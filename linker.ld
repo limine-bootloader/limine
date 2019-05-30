@@ -3,7 +3,7 @@ ENTRY(main)
 
 SECTIONS
 {
-	. = 0x7e00;
+	. = 0x8000;
 
     .text : {
         bootsect_begin = .;
@@ -14,7 +14,7 @@ SECTIONS
     .data : {
         KEEP(*(.data*))
         KEEP(*(.bss*))
-        . += 3584 - (. - bootsect_begin);
+        . += 3072 - (. - bootsect_begin);
     }
 
 }

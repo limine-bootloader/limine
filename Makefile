@@ -4,7 +4,7 @@ LD = ld
 CFLAGS = -O2 -pipe -Wall -Wextra
 
 INTERNAL_CFLAGS = \
-	-m16 \
+	-m32 \
 	-ffreestanding \
 	-nostdlib \
 	-masm=intel \

@@ -64,49 +64,6 @@ dw 0xaa55
 
 ; ********************* Stage 2 *********************
 
-; ***** A20 *****
-
-call enable_a20
-jc err
-
-; Enable 4GiB limits
-
-lgdt [GDT]						; Load the GDT
-
-cli
-
-mov eax, cr0
-or eax, 00000001b
-mov cr0, eax
-
-jmp 0x08:.pmodeu
-
-.pmodeu:
-
-mov ax, 0x10
-mov ds, ax
-mov es, ax
-mov fs, ax
-mov gs, ax
-mov ss, ax
-
-mov eax, cr0
-and eax, 11111110b
-mov cr0, eax
-
-jmp 0x0000:.unreal_mode
-
-.unreal_mode:
-
-xor ax, ax
-mov ds, ax
-mov es, ax
-mov fs, ax
-mov gs, ax
-mov ss, ax
-
-sti
-
 ; Load stage 3
 
 mov ax, 2
@@ -116,7 +73,35 @@ call read_sectors
 
 jc err
 
+; Enable A20
+
+call enable_a20
+jc err
+
+; Enter 32 bit pmode
+
+lgdt [GDT]						; Load the GDT
+
+cli
+
+mov eax, cr0
+or eax, 00000001b
+mov cr0, eax
+
+jmp 0x18:.pmode
+
+bits 32
+.pmode:
+
+mov ax, 0x20
+mov ds, ax
+mov es, ax
+mov fs, ax
+mov gs, ax
+mov ss, ax
+
 jmp 0x8000
+bits 16
 
 %include 'a20_enabler.inc'
 %include 'gdt.inc'

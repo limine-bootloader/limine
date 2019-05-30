@@ -6,7 +6,7 @@ megs: 512
 
 clock: sync=realtime, time0=local
 
-ata0-master: type=disk, path="qloader2.img", mode=flat
+ata0-master: type=disk, path="qloader2.bin", mode=flat
 
 boot: c
 

@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include <lib/print.h>
 #include <drivers/vga_textmode.h>
+#include <drivers/e9.h>
 
 static const char *base_digits = "0123456789abcdef";
 

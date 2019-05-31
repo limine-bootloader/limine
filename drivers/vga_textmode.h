@@ -5,5 +5,6 @@
 
 void init_vga_textmode(void);
 void text_write(const char *, size_t);
+void vga_load_8x8_font();
 
 #endif

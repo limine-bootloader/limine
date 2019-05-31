@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <lib/cio.h>
+#include <lib/real.h>
 #include <drivers/vga_textmode.h>
 
 #define VIDEO_BOTTOM ((VD_ROWS * VD_COLS) - 1)
@@ -276,4 +277,10 @@ static void escape_parse(char c) {
     escape = 0;
 
     return;
+}
+
+void vga_load_8x8_font() {
+    struct rm_regs regs;
+    regs.eax = 0x00001112;
+    rm_int(0x10, &regs, &regs);
 }

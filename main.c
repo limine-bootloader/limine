@@ -11,6 +11,7 @@ asm (
 
 void main(int boot_drive) {
     init_vga_textmode();
+    vga_load_8x8_font();
     print("qLoader 2\n\n");
     print("=> Boot drive: %x\n", boot_drive);
     print("\n");

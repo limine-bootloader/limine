@@ -7,10 +7,13 @@ asm (
 
 #include <drivers/vga_textmode.h>
 #include <lib/real.h>
+#include <lib/print.h>
 
 void main(int boot_drive) {
     init_vga_textmode();
-    text_write("qLoader 2\n\n", 11);
+    print("qLoader 2\n\n");
+    print("=> Boot drive: %x\n", boot_drive);
+    print("\n");
     for (;;) {
         struct rm_regs r = {0};
         rm_int(0x16, &r, &r);    // Real mode interrupt 16h

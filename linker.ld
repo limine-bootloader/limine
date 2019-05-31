@@ -14,7 +14,7 @@ SECTIONS
     .data : {
         KEEP(*(.data*))
         KEEP(*(.bss*))
-        . += 3072 - (. - bootsect_begin);
+        . += 7168 - (. - bootsect_begin);
     }
 
 }

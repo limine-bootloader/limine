@@ -41,7 +41,7 @@ static const unsigned char *disk_errstr[] =
     "ECC corrected data error" 
 } 
 
-inline void setup_dap(int lba, int count, int off, int seg)
+static inline void setup_dap(int lba, int count, int off, int seg)
 {
     dap.lba = lba;
     dap.count = count;

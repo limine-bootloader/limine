@@ -5,6 +5,8 @@
 #include <lib/print.h>
 
 #define DAP_SIZE 16
+#define MAX_COUNT 127
+#define SECTOR_SIZE(drv) ((drv == 0xE0) ? 2048 : 512) 
 
 static struct dap
 {
@@ -60,7 +62,7 @@ int read_sector(int drive, int lba, int count, unsigned char *buffer)
 {
     while (count > 0)
     {
-        setup_dap(lba, (count > 128) ? 128 : count, rm_off(buffer), rm_seg(buffer));
+        setup_dap(lba, (count > MAX_COUNT) ? MAX_COUNT : count, rm_off(buffer), rm_seg(buffer));
         struct rm_regs r = {0};
         r.eax = 0x4200;
         r.edx = drive;
@@ -69,8 +71,8 @@ int read_sector(int drive, int lba, int count, unsigned char *buffer)
         if (check_results(r)) 
             return (r.eax >> 8) & 0xFF;
 
-        count -= 128;
-        buffer += 128 * 512;
+        count -= MAX_COUNT;
+        buffer += MAX_COUNT * SECTOR_SIZE(drive);
     }
         
     return 0;
@@ -80,7 +82,7 @@ int write_sector(int drive, int lba, int count, unsigned char *buffer)
 {
     while (count > 0)
     {
-        setup_dap(lba, (count > 128) ? 128 : count, rm_off(buffer), rm_seg(buffer));
+        setup_dap(lba, (count > MAX_COUNT) ? MAX_COUNT : count, rm_off(buffer), rm_seg(buffer));
         struct rm_regs r = {0};
         r.eax = 0x4300;
         r.edx = drive;
@@ -89,8 +91,8 @@ int write_sector(int drive, int lba, int count, unsigned char *buffer)
         if (check_results(r)) 
             return (r.eax >> 8) & 0xFF;
 
-        count -= 128;
-        buffer += 128 * 512;
+        count -= MAX_COUNT;
+        buffer += MAX_COUNT * SECTOR_SIZE(drive);
     }
 
     return 0;

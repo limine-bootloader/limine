@@ -2,18 +2,42 @@
 #include <stddef.h>
 #include <lib/disk.h>
 #include <lib/real.h>
+#include <lib/print.h>
 
-struct dap
+#define DAP_SIZE 16
+
+static struct dap
 {
-    unsigned short size; // 16
+    unsigned short size;
     unsigned short count;
     unsigned short offset;
     unsigned short segment;
     unsigned long long lba;
 };
 
-struct dap dap = { 16, 0, 0, 0, 0 };
-struct rm_regs reg = { 0 };
+static struct dap dap = { DAP_SIZE, 0, 0, 0, 0 };
+
+static const unsigned char *disk_errstr[] = 
+{
+    "No error",
+    "Invalid command",
+    "Cannot find address mark",
+    "Attempted write on write protected disk", 
+    "Sector not found",
+    "Reset failed",
+    "Disk change line 'active'",
+    "Drive parameter activity failed",
+    "DMA overrun", 
+    "Attempt to DMA over 64kb boundary", 
+    "Bad sector detected", 
+    "Bad cylinder (track) detected", 
+    "Media type not found", 
+    "Invalid number of sectors", 
+    "Control data address mark detected", 
+    "DMA out of range",
+    "CRC/ECC data error", 
+    "ECC corrected data error" 
+} 
 
 inline void setup_dap(int lba, int count, int off, int seg)
 {
@@ -23,16 +47,27 @@ inline void setup_dap(int lba, int count, int off, int seg)
     dap.segment = seg;
 }
 
+static int check_results(struct rm_regs out)
+{
+    int ah = (out.eax >> 8) & 0xFF;
+    if (ah) 
+        print("Disk error ‰x (%s)", ah, (ah < 0x12) ? errstr[ah] : "");
+
+    return ah;
+} 
+
 int read_sector(int drive, int lba, int count, unsigned char *buffer)
 {
     while (count > 0)
     {
         setup_dap(lba, (count > 128) ? 128 : count, rm_off(buffer), rm_seg(buffer));
-        struct rm_regs r;
+        struct rm_regs r = {0};
         r.eax = 0x4200;
         r.edx = drive;
         r.esi = (unsigned int)&dap;
         rm_int(0x13, &r, &r);
+        if (check_results(r)) 
+            return (r.eax >> 8) & 0xFF;
 
         count -= 128;
         buffer += 128 * 512;
@@ -46,11 +81,13 @@ int write_sector(int drive, int lba, int count, unsigned char *buffer)
     while (count > 0)
     {
         setup_dap(lba, (count > 128) ? 128 : count, rm_off(buffer), rm_seg(buffer));
-        struct rm_regs r;
+        struct rm_regs r = {0};
         r.eax = 0x4300;
         r.edx = drive;
         r.esi = (unsigned int)&dap;
         rm_int(0x13, &r, &r);
+        if (check_results(r)) 
+            return (r.eax >> 8) & 0xFF;
 
         count -= 128;
         buffer += 128 * 512;

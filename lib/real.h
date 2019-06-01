@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+#define rm_seg(x) (unsigned short)(((int)x & 0xFFFF0) >> 4)
+#define rm_off(x) (unsigned short)(((int)x & 0x0000F) >> 0)
+
 struct rm_regs {
     uint32_t ebp;
     uint32_t edi;

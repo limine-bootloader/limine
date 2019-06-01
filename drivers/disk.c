@@ -17,16 +17,7 @@ static struct {
     uint64_t lba;
 } dap = { 16, 1, 0, 0, 0 };
 
-static int check_results(struct rm_regs *out) {
-    int ah = (out->eax >> 8) & 0xFF;
-
-    if (ah)
-        print("Disk error %x\n", ah);
-
-    return ah;
-}
-
-int read_sector(int drive, int lba, int count, uint8_t *buffer) {
+int read_sector(int drive, int lba, int count, void *buffer) {
     dap.offset = (uint16_t)(size_t)sector_buf;
 
     while (count--) {
@@ -36,8 +27,12 @@ int read_sector(int drive, int lba, int count, uint8_t *buffer) {
         r.edx = drive;
         r.esi = (unsigned int)&dap;
         rm_int(0x13, &r, &r);
-        if (check_results(&r))
-            return (r.eax >> 8) & 0xFF;
+
+        int ah = (r.eax >> 8) & 0xFF;
+        if (ah) {
+            print("Disk error %x\n", ah);
+            return ah;
+        }
 
         memcpy(buffer, sector_buf, SECTOR_SIZE);
 

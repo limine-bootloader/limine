@@ -25,24 +25,36 @@ inline void setup_dap(int lba, int count, int off, int seg)
 
 int read_sector(int drive, int lba, int count, unsigned char *buffer)
 {
-    setup_dap(lba, count, buffer, 0);
-    struct rm_regs r;
-    r.eax = 0x4200;
-    r.edx = drive;
-    r.esi = &dap;
-    rm_int(0x13, &r, &r);
-    
+    while (count > 0)
+    {
+        setup_dap(lba, (count > 128) ? 128 : count, rm_off(buffer), rm_seg(buffer));
+        struct rm_regs r;
+        r.eax = 0x4200;
+        r.edx = drive;
+        r.esi = (unsigned int)&dap;
+        rm_int(0x13, &r, &r);
+
+        count -= 128;
+        buffer += 128 * 512;
+    }
+        
     return 0;
 }
 
 int write_sector(int drive, int lba, int count, unsigned char *buffer)
 {
-    setup_dap(lba, count, buffer, 0);
-    struct rm_regs r;
-    r.eax = 0x430;
-    r.edx = drive;
-    r.esi = &dap;
-    rm_int(0x13, &r, &r);
+    while (count > 0)
+    {
+        setup_dap(lba, (count > 128) ? 128 : count, rm_off(buffer), rm_seg(buffer));
+        struct rm_regs r;
+        r.eax = 0x4300;
+        r.edx = drive;
+        r.esi = (unsigned int)&dap;
+        rm_int(0x13, &r, &r);
+
+        count -= 128;
+        buffer += 128 * 512;
+    }
 
     return 0;
 }

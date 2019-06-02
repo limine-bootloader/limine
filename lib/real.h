@@ -6,7 +6,10 @@
 #define rm_seg(x) (unsigned short)(((int)x & 0xFFFF0) >> 4)
 #define rm_off(x) (unsigned short)(((int)x & 0x0000F) >> 0)
 
+#define EFLAGS_CF (1 << 0)
+
 struct rm_regs {
+    uint32_t eflags;
     uint32_t ebp;
     uint32_t edi;
     uint32_t esi;

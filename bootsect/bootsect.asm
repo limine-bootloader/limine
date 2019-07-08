@@ -28,15 +28,20 @@ mov ebx, 0x7e00
 mov cx, 1
 call read_sectors
 
-jc err
+jc err_reading_disk
 
 mov si, DoneMsg
 call simple_print
 
 jmp 0x7e00
 
-err:
-mov si, ErrMsg
+err_reading_disk:
+mov si, ErrReadDiskMsg
+call simple_print
+jmp halt
+
+err_enabling_a20:
+mov si, ErrEnableA20Msg
 call simple_print
 
 halt:
@@ -47,7 +52,8 @@ jmp halt
 
 LoadingMsg db 0x0D, 0x0A, '<qLoader 2>', 0x0D, 0x0A, 0x0A, 0x00
 Stage2Msg db 'stage1: Loading stage2...', 0x00
-ErrMsg db 0x0D, 0x0A, 'Error, system halted.', 0x00
+ErrReadDiskMsg db 0x0D, 0x0A, 'Error reading disk, system halted.', 0x00
+ErrEnableA20Msg db 0x0D, 0x0A, 'Error enabling a20, system halted.', 0x00
 DoneMsg db '  DONE', 0x0D, 0x0A, 0x00
 
 times 0xda-($-$$) db 0
@@ -70,13 +76,12 @@ mov ax, 2
 mov ebx, 0x8000
 mov cx, 14
 call read_sectors
-
-jc err
+jc err_reading_disk
 
 ; Enable A20
 
 call enable_a20
-jc err
+jc err_enabling_a20
 
 ; Enter 32 bit pmode
 

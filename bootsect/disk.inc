@@ -13,13 +13,6 @@ read_sector:
 ; OUT:
 ; Carry if error
 
-push eax
-push ebx
-push ecx
-push edx
-push esi
-push edi
-
 push es
 pop word [.target_segment]
 mov word [.target_offset], bx
@@ -34,13 +27,6 @@ clc										; Clear carry for int 0x13 because some BIOSes may not clear it on 
 int 0x13								; Call int 0x13
 
 .done:
-
-pop edi
-pop esi
-pop edx
-pop ecx
-pop ebx
-pop eax
 ret										; Exit routine
 
 align 4

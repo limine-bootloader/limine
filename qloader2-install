@@ -11,7 +11,7 @@ fi
 # Variables.
 DEVICE="$1"
 MBR="$(mktemp)"
-QLOADER2="qloader2.bin"
+QLOADER2="src/qloader2.bin"
 
 # Copy the loader to the device.
 dd if="$DEVICE"   of="$MBR"    bs=1 count=64 skip=446

@@ -31,7 +31,7 @@ OBJ := $(C_FILES:.c=.o)
 all: qloader2.bin
 
 qloader2.bin: bootsect/bootsect.bin $(OBJ)
-	$(CC) $(LDFLAGS) $(INTERNAL_LDFLAGS) $(OBJ) -o stage2.bin
+	$(CC) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o stage2.bin
 	cat bootsect/bootsect.bin stage2.bin > $@
 
 bootsect/bootsect.bin: bootsect/bootsect.asm

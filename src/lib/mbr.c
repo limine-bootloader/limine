@@ -22,6 +22,11 @@ int mbr_get_part(struct mbr_part *part, int drive, int partition) {
         return ret;
     }
 
+    // Check if the partition exists, fail if it doesnt.
+    if (entry.type == 0) {
+        return -1;
+    }
+
     // Assign the final fields and return.
     part->first_sect = entry.first_sect;
     part->sect_count = entry.sect_count;

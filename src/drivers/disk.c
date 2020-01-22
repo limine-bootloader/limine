@@ -4,6 +4,7 @@
 #include <drivers/disk.h>
 #include <lib/real.h>
 #include <lib/print.h>
+#include <lib/mbr.h>
 
 #define SECTOR_SIZE 512
 
@@ -76,4 +77,14 @@ int read(int drive, void *buffer, uint64_t loc, uint64_t count) {
     }
 
     return 0;
+}
+
+int read_partition(int drive, int partition, void *buffer, uint64_t loc, uint64_t count) {
+    struct mbr_part part;
+    int ret = mbr_get_part(&part, drive, partition);
+    if (ret) {
+        return ret;
+    }
+
+    return read(drive, buffer, loc + (part.first_sect * 512), count);
 }

@@ -6,6 +6,7 @@
 void print(const char *fmt, ...);
 char getchar(void);
 void gets(char *buf, size_t limit);
+uint64_t strtoui(const char *s);
 
 #define DIV_ROUNDUP(a, b) (((a) + ((b) - 1)) / (b))
 

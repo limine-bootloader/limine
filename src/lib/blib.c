@@ -5,6 +5,13 @@
 #include <drivers/vga_textmode.h>
 #include <lib/real.h>
 
+uint64_t strtoui(const char *s) {
+    uint64_t n = 0;
+    while (*s)
+        n = n * 10 + ((*(s++)) - '0');
+    return n;
+}
+
 char getchar(void) {
     struct rm_regs r = {0};
     rm_int(0x16, &r, &r);

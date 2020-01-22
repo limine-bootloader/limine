@@ -9,12 +9,15 @@ asm (
 #include <lib/real.h>
 #include <lib/blib.h>
 #include <lib/mbr.h>
+#include <lib/config.h>
 #include <fs/echfs.h>
+
+#define CONFIG_NAME "qloader2.cfg"
 
 extern symbol bss_begin;
 extern symbol bss_end;
 
-#define QWORD_KERNEL "qword.bin"
+static int config_loaded = 0;
 
 void main(int boot_drive) {
     // Zero out .bss section
@@ -24,30 +27,49 @@ void main(int boot_drive) {
     // Initial prompt.
     init_vga_textmode();
     print("qLoader 2\n\n");
-    print("=> Boot drive: %x\n\n", boot_drive);
+    print("=> Boot drive: %x\n", boot_drive);
 
     // Enumerate partitions.
     struct mbr_part parts[4];
     for (int i = 0; i < 4; i++) {
-        print("=> Checking for partition %d...", i);
+        print("=> Checking for partition %d...\n", i);
         int ret = mbr_get_part(&parts[i], boot_drive, i);
         if (ret) {
-            print("Not found!\n");
+            print("   Not found!\n");
         } else {
-            print("Found!\n");
+            print("   Found!\n");
+            if (!config_loaded) {
+                if (!load_echfs_file(boot_drive, i, (void *)0x100000, CONFIG_NAME)) {
+                    config_loaded = 1;
+                    print("   Config file found and loaded!\n");
+                }
+            }
         }
     }
 
-    // Load the file from the chooen partition at 1 MiB.
-    int part = 1; // TODO: The boot partition is hardcoded for now.
-    print("=> Booting %s in partition %d\n", QWORD_KERNEL, part);
-    load_echfs_file(boot_drive, part, (void *)0x100000, QWORD_KERNEL);
+    int drive, part;
+    char path[128], cmdline[128];
+
+    if (config_loaded) {
+        char buf[32];
+        config_get_value(buf, 32, (void*)0x100000, "KERNEL_DRIVE");
+        drive = (int)strtoui(buf);
+        config_get_value(buf, 32, (void*)0x100000, "KERNEL_PARTITION");
+        part = (int)strtoui(buf);
+        config_get_value(path, 128, (void*)0x100000, "KERNEL_PATH");
+        config_get_value(cmdline, 128, (void*)0x100000, "KERNEL_CMDLINE");
+    } else {
+        print("   !! NO CONFIG FILE FOUND ON BOOT DRIVE !!");
+        for (;;);
+    }
+
+    load_echfs_file(drive, part, (void *)0x100000, path);
 
     // Boot the kernel.
     asm volatile (
         "jmp 0x100000"
         :
-        : "b" ("")
+        : "b" (cmdline)
         : "memory"
     );
 }

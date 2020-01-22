@@ -3,7 +3,7 @@
 #include <lib/libc.h>
 #include <drivers/disk.h>
 #include <lib/real.h>
-#include <lib/print.h>
+#include <lib/blib.h>
 #include <lib/mbr.h>
 
 #define SECTOR_SIZE 512

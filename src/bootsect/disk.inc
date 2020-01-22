@@ -28,9 +28,8 @@ read_sector:
     mov si, .da_struct
     mov ah, 0x42
 
-    clc										; Clear carry for int 0x13 because some BIOSes may not clear it on success
-
-    int 0x13								; Call int 0x13
+    clc
+    int 0x13
 
   .done:
     pop edi
@@ -39,7 +38,7 @@ read_sector:
     pop ecx
     pop ebx
     pop eax
-    ret										; Exit routine
+    ret
 
 align 4
 .da_struct:
@@ -65,6 +64,9 @@ align 4
 ; OUT:
 ; Carry if error
 
+%define TEMP_BUFFER_SEG 0x7000
+%define BYTES_PER_SECT  512
+
 read_sectors:
     push eax									; Save GPRs
     push ebx
@@ -77,41 +79,41 @@ read_sectors:
     push es
     push ebx
 
-    mov bx, 0x7000							; Load in a temp buffer
+    mov bx, TEMP_BUFFER_SEG
     mov es, bx
     xor bx, bx
 
-    call read_sector						; Read sector
+    call read_sector
 
     pop ebx
     pop es
 
-    jc .done								; If carry exit with flag
+    jc .done
 
     push ds
 
-    mov si, 0x7000
+    mov si, TEMP_BUFFER_SEG
     mov ds, si
     mov edi, ebx
     xor esi, esi
 
     push ecx
-    mov ecx, 512
+    mov ecx, BYTES_PER_SECT
     a32 o32 rep movsb
     pop ecx
 
     pop ds
 
-    inc eax									; Increment sector
-    add ebx, 512							; Add 512 to the buffer
+    inc eax
+    add ebx, BYTES_PER_SECT
 
-    loop .loop								; Loop!
+    loop .loop
 
   .done:
     pop edi
     pop esi
     pop edx
-    pop ecx									; Restore GPRs
+    pop ecx
     pop ebx
     pop eax
-    ret										; Exit routine
+    ret

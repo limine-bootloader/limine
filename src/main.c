@@ -7,8 +7,7 @@ asm (
 
 #include <drivers/vga_textmode.h>
 #include <lib/real.h>
-#include <lib/print.h>
-#include <lib/types.h>
+#include <lib/blib.h>
 #include <lib/mbr.h>
 #include <fs/echfs.h>
 
@@ -51,11 +50,4 @@ void main(int boot_drive) {
         : "b" ("")
         : "memory"
     );
-
-    /*for (;;) {
-        struct rm_regs r = {0};
-        rm_int(0x16, &r, &r);    // Real mode interrupt 16h
-        char c = (char)(r.eax & 0xff);
-        text_write(&c, 1);
-    }*/
 }

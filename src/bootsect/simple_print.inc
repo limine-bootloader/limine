@@ -6,16 +6,17 @@
 ; SI = points to a 0x00 terminated string
 
 simple_print:
-    push ax						; Save registers
+    push ax
     push si
-    mov ah, 0x0E				; int 0x10, function 0x0E (print character)
+    ; int 0x10, function 0x0e (print character)
+    mov ah, 0x0e
   .loop:
-	lodsb					; Load character from string
-	test al, al				; Is is the 0x00 terminator?
-	jz .done				; If it is, exit routine
-	int 0x10				; Call BIOS
-	jmp .loop				; Repeat!
+    lodsb
+    test al, al
+    jz .done
+    int 0x10
+    jmp .loop
   .done:
-	pop si					; Restore registers
-	pop ax
-	ret						; Exit routine
+    pop si
+    pop ax
+    ret

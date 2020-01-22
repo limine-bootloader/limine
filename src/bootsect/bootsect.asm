@@ -3,6 +3,7 @@ bits 16
 
 start:
     cli
+    cld
     jmp 0x0000:.initialise_cs
   .initialise_cs:
     xor ax, ax

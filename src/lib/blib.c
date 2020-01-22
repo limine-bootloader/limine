@@ -1,8 +1,37 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdarg.h>
-#include <lib/print.h>
+#include <lib/blib.h>
 #include <drivers/vga_textmode.h>
+#include <lib/real.h>
+
+char getchar(void) {
+    struct rm_regs r = {0};
+    rm_int(0x16, &r, &r);
+    return (char)(r.eax & 0xff);
+}
+
+void gets(char *buf, size_t limit) {
+    for (size_t i = 0; ; ) {
+        char c = getchar();
+        switch (c) {
+            case '\b':
+                if (i) {
+                    i--;
+                    text_write(&c, 1);
+                }
+                continue;
+            case '\n':
+                buf[i] = 0;
+                text_write(&c, 1);
+                return;
+        }
+        if (i < limit-1) {
+            buf[i++] = c;
+            text_write(&c, 1);
+        }
+    }
+}
 
 static const char *base_digits = "0123456789abcdef";
 

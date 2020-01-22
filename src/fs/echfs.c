@@ -1,9 +1,8 @@
 #include <fs/echfs.h>
 #include <stdint.h>
 #include <lib/libc.h>
-#include <lib/print.h>
+#include <lib/blib.h>
 #include <drivers/disk.h>
-#include <lib/types.h>
 
 struct echfs_identity_table {
     uint8_t jmp[4];

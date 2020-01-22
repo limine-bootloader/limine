@@ -46,9 +46,9 @@ static void prn_char(char *print_buf, size_t *print_buf_i, char c) {
     return;
 }
 
-static void prn_i(char *print_buf, size_t *print_buf_i, int32_t x) {
+static void prn_i(char *print_buf, size_t *print_buf_i, int64_t x) {
     int i;
-    char buf[12] = {0};
+    char buf[20] = {0};
 
     if (!x) {
         prn_char(print_buf, print_buf_i, '0');
@@ -58,7 +58,7 @@ static void prn_i(char *print_buf, size_t *print_buf_i, int32_t x) {
     int sign = x < 0;
     if (sign) x = -x;
 
-    for (i = 10; x; i--) {
+    for (i = 18; x; i--) {
         buf[i] = (x % 10) + 0x30;
         x = x / 10;
     }
@@ -72,16 +72,16 @@ static void prn_i(char *print_buf, size_t *print_buf_i, int32_t x) {
     return;
 }
 
-static void prn_ui(char *print_buf, size_t *print_buf_i, uint32_t x) {
+static void prn_ui(char *print_buf, size_t *print_buf_i, uint64_t x) {
     int i;
-    char buf[11] = {0};
+    char buf[21] = {0};
 
     if (!x) {
         prn_char(print_buf, print_buf_i, '0');
         return;
     }
 
-    for (i = 9; x; i--) {
+    for (i = 19; x; i--) {
         buf[i] = (x % 10) + 0x30;
         x = x / 10;
     }
@@ -92,16 +92,16 @@ static void prn_ui(char *print_buf, size_t *print_buf_i, uint32_t x) {
     return;
 }
 
-static void prn_x(char *print_buf, size_t *print_buf_i, uint32_t x) {
+static void prn_x(char *print_buf, size_t *print_buf_i, uint64_t x) {
     int i;
-    char buf[9] = {0};
+    char buf[17] = {0};
 
     if (!x) {
         prn_str(print_buf, print_buf_i, "0x0");
         return;
     }
 
-    for (i = 7; x; i--) {
+    for (i = 15; x; i--) {
         buf[i] = base_digits[(x % 16)];
         x = x / 16;
     }
@@ -145,13 +145,22 @@ void print(const char *fmt, ...) {
                     prn_nstr(print_buf, &print_buf_i, str, str_len); }
                 break;
             case 'd':
-                prn_i(print_buf, &print_buf_i, va_arg(args, int32_t));
+                prn_i(print_buf, &print_buf_i, (int64_t)va_arg(args, int32_t));
                 break;
             case 'u':
-                prn_ui(print_buf, &print_buf_i, va_arg(args, uint32_t));
+                prn_ui(print_buf, &print_buf_i, (uint64_t)va_arg(args, uint32_t));
                 break;
             case 'x':
-                prn_x(print_buf, &print_buf_i, va_arg(args, uint32_t));
+                prn_x(print_buf, &print_buf_i, (uint64_t)va_arg(args, uint32_t));
+                break;
+            case 'D':
+                prn_i(print_buf, &print_buf_i, va_arg(args, int64_t));
+                break;
+            case 'U':
+                prn_ui(print_buf, &print_buf_i, va_arg(args, uint64_t));
+                break;
+            case 'X':
+                prn_x(print_buf, &print_buf_i, va_arg(args, uint64_t));
                 break;
             case 'c': {
                 char c = (char)va_arg(args, int);

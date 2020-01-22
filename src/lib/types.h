@@ -3,4 +3,6 @@
 
 typedef void *symbol[];
 
+#define DIV_ROUNDUP(a, b) (((a) + ((b) - 1)) / (b))
+
 #endif

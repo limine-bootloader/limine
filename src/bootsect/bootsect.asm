@@ -1,52 +1,52 @@
 org 0x7C00
 bits 16
 
-code_start:
+start:
+    cli
+    jmp 0x0000:.initialise_cs
+  .initialise_cs:
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    mov sp, 0x7c00
+    sti
 
-cli
-jmp 0x0000:initialise_cs
-initialise_cs:
-xor ax, ax
-mov ds, ax
-mov es, ax
-mov fs, ax
-mov gs, ax
-mov ss, ax
-mov sp, 0x7c00
-sti
+    mov si, LoadingMsg
+    call simple_print
 
-mov si, LoadingMsg
-call simple_print
+    ; ****************** Load stage 2 ******************
 
-; ****************** Load stage 2 ******************
+    mov si, Stage2Msg
+    call simple_print
 
-mov si, Stage2Msg
-call simple_print
+    mov eax, 1
+    mov ebx, 0x7e00
+    mov ecx, 1
+    call read_sectors
 
-mov ax, 1
-mov ebx, 0x7e00
-mov cx, 1
-call read_sectors
+    jc err_reading_disk
 
-jc err_reading_disk
+    mov si, DoneMsg
+    call simple_print
 
-mov si, DoneMsg
-call simple_print
-
-jmp 0x7e00
+    jmp 0x7e00
 
 err_reading_disk:
-mov si, ErrReadDiskMsg
-call simple_print
-jmp halt
+    mov si, ErrReadDiskMsg
+    call simple_print
+    jmp halt
 
 err_enabling_a20:
-mov si, ErrEnableA20Msg
-call simple_print
+    mov si, ErrEnableA20Msg
+    call simple_print
+    jmp halt
 
 halt:
-hlt
-jmp halt
+    hlt
+    jmp halt
 
 ; Data
 
@@ -70,44 +70,40 @@ dw 0xaa55
 
 ; ********************* Stage 2 *********************
 
-; Load stage 3
+stage2:
+    ; Load stage 3
+    mov eax, 2
+    mov ebx, 0x8000
+    mov ecx, 62
+    call read_sectors
+    jc err_reading_disk
 
-mov ax, 2
-mov ebx, 0x8000
-mov cx, 62
-call read_sectors
-jc err_reading_disk
+    ; Enable A20
+    call enable_a20
+    jc err_enabling_a20
 
-; Enable A20
+    ; Enter 32 bit pmode
+    lgdt [GDT]						; Load the GDT
 
-call enable_a20
-jc err_enabling_a20
+    cli
 
-; Enter 32 bit pmode
+    mov eax, cr0
+    or al, 1
+    mov cr0, eax
 
-lgdt [GDT]						; Load the GDT
+    jmp 0x18:.pmode
+    bits 32
+  .pmode:
+    mov ax, 0x20
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
 
-cli
+    jmp 0x8000
 
-mov eax, cr0
-or eax, 00000001b
-mov cr0, eax
-
-jmp 0x18:.pmode
-
-bits 32
-.pmode:
-
-mov ax, 0x20
-mov ds, ax
-mov es, ax
-mov fs, ax
-mov gs, ax
-mov ss, ax
-
-jmp 0x8000
 bits 16
-
 %include 'a20_enabler.inc'
 %include 'gdt.inc'
 

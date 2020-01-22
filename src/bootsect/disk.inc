@@ -1,5 +1,3 @@
-read_sector:
-
 ; ***********************************************
 ;     Reads a disk sector with an LBA address
 ; ***********************************************
@@ -13,35 +11,35 @@ read_sector:
 ; OUT:
 ; Carry if error
 
-push eax
-push ebx
-push ecx
-push edx
-push esi
-push edi
+read_sector:
+    push eax
+    push ebx
+    push ecx
+    push edx
+    push esi
+    push edi
 
-push es
-pop word [.target_segment]
-mov word [.target_offset], bx
-mov dword [.lba_address_low], eax
+    push es
+    pop word [.target_segment]
+    mov word [.target_offset], bx
+    mov dword [.lba_address_low], eax
 
-xor esi, esi
-mov si, .da_struct
-mov ah, 0x42
+    xor esi, esi
+    mov si, .da_struct
+    mov ah, 0x42
 
-clc										; Clear carry for int 0x13 because some BIOSes may not clear it on success
+    clc										; Clear carry for int 0x13 because some BIOSes may not clear it on success
 
-int 0x13								; Call int 0x13
+    int 0x13								; Call int 0x13
 
-.done:
-
-pop edi
-pop esi
-pop edx
-pop ecx
-pop ebx
-pop eax
-ret										; Exit routine
+  .done:
+    pop edi
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
+    pop eax
+    ret										; Exit routine
 
 align 4
 .da_struct:
@@ -53,9 +51,6 @@ align 4
     .lba_address_low    dd  0
     .lba_address_high   dd  0
 
-
-read_sectors:
-
 ; ********************************************
 ;     Reads multiple LBA addressed sectors
 ; ********************************************
@@ -65,58 +60,58 @@ read_sectors:
 ; DL = Drive number
 ; ES = Buffer segment
 ; EBX = Buffer offset
-; CX = Sectors count
+; ECX = Sectors count
 
 ; OUT:
 ; Carry if error
 
-push eax									; Save GPRs
-push ebx
-push ecx
-push edx
-push esi
-push edi
+read_sectors:
+    push eax									; Save GPRs
+    push ebx
+    push ecx
+    push edx
+    push esi
+    push edi
 
-.loop:
+  .loop:
+    push es
+    push ebx
 
-push es
-push ebx
+    mov bx, 0x7000							; Load in a temp buffer
+    mov es, bx
+    xor bx, bx
 
-mov bx, 0x7000							; Load in a temp buffer
-mov es, bx
-xor bx, bx
+    call read_sector						; Read sector
 
-call read_sector						; Read sector
+    pop ebx
+    pop es
 
-pop ebx
-pop es
+    jc .done								; If carry exit with flag
 
-jc .done								; If carry exit with flag
+    push ds
 
-push ds
+    mov si, 0x7000
+    mov ds, si
+    mov edi, ebx
+    xor esi, esi
 
-mov si, 0x7000
-mov ds, si
-mov edi, ebx
-xor esi, esi
+    push ecx
+    mov ecx, 512
+    a32 o32 rep movsb
+    pop ecx
 
-push ecx
-mov ecx, 512
-a32 o32 rep movsb
-pop ecx
+    pop ds
 
-pop ds
+    inc eax									; Increment sector
+    add ebx, 512							; Add 512 to the buffer
 
-inc eax									; Increment sector
-add ebx, 512							; Add 512 to the buffer
+    loop .loop								; Loop!
 
-loop .loop								; Loop!
-
-.done:
-pop edi
-pop esi
-pop edx
-pop ecx									; Restore GPRs
-pop ebx
-pop eax
-ret										; Exit routine
+  .done:
+    pop edi
+    pop esi
+    pop edx
+    pop ecx									; Restore GPRs
+    pop ebx
+    pop eax
+    ret										; Exit routine

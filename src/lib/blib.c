@@ -21,9 +21,9 @@ void gets(char *buf, size_t limit) {
                     text_write(&c, 1);
                 }
                 continue;
-            case '\n':
+            case '\r':
                 buf[i] = 0;
-                text_write(&c, 1);
+                text_write("\n", 1);
                 return;
         }
         if (i < limit-1) {

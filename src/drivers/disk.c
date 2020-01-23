@@ -7,9 +7,15 @@
 #include <lib/mbr.h>
 
 #define SECTOR_SIZE 512
+#define BLOCK_SIZE_IN_SECTORS 16
+#define BLOCK_SIZE  (SECTOR_SIZE * BLOCK_SIZE_IN_SECTORS)
+#define BUFFER_SEG  0x7000
+#define BUFFER_OFF  0
+#define BUFFER_ADDR ((uint8_t *)((BUFFER_SEG << 4) + BUFFER_OFF))
 
-static uint64_t cached_sector = -1;
-static uint8_t sector_buf[512];
+#define CACHE_INVALID (~((uint64_t)0))
+
+static uint64_t cached_block = CACHE_INVALID;
 
 static struct {
     uint16_t size;
@@ -17,14 +23,13 @@ static struct {
     uint16_t offset;
     uint16_t segment;
     uint64_t lba;
-} dap = { 16, 1, 0, 0, 0 };
+} dap = { 16, BLOCK_SIZE_IN_SECTORS, BUFFER_OFF, BUFFER_SEG, 0 };
 
-static int cache_sector(int drive, uint64_t lba) {
-    if (lba == cached_sector)
+static int cache_block(int drive, uint64_t block) {
+    if (block == cached_block)
         return 0;
 
-    dap.offset = (uint16_t)(size_t)sector_buf;
-    dap.lba = lba;
+    dap.lba = block * BLOCK_SIZE_IN_SECTORS;
 
     struct rm_regs r = {0};
     r.eax = 0x4200;
@@ -35,25 +40,12 @@ static int cache_sector(int drive, uint64_t lba) {
 
     if (r.eflags & EFLAGS_CF) {
         int ah = (r.eax >> 8) & 0xff;
-        print("Disk error %x. Drive %x, LBA %x.\n", ah, drive, lba);
+        print("Disk error %x. Drive %x, LBA %x.\n", ah, drive, dap.lba);
+        cached_block = CACHE_INVALID;
         return ah;
     }
 
-    cached_sector = lba;
-
-    return 0;
-}
-
-int read_sector(int drive, void *buffer, uint64_t lba, uint64_t count) {
-    while (count--) {
-        int ret;
-        if ((ret = cache_sector(drive, lba++)))
-            return ret;
-
-        memcpy(buffer, sector_buf, SECTOR_SIZE);
-
-        buffer += SECTOR_SIZE;
-    }
+    cached_block = block;
 
     return 0;
 }
@@ -61,30 +53,24 @@ int read_sector(int drive, void *buffer, uint64_t lba, uint64_t count) {
 int read(int drive, void *buffer, uint64_t loc, uint64_t count) {
     uint64_t progress = 0;
     while (progress < count) {
-        uint64_t sect = (loc + progress) / SECTOR_SIZE;
+        uint64_t block = (loc + progress) / BLOCK_SIZE;
 
         int ret;
-        if ((ret = cache_sector(drive, sect)))
+        if ((ret = cache_block(drive, block)))
             return ret;
 
         uint64_t chunk = count - progress;
-        uint64_t offset = (loc + progress) % SECTOR_SIZE;
-        if (chunk > SECTOR_SIZE - offset)
-            chunk = SECTOR_SIZE - offset;
+        uint64_t offset = (loc + progress) % BLOCK_SIZE;
+        if (chunk > BLOCK_SIZE - offset)
+            chunk = BLOCK_SIZE - offset;
 
-        memcpy(buffer + progress, &sector_buf[offset], chunk);
+        memcpy(buffer + progress, &BUFFER_ADDR[offset], chunk);
         progress += chunk;
     }
 
     return 0;
 }
 
-int read_partition(int drive, int partition, void *buffer, uint64_t loc, uint64_t count) {
-    struct mbr_part part;
-    int ret = mbr_get_part(&part, drive, partition);
-    if (ret) {
-        return ret;
-    }
-
-    return read(drive, buffer, loc + (part.first_sect * 512), count);
+int read_partition(int drive, struct mbr_part *part, void *buffer, uint64_t loc, uint64_t count) {
+    return read(drive, buffer, loc + (part->first_sect * 512), count);
 }

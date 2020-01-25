@@ -25,6 +25,18 @@ void rm_int(
         "push ebp\n\t"
         "pushf\n\t"
 
+        "cli\n\t"
+
+        "mov dx, 0x21\n\t"
+        "mov al, byte ptr ds:[rm_pic0_mask]\n\t"
+        "out dx, al\n\t"
+        "mov dx, 0xa1\n\t"
+        "mov al, byte ptr ds:[rm_pic1_mask]\n\t"
+        "out dx, al\n\t"
+
+        "sidt [8f]\n\t"
+        "lidt [9f]\n\t"
+
         // Jump to real mode
         "jmp 0x08:1f\n\t"
         "1: .code16\n\t"
@@ -59,9 +71,13 @@ void rm_int(
         "pop eax\n\t"
         "mov esp, dword ptr ds:[5f]\n\t"
 
+        "sti\n\t"
+
         // Indirect interrupt call
         ".byte 0xcd\n\t"
         "3: .byte 0\n\t"
+
+        "cli\n\t"
 
         // Load out_regs
         "mov dword ptr ds:[5f], esp\n\t"
@@ -90,6 +106,15 @@ void rm_int(
         "mov gs, ax\n\t"
         "mov ss, ax\n\t"
 
+        "mov dx, 0x21\n\t"
+        "mov al, byte ptr ds:[pm_pic0_mask]\n\t"
+        "out dx, al\n\t"
+        "mov dx, 0xa1\n\t"
+        "mov al, byte ptr ds:[pm_pic1_mask]\n\t"
+        "out dx, al\n\t"
+
+        "lidt [8f]\n\t"
+
         // Restore non-scratch GPRs
         "popf\n\t"
         "pop ebp\n\t"
@@ -106,5 +131,11 @@ void rm_int(
         "6: .long 0\n\t"
         // in_regs
         "7: .long 0\n\t"
+        // pmode IDT
+        "8: .short 0\n\t"
+        "   .long  0\n\t"
+        // rmode IDT
+        "9: .short 0x3ff\n\t"
+        "   .long  0\n\t"
     );
 }

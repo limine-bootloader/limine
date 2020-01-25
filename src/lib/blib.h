@@ -2,6 +2,9 @@
 #define __LIB__BLIB_H__
 
 #include <stddef.h>
+#include <stdint.h>
+
+void pit_sleep(uint64_t pit_ticks);
 
 void print(const char *fmt, ...);
 char getchar(void);

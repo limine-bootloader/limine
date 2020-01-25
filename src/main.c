@@ -11,6 +11,7 @@ asm (
 #include <lib/mbr.h>
 #include <lib/config.h>
 #include <fs/echfs.h>
+#include <sys/interrupt.h>
 
 #define CONFIG_NAME "qloader2.cfg"
 
@@ -26,6 +27,9 @@ void main(int boot_drive) {
 
     // Initial prompt.
     init_vga_textmode();
+
+    init_idt();
+
     print("qLoader 2\n\n");
     print("=> Boot drive: %x\n", boot_drive);
 

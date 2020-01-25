@@ -4,6 +4,14 @@
 #include <lib/blib.h>
 #include <drivers/vga_textmode.h>
 #include <lib/real.h>
+#include <sys/interrupt.h>
+
+void pit_sleep(uint64_t pit_ticks) {
+    uint64_t target = global_pit_tick + pit_ticks;
+    while (global_pit_tick < target) {
+        asm volatile ("hlt");
+    }
+}
 
 uint64_t strtoui(const char *s) {
     uint64_t n = 0;

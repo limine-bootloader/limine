@@ -114,11 +114,15 @@ static int text_get_cursor_pos_y(void) {
     return cursor_offset / VD_COLS;
 }
 
-static void text_set_cursor_pos(int x, int y) {
+void text_get_cursor_pos(int *x, int *y) {
+    *x = (cursor_offset % VD_COLS) / 2;
+    *y = cursor_offset / VD_COLS;
+}
+
+void text_set_cursor_pos(int x, int y) {
     clear_cursor();
     cursor_offset = y * VD_COLS + x * 2;
     draw_cursor();
-    return;
 }
 
 void text_write(const char *buf, size_t count) {
@@ -137,7 +141,7 @@ static void text_putchar(char c) {
         case 0x1B:
             escape = 1;
             return;
-        case 0x0A:
+        case '\n':
             if (text_get_cursor_pos_y() == (VD_ROWS - 1)) {
                 clear_cursor();
                 scroll();
@@ -149,11 +153,10 @@ static void text_putchar(char c) {
         case '\r':
             text_set_cursor_pos(0, text_get_cursor_pos_y());
             break;
-        case 0x08:
+        case '\b':
             if (cursor_offset) {
                 clear_cursor();
                 cursor_offset -= 2;
-                video_mem[cursor_offset] = ' ';
                 draw_cursor();
             }
             break;

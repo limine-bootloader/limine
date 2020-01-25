@@ -6,6 +6,7 @@
 #include <lib/real.h>
 #include <sys/interrupt.h>
 #include <lib/libc.h>
+#include <lib/cio.h>
 
 void pit_sleep(uint64_t pit_ticks) {
     uint64_t target = global_pit_tick + pit_ticks;
@@ -33,33 +34,86 @@ uint64_t strtoui(const char *s) {
     return n;
 }
 
-char getchar(void) {
+int getchar(void) {
     struct rm_regs r = {0};
     rm_int(0x16, &r, &r);
+    switch ((r.eax >> 8) & 0xff) {
+        case 0x4b:
+            return GETCHAR_CURSOR_LEFT;
+        case 0x4d:
+            return GETCHAR_CURSOR_RIGHT;
+        case 0x48:
+            return GETCHAR_CURSOR_UP;
+        case 0x50:
+            return GETCHAR_CURSOR_DOWN;
+    }
     return (char)(r.eax & 0xff);
+}
+
+static void gets_reprint_string(int x, int y, const char *s, size_t limit) {
+    int last_x, last_y;
+    text_get_cursor_pos(&last_x, &last_y);
+    text_set_cursor_pos(x, y);
+    for (size_t i = 0; i < limit; i++) {
+        text_write(" ", 1);
+    }
+    text_set_cursor_pos(x, y);
+    text_write(s, strlen(s));
+    text_set_cursor_pos(last_x, last_y);
 }
 
 void gets(const char *orig_str, char *buf, size_t limit) {
     size_t orig_str_len = strlen(orig_str);
     memmove(buf, orig_str, orig_str_len);
-    text_write(orig_str, orig_str_len);
+    buf[orig_str_len] = 0;
+
+    int orig_x, orig_y;
+    text_get_cursor_pos(&orig_x, &orig_y);
+
+    print("%s", buf);
+
     for (size_t i = orig_str_len; ; ) {
-        char c = getchar();
+        int c = getchar();
         switch (c) {
+            case GETCHAR_CURSOR_LEFT:
+                if (i) {
+                    i--;
+                    text_write("\b", 1);
+                }
+                continue;
+            case GETCHAR_CURSOR_RIGHT:
+                if (i < strlen(buf)) {
+                    i++;
+                    text_write(" ", 1);
+                    gets_reprint_string(orig_x, orig_y, buf, limit);
+                }
+                continue;
             case '\b':
                 if (i) {
                     i--;
-                    text_write(&c, 1);
+                    for (size_t j = i; ; j++) {
+                        buf[j] = buf[j+1];
+                        if (!buf[j])
+                            break;
+                    }
+                    text_write("\b", 1);
+                    gets_reprint_string(orig_x, orig_y, buf, limit);
                 }
                 continue;
             case '\r':
-                buf[i] = 0;
                 text_write("\n", 1);
                 return;
-        }
-        if (i < limit-1) {
-            buf[i++] = c;
-            text_write(&c, 1);
+            default:
+                if (strlen(buf) < limit-1) {
+                    for (size_t j = strlen(buf); ; j--) {
+                        buf[j+1] = buf[j];
+                        if (j == i)
+                            break;
+                    }
+                    buf[i++] = c;
+                    text_write(" ", 1);
+                    gets_reprint_string(orig_x, orig_y, buf, limit);
+                }
         }
     }
 }

@@ -4,16 +4,25 @@
 #include <lib/cio.h>
 #include <lib/blib.h>
 
-volatile uint64_t global_pit_tick = 0;
-
 __attribute__((interrupt)) static void unhandled_int(void *r) {
     (void)r;
     print("Warning: unhandled interrupt");
 }
 
+volatile uint64_t global_pit_tick = 0;
+
 __attribute__((interrupt)) static void pit_irq(void *r) {
     (void)r;
     global_pit_tick++;
+    port_out_b(0x20, 0x20);
+}
+
+volatile int kbd_int = 0;
+
+__attribute__((interrupt)) static void keyboard_handler(void *r) {
+    (void)r;
+    kbd_int = 1;
+    (void)port_in_b(0x60);
     port_out_b(0x20, 0x20);
 }
 
@@ -48,6 +57,7 @@ void init_idt(void) {
     }
 
     register_interrupt_handler(0x08, pit_irq, 0x8e);
+    register_interrupt_handler(0x09, keyboard_handler, 0x8e);
 
     struct idt_ptr_t idt_ptr = {
         sizeof(idt) - 1,
@@ -60,7 +70,7 @@ void init_idt(void) {
         : "m" (idt_ptr)
     );
 
-    pm_pic0_mask = 0xfe;
+    pm_pic0_mask = 0xfc;
     pm_pic1_mask = 0xff;
     port_out_b(0x21, pm_pic0_mask);
     port_out_b(0xa1, pm_pic1_mask);

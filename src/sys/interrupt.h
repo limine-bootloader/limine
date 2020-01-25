@@ -5,6 +5,7 @@
 #include <stddef.h>
 
 extern volatile uint64_t global_pit_tick;
+extern volatile int kbd_int;
 
 extern uint8_t rm_pic0_mask;
 extern uint8_t rm_pic1_mask;

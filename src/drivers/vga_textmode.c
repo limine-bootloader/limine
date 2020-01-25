@@ -146,6 +146,9 @@ static void text_putchar(char c) {
                 text_set_cursor_pos(0, (text_get_cursor_pos_y() + 1));
             }
             break;
+        case '\r':
+            text_set_cursor_pos(0, text_get_cursor_pos_y());
+            break;
         case 0x08:
             if (cursor_offset) {
                 clear_cursor();

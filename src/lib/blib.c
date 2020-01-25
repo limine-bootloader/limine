@@ -5,12 +5,25 @@
 #include <drivers/vga_textmode.h>
 #include <lib/real.h>
 #include <sys/interrupt.h>
+#include <lib/libc.h>
 
 void pit_sleep(uint64_t pit_ticks) {
     uint64_t target = global_pit_tick + pit_ticks;
     while (global_pit_tick < target) {
         asm volatile ("hlt");
     }
+}
+
+int pit_sleep_and_quit_on_keypress(uint64_t pit_ticks) {
+    uint64_t target = global_pit_tick + pit_ticks;
+    while (global_pit_tick < target && !kbd_int) {
+        asm volatile ("hlt");
+    }
+    if (kbd_int) {
+        kbd_int = 0;
+        return 1;
+    }
+    return 0;
 }
 
 uint64_t strtoui(const char *s) {
@@ -26,8 +39,11 @@ char getchar(void) {
     return (char)(r.eax & 0xff);
 }
 
-void gets(char *buf, size_t limit) {
-    for (size_t i = 0; ; ) {
+void gets(const char *orig_str, char *buf, size_t limit) {
+    size_t orig_str_len = strlen(orig_str);
+    memmove(buf, orig_str, orig_str_len);
+    text_write(orig_str, orig_str_len);
+    for (size_t i = orig_str_len; ; ) {
         char c = getchar();
         switch (c) {
             case '\b':

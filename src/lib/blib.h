@@ -5,10 +5,11 @@
 #include <stdint.h>
 
 void pit_sleep(uint64_t pit_ticks);
+int pit_sleep_and_quit_on_keypress(uint64_t pit_ticks);
 
 void print(const char *fmt, ...);
 char getchar(void);
-void gets(char *buf, size_t limit);
+void gets(const char *orig_str, char *buf, size_t limit);
 uint64_t strtoui(const char *s);
 
 #define DIV_ROUNDUP(a, b) (((a) + ((b) - 1)) / (b))

@@ -67,6 +67,16 @@ void main(int boot_drive) {
         for (;;);
     }
 
+    print("\n");
+    for (int i = 3; i; i--) {
+        print("\rBooting in %d (press any key to edit command line)...", i);
+        if (pit_sleep_and_quit_on_keypress(18)) {
+            print("\n\n> ");
+            gets(cmdline, cmdline, 128);
+            break;
+        }
+    }
+
     load_echfs_file(drive, part, (void *)0x100000, path);
 
     // Boot the kernel.

@@ -71,7 +71,8 @@ void main(int boot_drive) {
 
     // Boot the kernel.
     asm volatile (
-        "jmp 0x100000"
+        "cli\n\t"
+        "jmp 0x100000\n\t"
         :
         : "b" (cmdline)
         : "memory"

@@ -22,6 +22,19 @@ uint8_t rm_pic1_mask = 0xff;
 uint8_t pm_pic0_mask = 0xff;
 uint8_t pm_pic1_mask = 0xff;
 
+struct idt_entry_t {
+    uint16_t offset_lo;
+    uint16_t selector;
+    uint8_t unused;
+    uint8_t type_attr;
+    uint16_t offset_hi;
+} __attribute__((packed));
+
+struct idt_ptr_t {
+    uint16_t size;
+    uint32_t address;
+} __attribute__((packed));
+
 #define IDT_MAX_ENTRIES 16
 
 static struct idt_entry_t idt[IDT_MAX_ENTRIES];

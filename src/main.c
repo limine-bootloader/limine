@@ -21,6 +21,8 @@ extern symbol bss_end;
 static int config_loaded = 0;
 
 void main(int boot_drive) {
+    struct echfs_file_handle f;
+
     // Zero out .bss section
     for (uint8_t *p = bss_begin; p < bss_end; p++)
         *p = 0;
@@ -43,7 +45,8 @@ void main(int boot_drive) {
         } else {
             print("   Found!\n");
             if (!config_loaded) {
-                if (!load_echfs_file(boot_drive, i, (void *)0x100000, CONFIG_NAME)) {
+                if (!echfs_open(&f, boot_drive, i, CONFIG_NAME)) {
+                    echfs_read(&f, (void *)0x100000, 0, f.dir_entry.size);
                     config_loaded = 1;
                     print("   Config file found and loaded!\n");
                 }
@@ -77,7 +80,8 @@ void main(int boot_drive) {
         }
     }
 
-    load_echfs_file(drive, part, (void *)0x100000, path);
+    echfs_open(&f, drive, part, path);
+    echfs_read(&f, (void *)0x100000, 0, f.dir_entry.size);
 
     // Boot the kernel.
     asm volatile (

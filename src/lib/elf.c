@@ -59,9 +59,24 @@ struct elf_shdr {
     uint64_t   sh_entsize;
 };
 
-int elf_load_section(struct echfs_file_handle *fd, void *buffer, const char *name) {
+int elf_load_section(struct echfs_file_handle *fd, void *buffer, const char *name, size_t limit) {
     struct elf_hdr hdr;
     echfs_read(fd, &hdr, 0, sizeof(struct elf_hdr));
+
+    if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
+        print("elf: Not a valid ELF file.\n");
+        return 1;
+    }
+
+    if (hdr.ident[EI_DATA] != BITS_LE) {
+        print("elf: Not a Little-endian ELF file.\n");
+        return 1;
+    }
+
+    if (hdr.machine != ARCH_X86_64) {
+        print("elf: Not an x86_64 ELF file.\n");
+        return 1;
+    }
 
     struct elf_shdr shstrtab;
     echfs_read(fd, &shstrtab, hdr.shoff + hdr.shstrndx * sizeof(struct elf_shdr),
@@ -76,12 +91,14 @@ int elf_load_section(struct echfs_file_handle *fd, void *buffer, const char *nam
                    sizeof(struct elf_shdr));
 
         if (!strcmp(&names[section.sh_name], name)) {
+            if (section.sh_size > limit)
+                return 3;
             echfs_read(fd, buffer, section.sh_offset, section.sh_size);
             return 0;
         }
     }
 
-    return 1;
+    return 2;
 }
 
 #define FIXED_HIGHER_HALF_OFFSET ((uint64_t)0xffffffff80000000)

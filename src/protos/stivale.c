@@ -2,15 +2,55 @@
 #include <stddef.h>
 #include <protos/stivale.h>
 #include <lib/elf.h>
+#include <lib/blib.h>
 
 struct stivale_header {
-    uint64_t magic;
     uint64_t stack;
     uint8_t  video_mode;  // 0 = default at boot (CGA text mode). 1 = graphical VESA
-};
+} __attribute__((packed));
+
+struct stivale_module {
+    uint64_t begin;
+    uint64_t end;
+    char     string[128];
+} __attribute__((packed));
+
+struct stivale_struct {
+    char    *cmdline;
+    uint64_t memory_map_addr;
+    uint64_t memory_map_entries;
+    uint64_t framebuffer_addr;
+    uint16_t framebuffer_pitch;
+    uint16_t framebuffer_width;
+    uint16_t framebuffer_height;
+    uint16_t framebuffer_bpp;
+    uint64_t module_count;
+    struct stivale_module modules[];
+} __attribute__((packed));
+
+struct stivale_struct stivale_struct;
 
 void stivale_load(struct echfs_file_handle *fd) {
     uint64_t entry_point;
+
+    struct stivale_header stivale_hdr;
+    int ret = elf_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header));
+    switch (ret) {
+        case 1:
+            print("stivale: File is not a valid ELF.\n");
+            for (;;);
+        case 2:
+            print("stivale: Section .stivalehdr not found.\n");
+            for (;;);
+        case 3:
+            print("stivale: Section .stivalehdr exceeds the size of the struct.\n");
+            for (;;);
+        default:
+            break;
+    }
+
+    print("stivale: Requested stack at %X\n", stivale_hdr.stack);
+    print("stivale: Video mode: %u\n", stivale_hdr.video_mode);
 
     elf_load(fd, &entry_point);
 
@@ -66,6 +106,6 @@ void stivale_load(struct echfs_file_handle *fd) {
         "jmp [rbx]\n\t"
         ".code32\n\t"
         :
-        : "a" (pagemap), "b" (&entry_point)
+        : "a" (pagemap), "b" (&entry_point), "S" (&stivale_struct)
     );
 }

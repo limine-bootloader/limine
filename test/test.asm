@@ -1,7 +1,17 @@
 ; This is a compliant "kernel" meant for testing purposes.
 
 ; Header
+section .stivalehdr
 
+stivale_header:
+    dq stack.top
+    db 0
+
+section .bss
+
+stack:
+    resb 4096
+  .top:
 
 section .text
 

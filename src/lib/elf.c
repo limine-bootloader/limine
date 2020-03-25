@@ -59,19 +59,24 @@ struct elf_shdr {
     uint64_t   sh_entsize;
 };
 
-int load_section(struct echfs_file_handle *fd, void *buffer, char *name) {
+int elf_load_section(struct echfs_file_handle *fd, void *buffer, const char *name) {
     struct elf_hdr hdr;
     echfs_read(fd, &hdr, 0, sizeof(struct elf_hdr));
 
-    struct elf_shdr sections[hdr.sh_num];
-    echfs_read(fd, sections, hdr.shoff, hdr.sh_num * sizeof(struct elf_shdr));
+    struct elf_shdr shstrtab;
+    echfs_read(fd, &shstrtab, hdr.shoff + hdr.shstrndx * sizeof(struct elf_shdr),
+            sizeof(struct elf_shdr));
 
-    char names[sections[hdr.shstrndx].sh_size];
-    echfs_read(fd, names, sections[hdr.shstrndx].sh_offset, sections[hdr.shstrndx].sh_size);
+    char names[shstrtab.sh_size];
+    echfs_read(fd, names, shstrtab.sh_offset, shstrtab.sh_size);
 
     for (uint16_t i = 0; i < hdr.sh_num; i++) {
-        if(!strcmp(&names[sections[i].sh_name], name)) {
-            echfs_read(fd, buffer, sections[i].sh_offset, sections[i].sh_size);
+        struct elf_shdr section;
+        echfs_read(fd, &section, hdr.shoff + i * sizeof(struct elf_shdr),
+                   sizeof(struct elf_shdr));
+
+        if (!strcmp(&names[section.sh_name], name)) {
+            echfs_read(fd, buffer, section.sh_offset, section.sh_size);
             return 0;
         }
     }

@@ -16,7 +16,7 @@ struct echfs_identity_table {
 #define END_OF_CHAIN (~((uint64_t)0))
 #define FILE_TYPE    0
 
-#define CACHE_ADDR   ((uint8_t *)(0x1000000))
+#define CACHE_ADDR   ((uint8_t *)(0x20000))
 
 static int cache_block(struct echfs_file_handle *file, uint64_t block) {
     // Load the file.

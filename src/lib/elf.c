@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <stdbool.h>
 #include <lib/blib.h>
 #include <lib/libc.h>
 #include <lib/elf.h>
@@ -50,8 +49,6 @@ struct elf_phdr {
 #define FIXED_HIGHER_HALF_OFFSET ((uint64_t)0xffffffff80000000)
 
 int elf_load(struct echfs_file_handle *fd) {
-    bool elf_higher_half = false;
-
     struct elf_hdr hdr;
     echfs_read(fd, &hdr, 0, sizeof(struct elf_hdr));
 
@@ -78,11 +75,8 @@ int elf_load(struct echfs_file_handle *fd) {
         if (phdr.p_type != PT_LOAD)
             continue;
 
-        if (phdr.p_vaddr & (1ull << 63)) {
-            print("elf: This is a higher half kernel!\n");
-            elf_higher_half = true;
+        if (phdr.p_vaddr & (1ull << 63))
             phdr.p_vaddr -= FIXED_HIGHER_HALF_OFFSET;
-        }
 
         echfs_read(fd, (void *)(uint32_t)phdr.p_vaddr,
                    phdr.p_offset, phdr.p_filesz);

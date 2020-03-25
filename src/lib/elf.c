@@ -122,10 +122,6 @@ int elf_load(struct echfs_file_handle *fd) {
     for (size_t i = 0; i < 512 * 4; i++)
         (&pagemap->pml2_0gb[0])[i] = (i * 0x1000) | 0x03 | (1 << 7);
 
-    uint32_t entry_point = elf_higher_half
-                             ? (uint32_t)(hdr.entry - FIXED_HIGHER_HALF_OFFSET)
-                             : (uint32_t)hdr.entry;
-
     asm volatile (
         "cli\n\t"
         "mov cr3, eax\n\t"
@@ -147,11 +143,11 @@ int elf_load(struct echfs_file_handle *fd) {
         "mov fs, ax\n\t"
         "mov gs, ax\n\t"
         "mov ss, ax\n\t"
-        "jmp rbx\n\t"
+        "jmp [rbx]\n\t"
         ".code32\n\t"
         :
-        : "a" (pagemap), "b" (entry_point)
+        : "a" (pagemap), "b" (&hdr.entry)
     );
 
-    for (;;);
+    return 0;
 }

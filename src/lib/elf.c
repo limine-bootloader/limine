@@ -13,10 +13,10 @@
 #define BITS_LE 0x01
 
 /* Indices into identification array */
-#define	EI_CLASS	4
-#define	EI_DATA		5
-#define	EI_VERSION	6
-#define	EI_OSABI	7
+#define EI_CLASS    4
+#define EI_DATA     5
+#define EI_VERSION  6
+#define EI_OSABI    7
 
 struct elf_hdr {
     uint8_t ident[16];
@@ -45,6 +45,39 @@ struct elf_phdr {
     uint64_t p_memsz;
     uint64_t p_align;
 };
+
+struct elf_shdr {
+    uint32_t   sh_name;
+    uint32_t   sh_type;
+    uint64_t   sh_flags;
+    uint64_t   sh_addr;
+    uint64_t   sh_offset;
+    uint64_t   sh_size;
+    uint32_t   sh_link;
+    uint32_t   sh_info;
+    uint64_t   sh_addralign;
+    uint64_t   sh_entsize;
+};
+
+int load_section(struct echfs_file_handle *fd, void *buffer, char *name) {
+    struct elf_hdr hdr;
+    echfs_read(fd, &hdr, 0, sizeof(struct elf_hdr));
+
+    struct elf_shdr sections[hdr.sh_num];
+    echfs_read(fd, sections, hdr.shoff, hdr.sh_num * sizeof(struct elf_shdr));
+
+    char names[sections[hdr.shstrndx].sh_size];
+    echfs_read(fd, names, sections[hdr.shstrndx].sh_offset, sections[hdr.shstrndx].sh_size);
+
+    for (uint16_t i = 0; i < hdr.sh_num; i++) {
+        if(!strcmp(&names[sections[i].sh_name], name)) {
+            echfs_read(fd, buffer, sections[i].sh_offset, sections[i].sh_size);
+            return 0;
+        }
+    }
+
+    return 1;
+}
 
 #define FIXED_HIGHER_HALF_OFFSET ((uint64_t)0xffffffff80000000)
 

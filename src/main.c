@@ -83,6 +83,7 @@ void main(int boot_drive) {
 
     echfs_open(&f, drive, part, path);
     echfs_read(&f, (void *)0x100000, 0, f.dir_entry.size);
+    //elf_load(&f);
 
     // Boot the kernel.
     asm volatile (

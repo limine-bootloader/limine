@@ -23,9 +23,9 @@ struct elf_hdr {
     uint16_t type;
     uint16_t machine;
     uint32_t version;
-    uint32_t entry;
-    uint32_t phoff;
-    uint32_t shoff;
+    uint64_t entry;
+    uint64_t phoff;
+    uint64_t shoff;
     uint32_t flags;
     uint16_t hdr_size;
     uint16_t phdr_size;
@@ -37,12 +37,13 @@ struct elf_hdr {
 
 struct elf_phdr {
     uint32_t p_type;
-    uint32_t p_offset;
-    uint32_t p_vaddr;
-    uint32_t p_paddr;
-    uint32_t p_filesz;
-    uint32_t p_memsz;
     uint32_t p_flags;
+    uint64_t p_offset;
+    uint64_t p_vaddr;
+    uint64_t p_paddr;
+    uint64_t p_filesz;
+    uint64_t p_memsz;
+    uint64_t p_align;
 };
 
 int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t count);
@@ -61,6 +62,11 @@ int elf_load(struct echfs_file_handle *fd) {
         return -1;
     }
 
+    if (hdr.machine != ARCH_X86_64) {
+        print("Not an x86_64 ELF file.\n");
+        return -1;
+    }
+
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf_phdr phdr;
         echfs_read(fd, &phdr, hdr.phoff + i * sizeof(struct elf_phdr),
@@ -69,13 +75,13 @@ int elf_load(struct echfs_file_handle *fd) {
         if (phdr.p_type != PT_LOAD)
             continue;
 
-
-        echfs_read(fd, (void *)phdr.p_vaddr, phdr.p_offset, phdr.p_filesz);
+        echfs_read(fd, (void *)(uint32_t)phdr.p_vaddr,
+                   phdr.p_offset, phdr.p_filesz);
 
         size_t to_zero = (size_t)(phdr.p_memsz - phdr.p_filesz);
 
         if (to_zero) {
-            void *ptr = (void *)(phdr.p_vaddr + phdr.p_filesz);
+            void *ptr = (void *)(uint32_t)(phdr.p_vaddr + phdr.p_filesz);
             memset(ptr, 0, to_zero);
         }
     }
@@ -83,7 +89,7 @@ int elf_load(struct echfs_file_handle *fd) {
     asm volatile (
         "jmp %0\n\t"
         :
-        : "r" (hdr.entry)
+        : "r" ((uint32_t)hdr.entry)
         : "memory"
     );
 }

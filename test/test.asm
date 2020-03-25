@@ -6,9 +6,8 @@
 section .text
 
 ; Entry point
-bits 32
 
 global _start
 _start:
-    mov eax, 0xdeadbeef
+    mov rax, 0xcafebabedeadbeef
     jmp $

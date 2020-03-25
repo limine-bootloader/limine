@@ -8,11 +8,13 @@ asm (
 #include <drivers/vga_textmode.h>
 #include <lib/real.h>
 #include <lib/blib.h>
+#include <lib/libc.h>
 #include <lib/mbr.h>
 #include <lib/config.h>
 #include <fs/echfs.h>
 #include <sys/interrupt.h>
 #include <lib/elf.h>
+#include <protos/stivale.h>
 
 #define CONFIG_NAME "qloader2.cfg"
 
@@ -56,7 +58,7 @@ void main(int boot_drive) {
     }
 
     int drive, part;
-    char path[128], cmdline[128];
+    char path[128], cmdline[128], proto[64];
 
     if (config_loaded) {
         char buf[32];
@@ -66,6 +68,7 @@ void main(int boot_drive) {
         part = (int)strtoui(buf);
         config_get_value(path, 128, (void*)0x100000, "KERNEL_PATH");
         config_get_value(cmdline, 128, (void*)0x100000, "KERNEL_CMDLINE");
+        config_get_value(proto, 64, (void*)0x100000, "KERNEL_PROTO");
     } else {
         print("   !! NO CONFIG FILE FOUND ON BOOT DRIVE !!");
         for (;;);
@@ -80,17 +83,24 @@ void main(int boot_drive) {
             break;
         }
     }
+    print("\n");
 
     echfs_open(&f, drive, part, path);
-    echfs_read(&f, (void *)0x100000, 0, f.dir_entry.size);
-    //elf_load(&f);
 
-    // Boot the kernel.
-    asm volatile (
-        "cli\n\t"
-        "jmp 0x100000\n\t"
-        :
-        : "b" (cmdline)
-        : "memory"
-    );
+    if (!strcmp(proto, "stivale")) {
+        stivale_load(&f);
+    } else if (!strcmp(proto, "qword")) {
+        echfs_read(&f, (void *)0x100000, 0, f.dir_entry.size);
+        // Boot the kernel.
+        asm volatile (
+            "cli\n\t"
+            "jmp 0x100000\n\t"
+            :
+            : "b" (cmdline)
+            : "memory"
+        );
+    } else {
+        print("Invalid protocol specified: `%s`.\n", proto);
+        for (;;);
+    }
 }

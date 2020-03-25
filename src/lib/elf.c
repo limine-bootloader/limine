@@ -104,6 +104,7 @@ int elf_load(struct echfs_file_handle *fd) {
         *p = 0;
 
     pagemap->pml4[511]    = (uint64_t)(size_t)pagemap->pml3_hi  | 0x03;
+    pagemap->pml4[256]    = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
     pagemap->pml4[0]      = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
     pagemap->pml3_hi[510] = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
     pagemap->pml3_hi[511] = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;

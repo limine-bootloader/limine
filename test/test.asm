@@ -6,5 +6,7 @@
 section .text
 
 ; Entry point
+global _start
 _start:
-
+    mov eax, 0xdeadbeef
+    jmp $

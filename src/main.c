@@ -12,6 +12,7 @@ asm (
 #include <lib/config.h>
 #include <fs/echfs.h>
 #include <sys/interrupt.h>
+#include <lib/elf.h>
 
 #define CONFIG_NAME "qloader2.cfg"
 

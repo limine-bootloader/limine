@@ -1,10 +1,12 @@
-#ifndef __REAL_H__
-#define __REAL_H__
+#ifndef __LIB__REAL_H__
+#define __LIB__REAL_H__
 
 #include <stdint.h>
 
 #define rm_seg(x) (unsigned short)(((int)x & 0xFFFF0) >> 4)
 #define rm_off(x) (unsigned short)(((int)x & 0x0000F) >> 0)
+
+#define rm_desegment(seg, off) (((uint32_t)(seg) << 4) + (uint32_t)(off))
 
 #define EFLAGS_CF (1 << 0)
 

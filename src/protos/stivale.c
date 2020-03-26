@@ -33,7 +33,7 @@ struct stivale_struct {
     struct stivale_module modules[];
 } __attribute__((packed));
 
-struct stivale_struct stivale_struct;
+struct stivale_struct stivale_struct = {0};
 
 void stivale_load(struct echfs_file_handle *fd) {
     uint64_t entry_point;
@@ -80,7 +80,7 @@ void stivale_load(struct echfs_file_handle *fd) {
         uint64_t pml2_1gb[512];
         uint64_t pml2_2gb[512];
         uint64_t pml2_3gb[512];
-    } *pagemap = (void *)0x10000;
+    } *pagemap = (void *)0x20000;
 
     // first, zero out the pagemap
     for (uint64_t *p = (uint64_t *)pagemap; p < &pagemap->pml3_hi[512]; p++)
@@ -98,13 +98,13 @@ void stivale_load(struct echfs_file_handle *fd) {
 
     // populate the page directories
     for (size_t i = 0; i < 512 * 4; i++)
-        (&pagemap->pml2_0gb[0])[i] = (i * 0x1000) | 0x03 | (1 << 7);
+        (&pagemap->pml2_0gb[0])[i] = (i * 0x200000) | 0x03 | (1 << 7);
 
     asm volatile (
         "cli\n\t"
         "mov cr3, eax\n\t"
         "mov eax, cr4\n\t"
-        "or eax, 1 << 5 | 1 << 7\n\t"
+        "or eax, 1 << 5\n\t"
         "mov cr4, eax\n\t"
         "mov ecx, 0xc0000080\n\t"
         "rdmsr\n\t"

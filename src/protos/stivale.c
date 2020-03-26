@@ -3,6 +3,7 @@
 #include <protos/stivale.h>
 #include <lib/elf.h>
 #include <lib/blib.h>
+#include <lib/acpi.h>
 
 struct stivale_header {
     uint64_t stack;
@@ -24,6 +25,7 @@ struct stivale_struct {
     uint16_t framebuffer_width;
     uint16_t framebuffer_height;
     uint16_t framebuffer_bpp;
+    uint64_t rsdp;
     uint64_t module_count;
     struct stivale_module modules[];
 } __attribute__((packed));
@@ -53,6 +55,9 @@ void stivale_load(struct echfs_file_handle *fd) {
     print("stivale: Video mode: %u\n", stivale_hdr.video_mode);
 
     elf_load(fd, &entry_point);
+
+    stivale_struct.rsdp = (uint64_t)(size_t)get_rsdp();
+    print("stivale: RSDP at %X\n", stivale_struct.rsdp);
 
     volatile struct {
         uint64_t pml4[512];
@@ -103,9 +108,11 @@ void stivale_load(struct echfs_file_handle *fd) {
         "mov fs, ax\n\t"
         "mov gs, ax\n\t"
         "mov ss, ax\n\t"
+        "mov rsp, [rsi]\n\t"
         "jmp [rbx]\n\t"
         ".code32\n\t"
         :
-        : "a" (pagemap), "b" (&entry_point), "S" (&stivale_struct)
+        : "a" (pagemap), "b" (&entry_point),
+          "D" (&stivale_struct), "S" (&stivale_hdr.stack)
     );
 }

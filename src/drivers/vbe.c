@@ -106,7 +106,7 @@ static int get_edid_info(struct edid_info_struct *buf) {
     return 0;
 }
 
-int init_vbe(uint64_t *framebuffer, uint16_t *pitch, uint16_t *target_width, uint16_t *target_height) {
+int init_vbe(uint64_t *framebuffer, uint16_t *pitch, uint16_t *target_width, uint16_t *target_height, uint16_t *target_bpp) {
     print("vbe: Initialising...\n");
 
     struct vbe_info_struct vbe_info;
@@ -119,7 +119,8 @@ int init_vbe(uint64_t *framebuffer, uint16_t *pitch, uint16_t *target_width, uin
     print("vbe: Product revision: %s\n", (char *)rm_desegment(vbe_info.prod_rev_seg, vbe_info.prod_rev_off));
 
     struct edid_info_struct edid_info;
-    if (!*target_width || !*target_height) {
+    if (!*target_width || !*target_height || !*target_bpp) {
+        *target_bpp = 32;
         if (get_edid_info(&edid_info)) {
             print("vbe: EDID unavailable, defaulting to 1024x768\n");
             *target_width  = 1024;
@@ -132,7 +133,8 @@ int init_vbe(uint64_t *framebuffer, uint16_t *pitch, uint16_t *target_width, uin
             *target_height += ((int)edid_info.det_timing_desc1[7] & 0xf0) << 4;
         }
     } else {
-        print("vbe: Requested resolution of %ux%u\n", *target_width, *target_height);
+        print("vbe: Requested resolution of %ux%ux%u\n",
+              *target_width, *target_height, *target_bpp);
     }
 
     uint16_t *vid_modes = (uint16_t *)rm_desegment(vbe_info.vid_modes_seg,
@@ -143,7 +145,7 @@ int init_vbe(uint64_t *framebuffer, uint16_t *pitch, uint16_t *target_width, uin
         get_vbe_mode_info(&vbe_mode_info, vid_modes[i]);
         if  (vbe_mode_info.res_x == *target_width
           && vbe_mode_info.res_y == *target_height
-          && vbe_mode_info.bpp   == 32) {
+          && vbe_mode_info.bpp   == *target_bpp) {
             print("vbe: Found matching mode %x, attempting to set\n", vid_modes[i]);
             *framebuffer = (uint64_t)vbe_mode_info.framebuffer;
             *pitch       = (int)vbe_mode_info.pitch;

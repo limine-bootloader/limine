@@ -9,9 +9,10 @@
 
 struct stivale_header {
     uint64_t stack;
-    uint8_t  video_mode;  // 0 = default at boot (CGA text mode). 1 = graphical VESA
+    uint16_t video_mode;  // 0 = default at boot (CGA text mode). 1 = graphical VESA
     uint16_t framebuffer_width;
     uint16_t framebuffer_height;
+    uint16_t framebuffer_bpp;
 } __attribute__((packed));
 
 struct stivale_module {
@@ -68,12 +69,14 @@ void stivale_load(struct echfs_file_handle *fd) {
 
     stivale_struct.framebuffer_width  = stivale_hdr.framebuffer_width;
     stivale_struct.framebuffer_height = stivale_hdr.framebuffer_height;
+    stivale_struct.framebuffer_bpp    = stivale_hdr.framebuffer_bpp;
 
     if (stivale_hdr.video_mode == 1) {
         init_vbe(&stivale_struct.framebuffer_addr,
                  &stivale_struct.framebuffer_pitch,
                  &stivale_struct.framebuffer_width,
-                 &stivale_struct.framebuffer_height);
+                 &stivale_struct.framebuffer_height,
+                 &stivale_struct.framebuffer_bpp);
     }
 
     volatile struct {

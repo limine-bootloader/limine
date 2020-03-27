@@ -21,7 +21,7 @@ struct stivale_module {
 } __attribute__((packed));
 
 struct stivale_struct {
-    char    *cmdline;
+    uint64_t cmdline;
     uint64_t memory_map_addr;
     uint64_t memory_map_entries;
     uint64_t framebuffer_addr;

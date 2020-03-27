@@ -143,7 +143,7 @@ int init_vbe(uint64_t *framebuffer, uint16_t *pitch, uint16_t *target_width, uin
         get_vbe_mode_info(&vbe_mode_info, vid_modes[i]);
         if  (vbe_mode_info.res_x == *target_width
           && vbe_mode_info.res_y == *target_height
-          /*&& vbe_mode_info.bpp   == *target_bpp*/) {
+          && vbe_mode_info.bpp   == 32) {
             print("vbe: Found matching mode %x, attempting to set\n", vid_modes[i]);
             *framebuffer = (uint64_t)vbe_mode_info.framebuffer;
             *pitch       = (int)vbe_mode_info.pitch;

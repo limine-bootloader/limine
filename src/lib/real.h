@@ -9,6 +9,7 @@
 #define rm_desegment(seg, off) (((uint32_t)(seg) << 4) + (uint32_t)(off))
 
 #define EFLAGS_CF (1 << 0)
+#define EFLAGS_ZF (1 << 6)
 
 struct rm_regs {
     uint32_t eflags;

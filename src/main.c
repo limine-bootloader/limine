@@ -62,8 +62,12 @@ void main(int boot_drive) {
 
     if (config_loaded) {
         char buf[32];
-        config_get_value(buf, 32, (void*)0x100000, "KERNEL_DRIVE");
-        drive = (int)strtoui(buf);
+        if (!config_get_value(buf, 32, (void*)0x100000, "KERNEL_DRIVE")) {
+            print("KERNEL_DRIVE not specified, using boot drive (%x)", boot_drive);
+            drive = boot_drive;
+        } else {
+            drive = (int)strtoui(buf);
+        }
         config_get_value(buf, 32, (void*)0x100000, "KERNEL_PARTITION");
         part = (int)strtoui(buf);
         config_get_value(path, 128, (void*)0x100000, "KERNEL_PATH");

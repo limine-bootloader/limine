@@ -14,6 +14,6 @@ struct e820_entry_t {
 
 extern struct e820_entry_t e820_map[E820_MAX_ENTRIES];
 
-void init_e820(void);
+int init_e820(void);
 
 #endif

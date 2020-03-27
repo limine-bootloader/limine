@@ -24,7 +24,8 @@ _start:
     mov rax, 'h e l l '
     mov rbx, 'o   w o '
     mov rcx, 'r l d   '
-    mov [0xb8000], rax
-    mov [0xb8008], rbx
-    mov [0xb8010], rcx
+    mov rdx, [rdi+20]
+    mov [rdx], rax
+    mov [rdx+8], rbx
+    mov [rdx+16], rcx
     jmp $

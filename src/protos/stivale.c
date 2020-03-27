@@ -4,6 +4,7 @@
 #include <lib/elf.h>
 #include <lib/blib.h>
 #include <lib/acpi.h>
+#include <lib/e820.h>
 #include <drivers/vbe.h>
 
 struct stivale_header {
@@ -58,6 +59,9 @@ void stivale_load(struct echfs_file_handle *fd) {
     print("stivale: Video mode: %u\n", stivale_hdr.video_mode);
 
     elf_load(fd, &entry_point);
+
+    stivale_struct.memory_map_entries = (uint64_t)init_e820();
+    stivale_struct.memory_map_addr    = (uint64_t)(size_t)e820_map;
 
     stivale_struct.rsdp = (uint64_t)(size_t)get_rsdp();
     print("stivale: RSDP at %X\n", stivale_struct.rsdp);

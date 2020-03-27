@@ -21,10 +21,11 @@ static const char *e820_type(uint32_t type) {
     }
 }
 
-void init_e820(void) {
+int init_e820(void) {
     struct rm_regs r = {0};
 
-    for (size_t i = 0; i < E820_MAX_ENTRIES; i++) {
+    int entry_count;
+    for (int i = 0; i < E820_MAX_ENTRIES; i++) {
         r.eax = 0xe820;
         r.ecx = 24;
         r.edx = 0x534d4150;
@@ -32,24 +33,27 @@ void init_e820(void) {
         rm_int(0x15, &r, &r);
 
         if (r.eflags & EFLAGS_CF) {
-            e820_map[i].type = 0;
+            entry_count = i;
             goto done;
         }
 
         if (!r.ebx) {
-            e820_map[i+1].type = 0;
+            entry_count = ++i;
             goto done;
         }
     }
 
     print("e820: Too many entries!\n");
+    for (;;);
 
 done:
-    for (size_t i = 0; e820_map[i].type; i++) {
+    for (int i = 0; i < entry_count; i++) {
         print("e820: [%X -> %X] : %X  <%s>\n",
               e820_map[i].base,
               e820_map[i].base + e820_map[i].length,
               e820_map[i].length,
               e820_type(e820_map[i].type));
     }
+
+    return entry_count;
 }

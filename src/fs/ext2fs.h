@@ -14,8 +14,8 @@
 #include <lib/libc.h>
 
 /* EXT2 Filesystem States */
-#define CLEAN           1
-#define ERRORS          2
+#define CLEAN   1
+#define ERRORS  2
 
 /* EXT2 Error Handling */
 #define IGNORE          1
@@ -116,17 +116,99 @@ struct ext2fs_superblock {
 } __attribute__((packed));
 
 struct ext2_block_group {
-    uint32_t block_bitmap_addr;             // Block address of block usage bitmap
-    uint32_t inode_bitmap_addr;             // Block address of inode usage bitmap
-    uint32_t init_block_addr;               // Starting block address of inode table
+    uint32_t block_bitmap_addr;     // Block address of block usage bitmap
+    uint32_t inode_bitmap_addr;     // Block address of inode usage bitmap
+    uint32_t init_block_addr;       // Starting block address of inode table
 
-    uint16_t num_free_blocks;               // Number of unallocated blocks in group
-    uint16_t num_free_inodes;               // Number of unallocated blocks in inode
-    uint16_t num_dirs;                      // Number of directories in group
+    uint16_t num_free_blocks;       // Number of unallocated blocks in group
+    uint16_t num_free_inodes;       // Number of unallocated blocks in inode
+    uint16_t num_dirs;              // Number of directories in group
 
     /* 18 - 31 UNUSED*/
-}
+} __attribute__((packed));
 
+/* EXT2 Inode Types */
+#define FIFO            0x1000
+#define CHAR_DEVICE     0x2000  // Character device
+#define DIRECTORY       0x4000
+#define BLOCK_DEVICE    0x6000
+#define FILE            0x8000
+#define SYMLINK         0xA000
+#define UNIX_SOCKET     0xC000
+
+/* EXT2 Inode Permissions */
+// TODO
+
+/* EXT2 Inode Flags */
+#define SECURE_DELETION     0x00000001  // Secure deletion                      (unused)
+#define KEEP_COPY           0x00000002  // Keep copy of data upon deleting      (unused)
+#define FILE_COMPRESSION    0x00000004  // File compression                     (unused)
+#define SYNC_UPDATES        0x00000008  // Sync updates to disk
+#define FILE_IMMUTABLE      0x00000010  // File is readonly
+#define APPEND_ONLY         0x00000020  // Append only
+#define NO_INCLUDE_DUMP     0x00000040  // File not included in dump command
+#define NO_UDPATE_LAT       0x00000080  // Dont update the last access time
+#define HASH_IDX_DIR        0x00010000  // Directory is hash indexed
+#define AFS_DIR             0x00020000  // Is AFS directory
+#define JOURNAL_DATA        0x00040000  // Journal File Data
+
+/* EXT2 OS Specific Value 2 (only Linux support) */
+struct ext2_linux {
+    uint8_t frag_num;           // Number of fragments
+    uint8_t frag_size;          // Fragment Size
+
+    uint16_t reserved_16;       // Reserved
+    uint16_t user_id_high;      // High 16 bits of 32 bit user_id
+    uint16_t group_id_high;     // High 16 bits of 32 bit group_id
+
+    uint32_t reserved_32;       // Reserved
+} __attribute__((packed));
+
+struct ext2_inode {
+    uint16_t permssions;                // Types and permissions
+    uint16_t user_id;                   // User ID
+
+    uint32_t size_lower;                // Lower 32 bits of the size (in bytes)
+    uint32_t last_access_time;          // Time of last access
+    uint32_t creation_time;             // Time of creation
+    uint32_t last_modification_time;    // Time of last modification
+    uint32_t deletion_time;             // Time of last deletion
+    
+    uint16_t group_id;                  // Block group ID this inode belongs to
+    uint16_t num_hard_links;            // Number of directory entries in this inode
+
+    uint32_t used_sectors;              // Number of sectors in use by this inode
+    uint32_t flags;                     // Flags for this inode
+    uint32_t os_val_1;                  // OS specific value #1 (linux support only) (unused)
+
+    uint32_t block_ptr_0;               // Direct Block Pointer 0
+    uint32_t block_ptr_1;               // Direct Block Pointer 1
+    uint32_t block_ptr_2;               // Direct Block Pointer 2
+    uint32_t block_ptr_3;               // Direct Block Pointer 3
+    uint32_t block_ptr_4;               // Direct Block Pointer 4
+    uint32_t block_ptr_5;               // Direct Block Pointer 5
+    uint32_t block_ptr_6;               // Direct Block Pointer 6
+    uint32_t block_ptr_7;               // Direct Block Pointer 7
+    uint32_t block_ptr_8;               // Direct Block Pointer 8
+    uint32_t block_ptr_9;               // Direct Block Pointer 9
+    uint32_t block_ptr_10;              // Direct Block Pointer 10
+    uint32_t block_ptr_11;              // Direct Block Pointer 11
+
+    uint32_t singly_indr_block_ptr;     // Singly Indirect Block Pointer
+    uint32_t doubly_indr_block_ptr;     // Doubly Indirect Block Pointer
+    uint32_t triply_indr_block_ptr;     // Triply Indirect Block Pointer
+
+    uint32_t gen_number;                // Generation number
+    
+    /* EXT2 v >= 1.0 */
+    uint32_t eab;                       // Extended Attribute Block
+    uint32_t major;                     // If feature bit set, upper 32 bit of file size. Directory ACL if inode is directory
+
+    /* EXT2 vAll */
+    uint32_t frag_block_addr;           // Block address of fragment
+
+    struct ext2_linux os_val_2;         // OS specific value #2 (linux support only)
+} __attribute__((packed));
 
 /* Drive Format Error Codes */
 #define EXT2            0

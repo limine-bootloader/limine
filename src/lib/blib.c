@@ -8,6 +8,25 @@
 #include <lib/libc.h>
 #include <lib/cio.h>
 
+static size_t bump_allocator_base = 0x20000;
+
+void *balloc(size_t count) {
+    void *ret = (void *)bump_allocator_base;
+    bump_allocator_base += count;
+    return ret;
+}
+
+// Only power of 2 alignments
+void *balloc_aligned(size_t count, size_t alignment) {
+    if (bump_allocator_base & (alignment - 1)) {
+        bump_allocator_base &= ~(alignment - 1);
+        bump_allocator_base += alignment;
+    }
+    void *ret = (void *)bump_allocator_base;
+    bump_allocator_base += count;
+    return ret;
+}
+
 void pit_sleep(uint64_t pit_ticks) {
     uint64_t target = global_pit_tick + pit_ticks;
     while (global_pit_tick < target) {

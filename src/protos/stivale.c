@@ -79,7 +79,7 @@ void stivale_load(struct echfs_file_handle *fd) {
                  &stivale_struct.framebuffer_bpp);
     }
 
-    volatile struct {
+    struct pagemap {
         uint64_t pml4[512];
         uint64_t pml3_lo[512];
         uint64_t pml3_hi[512];
@@ -87,7 +87,8 @@ void stivale_load(struct echfs_file_handle *fd) {
         uint64_t pml2_1gb[512];
         uint64_t pml2_2gb[512];
         uint64_t pml2_3gb[512];
-    } *pagemap = (void *)0x20000;
+    };
+    struct pagemap *pagemap = balloc_aligned(sizeof(struct pagemap), 0x1000);
 
     // first, zero out the pagemap
     for (uint64_t *p = (uint64_t *)pagemap; p < &pagemap->pml3_hi[512]; p++)

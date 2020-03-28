@@ -38,6 +38,8 @@ void main(int boot_drive) {
     print("qLoader 2\n\n");
     print("=> Boot drive: %x\n", boot_drive);
 
+    void *config_addr = balloc(4096);
+
     // Enumerate partitions.
     struct mbr_part parts[4];
     for (int i = 0; i < 4; i++) {
@@ -49,7 +51,7 @@ void main(int boot_drive) {
             print("   Found!\n");
             if (!config_loaded) {
                 if (!echfs_open(&f, boot_drive, i, CONFIG_NAME)) {
-                    echfs_read(&f, (void *)0x100000, 0, f.dir_entry.size);
+                    echfs_read(&f, config_addr, 0, f.dir_entry.size);
                     config_loaded = 1;
                     print("   Config file found and loaded!\n");
                 }
@@ -62,22 +64,22 @@ void main(int boot_drive) {
 
     if (config_loaded) {
         char buf[32];
-        if (!config_get_value(buf, 32, (void*)0x100000, "KERNEL_DRIVE")) {
+        if (!config_get_value(buf, 32, config_addr, "KERNEL_DRIVE")) {
             print("KERNEL_DRIVE not specified, using boot drive (%x)", boot_drive);
             drive = boot_drive;
         } else {
             drive = (int)strtoui(buf);
         }
-        if (!config_get_value(buf, 64, (void*)0x100000, "TIMEOUT")) {
+        if (!config_get_value(buf, 64, config_addr, "TIMEOUT")) {
             timeout = 5;
         } else {
             timeout = (int)strtoui(buf);
         }
-        config_get_value(buf, 32, (void*)0x100000, "KERNEL_PARTITION");
+        config_get_value(buf, 32, config_addr, "KERNEL_PARTITION");
         part = (int)strtoui(buf);
-        config_get_value(path, 128, (void*)0x100000, "KERNEL_PATH");
-        config_get_value(cmdline, 128, (void*)0x100000, "KERNEL_CMDLINE");
-        config_get_value(proto, 64, (void*)0x100000, "KERNEL_PROTO");
+        config_get_value(path, 128, config_addr, "KERNEL_PATH");
+        config_get_value(cmdline, 128, config_addr, "KERNEL_CMDLINE");
+        config_get_value(proto, 64, config_addr, "KERNEL_PROTO");
     } else {
         print("   !! NO CONFIG FILE FOUND ON BOOT DRIVE !!");
         for (;;);

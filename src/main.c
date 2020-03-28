@@ -12,6 +12,7 @@ asm (
 #include <lib/mbr.h>
 #include <lib/config.h>
 #include <fs/echfs.h>
+#include <fs/ext2fs.h>
 #include <sys/interrupt.h>
 #include <lib/elf.h>
 #include <protos/stivale.h>
@@ -98,7 +99,9 @@ void main(int boot_drive) {
 
     echfs_open(&f, drive, part, path);
 
-    if (!strcmp(proto, "stivale")) {
+    uint8_t drive_type = isEXT2();
+
+    /*if (!strcmp(proto, "stivale")) {
         stivale_load(&f);
     } else if (!strcmp(proto, "qword")) {
         echfs_read(&f, (void *)0x100000, 0, f.dir_entry.size);
@@ -113,5 +116,5 @@ void main(int boot_drive) {
     } else {
         print("Invalid protocol specified: `%s`.\n", proto);
         for (;;);
-    }
+    }*/
 }

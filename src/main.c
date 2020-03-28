@@ -57,7 +57,7 @@ void main(int boot_drive) {
         }
     }
 
-    int drive, part;
+    int drive, part, timeout;
     char path[128], cmdline[128], proto[64];
 
     if (config_loaded) {
@@ -67,6 +67,11 @@ void main(int boot_drive) {
             drive = boot_drive;
         } else {
             drive = (int)strtoui(buf);
+        }
+        if (!config_get_value(buf, 64, (void*)0x100000, "TIMEOUT")) {
+            timeout = 5;
+        } else {
+            timeout = (int)strtoui(buf);
         }
         config_get_value(buf, 32, (void*)0x100000, "KERNEL_PARTITION");
         part = (int)strtoui(buf);
@@ -79,7 +84,7 @@ void main(int boot_drive) {
     }
 
     print("\n");
-    for (int i = 3; i; i--) {
+    for (int i = timeout; i; i--) {
         print("\rBooting in %d (press any key to edit command line)...", i);
         if (pit_sleep_and_quit_on_keypress(18)) {
             print("\n\n> ");

@@ -137,7 +137,18 @@ struct ext2_block_group {
 #define UNIX_SOCKET     0xC000
 
 /* EXT2 Inode Permissions */
-// TODO
+#define X_OTHER     0x001
+#define W_OTHER     0x002
+#define R_OTHER     0x004
+#define X_GROUP     0x008
+#define W_GROUP     0x010
+#define R_GROUP     0x020
+#define X_USER      0x040
+#define W_USER      0x080
+#define R_USER      0x100
+#define STICKY      0x200
+#define S_GRP_ID    0x400   // Set User ID
+#define S_USR_ID    0x800   // Set Group ID
 
 /* EXT2 Inode Flags */
 #define SECURE_DELETION     0x00000001  // Secure deletion                      (unused)

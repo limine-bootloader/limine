@@ -8,6 +8,12 @@
 #ifndef __FS_EXT2FS_H__
 #define __FS_EXT2FS_H__
 
+#include <stdint.h>
+#include <stddef.h>
+#include <drivers/disk.h>
+#include <lib/libc.h>
+#include <lib/blib.h>
+
 /* Drive Format Error Codes */
 #define EXT2            0
 #define OTHER          -1

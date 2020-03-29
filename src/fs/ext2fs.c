@@ -1,9 +1,4 @@
 #include <fs/ext2fs.h>
-#include <stdint.h>
-#include <stddef.h>
-#include <drivers/disk.h>
-#include <lib/libc.h>
-#include <lib/blib.h>
 
 #define DIV_ROUND_UP(a, b) (((a) + (b) - 1) / (b))
 

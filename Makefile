@@ -20,15 +20,17 @@ test:
 
 testfs:
 	$(MAKE) -C test
+	rm -rf test.img bruh/
 	mkdir bruh
 	dd if=/dev/zero bs=1M count=0 seek=64 of=test.img
 	parted -s test.img mklabel msdos
 	parted -s test.img mkpart primary 1 100%
-	sudo losetup /dev/loop0 test.img
-	sudo mkfs.ext2 /dev/loop0p1
-	sudo mount /dev/loop0p1 bruh
+	sudo losetup --partscan /dev/loop28 test.img
+	sudo mkfs.ext2 /dev/loop28p1
+	sudo mount /dev/loop28p1 bruh
 	sudo cp test/test.elf bruh
-	sudo cp qloader2.cfg bruh
+	sudo cp test/qloader2.cfg bruh
 	sudo umount bruh/
-	sudo losetup -d /dev/loop0
+	sudo losetup -d /dev/loop28
 	rm -rf bruh
+	qemu-system-x86_64 -hda test.img -monitor stdio

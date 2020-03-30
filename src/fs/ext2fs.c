@@ -208,19 +208,24 @@ uint8_t init_ext2(uint64_t drive, struct mbr_part *part) {
     read(drive, superblock, (part->first_sect * 512) + 1024, 1024);
 
     if (superblock->signature == 0xEF53) {
-        print("   Found Superblock at %d!\n", part->first_sect);
-        uint64_t num_block_groups = DIV_ROUND_UP(superblock->block_num / superblock->blocks_per_group, 10);
+        uint64_t superblock_base = (part->first_sect * 512) + 1024;
+        print("   Found Superblock at %d!\n", superblock_base);
+        //uint64_t num_block_groups = DIV_ROUND_UP(superblock->block_num / superblock->blocks_per_group, 10);
         
-        uint8_t bgdt_block_num = 1; // Block that contains the Block Group Descriptor Table
+        uint8_t bgdt_block = 1; // Block that contains the Block Group Descriptor Table
+        uint64_t block_size = superblock->block_size << 10;
 
-        if (superblock->block_size >= 1024)
-            bgdt_block_num = 2;
+        if (block_size >= 1024)
+            bgdt_block = 2;
 
-        // addr (in bytes) is block_num * block_size
+        print("   Block Size: %d\n", block_size);
+        print("   BGDT Block: %d\n", bgdt_block);
+        print("   BGDT Addr (bytes): %d\n", bgdt_block * block_size);
+
         bgdt = balloc(32);
-        read(drive, bgdt, bgdt_block_num * superblock->block_size, superblock->block_size);
+        read(drive, bgdt, bgdt_block * block_size, 32);
 
-        print("   Inode Table Addr: %d\n", bgdt->itable_block_addr);
+        print("   Inode Table Block Addr: %d\n", bgdt->itable_block_addr);
 
         return EXT2;
     }

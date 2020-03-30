@@ -16,8 +16,6 @@ asm (
 #include <lib/elf.h>
 #include <protos/stivale.h>
 
-#define CONFIG_NAME "qloader2.cfg"
-
 extern symbol bss_begin;
 extern symbol bss_end;
 
@@ -38,7 +36,6 @@ void main(int boot_drive) {
     print("qLoader 2\n\n");
     print("=> Boot drive: %x\n", boot_drive);
 
-    void *config_addr = balloc(4096);
 
     // Enumerate partitions.
     struct mbr_part parts[4];
@@ -50,8 +47,7 @@ void main(int boot_drive) {
         } else {
             print("   Found!\n");
             if (!config_loaded) {
-                if (!echfs_open(&f, boot_drive, i, CONFIG_NAME)) {
-                    echfs_read(&f, config_addr, 0, f.dir_entry.size);
+                if (!init_config(boot_drive, i)) {
                     config_loaded = 1;
                     print("   Config file found and loaded!\n");
                 }
@@ -64,22 +60,22 @@ void main(int boot_drive) {
 
     if (config_loaded) {
         char buf[32];
-        if (!config_get_value(buf, 32, config_addr, "KERNEL_DRIVE")) {
+        if (!config_get_value(buf, 32, "KERNEL_DRIVE")) {
             print("KERNEL_DRIVE not specified, using boot drive (%x)", boot_drive);
             drive = boot_drive;
         } else {
             drive = (int)strtoui(buf);
         }
-        if (!config_get_value(buf, 64, config_addr, "TIMEOUT")) {
+        if (!config_get_value(buf, 64, "TIMEOUT")) {
             timeout = 5;
         } else {
             timeout = (int)strtoui(buf);
         }
-        config_get_value(buf, 32, config_addr, "KERNEL_PARTITION");
+        config_get_value(buf, 32, "KERNEL_PARTITION");
         part = (int)strtoui(buf);
-        config_get_value(path, 128, config_addr, "KERNEL_PATH");
-        config_get_value(cmdline, 128, config_addr, "KERNEL_CMDLINE");
-        config_get_value(proto, 64, config_addr, "KERNEL_PROTO");
+        config_get_value(path, 128, "KERNEL_PATH");
+        config_get_value(cmdline, 128, "KERNEL_CMDLINE");
+        config_get_value(proto, 64, "KERNEL_PROTO");
     } else {
         print("   !! NO CONFIG FILE FOUND ON BOOT DRIVE !!");
         for (;;);

@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 
-char *config_get_value(char *buf, size_t limit, const char *config, const char *key);
+int init_config(int drive, int part);
+char *config_get_value(char *buf, size_t limit, const char *key);
 
 #endif

@@ -103,13 +103,13 @@ int elf_load_section(struct echfs_file_handle *fd, void *buffer, const char *nam
 
 #define FIXED_HIGHER_HALF_OFFSET ((uint64_t)0xffffffff80000000)
 
-int elf_load(struct echfs_file_handle *fd, uint64_t *entry_point) {
+int elf_load(struct echfs_file_handle *fd, uint64_t *entry_point, uint64_t *top) {
     struct elf_hdr hdr;
     echfs_read(fd, &hdr, 0, sizeof(struct elf_hdr));
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
         print("Not a valid ELF file.\n");
-        return 1;
+        return -1;
     }
 
     if (hdr.ident[EI_DATA] != BITS_LE) {
@@ -122,6 +122,8 @@ int elf_load(struct echfs_file_handle *fd, uint64_t *entry_point) {
         return -1;
     }
 
+    *top = 0;
+
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf_phdr phdr;
         echfs_read(fd, &phdr, hdr.phoff + i * sizeof(struct elf_phdr),
@@ -132,6 +134,10 @@ int elf_load(struct echfs_file_handle *fd, uint64_t *entry_point) {
 
         if (phdr.p_vaddr & (1ull << 63))
             phdr.p_vaddr -= FIXED_HIGHER_HALF_OFFSET;
+
+        uint64_t this_top = phdr.p_vaddr + phdr.p_memsz;
+        if (this_top > *top)
+            *top = this_top;
 
         echfs_read(fd, (void *)(uint32_t)phdr.p_vaddr,
                    phdr.p_offset, phdr.p_filesz);

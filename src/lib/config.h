@@ -4,6 +4,6 @@
 #include <stddef.h>
 
 int init_config(int drive, int part);
-char *config_get_value(char *buf, size_t limit, const char *key);
+char *config_get_value(char *buf, size_t index, size_t limit, const char *key);
 
 #endif

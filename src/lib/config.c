@@ -17,7 +17,7 @@ int init_config(int drive, int part) {
         return -1;
     }
 
-    if (f.dir_entry.size >= 4096) {
+    if (f.dir_entry.size >= MAX_CONFIG_SIZE) {
         print("Config file is too big!\n");
         for (;;);
     }
@@ -30,7 +30,7 @@ int init_config(int drive, int part) {
     return 0;
 }
 
-char *config_get_value(char *buf, size_t limit, const char *key) {
+char *config_get_value(char *buf, size_t index, size_t limit, const char *key) {
     if (!limit || !buf || !key)
         return NULL;
 
@@ -39,6 +39,8 @@ char *config_get_value(char *buf, size_t limit, const char *key) {
     for (size_t i = 0; config_addr[i]; i++) {
         if (!strncmp(&config_addr[i], key, key_len) && config_addr[i + key_len] == '=') {
             if (i && config_addr[i - 1] != SEPARATOR)
+                continue;
+            if (index--)
                 continue;
             i += key_len + 1;
             size_t j;

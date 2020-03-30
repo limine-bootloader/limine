@@ -60,22 +60,22 @@ void main(int boot_drive) {
 
     if (config_loaded) {
         char buf[32];
-        if (!config_get_value(buf, 32, "KERNEL_DRIVE")) {
+        if (!config_get_value(buf, 0, 32, "KERNEL_DRIVE")) {
             print("KERNEL_DRIVE not specified, using boot drive (%x)", boot_drive);
             drive = boot_drive;
         } else {
             drive = (int)strtoui(buf);
         }
-        if (!config_get_value(buf, 64, "TIMEOUT")) {
+        if (!config_get_value(buf, 0, 64, "TIMEOUT")) {
             timeout = 5;
         } else {
             timeout = (int)strtoui(buf);
         }
-        config_get_value(buf, 32, "KERNEL_PARTITION");
+        config_get_value(buf, 0, 32, "KERNEL_PARTITION");
         part = (int)strtoui(buf);
-        config_get_value(path, 128, "KERNEL_PATH");
-        config_get_value(cmdline, 128, "KERNEL_CMDLINE");
-        config_get_value(proto, 64, "KERNEL_PROTO");
+        config_get_value(path, 0, 128, "KERNEL_PATH");
+        config_get_value(cmdline, 0, 128, "KERNEL_CMDLINE");
+        config_get_value(proto, 0, 64, "KERNEL_PROTO");
     } else {
         print("   !! NO CONFIG FILE FOUND ON BOOT DRIVE !!");
         for (;;);

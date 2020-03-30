@@ -203,11 +203,12 @@ struct ext2fs_superblock *superblock;
 struct ext2fs_bgdt *bgdt;
 
 // attempts to initialize the ext2 filesystem
-uint8_t init_ext2(int drive) {
+uint8_t init_ext2(uint64_t drive, struct mbr_part *part) {
     superblock = balloc(1024);
-    read(drive, superblock, 1024, 1024);
+    read(drive, superblock, (part->first_sect * 512) + 1024, 1024);
 
     if (superblock->signature == 0xEF53) {
+        print("   Found Superblock at %d!\n", part->first_sect);
         uint64_t num_block_groups = DIV_ROUND_UP(superblock->block_num / superblock->blocks_per_group, 10);
         
         uint8_t bgdt_block_num = 1; // Block that contains the Block Group Descriptor Table
@@ -219,7 +220,7 @@ uint8_t init_ext2(int drive) {
         bgdt = balloc(32);
         read(drive, bgdt, bgdt_block_num * superblock->block_size, superblock->block_size);
 
-        print("Inode Table Addr: %d\n", bgdt->itable_block_addr);
+        print("   Inode Table Addr: %d\n", bgdt->itable_block_addr);
 
         return EXT2;
     }

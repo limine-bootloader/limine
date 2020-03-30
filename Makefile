@@ -18,7 +18,7 @@ test:
 	./qloader2-install test.img
 	qemu-system-x86_64 -hda test.img -monitor stdio
 
-testfs:
+ext2:
 	$(MAKE) -C test
 	rm -rf test.img bruh/
 	mkdir bruh
@@ -30,7 +30,9 @@ testfs:
 	sudo mount /dev/loop28p1 bruh
 	sudo cp test/test.elf bruh
 	sudo cp test/qloader2.cfg bruh
+	sync
 	sudo umount bruh/
 	sudo losetup -d /dev/loop28
 	rm -rf bruh
+	./qloader2-install test.img
 	qemu-system-x86_64 -hda test.img -monitor stdio

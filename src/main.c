@@ -12,6 +12,7 @@ asm (
 #include <lib/mbr.h>
 #include <lib/config.h>
 #include <fs/echfs.h>
+#include <fs/ext2fs.h>
 #include <sys/interrupt.h>
 #include <lib/elf.h>
 #include <protos/stivale.h>
@@ -24,7 +25,6 @@ extern symbol bss_end;
 static int config_loaded = 0;
 
 void main(int boot_drive) {
-
     struct echfs_file_handle f;
 
     // Zero out .bss section
@@ -50,11 +50,20 @@ void main(int boot_drive) {
             print("   Not found!\n");
         } else {
             print("   Found!\n");
-            if (!config_loaded) {
-                if (!echfs_open(&f, boot_drive, i, CONFIG_NAME)) {
-                    echfs_read(&f, config_addr, 0, f.dir_entry.size);
-                    config_loaded = 1;
-                    print("   Config file found and loaded!\n");
+
+            // here we initialize ext2
+            uint8_t fs_type = init_ext2(boot_drive, &parts[i]);
+
+            if (fs_type == EXT2) {
+                // TODO: open the config file with the ext2 driver
+            } else {
+                // open the config file with the echfs driver
+                if (!config_loaded) {
+                    if (!echfs_open(&f, boot_drive, i, CONFIG_NAME)) {
+                        echfs_read(&f, config_addr, 0, f.dir_entry.size);
+                        config_loaded = 1;
+                        print("   Config file found and loaded!\n");
+                    }
                 }
             }
         }
@@ -82,7 +91,7 @@ void main(int boot_drive) {
         config_get_value(cmdline, 128, config_addr, "KERNEL_CMDLINE");
         config_get_value(proto, 64, config_addr, "KERNEL_PROTO");
     } else {
-        print("   !! NO CONFIG FILE FOUND ON BOOT DRIVE !!");
+        print("   !! NO CONFIG FILE FOUND ON BOOT DRIVE !!\n");
         for (;;);
     }
 

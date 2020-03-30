@@ -13,11 +13,12 @@
 #include <drivers/disk.h>
 #include <lib/libc.h>
 #include <lib/blib.h>
+#include <lib/mbr.h>
 
 /* Drive Format Error Codes */
 #define EXT2            0
 #define OTHER          -1
 
-uint8_t init_ext2(int disk);
+uint8_t init_ext2(uint64_t drive, struct mbr_part *part);
 
 #endif

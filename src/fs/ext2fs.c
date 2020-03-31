@@ -3,42 +3,42 @@
 #define DIV_ROUND_UP(a, b) (((a) + (b) - 1) / (b))
 
 // it willl most likely be 4096 bytes
-#define BLOCK_SIZE 4096
+#define EXT2_BLOCK_SIZE 4096
 
 /* EXT2 Filesystem States */
-#define FS_CLEAN   1
-#define FS_ERRORS  2
+#define EXT2_FS_CLEAN   1
+#define EXT2_FS_ERRORS  2
 
 /* EXT2 Error Handling */
-#define IGNORE          1
-#define REMOUNT_AS_READ 2
-#define PANIC           3
+#define EXT2_ERR_IGNORE          1
+#define EXT2_ERR_REMOUNT_AS_READ 2
+#define EXT2_ERR_PANIC           3
 
 /* EXT2 Creator OS IDs */
-#define LINUX           0
-#define GNU_HURD        1
-#define MASIX           2
-#define FREEBSD         3
-#define BSD_DERIVATIVE  4
+#define EXT2_LINUX           0
+#define EXT2_GNU_HURD        1
+#define EXT2_MASIX           2
+#define EXT2_FREEBSD         3
+#define EXT2_BSD_DERIVATIVE  4
 
 /* EXT2 Optional Feature Flags */
-#define PREALLOC        0x0001  // Prealloc x number of blocks (superblock byte 205)
-#define AFS_INODES      0x0002  // AFS server inodes exist
-#define JOURNAL         0x0004  // FS has a journal (ext3)
-#define INODE_EXT_ATTR  0x0008  // Inodes have extended attributes
-#define FS_RESIZE       0x0010  // FS can resize itself for larger partitions
-#define DIR_HASH_IDX    0x0020  // Directories use a hash index
+#define EXT2_OPT_PREALLOC        0x0001  // Prealloc x number of blocks (superblock byte 205)
+#define EXT2_OPT_AFS_INODES      0x0002  // AFS server inodes exist
+#define EXT2_OPT_JOURNAL         0x0004  // FS has a journal (ext3)
+#define EXT2_OPT_INODE_EXT_ATTR  0x0008  // Inodes have extended attributes
+#define EXT2_OPT_FS_RESIZE       0x0010  // FS can resize itself for larger partitions
+#define EXT2_OPT_DIR_HASH_IDX    0x0020  // Directories use a hash index
 
 /* EXT2 Required Feature Flags */
-#define COMPRESSION     0x0001  // the FS uses compression
-#define DIR_TYPE_FIELD  0x0002  // Dir entries contain a type field
-#define JOURNAL_REPLAY  0x0004  // FS needs to replay its journal
-#define USE_JOURNAL     0x0008  // FS uses a journal device
+#define EXT2_REQ_COMPRESSION     0x0001  // the FS uses compression
+#define EXT2_REQ_DIR_TYPE_FIELD  0x0002  // Dir entries contain a type field
+#define EXT2_REQ_JOURNAL_REPLAY  0x0004  // FS needs to replay its journal
+#define EXT2_REQ_USE_JOURNAL     0x0008  // FS uses a journal device
 
 /* EXT2 Read-Only Feature Flags */
-#define SPARSE           0x0001  // Sparse superblocks and group descriptor tables
-#define FS_LONG          0x0002  // FS uses 64 bit file sizes
-#define BTREE            0x0004  // Directory contents are stored in a Binary Tree
+#define EXT2_SPARSE           0x0001  // Sparse superblocks and group descriptor tables
+#define EXT2_FS_LONG          0x0002  // FS uses 64 bit file sizes
+#define EXT2_BTREE            0x0004  // Directory contents are stored in a Binary Tree
 
 // https://wiki.osdev.org/Ext2#Superblock
 // the superblock starts at byte 1024 and occupies 1024 bytes
@@ -46,65 +46,71 @@
 
 /* Superblock Fields */
 struct ext2fs_superblock {
-    uint32_t inode_num;                     // total number of inodes in the system
-    uint32_t block_num;                     // total number of blocks in the system
-    uint32_t reserved_blocks;               // blocks that only the superuser can access
-    uint32_t free_block_num;                // number of free blocks
-    uint32_t free_inode_num;                // number of free inodes
-    uint32_t superblock_block;              // block number of block that contains superblock
-    uint32_t block_size;                    // [log2(blocksize) - 10] shift left 1024 to get block size
-    uint32_t frag_size;                     // [log2(fragsize) - 10] sift left 1024 to get fragment size
-    uint32_t blocks_per_group;              // number of blocks per block group
-    uint32_t frags_per_group;               // number of fragments per block group
-    uint32_t inodes_per_group;              // number of inodes per block group
-    uint32_t last_mount_time;               // Last mount time
-    uint32_t last_write_time;               // Last write time
+    uint32_t s_inodes_count;        // total number of inodes in the system
+    uint32_t s_blocks_count;        // total number of blocks in the system
+    uint32_t s_r_blocks_count;      // blocks that only the superuser can access
+    uint32_t s_free_blocks_count;   // number of free blocks
+    uint32_t s_free_inodes_count;   // number of free inodes
+    uint32_t s_first_data_block;    // block number of block that contains superblock
+    uint32_t s_log_block_size;      // [log2(blocksize) - 10] shift left 1024 to get block size
+    uint32_t s_log_frag_size;       // [log2(fragsize) - 10] sift left 1024 to get fragment size
+    uint32_t s_blocks_per_group;    // number of blocks per block group
+    uint32_t s_frags_per_group;     // number of fragments per block group
+    uint32_t s_inodes_per_group;    // number of inodes per block group
+    uint32_t s_mtime;               // Last mount time
+    uint32_t s_wtime;               // Last write time
 
-    uint16_t times_mounted_before_check;    // number of times the volume was mounted before last consistency check
-    uint16_t mounts_allowed_after_check;    // number of times the drive can be mounted before a check
-    uint16_t signature;                     // 0xEF53 | used to confirm ext2 presence
-    uint16_t fs_state;                      // state of the filesystem
-    uint16_t error_action;                  // what to do incase of an error
-    uint16_t version_minor;                 // combine with major portion to get full version
+    uint16_t s_mnt_count;           // number of times the volume was mounted before last consistency check
+    uint16_t s_max_mnt_count;       // number of times the drive can be mounted before a check
+    uint16_t s_magic;               // 0xEF53 | used to confirm ext2 presence
+    uint16_t s_state;               // state of the filesystem
+    uint16_t s_errors;              // what to do incase of an error
+    uint16_t s_minor_rev_level;     // combine with major portion to get full version
     
-    uint32_t last_check_time;               // timestamp of last consistency check
-    uint32_t forced_check_interval;         // amount of time between required consistency checks
-    uint32_t os_id;                         // operating system ID
-    uint32_t version_major;                 // combine with minor portion to get full version
-    uint32_t user_id;                       // User ID that can use reserved blocks
-    uint32_t group_id;                      // Group ID that can use reserved blocks
+    uint32_t s_lastcheck;           // timestamp of last consistency check
+    uint32_t s_checkinterval;       // amount of time between required consistency checks
+    uint32_t s_creator_os;          // operating system ID
+    uint32_t s_rev_level;           // combine with minor portion to get full version
+    uint32_t s_def_resuid;          // User ID that can use reserved blocks
+    uint32_t s_def_gid;             // Group ID that can use reserved blocks
 
     // if version number >= 1, we have to use the ext2 extended superblock as well
 
     /* Extended Superblock */
-    uint32_t first_non_reserved_inode;      // first non reserved inode in the fs (fixed to 11 when version < 1)
+    uint32_t s_first_ino;           // first non reserved inode in the fs (fixed to 11 when version < 1)
 
-    uint16_t inode_size;                    // size of each inode (in bytes) (fixed to 128 when version < 1)
-    uint16_t block_group;                   // block group this superblock is part of
+    uint16_t s_inode_size;          // size of each inode (in bytes) (fixed to 128 when version < 1)
+    uint16_t s_block_group_nr;      // block group this superblock is part of
 
-    uint32_t optional_features_present;     // if optional features are present
-    uint32_t required_features_present;     // if required features are present
-    uint32_t unsupported_features;          // features that are unsupported (make FS readonly)
+    uint32_t s_feature_compat;      // if optional features are present
+    uint32_t s_feature_incompat;    // if required features are present
+    uint32_t s_feature_ro_compat;   // features that are unsupported (make FS readonly)
 
-    uint64_t fs_id[2];                      // FS ID
-    uint64_t volume_name[2];                // Volume Name
+    uint64_t s_uuid[2];             // FS ID
+    uint64_t s_volume_name[2];      // Volume Name
 
-    uint64_t last_mount_path[8];            // last path the volume was mounted to (C-style string)
+    uint64_t s_last_mounted[8];     // last path the volume was mounted to (C-style string)
 
-    uint32_t compression_alg;               // Compression algorithm used
+    uint32_t s_algo_bitmap;         // Compression algorithm used
 
-    uint8_t num_file_block_prealloc;        // Number of blocks to preallocate for files
-    uint8_t num_dir_block_prealloc;         // Number of blocks to preallocate for directories
+    uint8_t s_prealloc_blocks;      // Number of blocks to preallocate for files
+    uint8_t s_prealloc_dir_blocks;  // Number of blocks to preallocate for directories
 
-    uint16_t unused;                        // Unused
+    uint16_t unused;                // Unused
 
-    uint64_t journal_id;                    // Journal ID
+    uint64_t s_journal_uuid;        // Journal ID
 
-    uint32_t journal_inode;                 // Journal Inode number
-    uint32_t journal_device;                // Journal device
-    uint32_t orphan_inode_head;             // Head of orphan inode list
+    uint32_t s_journal_inum;        // Journal Inode number
+    uint32_t s_journal_dev;         // Journal device
+    uint32_t s_last_orphan;         // Head of orphan inode list
+    uint32_t s_hash_seed[4];        // Seeds used for hashing algo for dir indexing
+    
+    uint8_t s_def_hash_version;     // Default hash versrion used for dir indexing
 
-    /* 236 - 1023 UNUSED */
+    uint32_t s_default_mnt_opts;    // Default mount options
+    uint32_t s_first_meta_bg;       // Block group ID for first meta group
+
+    /* UNUSED */
 } __attribute__((packed));
 
 struct ext2fs_bgdt {
@@ -120,40 +126,40 @@ struct ext2fs_bgdt {
 } __attribute__((packed));
 
 /* EXT2 Inode Types */
-#define FIFO            0x1000
-#define CHAR_DEVICE     0x2000  // Character device
-#define DIRECTORY       0x4000
-#define BLOCK_DEVICE    0x6000
-#define FILE            0x8000
-#define SYMLINK         0xA000
-#define UNIX_SOCKET     0xC000
+#define EXT2_INO_FIFO            0x1000
+#define EXT2_INO_CHR_DEV         0x2000  // Character device
+#define EXT2_INO_DIRECTORY       0x4000
+#define EXT2_INO_BLK_DEV         0x6000
+#define EXT2_INO_FILE            0x8000
+#define EXT2_INO_SYMLINK         0xA000
+#define EXT2_INO_UNIX_SOCKET     0xC000
 
 /* EXT2 Inode Permissions */
-#define X_OTHER     0x001
-#define W_OTHER     0x002
-#define R_OTHER     0x004
-#define X_GROUP     0x008
-#define W_GROUP     0x010
-#define R_GROUP     0x020
-#define X_USER      0x040
-#define W_USER      0x080
-#define R_USER      0x100
-#define STICKY      0x200
-#define S_GRP_ID    0x400   // Set User ID
-#define S_USR_ID    0x800   // Set Group ID
+#define EXT2_INO_X_OTHER     0x001
+#define EXT2_INO_W_OTHER     0x002
+#define EXT2_INO_R_OTHER     0x004
+#define EXT2_INO_X_GROUP     0x008
+#define EXT2_INO_W_GROUP     0x010
+#define EXT2_INO_R_GROUP     0x020
+#define EXT2_INO_X_USER      0x040
+#define EXT2_INO_W_USER      0x080
+#define EXT2_INO_R_USER      0x100
+#define EXT2_INO_STICKY      0x200
+#define EXT2_INO_S_GRP_ID    0x400   // Set User ID
+#define EXT2_INO_S_USR_ID    0x800   // Set Group ID
 
 /* EXT2 Inode Flags */
-#define SECURE_DELETION     0x00000001  // Secure deletion                      (unused)
-#define KEEP_COPY           0x00000002  // Keep copy of data upon deleting      (unused)
-#define FILE_COMPRESSION    0x00000004  // File compression                     (unused)
-#define SYNC_UPDATES        0x00000008  // Sync updates to disk
-#define FILE_IMMUTABLE      0x00000010  // File is readonly
-#define APPEND_ONLY         0x00000020  // Append only
-#define NO_INCLUDE_DUMP     0x00000040  // File not included in dump command
-#define NO_UDPATE_LAT       0x00000080  // Dont update the last access time
-#define HASH_IDX_DIR        0x00010000  // Directory is hash indexed
-#define AFS_DIR             0x00020000  // Is AFS directory
-#define JOURNAL_DATA        0x00040000  // Journal File Data
+#define EXT2_INO_SECURE_DELETION     0x00000001  // Secure deletion                      (unused)
+#define EXT2_INO_KEEP_COPY           0x00000002  // Keep copy of data upon deleting      (unused)
+#define EXT2_INO_FILE_COMPRESSION    0x00000004  // File compression                     (unused)
+#define EXT2_INO_SYNC_UPDATES        0x00000008  // Sync updates to disk
+#define EXT2_INO_FILE_IMMUTABLE      0x00000010  // File is readonly
+#define EXT2_INO_APPEND_ONLY         0x00000020  // Append only
+#define EXT2_INO_NO_INCLUDE_DUMP     0x00000040  // File not included in dump command
+#define EXT2_INO_NO_UDPATE_LAT       0x00000080  // Dont update the last access time
+#define EXT2_INO_HASH_IDX_DIR        0x00010000  // Directory is hash indexed
+#define EXT2_INO_AFS_DIR             0x00020000  // Is AFS directory
+#define EXT2_INO_JOURNAL_DATA        0x00040000  // Journal File Data
 
 /* EXT2 OS Specific Value 2 (only Linux support) */
 struct ext2fs_linux {
@@ -202,6 +208,26 @@ struct ext2fs_inode {
     struct ext2fs_linux os_val_2;         // OS specific value #2 (linux support only)
 } __attribute__((packed));
 
+/* EXT2 Directory File Types */
+#define EXT2_FT_UNKNOWN  0  // Unknown
+#define EXT2_FT_FILE     1  // Regular file
+#define EXT2_FT_DIR      2  // Directory
+#define EXT2_FT_CHRDEV   3  // Character Device
+#define EXT2_FT_BLKDEV   4  // Block Device
+#define EXT2_FT_FIFO     5  // FIFO
+#define EXT2_FT_SOCKET   6  // Unix Socket
+#define EXT2_FT_SYMLINK  7  // Symbolic Link
+
+/* EXT2 Directory Entry */
+struct ext2fs_dir_entry {
+    uint32_t inode;     // Inode number of file entry
+    uint16_t rec_len;   // Displacement to next directory entry from start of current one
+    uint8_t name_len;   // Length of the name
+    uint8_t type;       // File type
+
+    /* NAME */
+} __attribute__((packed));
+
 struct ext2fs_superblock *superblock;
 struct ext2fs_bgdt *bgdt;
 
@@ -210,16 +236,13 @@ uint8_t init_ext2(uint64_t drive, struct mbr_part *part) {
     superblock = balloc(1024);
     read(drive, superblock, (part->first_sect * 512) + 1024, 1024);
 
-    print("   Partition Start: %d\n", part->first_sect * 512);
-
-    if (superblock->signature == 0xEF53) {
+    if (superblock->s_magic == 0xEF53) {
         uint64_t superblock_base = (part->first_sect * 512) + 1024;
         print("   Found Superblock at %d!\n", superblock_base);
-        //uint64_t num_block_groups = DIV_ROUND_UP(superblock->block_num / superblock->blocks_per_group, 10);
         
-        uint64_t bgdt_loc = (part->first_sect * 512) + 4096;
+        uint64_t bgdt_loc = (part->first_sect * 512) + EXT2_BLOCK_SIZE;
 
-        print("   Block Size: %d\n", BLOCK_SIZE);
+        print("   Block Size: %d\n", EXT2_BLOCK_SIZE);
         print("   BGDT Addr (bytes): %d\n", bgdt_loc);
 
         bgdt = balloc(32);

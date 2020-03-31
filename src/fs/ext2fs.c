@@ -2,6 +2,9 @@
 
 #define DIV_ROUND_UP(a, b) (((a) + (b) - 1) / (b))
 
+// it willl most likely be 4096 bytes
+#define BLOCK_SIZE 4096
+
 /* EXT2 Filesystem States */
 #define FS_CLEAN   1
 #define FS_ERRORS  2
@@ -207,25 +210,22 @@ uint8_t init_ext2(uint64_t drive, struct mbr_part *part) {
     superblock = balloc(1024);
     read(drive, superblock, (part->first_sect * 512) + 1024, 1024);
 
+    print("   Partition Start: %d\n", part->first_sect * 512);
+
     if (superblock->signature == 0xEF53) {
         uint64_t superblock_base = (part->first_sect * 512) + 1024;
         print("   Found Superblock at %d!\n", superblock_base);
         //uint64_t num_block_groups = DIV_ROUND_UP(superblock->block_num / superblock->blocks_per_group, 10);
         
-        uint8_t bgdt_block = 1; // Block that contains the Block Group Descriptor Table
-        uint64_t block_size = superblock->block_size << 10;
+        uint64_t bgdt_loc = (part->first_sect * 512) + 4096;
 
-        if (block_size >= 1024)
-            bgdt_block = 2;
-
-        print("   Block Size: %d\n", block_size);
-        print("   BGDT Block: %d\n", bgdt_block);
-        print("   BGDT Addr (bytes): %d\n", bgdt_block * block_size);
+        print("   Block Size: %d\n", BLOCK_SIZE);
+        print("   BGDT Addr (bytes): %d\n", bgdt_loc);
 
         bgdt = balloc(32);
-        read(drive, bgdt, bgdt_block * block_size, 32);
+        read(drive, bgdt, bgdt_loc, 32);
 
-        print("   Inode Table Block Addr: %d\n", bgdt->itable_block_addr);
+        print("   Inode Table Block Addr: %u\n", bgdt->itable_block_addr);
 
         return EXT2;
     }

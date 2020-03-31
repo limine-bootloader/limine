@@ -3,6 +3,6 @@
 
 #include <fs/echfs.h>
 
-void stivale_load(struct echfs_file_handle *fd);
+void stivale_load(struct echfs_file_handle *fd, char *cmdline);
 
 #endif

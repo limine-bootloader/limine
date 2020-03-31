@@ -40,7 +40,7 @@ struct stivale_struct {
 
 struct stivale_struct stivale_struct = {0};
 
-void stivale_load(struct echfs_file_handle *fd) {
+void stivale_load(struct echfs_file_handle *fd, char *cmdline) {
     uint64_t entry_point;
 
     struct stivale_header stivale_hdr;
@@ -116,6 +116,8 @@ void stivale_load(struct echfs_file_handle *fd) {
 
     stivale_struct.rsdp = (uint64_t)(size_t)get_rsdp();
     print("stivale: RSDP at %X\n", stivale_struct.rsdp);
+
+    stivale_struct.cmdline = (uint64_t)(size_t)cmdline;
 
     stivale_struct.framebuffer_width  = stivale_hdr.framebuffer_width;
     stivale_struct.framebuffer_height = stivale_hdr.framebuffer_height;

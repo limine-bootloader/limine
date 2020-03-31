@@ -95,7 +95,7 @@ void main(int boot_drive) {
     echfs_open(&f, drive, part, path);
 
     if (!strcmp(proto, "stivale")) {
-        stivale_load(&f);
+        stivale_load(&f, cmdline);
     } else if (!strcmp(proto, "qword")) {
         echfs_read(&f, (void *)0x100000, 0, f.dir_entry.size);
         // Boot the kernel.

@@ -113,23 +113,24 @@ struct ext2fs_superblock {
     /* UNUSED */
 } __attribute__((packed));
 
-struct ext2fs_bgdt {
-    uint32_t block_bitmap_addr;     // Block address of block usage bitmap
-    uint32_t inode_bitmap_addr;     // Block address of inode usage bitmap
-    uint32_t itable_block_addr;     // Starting block address of inode table
+/* EXT2 Block Group Descriptor */
+struct ext2fs_bgd {
+    uint32_t bg_block_bitmap;       // Block address of block usage bitmap
+    uint32_t bg_inode_bitmap;       // Block address of inode usage bitmap
+    uint32_t bg_inode_table;        // Starting block address of inode table
 
-    uint16_t num_free_blocks;       // Number of unallocated blocks in group
-    uint16_t num_free_inodes;       // Number of unallocated blocks in inode
-    uint16_t num_dirs;              // Number of directories in group
-
-    /* 18 - 31 UNUSED*/
+    uint16_t bg_free_blocks_count;  // Number of unallocated blocks in group
+    uint16_t bg_free_inodes_count;  // Number of unallocated blocks in inode
+    uint16_t bg_dirs_count;         // Number of directories in group
+    
+    uint16_t reserved[7];
 } __attribute__((packed));
 
 /* EXT2 Inode Types */
 #define EXT2_INO_FIFO            0x1000
-#define EXT2_INO_CHR_DEV         0x2000  // Character device
+#define EXT2_INO_CHR_DEV         0x2000 // Character device
 #define EXT2_INO_DIRECTORY       0x4000
-#define EXT2_INO_BLK_DEV         0x6000
+#define EXT2_INO_BLK_DEV         0x6000 // Block device
 #define EXT2_INO_FILE            0x8000
 #define EXT2_INO_SYMLINK         0xA000
 #define EXT2_INO_UNIX_SOCKET     0xC000
@@ -174,38 +175,38 @@ struct ext2fs_linux {
 } __attribute__((packed));
 
 struct ext2fs_inode {
-    uint16_t permssions;                // Types and permissions
-    uint16_t user_id;                   // User ID
+    uint16_t i_mode;            // Types and permissions
+    uint16_t i_uid;             // User ID
 
-    uint32_t size_lower;                // Lower 32 bits of the size (in bytes)
-    uint32_t last_access_time;          // Time of last access
-    uint32_t creation_time;             // Time of creation
-    uint32_t last_modification_time;    // Time of last modification
-    uint32_t deletion_time;             // Time of last deletion
+    uint32_t i_size;            // Lower 32 bits of the size (in bytes)
+    uint32_t i_atime;           // Time of last access
+    uint32_t i_ctime;           // Time of creation
+    uint32_t i_mtime;           // Time of last modification
+    uint32_t i_dtime;           // Time of last deletion
     
-    uint16_t group_id;                  // Block group ID this inode belongs to
-    uint16_t num_hard_links;            // Number of directory entries in this inode
+    uint16_t i_gid;             // Block group ID this inode belongs to
+    uint16_t i_links_count;     // Number of directory entries in this inode
 
-    uint32_t used_sectors;              // Number of sectors in use by this inode
-    uint32_t flags;                     // Flags for this inode
-    uint32_t os_val_1;                  // OS specific value #1 (linux support only) (unused)
+    uint32_t i_blocks;          // Number of blocks in use by this inode
+    uint32_t i_flags;           // Flags for this inode
+    uint32_t i_osd1;            // OS specific value #1 (linux support only) (unused)
 
-    uint32_t block_ptr[12];             // Block Pointers
+    uint32_t i_block[15];       // Block Pointers
 
-    uint32_t singly_indr_block_ptr;     // Singly Indirect Block Pointer
-    uint32_t doubly_indr_block_ptr;     // Doubly Indirect Block Pointer
-    uint32_t triply_indr_block_ptr;     // Triply Indirect Block Pointer
+    uint32_t i_s_block_ptr;     // Singly Indirect Block Pointer
+    uint32_t i_d_blocK_ptr;     // Doubly Indirect Block Pointer
+    uint32_t i_t_block_ptr;     // Triply Indirect Block Pointer
 
-    uint32_t gen_number;                // Generation number
+    uint32_t i_generation;      // Generation number
     
     /* EXT2 v >= 1.0 */
-    uint32_t eab;                       // Extended Attribute Block
-    uint32_t major;                     // If feature bit set, upper 32 bit of file size. Directory ACL if inode is directory
+    uint32_t i_eab;             // Extended Attribute Block
+    uint32_t i_maj;             // If feature bit set, upper 32 bit of file size. Directory ACL if inode is directory
 
     /* EXT2 vAll */
-    uint32_t frag_block_addr;           // Block address of fragment
+    uint32_t i_frag_block;      // Block address of fragment
 
-    struct ext2fs_linux os_val_2;         // OS specific value #2 (linux support only)
+    struct ext2fs_linux i_osd2; // OS specific value #2 (linux support only)
 } __attribute__((packed));
 
 /* EXT2 Directory File Types */
@@ -229,26 +230,39 @@ struct ext2fs_dir_entry {
 } __attribute__((packed));
 
 struct ext2fs_superblock *superblock;
-struct ext2fs_bgdt *bgdt;
+
+#define R_BG 0  // Root Block Group
 
 // attempts to initialize the ext2 filesystem
 uint8_t init_ext2(uint64_t drive, struct mbr_part *part) {
+    uint64_t base = part->first_sect * 512;
     superblock = balloc(1024);
-    read(drive, superblock, (part->first_sect * 512) + 1024, 1024);
+    read(drive, superblock, base + 1024, 1024);
 
     if (superblock->s_magic == 0xEF53) {
-        uint64_t superblock_base = (part->first_sect * 512) + 1024;
+        uint64_t superblock_base = base + 1024;
         print("   Found Superblock at %d!\n", superblock_base);
         
-        uint64_t bgdt_loc = (part->first_sect * 512) + EXT2_BLOCK_SIZE;
+        uint64_t bgdt_loc = base + EXT2_BLOCK_SIZE;
 
         print("   Block Size: %d\n", EXT2_BLOCK_SIZE);
-        print("   BGDT Addr (bytes): %d\n", bgdt_loc);
+        print("   BGDT Addr (bytes): %x\n", bgdt_loc);
 
-        bgdt = balloc(32);
-        read(drive, bgdt, bgdt_loc, 32);
+        print("   Inodes per Block Group: %d\n", superblock->s_inodes_per_group);
+        
+        struct ext2fs_bgd *root_descriptor = balloc(sizeof(struct ext2fs_bgd));
+        read(drive, root_descriptor, bgdt_loc, sizeof(struct ext2fs_bgd));
 
-        print("   Inode Table Block Addr: %u\n", bgdt->itable_block_addr);
+        uint64_t root_index = 1 % superblock->s_inodes_per_group;
+        print("   Root Index: %d\n", root_index);
+
+        // this is fucked
+        print("   Root Inode Bitmap Block: %d\n", root_descriptor->bg_inode_bitmap);
+
+        struct ext2fs_inode *root_inode = balloc(sizeof(struct ext2fs_inode));
+        read(drive, root_inode, base + (root_descriptor->bg_inode_table * EXT2_BLOCK_SIZE) + (root_index * sizeof(struct ext2fs_inode)), sizeof(struct ext2fs_inode));
+
+        print("   Inode Creation Time: %d\n", root_inode->i_ctime);
 
         return EXT2;
     }

@@ -187,16 +187,13 @@ struct ext2fs_inode {
     uint16_t i_gid;             // Block group ID this inode belongs to
     uint16_t i_links_count;     // Number of directory entries in this inode
 
-    uint32_t i_blocks;          // Number of blocks in use by this inode
+    uint32_t i_blocks_count;    // Number of blocks in use by this inode
     uint32_t i_flags;           // Flags for this inode
     uint32_t i_osd1;            // OS specific value #1 (linux support only) (unused)
-
-    uint32_t i_block[15];       // Block Pointers
-
+    uint32_t i_blocks[12];      // Block Pointers
     uint32_t i_s_block_ptr;     // Singly Indirect Block Pointer
     uint32_t i_d_blocK_ptr;     // Doubly Indirect Block Pointer
     uint32_t i_t_block_ptr;     // Triply Indirect Block Pointer
-
     uint32_t i_generation;      // Generation number
     
     /* EXT2 v >= 1.0 */
@@ -231,8 +228,6 @@ struct ext2fs_dir_entry {
 
 struct ext2fs_superblock *superblock;
 
-#define R_BG 0  // Root Block Group
-
 // attempts to initialize the ext2 filesystem
 uint8_t init_ext2(uint64_t drive, struct mbr_part *part) {
     uint64_t base = part->first_sect * 512;
@@ -241,28 +236,26 @@ uint8_t init_ext2(uint64_t drive, struct mbr_part *part) {
 
     if (superblock->s_magic == 0xEF53) {
         uint64_t superblock_base = base + 1024;
-        print("   Found Superblock at %d!\n", superblock_base);
+        print("   Found Superblock at %u!\n", superblock_base);
         
         uint64_t bgdt_loc = base + EXT2_BLOCK_SIZE;
-
-        print("   Block Size: %d\n", EXT2_BLOCK_SIZE);
-        print("   BGDT Addr (bytes): %x\n", bgdt_loc);
-
-        print("   Inodes per Block Group: %d\n", superblock->s_inodes_per_group);
         
         struct ext2fs_bgd *root_descriptor = balloc(sizeof(struct ext2fs_bgd));
         read(drive, root_descriptor, bgdt_loc, sizeof(struct ext2fs_bgd));
 
         uint64_t root_index = 1 % superblock->s_inodes_per_group;
-        print("   Root Index: %d\n", root_index);
-
-        // this is fucked
-        print("   Root Inode Bitmap Block: %d\n", root_descriptor->bg_inode_bitmap);
+        uint64_t root_inode_block = (root_index * 128) / EXT2_BLOCK_SIZE;
 
         struct ext2fs_inode *root_inode = balloc(sizeof(struct ext2fs_inode));
-        read(drive, root_inode, base + (root_descriptor->bg_inode_table * EXT2_BLOCK_SIZE) + (root_index * sizeof(struct ext2fs_inode)), sizeof(struct ext2fs_inode));
+        read(drive, root_inode, base + (root_descriptor->bg_inode_table * EXT2_BLOCK_SIZE) + sizeof(struct ext2fs_inode), sizeof(struct ext2fs_inode));
 
-        print("   Inode Creation Time: %d\n", root_inode->i_ctime);
+        struct ext2fs_dir_entry *root_dir_entry = balloc(sizeof(struct ext2fs_dir_entry));
+
+        // first we read the length of the name
+        uint32_t tmp = 0;
+        read(drive, &tmp, root_inode->i_blocks[0] * EXT2_BLOCK_SIZE + 6, 1);
+
+        print("   Name Length: %u\n", tmp);
 
         return EXT2;
     }

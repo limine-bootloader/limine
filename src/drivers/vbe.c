@@ -98,7 +98,7 @@ static int get_edid_info(struct edid_info_struct *buf) {
     r.edi = (uint32_t)buf;
     rm_int(0x10, &r, &r);
 
-    if ((r.eax & 0x00ff) == 0x4f)
+    if ((r.eax & 0x00ff) != 0x4f)
         return -1;
     if ((r.eax & 0xff00) != 0)
         return -1;
@@ -126,11 +126,12 @@ int init_vbe(uint64_t *framebuffer, uint16_t *pitch, uint16_t *target_width, uin
             *target_width  = 1024;
             *target_height = 768;
         } else {
-            print("vbe: EDID detected screen resolution of %ux%u\n");
             *target_width   = (int)edid_info.det_timing_desc1[2];
             *target_width  += ((int)edid_info.det_timing_desc1[4] & 0xf0) << 4;
             *target_height  = (int)edid_info.det_timing_desc1[5];
             *target_height += ((int)edid_info.det_timing_desc1[7] & 0xf0) << 4;
+            print("vbe: EDID detected screen resolution of %ux%u\n",
+                  *target_width, *target_height);
         }
     } else {
         print("vbe: Requested resolution of %ux%ux%u\n",

@@ -1,7 +1,5 @@
 #include <fs/ext2fs.h>
 
-#define DIV_ROUND_UP(a, b) (((a) + (b) - 1) / (b))
-
 // it willl most likely be 4096 bytes
 #define EXT2_BLOCK_SIZE 4096
 
@@ -43,6 +41,8 @@
 // https://wiki.osdev.org/Ext2#Superblock
 // the superblock starts at byte 1024 and occupies 1024 bytes
 // the size of each block is located at byte 24 of the superblock
+
+#define EXT2_S_MAGIC    0xEF53
 
 /* Superblock Fields */
 struct ext2fs_superblock {
@@ -190,10 +190,7 @@ struct ext2fs_inode {
     uint32_t i_blocks_count;    // Number of blocks in use by this inode
     uint32_t i_flags;           // Flags for this inode
     uint32_t i_osd1;            // OS specific value #1 (linux support only) (unused)
-    uint32_t i_blocks[12];      // Block Pointers
-    uint32_t i_s_block_ptr;     // Singly Indirect Block Pointer
-    uint32_t i_d_block_ptr;     // Doubly Indirect Block Pointer
-    uint32_t i_t_block_ptr;     // Triply Indirect Block Pointer
+    uint32_t i_blocks[15];      // Block Pointers
     uint32_t i_generation;      // Generation number
     
     /* EXT2 v >= 1.0 */
@@ -228,24 +225,40 @@ struct ext2fs_dir_entry {
 
 struct ext2fs_superblock *superblock;
 
+struct ext2fs_dir_entry **entries;
+char **entry_names;
+
+// parse an inode given the partition base and inode number
+struct ext2fs_inode *ext2fs_get_inode(uint64_t drive, uint64_t base, uint64_t inode) {
+    uint64_t bgdt_loc = base + EXT2_BLOCK_SIZE;
+    
+    uint64_t ino_blk_grp = (inode - 1) / superblock->s_inodes_per_group;
+    uint64_t ino_tbl_idx = (inode - 1) % superblock->s_inodes_per_group;
+
+    struct ext2fs_bgd *target_descriptor = balloc(sizeof(struct ext2fs_bgd));
+    read(drive, target_descriptor, bgdt_loc + (sizeof(struct ext2fs_bgd) * ino_blk_grp), sizeof(struct ext2fs_bgd));
+
+    struct ext2fs_inode *target = balloc(sizeof(struct ext2fs_inode));
+    read(drive, target, base + (target_descriptor->bg_inode_table * EXT2_BLOCK_SIZE) + (sizeof(struct ext2fs_inode) * ino_tbl_idx), sizeof(struct ext2fs_inode));
+
+    return target;
+}
+
 // attempts to initialize the ext2 filesystem
 uint8_t init_ext2(uint64_t drive, struct mbr_part *part) {
-    print("   => Checking for EXT2 FS\n");
     uint64_t base = part->first_sect * 512;
     superblock = balloc(1024);
     read(drive, superblock, base + 1024, 1024);
 
-    if (superblock->s_magic == 0xEF53) {
-        uint64_t superblock_base = base + 1024;
-        print("   Found!\n", superblock_base);
+    if (superblock->s_magic == EXT2_S_MAGIC) {
+        print("   Found!\n");
         
-        uint64_t bgdt_loc = base + EXT2_BLOCK_SIZE;
-        
-        struct ext2fs_bgd *root_descriptor = balloc(sizeof(struct ext2fs_bgd));
-        read(drive, root_descriptor, bgdt_loc, sizeof(struct ext2fs_bgd));
+        // TODO: everything from here down needs to be moved to the read function
+        struct ext2fs_inode *root_inode = ext2fs_get_inode(drive, base, 2);
 
-        struct ext2fs_inode *root_inode = balloc(sizeof(struct ext2fs_inode));
-        read(drive, root_inode, base + (root_descriptor->bg_inode_table * EXT2_BLOCK_SIZE) + sizeof(struct ext2fs_inode), sizeof(struct ext2fs_inode));
+        // directory entry and name storage
+        entries = balloc(sizeof(struct ext2fs_dir_entry *) * root_inode->i_links_count);
+        entry_names = balloc(sizeof(char *) * root_inode->i_links_count);
 
         uint64_t offset = base + (root_inode->i_blocks[0] * EXT2_BLOCK_SIZE);
         for (uint32_t i = 0; i < (root_inode->i_links_count + 2); i++) {
@@ -253,14 +266,53 @@ uint8_t init_ext2(uint64_t drive, struct mbr_part *part) {
 
             // preliminary read
             read(drive, dir, offset, sizeof(struct ext2fs_dir_entry));
+
+            // name read
             char* name = balloc(sizeof(char) * dir->name_len);
             read(drive, name, offset + sizeof(struct ext2fs_dir_entry), dir->name_len);
-            print("      => Name: %s\n", name);
+            print("      => Name: %s\n", name, dir->inode);
+
+            entries[i] = dir;
+            entry_names[i] = name;
+
             offset += dir->rec_len;
         }
+
+        char* config_contents = balloc(sizeof(char) * 100);
+        struct ext2fs_file_handle *handle = ext2fs_open(drive, part, entries[4]->inode);
+        ext2fs_read(config_contents, 100, handle);
+
+        print("config contents:\n%s\n", config_contents);
 
         return EXT2;
     }
 
+    print("   EXT2FS not found!\n");
     return OTHER;
+}
+
+struct ext2fs_file_handle *ext2fs_open(uint64_t drive, struct mbr_part *part, uint64_t inode) {
+    struct ext2fs_file_handle *handle = balloc(sizeof(struct ext2fs_file_handle));
+    handle->drive = drive;
+    handle->part = part;
+    handle->inode = inode;
+
+    return handle;
+}
+
+uint8_t ext2fs_read(char *buffer, size_t size, struct ext2fs_file_handle *handle) {
+    uint64_t base = handle->part->first_sect * 512;
+
+    struct ext2fs_inode *target = ext2fs_get_inode(handle->drive, base, handle->inode);
+
+    // read the contents of the inode
+    // it is assumed that bfread has already done the directory check
+
+    // TODO: add support for the indirect block pointers
+    // TOOD: add support for reading multiple blocks
+
+    read(handle->drive, buffer, base + target->i_blocks[0] * EXT2_BLOCK_SIZE, size);
+
+    // always returns SUCCESS
+    return SUCCESS;
 }

@@ -25,14 +25,14 @@ ext2:
 	dd if=/dev/zero bs=1M count=0 seek=64 of=test.img
 	parted -s test.img mklabel msdos
 	parted -s test.img mkpart primary 1 100%
-	sudo losetup --partscan /dev/loop30 test.img
-	sudo mkfs.ext2 /dev/loop30p1
-	sudo mount /dev/loop30p1 bruh
+	sudo losetup --partscan /dev/loop31 test.img
+	sudo mkfs.ext2 /dev/loop31p1
+	sudo mount /dev/loop31p1 bruh
 	sudo cp test/test.elf bruh
 	sudo cp test/qloader2.cfg bruh
 	sync
 	sudo umount bruh/
-	sudo losetup -d /dev/loop30
+	sudo losetup -d /dev/loop31
 	rm -rf bruh
 	./qloader2-install test.img
 	qemu-system-x86_64 -hda test.img -monitor stdio

@@ -51,12 +51,18 @@ void main(int boot_drive) {
         } else {
             print("   Found!\n");
 
-            // here we initialize ext2
+            print("   => Checking for EXT2FS\n");
             uint8_t fs_type = init_ext2(boot_drive, &parts[i]);
 
             if (fs_type == EXT2) {
                 // TODO: open the config file with the ext2 driver
+                if (!config_loaded) {
+                    struct ext2fs_file_handle *config_handle = ext2fs_open(0, &parts[i], 13);
+                    config_loaded = 1;
+                    print("   Config file found and loaded!\n");
+                }
             } else {
+                print("   => Checking for ECHFS\n");
                 // open the config file with the echfs driver
                 if (!config_loaded) {
                     if (!echfs_open(&f, boot_drive, i, CONFIG_NAME)) {

@@ -36,3 +36,7 @@ ext2:
 	rm -rf bruh
 	./qloader2-install test.img
 	qemu-system-x86_64 -hda test.img -monitor stdio
+
+ext2debug:
+	qemu-system-x86_64 -s -S -hda test.img -monitor stdio &
+	gdb -ex "target remote localhost:1234" -ex "symbol-file test/test.elf"

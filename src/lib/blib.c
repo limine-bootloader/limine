@@ -60,6 +60,43 @@ int bfgets(void *buf, uint64_t offset, uint64_t n, FILE *f) {
     return -1;
 }
 
+int bfsize(FILE *f) {
+    if (is_ext2() == 0) {
+        // TODO: make this more efficient
+        for (uint64_t i = 0; i < num_entries; i++) {
+            if (strncmp(entry_names[i], f->filename, entries[i]->name_len) == 0) {
+                struct ext2fs_inode *target = ext2fs_get_inode(f->drive, f->part.first_sect * 512, entries[i]->inode);
+
+                return target->i_size;
+            }
+        }
+
+        return -1;
+    } else if (is_echfs(f->drive, f->part) == 0) {
+        struct echfs_file_handle handle;
+        echfs_open(&handle, f->drive, f->part, f->filename);
+
+        return handle.dir_entry.size;
+    } else {
+        return -1;
+    }
+}
+
+int bfexists(FILE *f) {
+    if (is_ext2() == 0) {
+        for (uint64_t i = 0; i < num_entries; i++) {
+            if (strncmp(entry_names[i], f->filename, entries[i]->name_len) == 0) {
+                return 0;
+            }
+        }
+    } else if (is_echfs(f->drive, f->part) == 0) {
+        // TODO
+        return 0;
+    }
+
+    return -1;
+}
+
 void pit_sleep(uint64_t pit_ticks) {
     uint64_t target = global_pit_tick + pit_ticks;
     while (global_pit_tick < target) {

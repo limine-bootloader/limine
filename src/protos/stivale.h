@@ -3,6 +3,6 @@
 
 #include <lib/blib.h>
 
-void stivale_load(FILE *fd);
+void stivale_load(FILE *fd, char *cmdline);
 
 #endif

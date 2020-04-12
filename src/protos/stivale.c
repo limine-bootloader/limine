@@ -5,7 +5,9 @@
 #include <lib/blib.h>
 #include <lib/acpi.h>
 #include <lib/e820.h>
+#include <lib/config.h>
 #include <drivers/vbe.h>
+#include <fs/echfs.h>
 
 struct stivale_header {
     uint64_t stack;
@@ -19,6 +21,7 @@ struct stivale_module {
     uint64_t begin;
     uint64_t end;
     char     string[128];
+    uint64_t next;
 } __attribute__((packed));
 
 struct stivale_struct {
@@ -32,12 +35,12 @@ struct stivale_struct {
     uint16_t framebuffer_bpp;
     uint64_t rsdp;
     uint64_t module_count;
-    struct stivale_module modules[];
+    uint64_t modules;
 } __attribute__((packed));
 
 struct stivale_struct stivale_struct = {0};
 
-void stivale_load(FILE *fd) {
+void stivale_load(FILE *fd, char *cmdline) {
     uint64_t entry_point;
 
     struct stivale_header stivale_hdr;
@@ -59,13 +62,61 @@ void stivale_load(FILE *fd) {
     print("stivale: Requested stack at %X\n", stivale_hdr.stack);
     print("stivale: Video mode: %u\n", stivale_hdr.video_mode);
 
-    elf_load(fd, &entry_point);
+    uint64_t top_used_addr;
+    elf_load(fd, &entry_point, &top_used_addr);
+
+    print("stivale: Top used address in ELF: %X\n", top_used_addr);
 
     stivale_struct.memory_map_entries = (uint64_t)init_e820();
     stivale_struct.memory_map_addr    = (uint64_t)(size_t)e820_map;
 
+    stivale_struct.module_count = 0;
+    uint64_t *prev_mod_ptr = &stivale_struct.modules;
+    for (int i = 0; ; i++) {
+        char module_file[64];
+        if (!config_get_value(module_file, i, 64, "MODULE_PATH"))
+            break;
+
+        stivale_struct.module_count++;
+
+        struct stivale_module *m = balloc(sizeof(struct stivale_module));
+
+        config_get_value(m->string, i, 128, "MODULE_STRING");
+
+        int part; {
+            char buf[32];
+            config_get_value(buf, i, 32, "MODULE_PARTITION");
+            part = (int)strtoui(buf);
+        }
+
+        FILE *f = bfopen(module_file, fd->drive, fd->part);
+
+        void *module_addr = (void *)(((uint32_t)top_used_addr & 0xfff) ?
+            ((uint32_t)top_used_addr & ~((uint32_t)0xfff)) + 0x1000 :
+            (uint32_t)top_used_addr);
+
+        bfgets(module_addr, 0, bfsize(f), f);
+
+        m->begin = (uint64_t)(size_t)module_addr;
+        m->end   = m->begin + bfsize(f);
+        m->next  = 0;
+
+        top_used_addr = (uint64_t)(size_t)m->end;
+
+        *prev_mod_ptr = (uint64_t)(size_t)m;
+        prev_mod_ptr  = &m->next;
+
+        print("stivale: Requested module %u:\n", i);
+        print("         Path:   %s\n", module_file);
+        print("         String: %s\n", m->string);
+        print("         Begin:  %X\n", m->begin);
+        print("         End:    %X\n", m->end);
+    }
+
     stivale_struct.rsdp = (uint64_t)(size_t)get_rsdp();
     print("stivale: RSDP at %X\n", stivale_struct.rsdp);
+
+    stivale_struct.cmdline = (uint64_t)(size_t)cmdline;
 
     stivale_struct.framebuffer_width  = stivale_hdr.framebuffer_width;
     stivale_struct.framebuffer_height = stivale_hdr.framebuffer_height;

@@ -65,8 +65,6 @@ int elf_load_section(FILE *fd, void *buffer, const char *name, size_t limit) {
     char* e = balloc(10);
     FILE *h = bfopen("test.elf", fd->drive, fd->part);
     bfgets(e, 0, 10, h);
-    //ext2fs_read(e, 0, 10, h);
-    print("Buffer: %s\n", e);
 
     struct elf_hdr hdr;
     bfgets(&hdr, 0, sizeof(struct elf_hdr), fd);
@@ -109,13 +107,13 @@ int elf_load_section(FILE *fd, void *buffer, const char *name, size_t limit) {
 
 #define FIXED_HIGHER_HALF_OFFSET ((uint64_t)0xffffffff80000000)
 
-int elf_load(FILE *fd, uint64_t *entry_point) {
+int elf_load(FILE *fd, uint64_t *entry_point, uint64_t *top) {
     struct elf_hdr hdr;
     bfgets(&hdr, 0, sizeof(struct elf_hdr), fd);
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
         print("Not a valid ELF file.\n");
-        return 1;
+        return -1;
     }
 
     if (hdr.ident[EI_DATA] != BITS_LE) {
@@ -128,6 +126,8 @@ int elf_load(FILE *fd, uint64_t *entry_point) {
         return -1;
     }
 
+    *top = 0;
+
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf_phdr phdr;
         bfgets(&phdr, hdr.phoff + i * sizeof(struct elf_phdr), 
@@ -139,8 +139,11 @@ int elf_load(FILE *fd, uint64_t *entry_point) {
         if (phdr.p_vaddr & (1ull << 63))
             phdr.p_vaddr -= FIXED_HIGHER_HALF_OFFSET;
 
-        bfgets((void *)(uint32_t)phdr.p_vaddr, phdr.p_offset, 
-                phdr.p_filesz, fd);
+        uint64_t this_top = phdr.p_vaddr + phdr.p_memsz;
+        if (this_top > *top)
+            *top = this_top;
+
+        bfgets((void *)(uint32_t)phdr.p_vaddr, phdr.p_offset, phdr.p_filesz, fd);
 
         size_t to_zero = (size_t)(phdr.p_memsz - phdr.p_filesz);
 

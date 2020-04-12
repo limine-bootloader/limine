@@ -3,4 +3,8 @@
 /**/*.img
 /bochsout.txt
 /bx_enh_dbg.ini
+<<<<<<< HEAD
 .vscode
+=======
+!/qloader2.bin
+>>>>>>> upstream/master

@@ -31,6 +31,8 @@ uint64_t strtoui(const char *s);
 
 FILE *bfopen(char *filename, int drive, struct mbr_part part);
 int bfgets(void *buf, uint64_t offset, uint64_t n, FILE *f);
+int bfsize(FILE *f);
+int bfexists(FILE *f);
 
 #define DIV_ROUNDUP(a, b) (((a) + ((b) - 1)) / (b))
 

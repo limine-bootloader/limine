@@ -16,8 +16,6 @@ asm (
 #include <protos/stivale.h>
 #include <fs/ext2fs.h>
 
-#define CONFIG_NAME "qloader2.cfg"
-
 extern symbol bss_begin;
 extern symbol bss_end;
 
@@ -36,7 +34,6 @@ void main(int boot_drive) {
     print("qLoader 2\n\n");
     print("=> Boot drive: %x\n", boot_drive);
 
-    void *config_addr = balloc(4096);
 
     // Enumerate partitions.
     struct mbr_part parts[4];
@@ -52,9 +49,10 @@ void main(int boot_drive) {
             init_ext2(boot_drive, parts[i]);
 
             if (!config_loaded) {
-                FILE *file = bfopen("qloader2.cfg", boot_drive, parts[i]);
-                bfgets(config_addr, 0, 4096, file);
-                config_loaded = 1;
+                if (!init_config(boot_drive, parts[i])) {
+                    config_loaded = 1;
+                    print("   Config file found and loaded!\n");
+                }
             }
         }
     }
@@ -64,22 +62,22 @@ void main(int boot_drive) {
 
     if (config_loaded) {
         char buf[32];
-        if (!config_get_value(buf, 32, config_addr, "KERNEL_DRIVE")) {
+        if (!config_get_value(buf, 0, 32, "KERNEL_DRIVE")) {
             print("KERNEL_DRIVE not specified, using boot drive (%x)", boot_drive);
             drive = boot_drive;
         } else {
             drive = (int)strtoui(buf);
         }
-        if (!config_get_value(buf, 64, config_addr, "TIMEOUT")) {
+        if (!config_get_value(buf, 0, 64, "TIMEOUT")) {
             timeout = 5;
         } else {
             timeout = (int)strtoui(buf);
         }
-        config_get_value(buf, 32, config_addr, "KERNEL_PARTITION");
+        config_get_value(buf, 0, 32, "KERNEL_PARTITION");
         part = (int)strtoui(buf);
-        config_get_value(path, 128, config_addr, "KERNEL_PATH");
-        config_get_value(cmdline, 128, config_addr, "KERNEL_CMDLINE");
-        config_get_value(proto, 64, config_addr, "KERNEL_PROTO");
+        config_get_value(path, 0, 128, "KERNEL_PATH");
+        config_get_value(cmdline, 0, 128, "KERNEL_CMDLINE");
+        config_get_value(proto, 0, 64, "KERNEL_PROTO");
     } else {
         print("   !! NO CONFIG FILE FOUND ON BOOT DRIVE !!\n");
         for (;;);
@@ -100,7 +98,7 @@ void main(int boot_drive) {
     FILE *file = bfopen(path, drive, parts[part]);
 
     if (!strcmp(proto, "stivale")) {
-        stivale_load(file);
+        stivale_load(file, cmdline);
     } else if (!strcmp(proto, "qword")) {
         // TODO: GRAB ENTRY SIZE
         bfgets((void *)0x100000, 0, 100000, file);

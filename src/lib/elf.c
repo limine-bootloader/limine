@@ -59,9 +59,17 @@ struct elf_shdr {
     uint64_t   sh_entsize;
 };
 
-int elf_load_section(struct echfs_file_handle *fd, void *buffer, const char *name, size_t limit) {
+#include <fs/echfs.h>
+
+int elf_load_section(FILE *fd, void *buffer, const char *name, size_t limit) {
+    char* e = balloc(10);
+    FILE *h = bfopen("test.elf", fd->drive, fd->part);
+    bfgets(e, 0, 10, h);
+    //ext2fs_read(e, 0, 10, h);
+    print("Buffer: %s\n", e);
+
     struct elf_hdr hdr;
-    echfs_read(fd, &hdr, 0, sizeof(struct elf_hdr));
+    bfgets(&hdr, 0, sizeof(struct elf_hdr), fd);
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
         print("elf: Not a valid ELF file.\n");
@@ -79,21 +87,19 @@ int elf_load_section(struct echfs_file_handle *fd, void *buffer, const char *nam
     }
 
     struct elf_shdr shstrtab;
-    echfs_read(fd, &shstrtab, hdr.shoff + hdr.shstrndx * sizeof(struct elf_shdr),
-            sizeof(struct elf_shdr));
+    bfgets(&shstrtab, hdr.shoff + hdr.shstrndx * sizeof(struct elf_shdr), sizeof(struct elf_shdr), fd);
 
     char names[shstrtab.sh_size];
-    echfs_read(fd, names, shstrtab.sh_offset, shstrtab.sh_size);
+    bfgets(names, shstrtab.sh_offset, shstrtab.sh_size, fd);
 
     for (uint16_t i = 0; i < hdr.sh_num; i++) {
         struct elf_shdr section;
-        echfs_read(fd, &section, hdr.shoff + i * sizeof(struct elf_shdr),
-                   sizeof(struct elf_shdr));
+        bfgets(&section, hdr.shoff + i * sizeof(struct elf_shdr), sizeof(struct elf_shdr), fd);
 
         if (!strcmp(&names[section.sh_name], name)) {
             if (section.sh_size > limit)
                 return 3;
-            echfs_read(fd, buffer, section.sh_offset, section.sh_size);
+            bfgets(buffer, section.sh_offset, section.sh_size, fd);
             return 0;
         }
     }
@@ -103,9 +109,9 @@ int elf_load_section(struct echfs_file_handle *fd, void *buffer, const char *nam
 
 #define FIXED_HIGHER_HALF_OFFSET ((uint64_t)0xffffffff80000000)
 
-int elf_load(struct echfs_file_handle *fd, uint64_t *entry_point) {
+int elf_load(FILE *fd, uint64_t *entry_point) {
     struct elf_hdr hdr;
-    echfs_read(fd, &hdr, 0, sizeof(struct elf_hdr));
+    bfgets(&hdr, 0, sizeof(struct elf_hdr), fd);
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
         print("Not a valid ELF file.\n");
@@ -124,8 +130,8 @@ int elf_load(struct echfs_file_handle *fd, uint64_t *entry_point) {
 
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf_phdr phdr;
-        echfs_read(fd, &phdr, hdr.phoff + i * sizeof(struct elf_phdr),
-                   sizeof(struct elf_phdr));
+        bfgets(&phdr, hdr.phoff + i * sizeof(struct elf_phdr), 
+                sizeof(struct elf_phdr), fd);
 
         if (phdr.p_type != PT_LOAD)
             continue;
@@ -133,8 +139,8 @@ int elf_load(struct echfs_file_handle *fd, uint64_t *entry_point) {
         if (phdr.p_vaddr & (1ull << 63))
             phdr.p_vaddr -= FIXED_HIGHER_HALF_OFFSET;
 
-        echfs_read(fd, (void *)(uint32_t)phdr.p_vaddr,
-                   phdr.p_offset, phdr.p_filesz);
+        bfgets((void *)(uint32_t)phdr.p_vaddr, phdr.p_offset, 
+                phdr.p_filesz, fd);
 
         size_t to_zero = (size_t)(phdr.p_memsz - phdr.p_filesz);
 

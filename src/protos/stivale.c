@@ -37,7 +37,7 @@ struct stivale_struct {
 
 struct stivale_struct stivale_struct = {0};
 
-void stivale_load(struct echfs_file_handle *fd) {
+void stivale_load(FILE *fd) {
     uint64_t entry_point;
 
     struct stivale_header stivale_hdr;

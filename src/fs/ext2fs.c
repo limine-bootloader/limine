@@ -203,28 +203,9 @@ struct ext2fs_inode {
     struct ext2fs_linux i_osd2; // OS specific value #2 (linux support only)
 } __attribute__((packed));
 
-/* EXT2 Directory File Types */
-#define EXT2_FT_UNKNOWN  0  // Unknown
-#define EXT2_FT_FILE     1  // Regular file
-#define EXT2_FT_DIR      2  // Directory
-#define EXT2_FT_CHRDEV   3  // Character Device
-#define EXT2_FT_BLKDEV   4  // Block Device
-#define EXT2_FT_FIFO     5  // FIFO
-#define EXT2_FT_SOCKET   6  // Unix Socket
-#define EXT2_FT_SYMLINK  7  // Symbolic Link
-
-/* EXT2 Directory Entry */
-struct ext2fs_dir_entry {
-    uint32_t inode;     // Inode number of file entry
-    uint16_t rec_len;   // Displacement to next directory entry from start of current one
-    uint8_t name_len;   // Length of the name
-    uint8_t type;       // File type
-
-    /* NAME */
-} __attribute__((packed));
-
 struct ext2fs_superblock *superblock;
 
+uint64_t num_entries = 0;
 struct ext2fs_dir_entry **entries;
 char **entry_names;
 
@@ -245,15 +226,15 @@ struct ext2fs_inode *ext2fs_get_inode(uint64_t drive, uint64_t base, uint64_t in
 }
 
 // attempts to initialize the ext2 filesystem
-uint8_t init_ext2(uint64_t drive, struct mbr_part *part) {
-    uint64_t base = part->first_sect * 512;
+void init_ext2(uint64_t drive, struct mbr_part part) {
+    uint64_t base = part.first_sect * 512;
     superblock = balloc(1024);
     read(drive, superblock, base + 1024, 1024);
 
     if (superblock->s_magic == EXT2_S_MAGIC) {
         print("   Found!\n");
         
-        // TODO: everything from here down needs to be moved to the read function
+        // grab the root directory entries
         struct ext2fs_inode *root_inode = ext2fs_get_inode(drive, base, 2);
 
         // directory entry and name storage
@@ -261,6 +242,8 @@ uint8_t init_ext2(uint64_t drive, struct mbr_part *part) {
         entry_names = balloc(sizeof(char *) * root_inode->i_links_count);
 
         uint64_t offset = base + (root_inode->i_blocks[0] * EXT2_BLOCK_SIZE);
+
+        num_entries = root_inode->i_links_count + 2;
         for (uint32_t i = 0; i < (root_inode->i_links_count + 2); i++) {
             struct ext2fs_dir_entry *dir = balloc(sizeof(struct ext2fs_dir_entry));
 
@@ -278,20 +261,22 @@ uint8_t init_ext2(uint64_t drive, struct mbr_part *part) {
             offset += dir->rec_len;
         }
 
-        char* config_contents = balloc(sizeof(char) * 100);
-        struct ext2fs_file_handle *handle = ext2fs_open(drive, part, entries[4]->inode);
-        ext2fs_read(config_contents, 100, handle);
-
-        print("config contents:\n%s\n", config_contents);
-
-        return EXT2;
+        return;
+    } else {
+        print("   EXT2FS not found!\n");
+        return;
     }
-
-    print("   EXT2FS not found!\n");
-    return OTHER;
 }
 
-struct ext2fs_file_handle *ext2fs_open(uint64_t drive, struct mbr_part *part, uint64_t inode) {
+int is_ext2() {
+    if (superblock->s_magic != EXT2_S_MAGIC) {
+        return -1;
+    }
+    
+    return 0;
+}
+
+struct ext2fs_file_handle *ext2fs_open(uint64_t drive, struct mbr_part part, uint64_t inode) {
     struct ext2fs_file_handle *handle = balloc(sizeof(struct ext2fs_file_handle));
     handle->drive = drive;
     handle->part = part;
@@ -300,8 +285,8 @@ struct ext2fs_file_handle *ext2fs_open(uint64_t drive, struct mbr_part *part, ui
     return handle;
 }
 
-uint8_t ext2fs_read(char *buffer, size_t size, struct ext2fs_file_handle *handle) {
-    uint64_t base = handle->part->first_sect * 512;
+uint8_t ext2fs_read(void *buffer, uint64_t loc, uint64_t size, struct ext2fs_file_handle *handle) {
+    uint64_t base = handle->part.first_sect * 512;
 
     struct ext2fs_inode *target = ext2fs_get_inode(handle->drive, base, handle->inode);
 
@@ -311,7 +296,7 @@ uint8_t ext2fs_read(char *buffer, size_t size, struct ext2fs_file_handle *handle
     // TODO: add support for the indirect block pointers
     // TOOD: add support for reading multiple blocks
 
-    read(handle->drive, buffer, base + target->i_blocks[0] * EXT2_BLOCK_SIZE, size);
+    read(handle->drive, buffer, base + (target->i_blocks[0] * EXT2_BLOCK_SIZE) + loc, size);
 
     // always returns SUCCESS
     return SUCCESS;

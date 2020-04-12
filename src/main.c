@@ -11,11 +11,10 @@ asm (
 #include <lib/libc.h>
 #include <lib/mbr.h>
 #include <lib/config.h>
-#include <fs/echfs.h>
-#include <fs/ext2fs.h>
 #include <sys/interrupt.h>
 #include <lib/elf.h>
 #include <protos/stivale.h>
+#include <fs/ext2fs.h>
 
 #define CONFIG_NAME "qloader2.cfg"
 
@@ -25,8 +24,6 @@ extern symbol bss_end;
 static int config_loaded = 0;
 
 void main(int boot_drive) {
-    struct echfs_file_handle f;
-
     // Zero out .bss section
     for (uint8_t *p = bss_begin; p < bss_end; p++)
         *p = 0;
@@ -52,25 +49,12 @@ void main(int boot_drive) {
             print("   Found!\n");
 
             print("   => Checking for EXT2FS\n");
-            uint8_t fs_type = init_ext2(boot_drive, &parts[i]);
+            init_ext2(boot_drive, parts[i]);
 
-            if (fs_type == EXT2) {
-                // TODO: open the config file with the ext2 driver
-                if (!config_loaded) {
-                    struct ext2fs_file_handle *config_handle = ext2fs_open(0, &parts[i], 13);
-                    config_loaded = 1;
-                    print("   Config file found and loaded!\n");
-                }
-            } else {
-                print("   => Checking for ECHFS\n");
-                // open the config file with the echfs driver
-                if (!config_loaded) {
-                    if (!echfs_open(&f, boot_drive, i, CONFIG_NAME)) {
-                        echfs_read(&f, config_addr, 0, f.dir_entry.size);
-                        config_loaded = 1;
-                        print("   Config file found and loaded!\n");
-                    }
-                }
+            if (!config_loaded) {
+                FILE *file = bfopen("qloader2.cfg", boot_drive, parts[i]);
+                bfgets(config_addr, 0, 4096, file);
+                config_loaded = 1;
             }
         }
     }
@@ -112,12 +96,15 @@ void main(int boot_drive) {
     }
     print("\n");
 
-    echfs_open(&f, drive, part, path);
+    // TODO: edit stivale
+    FILE *file = bfopen(path, drive, parts[part]);
 
     if (!strcmp(proto, "stivale")) {
-        stivale_load(&f);
+        stivale_load(file);
     } else if (!strcmp(proto, "qword")) {
-        echfs_read(&f, (void *)0x100000, 0, f.dir_entry.size);
+        // TODO: GRAB ENTRY SIZE
+        bfgets((void *)0x100000, 0, 100000, file);
+        //echfs_read(&f, (void *)0x100000, 0, f.dir_entry.size);
         // Boot the kernel.
         asm volatile (
             "cli\n\t"

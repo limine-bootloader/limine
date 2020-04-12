@@ -3,6 +3,15 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <lib/mbr.h>
+#include <fs/echfs.h>
+#include <fs/ext2fs.h>
+
+typedef struct {
+    char *filename;
+    int drive;
+    struct mbr_part part;
+} FILE;
 
 void pit_sleep(uint64_t pit_ticks);
 int pit_sleep_and_quit_on_keypress(uint64_t pit_ticks);
@@ -19,6 +28,9 @@ void print(const char *fmt, ...);
 int getchar(void);
 void gets(const char *orig_str, char *buf, size_t limit);
 uint64_t strtoui(const char *s);
+
+FILE *bfopen(char *filename, int drive, struct mbr_part part);
+int bfgets(void *buf, uint64_t offset, uint64_t n, FILE *f);
 
 #define DIV_ROUNDUP(a, b) (((a) + ((b) - 1)) / (b))
 

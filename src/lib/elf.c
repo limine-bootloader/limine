@@ -59,13 +59,7 @@ struct elf_shdr {
     uint64_t   sh_entsize;
 };
 
-#include <fs/echfs.h>
-
 int elf_load_section(FILE *fd, void *buffer, const char *name, size_t limit) {
-    char* e = balloc(10);
-    FILE *h = bfopen("test.elf", fd->drive, fd->part);
-    bfgets(e, 0, 10, h);
-
     struct elf_hdr hdr;
     bfgets(&hdr, 0, sizeof(struct elf_hdr), fd);
 

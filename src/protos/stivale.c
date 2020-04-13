@@ -95,10 +95,10 @@ void stivale_load(FILE *fd, char *cmdline) {
             ((uint32_t)top_used_addr & ~((uint32_t)0xfff)) + 0x1000 :
             (uint32_t)top_used_addr);
 
-        bfgets(module_addr, 0, bfsize(f), f);
+        bfgets(module_addr, 0, f->size, f);
 
         m->begin = (uint64_t)(size_t)module_addr;
-        m->end   = m->begin + bfsize(f);
+        m->end   = m->begin + f->size;
         m->next  = 0;
 
         top_used_addr = (uint64_t)(size_t)m->end;

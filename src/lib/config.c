@@ -17,7 +17,7 @@ int init_config(int drive, struct mbr_part part) {
         return -1;
     }
 
-    if (bfsize(f) >= MAX_CONFIG_SIZE) {
+    if (f->size >= MAX_CONFIG_SIZE) {
         print("Config file is too big!\n");
         for (;;);
     }
@@ -25,7 +25,7 @@ int init_config(int drive, struct mbr_part part) {
     config_addr = balloc(MAX_CONFIG_SIZE);
     memset(config_addr, 0, MAX_CONFIG_SIZE);
 
-    bfgets(config_addr, 0, bfsize(f), f);
+    bfgets(config_addr, 0, f->size, f);
 
     return 0;
 }

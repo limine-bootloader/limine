@@ -6,7 +6,7 @@ all:
 clean:
 	find -type f -name '*.o' -delete
 
-test: all
+echfs: all
 	$(MAKE) -C test
 	rm -f test.img
 	dd if=/dev/zero bs=1M count=0 seek=64 of=test.img
@@ -16,7 +16,7 @@ test: all
 	echfs-utils -m -p0 test.img import test/test.elf test.elf
 	echfs-utils -m -p0 test.img import test/qloader2.cfg qloader2.cfg
 	./qloader2-install src/qloader2.bin test.img
-	qemu-system-x86_64 -hda test.img -monitor stdio
+	qemu-system-x86_64 -hda test.img -d int -no-shutdown -no-reboot
 
 ext2:
 	$(MAKE) -C test
@@ -36,7 +36,3 @@ ext2:
 	rm -rf bruh
 	./qloader2-install src/qloader2.bin test.img
 	qemu-system-x86_64 -hda test.img -monitor stdio
-
-ext2debug:
-	qemu-system-x86_64 -s -S -hda test.img -monitor stdio &
-	gdb -ex "target remote localhost:1234" -ex "symbol-file test/test.elf"

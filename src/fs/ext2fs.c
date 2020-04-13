@@ -126,42 +126,6 @@ struct ext2fs_bgd {
     uint16_t reserved[7];
 } __attribute__((packed));
 
-/* EXT2 Inode Types */
-#define EXT2_INO_FIFO            0x1000
-#define EXT2_INO_CHR_DEV         0x2000 // Character device
-#define EXT2_INO_DIRECTORY       0x4000
-#define EXT2_INO_BLK_DEV         0x6000 // Block device
-#define EXT2_INO_FILE            0x8000
-#define EXT2_INO_SYMLINK         0xA000
-#define EXT2_INO_UNIX_SOCKET     0xC000
-
-/* EXT2 Inode Permissions */
-#define EXT2_INO_X_OTHER     0x001
-#define EXT2_INO_W_OTHER     0x002
-#define EXT2_INO_R_OTHER     0x004
-#define EXT2_INO_X_GROUP     0x008
-#define EXT2_INO_W_GROUP     0x010
-#define EXT2_INO_R_GROUP     0x020
-#define EXT2_INO_X_USER      0x040
-#define EXT2_INO_W_USER      0x080
-#define EXT2_INO_R_USER      0x100
-#define EXT2_INO_STICKY      0x200
-#define EXT2_INO_S_GRP_ID    0x400   // Set User ID
-#define EXT2_INO_S_USR_ID    0x800   // Set Group ID
-
-/* EXT2 Inode Flags */
-#define EXT2_INO_SECURE_DELETION     0x00000001  // Secure deletion                      (unused)
-#define EXT2_INO_KEEP_COPY           0x00000002  // Keep copy of data upon deleting      (unused)
-#define EXT2_INO_FILE_COMPRESSION    0x00000004  // File compression                     (unused)
-#define EXT2_INO_SYNC_UPDATES        0x00000008  // Sync updates to disk
-#define EXT2_INO_FILE_IMMUTABLE      0x00000010  // File is readonly
-#define EXT2_INO_APPEND_ONLY         0x00000020  // Append only
-#define EXT2_INO_NO_INCLUDE_DUMP     0x00000040  // File not included in dump command
-#define EXT2_INO_NO_UDPATE_LAT       0x00000080  // Dont update the last access time
-#define EXT2_INO_HASH_IDX_DIR        0x00010000  // Directory is hash indexed
-#define EXT2_INO_AFS_DIR             0x00020000  // Is AFS directory
-#define EXT2_INO_JOURNAL_DATA        0x00040000  // Journal File Data
-
 struct ext2fs_superblock *superblock;
 
 uint64_t num_entries = 0;
@@ -182,6 +146,16 @@ struct ext2fs_inode *ext2fs_get_inode(uint64_t drive, uint64_t base, uint64_t in
     read(drive, target, base + (target_descriptor->bg_inode_table * EXT2_BLOCK_SIZE) + (sizeof(struct ext2fs_inode) * ino_tbl_idx), sizeof(struct ext2fs_inode));
 
     return target;
+}
+
+uint64_t ext2fs_parse_dirent(int drive, struct mbr_part part, char* filename) {
+    for (uint64_t i = 0; i < num_entries; i++) {
+        if (strncmp(entry_names[i], filename, entries[i]->name_len) == 0) {
+            return entries[i]->inode;
+        }
+    }
+
+    return NULL;
 }
 
 // attempts to initialize the ext2 filesystem
@@ -222,7 +196,7 @@ void init_ext2(uint64_t drive, struct mbr_part part) {
 
         return;
     } else {
-        print("   EXT2FS not found!\n");
+        print("      EXT2FS not found!\n");
         return;
     }
 }
@@ -235,11 +209,12 @@ int is_ext2() {
     return 0;
 }
 
-struct ext2fs_file_handle *ext2fs_open(uint64_t drive, struct mbr_part part, uint64_t inode) {
+struct ext2fs_file_handle *ext2fs_open(uint64_t drive, struct mbr_part part, uint64_t inode_num) {
     struct ext2fs_file_handle *handle = balloc(sizeof(struct ext2fs_file_handle));
     handle->drive = drive;
     handle->part = part;
-    handle->inode = inode;
+    handle->inode = ext2fs_get_inode(drive, part.first_sect * 512, inode_num);
+    handle->size = handle->inode->i_size; // ultra crust
 
     return handle;
 }
@@ -247,15 +222,13 @@ struct ext2fs_file_handle *ext2fs_open(uint64_t drive, struct mbr_part part, uin
 uint8_t ext2fs_read(void *buffer, uint64_t loc, uint64_t size, struct ext2fs_file_handle *handle) {
     uint64_t base = handle->part.first_sect * 512;
 
-    struct ext2fs_inode *target = ext2fs_get_inode(handle->drive, base, handle->inode);
-
     // read the contents of the inode
     // it is assumed that bfread has already done the directory check
 
     // TODO: add support for the indirect block pointers
     // TOOD: add support for reading multiple blocks
 
-    read(handle->drive, buffer, base + (target->i_blocks[0] * EXT2_BLOCK_SIZE) + loc, size);
+    read(handle->drive, buffer, base + (handle->inode->i_blocks[0] * EXT2_BLOCK_SIZE) + loc, size);
 
     // always returns SUCCESS
     return SUCCESS;

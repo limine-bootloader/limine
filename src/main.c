@@ -48,6 +48,14 @@ void main(int boot_drive) {
             print("   => Checking for EXT2FS\n");
             init_ext2(boot_drive, parts[i]);
 
+            print("   => Checking for ECHFS\n");
+            int ret = is_echfs(boot_drive, parts[i]);
+            if (ret == 0) {
+                print("      ECHFS Found!\n");
+            } else {
+                print("      ECHFS Not found!\n");
+            }
+
             if (!config_loaded) {
                 if (!init_config(boot_drive, parts[i])) {
                     config_loaded = 1;

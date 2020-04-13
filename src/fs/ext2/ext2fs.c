@@ -201,7 +201,7 @@ void init_ext2(uint64_t drive, struct mbr_part part) {
     }
 }
 
-int is_ext2() {
+int is_ext2(void ) {
     if (superblock->s_magic != EXT2_S_MAGIC) {
         return -1;
     }

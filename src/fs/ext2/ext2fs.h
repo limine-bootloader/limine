@@ -121,7 +121,7 @@ extern char **entry_names;
 
 void init_ext2(uint64_t drive, struct mbr_part part);
 
-int is_ext2();
+int is_ext2(void);
 
 uint64_t ext2fs_parse_dirent(int drive, struct mbr_part part, char* filename);
 struct ext2fs_inode *ext2fs_get_inode(uint64_t drive, uint64_t base, uint64_t inode);

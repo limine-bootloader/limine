@@ -22,8 +22,11 @@ static size_t bump_allocator_base = 0x20000;
 void *balloc(size_t count) {
     void *ret = (void *)bump_allocator_base;
     size_t new_base = bump_allocator_base + count;
-    if (new_base >= BUMP_ALLOCATOR_LIMIT)
+    if (new_base >= BUMP_ALLOCATOR_LIMIT) {
+        print("PANIC: Old: %x | New: %x\n", (size_t)ret, new_base);
+        print("PANIC: Allocated: %x\n", count);
         panic("Memory allocation failed");
+    }
     bump_allocator_base = new_base;
     return ret;
 }

@@ -2,7 +2,6 @@
 #include <lib/config.h>
 #include <lib/libc.h>
 #include <lib/blib.h>
-#include <fs/echfs.h>
 
 #define SEPARATOR '\n'
 #define CONFIG_NAME "qloader2.cfg"

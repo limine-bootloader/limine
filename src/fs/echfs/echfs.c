@@ -85,6 +85,8 @@ int echfs_open(struct echfs_file_handle *ret, int disk, struct mbr_part part, co
     ret->alloc_table_size   = DIV_ROUNDUP(ret->block_count * sizeof(uint64_t), ret->block_size) * ret->block_size;
     ret->alloc_table_offset = 16 * ret->block_size;
     ret->dir_offset         = ret->alloc_table_offset + ret->alloc_table_size;
+    
+    // this line is abused
     ret->cache              = balloc(ret->block_size);
 
     // Find the file in the root dir.

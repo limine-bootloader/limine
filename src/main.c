@@ -14,7 +14,6 @@ asm (
 #include <sys/interrupt.h>
 #include <lib/elf.h>
 #include <protos/stivale.h>
-#include <fs/ext2fs.h>
 
 extern symbol bss_begin;
 extern symbol bss_end;

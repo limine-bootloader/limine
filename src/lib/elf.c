@@ -124,6 +124,7 @@ int elf_load(FILE *fd, uint64_t *entry_point, uint64_t *top) {
 
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf_phdr phdr;
+        // Failing alloc happens on this bfgets
         bfgets(&phdr, hdr.phoff + i * sizeof(struct elf_phdr), 
                 sizeof(struct elf_phdr), fd);
 

@@ -9,22 +9,37 @@
 #include <lib/libc.h>
 #include <lib/cio.h>
 
+void panic(const char *str) {
+    print("PANIC: %s", str);
+    for (;;) {
+        asm volatile ("cli; hlt");
+    }
+}
+
 static size_t bump_allocator_base = 0x20000;
+#define BUMP_ALLOCATOR_LIMIT ((size_t)0x80000)
 
 void *balloc(size_t count) {
     void *ret = (void *)bump_allocator_base;
-    bump_allocator_base += count;
+    size_t new_base = bump_allocator_base + count;
+    if (new_base >= BUMP_ALLOCATOR_LIMIT)
+        panic("Memory allocation failed");
+    bump_allocator_base = new_base;
     return ret;
 }
 
 // Only power of 2 alignments
 void *balloc_aligned(size_t count, size_t alignment) {
-    if (bump_allocator_base & (alignment - 1)) {
-        bump_allocator_base &= ~(alignment - 1);
-        bump_allocator_base += alignment;
+    size_t new_base = bump_allocator_base;
+    if (new_base & (alignment - 1)) {
+        new_base &= ~(alignment - 1);
+        new_base += alignment;
     }
-    void *ret = (void *)bump_allocator_base;
-    bump_allocator_base += count;
+    void *ret = (void *)new_base;
+    new_base += count;
+    if (new_base >= BUMP_ALLOCATOR_LIMIT)
+        panic("Memory allocation failed");
+    bump_allocator_base = new_base;
     return ret;
 }
 

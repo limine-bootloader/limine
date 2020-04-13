@@ -1,11 +1,3 @@
-/**
- * TODO
- * 1. Finish ext2 open and read
- * 2. Implement EXT2 FS check
- * 3. Implement generic filesystem functions in lib/file.h
- * 4. Implement writing
- */
-
 #ifndef __FS_EXT2FS_H__
 #define __FS_EXT2FS_H__
 
@@ -114,8 +106,6 @@ struct ext2fs_dir_entry {
     uint16_t rec_len;   // Displacement to next directory entry from start of current one
     uint8_t name_len;   // Length of the name
     uint8_t type;       // File type
-
-    /* NAME */
 } __attribute__((packed));
 
 struct ext2fs_file_handle {
@@ -130,6 +120,7 @@ extern struct ext2fs_dir_entry **entries;
 extern char **entry_names;
 
 void init_ext2(uint64_t drive, struct mbr_part part);
+
 int is_ext2();
 
 uint64_t ext2fs_parse_dirent(int drive, struct mbr_part part, char* filename);

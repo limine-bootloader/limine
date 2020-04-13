@@ -7,7 +7,6 @@
 #include <lib/e820.h>
 #include <lib/config.h>
 #include <drivers/vbe.h>
-#include <fs/echfs.h>
 
 struct stivale_header {
     uint64_t stack;

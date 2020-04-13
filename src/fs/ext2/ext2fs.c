@@ -1,4 +1,4 @@
-#include <fs/ext2fs.h>
+#include <fs/ext2/ext2fs.h>
 
 // it willl most likely be 4096 bytes
 #define EXT2_BLOCK_SIZE 4096

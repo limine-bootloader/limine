@@ -16,7 +16,7 @@ struct echfs_identity_table {
 #define END_OF_CHAIN (~((uint64_t)0))
 #define FILE_TYPE    0
 
-static int cache_block(struct echfs_file_handle *file, uint64_t block) {
+static int read_block(struct echfs_file_handle *file, void *buf, uint64_t block, uint64_t offset, uint64_t count) {
     // Load the file.
     uint64_t block_val = file->dir_entry.payload;
     for (uint64_t i = 0; i < block; i++) {
@@ -31,24 +31,19 @@ sizeof(uint64_t));
     if (block_val == END_OF_CHAIN)
         return -1;
 
-    return read_partition(file->disk, &file->mbr_part, file->cache, block_val * file->block_size, file->block_size);
+    return read_partition(file->disk, &file->mbr_part, buf, (block_val * file->block_size) + offset, count);
 }
 
 int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
     for (uint64_t progress = 0; progress < count;) {
-        /* cache the block */
         uint64_t block = (loc + progress) / file->block_size;
-
-        int ret = cache_block(file, block);
-        if (ret)
-            return ret;
 
         uint64_t chunk = count - progress;
         uint64_t offset = (loc + progress) % file->block_size;
         if (chunk > file->block_size - offset)
             chunk = file->block_size - offset;
 
-        memcpy(buf + progress, &file->cache[offset], chunk);
+        read_block(file, buf + progress, block, offset, chunk);
         progress += chunk;
     }
 
@@ -74,7 +69,6 @@ int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const cha
     ret->alloc_table_size   = DIV_ROUNDUP(ret->block_count * sizeof(uint64_t), ret->block_size) * ret->block_size;
     ret->alloc_table_offset = 16 * ret->block_size;
     ret->dir_offset         = ret->alloc_table_offset + ret->alloc_table_size;
-    ret->cache              = balloc(ret->block_size);
 
     // Find the file in the root dir.
     for (uint64_t i = 0; i < ret->dir_length; i += sizeof(struct echfs_dir_entry)) {

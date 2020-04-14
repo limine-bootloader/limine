@@ -27,7 +27,6 @@ struct echfs_file_handle {
     uint64_t alloc_table_size;
     uint64_t alloc_table_offset;
     uint64_t dir_offset;
-    uint8_t *cache;
     struct echfs_dir_entry dir_entry;
 };
 

@@ -25,7 +25,7 @@ INTERNAL_LDFLAGS = \
 
 .PHONY: all clean
 
-C_FILES := $(shell find ./ -type f -name '*.c')
+C_FILES := $(shell find ./ -type f -name '*.c' | sort)
 OBJ := $(C_FILES:.c=.o)
 
 all: qloader2.bin

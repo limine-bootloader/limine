@@ -1,8 +1,8 @@
 #ifndef __PROTOS__STIVALE_H__
 #define __PROTOS__STIVALE_H__
 
-#include <lib/blib.h>
+#include <fs/file.h>
 
-void stivale_load(FILE *fd, char *cmdline);
+void stivale_load(struct file_handle *fd, char *cmdline);
 
 #endif

@@ -7,6 +7,10 @@
 #include <lib/e820.h>
 #include <lib/config.h>
 #include <drivers/vbe.h>
+<<<<<<< HEAD
+=======
+#include <fs/file.h>
+>>>>>>> upstream/master
 
 struct stivale_header {
     uint64_t stack;
@@ -39,7 +43,7 @@ struct stivale_struct {
 
 struct stivale_struct stivale_struct = {0};
 
-void stivale_load(FILE *fd, char *cmdline) {
+void stivale_load(struct file_handle *fd, char *cmdline) {
     uint64_t entry_point;
 
     struct stivale_header stivale_hdr;
@@ -88,16 +92,28 @@ void stivale_load(FILE *fd, char *cmdline) {
             part = (int)strtoui(buf);
         }
 
+<<<<<<< HEAD
         FILE *f = bfopen(module_file, fd->drive, fd->part);
+=======
+        struct file_handle f;
+        fopen(&f, fd->disk, part, module_file);
+>>>>>>> upstream/master
 
         void *module_addr = (void *)(((uint32_t)top_used_addr & 0xfff) ?
             ((uint32_t)top_used_addr & ~((uint32_t)0xfff)) + 0x1000 :
             (uint32_t)top_used_addr);
 
+<<<<<<< HEAD
         bfgets(module_addr, 0, f->size, f);
 
         m->begin = (uint64_t)(size_t)module_addr;
         m->end   = m->begin + f->size;
+=======
+        fread(&f, module_addr, 0, f.size);
+
+        m->begin = (uint64_t)(size_t)module_addr;
+        m->end   = m->begin + f.size;
+>>>>>>> upstream/master
         m->next  = 0;
 
         top_used_addr = (uint64_t)(size_t)m->end;

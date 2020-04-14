@@ -27,13 +27,12 @@ struct echfs_file_handle {
     uint64_t alloc_table_size;
     uint64_t alloc_table_offset;
     uint64_t dir_offset;
-    uint8_t *cache;
     struct echfs_dir_entry dir_entry;
 };
 
-int is_echfs(int drive, struct mbr_part part);
+int echfs_check_signature(int disk, int partition);
 
-int echfs_open(struct echfs_file_handle *ret, int disk, struct mbr_part part, const char *filename);
+int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const char *filename);
 int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t count);
 
 #endif

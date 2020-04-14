@@ -2,6 +2,7 @@
 #include <lib/config.h>
 #include <lib/libc.h>
 #include <lib/blib.h>
+#include <fs/file.h>
 
 #define SEPARATOR '\n'
 #define CONFIG_NAME "qloader2.cfg"
@@ -9,14 +10,14 @@
 
 static char *config_addr;
 
-int init_config(int drive, struct mbr_part part) {
-    FILE *f = bfopen(CONFIG_NAME, drive, part);
+int init_config(int drive, int part) {
+    struct file_handle f;
 
-    if (bfexists(f) == -1) {
+    if (fopen(&f, drive, part, CONFIG_NAME)) {
         return -1;
     }
 
-    if (f->size >= MAX_CONFIG_SIZE) {
+    if (f.size >= MAX_CONFIG_SIZE) {
         print("Config file is too big!\n");
         for (;;);
     }
@@ -24,7 +25,7 @@ int init_config(int drive, struct mbr_part part) {
     config_addr = balloc(MAX_CONFIG_SIZE);
     memset(config_addr, 0, MAX_CONFIG_SIZE);
 
-    bfgets(config_addr, 0, f->size, f);
+    fread(&f, config_addr, 0, f.size);
 
     return 0;
 }

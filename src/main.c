@@ -11,6 +11,7 @@ asm (
 #include <lib/libc.h>
 #include <lib/mbr.h>
 #include <lib/config.h>
+#include <fs/file.h>
 #include <sys/interrupt.h>
 #include <lib/elf.h>
 #include <protos/stivale.h>
@@ -21,6 +22,8 @@ extern symbol bss_end;
 static int config_loaded = 0;
 
 void main(int boot_drive) {
+    struct file_handle f;
+
     // Zero out .bss section
     for (uint8_t *p = bss_begin; p < bss_end; p++)
         *p = 0;
@@ -32,7 +35,6 @@ void main(int boot_drive) {
 
     print("qLoader 2\n\n");
     print("=> Boot drive: %x\n", boot_drive);
-
 
     // Enumerate partitions.
     struct mbr_part parts[4];
@@ -101,15 +103,12 @@ void main(int boot_drive) {
     }
     print("\n");
 
-    // TODO: edit stivale
-    FILE *file = bfopen(path, drive, parts[part]);
+    fopen(&f, drive, part, path);
 
     if (!strcmp(proto, "stivale")) {
-        stivale_load(file, cmdline);
+        stivale_load(&f, cmdline);
     } else if (!strcmp(proto, "qword")) {
-        // TODO: GRAB ENTRY SIZE
-        bfgets((void *)0x100000, 0, 100000, file);
-        //echfs_read(&f, (void *)0x100000, 0, f.dir_entry.size);
+        fread(&f, (void *)0x100000, 0, f.size);
         // Boot the kernel.
         asm volatile (
             "cli\n\t"

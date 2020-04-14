@@ -3,6 +3,7 @@
 #include <lib/blib.h>
 #include <lib/libc.h>
 #include <lib/elf.h>
+#include <fs/file.h>
 
 #define PT_LOAD     0x00000001
 #define PT_INTERP   0x00000003
@@ -59,9 +60,9 @@ struct elf_shdr {
     uint64_t   sh_entsize;
 };
 
-int elf_load_section(FILE *fd, void *buffer, const char *name, size_t limit) {
+int elf_load_section(struct file_handle *fd, void *buffer, const char *name, size_t limit) {
     struct elf_hdr hdr;
-    bfgets(&hdr, 0, sizeof(struct elf_hdr), fd);
+    fread(fd, &hdr, 0, sizeof(struct elf_hdr));
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
         print("elf: Not a valid ELF file.\n");
@@ -79,19 +80,21 @@ int elf_load_section(FILE *fd, void *buffer, const char *name, size_t limit) {
     }
 
     struct elf_shdr shstrtab;
-    bfgets(&shstrtab, hdr.shoff + hdr.shstrndx * sizeof(struct elf_shdr), sizeof(struct elf_shdr), fd);
+    fread(fd, &shstrtab, hdr.shoff + hdr.shstrndx * sizeof(struct elf_shdr),
+            sizeof(struct elf_shdr));
 
     char names[shstrtab.sh_size];
-    bfgets(names, shstrtab.sh_offset, shstrtab.sh_size, fd);
+    fread(fd, names, shstrtab.sh_offset, shstrtab.sh_size);
 
     for (uint16_t i = 0; i < hdr.sh_num; i++) {
         struct elf_shdr section;
-        bfgets(&section, hdr.shoff + i * sizeof(struct elf_shdr), sizeof(struct elf_shdr), fd);
+        fread(fd, &section, hdr.shoff + i * sizeof(struct elf_shdr),
+                   sizeof(struct elf_shdr));
 
         if (!strcmp(&names[section.sh_name], name)) {
             if (section.sh_size > limit)
                 return 3;
-            bfgets(buffer, section.sh_offset, section.sh_size, fd);
+            fread(fd, buffer, section.sh_offset, section.sh_size);
             return 0;
         }
     }
@@ -101,9 +104,9 @@ int elf_load_section(FILE *fd, void *buffer, const char *name, size_t limit) {
 
 #define FIXED_HIGHER_HALF_OFFSET ((uint64_t)0xffffffff80000000)
 
-int elf_load(FILE *fd, uint64_t *entry_point, uint64_t *top) {
+int elf_load(struct file_handle *fd, uint64_t *entry_point, uint64_t *top) {
     struct elf_hdr hdr;
-    bfgets(&hdr, 0, sizeof(struct elf_hdr), fd);
+    fread(fd, &hdr, 0, sizeof(struct elf_hdr));
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
         print("Not a valid ELF file.\n");
@@ -124,9 +127,8 @@ int elf_load(FILE *fd, uint64_t *entry_point, uint64_t *top) {
 
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf_phdr phdr;
-        // Failing alloc happens on this bfgets
-        bfgets(&phdr, hdr.phoff + i * sizeof(struct elf_phdr), 
-                sizeof(struct elf_phdr), fd);
+        fread(fd, &phdr, hdr.phoff + i * sizeof(struct elf_phdr),
+                   sizeof(struct elf_phdr));
 
         if (phdr.p_type != PT_LOAD)
             continue;
@@ -138,7 +140,8 @@ int elf_load(FILE *fd, uint64_t *entry_point, uint64_t *top) {
         if (this_top > *top)
             *top = this_top;
 
-        bfgets((void *)(uint32_t)phdr.p_vaddr, phdr.p_offset, phdr.p_filesz, fd);
+        fread(fd, (void *)(uint32_t)phdr.p_vaddr,
+                   phdr.p_offset, phdr.p_filesz);
 
         size_t to_zero = (size_t)(phdr.p_memsz - phdr.p_filesz);
 

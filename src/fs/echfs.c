@@ -50,6 +50,20 @@ int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t
     return 0;
 }
 
+int echfs_check_signature(int disk, int partition) {
+    struct mbr_part mbr_part;
+    mbr_get_part(&mbr_part, disk, partition);
+
+    struct echfs_identity_table id_table;
+    read_partition(disk, &mbr_part, &id_table, 0, sizeof(struct echfs_identity_table));
+
+    if (strncmp(id_table.signature, "_ECH_FS_", 8)) {
+        return 0;
+    }
+
+    return 1;
+}
+
 int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const char *filename) {
     ret->disk = disk;
 

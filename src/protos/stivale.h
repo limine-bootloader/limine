@@ -1,8 +1,8 @@
 #ifndef __PROTOS__STIVALE_H__
 #define __PROTOS__STIVALE_H__
 
-#include <fs/echfs.h>
+#include <fs/file.h>
 
-void stivale_load(struct echfs_file_handle *fd, char *cmdline);
+void stivale_load(struct file_handle *fd, char *cmdline);
 
 #endif

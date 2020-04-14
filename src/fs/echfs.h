@@ -30,6 +30,8 @@ struct echfs_file_handle {
     struct echfs_dir_entry dir_entry;
 };
 
+int echfs_check_signature(int disk, int partition);
+
 int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const char *filename);
 int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t count);
 

@@ -3,6 +3,7 @@
 #include <lib/blib.h>
 #include <lib/libc.h>
 #include <lib/elf.h>
+#include <fs/file.h>
 
 #define PT_LOAD     0x00000001
 #define PT_INTERP   0x00000003
@@ -59,9 +60,9 @@ struct elf_shdr {
     uint64_t   sh_entsize;
 };
 
-int elf_load_section(struct echfs_file_handle *fd, void *buffer, const char *name, size_t limit) {
+int elf_load_section(struct file_handle *fd, void *buffer, const char *name, size_t limit) {
     struct elf_hdr hdr;
-    echfs_read(fd, &hdr, 0, sizeof(struct elf_hdr));
+    fread(fd, &hdr, 0, sizeof(struct elf_hdr));
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
         print("elf: Not a valid ELF file.\n");
@@ -79,21 +80,21 @@ int elf_load_section(struct echfs_file_handle *fd, void *buffer, const char *nam
     }
 
     struct elf_shdr shstrtab;
-    echfs_read(fd, &shstrtab, hdr.shoff + hdr.shstrndx * sizeof(struct elf_shdr),
+    fread(fd, &shstrtab, hdr.shoff + hdr.shstrndx * sizeof(struct elf_shdr),
             sizeof(struct elf_shdr));
 
     char names[shstrtab.sh_size];
-    echfs_read(fd, names, shstrtab.sh_offset, shstrtab.sh_size);
+    fread(fd, names, shstrtab.sh_offset, shstrtab.sh_size);
 
     for (uint16_t i = 0; i < hdr.sh_num; i++) {
         struct elf_shdr section;
-        echfs_read(fd, &section, hdr.shoff + i * sizeof(struct elf_shdr),
+        fread(fd, &section, hdr.shoff + i * sizeof(struct elf_shdr),
                    sizeof(struct elf_shdr));
 
         if (!strcmp(&names[section.sh_name], name)) {
             if (section.sh_size > limit)
                 return 3;
-            echfs_read(fd, buffer, section.sh_offset, section.sh_size);
+            fread(fd, buffer, section.sh_offset, section.sh_size);
             return 0;
         }
     }
@@ -103,9 +104,9 @@ int elf_load_section(struct echfs_file_handle *fd, void *buffer, const char *nam
 
 #define FIXED_HIGHER_HALF_OFFSET ((uint64_t)0xffffffff80000000)
 
-int elf_load(struct echfs_file_handle *fd, uint64_t *entry_point, uint64_t *top) {
+int elf_load(struct file_handle *fd, uint64_t *entry_point, uint64_t *top) {
     struct elf_hdr hdr;
-    echfs_read(fd, &hdr, 0, sizeof(struct elf_hdr));
+    fread(fd, &hdr, 0, sizeof(struct elf_hdr));
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
         print("Not a valid ELF file.\n");
@@ -126,7 +127,7 @@ int elf_load(struct echfs_file_handle *fd, uint64_t *entry_point, uint64_t *top)
 
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf_phdr phdr;
-        echfs_read(fd, &phdr, hdr.phoff + i * sizeof(struct elf_phdr),
+        fread(fd, &phdr, hdr.phoff + i * sizeof(struct elf_phdr),
                    sizeof(struct elf_phdr));
 
         if (phdr.p_type != PT_LOAD)
@@ -139,7 +140,7 @@ int elf_load(struct echfs_file_handle *fd, uint64_t *entry_point, uint64_t *top)
         if (this_top > *top)
             *top = this_top;
 
-        echfs_read(fd, (void *)(uint32_t)phdr.p_vaddr,
+        fread(fd, (void *)(uint32_t)phdr.p_vaddr,
                    phdr.p_offset, phdr.p_filesz);
 
         size_t to_zero = (size_t)(phdr.p_memsz - phdr.p_filesz);

@@ -1,4 +1,4 @@
-.PHONY: all clean test
+.PHONY: all clean echfs ext2
 
 all:
 	$(MAKE) -C src all
@@ -16,7 +16,7 @@ echfs: all
 	echfs-utils -m -p0 test.img import test/test.elf test.elf
 	echfs-utils -m -p0 test.img import test/qloader2.cfg qloader2.cfg
 	./qloader2-install src/qloader2.bin test.img
-	qemu-system-x86_64 -hda test.img -d int -no-shutdown -no-reboot
+	qemu-system-x86_64 -hda test.img -monitor stdio
 
 ext2:
 	$(MAKE) -C test

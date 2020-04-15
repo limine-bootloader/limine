@@ -222,9 +222,9 @@ struct ext2fs_dir_entry {
     uint8_t type;       // File type
 } __attribute__((packed));
 
-struct ext2fs_superblock *superblock;
-struct ext2fs_inode *root_inode;
-int num_entries = 0;
+static struct ext2fs_superblock *superblock;
+static struct ext2fs_inode *root_inode;
+static int num_entries = 0;
 
 // parse an inode given the partition base and inode number
 static struct ext2fs_inode *ext2fs_get_inode(uint64_t drive, struct mbr_part *part, uint64_t inode) {
@@ -303,7 +303,7 @@ int ext2fs_read(struct ext2fs_file_handle *file, void* buf, uint64_t loc, uint64
     return 1;
 }
 
-int first_run = 0;
+static int first_run = 0;
 
 // attempts to initialize the ext2 filesystem
 int ext2fs_check_signature(int drive, int partition) {

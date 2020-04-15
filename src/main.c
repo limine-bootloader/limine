@@ -77,7 +77,7 @@ void main(int boot_drive) {
         config_get_value(cmdline, 0, 128, "KERNEL_CMDLINE");
         config_get_value(proto, 0, 64, "KERNEL_PROTO");
     } else {
-        print("   !! NO CONFIG FILE FOUND ON BOOT DRIVE !!\n");
+        print("   !! NO CONFIG FILE FOUND ON BOOT DRIVE !!");
         for (;;);
     }
 

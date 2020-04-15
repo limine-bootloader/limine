@@ -30,3 +30,4 @@ _start:
     mov [rdx+8], rbx
     mov [rdx+16], rcx
     jmp $
+    

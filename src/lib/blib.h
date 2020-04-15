@@ -3,7 +3,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <lib/mbr.h>
 
 void panic(const char *str);
 

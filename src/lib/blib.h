@@ -4,15 +4,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <lib/mbr.h>
-#include <fs/echfs.h>
-#include <fs/ext2fs.h>
-
-typedef struct {
-    char *filename;
-    int drive;
-    struct mbr_part part;
-    int size;
-} FILE;
 
 void panic(const char *str);
 
@@ -31,10 +22,6 @@ void print(const char *fmt, ...);
 int getchar(void);
 void gets(const char *orig_str, char *buf, size_t limit);
 uint64_t strtoui(const char *s);
-
-FILE *bfopen(char *filename, int drive, struct mbr_part part);
-int bfgets(void *buf, uint64_t offset, uint64_t n, FILE *f);
-int bfexists(FILE *f);
 
 #define DIV_ROUNDUP(a, b) (((a) + ((b) - 1)) / (b))
 

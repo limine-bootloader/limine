@@ -245,7 +245,7 @@ static struct ext2fs_inode *ext2fs_get_inode(uint64_t drive, struct mbr_part *pa
 
 static struct ext2fs_dir_entry *ext2fs_parse_dirent(int drive, struct mbr_part *part, const char* filename) {
     if (root_inode == NULL)
-        return ERROR;
+        return NULL;
 
     uint64_t base = part->first_sect * 512;
     uint64_t offset = base + (root_inode->i_blocks[0] * EXT2_BLOCK_SIZE);
@@ -259,7 +259,7 @@ static struct ext2fs_dir_entry *ext2fs_parse_dirent(int drive, struct mbr_part *
         // name read
         char* name = balloc(sizeof(char) * dir->name_len);
         read(drive, name, offset + sizeof(struct ext2fs_dir_entry), dir->name_len);
-        
+
         if (!strncmp(filename, name, dir->name_len)) {
             return dir;
         }
@@ -267,7 +267,7 @@ static struct ext2fs_dir_entry *ext2fs_parse_dirent(int drive, struct mbr_part *
         offset += dir->rec_len;
     }
 
-    return ERROR;
+    return NULL;
 }
 
 int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const char* filename) {
@@ -284,7 +284,7 @@ int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const 
     ret->inode_num = entry->inode;
     ret->size = target->i_size;
 
-    return SUCCESS;
+    return 1;
 }
 
 int ext2fs_read(struct ext2fs_file_handle *file, void* buf, uint64_t loc, uint64_t count) {
@@ -300,7 +300,7 @@ int ext2fs_read(struct ext2fs_file_handle *file, void* buf, uint64_t loc, uint64
 
     read(file->drive, buf, base + (target->i_blocks[0] * EXT2_BLOCK_SIZE) + loc, count);
 
-    return SUCCESS;
+    return 1;
 }
 
 int first_run = 0;
@@ -331,8 +331,8 @@ int ext2fs_check_signature(int drive, int partition) {
             num_entries = root_inode->i_links_count + 2;
         }
 
-        return SUCCESS;
+        return 1;
     }
 
-    return ERROR;
+    return 0;
 }

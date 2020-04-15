@@ -47,7 +47,7 @@ make install
 cd ..
 
 cd gcc-$GCCVERSION
-#contrib/download_prerequisites
+contrib/download_prerequisites
 cd ..
 mkdir build-gcc
 cd build-gcc

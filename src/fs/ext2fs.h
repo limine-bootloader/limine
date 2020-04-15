@@ -8,10 +8,6 @@
 #include <lib/blib.h>
 #include <lib/mbr.h>
 
-/* Error Codes */
-#define SUCCESS  1
-#define ERROR    0
-
 struct ext2fs_file_handle {
     int drive;
     struct mbr_part part;

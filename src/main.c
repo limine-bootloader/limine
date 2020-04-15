@@ -46,24 +46,6 @@ void main(int boot_drive) {
         } else {
             print("   Found!\n");
 
-            int ret = 0;
-
-            print("   => Checking for EXT2FS\n");
-            ret = ext2fs_check_signature(boot_drive, i);
-
-            if (ret)
-                print("      EXT2FS found!\n");
-            else
-                print("      EXT2FS not found!\n");
-
-            print("   => Checking for ECHFS\n");
-            ret = echfs_check_signature(boot_drive, i);
-
-            if (ret)
-                print("      ECHFS found!\n");
-            else
-                print("      ECHFS not found!\n");
-
             if (!config_loaded) {
                 if (!init_config(boot_drive, i)) {
                     config_loaded = 1;

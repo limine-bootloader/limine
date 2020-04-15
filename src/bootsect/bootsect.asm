@@ -1,4 +1,4 @@
-org 0x7C00
+org 0x7c00
 bits 16
 
 start:
@@ -23,7 +23,7 @@ start:
     mov si, Stage2Msg
     call simple_print
 
-    mov eax, 1
+    mov eax, dword [stage2_sector]
     mov ebx, 0x7e00
     mov ecx, 1
     call read_sectors
@@ -65,6 +65,9 @@ times 6 db 0
 %include 'simple_print.inc'
 %include 'disk.inc'
 
+times 0x1b0-($-$$) db 0
+stage2_sector: dd 1
+
 times 0x1b8-($-$$) db 0
 times 510-($-$$) db 0
 dw 0xaa55
@@ -72,19 +75,17 @@ dw 0xaa55
 ; ********************* Stage 2 *********************
 
 stage2:
-    ; Load stage 3
-    mov eax, 2
+    mov eax, dword [stage2_sector]
+    inc eax
     mov ebx, 0x8000
     mov ecx, 62
     call read_sectors
     jc err_reading_disk
 
-    ; Enable A20
     call enable_a20
     jc err_enabling_a20
 
-    ; Enter 32 bit pmode
-    lgdt [GDT]						; Load the GDT
+    lgdt [GDT]
 
     cli
 
@@ -109,3 +110,7 @@ bits 16
 %include 'gdt.inc'
 
 times 1024-($-$$) db 0
+
+incbin '../stage2.bin'
+
+times 32768-($-$$) db 0

@@ -1,21 +1,33 @@
 #!/bin/sh
 
-set -e
+set -ex
 
-# We take 1 argument, the device to use.
 if [ -z "$2" ]; then
-    echo "Usage: $0 <path to qloader2 binary> <device>"
+    echo "Usage: $0 <path to qloader2 binary> <device> [stage2 start sector]"
     exit 1
 fi
 
 # Variables.
 DEVICE="$2"
 MBR="$(mktemp)"
+BINARY_SECT_SRC="$(mktemp)"
+BINARY_SECT_BIN="$(mktemp)"
 QLOADER2="$1"
 
-# Copy the loader to the device.
-dd if="$DEVICE"   of="$MBR"    bs=1 count=64 skip=446
-dd if="$QLOADER2" of="$DEVICE" conv=notrunc
-dd if="$MBR"      of="$DEVICE" conv=notrunc bs=1 count=64 seek=446
+if [ -z "$3" ]; then
+    STAGE2_SECT=1
+else
+    STAGE2_SECT="$3"
+fi
 
-rm "$MBR"
+echo "dd $STAGE2_SECT" > "$BINARY_SECT_SRC"
+nasm "$BINARY_SECT_SRC" -f bin -o "$BINARY_SECT_BIN"
+
+# Copy the loader to the device.
+dd if="$DEVICE"          of="$MBR"    bs=1   count=64 skip=446
+dd if="$QLOADER2"        of="$DEVICE" bs=512 count=1  conv=notrunc
+dd if="$QLOADER2"        of="$DEVICE" bs=512 count=63 skip=1   seek=$(( $STAGE2_SECT )) conv=notrunc
+dd if="$BINARY_SECT_BIN" of="$DEVICE" bs=1   count=4  seek=$(( 0x1b0 )) conv=notrunc
+dd if="$MBR"             of="$DEVICE" bs=1   count=64 seek=446 conv=notrunc
+
+rm "$MBR" "$BINARY_SECT_SRC" "$BINARY_SECT_BIN"

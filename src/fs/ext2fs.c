@@ -1,8 +1,5 @@
 #include <fs/ext2fs.h>
 
-// it willl most likely be 4096 bytes
-#define EXT2_BLOCK_SIZE 4096
-
 /* EXT2 Filesystem States */
 #define EXT2_FS_CLEAN   1
 #define EXT2_FS_ERRORS  2
@@ -162,7 +159,6 @@ struct ext2fs_bgd {
 #define EXT2_INO_AFS_DIR             0x00020000  // Is AFS directory
 #define EXT2_INO_JOURNAL_DATA        0x00040000  // Journal File Data
 
-
 /* EXT2 Directory File Types */
 #define EXT2_FT_UNKNOWN  0  // Unknown
 #define EXT2_FT_FILE     1  // Regular file
@@ -182,33 +178,40 @@ struct ext2fs_dir_entry {
 } __attribute__((packed));
 
 // parse an inode given the partition base and inode number
-static int ext2fs_get_inode(struct ext2fs_inode *ret, uint64_t drive, struct part *part, uint64_t inode, struct ext2fs_superblock *superblock) {
-    uint64_t ino_blk_grp = (inode - 1) / superblock->s_inodes_per_group;
-    uint64_t ino_tbl_idx = (inode - 1) % superblock->s_inodes_per_group;
+static int ext2fs_get_inode(struct ext2fs_inode *ret, uint64_t drive, struct part *part, uint64_t inode, struct ext2fs_superblock *sb) {
+    if (inode == 0)
+        return -1;
+
+    uint64_t ino_blk_grp = (inode - 1) / sb->s_inodes_per_group;
+    uint64_t ino_tbl_idx = (inode - 1) % sb->s_inodes_per_group;
+
+    uint64_t block_size = ((uint64_t)1024 << sb->s_log_block_size);
 
     struct ext2fs_bgd target_descriptor;
 
-    read_partition(drive, part, &target_descriptor, EXT2_BLOCK_SIZE + (sizeof(struct ext2fs_bgd) * ino_blk_grp), sizeof(struct ext2fs_bgd));
+    uint64_t bgd_start_offset = block_size >= 2048 ? block_size : block_size * 2;
 
-    read_partition(drive, part, ret, target_descriptor.bg_inode_table * EXT2_BLOCK_SIZE + (sizeof(struct ext2fs_inode) * ino_tbl_idx), sizeof(struct ext2fs_inode));
+    read_partition(drive, part, &target_descriptor, bgd_start_offset + (sizeof(struct ext2fs_bgd) * ino_blk_grp), sizeof(struct ext2fs_bgd));
+
+    read_partition(drive, part, ret, (target_descriptor.bg_inode_table * block_size) + (sizeof(struct ext2fs_inode) * ino_tbl_idx), sizeof(struct ext2fs_inode));
 
     return 0;
 }
 
 static int ext2fs_parse_dirent(struct ext2fs_dir_entry *dir, struct ext2fs_file_handle *fd, const char *filename) {
-    uint64_t offset = fd->root_inode.i_blocks[0] * EXT2_BLOCK_SIZE;
+    uint64_t offset = fd->root_inode.i_blocks[0] * fd->block_size;
 
     for (uint32_t i = 0; i < fd->num_entries; i++) {
         // preliminary read
         read_partition(fd->drive, &fd->part, dir, offset, sizeof(struct ext2fs_dir_entry));
 
         // name read
-        char* name = balloc(sizeof(char) * dir->name_len);
+        char* name = balloc(dir->name_len);
         read_partition(fd->drive, &fd->part, name, offset + sizeof(struct ext2fs_dir_entry), dir->name_len);
 
         int r = strncmp(filename, name, dir->name_len);
 
-        brewind(sizeof(char) * dir->name_len);
+        brewind(dir->name_len);
 
         if (!r) {
             return 0;
@@ -227,6 +230,8 @@ int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const 
 
     struct ext2fs_superblock sb;
     read_partition(drive, &ret->part, &sb, 1024, sizeof(struct ext2fs_superblock));
+
+    ret->block_size = ((uint64_t)1024 << sb.s_log_block_size);
 
     ext2fs_get_inode(&ret->root_inode, drive, &ret->part, 2, &sb);
     ret->num_entries = ret->root_inode.i_links_count + 2;
@@ -247,7 +252,18 @@ int ext2fs_read(struct ext2fs_file_handle *file, void* buf, uint64_t loc, uint64
     // TODO: add support for the indirect block pointers
     // TODO: add support for reading multiple blocks
 
-    read_partition(file->drive, &file->part, buf, (file->inode.i_blocks[0] * EXT2_BLOCK_SIZE) + loc, count);
+    for (uint64_t progress = 0; progress < count;) {
+        uint64_t block = (loc + progress) / file->block_size;
+
+        uint64_t chunk = count - progress;
+        uint64_t offset = (loc + progress) % file->block_size;
+        if (chunk > file->block_size - offset)
+            chunk = file->block_size - offset;
+
+        read_partition(file->drive, &file->part, buf + progress, (file->inode.i_blocks[block] * file->block_size) + offset, chunk);
+
+        progress += chunk;
+    }
 
     return 0;
 }

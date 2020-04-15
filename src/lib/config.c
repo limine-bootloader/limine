@@ -18,8 +18,7 @@ int init_config(int drive, int part) {
     }
 
     if (f.size >= MAX_CONFIG_SIZE) {
-        print("Config file is too big!\n");
-        for (;;);
+        panic("Config file is too big!\n");
     }
 
     config_addr = balloc(MAX_CONFIG_SIZE);

@@ -26,8 +26,8 @@ int fopen(struct file_handle *ret, int disk, int partition, const char *filename
         struct ext2fs_file_handle *fd = balloc(sizeof(struct ext2fs_file_handle));
 
         int r = ext2fs_open(fd, disk, partition, filename);
-        if (!r)
-            return 1;
+        if (r)
+            return r;
 
         ret->fd        = (void *)fd;
         ret->read      = (void *)ext2fs_read;

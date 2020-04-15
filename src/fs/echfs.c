@@ -1,4 +1,4 @@
-#include <fs/echfs/echfs.h>
+#include <fs/echfs.h>
 #include <stdint.h>
 #include <lib/libc.h>
 #include <lib/blib.h>
@@ -67,7 +67,10 @@ int echfs_check_signature(int disk, int partition) {
 int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const char *filename) {
     ret->disk = disk;
 
+    struct mbr_part part;
+    mbr_get_part(&part, disk, partition);
     ret->mbr_part = part;
+    
 
     struct echfs_identity_table id_table;
     read_partition(disk, &ret->mbr_part, &id_table, 0, sizeof(struct echfs_identity_table));

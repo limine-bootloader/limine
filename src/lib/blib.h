@@ -4,8 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <lib/mbr.h>
-#include <fs/echfs/echfs.h>
-#include <fs/ext2/ext2fs.h>
+#include <fs/echfs.h>
+#include <fs/ext2fs.h>
 
 typedef struct {
     char *filename;

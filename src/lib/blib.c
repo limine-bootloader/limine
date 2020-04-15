@@ -46,67 +46,6 @@ void *balloc_aligned(size_t count, size_t alignment) {
     return ret;
 }
 
-FILE *bfopen(char *filename, int drive, struct mbr_part part) {
-    FILE *file = balloc(sizeof(FILE));
-
-    file->filename  = filename;
-    file->drive     = drive;
-    file->part      = part;
-
-    if (is_ext2() == 0) {
-        uint64_t inode_num = ext2fs_parse_dirent(drive, part, filename);
-        struct ext2fs_file_handle *handle = ext2fs_open(drive, part, inode_num);
-
-        file->size = handle->size;
-    } else {
-        // assume echfs?
-        // idk fix this sometime
-        // i'm just trying to get this shit to work
-
-        struct echfs_file_handle handle;
-        echfs_open(&handle, drive, part, filename);
-
-        file->size = handle.dir_entry.size;
-    }
-
-    return file;
-}
-
-int bfgets(void *buf, uint64_t offset, uint64_t n, FILE *f) {
-    if (is_ext2() == 0) {
-        uint64_t inode_num = ext2fs_parse_dirent(f->drive, f->part, f->filename);
-        struct ext2fs_file_handle *handle = ext2fs_open(f->drive, f->part, inode_num);
-
-        ext2fs_read(buf, offset, n, handle);
-        return 0;
-    } else {
-        // assume echfs?
-        // idk fix this sometime
-        // i'm just trying to get this shit to work
-        
-        struct echfs_file_handle handle;
-        echfs_open(&handle, f->drive, f->part, f->filename);
-
-        echfs_read(&handle, buf, offset, n);
-        return 0;
-    }
-}
-
-int bfexists(FILE *f) {
-    if (is_ext2() == 0) {
-        for (uint64_t i = 0; i < num_entries; i++) {
-            if (strncmp(entry_names[i], f->filename, entries[i]->name_len) == 0) {
-                return 0;
-            }
-        }
-    } else if (is_echfs(f->drive, f->part) == 0) {
-        struct echfs_file_handle handle;
-        return echfs_open(&handle, f->drive, f->part, f->filename);
-    }
-
-    return -1;
-}
-
 void pit_sleep(uint64_t pit_ticks) {
     uint64_t target = global_pit_tick + pit_ticks;
     while (global_pit_tick < target) {

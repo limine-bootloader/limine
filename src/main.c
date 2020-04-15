@@ -12,6 +12,7 @@ asm (
 #include <lib/mbr.h>
 #include <lib/config.h>
 #include <fs/file.h>
+#include <fs/ext2fs.h>
 #include <sys/interrupt.h>
 #include <lib/elf.h>
 #include <protos/stivale.h>
@@ -46,22 +47,37 @@ void main(int boot_drive) {
         } else {
             print("   Found!\n");
 
+            int ret = 0;
+
             print("   => Checking for EXT2FS\n");
-            init_ext2(boot_drive, parts[i]);
+            ret = ext2fs_check_signature(boot_drive, i);
+
+            if (ret)
+                print("      EXT2FS found!\n");
+            else
+                print("      EXT2FS not found!\n");
 
             print("   => Checking for ECHFS\n");
-            int ret = is_echfs(boot_drive, parts[i]);
-            if (ret == 0) {
-                print("      ECHFS Found!\n");
-            } else {
-                print("      ECHFS Not found!\n");
-            }
+            ret = echfs_check_signature(boot_drive, i);
+
+            if (ret)
+                print("      ECHFS found!\n");
+            else
+                print("      ECHFS not found!\n");
 
             if (!config_loaded) {
-                if (!init_config(boot_drive, parts[i])) {
+                char* content = balloc(4096);
+
+                struct ext2fs_file_handle *handle = balloc(sizeof(struct ext2fs_file_handle));
+                ext2fs_open(handle, boot_drive, i, "qloader2.cfg");
+                ext2fs_read(handle, content, 0, 4096);
+
+                print("%s\n", content);
+
+                /*if (!init_config(boot_drive, i)) {
                     config_loaded = 1;
                     print("   Config file found and loaded!\n");
-                }
+                }*/
             }
         }
     }

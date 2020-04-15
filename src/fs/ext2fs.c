@@ -259,8 +259,7 @@ static struct ext2fs_dir_entry *ext2fs_parse_dirent(int drive, struct mbr_part *
         // name read
         char* name = balloc(sizeof(char) * dir->name_len);
         read(drive, name, offset + sizeof(struct ext2fs_dir_entry), dir->name_len);
-        print("      => Name: %s\n", name, dir->inode);
-
+        
         if (!strncmp(filename, name, dir->name_len)) {
             return dir;
         }
@@ -284,8 +283,6 @@ int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const 
 
     ret->inode_num = entry->inode;
     ret->size = target->i_size;
-
-    print("Requested File: %s | %u", filename, entry->inode);
 
     return SUCCESS;
 }

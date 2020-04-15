@@ -19,7 +19,7 @@ echfs-test: all
 	./qloader2-install src/qloader2.bin test.img 2048
 	qemu-system-x86_64 -hda test.img -monitor stdio
 
-ext2-test:
+ext2-test: all
 	$(MAKE) -C test
 	rm -rf test.img test_image/
 	mkdir test_image

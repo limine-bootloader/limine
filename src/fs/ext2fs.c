@@ -162,47 +162,6 @@ struct ext2fs_bgd {
 #define EXT2_INO_AFS_DIR             0x00020000  // Is AFS directory
 #define EXT2_INO_JOURNAL_DATA        0x00040000  // Journal File Data
 
-/* EXT2 OS Specific Value 2 (only Linux support) */
-struct ext2fs_linux {
-    uint8_t frag_num;           // Number of fragments
-    uint8_t frag_size;          // Fragment Size
-
-    uint16_t reserved_16;       // Reserved
-    uint16_t user_id_high;      // High 16 bits of 32 bit user_id
-    uint16_t group_id_high;     // High 16 bits of 32 bit group_id
-
-    uint32_t reserved_32;       // Reserved
-} __attribute__((packed));
-
-/* EXT2 Inode */
-struct ext2fs_inode {
-    uint16_t i_mode;            // Types and permissions
-    uint16_t i_uid;             // User ID
-
-    uint32_t i_size;            // Lower 32 bits of the size (in bytes)
-    uint32_t i_atime;           // Time of last access
-    uint32_t i_ctime;           // Time of creation
-    uint32_t i_mtime;           // Time of last modification
-    uint32_t i_dtime;           // Time of last deletion
-
-    uint16_t i_gid;             // Block group ID this inode belongs to
-    uint16_t i_links_count;     // Number of directory entries in this inode
-
-    uint32_t i_blocks_count;    // Number of blocks in use by this inode
-    uint32_t i_flags;           // Flags for this inode
-    uint32_t i_osd1;            // OS specific value #1 (linux support only) (unused)
-    uint32_t i_blocks[15];      // Block Pointers
-    uint32_t i_generation;      // Generation number
-
-    /* EXT2 v >= 1.0 */
-    uint32_t i_eab;             // Extended Attribute Block
-    uint32_t i_maj;             // If feature bit set, upper 32 bit of file size. Directory ACL if inode is directory
-
-    /* EXT2 vAll */
-    uint32_t i_frag_block;      // Block address of fragment
-
-    struct ext2fs_linux i_osd2; // OS specific value #2 (linux support only)
-} __attribute__((packed));
 
 /* EXT2 Directory File Types */
 #define EXT2_FT_UNKNOWN  0  // Unknown
@@ -222,115 +181,88 @@ struct ext2fs_dir_entry {
     uint8_t type;       // File type
 } __attribute__((packed));
 
-static struct ext2fs_superblock *superblock;
-static struct ext2fs_inode *root_inode;
-static int num_entries = 0;
-
 // parse an inode given the partition base and inode number
-static struct ext2fs_inode *ext2fs_get_inode(uint64_t drive, struct part *part, uint64_t inode) {
-    uint64_t base = part->first_sect * 512;
-    uint64_t bgdt_loc = base + EXT2_BLOCK_SIZE;
-
+static int ext2fs_get_inode(struct ext2fs_inode *ret, uint64_t drive, struct part *part, uint64_t inode, struct ext2fs_superblock *superblock) {
     uint64_t ino_blk_grp = (inode - 1) / superblock->s_inodes_per_group;
     uint64_t ino_tbl_idx = (inode - 1) % superblock->s_inodes_per_group;
 
-    struct ext2fs_bgd *target_descriptor = balloc(sizeof(struct ext2fs_bgd));
-    read(drive, target_descriptor, bgdt_loc + (sizeof(struct ext2fs_bgd) * ino_blk_grp), sizeof(struct ext2fs_bgd));
+    struct ext2fs_bgd target_descriptor;
 
-    struct ext2fs_inode *target = balloc(sizeof(struct ext2fs_inode));
-    read(drive, target, base + (target_descriptor->bg_inode_table * EXT2_BLOCK_SIZE) + (sizeof(struct ext2fs_inode) * ino_tbl_idx), sizeof(struct ext2fs_inode));
+    read_partition(drive, part, &target_descriptor, EXT2_BLOCK_SIZE + (sizeof(struct ext2fs_bgd) * ino_blk_grp), sizeof(struct ext2fs_bgd));
 
-    return target;
+    read_partition(drive, part, ret, target_descriptor.bg_inode_table * EXT2_BLOCK_SIZE + (sizeof(struct ext2fs_inode) * ino_tbl_idx), sizeof(struct ext2fs_inode));
+
+    return 0;
 }
 
-static struct ext2fs_dir_entry *ext2fs_parse_dirent(int drive, struct part *part, const char* filename) {
-    if (root_inode == NULL)
-        return NULL;
+static int ext2fs_parse_dirent(struct ext2fs_dir_entry *dir, struct ext2fs_file_handle *fd, const char *filename) {
+    uint64_t offset = fd->root_inode.i_blocks[0] * EXT2_BLOCK_SIZE;
 
-    uint64_t base = part->first_sect * 512;
-    uint64_t offset = base + (root_inode->i_blocks[0] * EXT2_BLOCK_SIZE);
-
-    for (uint32_t i = 0; i < num_entries; i++) {
-        struct ext2fs_dir_entry *dir = balloc(sizeof(struct ext2fs_dir_entry));
-
+    for (uint32_t i = 0; i < fd->num_entries; i++) {
         // preliminary read
-        read(drive, dir, offset, sizeof(struct ext2fs_dir_entry));
+        read_partition(fd->drive, &fd->part, dir, offset, sizeof(struct ext2fs_dir_entry));
 
         // name read
         char* name = balloc(sizeof(char) * dir->name_len);
-        read(drive, name, offset + sizeof(struct ext2fs_dir_entry), dir->name_len);
+        read_partition(fd->drive, &fd->part, name, offset + sizeof(struct ext2fs_dir_entry), dir->name_len);
 
-        if (!strncmp(filename, name, dir->name_len)) {
-            return dir;
+        int r = strncmp(filename, name, dir->name_len);
+
+        brewind(sizeof(char) * dir->name_len);
+
+        if (!r) {
+            return 0;
         }
 
         offset += dir->rec_len;
     }
 
-    return NULL;
-}
-
-int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const char* filename) {
-    struct part part;
-    get_part(&part, drive, partition);
-
-    struct ext2fs_dir_entry *entry = ext2fs_parse_dirent(drive, &part, filename);
-
-    ret->drive = drive;
-    ret->part = part;
-
-    struct ext2fs_inode *target = ext2fs_get_inode(drive, &part, entry->inode);
-
-    ret->inode_num = entry->inode;
-    ret->size = target->i_size;
-
     return 1;
 }
 
-int ext2fs_read(struct ext2fs_file_handle *file, void* buf, uint64_t loc, uint64_t count) {
-    uint64_t base = file->part.first_sect * 512;
+int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const char* filename) {
+    get_part(&ret->part, drive, partition);
 
+    ret->drive = drive;
+
+    struct ext2fs_superblock sb;
+    read_partition(drive, &ret->part, &sb, 1024, sizeof(struct ext2fs_superblock));
+
+    ext2fs_get_inode(&ret->root_inode, drive, &ret->part, 2, &sb);
+    ret->num_entries = ret->root_inode.i_links_count + 2;
+
+    struct ext2fs_dir_entry entry;
+    ext2fs_parse_dirent(&entry, ret, filename);
+
+    ext2fs_get_inode(&ret->inode, drive, &ret->part, entry.inode, &sb);
+    ret->size = ret->inode.i_size;
+
+    return 0;
+}
+
+int ext2fs_read(struct ext2fs_file_handle *file, void* buf, uint64_t loc, uint64_t count) {
     // read the contents of the inode
     // it is assumed that bfread has already done the directory check
 
     // TODO: add support for the indirect block pointers
     // TODO: add support for reading multiple blocks
 
-    struct ext2fs_inode *target = ext2fs_get_inode(file->drive, &file->part, file->inode_num);
+    read_partition(file->drive, &file->part, buf, (file->inode.i_blocks[0] * EXT2_BLOCK_SIZE) + loc, count);
 
-    read(file->drive, buf, base + (target->i_blocks[0] * EXT2_BLOCK_SIZE) + loc, count);
-
-    return 1;
+    return 0;
 }
-
-static int first_run = 0;
 
 // attempts to initialize the ext2 filesystem
 int ext2fs_check_signature(int drive, int partition) {
     struct part part;
     get_part(&part, drive, partition);
 
-    uint64_t base = part.first_sect * 512;
-
-    int magic = 0;
+    uint16_t magic = 0;
 
     // read only the checksum of the superblock
-    read(drive, &magic, base + 1024 + 56, 2);
+    read_partition(drive, &part, &magic, 1024 + 56, 2);
 
     if (magic == EXT2_S_MAGIC) {
-        if (first_run == 0) {
-            first_run = 1;
-
-            superblock = balloc(1024);
-
-            // read the entire superblock this time
-            read(drive, superblock, base + 1024, 1024);
-            // parse the root inode
-            root_inode = ext2fs_get_inode(drive, &part, 2);
-
-            num_entries = root_inode->i_links_count + 2;
-        }
-
         return 1;
     }
 

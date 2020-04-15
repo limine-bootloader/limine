@@ -18,6 +18,10 @@ void panic(const char *str) {
 static size_t bump_allocator_base = 0x20000;
 #define BUMP_ALLOCATOR_LIMIT ((size_t)0x80000)
 
+void brewind(size_t count) {
+    bump_allocator_base -= count;
+}
+
 void *balloc(size_t count) {
     void *ret = (void *)bump_allocator_base;
     size_t new_base = bump_allocator_base + count;

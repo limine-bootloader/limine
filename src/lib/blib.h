@@ -9,6 +9,7 @@ void panic(const char *str);
 void pit_sleep(uint64_t pit_ticks);
 int pit_sleep_and_quit_on_keypress(uint64_t pit_ticks);
 
+void brewind(size_t count);
 void *balloc(size_t count);
 void *balloc_aligned(size_t count, size_t alignment);
 

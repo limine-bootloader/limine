@@ -66,6 +66,7 @@ int echfs_check_signature(int disk, int partition) {
 
 int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const char *filename) {
     ret->disk = disk;
+
     mbr_get_part(&ret->mbr_part, disk, partition);
 
     struct echfs_identity_table id_table;

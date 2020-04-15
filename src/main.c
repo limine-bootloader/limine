@@ -45,7 +45,6 @@ void main(int boot_drive) {
             print("   Not found!\n");
         } else {
             print("   Found!\n");
-
             if (!config_loaded) {
                 if (!init_config(boot_drive, i)) {
                     config_loaded = 1;

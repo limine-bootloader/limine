@@ -2,7 +2,7 @@
 #define __FS__ECHFS_H__
 
 #include <stdint.h>
-#include <lib/mbr.h>
+#include <lib/part.h>
 
 struct echfs_dir_entry {
     uint64_t parent_id;
@@ -20,7 +20,7 @@ struct echfs_dir_entry {
 
 struct echfs_file_handle {
     int disk;
-    struct mbr_part mbr_part;
+    struct part part;
     uint64_t block_size;
     uint64_t block_count;
     uint64_t dir_length;

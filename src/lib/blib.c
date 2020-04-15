@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <lib/blib.h>
+#include <lib/libc.h>
 #include <drivers/vga_textmode.h>
 #include <lib/real.h>
 #include <sys/interrupt.h>

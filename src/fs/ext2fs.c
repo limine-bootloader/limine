@@ -66,7 +66,7 @@ struct ext2fs_superblock {
     uint16_t s_state;               // state of the filesystem
     uint16_t s_errors;              // what to do incase of an error
     uint16_t s_minor_rev_level;     // combine with major portion to get full version
-    
+
     uint32_t s_lastcheck;           // timestamp of last consistency check
     uint32_t s_checkinterval;       // amount of time between required consistency checks
     uint32_t s_creator_os;          // operating system ID
@@ -104,7 +104,7 @@ struct ext2fs_superblock {
     uint32_t s_journal_dev;         // Journal device
     uint32_t s_last_orphan;         // Head of orphan inode list
     uint32_t s_hash_seed[4];        // Seeds used for hashing algo for dir indexing
-    
+
     uint8_t s_def_hash_version;     // Default hash versrion used for dir indexing
 
     uint32_t s_default_mnt_opts;    // Default mount options
@@ -122,7 +122,7 @@ struct ext2fs_bgd {
     uint16_t bg_free_blocks_count;  // Number of unallocated blocks in group
     uint16_t bg_free_inodes_count;  // Number of unallocated blocks in inode
     uint16_t bg_dirs_count;         // Number of directories in group
-    
+
     uint16_t reserved[7];
 } __attribute__((packed));
 
@@ -184,7 +184,7 @@ struct ext2fs_inode {
     uint32_t i_ctime;           // Time of creation
     uint32_t i_mtime;           // Time of last modification
     uint32_t i_dtime;           // Time of last deletion
-    
+
     uint16_t i_gid;             // Block group ID this inode belongs to
     uint16_t i_links_count;     // Number of directory entries in this inode
 
@@ -193,7 +193,7 @@ struct ext2fs_inode {
     uint32_t i_osd1;            // OS specific value #1 (linux support only) (unused)
     uint32_t i_blocks[15];      // Block Pointers
     uint32_t i_generation;      // Generation number
-    
+
     /* EXT2 v >= 1.0 */
     uint32_t i_eab;             // Extended Attribute Block
     uint32_t i_maj;             // If feature bit set, upper 32 bit of file size. Directory ACL if inode is directory
@@ -227,10 +227,10 @@ static struct ext2fs_inode *root_inode;
 static int num_entries = 0;
 
 // parse an inode given the partition base and inode number
-static struct ext2fs_inode *ext2fs_get_inode(uint64_t drive, struct mbr_part *part, uint64_t inode) {
+static struct ext2fs_inode *ext2fs_get_inode(uint64_t drive, struct part *part, uint64_t inode) {
     uint64_t base = part->first_sect * 512;
     uint64_t bgdt_loc = base + EXT2_BLOCK_SIZE;
-    
+
     uint64_t ino_blk_grp = (inode - 1) / superblock->s_inodes_per_group;
     uint64_t ino_tbl_idx = (inode - 1) % superblock->s_inodes_per_group;
 
@@ -243,7 +243,7 @@ static struct ext2fs_inode *ext2fs_get_inode(uint64_t drive, struct mbr_part *pa
     return target;
 }
 
-static struct ext2fs_dir_entry *ext2fs_parse_dirent(int drive, struct mbr_part *part, const char* filename) {
+static struct ext2fs_dir_entry *ext2fs_parse_dirent(int drive, struct part *part, const char* filename) {
     if (root_inode == NULL)
         return NULL;
 
@@ -271,9 +271,9 @@ static struct ext2fs_dir_entry *ext2fs_parse_dirent(int drive, struct mbr_part *
 }
 
 int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const char* filename) {
-    struct mbr_part part;
-    mbr_get_part(&part, drive, partition);
-    
+    struct part part;
+    get_part(&part, drive, partition);
+
     struct ext2fs_dir_entry *entry = ext2fs_parse_dirent(drive, &part, filename);
 
     ret->drive = drive;
@@ -307,8 +307,8 @@ static int first_run = 0;
 
 // attempts to initialize the ext2 filesystem
 int ext2fs_check_signature(int drive, int partition) {
-    struct mbr_part part;
-    mbr_get_part(&part, drive, partition);
+    struct part part;
+    get_part(&part, drive, partition);
 
     uint64_t base = part.first_sect * 512;
 

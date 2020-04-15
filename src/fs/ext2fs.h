@@ -6,11 +6,11 @@
 #include <drivers/disk.h>
 #include <lib/libc.h>
 #include <lib/blib.h>
-#include <lib/mbr.h>
+#include <lib/part.h>
 
 struct ext2fs_file_handle {
     int drive;
-    struct mbr_part part;
+    struct part part;
     int inode_num;
     int size;
 };

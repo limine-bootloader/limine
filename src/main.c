@@ -9,7 +9,7 @@ asm (
 #include <lib/real.h>
 #include <lib/blib.h>
 #include <lib/libc.h>
-#include <lib/mbr.h>
+#include <lib/part.h>
 #include <lib/config.h>
 #include <fs/file.h>
 #include <sys/interrupt.h>
@@ -18,8 +18,6 @@ asm (
 
 extern symbol bss_begin;
 extern symbol bss_end;
-
-static int config_loaded = 0;
 
 void main(int boot_drive) {
     struct file_handle f;
@@ -34,53 +32,49 @@ void main(int boot_drive) {
     init_idt();
 
     print("qLoader 2\n\n");
-    print("=> Boot drive: %x\n", boot_drive);
+    print("Boot drive: %x\n", boot_drive);
 
-    // Enumerate partitions.
-    struct mbr_part parts[4];
-    for (int i = 0; i < 4; i++) {
-        print("=> Checking for partition %d...\n", i);
-        int ret = mbr_get_part(&parts[i], boot_drive, i);
+    // Look for config file.
+    print("Searching for config file...\n");
+    struct part parts[4];
+    for (int i = 0; ; i++) {
+        if (i == 4) {
+            panic("Config file not found.");
+        }
+        print("Checking partition %d...\n", i);
+        int ret = get_part(&parts[i], boot_drive, i);
         if (ret) {
-            print("   Not found!\n");
+            print("Partition not found.\n");
         } else {
-            print("   Found!\n");
-            if (!config_loaded) {
-                if (!init_config(boot_drive, i)) {
-                    config_loaded = 1;
-                    print("   Config file found and loaded!\n");
-                }
+            print("Partition found.\n");
+            if (!init_config(boot_drive, i)) {
+                print("Config file found and loaded.\n");
+                break;
             }
         }
     }
 
     int drive, part, timeout;
-    char path[128], cmdline[128], proto[64];
+    char path[128], cmdline[128], proto[64], buf[32];
 
-    if (config_loaded) {
-        char buf[32];
-        if (!config_get_value(buf, 0, 32, "KERNEL_DRIVE")) {
-            print("KERNEL_DRIVE not specified, using boot drive (%x)", boot_drive);
-            drive = boot_drive;
-        } else {
-            drive = (int)strtoui(buf);
-        }
-        if (!config_get_value(buf, 0, 64, "TIMEOUT")) {
-            timeout = 5;
-        } else {
-            timeout = (int)strtoui(buf);
-        }
-        config_get_value(buf, 0, 32, "KERNEL_PARTITION");
-        part = (int)strtoui(buf);
-        config_get_value(path, 0, 128, "KERNEL_PATH");
-        config_get_value(cmdline, 0, 128, "KERNEL_CMDLINE");
-        config_get_value(proto, 0, 64, "KERNEL_PROTO");
+    if (!config_get_value(buf, 0, 32, "KERNEL_DRIVE")) {
+        print("KERNEL_DRIVE not specified, using boot drive (%x)", boot_drive);
+        drive = boot_drive;
     } else {
-        print("   !! NO CONFIG FILE FOUND ON BOOT DRIVE !!");
-        for (;;);
+        drive = (int)strtoui(buf);
     }
+    if (!config_get_value(buf, 0, 64, "TIMEOUT")) {
+        timeout = 5;
+    } else {
+        timeout = (int)strtoui(buf);
+    }
+    config_get_value(buf, 0, 32, "KERNEL_PARTITION");
+    part = (int)strtoui(buf);
+    config_get_value(path, 0, 128, "KERNEL_PATH");
+    config_get_value(cmdline, 0, 128, "KERNEL_CMDLINE");
+    config_get_value(proto, 0, 64, "KERNEL_PROTO");
 
-    print("\n");
+    print("\n\n");
     for (int i = timeout; i; i--) {
         print("\rBooting in %d (press any key to edit command line)...", i);
         if (pit_sleep_and_quit_on_keypress(18)) {
@@ -89,7 +83,7 @@ void main(int boot_drive) {
             break;
         }
     }
-    print("\n");
+    print("\n\n");
 
     fopen(&f, drive, part, path);
 

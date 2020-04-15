@@ -24,14 +24,14 @@ static int read_block(struct echfs_file_handle *file, void *buf, uint64_t block,
             return -1;
 
         // Read the next block.
-        read_partition(file->disk, &file->mbr_part, &block_val, file->alloc_table_offset + block_val * sizeof(uint64_t),
+        read_partition(file->disk, &file->part, &block_val, file->alloc_table_offset + block_val * sizeof(uint64_t),
 sizeof(uint64_t));
     }
 
     if (block_val == END_OF_CHAIN)
         return -1;
 
-    return read_partition(file->disk, &file->mbr_part, buf, (block_val * file->block_size) + offset, count);
+    return read_partition(file->disk, &file->part, buf, (block_val * file->block_size) + offset, count);
 }
 
 int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
@@ -51,11 +51,11 @@ int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t
 }
 
 int echfs_check_signature(int disk, int partition) {
-    struct mbr_part mbr_part;
-    mbr_get_part(&mbr_part, disk, partition);
+    struct part part;
+    get_part(&part, disk, partition);
 
     struct echfs_identity_table id_table;
-    read_partition(disk, &mbr_part, &id_table, 0, sizeof(struct echfs_identity_table));
+    read_partition(disk, &part, &id_table, 0, sizeof(struct echfs_identity_table));
 
     if (strncmp(id_table.signature, "_ECH_FS_", 8)) {
         return 0;
@@ -67,10 +67,10 @@ int echfs_check_signature(int disk, int partition) {
 int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const char *filename) {
     ret->disk = disk;
 
-    mbr_get_part(&ret->mbr_part, disk, partition);
+    get_part(&ret->part, disk, partition);
 
     struct echfs_identity_table id_table;
-    read_partition(disk, &ret->mbr_part, &id_table, 0, sizeof(struct echfs_identity_table));
+    read_partition(disk, &ret->part, &id_table, 0, sizeof(struct echfs_identity_table));
 
     if (strncmp(id_table.signature, "_ECH_FS_", 8)) {
         print("echfs: signature invalid\n", filename);
@@ -86,7 +86,7 @@ int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const cha
 
     // Find the file in the root dir.
     for (uint64_t i = 0; i < ret->dir_length; i += sizeof(struct echfs_dir_entry)) {
-        read_partition(disk, &ret->mbr_part, &ret->dir_entry, i + ret->dir_offset, sizeof(struct echfs_dir_entry));
+        read_partition(disk, &ret->part, &ret->dir_entry, i + ret->dir_offset, sizeof(struct echfs_dir_entry));
 
         if (!ret->dir_entry.parent_id) {
             break;

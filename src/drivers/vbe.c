@@ -120,18 +120,20 @@ int init_vbe(uint64_t *framebuffer, uint16_t *pitch, uint16_t *target_width, uin
 
     struct edid_info_struct edid_info;
     if (!*target_width || !*target_height || !*target_bpp) {
-        *target_bpp = 32;
-        if (get_edid_info(&edid_info)) {
-            print("vbe: EDID unavailable, defaulting to 1024x768\n");
-            *target_width  = 1024;
-            *target_height = 768;
-        } else {
-            *target_width   = (int)edid_info.det_timing_desc1[2];
-            *target_width  += ((int)edid_info.det_timing_desc1[4] & 0xf0) << 4;
-            *target_height  = (int)edid_info.det_timing_desc1[5];
-            *target_height += ((int)edid_info.det_timing_desc1[7] & 0xf0) << 4;
-            print("vbe: EDID detected screen resolution of %ux%u\n",
-                  *target_width, *target_height);
+        *target_width  = 1024;
+        *target_height = 768;
+        *target_bpp    = 32;
+        if (!get_edid_info(&edid_info)) {
+            int edid_width   = (int)edid_info.det_timing_desc1[2];
+                edid_width  += ((int)edid_info.det_timing_desc1[4] & 0xf0) << 4;
+            int edid_height  = (int)edid_info.det_timing_desc1[5];
+                edid_height += ((int)edid_info.det_timing_desc1[7] & 0xf0) << 4;
+            if (edid_width && edid_height) {
+                *target_width  = edid_width;
+                *target_height = edid_height;
+                print("vbe: EDID detected screen resolution of %ux%u\n",
+                      *target_width, *target_height);
+            }
         }
     } else {
         print("vbe: Requested resolution of %ux%ux%u\n",

@@ -56,7 +56,6 @@ struct ext2fs_file_handle {
     int size;
     struct ext2fs_inode root_inode;
     struct ext2fs_inode inode;
-    int num_entries;
     uint64_t block_size;
 };
 

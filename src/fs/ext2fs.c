@@ -68,8 +68,8 @@ struct ext2fs_superblock {
     uint32_t s_checkinterval;       // amount of time between required consistency checks
     uint32_t s_creator_os;          // operating system ID
     uint32_t s_rev_level;           // combine with minor portion to get full version
-    uint32_t s_def_resuid;          // User ID that can use reserved blocks
-    uint32_t s_def_gid;             // Group ID that can use reserved blocks
+    uint16_t s_def_resuid;          // User ID that can use reserved blocks
+    uint16_t s_def_gid;             // Group ID that can use reserved blocks
 
     // if version number >= 1, we have to use the ext2 extended superblock as well
 
@@ -95,7 +95,7 @@ struct ext2fs_superblock {
 
     uint16_t unused;                // Unused
 
-    uint64_t s_journal_uuid;        // Journal ID
+    uint64_t s_journal_uuid[2];     // Journal ID
 
     uint32_t s_journal_inum;        // Journal Inode number
     uint32_t s_journal_dev;         // Journal device
@@ -103,6 +103,8 @@ struct ext2fs_superblock {
     uint32_t s_hash_seed[4];        // Seeds used for hashing algo for dir indexing
 
     uint8_t s_def_hash_version;     // Default hash versrion used for dir indexing
+
+    uint8_t padding[3];
 
     uint32_t s_default_mnt_opts;    // Default mount options
     uint32_t s_first_meta_bg;       // Block group ID for first meta group
@@ -193,7 +195,7 @@ static int ext2fs_get_inode(struct ext2fs_inode *ret, uint64_t drive, struct par
 
     read_partition(drive, part, &target_descriptor, bgd_start_offset + (sizeof(struct ext2fs_bgd) * ino_blk_grp), sizeof(struct ext2fs_bgd));
 
-    read_partition(drive, part, ret, (target_descriptor.bg_inode_table * block_size) + (sizeof(struct ext2fs_inode) * ino_tbl_idx), sizeof(struct ext2fs_inode));
+    read_partition(drive, part, ret, (target_descriptor.bg_inode_table * block_size) + (sb->s_inode_size * ino_tbl_idx), sizeof(struct ext2fs_inode));
 
     return 0;
 }
@@ -201,7 +203,7 @@ static int ext2fs_get_inode(struct ext2fs_inode *ret, uint64_t drive, struct par
 static int ext2fs_parse_dirent(struct ext2fs_dir_entry *dir, struct ext2fs_file_handle *fd, const char *filename) {
     uint64_t offset = fd->root_inode.i_blocks[0] * fd->block_size;
 
-    for (uint32_t i = 0; i < fd->num_entries; i++) {
+    while (offset < fd->root_inode.i_size + offset) {
         // preliminary read
         read_partition(fd->drive, &fd->part, dir, offset, sizeof(struct ext2fs_dir_entry));
 
@@ -234,11 +236,9 @@ int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const 
     ret->block_size = ((uint64_t)1024 << sb.s_log_block_size);
 
     ext2fs_get_inode(&ret->root_inode, drive, &ret->part, 2, &sb);
-    ret->num_entries = ret->root_inode.i_links_count + 2;
 
     struct ext2fs_dir_entry entry;
     ext2fs_parse_dirent(&entry, ret, filename);
-
     ext2fs_get_inode(&ret->inode, drive, &ret->part, entry.inode, &sb);
     ret->size = ret->inode.i_size;
 
@@ -246,11 +246,7 @@ int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const 
 }
 
 int ext2fs_read(struct ext2fs_file_handle *file, void* buf, uint64_t loc, uint64_t count) {
-    // read the contents of the inode
-    // it is assumed that bfread has already done the directory check
-
     // TODO: add support for the indirect block pointers
-    // TODO: add support for reading multiple blocks
 
     for (uint64_t progress = 0; progress < count;) {
         uint64_t block = (loc + progress) / file->block_size;
@@ -260,7 +256,44 @@ int ext2fs_read(struct ext2fs_file_handle *file, void* buf, uint64_t loc, uint64
         if (chunk > file->block_size - offset)
             chunk = file->block_size - offset;
 
-        read_partition(file->drive, &file->part, buf + progress, (file->inode.i_blocks[block] * file->block_size) + offset, chunk);
+        uint64_t block_index;
+
+        if (block < 12) {
+            // Direct block
+            block_index = file->inode.i_blocks[block];
+        } else {
+            // Indirect block
+            block -= 12;
+            if (block * sizeof(uint32_t) >= file->block_size) {
+                // Double indirect block
+                block -= file->block_size / sizeof(uint32_t);
+                uint32_t index  = block / (file->block_size / sizeof(uint32_t));
+                if (index * sizeof(uint32_t) >= file->block_size) {
+                    // Triple indirect block
+                    panic("ext2fs: triply indirect blocks unsupported");
+                }
+                uint32_t offset = block % (file->block_size / sizeof(uint32_t));
+                uint32_t indirect_block;
+                read_partition(
+                    file->drive, &file->part, &indirect_block,
+                    file->inode.i_blocks[13] * file->block_size + index * sizeof(uint32_t),
+                    sizeof(uint32_t)
+                );
+                read_partition(
+                    file->drive, &file->part, &block_index,
+                    indirect_block * file->block_size + offset * sizeof(uint32_t),
+                    sizeof(uint32_t)
+                );
+            } else {
+                read_partition(
+                    file->drive, &file->part, &block_index,
+                    file->inode.i_blocks[12] * file->block_size + block * sizeof(uint32_t),
+                    sizeof(uint32_t)
+                );
+            }
+        }
+
+        read_partition(file->drive, &file->part, buf + progress, (block_index * file->block_size) + offset, chunk);
 
         progress += chunk;
     }

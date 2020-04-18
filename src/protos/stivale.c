@@ -11,7 +11,9 @@
 
 struct stivale_header {
     uint64_t stack;
-    uint16_t video_mode;  // 0 = default at boot (CGA text mode). 1 = graphical VESA
+    // Flags
+    // bit 0   0 = text mode,   1 = graphics mode
+    uint16_t flags;
     uint16_t framebuffer_width;
     uint16_t framebuffer_height;
     uint16_t framebuffer_bpp;
@@ -41,29 +43,44 @@ struct stivale_struct {
 struct stivale_struct stivale_struct = {0};
 
 void stivale_load(struct file_handle *fd, char *cmdline) {
-    uint64_t entry_point;
-
     struct stivale_header stivale_hdr;
-    int ret = elf_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header));
-    switch (ret) {
-        case 1:
-            print("stivale: File is not a valid ELF.\n");
-            for (;;);
-        case 2:
-            print("stivale: Section .stivalehdr not found.\n");
-            for (;;);
-        case 3:
-            print("stivale: Section .stivalehdr exceeds the size of the struct.\n");
-            for (;;);
-        default:
+
+    int bits = elf_bits(fd);
+
+    int ret;
+
+    print("stivale: %u-bit ELF file detected\n", bits);
+
+    switch (bits) {
+        case 64:
+            ret = elf64_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header));
+            break;
+        case 32:
+            ret = elf32_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header));
             break;
     }
 
-    print("stivale: Requested stack at %X\n", stivale_hdr.stack);
-    print("stivale: Video mode: %u\n", stivale_hdr.video_mode);
+    switch (ret) {
+        case 1:
+            panic("stivale: File is not a valid ELF.\n");
+        case 2:
+            panic("stivale: Section .stivalehdr not found.\n");
+        case 3:
+            panic("stivale: Section .stivalehdr exceeds the size of the struct.\n");
+    }
 
-    uint64_t top_used_addr;
-    elf_load(fd, &entry_point, &top_used_addr);
+    print("stivale: Requested stack at %X\n", stivale_hdr.stack);
+
+    uint64_t entry_point   = 0;
+    uint64_t top_used_addr = 0;
+    switch (bits) {
+        case 64:
+            elf64_load(fd, &entry_point, &top_used_addr);
+            break;
+        case 32:
+            elf32_load(fd, (uint32_t *)&entry_point, (uint32_t *)&top_used_addr);
+            break;
+    }
 
     print("stivale: Top used address in ELF: %X\n", top_used_addr);
 
@@ -115,7 +132,6 @@ void stivale_load(struct file_handle *fd, char *cmdline) {
     }
 
     stivale_struct.rsdp = (uint64_t)(size_t)get_rsdp();
-    print("stivale: RSDP at %X\n", stivale_struct.rsdp);
 
     stivale_struct.cmdline = (uint64_t)(size_t)cmdline;
 
@@ -123,7 +139,7 @@ void stivale_load(struct file_handle *fd, char *cmdline) {
     stivale_struct.framebuffer_height = stivale_hdr.framebuffer_height;
     stivale_struct.framebuffer_bpp    = stivale_hdr.framebuffer_bpp;
 
-    if (stivale_hdr.video_mode == 1) {
+    if ((stivale_hdr.flags & 1) == 1) {
         init_vbe(&stivale_struct.framebuffer_addr,
                  &stivale_struct.framebuffer_pitch,
                  &stivale_struct.framebuffer_width,
@@ -131,61 +147,74 @@ void stivale_load(struct file_handle *fd, char *cmdline) {
                  &stivale_struct.framebuffer_bpp);
     }
 
-    struct pagemap {
-        uint64_t pml4[512];
-        uint64_t pml3_lo[512];
-        uint64_t pml3_hi[512];
-        uint64_t pml2_0gb[512];
-        uint64_t pml2_1gb[512];
-        uint64_t pml2_2gb[512];
-        uint64_t pml2_3gb[512];
-    };
-    struct pagemap *pagemap = balloc_aligned(sizeof(struct pagemap), 0x1000);
+    if (bits == 64) {
+        struct pagemap {
+            uint64_t pml4[512];
+            uint64_t pml3_lo[512];
+            uint64_t pml3_hi[512];
+            uint64_t pml2_0gb[512];
+            uint64_t pml2_1gb[512];
+            uint64_t pml2_2gb[512];
+            uint64_t pml2_3gb[512];
+        };
+        struct pagemap *pagemap = balloc_aligned(sizeof(struct pagemap), 0x1000);
 
-    // first, zero out the pagemap
-    for (uint64_t *p = (uint64_t *)pagemap; p < &pagemap->pml3_hi[512]; p++)
-        *p = 0;
+        // first, zero out the pagemap
+        for (uint64_t *p = (uint64_t *)pagemap; p < &pagemap->pml3_hi[512]; p++)
+            *p = 0;
 
-    pagemap->pml4[511]    = (uint64_t)(size_t)pagemap->pml3_hi  | 0x03;
-    pagemap->pml4[256]    = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
-    pagemap->pml4[0]      = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
-    pagemap->pml3_hi[510] = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
-    pagemap->pml3_hi[511] = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;
-    pagemap->pml3_lo[0]   = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
-    pagemap->pml3_lo[1]   = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;
-    pagemap->pml3_lo[2]   = (uint64_t)(size_t)pagemap->pml2_2gb | 0x03;
-    pagemap->pml3_lo[3]   = (uint64_t)(size_t)pagemap->pml2_3gb | 0x03;
+        pagemap->pml4[511]    = (uint64_t)(size_t)pagemap->pml3_hi  | 0x03;
+        pagemap->pml4[256]    = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
+        pagemap->pml4[0]      = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
+        pagemap->pml3_hi[510] = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
+        pagemap->pml3_hi[511] = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;
+        pagemap->pml3_lo[0]   = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
+        pagemap->pml3_lo[1]   = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;
+        pagemap->pml3_lo[2]   = (uint64_t)(size_t)pagemap->pml2_2gb | 0x03;
+        pagemap->pml3_lo[3]   = (uint64_t)(size_t)pagemap->pml2_3gb | 0x03;
 
-    // populate the page directories
-    for (size_t i = 0; i < 512 * 4; i++)
-        (&pagemap->pml2_0gb[0])[i] = (i * 0x200000) | 0x03 | (1 << 7);
+        // populate the page directories
+        for (size_t i = 0; i < 512 * 4; i++)
+            (&pagemap->pml2_0gb[0])[i] = (i * 0x200000) | 0x03 | (1 << 7);
 
-    asm volatile (
-        "cli\n\t"
-        "mov cr3, eax\n\t"
-        "mov eax, cr4\n\t"
-        "or eax, 1 << 5\n\t"
-        "mov cr4, eax\n\t"
-        "mov ecx, 0xc0000080\n\t"
-        "rdmsr\n\t"
-        "or eax, 1 << 8\n\t"
-        "wrmsr\n\t"
-        "mov eax, cr0\n\t"
-        "or eax, 1 << 31\n\t"
-        "mov cr0, eax\n\t"
-        "jmp 0x28:1f\n\t"
-        "1: .code64\n\t"
-        "mov ax, 0x30\n\t"
-        "mov ds, ax\n\t"
-        "mov es, ax\n\t"
-        "mov fs, ax\n\t"
-        "mov gs, ax\n\t"
-        "mov ss, ax\n\t"
-        "mov rsp, [rsi]\n\t"
-        "jmp [rbx]\n\t"
-        ".code32\n\t"
-        :
-        : "a" (pagemap), "b" (&entry_point),
-          "D" (&stivale_struct), "S" (&stivale_hdr.stack)
-    );
+        asm volatile (
+            "cli\n\t"
+            "cld\n\t"
+            "mov cr3, eax\n\t"
+            "mov eax, cr4\n\t"
+            "or eax, 1 << 5\n\t"
+            "mov cr4, eax\n\t"
+            "mov ecx, 0xc0000080\n\t"
+            "rdmsr\n\t"
+            "or eax, 1 << 8\n\t"
+            "wrmsr\n\t"
+            "mov eax, cr0\n\t"
+            "or eax, 1 << 31\n\t"
+            "mov cr0, eax\n\t"
+            "jmp 0x28:1f\n\t"
+            "1: .code64\n\t"
+            "mov ax, 0x30\n\t"
+            "mov ds, ax\n\t"
+            "mov es, ax\n\t"
+            "mov fs, ax\n\t"
+            "mov gs, ax\n\t"
+            "mov ss, ax\n\t"
+            "mov rsp, [rsi]\n\t"
+            "call [rbx]\n\t"
+            ".code32\n\t"
+            :
+            : "a" (pagemap), "b" (&entry_point),
+              "D" (&stivale_struct), "S" (&stivale_hdr.stack)
+        );
+    } else if (bits == 32) {
+        asm volatile (
+            "cli\n\t"
+            "cld\n\t"
+            "mov esp, [esi]\n\t"
+            "push edi\n\t"
+            "call [ebx]\n\t"
+            :
+            : "b" (&entry_point), "D" (&stivale_struct), "S" (&stivale_hdr.stack)
+        );
+    }
 }

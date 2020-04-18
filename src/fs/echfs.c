@@ -17,21 +17,7 @@ struct echfs_identity_table {
 #define FILE_TYPE    0
 
 static int read_block(struct echfs_file_handle *file, void *buf, uint64_t block, uint64_t offset, uint64_t count) {
-    // Load the file.
-    uint64_t block_val = file->dir_entry.payload;
-    for (uint64_t i = 0; i < block; i++) {
-        if (block_val == END_OF_CHAIN)
-            return -1;
-
-        // Read the next block.
-        read_partition(file->disk, &file->part, &block_val, file->alloc_table_offset + block_val * sizeof(uint64_t),
-sizeof(uint64_t));
-    }
-
-    if (block_val == END_OF_CHAIN)
-        return -1;
-
-    return read_partition(file->disk, &file->part, buf, (block_val * file->block_size) + offset, count);
+    return read_partition(file->disk, &file->part, buf, (file->alloc_map[block] * file->block_size) + offset, count);
 }
 
 int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
@@ -95,10 +81,27 @@ int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const cha
         if (!strcmp(filename, ret->dir_entry.name) &&
             ret->dir_entry.parent_id == ROOT_DIR_ID &&
             ret->dir_entry.type == FILE_TYPE) {
-            return 0;
+            goto found;
         }
     }
 
     print("echfs: file %s not found\n", filename);
     return -1;
+
+found:;
+    // Load the allocation map.
+    uint64_t file_block_count = DIV_ROUNDUP(ret->dir_entry.size, ret->block_size);
+
+    ret->alloc_map = balloc(file_block_count * sizeof(uint64_t));
+
+    ret->alloc_map[0] = ret->dir_entry.payload;
+    for (uint64_t i = 1; i < file_block_count; i++) {
+        // Read the next block.
+        read_partition(ret->disk, &ret->part,
+            &ret->alloc_map[i],
+            ret->alloc_table_offset + ret->alloc_map[i-1] * sizeof(uint64_t),
+            sizeof(uint64_t));
+    }
+
+    return 0;
 }

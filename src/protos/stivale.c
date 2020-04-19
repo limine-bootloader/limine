@@ -7,6 +7,7 @@
 #include <lib/e820.h>
 #include <lib/config.h>
 #include <drivers/vbe.h>
+#include <drivers/vga_textmode.h>
 #include <fs/file.h>
 
 struct stivale_header {
@@ -145,6 +146,8 @@ void stivale_load(struct file_handle *fd, char *cmdline) {
                  &stivale_struct.framebuffer_width,
                  &stivale_struct.framebuffer_height,
                  &stivale_struct.framebuffer_bpp);
+    } else {
+        deinit_vga_textmode();
     }
 
     if (bits == 64) {

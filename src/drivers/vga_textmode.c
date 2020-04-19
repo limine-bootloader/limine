@@ -68,13 +68,6 @@ static void text_clear_no_move(void) {
     return;
 }
 
-void init_vga_textmode(void) {
-    port_out_b(0x3d4, 0x0a);
-    port_out_b(0x3d5, 0x20);
-    text_clear();
-    return;
-}
-
 static void text_enable_cursor(void) {
     cursor_status = 1;
     draw_cursor();
@@ -85,6 +78,29 @@ static void text_disable_cursor(void) {
     cursor_status = 0;
     clear_cursor();
     return;
+}
+
+// VGA cursor code taken from: https://wiki.osdev.org/Text_Mode_Cursor
+
+void init_vga_textmode(void) {
+    port_out_b(0x3d4, 0x0a);
+    port_out_b(0x3d5, 0x20);
+    text_clear();
+}
+
+void deinit_vga_textmode(void) {
+    text_disable_cursor();
+    text_clear();
+
+    port_out_b(0x3d4, 0x0a);
+    port_out_b(0x3d5, (port_in_b(0x3d5) & 0xc0) | 14);
+    port_out_b(0x3d4, 0x0b);
+    port_out_b(0x3d5, (port_in_b(0x3d5) & 0xe0) | 15);
+
+    port_out_b(0x3d4, 0x0f);
+    port_out_b(0x3d5, 0x00);
+    port_out_b(0x3d4, 0x0e);
+    port_out_b(0x3d5, 0x00);
 }
 
 static void text_set_cursor_palette(uint8_t c) {

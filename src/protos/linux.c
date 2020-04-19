@@ -4,6 +4,8 @@
 #include <fs/file.h>
 #include <lib/blib.h>
 #include <lib/real.h>
+#include <drivers/vga_textmode.h>
+#include <lib/config.h>
 
 void linux_load(struct file_handle *fd, char *cmdline) {
     uint32_t signature;
@@ -94,6 +96,8 @@ void linux_load(struct file_handle *fd, char *cmdline) {
 
     uint16_t real_mode_code_seg = rm_seg(real_mode_code);
     uint16_t kernel_entry_seg   = real_mode_code_seg + 0x20;
+
+    deinit_vga_textmode();
 
     asm volatile (
         "cli\n\t"

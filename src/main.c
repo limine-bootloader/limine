@@ -15,6 +15,7 @@ asm (
 #include <sys/interrupt.h>
 #include <lib/elf.h>
 #include <protos/stivale.h>
+#include <protos/linux.h>
 
 extern symbol bss_begin;
 extern symbol bss_end;
@@ -89,6 +90,8 @@ void main(int boot_drive) {
 
     if (!strcmp(proto, "stivale")) {
         stivale_load(&f, cmdline);
+    } else if (!strcmp(proto, "linux")) {
+        linux_load(&f, cmdline);
     } else if (!strcmp(proto, "qword")) {
         fread(&f, (void *)0x100000, 0, f.size);
         // Boot the kernel.

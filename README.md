@@ -13,7 +13,7 @@ run the provided `qloader2-install` script as such:
 ```
 
 Then make sure the device/image contains at least 1 partition formatted in
-echfs containing a `qloader2.cfg` file and the kernel/modules one wants to load.
+echfs or ext2 containing a `qloader2.cfg` file and the kernel/modules one wants to load.
 
 An example `qloader2.cfg` file can be found in `test/qloader2.cfg`.
 

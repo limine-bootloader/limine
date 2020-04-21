@@ -3,6 +3,7 @@
 #include <lib/libc.h>
 #include <lib/blib.h>
 #include <drivers/disk.h>
+#include <stdbool.h>
 
 struct echfs_identity_table {
     uint8_t jmp[4];
@@ -15,6 +16,7 @@ struct echfs_identity_table {
 #define ROOT_DIR_ID  (~((uint64_t)0))
 #define END_OF_CHAIN (~((uint64_t)0))
 #define FILE_TYPE    0
+#define DIR_TYPE     1
 
 static int read_block(struct echfs_file_handle *file, void *buf, uint64_t block, uint64_t offset, uint64_t count) {
     return read_partition(file->disk, &file->part, buf, (file->alloc_map[block] * file->block_size) + offset, count);
@@ -50,7 +52,9 @@ int echfs_check_signature(int disk, int partition) {
     return 1;
 }
 
-int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const char *filename) {
+int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const char *path) {
+    const char *fullpath = path;
+
     ret->disk = disk;
 
     get_part(&ret->part, disk, partition);
@@ -59,7 +63,7 @@ int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const cha
     read_partition(disk, &ret->part, &id_table, 0, sizeof(struct echfs_identity_table));
 
     if (strncmp(id_table.signature, "_ECH_FS_", 8)) {
-        print("echfs: signature invalid\n", filename);
+        print("echfs: signature invalid\n");
         return -1;
     }
 
@@ -71,6 +75,23 @@ int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const cha
     ret->dir_offset         = ret->alloc_table_offset + ret->alloc_table_size;
 
     // Find the file in the root dir.
+    uint64_t wanted_parent = ROOT_DIR_ID;
+    bool     last_elem     = false;
+
+next:;
+    char wanted_name[128];
+    for (; *path == '/'; path++);
+    for (int i = 0; ; i++, path++) {
+        if (*path == '\0' || *path == '/') {
+            if (*path == '\0')
+                last_elem = true;
+            wanted_name[i] = '\0';
+            path++;
+            break;
+        }
+        wanted_name[i] = *path;
+    }
+
     for (uint64_t i = 0; i < ret->dir_length; i += sizeof(struct echfs_dir_entry)) {
         read_partition(disk, &ret->part, &ret->dir_entry, i + ret->dir_offset, sizeof(struct echfs_dir_entry));
 
@@ -78,14 +99,19 @@ int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const cha
             break;
         }
 
-        if (!strcmp(filename, ret->dir_entry.name) &&
-            ret->dir_entry.parent_id == ROOT_DIR_ID &&
-            ret->dir_entry.type == FILE_TYPE) {
-            goto found;
+        if (!strcmp(wanted_name, ret->dir_entry.name) &&
+            ret->dir_entry.parent_id == wanted_parent &&
+            ret->dir_entry.type == (last_elem ? FILE_TYPE : DIR_TYPE)) {
+            if (last_elem) {
+                goto found;
+            } else {
+                wanted_parent = ret->dir_entry.payload;
+                goto next;
+            }
         }
     }
 
-    print("echfs: file %s not found\n", filename);
+    print("echfs: file %s not found\n", fullpath);
     return -1;
 
 found:;

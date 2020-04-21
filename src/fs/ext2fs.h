@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <drivers/disk.h>
 #include <lib/libc.h>
 #include <lib/blib.h>
@@ -61,7 +62,7 @@ struct ext2fs_file_handle {
 
 int ext2fs_check_signature(int drive, int partition);
 
-int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const char* filename);
-int ext2fs_read(struct ext2fs_file_handle *file, void* buf, uint64_t loc, uint64_t count);
+int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const char *path);
+int ext2fs_read(struct ext2fs_file_handle *file, void *buf, uint64_t loc, uint64_t count);
 
 #endif

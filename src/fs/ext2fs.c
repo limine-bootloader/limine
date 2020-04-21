@@ -200,32 +200,61 @@ static int ext2fs_get_inode(struct ext2fs_inode *ret, uint64_t drive, struct par
     return 0;
 }
 
-static int ext2fs_parse_dirent(struct ext2fs_dir_entry *dir, struct ext2fs_file_handle *fd, const char *filename) {
-    uint64_t offset = fd->root_inode.i_blocks[0] * fd->block_size;
+static int ext2fs_parse_dirent(struct ext2fs_dir_entry *dir, struct ext2fs_file_handle *fd, struct ext2fs_superblock *sb, const char *path) {
+    int path_len = strlen(path);
 
-    while (offset < fd->root_inode.i_size + offset) {
-        // preliminary read
-        read_partition(fd->drive, &fd->part, dir, offset, sizeof(struct ext2fs_dir_entry));
+    char *cpy = path;
 
-        // name read
-        char* name = balloc(dir->name_len);
-        read_partition(fd->drive, &fd->part, name, offset + sizeof(struct ext2fs_dir_entry), dir->name_len);
+    if (*cpy = '/')
+        cpy++;
 
-        int r = strncmp(filename, name, dir->name_len);
+    int token_count;
+    for (int i = 0; i < path_len; i++) {
+        if (cpy[i] == '/')
+            token_count++;
+    }
 
-        brewind(dir->name_len);
+    const char *delimiter = "/";
+    char *token;
+    struct ext2fs_inode *current = &fd->root_inode;
 
-        if (!r) {
-            return 0;
+    for (int i = 0; i < (token_count + 1); i++) {
+        token = strtok(cpy, delimiter);
+
+        uint64_t offset = current->i_blocks[0] * fd->block_size;
+
+        while (offset < current->i_size + offset) {
+            // preliminary read
+            read_partition(fd->drive, &fd->part, dir, offset, sizeof(struct ext2fs_dir_entry));
+
+            // name read
+            char* name = balloc(dir->name_len);
+            read_partition(fd->drive, &fd->part, name, offset + sizeof(struct ext2fs_dir_entry), dir->name_len);
+
+            int r = strncmp(token, name, dir->name_len);
+
+            brewind(dir->name_len);
+
+            if (!r) {
+                if (i == token_count)
+                    return 0;
+                else
+                    break;
+            }
+
+            offset += dir->rec_len;
         }
 
-        offset += dir->rec_len;
+        cpy = NULL;
+
+        // update the current inode
+        ext2fs_get_inode(current, fd->drive, &fd->part, dir->inode, sb);
     }
 
     return 1;
 }
 
-int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const char* filename) {
+int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const char *path) {
     get_part(&ret->part, drive, partition);
 
     ret->drive = drive;
@@ -238,14 +267,14 @@ int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const 
     ext2fs_get_inode(&ret->root_inode, drive, &ret->part, 2, &sb);
 
     struct ext2fs_dir_entry entry;
-    ext2fs_parse_dirent(&entry, ret, filename);
+    ext2fs_parse_dirent(&entry, ret, &sb, path);
     ext2fs_get_inode(&ret->inode, drive, &ret->part, entry.inode, &sb);
     ret->size = ret->inode.i_size;
 
     return 0;
 }
 
-int ext2fs_read(struct ext2fs_file_handle *file, void* buf, uint64_t loc, uint64_t count) {
+int ext2fs_read(struct ext2fs_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
     // TODO: add support for the indirect block pointers
 
     for (uint64_t progress = 0; progress < count;) {

@@ -61,15 +61,15 @@ int config_set_entry(size_t index) {
                 return -1;
             p++;
         }
+        p++;
     }
-    p++;
 
     config_addr = p;
 
-    while (*config_addr != ':' && *config_addr)
-        config_addr++;
+    while (*p != ':' && *p)
+        p++;
 
-    *config_addr = 0;
+    *p = 0;
 
     return 0;
 }

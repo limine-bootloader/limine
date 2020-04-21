@@ -5,7 +5,7 @@
 #include <fs/file.h>
 
 #define SEPARATOR '\n'
-#define CONFIG_NAME "qloader2.cfg"
+#define CONFIG_NAME "/qloader2.cfg"
 #define MAX_CONFIG_SIZE 4096
 
 static char *config_addr;

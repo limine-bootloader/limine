@@ -29,6 +29,51 @@ int init_config(int drive, int part) {
     return 0;
 }
 
+int config_get_entry_name(char *ret, size_t index, size_t limit) {
+    char *p = config_addr;
+
+    for (size_t i = 0; i <= index; i++) {
+        while (*p != ':') {
+            if (!*p)
+                return -1;
+            p++;
+        }
+        p++;
+    }
+
+    size_t i;
+    for (i = 0; i < (limit - 1); i++) {
+        if (p[i] == SEPARATOR)
+            break;
+        ret[i] = p[i];
+    }
+
+    ret[i] = 0;
+    return 0;
+}
+
+int config_set_entry(size_t index) {
+    char *p = config_addr;
+
+    for (size_t i = 0; i <= index; i++) {
+        while (*p != ':') {
+            if (!*p)
+                return -1;
+            p++;
+        }
+    }
+    p++;
+
+    config_addr = p;
+
+    while (*config_addr != ':' && *config_addr)
+        config_addr++;
+
+    *config_addr = 0;
+
+    return 0;
+}
+
 char *config_get_value(char *buf, size_t index, size_t limit, const char *key) {
     if (!limit || !buf || !key)
         return NULL;

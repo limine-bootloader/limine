@@ -204,7 +204,7 @@ static int ext2fs_parse_dirent(struct ext2fs_dir_entry *dir, struct ext2fs_file_
     int path_len = strlen(path);
 
     char *cpy = path;
-    
+
     // insert a leading path separator
     if (cpy[0] != '/') {
         char s[path_len + 1];
@@ -212,19 +212,11 @@ static int ext2fs_parse_dirent(struct ext2fs_dir_entry *dir, struct ext2fs_file_
         strcpy(s + 1, cpy);
         strcpy(cpy, s);
     }
-    // remove the trailing path separator
-    if (cpy[path_len - 1] == '/') {
-        cpy[path_len - 1] = '\0';
-    }
 
     int dir_count = 0;
     for (int i = 0; i < path_len; i++) {
         if (cpy[i] == '/')
             dir_count++;
-    }
-
-    if (!dir_count) {
-        panic("Filepath invalid.\n");
     }
 
     const char *delimiter = "/";

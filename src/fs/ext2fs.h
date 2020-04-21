@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <drivers/disk.h>
 #include <lib/libc.h>
 #include <lib/blib.h>

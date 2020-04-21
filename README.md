@@ -39,6 +39,8 @@ wants to load.
 
 An example `qloader2.cfg` file can be found in `test/qloader2.cfg`.
 
+More info on the format of `qloader2.cfg` can be found in `CONFIG.md`.
+
 For example, to create an empty image file of 64MiB in size, 1 echfs partition
 on the image spanning the whole device, format it, copy the relevant files over,
 and install qloader2, one can do:

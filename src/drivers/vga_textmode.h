@@ -11,4 +11,8 @@ void text_write(const char *, size_t);
 void text_get_cursor_pos(int *x, int *y);
 void text_set_cursor_pos(int x, int y);
 
+void text_clear(void);
+void text_enable_cursor(void);
+void text_disable_cursor(void);
+
 #endif

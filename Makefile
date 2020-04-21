@@ -14,7 +14,7 @@ echfs-test: all
 	parted -s test.img mkpart primary 2048s 6143s
 	parted -s test.img mkpart primary 6144s 131038s
 	echfs-utils -g -p1 test.img quick-format 512
-	echfs-utils -g -p1 test.img import test/test.elf test.elf
+	echfs-utils -g -p1 test.img import test/test.elf boot/test.elf
 	echfs-utils -g -p1 test.img import test/qloader2.cfg qloader2.cfg
 	./qloader2-install src/qloader2.bin test.img 2048
 	qemu-system-x86_64 -hda test.img -monitor stdio

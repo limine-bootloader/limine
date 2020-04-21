@@ -47,7 +47,7 @@ static void scroll(void) {
     return;
 }
 
-static void text_clear(void) {
+void text_clear(void) {
     clear_cursor();
     for (size_t i = 0; i < VIDEO_BOTTOM; i += 2) {
         video_mem[i] = ' ';
@@ -68,13 +68,13 @@ static void text_clear_no_move(void) {
     return;
 }
 
-static void text_enable_cursor(void) {
+void text_enable_cursor(void) {
     cursor_status = 1;
     draw_cursor();
     return;
 }
 
-static void text_disable_cursor(void) {
+void text_disable_cursor(void) {
     cursor_status = 0;
     clear_cursor();
     return;

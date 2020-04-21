@@ -205,25 +205,20 @@ static int ext2fs_parse_dirent(struct ext2fs_dir_entry *dir, struct ext2fs_file_
 
     char *cpy = path;
 
-    // insert a leading path separator
-    if (cpy[0] != '/') {
-        char s[path_len + 1];
-        s[0] = '/';
-        strcpy(s + 1, cpy);
-        strcpy(cpy, s);
-    }
+    if (*cpy = '/')
+        cpy++;
 
-    int dir_count = 0;
+    int token_count;
     for (int i = 0; i < path_len; i++) {
         if (cpy[i] == '/')
-            dir_count++;
+            token_count++;
     }
 
     const char *delimiter = "/";
     char *token;
     struct ext2fs_inode *current = &fd->root_inode;
 
-    for (int i = 0; i < dir_count; i++) {
+    for (int i = 0; i < (token_count + 1); i++) {
         token = strtok(cpy, delimiter);
 
         uint64_t offset = current->i_blocks[0] * fd->block_size;
@@ -241,7 +236,7 @@ static int ext2fs_parse_dirent(struct ext2fs_dir_entry *dir, struct ext2fs_file_
             brewind(dir->name_len);
 
             if (!r) {
-                if (i == dir_count)
+                if (i == token_count)
                     return 0;
                 else
                     break;

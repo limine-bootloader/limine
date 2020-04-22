@@ -111,36 +111,3 @@ size_t strlen(const char *str) {
 
     return len;
 }
-
-char *strtok(char *str, const char *delimiter) {
-    static char* buffer;
-
-    if (str != NULL) {
-        buffer = str;
-    }
-
-    if (buffer[0] == '\0') {
-        return NULL;
-    }
-
-    char* ret = buffer;
-
-    for (char* b = buffer; *b != '\0'; b++) {
-        for (const char* d = delimiter; *d != '\0'; d++) {
-            if(*b == *d) {
-                *b     = '\0';
-                buffer = b + 1;
-
-                // Skip the beginning delimiters
-                if (b == ret) {
-                    ret++;
-                    continue;
-                }
-
-                return ret;
-            }
-        }
-    }
-
-    return ret;
-}

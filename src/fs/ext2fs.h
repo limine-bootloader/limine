@@ -3,10 +3,6 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <stdbool.h>
-#include <drivers/disk.h>
-#include <lib/libc.h>
-#include <lib/blib.h>
 #include <lib/part.h>
 
 /* EXT2 OS Specific Value 2 (only Linux support) */

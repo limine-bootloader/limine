@@ -1,4 +1,10 @@
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
 #include <fs/ext2fs.h>
+#include <drivers/disk.h>
+#include <lib/libc.h>
+#include <lib/blib.h>
 
 /* EXT2 Filesystem States */
 #define EXT2_FS_CLEAN   1
@@ -201,57 +207,52 @@ static int ext2fs_get_inode(struct ext2fs_inode *ret, uint64_t drive, struct par
 }
 
 static int ext2fs_parse_dirent(struct ext2fs_dir_entry *dir, struct ext2fs_file_handle *fd, struct ext2fs_superblock *sb, const char *path) {
-    int path_len = strlen(path);
+    if (*path == '/')
+        path++;
 
-    char *cpy = path;
+    struct ext2fs_inode current_inode = fd->root_inode;
 
-    if (*cpy == '/')
-        cpy++;
+    bool escape = false;
 
-    int token_count;
-    for (int i = 0; i < path_len; i++) {
-        if (cpy[i] == '/')
-            token_count++;
-    }
+    char token[128] = {0};
 
-    const char *delimiter = "/";
-    char *token;
-    struct ext2fs_inode *current = &fd->root_inode;
+next:
+    for (size_t i = 0; *path != '/' && *path != '\0'; i++, path++)
+        token[i] = *path;
 
-    for (int i = 0; i < (token_count + 1); i++) {
-        token = strtok(cpy, delimiter);
+    if (*path == '\0')
+        escape = true;
+    else
+        path++;
 
-        uint64_t offset = current->i_blocks[0] * fd->block_size;
+    uint64_t offset = current_inode.i_blocks[0] * fd->block_size;
 
-        while (offset < current->i_size + offset) {
-            // preliminary read
-            read_partition(fd->drive, &fd->part, dir, offset, sizeof(struct ext2fs_dir_entry));
+    while (offset < current_inode.i_size + offset) {
+        // preliminary read
+        read_partition(fd->drive, &fd->part, dir, offset, sizeof(struct ext2fs_dir_entry));
 
-            // name read
-            char* name = balloc(dir->name_len);
-            read_partition(fd->drive, &fd->part, name, offset + sizeof(struct ext2fs_dir_entry), dir->name_len);
+        // name read
+        char* name = balloc(dir->name_len);
+        read_partition(fd->drive, &fd->part, name, offset + sizeof(struct ext2fs_dir_entry), dir->name_len);
 
-            int r = strncmp(token, name, dir->name_len);
+        int r = strncmp(token, name, dir->name_len);
 
-            brewind(dir->name_len);
+        brewind(dir->name_len);
 
-            if (!r) {
-                if (i == token_count)
-                    return 0;
-                else
-                    break;
+        if (!r) {
+            if (escape) {
+                return 0;
+            } else {
+                // update the current inode
+                ext2fs_get_inode(&current_inode, fd->drive, &fd->part, dir->inode, sb);
+                goto next;
             }
-
-            offset += dir->rec_len;
         }
 
-        cpy = NULL;
-
-        // update the current inode
-        ext2fs_get_inode(current, fd->drive, &fd->part, dir->inode, sb);
+        offset += dir->rec_len;
     }
 
-    return 1;
+    return -1;
 }
 
 int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const char *path) {

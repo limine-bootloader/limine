@@ -6,8 +6,8 @@ x86/x86_64 BIOS Bootloader
 * stivale (qloader2's native boot protocol, TODO: write specification)
 
 ### Supported filesystems
-* ext2 (root directory only)
-* echfs (root directory only)
+* ext2
+* echfs
 
 ### Supported partitioning schemes
 * MBR

@@ -205,7 +205,7 @@ static int ext2fs_parse_dirent(struct ext2fs_dir_entry *dir, struct ext2fs_file_
 
     char *cpy = path;
 
-    if (*cpy = '/')
+    if (*cpy == '/')
         cpy++;
 
     int token_count;

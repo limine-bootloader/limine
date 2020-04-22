@@ -56,6 +56,7 @@ refresh:
             case '\r':
                 config_set_entry(selected_entry);
                 text_enable_cursor();
+                config_get_value(cmdline, 0, 128, "KERNEL_CMDLINE");
                 text_clear();
                 return;
             case 'e':
@@ -131,6 +132,8 @@ void main(int boot_drive) {
     if (config_set_entry(0) == -1) {
         panic("Invalid config entry.");
     }
+
+    config_get_value(cmdline, 0, 128, "KERNEL_CMDLINE");
 
 got_entry:
     if (!config_get_value(buf, 0, 32, "KERNEL_DRIVE")) {

@@ -3,10 +3,11 @@
 #include <sys/interrupt.h>
 #include <lib/cio.h>
 #include <lib/blib.h>
+#include <lib/real.h>
 
 __attribute__((interrupt)) static void unhandled_int(void *r) {
     (void)r;
-    print("Warning: unhandled interrupt");
+    panic("Unhandled interrupt");
 }
 
 volatile uint64_t global_pit_tick = 0;
@@ -17,13 +18,19 @@ __attribute__((interrupt)) static void pit_irq(void *r) {
     port_out_b(0x20, 0x20);
 }
 
-volatile int kbd_int = 0;
-
-__attribute__((interrupt)) static void keyboard_handler(void *r) {
-    (void)r;
-    kbd_int = 1;
-    (void)port_in_b(0x60);
-    port_out_b(0x20, 0x20);
+__attribute__((naked)) static void ivt_timer_isr(void) {
+    asm (
+        ".code16\n\t"
+        "pushf\n\t"
+        "push bx\n\t"
+        "mov ebx, dword ptr ds:[1f]\n\t"
+        "inc dword ptr ds:[ebx]\n\t"
+        "pop bx\n\t"
+        "popf\n\t"
+        "iret\n\t"
+        ".code32\n\t"
+        "1: .long global_pit_tick\n\t"
+    );
 }
 
 uint8_t rm_pic0_mask = 0xff;
@@ -57,7 +64,8 @@ void init_idt(void) {
     }
 
     register_interrupt_handler(0x08, pit_irq, 0x8e);
-    register_interrupt_handler(0x09, keyboard_handler, 0x8e);
+
+    ivt_register_handler(0x1c, ivt_timer_isr);
 
     struct idt_ptr_t idt_ptr = {
         sizeof(idt) - 1,
@@ -70,7 +78,7 @@ void init_idt(void) {
         : "m" (idt_ptr)
     );
 
-    pm_pic0_mask = 0xfc;
+    pm_pic0_mask = 0xfe;
     pm_pic1_mask = 0xff;
     port_out_b(0x21, pm_pic0_mask);
     port_out_b(0xa1, pm_pic1_mask);
@@ -86,4 +94,9 @@ void register_interrupt_handler(size_t vec, void *handler, uint8_t type) {
     idt[vec].unused = 0;
     idt[vec].type_attr = type;
     idt[vec].offset_hi = (uint16_t)(p >> 16);
+}
+
+void ivt_register_handler(int vect, void *isr) {
+    volatile uint32_t *ivt = (volatile void *)0;
+    ivt[vect] = rm_seg(isr) << 16 | rm_off(isr);
 }

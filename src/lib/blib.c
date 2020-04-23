@@ -58,12 +58,15 @@ void pit_sleep(uint64_t pit_ticks) {
 
 int pit_sleep_and_quit_on_keypress(uint64_t pit_ticks) {
     uint64_t target = global_pit_tick + pit_ticks;
-    while (global_pit_tick < target && !kbd_int) {
-        asm volatile ("hlt");
-    }
-    if (kbd_int) {
-        kbd_int = 0;
-        return 1;
+    while (global_pit_tick < target) {
+        struct rm_regs r = {0};
+        r.eax = 0x0100;
+        rm_int(0x16, &r, &r);
+        if (!(r.eflags & EFLAGS_ZF)) {
+            r.eax = 0x0000;
+            rm_int(0x16, &r, &r);
+            return 1;
+        }
     }
     return 0;
 }

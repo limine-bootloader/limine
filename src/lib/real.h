@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-#define rm_seg(x) (unsigned short)(((int)x & 0xFFFF0) >> 4)
-#define rm_off(x) (unsigned short)(((int)x & 0x0000F) >> 0)
+#define rm_seg(x) ((uint16_t)(((int)x & 0xffff0) >> 4))
+#define rm_off(x) ((uint16_t)(((int)x & 0x0000f) >> 0))
 
 #define rm_desegment(seg, off) (((uint32_t)(seg) << 4) + (uint32_t)(off))
 

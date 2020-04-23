@@ -19,6 +19,8 @@ asm (
 
 static char cmdline[128];
 
+static char config_entry_name[1024];
+
 void boot_menu(void) {
     text_disable_cursor();
     int selected_entry = 0;
@@ -31,13 +33,12 @@ refresh:
 
     size_t max_entries;
     for (max_entries = 0; ; max_entries++) {
-        char buf[32];
-        if (config_get_entry_name(buf, max_entries, 32) == -1)
+        if (config_get_entry_name(config_entry_name, max_entries, 1024) == -1)
             break;
         if (max_entries == selected_entry)
-            print(" -> %s\n", buf);
+            print(" -> %s\n", config_entry_name);
         else
-            print("    %s\n", buf);
+            print("    %s\n", config_entry_name);
     }
 
     print("\nArrows to choose, enter to select, 'e' to edit command line.");

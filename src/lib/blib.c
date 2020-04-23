@@ -334,5 +334,10 @@ out:
     va_end(args);
     text_write(print_buf, print_buf_i);
 
+#ifdef E9_OUTPUT
+    for (size_t i = 0; i < print_buf_i; i++)
+        port_out_b(0xe9, print_buf[i]);
+#endif
+
     return;
 }

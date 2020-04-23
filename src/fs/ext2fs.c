@@ -210,7 +210,8 @@ static int ext2fs_parse_dirent(struct ext2fs_dir_entry *dir, struct ext2fs_file_
     if (*path == '/')
         path++;
 
-    struct ext2fs_inode current_inode = fd->root_inode;
+    struct ext2fs_inode *current_inode = balloc(sizeof(struct ext2fs_inode));
+    *current_inode = fd->root_inode;
 
     bool escape = false;
 
@@ -225,14 +226,15 @@ next:
     else
         path++;
 
-    uint64_t offset = current_inode.i_blocks[0] * fd->block_size;
+    uint64_t offset = current_inode->i_blocks[0] * fd->block_size;
 
-    while (offset < current_inode.i_size + offset) {
+    uint64_t stop = current_inode->i_size + offset;
+    while (offset < stop) {
         // preliminary read
         read_partition(fd->drive, &fd->part, dir, offset, sizeof(struct ext2fs_dir_entry));
 
         // name read
-        char* name = balloc(dir->name_len);
+        char *name = balloc(dir->name_len);
         read_partition(fd->drive, &fd->part, name, offset + sizeof(struct ext2fs_dir_entry), dir->name_len);
 
         int r = strncmp(token, name, dir->name_len);
@@ -241,10 +243,11 @@ next:
 
         if (!r) {
             if (escape) {
+                brewind(sizeof(struct ext2fs_inode));
                 return 0;
             } else {
                 // update the current inode
-                ext2fs_get_inode(&current_inode, fd->drive, &fd->part, dir->inode, sb);
+                ext2fs_get_inode(current_inode, fd->drive, &fd->part, dir->inode, sb);
                 goto next;
             }
         }
@@ -252,6 +255,7 @@ next:
         offset += dir->rec_len;
     }
 
+    brewind(sizeof(struct ext2fs_inode));
     return -1;
 }
 
@@ -268,7 +272,11 @@ int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const 
     ext2fs_get_inode(&ret->root_inode, drive, &ret->part, 2, &sb);
 
     struct ext2fs_dir_entry entry;
-    ext2fs_parse_dirent(&entry, ret, &sb, path);
+    int r = ext2fs_parse_dirent(&entry, ret, &sb, path);
+
+    if (r)
+        return r;
+
     ext2fs_get_inode(&ret->inode, drive, &ret->part, entry.inode, &sb);
     ret->size = ret->inode.i_size;
 

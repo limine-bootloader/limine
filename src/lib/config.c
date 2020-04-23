@@ -5,7 +5,6 @@
 #include <fs/file.h>
 
 #define SEPARATOR '\n'
-#define CONFIG_NAME "qloader2.cfg"
 #define MAX_CONFIG_SIZE 4096
 
 static char *config_addr;
@@ -13,8 +12,10 @@ static char *config_addr;
 int init_config(int drive, int part) {
     struct file_handle f;
 
-    if (fopen(&f, drive, part, CONFIG_NAME)) {
-        return -1;
+    if (fopen(&f, drive, part, "/qloader2.cfg")) {
+        if (fopen(&f, drive, part, "/boot/qloader2.cfg")) {
+            return -1;
+        }
     }
 
     if (f.size >= MAX_CONFIG_SIZE) {

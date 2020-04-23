@@ -38,9 +38,6 @@ int fopen(struct file_handle *ret, int disk, int partition, const char *filename
         return 0;
     }
 
-    print("fs: Could not determine the file system of disk %u partition %u\n",
-          disk, partition);
-
     return -1;
 }
 

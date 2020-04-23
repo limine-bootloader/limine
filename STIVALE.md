@@ -86,7 +86,7 @@ The stivale structure returned by the bootloader looks like this:
 ```c
 struct stivale_struct {
     uint64_t cmdline;               // Pointer to a null-terminated cmdline
-    uint64_t memory_map_addr;       // Pointer to the memory map
+    uint64_t memory_map_addr;       // Pointer to the memory map (entries described below)
     uint64_t memory_map_entries;    // Count of memory map entries
     uint64_t framebuffer_addr;      // Address of the framebuffer and related info
     uint16_t framebuffer_pitch;
@@ -95,9 +95,30 @@ struct stivale_struct {
     uint16_t framebuffer_bpp;
     uint64_t rsdp;                  // Pointer to the ACPI RSDP structure
     uint64_t module_count;          // Count of modules that stivale loaded according to config
-    uint64_t modules;               // Pointer to the first entry in the linked list of modules
+    uint64_t modules;               // Pointer to the first entry in the linked list of modules (described below)
 } __attribute__((packed));
 ```
+
+## Memory map entry
+
+```c
+struct mmap_entry {
+    uint64_t base;      // Base of the memory section
+    uint64_t length;    // Length of the section
+    uint32_t type;      // Type (described below)
+    uint32_t unused;
+} __attribute__((packed));
+```
+
+`type` is an enumeration that can have the following values:
+
+1. Usable RAM
+2. Reserved
+3. ACPI reclaimable
+4. ACPI NVS
+5. Bad memory
+
+All other values are undefined.
 
 ## Modules
 

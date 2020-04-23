@@ -3,7 +3,7 @@ x86/x86_64 BIOS Bootloader
 
 ### Supported boot protocols
 * Linux
-* stivale (qloader2's native boot protocol, TODO: write specification)
+* stivale (qloader2's native boot protocol, see STIVALE.md for details)
 
 ### Supported filesystems
 * ext2
@@ -34,8 +34,8 @@ fdisk <device>    # Create bootloader partition using your favourite method
 ```
 
 Then make sure the device/image contains at least 1 partition formatted in
-a supported filesystem containing a `qloader2.cfg` file and the kernel/modules one
-wants to load.
+a supported filesystem containing a `/qloader2.cfg` or `/boot/qloader2.cfg` file
+and the kernel/modules one wants to load.
 
 An example `qloader2.cfg` file can be found in `test/qloader2.cfg`.
 

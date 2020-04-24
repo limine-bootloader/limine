@@ -17,7 +17,8 @@ asm (
 #include <protos/stivale.h>
 #include <protos/linux.h>
 
-static char cmdline[128];
+static char *cmdline;
+#define CMDLINE_MAX 1024
 
 static char config_entry_name[1024];
 
@@ -41,6 +42,9 @@ refresh:
             print("    %s\n", config_entry_name);
     }
 
+    if (max_entries == 0)
+        panic("Config contains no entries.");
+
     print("\nArrows to choose, enter to select, 'e' to edit command line.");
 
     for (;;) {
@@ -57,15 +61,19 @@ refresh:
             case '\r':
                 config_set_entry(selected_entry);
                 text_enable_cursor();
-                config_get_value(cmdline, 0, 128, "KERNEL_CMDLINE");
+                if (!config_get_value(cmdline, 0, CMDLINE_MAX, "KERNEL_CMDLINE")) {
+                    cmdline[0] = '\0';
+                }
                 text_clear();
                 return;
             case 'e':
                 config_set_entry(selected_entry);
                 text_enable_cursor();
-                config_get_value(cmdline, 0, 128, "KERNEL_CMDLINE");
+                if (!config_get_value(cmdline, 0, CMDLINE_MAX, "KERNEL_CMDLINE")) {
+                    cmdline[0] = '\0';
+                }
                 print("\n\n> ");
-                gets(cmdline, cmdline, 128);
+                gets(cmdline, cmdline, CMDLINE_MAX);
                 text_clear();
                 return;
         }
@@ -88,7 +96,10 @@ void main(int boot_drive) {
     init_idt();
 
     print("qloader2\n\n");
+
     print("Boot drive: %x\n", boot_drive);
+
+    cmdline = balloc(CMDLINE_MAX);
 
     // Look for config file.
     print("Searching for config file...\n");
@@ -134,19 +145,26 @@ void main(int boot_drive) {
         panic("Invalid config entry.");
     }
 
-    config_get_value(cmdline, 0, 128, "KERNEL_CMDLINE");
+    if (!config_get_value(cmdline, 0, CMDLINE_MAX, "KERNEL_CMDLINE")) {
+        cmdline[0] = '\0';
+    }
 
 got_entry:
     if (!config_get_value(buf, 0, 32, "KERNEL_DRIVE")) {
-        print("KERNEL_DRIVE not specified, using boot drive (%x)", boot_drive);
         drive = boot_drive;
     } else {
         drive = (int)strtoui(buf);
     }
-    config_get_value(buf, 0, 32, "KERNEL_PARTITION");
+    if (!config_get_value(buf, 0, 32, "KERNEL_PARTITION")) {
+        panic("KERNEL_PARTITION not specified");
+    }
     part = (int)strtoui(buf);
-    config_get_value(path, 0, 128, "KERNEL_PATH");
-    config_get_value(proto, 0, 64, "KERNEL_PROTO");
+    if (!config_get_value(path, 0, 128, "KERNEL_PATH")) {
+        panic("KERNEL_PATH not specified");
+    }
+    if (!config_get_value(proto, 0, 64, "KERNEL_PROTO")) {
+        panic("KERNEL_PROTO not specified");
+    }
 
     fopen(&f, drive, part, path);
 
@@ -154,18 +172,7 @@ got_entry:
         stivale_load(&f, cmdline);
     } else if (!strcmp(proto, "linux")) {
         linux_load(&f, cmdline);
-    } else if (!strcmp(proto, "qword")) {
-        fread(&f, (void *)0x100000, 0, f.size);
-        // Boot the kernel.
-        asm volatile (
-            "cli\n\t"
-            "jmp 0x100000\n\t"
-            :
-            : "b" (cmdline)
-            : "memory"
-        );
     } else {
-        print("Invalid protocol specified: `%s`.\n", proto);
-        for (;;);
+        panic("Invalid protocol specified");
     }
 }

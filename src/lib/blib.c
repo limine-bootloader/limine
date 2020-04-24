@@ -15,7 +15,8 @@ void panic(const char *str) {
     }
 }
 
-static size_t bump_allocator_base = 0x20000;
+extern symbol bss_end;
+static size_t bump_allocator_base = (size_t)bss_end;
 #define BUMP_ALLOCATOR_LIMIT ((size_t)0x80000)
 
 void brewind(size_t count) {

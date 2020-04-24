@@ -63,6 +63,8 @@ int config_set_entry(size_t index) {
             p++;
         }
         p++;
+        if (*(p - 2) != '\n')
+            i--;
     }
 
     config_addr = p;

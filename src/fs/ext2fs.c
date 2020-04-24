@@ -185,6 +185,10 @@ struct ext2fs_dir_entry {
     uint8_t type;       // File type
 } __attribute__((packed));
 
+static int inode_read(void *buf, uint64_t loc, uint64_t count,
+                      uint64_t block_size, struct ext2fs_inode *inode,
+                      uint64_t drive, struct part *part);
+
 // parse an inode given the partition base and inode number
 static int ext2fs_get_inode(struct ext2fs_inode *ret, uint64_t drive, struct part *part, uint64_t inode, struct ext2fs_superblock *sb) {
     if (inode == 0)
@@ -226,16 +230,17 @@ next:
     else
         path++;
 
-    uint64_t offset = current_inode->i_blocks[0] * fd->block_size;
-
-    uint64_t stop = current_inode->i_size + offset;
-    while (offset < stop) {
+    for (uint32_t i = 0; i < current_inode->i_size; ) {
         // preliminary read
-        read_partition(fd->drive, &fd->part, dir, offset, sizeof(struct ext2fs_dir_entry));
+        inode_read(dir, i, sizeof(struct ext2fs_dir_entry),
+                   fd->block_size, current_inode,
+                   fd->drive, &fd->part);
 
         // name read
         char *name = balloc(dir->name_len);
-        read_partition(fd->drive, &fd->part, name, offset + sizeof(struct ext2fs_dir_entry), dir->name_len);
+        inode_read(name, i + sizeof(struct ext2fs_dir_entry), dir->name_len,
+                   fd->block_size, current_inode,
+                   fd->drive, &fd->part);
 
         int r = strncmp(token, name, dir->name_len);
 
@@ -252,7 +257,7 @@ next:
             }
         }
 
-        offset += dir->rec_len;
+        i += dir->rec_len;
     }
 
     brewind(sizeof(struct ext2fs_inode));
@@ -284,54 +289,60 @@ int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const 
 }
 
 int ext2fs_read(struct ext2fs_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
-    // TODO: add support for the indirect block pointers
+    return inode_read(buf, loc, count,
+                      file->block_size, &file->inode,
+                      file->drive, &file->part);
+}
 
+static int inode_read(void *buf, uint64_t loc, uint64_t count,
+                      uint64_t block_size, struct ext2fs_inode *inode,
+                      uint64_t drive, struct part *part) {
     for (uint64_t progress = 0; progress < count;) {
-        uint64_t block = (loc + progress) / file->block_size;
+        uint64_t block = (loc + progress) / block_size;
 
         uint64_t chunk = count - progress;
-        uint64_t offset = (loc + progress) % file->block_size;
-        if (chunk > file->block_size - offset)
-            chunk = file->block_size - offset;
+        uint64_t offset = (loc + progress) % block_size;
+        if (chunk > block_size - offset)
+            chunk = block_size - offset;
 
         uint64_t block_index;
 
         if (block < 12) {
             // Direct block
-            block_index = file->inode.i_blocks[block];
+            block_index = inode->i_blocks[block];
         } else {
             // Indirect block
             block -= 12;
-            if (block * sizeof(uint32_t) >= file->block_size) {
+            if (block * sizeof(uint32_t) >= block_size) {
                 // Double indirect block
-                block -= file->block_size / sizeof(uint32_t);
-                uint32_t index  = block / (file->block_size / sizeof(uint32_t));
-                if (index * sizeof(uint32_t) >= file->block_size) {
+                block -= block_size / sizeof(uint32_t);
+                uint32_t index  = block / (block_size / sizeof(uint32_t));
+                if (index * sizeof(uint32_t) >= block_size) {
                     // Triple indirect block
                     panic("ext2fs: triply indirect blocks unsupported");
                 }
-                uint32_t offset = block % (file->block_size / sizeof(uint32_t));
+                uint32_t offset = block % (block_size / sizeof(uint32_t));
                 uint32_t indirect_block;
                 read_partition(
-                    file->drive, &file->part, &indirect_block,
-                    file->inode.i_blocks[13] * file->block_size + index * sizeof(uint32_t),
+                    drive, part, &indirect_block,
+                    inode->i_blocks[13] * block_size + index * sizeof(uint32_t),
                     sizeof(uint32_t)
                 );
                 read_partition(
-                    file->drive, &file->part, &block_index,
-                    indirect_block * file->block_size + offset * sizeof(uint32_t),
+                    drive, part, &block_index,
+                    indirect_block * block_size + offset * sizeof(uint32_t),
                     sizeof(uint32_t)
                 );
             } else {
                 read_partition(
-                    file->drive, &file->part, &block_index,
-                    file->inode.i_blocks[12] * file->block_size + block * sizeof(uint32_t),
+                    drive, part, &block_index,
+                    inode->i_blocks[12] * block_size + block * sizeof(uint32_t),
                     sizeof(uint32_t)
                 );
             }
         }
 
-        read_partition(file->drive, &file->part, buf + progress, (block_index * file->block_size) + offset, chunk);
+        read_partition(drive, part, buf + progress, (block_index * block_size) + offset, chunk);
 
         progress += chunk;
     }

@@ -1,6 +1,6 @@
 CC = ../toolchain/bin/i386-elf-gcc
 
-CFLAGS = -O2 -pipe -Wall -Wextra
+CFLAGS = -Os -pipe -Wall -Wextra
 
 INTERNAL_CFLAGS = \
 	-ffreestanding \

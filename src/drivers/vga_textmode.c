@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <lib/cio.h>
+#include <lib/real.h>
 #include <drivers/vga_textmode.h>
 
 #define VIDEO_BOTTOM ((VD_ROWS * VD_COLS) - 1)
@@ -89,18 +90,11 @@ void init_vga_textmode(void) {
 }
 
 void deinit_vga_textmode(void) {
-    text_disable_cursor();
-    text_clear();
+    struct rm_regs r = {0};
 
-    port_out_b(0x3d4, 0x0a);
-    port_out_b(0x3d5, (port_in_b(0x3d5) & 0xc0) | 14);
-    port_out_b(0x3d4, 0x0b);
-    port_out_b(0x3d5, (port_in_b(0x3d5) & 0xe0) | 15);
+    r.eax = 0x0003;
 
-    port_out_b(0x3d4, 0x0f);
-    port_out_b(0x3d5, 0x00);
-    port_out_b(0x3d4, 0x0e);
-    port_out_b(0x3d5, 0x00);
+    rm_int(0x10, &r, &r);
 }
 
 static void text_set_cursor_palette(uint8_t c) {

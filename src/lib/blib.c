@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <lib/blib.h>
 #include <lib/libc.h>
 #include <drivers/vga_textmode.h>
@@ -23,15 +24,7 @@ void brewind(size_t count) {
 }
 
 void *balloc(size_t count) {
-    void *ret = (void *)bump_allocator_base;
-    size_t new_base = bump_allocator_base + count;
-    if (new_base >= BUMP_ALLOCATOR_LIMIT) {
-        print("PANIC: Old: %x | New: %x\n", (size_t)ret, new_base);
-        print("PANIC: Allocated: %x\n", count);
-        panic("Memory allocation failed");
-    }
-    bump_allocator_base = new_base;
-    return ret;
+    return balloc_aligned(count, 4);
 }
 
 // Only power of 2 alignments
@@ -49,9 +42,9 @@ void *balloc_aligned(size_t count, size_t alignment) {
     return ret;
 }
 
-__attribute__((used)) static uint32_t int_1c_ticks_counter;
+__attribute__((used)) static uint32_t int_08_ticks_counter;
 
-__attribute__((used)) __attribute__((naked)) static void ivt_timer_isr(void) {
+__attribute__((naked)) static void int_08_isr(void) {
     asm (
         ".code16\n\t"
         "pushf\n\t"
@@ -60,24 +53,28 @@ __attribute__((used)) __attribute__((naked)) static void ivt_timer_isr(void) {
         "inc dword ptr ds:[ebx]\n\t"
         "pop bx\n\t"
         "popf\n\t"
+        "int 0x40\n\t"   // call callback
         "iret\n\t"
         ".code32\n\t"
-        "1: .long int_1c_ticks_counter\n\t"
+        "1: .long int_08_ticks_counter\n\t"
     );
 }
 
+uint32_t *ivt = 0; // this variable is not static else gcc will optimise the
+                   // 0 ptr to a ud2
+
+static void hook_int_08(void) {
+    ivt[0x40] = ivt[0x08];  // int 0x40 is callback interrupt
+    ivt[0x08] = rm_seg(int_08_isr) << 16 | rm_off(int_08_isr);
+}
+
 // This is a dirty hack but we need to execute this full function in real mode
-__attribute__((naked)) int pit_sleep_and_quit_on_keypress(uint32_t ticks) {
+__attribute__((naked)) int _pit_sleep_and_quit_on_keypress(uint32_t ticks) {
     asm (
         // pit_ticks in edx
         "mov edx, dword ptr ss:[esp+4]\n\t"
 
-        "lea ecx, int_1c_ticks_counter\n\t"
-
-        // Make sure the ISR for int 0x1c is hooked
-        "lea eax, ivt_timer_isr\n\t"
-        "mov word ptr ds:[0x1c * 4], ax\n\t"
-        "mov word ptr ds:[0x1c * 4 + 2], 0\n\t"
+        "lea ecx, int_08_ticks_counter\n\t"
 
         "mov dword ptr ds:[ecx], 0\n\t"
 
@@ -156,6 +153,17 @@ __attribute__((naked)) int pit_sleep_and_quit_on_keypress(uint32_t ticks) {
         // Exit
         "ret\n\t"
     );
+}
+
+static bool int_08_hooked = false;
+
+int pit_sleep_and_quit_on_keypress(uint32_t ticks) {
+    if (!int_08_hooked) {
+        hook_int_08();
+        int_08_hooked = true;
+    }
+
+    return _pit_sleep_and_quit_on_keypress(ticks);
 }
 
 uint64_t strtoui(const char *s) {

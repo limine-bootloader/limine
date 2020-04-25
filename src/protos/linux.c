@@ -103,15 +103,6 @@ void linux_load(struct file_handle *fd, char *cmdline) {
         "cli\n\t"
         "cld\n\t"
 
-        "mov dx, 0x21\n\t"
-        "mov al, byte ptr ds:[rm_pic0_mask]\n\t"
-        "out dx, al\n\t"
-        "mov dx, 0xa1\n\t"
-        "mov al, byte ptr ds:[rm_pic1_mask]\n\t"
-        "out dx, al\n\t"
-
-        "lidt [3f]\n\t"
-
         "jmp 0x08:1f\n\t"
         "1: .code16\n\t"
         "mov ax, 0x10\n\t"
@@ -136,10 +127,6 @@ void linux_load(struct file_handle *fd, char *cmdline) {
         "push cx\n\t"
         "push 0\n\t"
         "retf\n\t"
-
-        // rmode IDT
-        "3: .short 0x3ff\n\t"
-        "   .long  0\n\t"
         :
         : "b" (real_mode_code_seg), "c" (kernel_entry_seg)
     );

@@ -12,7 +12,6 @@ asm (
 #include <lib/part.h>
 #include <lib/config.h>
 #include <fs/file.h>
-#include <sys/interrupt.h>
 #include <lib/elf.h>
 #include <protos/stivale.h>
 #include <protos/linux.h>
@@ -93,8 +92,6 @@ void main(int boot_drive) {
     // Initial prompt.
     init_vga_textmode();
 
-    init_idt();
-
     print("qloader2\n\n");
 
     print("Boot drive: %x\n", boot_drive);
@@ -166,7 +163,9 @@ got_entry:
         panic("KERNEL_PROTO not specified");
     }
 
-    fopen(&f, drive, part, path);
+    if (fopen(&f, drive, part, path)) {
+        panic("Could not open kernel file");
+    }
 
     if (!strcmp(proto, "stivale")) {
         stivale_load(&f, cmdline);

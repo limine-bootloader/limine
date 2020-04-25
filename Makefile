@@ -17,7 +17,7 @@ echfs-test: all
 	echfs-utils -g -p1 test.img import test/test.elf boot/test.elf
 	echfs-utils -g -p1 test.img import test/qloader2.cfg qloader2.cfg
 	./qloader2-install src/qloader2.bin test.img 2048
-	qemu-system-x86_64 -hda test.img -monitor stdio
+	qemu-system-x86_64 -hda test.img -debugcon stdio
 
 ext2-test: all
 	$(MAKE) -C test
@@ -38,4 +38,4 @@ ext2-test: all
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
 	./qloader2-install src/qloader2.bin test.img 2048
-	qemu-system-x86_64 -hda test.img -monitor stdio
+	qemu-system-x86_64 -hda test.img -debugcon stdio

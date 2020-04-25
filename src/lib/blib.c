@@ -5,7 +5,6 @@
 #include <lib/libc.h>
 #include <drivers/vga_textmode.h>
 #include <lib/real.h>
-#include <sys/interrupt.h>
 #include <lib/cio.h>
 
 void panic(const char *str) {
@@ -50,26 +49,113 @@ void *balloc_aligned(size_t count, size_t alignment) {
     return ret;
 }
 
-void pit_sleep(uint64_t pit_ticks) {
-    uint64_t target = global_pit_tick + pit_ticks;
-    while (global_pit_tick < target) {
-        asm volatile ("hlt");
-    }
+__attribute__((used)) static uint32_t int_1c_ticks_counter;
+
+__attribute__((used)) __attribute__((naked)) static void ivt_timer_isr(void) {
+    asm (
+        ".code16\n\t"
+        "pushf\n\t"
+        "push bx\n\t"
+        "mov ebx, dword ptr ds:[1f]\n\t"
+        "inc dword ptr ds:[ebx]\n\t"
+        "pop bx\n\t"
+        "popf\n\t"
+        "iret\n\t"
+        ".code32\n\t"
+        "1: .long int_1c_ticks_counter\n\t"
+    );
 }
 
-int pit_sleep_and_quit_on_keypress(uint64_t pit_ticks) {
-    uint64_t target = global_pit_tick + pit_ticks;
-    while (global_pit_tick < target) {
-        struct rm_regs r = {0};
-        r.eax = 0x0100;
-        rm_int(0x16, &r, &r);
-        if (!(r.eflags & EFLAGS_ZF)) {
-            r.eax = 0x0000;
-            rm_int(0x16, &r, &r);
-            return 1;
-        }
-    }
-    return 0;
+// This is a dirty hack but we need to execute this full function in real mode
+__attribute__((naked)) int pit_sleep_and_quit_on_keypress(uint32_t ticks) {
+    asm (
+        // pit_ticks in edx
+        "mov edx, dword ptr ss:[esp+4]\n\t"
+
+        "lea ecx, int_1c_ticks_counter\n\t"
+
+        // Make sure the ISR for int 0x1c is hooked
+        "lea eax, ivt_timer_isr\n\t"
+        "mov word ptr ds:[0x1c * 4], ax\n\t"
+        "mov word ptr ds:[0x1c * 4 + 2], 0\n\t"
+
+        "mov dword ptr ds:[ecx], 0\n\t"
+
+        // Save non-scratch GPRs
+        "push ebx\n\t"
+        "push esi\n\t"
+        "push edi\n\t"
+        "push ebp\n\t"
+
+        // Jump to real mode
+        "jmp 0x08:1f\n\t"
+        "1: .code16\n\t"
+        "mov ax, 0x10\n\t"
+        "mov ds, ax\n\t"
+        "mov es, ax\n\t"
+        "mov fs, ax\n\t"
+        "mov gs, ax\n\t"
+        "mov ss, ax\n\t"
+        "mov eax, cr0\n\t"
+        "and al, 0xfe\n\t"
+        "mov cr0, eax\n\t"
+        "jmp 0:2f\n\t"
+        "2:\n\t"
+        "mov ax, 0\n\t"
+        "mov ds, ax\n\t"
+        "mov es, ax\n\t"
+        "mov fs, ax\n\t"
+        "mov gs, ax\n\t"
+        "mov ss, ax\n\t"
+
+        "sti\n\t"
+
+        "10:\n\t"
+
+        "cmp dword ptr ds:[ecx], edx\n\t"
+        "je 30f\n\t" // out on timeout
+
+        "mov ah, 0x01\n\t"
+        "xor al, al\n\t"
+        "int 0x16\n\t"
+
+        "jz 10b\n\t" // loop
+
+        // on keypress
+        "xor ax, ax\n\t"
+        "int 0x16\n\t"
+        "mov eax, 1\n\t"
+        "jmp 20f\n\t"  // out
+
+        "30:\n\t"   // out on timeout
+        "xor eax, eax\n\t"
+
+        "20:\n\t"
+
+        "cli\n\t"
+
+        // Jump back to pmode
+        "mov ebx, cr0\n\t"
+        "or bl, 1\n\t"
+        "mov cr0, ebx\n\t"
+        "jmp 0x18:4f\n\t"
+        "4: .code32\n\t"
+        "mov bx, 0x20\n\t"
+        "mov ds, bx\n\t"
+        "mov es, bx\n\t"
+        "mov fs, bx\n\t"
+        "mov gs, bx\n\t"
+        "mov ss, bx\n\t"
+
+        // Restore non-scratch GPRs
+        "pop ebp\n\t"
+        "pop edi\n\t"
+        "pop esi\n\t"
+        "pop ebx\n\t"
+
+        // Exit
+        "ret\n\t"
+    );
 }
 
 uint64_t strtoui(const char *s) {

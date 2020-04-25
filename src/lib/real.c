@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <lib/real.h>
 
 __attribute__((naked))
@@ -23,19 +24,6 @@ void rm_int(
         "push esi\n\t"
         "push edi\n\t"
         "push ebp\n\t"
-        "pushf\n\t"
-
-        "cli\n\t"
-
-        "mov dx, 0x21\n\t"
-        "mov al, byte ptr ds:[rm_pic0_mask]\n\t"
-        "out dx, al\n\t"
-        "mov dx, 0xa1\n\t"
-        "mov al, byte ptr ds:[rm_pic1_mask]\n\t"
-        "out dx, al\n\t"
-
-        "sidt [8f]\n\t"
-        "lidt [9f]\n\t"
 
         // Jump to real mode
         "jmp 0x08:1f\n\t"
@@ -106,17 +94,7 @@ void rm_int(
         "mov gs, ax\n\t"
         "mov ss, ax\n\t"
 
-        "mov dx, 0x21\n\t"
-        "mov al, byte ptr ds:[pm_pic0_mask]\n\t"
-        "out dx, al\n\t"
-        "mov dx, 0xa1\n\t"
-        "mov al, byte ptr ds:[pm_pic1_mask]\n\t"
-        "out dx, al\n\t"
-
-        "lidt [8f]\n\t"
-
         // Restore non-scratch GPRs
-        "popf\n\t"
         "pop ebp\n\t"
         "pop edi\n\t"
         "pop esi\n\t"
@@ -131,11 +109,5 @@ void rm_int(
         "6: .long 0\n\t"
         // in_regs
         "7: .long 0\n\t"
-        // pmode IDT
-        "8: .short 0\n\t"
-        "   .long  0\n\t"
-        // rmode IDT
-        "9: .short 0x3ff\n\t"
-        "   .long  0\n\t"
     );
 }

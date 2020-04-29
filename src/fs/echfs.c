@@ -1,9 +1,9 @@
-#include <fs/echfs.h>
-#include <stdint.h>
-#include <lib/libc.h>
-#include <lib/blib.h>
 #include <drivers/disk.h>
+#include <fs/echfs.h>
+#include <lib/blib.h>
+#include <lib/libc.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 struct echfs_identity_table {
     uint8_t jmp[4];
@@ -13,16 +13,18 @@ struct echfs_identity_table {
     uint64_t block_size;
 } __attribute__((packed));
 
-#define ROOT_DIR_ID  (~((uint64_t)0))
+#define ROOT_DIR_ID (~((uint64_t)0))
 #define END_OF_CHAIN (~((uint64_t)0))
-#define FILE_TYPE    0
-#define DIR_TYPE     1
+#define FILE_TYPE 0
+#define DIR_TYPE 1
 
-static int read_block(struct echfs_file_handle *file, void *buf, uint64_t block, uint64_t offset, uint64_t count) {
+static int read_block(struct echfs_file_handle* file, void* buf, uint64_t block, uint64_t offset, uint64_t count)
+{
     return read_partition(file->disk, &file->part, buf, (file->alloc_map[block] * file->block_size) + offset, count);
 }
 
-int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
+int echfs_read(struct echfs_file_handle* file, void* buf, uint64_t loc, uint64_t count)
+{
     for (uint64_t progress = 0; progress < count;) {
         uint64_t block = (loc + progress) / file->block_size;
 
@@ -38,7 +40,8 @@ int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t
     return 0;
 }
 
-int echfs_check_signature(int disk, int partition) {
+int echfs_check_signature(int disk, int partition)
+{
     struct part part;
     get_part(&part, disk, partition);
 
@@ -52,8 +55,9 @@ int echfs_check_signature(int disk, int partition) {
     return 1;
 }
 
-int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const char *path) {
-    const char *fullpath = path;
+int echfs_open(struct echfs_file_handle* ret, int disk, int partition, const char* path)
+{
+    const char* fullpath = path;
 
     ret->disk = disk;
 
@@ -67,21 +71,22 @@ int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const cha
         return -1;
     }
 
-    ret->block_size         = id_table.block_size;
-    ret->block_count        = id_table.block_count;
-    ret->dir_length         = id_table.dir_length * ret->block_size;
-    ret->alloc_table_size   = DIV_ROUNDUP(ret->block_count * sizeof(uint64_t), ret->block_size) * ret->block_size;
+    ret->block_size = id_table.block_size;
+    ret->block_count = id_table.block_count;
+    ret->dir_length = id_table.dir_length * ret->block_size;
+    ret->alloc_table_size = DIV_ROUNDUP(ret->block_count * sizeof(uint64_t), ret->block_size) * ret->block_size;
     ret->alloc_table_offset = 16 * ret->block_size;
-    ret->dir_offset         = ret->alloc_table_offset + ret->alloc_table_size;
+    ret->dir_offset = ret->alloc_table_offset + ret->alloc_table_size;
 
     // Find the file in the root dir.
     uint64_t wanted_parent = ROOT_DIR_ID;
-    bool     last_elem     = false;
+    bool last_elem = false;
 
 next:;
     char wanted_name[128];
-    for (; *path == '/'; path++);
-    for (int i = 0; ; i++, path++) {
+    for (; *path == '/'; path++)
+        ;
+    for (int i = 0;; i++, path++) {
         if (*path == '\0' || *path == '/') {
             if (*path == '\0')
                 last_elem = true;
@@ -99,9 +104,7 @@ next:;
             break;
         }
 
-        if (!strcmp(wanted_name, ret->dir_entry.name) &&
-            ret->dir_entry.parent_id == wanted_parent &&
-            ret->dir_entry.type == (last_elem ? FILE_TYPE : DIR_TYPE)) {
+        if (!strcmp(wanted_name, ret->dir_entry.name) && ret->dir_entry.parent_id == wanted_parent && ret->dir_entry.type == (last_elem ? FILE_TYPE : DIR_TYPE)) {
             if (last_elem) {
                 goto found;
             } else {
@@ -125,7 +128,7 @@ found:;
         // Read the next block.
         read_partition(ret->disk, &ret->part,
             &ret->alloc_map[i],
-            ret->alloc_table_offset + ret->alloc_map[i-1] * sizeof(uint64_t),
+            ret->alloc_table_offset + ret->alloc_map[i - 1] * sizeof(uint64_t),
             sizeof(uint64_t));
     }
 

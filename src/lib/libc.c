@@ -1,10 +1,11 @@
+#include <lib/libc.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <lib/libc.h>
 
-void *memcpy(void *dest, const void *src, size_t n) {
-    uint8_t *pdest = dest;
-    const uint8_t *psrc = src;
+void* memcpy(void* dest, const void* src, size_t n)
+{
+    uint8_t* pdest = dest;
+    const uint8_t* psrc = src;
 
     for (size_t i = 0; i < n; i++) {
         pdest[i] = psrc[i];
@@ -13,8 +14,9 @@ void *memcpy(void *dest, const void *src, size_t n) {
     return dest;
 }
 
-void *memset(void *s, int c, size_t n) {
-    uint8_t *p = s;
+void* memset(void* s, int c, size_t n)
+{
+    uint8_t* p = s;
 
     for (size_t i = 0; i < n; i++) {
         p[i] = (uint8_t)c;
@@ -23,9 +25,10 @@ void *memset(void *s, int c, size_t n) {
     return s;
 }
 
-void *memmove(void *dest, const void *src, size_t n) {
-    uint8_t *pdest = dest;
-    const uint8_t *psrc = src;
+void* memmove(void* dest, const void* src, size_t n)
+{
+    uint8_t* pdest = dest;
+    const uint8_t* psrc = src;
 
     if (src > dest) {
         for (size_t i = 0; i < n; i++) {
@@ -33,16 +36,17 @@ void *memmove(void *dest, const void *src, size_t n) {
         }
     } else if (src < dest) {
         for (size_t i = n; i > 0; i--) {
-            pdest[i-1] = psrc[i-1];
+            pdest[i - 1] = psrc[i - 1];
         }
     }
 
     return dest;
 }
 
-int memcmp(const void *s1, const void *s2, size_t n) {
-    const uint8_t *p1 = s1;
-    const uint8_t *p2 = s2;
+int memcmp(const void* s1, const void* s2, size_t n)
+{
+    const uint8_t* p1 = s1;
+    const uint8_t* p2 = s2;
 
     for (size_t i = 0; i < n; i++) {
         if (p1[i] != p2[i])
@@ -52,7 +56,8 @@ int memcmp(const void *s1, const void *s2, size_t n) {
     return 0;
 }
 
-char *strcpy(char *dest, const char *src) {
+char* strcpy(char* dest, const char* src)
+{
     size_t i;
 
     for (i = 0; src[i]; i++)
@@ -63,19 +68,21 @@ char *strcpy(char *dest, const char *src) {
     return dest;
 }
 
-char *strncpy(char *dest, const char *src, size_t n) {
+char* strncpy(char* dest, const char* src, size_t n)
+{
     size_t i;
 
     for (i = 0; i < n && src[i]; i++)
         dest[i] = src[i];
-    for ( ; i < n; i++)
+    for (; i < n; i++)
         dest[i] = 0;
 
     return dest;
 }
 
-int strcmp(const char *s1, const char *s2) {
-    for (size_t i = 0; ; i++) {
+int strcmp(const char* s1, const char* s2)
+{
+    for (size_t i = 0;; i++) {
         char c1 = s1[i], c2 = s2[i];
         if (c1 != c2)
             return c1 - c2;
@@ -84,7 +91,8 @@ int strcmp(const char *s1, const char *s2) {
     }
 }
 
-int strncmp(const char *s1, const char *s2, size_t n) {
+int strncmp(const char* s1, const char* s2, size_t n)
+{
     for (size_t i = 0; i < n; i++) {
         char c1 = s1[i], c2 = s2[i];
         if (c1 != c2)
@@ -96,10 +104,26 @@ int strncmp(const char *s1, const char *s2, size_t n) {
     return 0;
 }
 
-size_t strlen(const char *str) {
+size_t strlen(const char* str)
+{
     size_t len;
 
-    for (len = 0; str[len]; len++);
+    for (len = 0; str[len]; len++)
+        ;
 
     return len;
+}
+
+int toupper(int ch)
+{
+    if (ch >= 'a' && ch <= 'z')
+        return ch - ('a' - 'A');
+    return ch;
+}
+
+int tolower(int ch)
+{
+    if (ch >= 'A' && ch <= 'Z')
+        return ch + ('a' - 'A');
+    return ch;
 }

@@ -1,0 +1,101 @@
+{
+  "protocol_version" : "0.0.2",
+  "configuration" : {
+    "version" : "5.18.0.240 (Debian 5.18.0.240+dfsg-3 Mon Jun 24 08:50:44 UTC 2019)",
+    "tlc" : "__thread",
+    "sigsgev" : "altstack",
+    "notifications" : "epoll",
+    "architecture" : "amd64",
+    "disabled_features" : "none",
+    "smallconfig" : "disabled",
+    "bigarrays" : "disabled",
+    "softdebug" : "enabled",
+    "interpreter" : "enabled",
+    "llvm_support" : "disabled",
+    "suspend" : "preemptive"
+  },
+  "memory" : {
+    "minor_gc_time" : "29670",
+    "major_gc_time" : "0",
+    "minor_gc_count" : "1",
+    "major_gc_count" : "0",
+    "major_gc_time_concurrent" : "0"
+ },
+  "threads" : [
+ {
+    "is_managed" : false,
+    "crashed" : false,
+    "managed_thread_ptr" : "0x0",
+    "native_thread_id" : "0x7fe510aa1780",
+    "thread_info_addr" : "0x0",
+    "thread_name" : "mono",
+    "ctx" : {
+      "IP" : "0x7fe510bbbc2f",
+      "SP" : "0x7ffde16959d0",
+      "BP" : "0x558d4ea9c620"
+  },
+    "managed_frames" : [
+  {
+      "native_address" : "unregistered"
+   }
+
+  ],
+  "unmanaged_frames" : [
+ {
+    "native_address" : "unregistered"
+  }
+
+ ]
+},
+{
+  "is_managed" : false,
+  "crashed" : false,
+  "managed_thread_ptr" : "0x0",
+  "native_thread_id" : "0x7fe4d1ffb700",
+  "thread_info_addr" : "0x0",
+  "thread_name" : "mono",
+  "ctx" : {
+    "IP" : "0x7fe510cc531c",
+    "SP" : "0x7fe4d1ffa430",
+    "BP" : "0x15"
+ },
+  "managed_frames" : [
+ {
+    "native_address" : "unregistered"
+  }
+
+ ],
+"unmanaged_frames" : [
+{
+  "native_address" : "unregistered"
+ }
+
+]
+},
+{
+"is_managed" : false,
+"crashed" : true,
+"managed_thread_ptr" : "0x0",
+"native_thread_id" : "0x7fe50d93d700",
+"thread_info_addr" : "0x0",
+"thread_name" : "Finalizer",
+"ctx" : {
+  "IP" : "0x7fe510aec3eb",
+  "SP" : "0x7fe50d93c680",
+  "BP" : "0x7fe50d93c9d0"
+},
+"managed_frames" : [
+{
+  "native_address" : "unregistered"
+ }
+
+],
+"unmanaged_frames" : [
+{
+"native_address" : "unregistered"
+}
+
+]
+}
+]
+}

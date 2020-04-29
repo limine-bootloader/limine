@@ -1,39 +1,57 @@
-#include <stddef.h>
-#include <stdint.h>
-#include <fs/file.h>
 #include <fs/echfs.h>
 #include <fs/ext2fs.h>
+#include <fs/fat32fs.h>
+#include <fs/file.h>
 #include <lib/blib.h>
+#include <stddef.h>
+#include <stdint.h>
 
-int fopen(struct file_handle *ret, int disk, int partition, const char *filename) {
+int fopen(struct file_handle* ret, int disk, int partition, const char* filename)
+{
     if (echfs_check_signature(disk, partition)) {
-        struct echfs_file_handle *fd = balloc(sizeof(struct echfs_file_handle));
+        struct echfs_file_handle* fd = balloc(sizeof(struct echfs_file_handle));
 
         int r = echfs_open(fd, disk, partition, filename);
         if (r)
             return r;
 
-        ret->fd        = (void *)fd;
-        ret->read      = (void *)echfs_read;
-        ret->disk      = disk;
+        ret->fd = (void*)fd;
+        ret->read = (void*)echfs_read;
+        ret->disk = disk;
         ret->partition = partition;
-        ret->size      = fd->dir_entry.size;
+        ret->size = fd->dir_entry.size;
 
         return 0;
     }
 
     if (ext2fs_check_signature(disk, partition)) {
-        struct ext2fs_file_handle *fd = balloc(sizeof(struct ext2fs_file_handle));
+        struct ext2fs_file_handle* fd = balloc(sizeof(struct ext2fs_file_handle));
 
         int r = ext2fs_open(fd, disk, partition, filename);
         if (r)
             return r;
 
-        ret->fd        = (void *)fd;
-        ret->read      = (void *)ext2fs_read;
-        ret->disk      = disk;
+        ret->fd = (void*)fd;
+        ret->read = (void*)ext2fs_read;
+        ret->disk = disk;
         ret->partition = partition;
-        ret->size      = fd->size;
+        ret->size = fd->size;
+
+        return 0;
+    }
+
+    if (fat32_check_signature(disk, partition)) {
+        struct fat32_file_handle* fd = balloc(sizeof(struct fat32_file_handle));
+
+        int r = fat32_open(fd, disk, partition, filename);
+        if (r)
+            return r;
+
+        ret->fd = (void*)fd;
+        ret->read = (void*)fat32_read;
+        ret->disk = disk;
+        ret->partition = partition;
+        ret->size = fd->directory_entry.file_size;
 
         return 0;
     }
@@ -41,6 +59,7 @@ int fopen(struct file_handle *ret, int disk, int partition, const char *filename
     return -1;
 }
 
-int fread(struct file_handle *fd, void *buf, uint64_t loc, uint64_t count) {
+int fread(struct file_handle* fd, void* buf, uint64_t loc, uint64_t count)
+{
     return fd->read(fd->fd, buf, loc, count);
 }

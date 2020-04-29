@@ -63,14 +63,21 @@ __attribute__((naked)) static void int_08_isr(void) {
 uint32_t *ivt = 0; // this variable is not static else gcc will optimise the
                    // 0 ptr to a ud2
 
-static void hook_int_08(void) {
+__attribute__((used)) static void hook_int_08(void) {
     ivt[0x40] = ivt[0x08];  // int 0x40 is callback interrupt
     ivt[0x08] = rm_seg(int_08_isr) << 16 | rm_off(int_08_isr);
 }
 
+__attribute__((used)) static void dehook_int_08(void) {
+    ivt[0x08] = ivt[0x40];
+}
+
 // This is a dirty hack but we need to execute this full function in real mode
-__attribute__((naked)) int _pit_sleep_and_quit_on_keypress(uint32_t ticks) {
+__attribute__((naked))
+int pit_sleep_and_quit_on_keypress(uint32_t ticks) {
     asm (
+        "call hook_int_08\n\t"
+
         // pit_ticks in edx
         "mov edx, dword ptr ss:[esp+4]\n\t"
 
@@ -151,20 +158,10 @@ __attribute__((naked)) int _pit_sleep_and_quit_on_keypress(uint32_t ticks) {
         "pop ebx\n\t"
 
         // Exit
+        "call dehook_int_08\n\t"
         "ret\n\t"
     );
     (void)ticks;
-}
-
-static bool int_08_hooked = false;
-
-int pit_sleep_and_quit_on_keypress(uint32_t ticks) {
-    if (!int_08_hooked) {
-        hook_int_08();
-        int_08_hooked = true;
-    }
-
-    return _pit_sleep_and_quit_on_keypress(ticks);
 }
 
 uint64_t strtoui(const char *s) {

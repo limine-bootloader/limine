@@ -6,8 +6,8 @@
 #include <stdbool.h>
 
 struct echfs_identity_table {
-    uint8_t jmp[4];
-    uint8_t signature[8];
+    uint8_t  jmp[4];
+    char     signature[8];
     uint64_t block_count;
     uint64_t dir_length;
     uint64_t block_size;

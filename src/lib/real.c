@@ -2,10 +2,7 @@
 #include <lib/real.h>
 
 __attribute__((naked))
-void rm_int(
-  uint8_t int_no,
-  struct rm_regs *out_regs,
-  struct rm_regs *in_regs) {
+void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs) {
     asm (
         // Self-modifying code: int $int_no
         "mov al, byte ptr ss:[esp+4]\n\t"
@@ -110,4 +107,5 @@ void rm_int(
         // in_regs
         "7: .long 0\n\t"
     );
+    (void)int_no; (void)out_regs; (void)in_regs;
 }

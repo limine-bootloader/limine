@@ -2,6 +2,15 @@ asm (
     ".section .entry\n\t"
     "xor dh, dh\n\t"
     "push edx\n\t"
+
+    // Zero out .bss
+    "xor al, al\n\t"
+    "lea edi, bss_begin\n\t"
+    "lea ecx, bss_end\n\t"
+    "lea edx, bss_begin\n\t"
+    "sub ecx, edx\n\t"
+    "rep stosb\n\t"
+
     "call main\n\t"
 );
 
@@ -31,7 +40,7 @@ refresh:
 
     print("Select an entry:\n\n");
 
-    size_t max_entries;
+    int max_entries;
     for (max_entries = 0; ; max_entries++) {
         if (config_get_entry_name(config_entry_name, max_entries, 1024) == -1)
             break;
@@ -79,15 +88,8 @@ refresh:
     }
 }
 
-extern symbol bss_begin;
-extern symbol bss_end;
-
 void main(int boot_drive) {
     struct file_handle f;
-
-    // Zero out .bss section
-    for (uint8_t *p = bss_begin; p < bss_end; p++)
-        *p = 0;
 
     // Initial prompt.
     init_vga_textmode();

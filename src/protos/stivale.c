@@ -50,8 +50,6 @@ void stivale_load(struct file_handle *fd, char *cmdline) {
 
     int ret;
 
-    print("stivale: %u-bit ELF file detected\n", bits);
-
     switch (bits) {
         case 64:
             ret = elf64_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header));
@@ -59,7 +57,11 @@ void stivale_load(struct file_handle *fd, char *cmdline) {
         case 32:
             ret = elf32_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header));
             break;
+        default:
+            panic("Not 32 nor 64 bit x86 ELF file.");
     }
+
+    print("stivale: %u-bit ELF file detected\n", bits);
 
     switch (ret) {
         case 1:

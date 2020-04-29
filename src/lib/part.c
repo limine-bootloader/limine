@@ -66,7 +66,8 @@ static int gpt_get_part(struct part *ret, int drive, int partition) {
     if (header.revision != 0x00010000) return NO_PARTITION;
 
     // parse the entries if reached here
-    if (partition >= header.number_of_partition_entries) return NO_PARTITION;
+    if ((uint32_t)partition >= header.number_of_partition_entries)
+        return NO_PARTITION;
 
     struct gpt_entry entry = {0};
     read(drive, &entry,

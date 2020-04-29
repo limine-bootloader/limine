@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-void panic(const char *str);
+__attribute__((noreturn)) void panic(const char *str);
 
 void pit_sleep(uint64_t pit_ticks);
 int pit_sleep_and_quit_on_keypress(uint32_t pit_ticks);

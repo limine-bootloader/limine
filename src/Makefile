@@ -12,7 +12,8 @@ INTERNAL_CFLAGS = \
 	-mno-80387 \
 	-ffreestanding \
 	-fno-stack-protector \
-	-I.
+	-I. \
+	-Wno-address-of-packed-member
 
 LDFLAGS = -O2
 

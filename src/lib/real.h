@@ -22,6 +22,6 @@ struct rm_regs {
     uint32_t eax;
 };
 
-void rm_int(uint8_t, struct rm_regs *, struct rm_regs *);
+void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs);
 
 #endif

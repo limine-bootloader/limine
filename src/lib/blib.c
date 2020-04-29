@@ -8,7 +8,7 @@
 #include <lib/real.h>
 #include <lib/cio.h>
 
-void panic(const char *str) {
+__attribute__((noreturn)) void panic(const char *str) {
     print("PANIC: %s", str);
     for (;;) {
         asm volatile ("cli; hlt");
@@ -153,6 +153,7 @@ __attribute__((naked)) int _pit_sleep_and_quit_on_keypress(uint32_t ticks) {
         // Exit
         "ret\n\t"
     );
+    (void)ticks;
 }
 
 static bool int_08_hooked = false;

@@ -1,6 +1,6 @@
 #include <fs/echfs.h>
 #include <fs/ext2fs.h>
-#include <fs/fat32fs.h>
+#include <fs/fat32.h>
 #include <fs/file.h>
 #include <lib/blib.h>
 #include <stddef.h>

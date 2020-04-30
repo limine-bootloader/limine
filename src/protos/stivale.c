@@ -52,13 +52,21 @@ void stivale_load(struct file_handle *fd, char *cmdline) {
 
     switch (bits) {
         case 64:
+            // Check if 64 bit CPU
+            {
+                uint32_t eax, ebx, ecx, edx;
+                cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx);
+                if (!(edx & (1 << 29))) {
+                    panic("stivale: This CPU does not support 64-bit mode.");
+                }
+            }
             ret = elf64_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header));
             break;
         case 32:
             ret = elf32_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header));
             break;
         default:
-            panic("Not 32 nor 64 bit x86 ELF file.");
+            panic("stivale: Not 32 nor 64 bit x86 ELF file.");
     }
 
     print("stivale: %u-bit ELF file detected\n", bits);

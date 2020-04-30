@@ -4,6 +4,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+int cpuid(uint32_t leaf, uint32_t subleaf,
+          uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
+
 __attribute__((noreturn)) void panic(const char *str);
 
 void pit_sleep(uint64_t pit_ticks);

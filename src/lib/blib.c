@@ -177,7 +177,9 @@ int pit_sleep_and_quit_on_keypress(uint32_t ticks) {
         "pop ebx\n\t"
 
         // Exit
+        "push eax\n\t"
         "call dehook_int_08\n\t"
+        "pop eax\n\t"
         "ret\n\t"
     );
     (void)ticks;

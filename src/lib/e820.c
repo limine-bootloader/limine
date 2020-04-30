@@ -2,7 +2,7 @@
 #include <lib/real.h>
 #include <lib/blib.h>
 
-struct e820_entry_t e820_map[E820_MAX_ENTRIES];
+struct e820_entry_t *e820_map;
 
 static const char *e820_type(uint32_t type) {
     switch (type) {
@@ -25,28 +25,32 @@ int init_e820(void) {
     struct rm_regs r = {0};
 
     int entry_count;
-    for (int i = 0; i < E820_MAX_ENTRIES; i++) {
+
+    e820_map = balloc(sizeof(struct e820_entry_t));
+    for (int i = 0; ; i++) {
+        struct e820_entry_t entry;
+
         r.eax = 0xe820;
         r.ecx = 24;
         r.edx = 0x534d4150;
-        r.edi = (uint32_t)&e820_map[i];
+        r.edi = (uint32_t)&entry;
         rm_int(0x15, &r, &r);
+
+        e820_map[i] = entry;
 
         if (r.eflags & EFLAGS_CF) {
             entry_count = i;
-            goto done;
+            break;
         }
 
         if (!r.ebx) {
             entry_count = ++i;
-            goto done;
+            break;
         }
+
+        balloc(sizeof(struct e820_entry_t));
     }
 
-    print("e820: Too many entries!\n");
-    for (;;);
-
-done:
     for (int i = 0; i < entry_count; i++) {
         print("e820: [%X -> %X] : %X  <%s>\n",
               e820_map[i].base,

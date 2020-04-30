@@ -12,7 +12,7 @@ struct e820_entry_t {
     uint32_t unused;
 } __attribute__((packed));
 
-extern struct e820_entry_t e820_map[E820_MAX_ENTRIES];
+extern struct e820_entry_t *e820_map;
 
 int init_e820(void);
 

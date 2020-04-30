@@ -6,6 +6,7 @@
 #include <lib/acpi.h>
 #include <lib/e820.h>
 #include <lib/config.h>
+#include <lib/time.h>
 #include <drivers/vbe.h>
 #include <drivers/vga_textmode.h>
 #include <fs/file.h>
@@ -39,6 +40,7 @@ struct stivale_struct {
     uint64_t rsdp;
     uint64_t module_count;
     uint64_t modules;
+    uint64_t epoch;
 } __attribute__((packed));
 
 struct stivale_struct stivale_struct = {0};
@@ -145,6 +147,8 @@ void stivale_load(struct file_handle *fd, char *cmdline) {
     stivale_struct.rsdp = (uint64_t)(size_t)get_rsdp();
 
     stivale_struct.cmdline = (uint64_t)(size_t)cmdline;
+
+    stivale_struct.epoch = time();
 
     stivale_struct.framebuffer_width  = stivale_hdr.framebuffer_width;
     stivale_struct.framebuffer_height = stivale_hdr.framebuffer_height;

@@ -2,15 +2,18 @@
 
 The stivale boot protocol aims to be a *simple* to implement protocol which
 provides the kernel with most of the features one may need in a *modern*
-x86_64 context.
+x86_64 context (although 32-bit x86 is also supported).
 
 ## General information
 
 In order to have a stivale compliant kernel, one must have a kernel executable
-in the `elf64` format and have a `.stivalehdr` section (described below).
+in the `elf64` or `elf32` format and have a `.stivalehdr` section (described below).
 Other executable formats are not supported.
 
-stivale natively supports and encourages higher half kernels.
+stivale will recognise whether the ELF file is 32-bit or 64-bit and load the kernel
+into the appropriate CPU mode.
+
+stivale natively supports (only for 64-bit kernels) and encourages higher half kernels.
 The kernel can load itself at `0xffffffff80100000` (as defined in the linker script)
 and the bootloader will take care of everything, no AT linker script directives needed.
 
@@ -26,6 +29,8 @@ The kernel MUST NOT request to load itself at an address lower than `0x100000`
 (or `0xffffffff80100000` for higher half kernels) for the same reasons as above.
 
 ## Kernel entry machine state
+
+### 64-bit kernel
 
 `rip` will be the entry point as defined in the ELF file.
 
@@ -57,6 +62,29 @@ The A20 gate is enabled.
 `rsp` is set to the requested stack as per stivale header.
 
 `rdi` will point to the stivale structure (described below).
+
+### 32-bit kernel
+
+`eip` will be the entry point as defined in the ELF file.
+
+At entry all segment registers are loaded as 32 bit code/data segments.
+All segment bases are `0x00000000` and all limits are `0xffffffff`.
+
+DO NOT reload segment registers or rely on the provided GDT. The kernel MUST load
+its own GDT as soon as possible and not rely on the bootloader's.
+
+The IDT is in an undefined state. Kernel must load its own.
+
+IF flag, VM flag, and direction flag are cleared on entry. Other flags undefined.
+
+PE is enabled (`cr0`).
+
+The A20 gate is enabled.
+
+`esp` is set to the requested stack as per stivale header.
+
+A pointer to the stivale structure (described below) is pushed onto this stack
+before the entry point is called.
 
 ## stivale header (.stivalehdr)
 
@@ -96,6 +124,7 @@ struct stivale_struct {
     uint64_t rsdp;                  // Pointer to the ACPI RSDP structure
     uint64_t module_count;          // Count of modules that stivale loaded according to config
     uint64_t modules;               // Pointer to the first entry in the linked list of modules (described below)
+    uint64_t epoch;                 // UNIX epoch at boot, read from system RTC
 } __attribute__((packed));
 ```
 

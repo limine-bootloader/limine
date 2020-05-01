@@ -32,4 +32,6 @@ uint64_t strtoui(const char *s);
 
 typedef void *symbol[];
 
+#define SIZEOF_ARRAY(array) (sizeof(array) / sizeof(array[0]))
+
 #endif

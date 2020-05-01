@@ -28,6 +28,7 @@ ext2-test: all
 	parted -s test.img mkpart primary 2048s 6143s
 	parted -s test.img mkpart primary 6144s 131038s
 	sudo losetup -Pf --show test.img > loopback_dev
+	sudo partprobe `cat loopback_dev`
 	sudo mkfs.ext2 `cat loopback_dev`p2
 	sudo mount `cat loopback_dev`p2 test_image
 	sudo mkdir test_image/boot
@@ -49,6 +50,7 @@ fat32-test: all
 	parted -s test.img mkpart primary 2048s 6143s
 	parted -s test.img mkpart primary 6144s 131038s
 	sudo losetup -Pf --show test.img > loopback_dev
+	sudo partprobe `cat loopback_dev`
 	sudo mkfs.fat -F 32 `cat loopback_dev`p2
 	sudo mount `cat loopback_dev`p2 test_image
 	sudo mkdir test_image/boot

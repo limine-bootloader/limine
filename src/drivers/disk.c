@@ -28,7 +28,7 @@ static int cache_block(int drive, uint64_t block) {
         return 0;
 
     if (!cache)
-        cache = balloc(BLOCK_SIZE);
+        cache = balloc_aligned(BLOCK_SIZE, 16);
 
     dap.segment = rm_seg(cache);
     dap.offset  = rm_off(cache);

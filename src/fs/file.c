@@ -3,6 +3,7 @@
 #include <fs/file.h>
 #include <fs/echfs.h>
 #include <fs/ext2fs.h>
+#include <fs/fat32.h>
 #include <lib/blib.h>
 
 int fopen(struct file_handle *ret, int disk, int partition, const char *filename) {
@@ -34,6 +35,23 @@ int fopen(struct file_handle *ret, int disk, int partition, const char *filename
         ret->disk      = disk;
         ret->partition = partition;
         ret->size      = fd->size;
+
+        return 0;
+    }
+
+    if (fat32_check_signature(disk, partition)) {
+        struct fat32_file_handle *fd = balloc(sizeof(struct fat32_file_handle));
+
+        int r = fat32_open(fd, disk, partition, filename);
+
+        if (r)
+            return r;
+
+        ret->fd        = (void *)fd;
+        ret->read      = (void *)fat32_read;
+        ret->disk      = disk;
+        ret->partition = partition;
+        ret->size      = fd->size_bytes;
 
         return 0;
     }

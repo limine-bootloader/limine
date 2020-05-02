@@ -7,6 +7,9 @@
 #include <drivers/vga_textmode.h>
 #include <lib/config.h>
 
+#define KERNEL_LOAD_ADDR ((size_t)0x100000)
+#define INITRD_LOAD_ADDR ((size_t)0x1000000)
+
 void linux_load(struct file_handle *fd, char *cmdline) {
     uint32_t signature;
     fread(fd, &signature, 0x202, sizeof(uint32_t));
@@ -70,7 +73,8 @@ void linux_load(struct file_handle *fd, char *cmdline) {
 
     // load kernel
     print("Loading kernel...\n");
-    fread(fd, (void *)0x100000, real_mode_code_size, fd->size - real_mode_code_size);
+    is_valid_memory_range(KERNEL_LOAD_ADDR, fd->size - real_mode_code_size);
+    fread(fd, (void *)KERNEL_LOAD_ADDR, real_mode_code_size, fd->size - real_mode_code_size);
 
     char initrd_path[64];
     if (!config_get_value(initrd_path, 0, 64, "INITRD_PATH"))
@@ -88,10 +92,10 @@ void linux_load(struct file_handle *fd, char *cmdline) {
     }
 
     print("Loading initrd...\n");
-    size_t initrd_addr = 0x1000000;
-    fread(&initrd, (void *)initrd_addr, 0, initrd.size);
+    is_valid_memory_range(INITRD_LOAD_ADDR, initrd.size);
+    fread(&initrd, (void *)INITRD_LOAD_ADDR, 0, initrd.size);
 
-    *((uint32_t *)(real_mode_code + 0x218)) = (uint32_t)initrd_addr;
+    *((uint32_t *)(real_mode_code + 0x218)) = (uint32_t)INITRD_LOAD_ADDR;
     *((uint32_t *)(real_mode_code + 0x21c)) = (uint32_t)initrd.size;
 
     uint16_t real_mode_code_seg = rm_seg(real_mode_code);

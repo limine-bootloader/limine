@@ -7,6 +7,25 @@
 #include <drivers/vga_textmode.h>
 #include <lib/real.h>
 #include <lib/cio.h>
+#include <lib/e820.h>
+
+// Checks if a given memory range is entirely within a usable e820 entry.
+// TODO: Consider the possibility of adjacent usable entries.
+// TODO: Consider the possibility of usable entry being overlapped by non-usable
+//       ones.
+void is_valid_memory_range(size_t base, size_t size) {
+    for (size_t i = 0; i < e820_entries; i++) {
+        if (e820_map[i].type != 1)
+            continue;
+        size_t entry_base = e820_map[i].base;
+        size_t entry_top  = e820_map[i].base + e820_map[i].length;
+        size_t limit      = base + size;
+        if (base  >= entry_base && base  < entry_top &&
+            limit >= entry_base && limit < entry_top)
+            return;
+    }
+    panic("Out of memory");
+}
 
 uint8_t bcd_to_int(uint8_t val) {
     return (val & 0x0f) + ((val & 0xf0) >> 4) * 10;

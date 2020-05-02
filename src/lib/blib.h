@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+void is_valid_memory_range(size_t base, size_t size);
+
 uint8_t bcd_to_int(uint8_t val);
 
 int cpuid(uint32_t leaf, uint32_t subleaf,

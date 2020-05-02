@@ -97,7 +97,7 @@ void stivale_load(struct file_handle *fd, char *cmdline) {
 
     print("stivale: Top used address in ELF: %X\n", top_used_addr);
 
-    stivale_struct.memory_map_entries = (uint64_t)init_e820();
+    stivale_struct.memory_map_entries = (uint64_t)e820_entries;
     stivale_struct.memory_map_addr    = (uint64_t)(size_t)e820_map;
 
     stivale_struct.module_count = 0;
@@ -126,6 +126,7 @@ void stivale_load(struct file_handle *fd, char *cmdline) {
             ((uint32_t)top_used_addr & ~((uint32_t)0xfff)) + 0x1000 :
             (uint32_t)top_used_addr);
 
+        is_valid_memory_range((size_t)module_addr, f.size);
         fread(&f, module_addr, 0, f.size);
 
         m->begin = (uint64_t)(size_t)module_addr;

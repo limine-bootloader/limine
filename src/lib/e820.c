@@ -1,8 +1,11 @@
+#include <stdint.h>
+#include <stddef.h>
 #include <lib/e820.h>
 #include <lib/real.h>
 #include <lib/blib.h>
 
 struct e820_entry_t *e820_map;
+size_t e820_entries;
 
 static const char *e820_type(uint32_t type) {
     switch (type) {
@@ -21,13 +24,11 @@ static const char *e820_type(uint32_t type) {
     }
 }
 
-int init_e820(void) {
+void init_e820(void) {
     struct rm_regs r = {0};
 
-    int entry_count;
-
     e820_map = balloc(sizeof(struct e820_entry_t));
-    for (int i = 0; ; i++) {
+    for (size_t i = 0; ; i++) {
         struct e820_entry_t entry;
 
         r.eax = 0xe820;
@@ -39,25 +40,23 @@ int init_e820(void) {
         e820_map[i] = entry;
 
         if (r.eflags & EFLAGS_CF) {
-            entry_count = i;
+            e820_entries = i;
             break;
         }
 
         if (!r.ebx) {
-            entry_count = ++i;
+            e820_entries = ++i;
             break;
         }
 
         balloc(sizeof(struct e820_entry_t));
     }
 
-    for (int i = 0; i < entry_count; i++) {
+    for (size_t i = 0; i < e820_entries; i++) {
         print("e820: [%X -> %X] : %X  <%s>\n",
               e820_map[i].base,
               e820_map[i].base + e820_map[i].length,
               e820_map[i].length,
               e820_type(e820_map[i].type));
     }
-
-    return entry_count;
 }

@@ -20,6 +20,7 @@ asm (
 #include <lib/libc.h>
 #include <lib/part.h>
 #include <lib/config.h>
+#include <lib/e820.h>
 #include <fs/file.h>
 #include <lib/elf.h>
 #include <protos/stivale.h>
@@ -149,6 +150,8 @@ void main(int boot_drive) {
     }
 
 got_entry:
+    init_e820();
+
     if (!config_get_value(buf, 0, 32, "KERNEL_DRIVE")) {
         drive = boot_drive;
     } else {

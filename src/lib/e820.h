@@ -2,8 +2,7 @@
 #define __LIB__E820_H__
 
 #include <stdint.h>
-
-#define E820_MAX_ENTRIES 256
+#include <stddef.h>
 
 struct e820_entry_t {
     uint64_t base;
@@ -13,7 +12,8 @@ struct e820_entry_t {
 } __attribute__((packed));
 
 extern struct e820_entry_t *e820_map;
+extern size_t e820_entries;
 
-int init_e820(void);
+void init_e820(void);
 
 #endif

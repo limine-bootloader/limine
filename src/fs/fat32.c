@@ -277,16 +277,35 @@ int fat32_read(struct fat32_file_handle* file, void* buf, uint64_t loc, uint64_t
         loc -= cluster_size;
     }
 
-    uint64_t readTotal = 0;
+    uint64_t read_total = 0;
 
     do {
-        // find largest read size
-        uint64_t current_read = count;
-        if (current_read > cluster_size - loc) {
-            current_read = cluster_size - loc;
+        // find non-fragmented cluster chains to improve read performance
+        uint32_t non_fragmented_clusters = 1;
+        for (size_t i = 0 ; i < count / cluster_size; i++) {
+            uint32_t next_cluster;
+
+            r = fat32_read_cluster_from_map(&file->context, current_cluster_number + i, &next_cluster);
+
+            if (r != 0) {
+                print("fat32: failed to read cluster %x from map\n", current_cluster_number);
+                return r;
+            }
+
+            if (next_cluster != current_cluster_number + i + 1) {
+                break;
+            }
+
+            non_fragmented_clusters++;
         }
 
-        r = fat32_load_fat_cluster_to_memory(&file->context, current_cluster_number, buf + readTotal, loc, current_read);
+        // find largest read size
+        uint64_t current_read = count;
+        if (current_read > non_fragmented_clusters * cluster_size - loc) {
+            current_read = non_fragmented_clusters * cluster_size - loc;
+        }
+
+        r = fat32_load_fat_cluster_to_memory(&file->context, current_cluster_number, buf + read_total, loc, current_read);
 
         if (r != 0) {
             print("fat32: failed to load cluster %x to memory\n", current_cluster_number);
@@ -295,7 +314,7 @@ int fat32_read(struct fat32_file_handle* file, void* buf, uint64_t loc, uint64_t
 
         loc = 0;
         count -= current_read;
-        readTotal += current_read;
+        read_total += current_read;
 
         if (count == 0) {
             return 0;

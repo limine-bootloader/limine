@@ -8,6 +8,7 @@ x86/x86_64 BIOS Bootloader
 ### Supported filesystems
 * ext2
 * echfs
+* FAT32
 
 ### Supported partitioning schemes
 * MBR

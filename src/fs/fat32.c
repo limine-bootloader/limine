@@ -67,7 +67,9 @@ struct fat32_lfn_entry {
 
 static int fat32_init_context(struct fat32_context* context, int disk, int partition) {
     context->drive = disk;
-    get_part(&context->part, disk, partition);
+    if (get_part(&context->part, disk, partition)) {
+        panic("Invalid partition");
+    }
 
     struct fat32_bpb bpb;
     read_partition(disk, &context->part, &bpb, 0, sizeof(struct fat32_bpb));

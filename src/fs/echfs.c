@@ -40,7 +40,9 @@ int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t
 
 int echfs_check_signature(int disk, int partition) {
     struct part part;
-    get_part(&part, disk, partition);
+    if (get_part(&part, disk, partition)) {
+        panic("Invalid partition");
+    }
 
     struct echfs_identity_table id_table;
     read_partition(disk, &part, &id_table, 0, sizeof(struct echfs_identity_table));
@@ -57,7 +59,9 @@ int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const cha
 
     ret->disk = disk;
 
-    get_part(&ret->part, disk, partition);
+    if (get_part(&ret->part, disk, partition)) {
+        panic("Invalid partition");
+    }
 
     struct echfs_identity_table id_table;
     read_partition(disk, &ret->part, &id_table, 0, sizeof(struct echfs_identity_table));

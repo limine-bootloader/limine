@@ -44,6 +44,7 @@ static int cache_block(int drive, uint64_t block) {
     if (r.eflags & EFLAGS_CF) {
         int ah = (r.eax >> 8) & 0xff;
         print("Disk error %x. Drive %x, LBA %x.\n", ah, drive, dap.lba);
+        panic("");
         cached_block = CACHE_INVALID;
         return ah;
     }

@@ -265,7 +265,9 @@ next:
 }
 
 int ext2fs_open(struct ext2fs_file_handle *ret, int drive, int partition, const char *path) {
-    get_part(&ret->part, drive, partition);
+    if (get_part(&ret->part, drive, partition)) {
+        panic("Invalid partition");
+    }
 
     ret->drive = drive;
 
@@ -353,7 +355,9 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
 // attempts to initialize the ext2 filesystem
 int ext2fs_check_signature(int drive, int partition) {
     struct part part;
-    get_part(&part, drive, partition);
+    if (get_part(&part, drive, partition)) {
+        panic("Invalid partition");
+    }
 
     uint16_t magic = 0;
 

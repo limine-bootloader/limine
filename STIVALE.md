@@ -56,6 +56,8 @@ IF flag, VM flag, and direction flag are cleared on entry. Other flags undefined
 
 PG is enabled (`cr0`), PE is enabled (`cr0`), PAE is enabled (`cr4`),
 LME is enabled (`EFER`).
+If stivale header flag bit 1 is set, then, if available, 5-level paging is enabled
+(LA57 bit in `cr4`).
 
 The A20 gate is enabled.
 
@@ -98,7 +100,10 @@ struct stivale_header {
                       // when the kernel is loaded.
 
     uint16_t flags;   // Flags
-                      // bit 0   0 = text mode,   1 = graphics mode
+                      // bit 0  0 = text mode, 1 = graphics framebuffer mode
+                      // bit 1  0 = 4-level paging, 1 = use 5-level paging (if
+                                                        available)
+                                Ignored if booting a 32-bit kernel.
                       // All other bits undefined.
 
     uint16_t framebuffer_width;   // These 3 values are parsed if a graphics mode

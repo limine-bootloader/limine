@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <protos/stivale.h>
 #include <lib/elf.h>
 #include <lib/blib.h>
@@ -52,18 +53,24 @@ void stivale_load(struct file_handle *fd, char *cmdline) {
 
     int ret;
 
+    bool level5pg = false;
     switch (bits) {
-        case 64:
+        case 64: {
             // Check if 64 bit CPU
-            {
-                uint32_t eax, ebx, ecx, edx;
-                cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx);
-                if (!(edx & (1 << 29))) {
-                    panic("stivale: This CPU does not support 64-bit mode.");
-                }
+            uint32_t eax, ebx, ecx, edx;
+            cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx);
+            if (!(edx & (1 << 29))) {
+                panic("stivale: This CPU does not support 64-bit mode.");
+            }
+            // Check if 5-level paging is available
+            cpuid(0x00000007, 0, &eax, &ebx, &ecx, &edx);
+            if (ecx & (1 << 16)) {
+                print("stivale: CPU has 5-level paging support\n");
+                level5pg = true;
             }
             ret = elf64_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header));
             break;
+        }
         case 32:
             ret = elf32_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header));
             break;
@@ -155,7 +162,7 @@ void stivale_load(struct file_handle *fd, char *cmdline) {
     stivale_struct.framebuffer_height = stivale_hdr.framebuffer_height;
     stivale_struct.framebuffer_bpp    = stivale_hdr.framebuffer_bpp;
 
-    if ((stivale_hdr.flags & 1) == 1) {
+    if (stivale_hdr.flags & (1 << 0)) {
         init_vbe(&stivale_struct.framebuffer_addr,
                  &stivale_struct.framebuffer_pitch,
                  &stivale_struct.framebuffer_width,
@@ -166,34 +173,79 @@ void stivale_load(struct file_handle *fd, char *cmdline) {
     }
 
     if (bits == 64) {
-        struct pagemap {
-            uint64_t pml4[512];
-            uint64_t pml3_lo[512];
-            uint64_t pml3_hi[512];
-            uint64_t pml2_0gb[512];
-            uint64_t pml2_1gb[512];
-            uint64_t pml2_2gb[512];
-            uint64_t pml2_3gb[512];
-        };
-        struct pagemap *pagemap = balloc_aligned(sizeof(struct pagemap), 0x1000);
+        void *pagemap_ptr;
+        if (level5pg && (stivale_hdr.flags & (1 << 1))) {
+            // Enable CR4.LA57
+            asm volatile (
+                "mov eax, cr4\n\t"
+                "bts eax, 12\n\t"
+                "mov cr4, eax\n\t"
+            );
 
-        // first, zero out the pagemap
-        for (uint64_t *p = (uint64_t *)pagemap; p < &pagemap->pml3_hi[512]; p++)
-            *p = 0;
+            struct pagemap {
+                uint64_t pml5[512];
+                uint64_t pml4_lo[512];
+                uint64_t pml4_hi[512];
+                uint64_t pml3_lo[512];
+                uint64_t pml3_hi[512];
+                uint64_t pml2_0gb[512];
+                uint64_t pml2_1gb[512];
+                uint64_t pml2_2gb[512];
+                uint64_t pml2_3gb[512];
+            };
+            struct pagemap *pagemap = balloc_aligned(sizeof(struct pagemap), 0x1000);
+            pagemap_ptr = (void *)pagemap;
 
-        pagemap->pml4[511]    = (uint64_t)(size_t)pagemap->pml3_hi  | 0x03;
-        pagemap->pml4[256]    = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
-        pagemap->pml4[0]      = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
-        pagemap->pml3_hi[510] = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
-        pagemap->pml3_hi[511] = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;
-        pagemap->pml3_lo[0]   = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
-        pagemap->pml3_lo[1]   = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;
-        pagemap->pml3_lo[2]   = (uint64_t)(size_t)pagemap->pml2_2gb | 0x03;
-        pagemap->pml3_lo[3]   = (uint64_t)(size_t)pagemap->pml2_3gb | 0x03;
+            // zero out the pagemap
+            for (uint64_t *p = (uint64_t *)pagemap; p < &pagemap->pml3_hi[512]; p++)
+                *p = 0;
 
-        // populate the page directories
-        for (size_t i = 0; i < 512 * 4; i++)
-            (&pagemap->pml2_0gb[0])[i] = (i * 0x200000) | 0x03 | (1 << 7);
+            pagemap->pml5[511]    = (uint64_t)(size_t)pagemap->pml4_hi  | 0x03;
+            pagemap->pml5[0]      = (uint64_t)(size_t)pagemap->pml4_lo  | 0x03;
+            pagemap->pml4_hi[511] = (uint64_t)(size_t)pagemap->pml3_hi  | 0x03;
+            pagemap->pml4_hi[256] = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
+            pagemap->pml4_lo[0]   = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
+            pagemap->pml3_hi[510] = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
+            pagemap->pml3_hi[511] = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;
+            pagemap->pml3_lo[0]   = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
+            pagemap->pml3_lo[1]   = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;
+            pagemap->pml3_lo[2]   = (uint64_t)(size_t)pagemap->pml2_2gb | 0x03;
+            pagemap->pml3_lo[3]   = (uint64_t)(size_t)pagemap->pml2_3gb | 0x03;
+
+            // populate the page directories
+            for (size_t i = 0; i < 512 * 4; i++)
+                (&pagemap->pml2_0gb[0])[i] = (i * 0x200000) | 0x03 | (1 << 7);
+        } else {
+            struct pagemap {
+                uint64_t pml4[512];
+                uint64_t pml3_lo[512];
+                uint64_t pml3_hi[512];
+                uint64_t pml2_0gb[512];
+                uint64_t pml2_1gb[512];
+                uint64_t pml2_2gb[512];
+                uint64_t pml2_3gb[512];
+            };
+            struct pagemap *pagemap = balloc_aligned(sizeof(struct pagemap), 0x1000);
+            pagemap_ptr = (void *)pagemap;
+
+            // zero out the pagemap
+            for (uint64_t *p = (uint64_t *)pagemap; p < &pagemap->pml3_hi[512]; p++)
+                *p = 0;
+
+            pagemap->pml4[511]    = (uint64_t)(size_t)pagemap->pml3_hi  | 0x03;
+            pagemap->pml4[256]    = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
+            pagemap->pml4[0]      = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
+            pagemap->pml3_hi[510] = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
+            pagemap->pml3_hi[511] = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;
+            pagemap->pml3_lo[0]   = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
+            pagemap->pml3_lo[1]   = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;
+            pagemap->pml3_lo[2]   = (uint64_t)(size_t)pagemap->pml2_2gb | 0x03;
+            pagemap->pml3_lo[3]   = (uint64_t)(size_t)pagemap->pml2_3gb | 0x03;
+
+            // populate the page directories
+            for (size_t i = 0; i < 512 * 4; i++)
+                (&pagemap->pml2_0gb[0])[i] = (i * 0x200000) | 0x03 | (1 << 7);
+        }
 
         asm volatile (
             "cli\n\t"
@@ -221,7 +273,7 @@ void stivale_load(struct file_handle *fd, char *cmdline) {
             "call [rbx]\n\t"
             ".code32\n\t"
             :
-            : "a" (pagemap), "b" (&entry_point),
+            : "a" (pagemap_ptr), "b" (&entry_point),
               "D" (&stivale_struct), "S" (&stivale_hdr.stack)
         );
     } else if (bits == 32) {

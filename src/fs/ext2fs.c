@@ -307,7 +307,7 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
         if (chunk > block_size - offset)
             chunk = block_size - offset;
 
-        uint64_t block_index;
+        uint32_t block_index;
 
         if (block < 12) {
             // Direct block

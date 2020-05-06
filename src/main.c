@@ -25,6 +25,7 @@ asm (
 #include <lib/elf.h>
 #include <protos/stivale.h>
 #include <protos/linux.h>
+#include <protos/chainload.h>
 
 static char *cmdline;
 #define CMDLINE_MAX 1024
@@ -164,6 +165,8 @@ got_entry:
         stivale_load(cmdline, boot_drive);
     } else if (!strcmp(proto, "linux")) {
         linux_load(cmdline, boot_drive);
+    } else if (!strcmp(proto, "chainload")) {
+        chainload();
     } else {
         panic("Invalid protocol specified");
     }

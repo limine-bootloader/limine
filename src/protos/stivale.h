@@ -3,6 +3,6 @@
 
 #include <fs/file.h>
 
-void stivale_load(struct file_handle *fd, char *cmdline);
+void stivale_load(char *cmdline, int boot_drive);
 
 #endif

@@ -23,20 +23,26 @@ Some *local assignments* are shared between entries using any *protocol*, while 
 * `TIMEOUT` - Specifies the timeout in seconds before the first *entry* is automatically booted.
 
 *Locally assignable (non protocol specific)* keys are:
-* `KERNEL_DRIVE` - The BIOS drive (in decimal) where the kernel resides (if unspecified, boot drive is assumed).
-* `KERNEL_PARTITION` - The index (in decimal) of the partition containing the kernel.
-* `KERNEL_PATH` - The path of the kernel in said partition, forward slashes to delimit directories.
-* `KERNEL_PROTO` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `stivale`.
-* `KERNEL_CMDLINE` - The command line string to be passed to the kernel.
+* `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `stivale`.
+* `KERNEL_PROTO` - Alias of `PROTOCOL`.
+* `CMDLINE` - The command line string to be passed to the kernel. Can be omitted.
+* `KERNEL_CMDLINE` - Alias of `CMDLINE`.
 
 *Locally assignable (protocol specific)* keys are:
 * Linux protocol:
+  * `KERNEL_DRIVE` - The BIOS drive (in decimal) where the kernel resides (if unspecified, boot drive is assumed).
+  * `KERNEL_PARTITION` - The index (in decimal) of the partition containing the kernel.
+  * `KERNEL_PATH` - The path of the kernel in said partition, forward slashes to delimit directories.
   * `INITRD_PARTITION` - Partition index of the initial ramdisk.
   * `INITRD_PATH` - The path to the initial ramdisk.
 * stivale protocol:
+  * `KERNEL_DRIVE` - The BIOS drive (in decimal) where the kernel resides (if unspecified, boot drive is assumed).
+  * `KERNEL_PARTITION` - The index (in decimal) of the partition containing the kernel.
+  * `KERNEL_PATH` - The path of the kernel in said partition, forward slashes to delimit directories.
   * `MODULE_PARTITION` - Partition index of a module.
   * `MODULE_PATH` - The path to a module.
   * `MODULE_STRING` - A string to be passed to a module.
+
   Note that one can define these 3 variable multiple times to specify multiple modules.
   The entries will be matched in order. E.g.: the 1st partition entry will be matched
   to the 1st path and the 1st string entry that appear, and so on.

@@ -10,7 +10,35 @@
 #define KERNEL_LOAD_ADDR ((size_t)0x100000)
 #define INITRD_LOAD_ADDR ((size_t)0x1000000)
 
-void linux_load(struct file_handle *fd, char *cmdline) {
+void linux_load(char *cmdline, int boot_drive) {
+    int kernel_drive; {
+        char buf[32];
+        if (!config_get_value(buf, 0, 32, "KERNEL_DRIVE")) {
+            kernel_drive = boot_drive;
+        } else {
+            kernel_drive = (int)strtoui(buf);
+        }
+    }
+
+    int kernel_part; {
+        char buf[32];
+        if (!config_get_value(buf, 0, 32, "KERNEL_PARTITION")) {
+            panic("KERNEL_PARTITION not specified");
+        } else {
+            kernel_part = (int)strtoui(buf);
+        }
+    }
+
+    char *kernel_path = balloc(128);
+    if (!config_get_value(kernel_path, 0, 128, "KERNEL_PATH")) {
+        panic("KERNEL_PATH not specified");
+    }
+
+    struct file_handle *fd = balloc(sizeof(struct file_handle));
+    if (fopen(fd, kernel_drive, kernel_part, kernel_path)) {
+        panic("Could not open kernel file");
+    }
+
     uint32_t signature;
     fread(fd, &signature, 0x202, sizeof(uint32_t));
 
@@ -82,8 +110,11 @@ void linux_load(struct file_handle *fd, char *cmdline) {
 
     int initrd_part; {
         char buf[32];
-        config_get_value(buf, 0, 32, "INITRD_PARTITION");
-        initrd_part = (int)strtoui(buf);
+        if (!config_get_value(buf, 0, 32, "INITRD_PARTITION")) {
+            initrd_part = fd->partition;
+        } else {
+            initrd_part = (int)strtoui(buf);
+        }
     }
 
     struct file_handle initrd;

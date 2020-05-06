@@ -71,7 +71,9 @@ refresh:
                 config_set_entry(selected_entry);
                 text_enable_cursor();
                 if (!config_get_value(cmdline, 0, CMDLINE_MAX, "KERNEL_CMDLINE")) {
-                    cmdline[0] = '\0';
+                    if (!config_get_value(cmdline, 0, CMDLINE_MAX, "CMDLINE")) {
+                        cmdline[0] = '\0';
+                    }
                 }
                 text_clear();
                 return;
@@ -79,7 +81,9 @@ refresh:
                 config_set_entry(selected_entry);
                 text_enable_cursor();
                 if (!config_get_value(cmdline, 0, CMDLINE_MAX, "KERNEL_CMDLINE")) {
-                    cmdline[0] = '\0';
+                    if (!config_get_value(cmdline, 0, CMDLINE_MAX, "CMDLINE")) {
+                        cmdline[0] = '\0';
+                    }
                 }
                 print("\n\n> ");
                 gets(cmdline, cmdline, CMDLINE_MAX);
@@ -90,8 +94,6 @@ refresh:
 }
 
 void main(int boot_drive) {
-    struct file_handle f;
-
     // Initial prompt.
     init_vga_textmode();
 
@@ -121,14 +123,13 @@ void main(int boot_drive) {
         }
     }
 
-    int drive, part;
-    char path[128], proto[64], buf[32];
-
-    int timeout;
-    if (!config_get_value(buf, 0, 64, "TIMEOUT")) {
-        timeout = 5;
-    } else {
-        timeout = (int)strtoui(buf);
+    int timeout; {
+        char buf[32];
+        if (!config_get_value(buf, 0, 32, "TIMEOUT")) {
+            timeout = 5;
+        } else {
+            timeout = (int)strtoui(buf);
+        }
     }
 
     print("\n");
@@ -152,30 +153,17 @@ void main(int boot_drive) {
 got_entry:
     init_e820();
 
-    if (!config_get_value(buf, 0, 32, "KERNEL_DRIVE")) {
-        drive = boot_drive;
-    } else {
-        drive = (int)strtoui(buf);
-    }
-    if (!config_get_value(buf, 0, 32, "KERNEL_PARTITION")) {
-        panic("KERNEL_PARTITION not specified");
-    }
-    part = (int)strtoui(buf);
-    if (!config_get_value(path, 0, 128, "KERNEL_PATH")) {
-        panic("KERNEL_PATH not specified");
-    }
-    if (!config_get_value(proto, 0, 64, "KERNEL_PROTO")) {
-        panic("KERNEL_PROTO not specified");
-    }
-
-    if (fopen(&f, drive, part, path)) {
-        panic("Could not open kernel file");
+    char proto[32];
+    if (!config_get_value(proto, 0, 32, "KERNEL_PROTO")) {
+        if (!config_get_value(proto, 0, 32, "PROTOCOL")) {
+            panic("PROTOCOL not specified");
+        }
     }
 
     if (!strcmp(proto, "stivale")) {
-        stivale_load(&f, cmdline);
+        stivale_load(cmdline, boot_drive);
     } else if (!strcmp(proto, "linux")) {
-        linux_load(&f, cmdline);
+        linux_load(cmdline, boot_drive);
     } else {
         panic("Invalid protocol specified");
     }

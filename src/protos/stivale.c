@@ -46,7 +46,35 @@ struct stivale_struct {
 
 struct stivale_struct stivale_struct = {0};
 
-void stivale_load(struct file_handle *fd, char *cmdline) {
+void stivale_load(char *cmdline, int boot_drive) {
+    int kernel_drive; {
+        char buf[32];
+        if (!config_get_value(buf, 0, 32, "KERNEL_DRIVE")) {
+            kernel_drive = boot_drive;
+        } else {
+            kernel_drive = (int)strtoui(buf);
+        }
+    }
+
+    int kernel_part; {
+        char buf[32];
+        if (!config_get_value(buf, 0, 32, "KERNEL_PARTITION")) {
+            panic("KERNEL_PARTITION not specified");
+        } else {
+            kernel_part = (int)strtoui(buf);
+        }
+    }
+
+    char *kernel_path = balloc(128);
+    if (!config_get_value(kernel_path, 0, 128, "KERNEL_PATH")) {
+        panic("KERNEL_PATH not specified");
+    }
+
+    struct file_handle *fd = balloc(sizeof(struct file_handle));
+    if (fopen(fd, kernel_drive, kernel_part, kernel_path)) {
+        panic("Could not open kernel file");
+    }
+
     struct stivale_header stivale_hdr;
 
     int bits = elf_bits(fd);

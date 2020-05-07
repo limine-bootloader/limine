@@ -16,6 +16,9 @@ void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs) {
         "mov eax, dword ptr ss:[esp+12]\n\t"
         "mov dword ptr ds:[7f], eax\n\t"
 
+        // Save GDT in case BIOS overwrites it
+        "sgdt [8f]\n\t"
+
         // Save non-scratch GPRs
         "push ebx\n\t"
         "push esi\n\t"
@@ -78,6 +81,9 @@ void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs) {
         "pushfd\n\t"
         "mov esp, dword ptr ds:[5f]\n\t"
 
+        // Restore GDT
+        "lgdt [8f]\n\t"
+
         // Jump back to pmode
         "mov eax, cr0\n\t"
         "or al, 1\n\t"
@@ -106,6 +112,9 @@ void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs) {
         "6: .long 0\n\t"
         // in_regs
         "7: .long 0\n\t"
+        // gdt
+        "8: .long 0\n\t"
+        "   .long 0\n\t"
     );
     (void)int_no; (void)out_regs; (void)in_regs;
 }

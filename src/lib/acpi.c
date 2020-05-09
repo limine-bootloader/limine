@@ -2,6 +2,7 @@
 #include <lib/acpi.h>
 #include <lib/blib.h>
 #include <lib/libc.h>
+#include <lib/print.h>
 
 void *get_rsdp(void) {
     for (size_t i = 0x80000; i < 0x100000; i += 16) {

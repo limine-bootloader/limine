@@ -2,6 +2,7 @@
 #include <lib/blib.h>
 #include <drivers/disk.h>
 #include <lib/libc.h>
+#include <lib/print.h>
 #include <stdbool.h>
 
 #define FAT32_LFN_MAX_ENTRIES 20

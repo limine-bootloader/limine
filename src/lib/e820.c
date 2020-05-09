@@ -3,6 +3,7 @@
 #include <lib/e820.h>
 #include <lib/real.h>
 #include <lib/blib.h>
+#include <lib/print.h>
 
 struct e820_entry_t *e820_map;
 size_t e820_entries;

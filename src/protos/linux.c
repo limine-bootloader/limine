@@ -6,6 +6,7 @@
 #include <lib/real.h>
 #include <drivers/vga_textmode.h>
 #include <lib/config.h>
+#include <lib/print.h>
 
 #define KERNEL_LOAD_ADDR ((size_t)0x100000)
 #define INITRD_LOAD_ADDR ((size_t)0x1000000)

@@ -3,6 +3,7 @@
 #include <drivers/vbe.h>
 #include <lib/blib.h>
 #include <lib/real.h>
+#include <lib/print.h>
 
 struct vbe_info_struct {
     char     signature[4];

@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <lib/libc.h>
 #include <lib/blib.h>
+#include <lib/print.h>
 #include <drivers/disk.h>
 #include <stdbool.h>
 

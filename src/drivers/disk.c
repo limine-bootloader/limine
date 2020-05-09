@@ -5,6 +5,7 @@
 #include <lib/real.h>
 #include <lib/blib.h>
 #include <lib/part.h>
+#include <lib/print.h>
 
 #define SECTOR_SIZE 512
 #define BLOCK_SIZE_IN_SECTORS 16

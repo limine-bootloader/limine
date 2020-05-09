@@ -21,6 +21,7 @@ asm (
 #include <lib/part.h>
 #include <lib/config.h>
 #include <lib/e820.h>
+#include <lib/print.h>
 #include <fs/file.h>
 #include <lib/elf.h>
 #include <protos/stivale.h>

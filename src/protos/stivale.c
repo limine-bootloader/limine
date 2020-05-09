@@ -8,6 +8,7 @@
 #include <lib/e820.h>
 #include <lib/config.h>
 #include <lib/time.h>
+#include <lib/print.h>
 #include <drivers/vbe.h>
 #include <drivers/vga_textmode.h>
 #include <fs/file.h>

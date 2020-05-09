@@ -25,7 +25,6 @@ void *balloc_aligned(size_t count, size_t alignment);
 #define GETCHAR_CURSOR_UP    (-12)
 #define GETCHAR_CURSOR_DOWN  (-13)
 
-void print(const char *fmt, ...);
 int getchar(void);
 void gets(const char *orig_str, char *buf, size_t limit);
 uint64_t strtoui(const char *s);

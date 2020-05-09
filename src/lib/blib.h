@@ -11,7 +11,7 @@ uint8_t bcd_to_int(uint8_t val);
 int cpuid(uint32_t leaf, uint32_t subleaf,
           uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
 
-__attribute__((noreturn)) void panic(const char *str);
+__attribute__((noreturn)) void panic(const char *fmt, ...);
 
 void pit_sleep(uint64_t pit_ticks);
 int pit_sleep_and_quit_on_keypress(uint32_t pit_ticks);

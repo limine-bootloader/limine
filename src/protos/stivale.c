@@ -111,11 +111,11 @@ void stivale_load(char *cmdline, int boot_drive) {
 
     switch (ret) {
         case 1:
-            panic("stivale: File is not a valid ELF.\n");
+            panic("stivale: File is not a valid ELF.");
         case 2:
-            panic("stivale: Section .stivalehdr not found.\n");
+            panic("stivale: Section .stivalehdr not found.");
         case 3:
-            panic("stivale: Section .stivalehdr exceeds the size of the struct.\n");
+            panic("stivale: Section .stivalehdr exceeds the size of the struct.");
     }
 
     print("stivale: Requested stack at %X\n", stivale_hdr.stack);

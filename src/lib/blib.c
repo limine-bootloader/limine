@@ -50,10 +50,20 @@ int cpuid(uint32_t leaf, uint32_t subleaf,
     return 0;
 }
 
-__attribute__((noreturn)) void panic(const char *str) {
-    print("PANIC: %s", str);
+__attribute__((noreturn)) void panic(const char *fmt, ...) {
+    asm volatile ("cli");
+
+    va_list args;
+
+    va_start(args, fmt);
+
+    print("PANIC: ");
+    vprint(fmt, args);
+
+    va_end(args);
+
     for (;;) {
-        asm volatile ("cli; hlt");
+        asm volatile ("hlt");
     }
 }
 

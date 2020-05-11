@@ -5,7 +5,6 @@
 #include <fs/file.h>
 
 #define SEPARATOR '\n'
-#define MAX_CONFIG_SIZE 4096
 
 static char *config_addr;
 
@@ -18,12 +17,8 @@ int init_config(int drive, int part) {
         }
     }
 
-    if (f.size >= MAX_CONFIG_SIZE) {
-        panic("Config file is too big.");
-    }
-
-    config_addr = balloc(MAX_CONFIG_SIZE);
-    memset(config_addr, 0, MAX_CONFIG_SIZE);
+    config_addr = balloc(f.size + 1);
+    memset(config_addr, 0, f.size + 1);
 
     fread(&f, config_addr, 0, f.size);
 

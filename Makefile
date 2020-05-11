@@ -2,6 +2,7 @@
 
 all:
 	$(MAKE) -C src all
+	cp src/qloader2.bin ./
 
 clean:
 	$(MAKE) -C src clean

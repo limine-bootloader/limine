@@ -11,9 +11,10 @@ void chainload(void) {
     int part; {
         char buf[32];
         if (!config_get_value(buf, 0, 32, "PARTITION")) {
-            panic("PARTITION not specified");
+            part = -1;
+        } else {
+            part = (int)strtoui(buf);
         }
-        part = (int)strtoui(buf);
     }
     int drive; {
         char buf[32];
@@ -25,10 +26,14 @@ void chainload(void) {
 
     deinit_vga_textmode();
 
-    struct part p;
-    get_part(&p, drive, part);
+    if (part != -1) {
+        struct part p;
+        get_part(&p, drive, part);
 
-    read_partition(drive, &p, (void*)0x7c00, 0, 512);
+        read_partition(drive, &p, (void *)0x7c00, 0, 512);
+    } else {
+        read(drive, (void *)0x7c00, 0, 512);
+    }
 
     asm volatile (
         // Jump to real mode

@@ -42,9 +42,9 @@ Some *local assignments* are shared between entries using any *protocol*, while 
   * `MODULE_PARTITION` - Partition index of a module.
   * `MODULE_PATH` - The path to a module.
   * `MODULE_STRING` - A string to be passed to a module.
-* chainload protocol:
-  * `DRIVE` - The drive to chainload.
-  * `PARTITION` - The partition to chainload.
+* Chainload protocol:
+  * `DRIVE` - The BIOS drive (in decimal) to chainload.
+  * `PARTITION` - The partition index (in decimal) to chainload (if omitted, chainload the drive's bootsector).
 
   Note that one can define these 3 variable multiple times to specify multiple modules.
   The entries will be matched in order. E.g.: the 1st partition entry will be matched

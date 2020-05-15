@@ -130,6 +130,9 @@ struct stivale_struct {
     uint64_t module_count;          // Count of modules that stivale loaded according to config
     uint64_t modules;               // Pointer to the first entry in the linked list of modules (described below)
     uint64_t epoch;                 // UNIX epoch at boot, read from system RTC
+    uint64_t flags;                 // Flags
+                                    // bit 0: 1 if booted with BIOS, 0 if booted with UEFI
+                                    // All other bits undefined.
 } __attribute__((packed));
 ```
 

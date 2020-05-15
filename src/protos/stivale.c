@@ -43,11 +43,14 @@ struct stivale_struct {
     uint64_t module_count;
     uint64_t modules;
     uint64_t epoch;
+    uint64_t flags;       // bit 0: 1 if booted with BIOS, 0 if booted with UEFI
 } __attribute__((packed));
 
 struct stivale_struct stivale_struct = {0};
 
 void stivale_load(char *cmdline, int boot_drive) {
+    stivale_struct.flags &= (1 << 0);  // set bit 0 since we are BIOS and not UEFI
+
     int kernel_drive; {
         char buf[32];
         if (!config_get_value(buf, 0, 32, "KERNEL_DRIVE")) {

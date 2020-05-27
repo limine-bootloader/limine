@@ -1,0 +1,2 @@
+rm disk/*.*
+rm bin/*.*

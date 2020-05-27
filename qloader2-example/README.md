@@ -1,6 +1,7 @@
 # qloader2 example usage
 
 # What you need before building
+**A GNU/Linux system. Most of these apps don't work on Windows.**  
 **NASM**. You can get it from here: https://nasm.us/ or use your package manager to install it.  
 **QEMU**. You will need this to emulate the disk image. You can get it from this website: https://www.qemu.org/ or use your package manager to install it.  
 **x86_64-elf**. This will let you link and compile your sources. More specifically you need x86_64-elf-gcc and x86_64-elf-ld.  

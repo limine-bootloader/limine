@@ -35,7 +35,7 @@ int config_get_entry_name(char *ret, size_t index, size_t limit) {
             p++;
         }
         p++;
-        if (*(p - 2) != '\n')
+        if ((p - 1) != config_addr && *(p - 2) != '\n')
             i--;
     }
 
@@ -60,7 +60,7 @@ int config_set_entry(size_t index) {
             p++;
         }
         p++;
-        if (*(p - 2) != '\n')
+        if ((p - 1) != config_addr && *(p - 2) != '\n')
             i--;
     }
 

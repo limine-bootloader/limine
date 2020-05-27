@@ -11,5 +11,5 @@
 Copy from the root directory of qloader2's repository qloader2-install and qloader2.bin. Then, paste it here.
 
 # How to build
-First, run `chmod u+x build.sh`. Then, run `./build.sh`. You might also want to clean up the bin and disk folder. If so, run `chmod u+x clean.sh` and then `./clean.sh`  
+First, run `chmod u+x build.sh`. Then, run `./build.sh`. You might also want to clean up the bin and disk folder. If so, run `chmod u+x clean.sh` and then `./clean.sh`.
 

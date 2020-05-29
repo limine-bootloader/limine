@@ -22,6 +22,7 @@ asm (
 #include <lib/config.h>
 #include <lib/e820.h>
 #include <lib/print.h>
+#include <lib/random.h>
 #include <fs/file.h>
 #include <lib/elf.h>
 #include <protos/stivale.h>
@@ -98,6 +99,7 @@ refresh:
 void main(int boot_drive) {
     // Initial prompt.
     init_vga_textmode();
+    init_random();
 
     print("qloader2\n\n");
 

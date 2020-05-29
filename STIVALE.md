@@ -104,6 +104,8 @@ struct stivale_header {
                       // bit 1  0 = 4-level paging, 1 = use 5-level paging (if
                                                         available)
                                 Ignored if booting a 32-bit kernel.
+                      // bit 2  0 = Disable KASLR, 1 = enable KASLR (up to 1GB slide)
+                                Ignored if booting a 32-bit or non-relocatable kernel
                       // All other bits undefined.
 
     uint16_t framebuffer_width;   // These 3 values are parsed if a graphics mode

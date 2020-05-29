@@ -9,6 +9,7 @@
 #include <lib/config.h>
 #include <lib/time.h>
 #include <lib/print.h>
+#include <lib/random.h>
 #include <drivers/vbe.h>
 #include <drivers/vga_textmode.h>
 #include <fs/file.h>
@@ -45,6 +46,8 @@ struct stivale_struct {
     uint64_t epoch;
     uint64_t flags;       // bit 0: 1 if booted with BIOS, 0 if booted with UEFI
 } __attribute__((packed));
+
+#define KASLR_SLIDE_BITMASK 0x03FFFF000u
 
 struct stivale_struct stivale_struct = {0};
 
@@ -85,6 +88,8 @@ void stivale_load(char *cmdline, int boot_drive) {
 
     int ret;
 
+    uint64_t slide = 0;
+
     bool level5pg = false;
     switch (bits) {
         case 64: {
@@ -100,7 +105,17 @@ void stivale_load(char *cmdline, int boot_drive) {
                 print("stivale: CPU has 5-level paging support\n");
                 level5pg = true;
             }
-            ret = elf64_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header));
+
+            ret = elf64_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header), slide);
+
+            if (!ret && ((stivale_hdr.flags >> 2) & 1)) {
+                // KASLR is enabled, set the slide
+                slide = get_random() & KASLR_SLIDE_BITMASK;
+
+                // Re-read the .stivalehdr with slid relocations
+                ret = elf64_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header), slide);
+            }
+
             break;
         }
         case 32:
@@ -125,14 +140,17 @@ void stivale_load(char *cmdline, int boot_drive) {
 
     uint64_t entry_point   = 0;
     uint64_t top_used_addr = 0;
+
     switch (bits) {
         case 64:
-            elf64_load(fd, &entry_point, &top_used_addr);
+            elf64_load(fd, &entry_point, &top_used_addr, slide);
             break;
         case 32:
             elf32_load(fd, (uint32_t *)&entry_point, (uint32_t *)&top_used_addr);
             break;
     }
+
+    print("stivale: Kernel slide: %X\n", slide);
 
     print("stivale: Top used address in ELF: %X\n", top_used_addr);
 

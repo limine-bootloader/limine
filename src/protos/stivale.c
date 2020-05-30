@@ -16,12 +16,11 @@
 
 struct stivale_header {
     uint64_t stack;
-    // Flags
-    // bit 0   0 = text mode,   1 = graphics mode
     uint16_t flags;
     uint16_t framebuffer_width;
     uint16_t framebuffer_height;
     uint16_t framebuffer_bpp;
+    uint64_t entry_point;
 } __attribute__((packed));
 
 struct stivale_module {
@@ -134,6 +133,8 @@ void stivale_load(char *cmdline, int boot_drive) {
             panic("stivale: Section .stivalehdr not found.");
         case 3:
             panic("stivale: Section .stivalehdr exceeds the size of the struct.");
+        case 4:
+            panic("stivale: Section .stivalehdr is smaller than size of the struct.");
     }
 
     print("stivale: Requested stack at %X\n", stivale_hdr.stack);
@@ -149,6 +150,9 @@ void stivale_load(char *cmdline, int boot_drive) {
             elf32_load(fd, (uint32_t *)&entry_point, (uint32_t *)&top_used_addr);
             break;
     }
+
+    if (stivale_hdr.entry_point != 0)
+        entry_point = stivale_hdr.entry_point;
 
     print("stivale: Kernel slide: %X\n", slide);
 

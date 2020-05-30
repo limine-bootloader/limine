@@ -32,7 +32,9 @@ The kernel MUST NOT request to load itself at an address lower than `0x100000`
 
 ### 64-bit kernel
 
-`rip` will be the entry point as defined in the ELF file.
+`rip` will be the entry point as defined in the ELF file, unless the `entry_point`
+field in the stivale header is set to a non-0 value, in which case, it is set to
+the value of `entry_point`.
 
 At entry, the bootloader will have setup paging such that there is a 4GiB identity
 mapped block of memory at `0x0000000000000000`, a 2GiB mapped area of memory
@@ -40,6 +42,10 @@ that maps from `0x0000000000000000` physical to `0x0000000080000000` physical
 to `0xffffffff80000000` virtual. This area is for the higher half kernels.
 Further more, a 4GiB area of memory from `0x0000000000000000` physical to
 `0x0000000100000000` physical to `0xffff800000000000` virtual is mapped.
+
+If the kernel is dynamic and not statically linked, the bootloader will relocate it.
+Furthermore if bit 2 of the flags field in the stivale header is set, the bootloader
+will perform kernel address space layout randomisation (KASLR).
 
 The kernel should NOT modify the bootloader page tables, and it should only use them
 to bootstrap its own virtual memory manager and its own page tables.
@@ -67,7 +73,9 @@ The A20 gate is enabled.
 
 ### 32-bit kernel
 
-`eip` will be the entry point as defined in the ELF file.
+`eip` will be the entry point as defined in the ELF file, unless the `entry_point`
+field in the stivale header is set to a non-0 value, in which case, it is set to
+the value of `entry_point`.
 
 At entry all segment registers are loaded as 32 bit code/data segments.
 All segment bases are `0x00000000` and all limits are `0xffffffff`.
@@ -112,6 +120,8 @@ struct stivale_header {
     uint16_t framebuffer_height;  // is requested. If all values are set to 0
     uint16_t framebuffer_bpp;     // then the bootloader will pick the best possible
                                   // video mode automatically (recommended).
+    uint64_t entry_point;      // If not 0, this field will be jumped to at entry
+                               // instead of the ELF entry point.
 } __attribute__((packed));
 ```
 

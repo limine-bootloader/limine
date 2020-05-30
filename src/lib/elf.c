@@ -216,6 +216,8 @@ int elf64_load_section(struct file_handle *fd, void *buffer, const char *name, s
         if (!strcmp(&names[section.sh_name], name)) {
             if (section.sh_size > limit)
                 return 3;
+            if (section.sh_size < limit)
+                return 4;
             fread(fd, buffer, section.sh_offset, section.sh_size);
             return elf64_apply_relocations(fd, &hdr, buffer, section.sh_addr, section.sh_size, slide);
         }
@@ -258,6 +260,8 @@ int elf32_load_section(struct file_handle *fd, void *buffer, const char *name, s
         if (!strcmp(&names[section.sh_name], name)) {
             if (section.sh_size > limit)
                 return 3;
+            if (section.sh_size < limit)
+                return 4;
             fread(fd, buffer, section.sh_offset, section.sh_size);
             return 0;
         }

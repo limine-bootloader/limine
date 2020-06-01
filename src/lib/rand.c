@@ -19,6 +19,17 @@
     ret; \
 })
 
+#define rdseed(type) ({ \
+    type ret; \
+    asm volatile ( \
+        "1: " \
+        "rdrand %0;" \
+        "jnc 1b;" \
+        : "=r" (ret) \
+    ); \
+    ret; \
+})
+
 #define rdtsc(type) ({ \
     type ret; \
     asm volatile ( \
@@ -28,27 +39,25 @@
     ret; \
 })
 
-static bool rdrand_available = false;
+static bool rand_initialised = false;
 
-void init_rand(void) {
-    {
-        uint32_t eax, ebx, ecx, edx;
-        int ret = cpuid(1, 0, &eax, &ebx, &ecx, &edx);
-
-        if (!ret && (ecx & (1 << 30)))
-            rdrand_available = true;
-    }
-
+static void init_rand(void) {
     uint32_t seed = ((uint32_t)0xc597060c * rdtsc(uint32_t))
                   * ((uint32_t)0xce86d624)
                   ^ ((uint32_t)0xee0da130 * rdtsc(uint32_t));
 
-    if (!rdrand_available) {
-        srand(seed);
-    } else {
+    uint32_t eax, ebx, ecx, edx;
+
+    // Check for rdseed
+    if (!cpuid(0x07, 0, &eax, &ebx, &ecx, &edx) && (ebx & (1 << 18))) {
+        seed *= (seed ^ rdseed(uint32_t));
+    } else if (!cpuid(0x01, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 30))) {
         seed *= (seed ^ rdrand(uint32_t));
-        srand(seed);
     }
+
+    srand(seed);
+
+    rand_initialised = true;
 }
 
 #define n ((int)624)
@@ -67,6 +76,9 @@ void srand(uint32_t s) {
 }
 
 uint32_t rand32(void) {
+    if (!rand_initialised)
+        init_rand();
+
     const uint32_t mag01[2] = {0, matrix_a};
 
     if (ctr >= n) {

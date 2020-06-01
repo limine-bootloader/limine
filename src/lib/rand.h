@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 
-void init_rand(void);
-
 void srand(uint32_t s);
 
 uint32_t rand32(void);

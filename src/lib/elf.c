@@ -153,7 +153,7 @@ static int elf64_apply_relocations(struct file_handle *fd, struct elf64_hdr *hdr
         // This is a RELA header, get and apply all relocations
         for (uint64_t offset = 0; offset < section.sh_size; offset += section.sh_entsize) {
             struct elf64_rela relocation;
-            fread(fd, &relocation, section.sh_offset + offset, section.sh_size);
+            fread(fd, &relocation, section.sh_offset + offset, sizeof(relocation));
 
             switch (relocation.r_info) {
                 case R_X86_64_RELATIVE:

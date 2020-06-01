@@ -9,7 +9,7 @@
 #include <lib/config.h>
 #include <lib/time.h>
 #include <lib/print.h>
-#include <lib/random.h>
+#include <lib/rand.h>
 #include <lib/real.h>
 #include <drivers/vbe.h>
 #include <drivers/vga_textmode.h>
@@ -110,7 +110,7 @@ void stivale_load(char *cmdline, int boot_drive) {
 
             if (!ret && ((stivale_hdr.flags >> 2) & 1)) {
                 // KASLR is enabled, set the slide
-                slide = get_random() & KASLR_SLIDE_BITMASK;
+                slide = rand64() & KASLR_SLIDE_BITMASK;
 
                 // Re-read the .stivalehdr with slid relocations
                 ret = elf64_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header), slide);

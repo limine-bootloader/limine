@@ -24,4 +24,6 @@ struct rm_regs {
 
 void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs);
 
+void rm_flush_irqs(void);
+
 #endif

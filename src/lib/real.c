@@ -2,6 +2,88 @@
 #include <lib/real.h>
 
 __attribute__((naked))
+void rm_flush_irqs(void) {
+    asm (
+        // Mask PICs
+        "mov al, 0xff\n\t"
+        "out 0x21, al\n\t"
+        "out 0xa1, al\n\t"
+
+        // Save GDT in case BIOS overwrites it
+        "sgdt [8f]\n\t"
+
+        // Save non-scratch GPRs
+        "push ebx\n\t"
+        "push esi\n\t"
+        "push edi\n\t"
+        "push ebp\n\t"
+
+        // Jump to real mode
+        "jmp 0x08:1f\n\t"
+        "1: .code16\n\t"
+        "mov ax, 0x10\n\t"
+        "mov ds, ax\n\t"
+        "mov es, ax\n\t"
+        "mov fs, ax\n\t"
+        "mov gs, ax\n\t"
+        "mov ss, ax\n\t"
+        "mov eax, cr0\n\t"
+        "and al, 0xfe\n\t"
+        "mov cr0, eax\n\t"
+        "jmp 0:2f\n\t"
+        "2:\n\t"
+        "mov ax, 0\n\t"
+        "mov ds, ax\n\t"
+        "mov es, ax\n\t"
+        "mov fs, ax\n\t"
+        "mov gs, ax\n\t"
+        "mov ss, ax\n\t"
+
+        "sti\n\t"
+        "call 2f\n\t"   // call await
+        "cli\n\t"
+
+        // Restore GDT
+        "lgdt [8f]\n\t"
+
+        // Jump back to pmode
+        "mov eax, cr0\n\t"
+        "or al, 1\n\t"
+        "mov cr0, eax\n\t"
+        "jmp 0x18:4f\n\t"
+        "4: .code32\n\t"
+        "mov ax, 0x20\n\t"
+        "mov ds, ax\n\t"
+        "mov es, ax\n\t"
+        "mov fs, ax\n\t"
+        "mov gs, ax\n\t"
+        "mov ss, ax\n\t"
+
+        // Restore non-scratch GPRs
+        "pop ebp\n\t"
+        "pop edi\n\t"
+        "pop esi\n\t"
+        "pop ebx\n\t"
+
+        // Exit
+        "ret\n\t"
+
+        // gdt
+        "1: .long 0\n\t"
+        "   .long 0\n\t"
+
+        // Await
+        ".code16\n\t"
+        "2: xor al, al\n\t"
+        "mov cx, 0x1000\n\t"
+        "3: out 0x80, al\n\t"
+        "loop 3b\n\t"
+        "ret\n\t"
+        ".code32\n\t"
+    );
+}
+
+__attribute__((naked))
 void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs) {
     asm (
         // Self-modifying code: int $int_no

@@ -10,6 +10,7 @@
 #include <lib/time.h>
 #include <lib/print.h>
 #include <lib/random.h>
+#include <lib/real.h>
 #include <drivers/vbe.h>
 #include <drivers/vga_textmode.h>
 #include <fs/file.h>
@@ -225,6 +226,8 @@ void stivale_load(char *cmdline, int boot_drive) {
     } else {
         deinit_vga_textmode();
     }
+
+    rm_flush_irqs();
 
     if (bits == 64) {
         void *pagemap_ptr;

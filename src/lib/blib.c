@@ -100,15 +100,11 @@ __attribute__((naked)) static void int_08_isr(void) {
     asm (
         ".code16\n\t"
         "pushf\n\t"
-        "push bx\n\t"
-        "mov ebx, dword ptr ds:[1f]\n\t"
-        "inc dword ptr ds:[ebx]\n\t"
-        "pop bx\n\t"
+        "inc dword ptr cs:[int_08_ticks_counter]\n\t"
         "popf\n\t"
         "int 0x40\n\t"   // call callback
         "iret\n\t"
         ".code32\n\t"
-        "1: .long int_08_ticks_counter\n\t"
     );
 }
 
@@ -117,7 +113,7 @@ uint32_t *ivt = 0; // this variable is not static else gcc will optimise the
 
 __attribute__((used)) static void hook_int_08(void) {
     ivt[0x40] = ivt[0x08];  // int 0x40 is callback interrupt
-    ivt[0x08] = rm_seg(int_08_isr) << 16 | rm_off(int_08_isr);
+    ivt[0x08] = (uint16_t)(size_t)int_08_isr;
 }
 
 __attribute__((used)) static void dehook_int_08(void) {
@@ -171,9 +167,13 @@ int pit_sleep_and_quit_on_keypress(uint32_t ticks) {
         "cmp dword ptr ds:[ecx], edx\n\t"
         "je 30f\n\t" // out on timeout
 
+        "push ecx\n\t"
+        "push edx\n\t"
         "mov ah, 0x01\n\t"
         "xor al, al\n\t"
         "int 0x16\n\t"
+        "pop edx\n\t"
+        "pop ecx\n\t"
 
         "jz 10b\n\t" // loop
 

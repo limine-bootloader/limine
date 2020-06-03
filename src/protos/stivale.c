@@ -227,6 +227,16 @@ void stivale_load(char *cmdline, int boot_drive) {
         deinit_vga_textmode();
     }
 
+    if (bits == 64) {
+        // If we're going 64, we might as well call this BIOS interrupt
+        // to tell the BIOS that we are entering Long Mode, since it is in
+        // the specification.
+        struct rm_regs r = {0};
+        r.eax = 0xec00;
+        r.ebx = 0x02;   // Long mode only
+        rm_int(0x15, &r, &r);
+    }
+
     rm_flush_irqs();
 
     if (bits == 64) {

@@ -99,9 +99,7 @@ __attribute__((used)) static uint32_t int_08_ticks_counter;
 __attribute__((naked)) static void int_08_isr(void) {
     asm (
         ".code16\n\t"
-        "pushf\n\t"
         "inc dword ptr cs:[int_08_ticks_counter]\n\t"
-        "popf\n\t"
         "int 0x40\n\t"   // call callback
         "iret\n\t"
         ".code32\n\t"

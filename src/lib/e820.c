@@ -4,26 +4,10 @@
 #include <lib/real.h>
 #include <lib/blib.h>
 #include <lib/print.h>
+#include <lib/memmap.h>
 
 struct e820_entry_t *e820_map;
 size_t e820_entries;
-
-static const char *e820_type(uint32_t type) {
-    switch (type) {
-        case 1:
-            return "Usable RAM";
-        case 2:
-            return "Reserved";
-        case 3:
-            return "ACPI reclaimable";
-        case 4:
-            return "ACPI NVS";
-        case 5:
-            return "Bad memory";
-        default:
-            return "???";
-    }
-}
 
 void init_e820(void) {
     struct rm_regs r = {0};
@@ -53,11 +37,6 @@ void init_e820(void) {
         balloc(sizeof(struct e820_entry_t));
     }
 
-    for (size_t i = 0; i < e820_entries; i++) {
-        print("e820: [%X -> %X] : %X  <%s>\n",
-              e820_map[i].base,
-              e820_map[i].base + e820_map[i].length,
-              e820_map[i].length,
-              e820_type(e820_map[i].type));
-    }
+    print("E820 memory map:\n");
+    print_memmap(e820_map, e820_entries);
 }

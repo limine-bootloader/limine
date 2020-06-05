@@ -4,6 +4,7 @@
 #include <lib/memmap.h>
 #include <lib/e820.h>
 #include <lib/blib.h>
+#include <lib/print.h>
 
 #define PAGE_SIZE   4096
 #define MEMMAP_BASE ((size_t)0x100000)
@@ -11,6 +12,35 @@
 
 static struct e820_entry_t memmap[MEMMAP_MAX_ENTRIES];
 static size_t memmap_entries = 0;
+
+static const char *memmap_type(uint32_t type) {
+    switch (type) {
+        case 1:
+            return "Usable RAM";
+        case 2:
+            return "Reserved";
+        case 3:
+            return "ACPI reclaimable";
+        case 4:
+            return "ACPI NVS";
+        case 5:
+            return "Bad memory";
+        case 10:
+            return "Kernel/Modules";
+        default:
+            return "???";
+    }
+}
+
+void print_memmap(struct e820_entry_t *mm, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        print("e820: [%X -> %X] : %X  <%s>\n",
+              mm[i].base,
+              mm[i].base + mm[i].length,
+              mm[i].length,
+              memmap_type(mm[i].type));
+    }
+}
 
 static void align_entry_down(uint64_t *base, uint64_t *length) {
     uint64_t orig_base = *base;
@@ -76,6 +106,10 @@ struct e820_entry_t *get_memmap(size_t *entries) {
     }
 
     *entries = memmap_entries;
+
+    print("Memory map requested. Current layout:\n");
+    print_memmap(memmap, memmap_entries);
+
     return memmap;
 }
 
@@ -127,6 +161,9 @@ void init_memmap(void) {
 
         memmap_entries++;
     }
+
+    print("Memory map initialised. Current layout:\n");
+    print_memmap(memmap, memmap_entries);
 }
 
 void memmap_alloc_range(uint64_t base, uint64_t length) {
@@ -174,6 +211,8 @@ void memmap_alloc_range(uint64_t base, uint64_t length) {
             target->base   = base;
             target->length = length;
 
+            print("Memory map changed. Current layout:\n");
+            print_memmap(memmap, memmap_entries);
             return;
         }
     }

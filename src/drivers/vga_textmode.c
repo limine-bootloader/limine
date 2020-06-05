@@ -183,7 +183,7 @@ static void text_putchar(char c) {
     return;
 }
 
-static uint8_t ansi_colours[] = { 0, 4, 2, 6, 1, 5, 3, 7 };
+static uint8_t ansi_colours[] = { 0, 4, 2, 0x0e, 1, 5, 3, 7 };
 
 static void sgr(void) {
 

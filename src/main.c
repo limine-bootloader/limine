@@ -28,73 +28,7 @@ asm (
 #include <protos/stivale.h>
 #include <protos/linux.h>
 #include <protos/chainload.h>
-
-static char *cmdline;
-#define CMDLINE_MAX 1024
-
-static char config_entry_name[1024];
-
-void boot_menu(void) {
-    text_disable_cursor();
-    int selected_entry = 0;
-
-refresh:
-    text_clear();
-    print("qloader2\n\n");
-
-    print("Select an entry:\n\n");
-
-    int max_entries;
-    for (max_entries = 0; ; max_entries++) {
-        if (config_get_entry_name(config_entry_name, max_entries, 1024) == -1)
-            break;
-        if (max_entries == selected_entry)
-            print(" -> %s\n", config_entry_name);
-        else
-            print("    %s\n", config_entry_name);
-    }
-
-    if (max_entries == 0)
-        panic("Config contains no entries.");
-
-    print("\nArrows to choose, enter to select, 'e' to edit command line.");
-
-    for (;;) {
-        int c = getchar();
-        switch (c) {
-            case GETCHAR_CURSOR_UP:
-                if (--selected_entry == -1)
-                    selected_entry = max_entries - 1;
-                goto refresh;
-            case GETCHAR_CURSOR_DOWN:
-                if (++selected_entry == max_entries)
-                    selected_entry = 0;
-                goto refresh;
-            case '\r':
-                config_set_entry(selected_entry);
-                text_enable_cursor();
-                if (!config_get_value(cmdline, 0, CMDLINE_MAX, "KERNEL_CMDLINE")) {
-                    if (!config_get_value(cmdline, 0, CMDLINE_MAX, "CMDLINE")) {
-                        cmdline[0] = '\0';
-                    }
-                }
-                text_clear();
-                return;
-            case 'e':
-                config_set_entry(selected_entry);
-                text_enable_cursor();
-                if (!config_get_value(cmdline, 0, CMDLINE_MAX, "KERNEL_CMDLINE")) {
-                    if (!config_get_value(cmdline, 0, CMDLINE_MAX, "CMDLINE")) {
-                        cmdline[0] = '\0';
-                    }
-                }
-                print("\n\n> ");
-                gets(cmdline, cmdline, CMDLINE_MAX);
-                text_clear();
-                return;
-        }
-    }
-}
+#include <menu.h>
 
 void main(int boot_drive) {
     // Initial prompt.
@@ -103,8 +37,6 @@ void main(int boot_drive) {
     print("qloader2\n\n");
 
     print("Boot drive: %x\n", boot_drive);
-
-    cmdline = balloc(CMDLINE_MAX);
 
     // Look for config file.
     print("Searching for config file...\n");
@@ -126,34 +58,8 @@ void main(int boot_drive) {
         }
     }
 
-    int timeout; {
-        char buf[32];
-        if (!config_get_value(buf, 0, 32, "TIMEOUT")) {
-            timeout = 5;
-        } else {
-            timeout = (int)strtoui(buf);
-        }
-    }
+    char *cmdline = menu();
 
-    print("\n");
-    for (int i = timeout; i; i--) {
-        print("\rBooting in %d (press any key for boot menu, command line edit)...", i);
-        if (pit_sleep_and_quit_on_keypress(18)) {
-            boot_menu();
-            goto got_entry;
-        }
-    }
-    print("\n\n");
-
-    if (config_set_entry(0) == -1) {
-        panic("Invalid config entry.");
-    }
-
-    if (!config_get_value(cmdline, 0, CMDLINE_MAX, "KERNEL_CMDLINE")) {
-        cmdline[0] = '\0';
-    }
-
-got_entry:
     init_e820();
     init_memmap();
 

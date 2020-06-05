@@ -62,8 +62,13 @@ struct e820_entry_t *get_memmap(size_t *entries) {
 
     // Sort the entries
     for (size_t p = 0; p < memmap_entries - 1; p++) {
+<<<<<<< HEAD
         uint64_t min = memmap[0].base;
         size_t min_index = 0;
+=======
+        uint64_t min = memmap[p].base;
+        size_t min_index = p;
+>>>>>>> upstream/master
         for (size_t i = p; i < memmap_entries; i++) {
             if (memmap[i].base < min) {
                 min = memmap[i].base;

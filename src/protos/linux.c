@@ -7,6 +7,7 @@
 #include <drivers/vga_textmode.h>
 #include <lib/config.h>
 #include <lib/print.h>
+#include <lib/memmap.h>
 
 #define KERNEL_LOAD_ADDR ((size_t)0x100000)
 #define INITRD_LOAD_ADDR ((size_t)0x1000000)
@@ -102,7 +103,7 @@ void linux_load(char *cmdline, int boot_drive) {
 
     // load kernel
     print("Loading kernel...\n");
-    is_valid_memory_range(KERNEL_LOAD_ADDR, fd->size - real_mode_code_size);
+    memmap_alloc_range(KERNEL_LOAD_ADDR, fd->size - real_mode_code_size);
     fread(fd, (void *)KERNEL_LOAD_ADDR, real_mode_code_size, fd->size - real_mode_code_size);
 
     char initrd_path[64];
@@ -124,7 +125,7 @@ void linux_load(char *cmdline, int boot_drive) {
     }
 
     print("Loading initrd...\n");
-    is_valid_memory_range(INITRD_LOAD_ADDR, initrd.size);
+    memmap_alloc_range(INITRD_LOAD_ADDR, initrd.size);
     fread(&initrd, (void *)INITRD_LOAD_ADDR, 0, initrd.size);
 
     *((uint32_t *)(real_mode_code + 0x218)) = (uint32_t)INITRD_LOAD_ADDR;

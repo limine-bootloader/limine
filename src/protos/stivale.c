@@ -5,7 +5,7 @@
 #include <lib/elf.h>
 #include <lib/blib.h>
 #include <lib/acpi.h>
-#include <lib/e820.h>
+#include <lib/memmap.h>
 #include <lib/config.h>
 #include <lib/time.h>
 #include <lib/print.h>
@@ -159,9 +159,6 @@ void stivale_load(char *cmdline, int boot_drive) {
 
     print("stivale: Top used address in ELF: %X\n", top_used_addr);
 
-    stivale_struct.memory_map_entries = (uint64_t)e820_entries;
-    stivale_struct.memory_map_addr    = (uint64_t)(size_t)e820_map;
-
     stivale_struct.module_count = 0;
     uint64_t *prev_mod_ptr = &stivale_struct.modules;
     for (int i = 0; ; i++) {
@@ -173,12 +170,17 @@ void stivale_load(char *cmdline, int boot_drive) {
 
         struct stivale_module *m = balloc(sizeof(struct stivale_module));
 
-        config_get_value(m->string, i, 128, "MODULE_STRING");
+        if (!config_get_value(m->string, i, 128, "MODULE_STRING")) {
+            m->string[0] = '\0';
+        }
 
         int part; {
             char buf[32];
-            config_get_value(buf, i, 32, "MODULE_PARTITION");
-            part = (int)strtoui(buf);
+            if (!config_get_value(buf, i, 32, "MODULE_PARTITION")) {
+                part = kernel_part;
+            } else {
+                part = (int)strtoui(buf);
+            }
         }
 
         struct file_handle f;
@@ -188,7 +190,7 @@ void stivale_load(char *cmdline, int boot_drive) {
             ((uint32_t)top_used_addr & ~((uint32_t)0xfff)) + 0x1000 :
             (uint32_t)top_used_addr);
 
-        is_valid_memory_range((size_t)module_addr, f.size);
+        memmap_alloc_range((size_t)module_addr, f.size);
         fread(&f, module_addr, 0, f.size);
 
         m->begin = (uint64_t)(size_t)module_addr;
@@ -226,6 +228,11 @@ void stivale_load(char *cmdline, int boot_drive) {
     } else {
         deinit_vga_textmode();
     }
+
+    size_t memmap_entries;
+    struct e820_entry_t *memmap = get_memmap(&memmap_entries);
+    stivale_struct.memory_map_entries = (uint64_t)memmap_entries;
+    stivale_struct.memory_map_addr    = (uint64_t)(size_t)memmap;
 
     if (bits == 64) {
         // If we're going 64, we might as well call this BIOS interrupt

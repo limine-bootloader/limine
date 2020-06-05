@@ -41,6 +41,15 @@
 
 static bool rand_initialised = false;
 
+#define n ((int)624)
+#define m ((int)397)
+#define matrix_a ((uint32_t)0x9908b0df)
+#define msb ((uint32_t)0x80000000)
+#define lsbs ((uint32_t)0x7fffffff)
+
+static uint32_t *status;
+static int ctr;
+
 static void init_rand(void) {
     uint32_t seed = ((uint32_t)0xc597060c * rdtsc(uint32_t))
                   * ((uint32_t)0xce86d624)
@@ -55,19 +64,12 @@ static void init_rand(void) {
         seed *= (seed ^ rdrand(uint32_t));
     }
 
+    status = balloc(n);
+
     srand(seed);
 
     rand_initialised = true;
 }
-
-#define n ((int)624)
-#define m ((int)397)
-#define matrix_a ((uint32_t)0x9908b0df)
-#define msb ((uint32_t)0x80000000)
-#define lsbs ((uint32_t)0x7fffffff)
-
-static uint32_t status[n];
-static int ctr;
 
 void srand(uint32_t s) {
     status[0] = s;

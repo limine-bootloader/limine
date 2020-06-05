@@ -4,7 +4,24 @@
 #include <stddef.h>
 #include <stdint.h>
 
-void is_valid_memory_range(size_t base, size_t size);
+#define ALIGN_UP(x, a) ({ \
+    typeof(x) value = x; \
+    typeof(a) align = a; \
+    if ((value & (align - 1)) != 0) { \
+        value &= ~(align - 1); \
+        value += align; \
+    } \
+    value; \
+})
+
+#define ALIGN_DOWN(x, a) ({ \
+    typeof(x) value = x; \
+    typeof(a) align = a; \
+    if ((value & (align - 1)) != 0) { \
+        value &= ~(align - 1); \
+    } \
+    value; \
+})
 
 uint8_t bcd_to_int(uint8_t val);
 

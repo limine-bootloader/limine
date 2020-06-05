@@ -21,6 +21,7 @@ asm (
 #include <lib/part.h>
 #include <lib/config.h>
 #include <lib/e820.h>
+#include <lib/memmap.h>
 #include <lib/print.h>
 #include <fs/file.h>
 #include <lib/elf.h>
@@ -154,6 +155,7 @@ void main(int boot_drive) {
 
 got_entry:
     init_e820();
+    init_memmap();
 
     char proto[32];
     if (!config_get_value(proto, 0, 32, "KERNEL_PROTO")) {

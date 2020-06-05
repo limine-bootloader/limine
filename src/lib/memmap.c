@@ -59,6 +59,22 @@ static void memmap_align_free_entries(void) {
 
 struct e820_entry_t *get_memmap(size_t *entries) {
     memmap_align_free_entries();
+
+    // Sort the entries
+    for (size_t p = 0; p < memmap_entries - 1; p++) {
+        uint64_t min = memmap[0].base;
+        size_t min_index = 0;
+        for (size_t i = p; i < memmap_entries; i++) {
+            if (memmap[i].base < min) {
+                min = memmap[i].base;
+                min_index = i;
+            }
+        }
+        struct e820_entry_t min_e = memmap[min_index];
+        memmap[min_index] = memmap[0];
+        memmap[0] = min_e;
+    }
+
     *entries = memmap_entries;
     return memmap;
 }

@@ -184,7 +184,9 @@ void stivale_load(char *cmdline, int boot_drive) {
         }
 
         struct file_handle f;
-        fopen(&f, fd->disk, part, module_file);
+        if (fopen(&f, fd->disk, part, module_file)) {
+            panic("Requested module with path \"%s\" not found!\n", module_file);
+        }
 
         void *module_addr = (void *)(((uint32_t)top_used_addr & 0xfff) ?
             ((uint32_t)top_used_addr & ~((uint32_t)0xfff)) + 0x1000 :

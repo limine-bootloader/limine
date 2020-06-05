@@ -36,7 +36,7 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
 
     va_start(args, fmt);
 
-    print("PANIC: ");
+    print("\033[31mPANIC:\033[37;1m\033[40m ");
     vprint(fmt, args);
 
     va_end(args);

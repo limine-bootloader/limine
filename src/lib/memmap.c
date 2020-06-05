@@ -72,7 +72,7 @@ struct e820_entry_t *get_memmap(size_t *entries) {
         }
         struct e820_entry_t min_e = memmap[min_index];
         memmap[min_index] = memmap[0];
-        memmap[0] = min_e;
+        memmap[p] = min_e;
     }
 
     *entries = memmap_entries;

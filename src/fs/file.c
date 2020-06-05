@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <fs/file.h>
 #include <fs/echfs.h>
-#include <fs/ext2fs.h>
+#include <fs/ext2.h>
 #include <fs/fat32.h>
 #include <lib/blib.h>
 
@@ -23,15 +23,15 @@ int fopen(struct file_handle *ret, int disk, int partition, const char *filename
         return 0;
     }
 
-    if (ext2fs_check_signature(disk, partition)) {
-        struct ext2fs_file_handle *fd = balloc(sizeof(struct ext2fs_file_handle));
+    if (ext2_check_signature(disk, partition)) {
+        struct ext2_file_handle *fd = balloc(sizeof(struct ext2_file_handle));
 
-        int r = ext2fs_open(fd, disk, partition, filename);
+        int r = ext2_open(fd, disk, partition, filename);
         if (r)
             return r;
 
         ret->fd        = (void *)fd;
-        ret->read      = (void *)ext2fs_read;
+        ret->read      = (void *)ext2_read;
         ret->disk      = disk;
         ret->partition = partition;
         ret->size      = fd->size;

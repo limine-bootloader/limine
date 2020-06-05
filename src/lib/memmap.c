@@ -34,7 +34,7 @@ static const char *memmap_type(uint32_t type) {
 
 void print_memmap(struct e820_entry_t *mm, size_t size) {
     for (size_t i = 0; i < size; i++) {
-        print("e820: [%X -> %X] : %X  <%s>\n",
+        print("[%X -> %X] : %X  <%s>\n",
               mm[i].base,
               mm[i].base + mm[i].length,
               mm[i].length,
@@ -42,16 +42,23 @@ void print_memmap(struct e820_entry_t *mm, size_t size) {
     }
 }
 
-static void align_entry_down(uint64_t *base, uint64_t *length) {
+static int align_entry_down(uint64_t *base, uint64_t *length) {
     uint64_t orig_base = *base;
 
     *base   = ALIGN_UP(*base, PAGE_SIZE);
+
+    if ((*base - orig_base) > *length)
+        return -1;
+
     *length = *length - (*base - orig_base);
     *length = ALIGN_DOWN(*length, PAGE_SIZE);
+
+    return 0;
 }
 
 static int align_entry_with_base(uint64_t *base, uint64_t *length) {
-    align_entry_down(base, length);
+    if (align_entry_down(base, length))
+        return -1;
 
     if (!length)
         return -1;
@@ -75,9 +82,8 @@ static void memmap_align_free_entries(void) {
         if (memmap[i].type != 1)
             continue;
 
-        align_entry_down(&memmap[i].base, &memmap[i].length);
-
-        if (!memmap[i].length) {
+        if (align_entry_down(&memmap[i].base, &memmap[i].length)
+         || !memmap[i].length) {
             // Eradicate from memmap
             for (size_t j = i; j < memmap_entries - 1; j++) {
                 memmap[j] = memmap[j+1];

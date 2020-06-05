@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <lib/cio.h>
 #include <lib/real.h>
 #include <drivers/vga_textmode.h>
@@ -7,6 +8,8 @@
 #define VIDEO_BOTTOM ((VD_ROWS * VD_COLS) - 1)
 #define VD_COLS (80 * 2)
 #define VD_ROWS 25
+
+static bool vga_textmode_initialised = false;
 
 static void escape_parse(char c);
 static void text_putchar(char c);
@@ -87,14 +90,16 @@ void init_vga_textmode(void) {
     port_out_b(0x3d4, 0x0a);
     port_out_b(0x3d5, 0x20);
     text_clear();
+
+    vga_textmode_initialised = true;
 }
 
 void deinit_vga_textmode(void) {
     struct rm_regs r = {0};
-
     r.eax = 0x0003;
-
     rm_int(0x10, &r, &r);
+
+    vga_textmode_initialised = false;
 }
 
 static void text_set_cursor_palette(uint8_t c) {
@@ -136,6 +141,8 @@ void text_set_cursor_pos(int x, int y) {
 }
 
 void text_write(const char *buf, size_t count) {
+    if (!vga_textmode_initialised)
+        return;
     for (size_t i = 0; i < count; i++)
         text_putchar(buf[i]);
 }

@@ -167,9 +167,6 @@ void init_memmap(void) {
 
         memmap_entries++;
     }
-
-    print("Memory map initialised. Current layout:\n");
-    print_memmap(memmap, memmap_entries);
 }
 
 void memmap_alloc_range(uint64_t base, uint64_t length) {
@@ -217,8 +214,6 @@ void memmap_alloc_range(uint64_t base, uint64_t length) {
             target->base   = base;
             target->length = length;
 
-            print("Memory map changed. Current layout:\n");
-            print_memmap(memmap, memmap_entries);
             return;
         }
     }

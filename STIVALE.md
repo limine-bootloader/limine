@@ -165,12 +165,14 @@ struct mmap_entry {
 
 `type` is an enumeration that can have the following values:
 
-1. Usable RAM
-2. Reserved
-3. ACPI reclaimable
-4. ACPI NVS
-5. Bad memory
-10. Kernel/Modules
+```
+1  - Usable RAM
+2  - Reserved
+3  - ACPI reclaimable
+4  - ACPI NVS
+5  - Bad memory
+10 - Kernel/Modules
+```
 
 All other values are undefined.
 

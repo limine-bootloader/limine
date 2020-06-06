@@ -170,8 +170,21 @@ struct mmap_entry {
 3. ACPI reclaimable
 4. ACPI NVS
 5. Bad memory
+10. Kernel/Modules
 
 All other values are undefined.
+
+The kernel and modules loaded **are not** marked as usable memory. They are marked
+as Kernel/Modules (type 10).
+
+Usable RAM chunks are guaranteed to be 4096 byte aligned for both base and length.
+
+The entries are guaranteed to be sorted by base address, lowest to highest.
+
+Usable RAM chunks are guaranteed not to overlap with any other entry.
+
+To the contrary, all non-usable RAM chunks are not guaranteed any alignment, nor
+is it guaranteed that they do not overlap each other (except usable RAM).
 
 ## Modules
 

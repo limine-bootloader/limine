@@ -133,7 +133,7 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
     do {
         for (size_t sector_in_cluster = 0; sector_in_cluster < context->sectors_per_cluster; sector_in_cluster++) {
             struct fat32_directory_entry directory_entries[FAT32_SECTOR_SIZE / sizeof(struct fat32_directory_entry)];
-            error = fat32_load_fat_cluster_to_memory(context, current_cluster_number, directory_entries, 0 * FAT32_SECTOR_SIZE, sizeof(directory_entries));
+            error = fat32_load_fat_cluster_to_memory(context, current_cluster_number, directory_entries, sector_in_cluster * FAT32_SECTOR_SIZE, sizeof(directory_entries));
 
             if (error != 0) {
                 return error;

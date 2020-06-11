@@ -123,6 +123,26 @@ static void fat32_lfncpy(char* destination, const void* source, unsigned int siz
     }
 }
 
+static void fat32_filename_to_8_3(char *dest, const char *src) {
+    int i = 0, j = 0;
+
+conv:
+    while (src[i] && src[i] != '.')
+        dest[j++] = toupper(src[i++]);
+
+    if (!src[i]) {
+        while (j < 8+3)
+            dest[j++] = ' ';
+        return;
+    }
+
+    i++;
+    while (j < 8)
+        dest[j++] = ' ';
+
+    goto conv;
+}
+
 static int fat32_open_in(struct fat32_context* context, struct fat32_directory_entry* directory, struct fat32_directory_entry* file, const char* name) {
     int error;
     uint32_t current_cluster_number = directory->cluster_num_high << 16 | directory->cluster_num_low;
@@ -176,14 +196,21 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
                     }
                 }
 
-                if ((has_lfn && strcmp(current_lfn, name) == 0) || strncmp(directory_entries[i].file_name_and_ext, name, 8 + 3) == 0) {
-                    *file = directory_entries[i];
-                    return 0;
+                if (has_lfn) {
+                    if (!strcmp(current_lfn, name)) {
+                        *file = directory_entries[i];
+                        return 0;
+                    }
+                } else {
+                    char fn[8+3];
+                    fat32_filename_to_8_3(fn, name);
+                    if (!strncmp(directory_entries[i].file_name_and_ext, fn, 8+3)) {
+                        *file = directory_entries[i];
+                        return 0;
+                    }
                 }
 
-                if (has_lfn) {
-                    has_lfn = false;
-                }
+                has_lfn = false;
             }
         }
 
@@ -192,7 +219,7 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
         if (error != 0) {
             return error;
         }
-    } while (current_cluster_number >= 0x00000002 && current_cluster_number <= 0x0FFFFEF);
+    } while (current_cluster_number >= 0x00000002 && current_cluster_number <= 0x0FFFFFEF);
 
     // file not found
     return -1;
@@ -330,7 +357,7 @@ int fat32_read(struct fat32_file_handle* file, void* buf, uint64_t loc, uint64_t
             print("fat32: failed to read cluster %x from map\n", current_cluster_number);
             return r;
         }
-    } while (current_cluster_number >= 0x00000002 && current_cluster_number <= 0x0FFFFEF);
+    } while (current_cluster_number >= 0x00000002 && current_cluster_number <= 0x0FFFFFEF);
 
     print("fat32: read failed, unexpected end of cluster chain\n");
     return 0;

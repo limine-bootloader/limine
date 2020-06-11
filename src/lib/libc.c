@@ -2,6 +2,20 @@
 #include <stdint.h>
 #include <lib/libc.h>
 
+int toupper(int c) {
+    if (c >= 'a' && c <= 'z') {
+        return c - 0x20;
+    }
+    return c;
+}
+
+int tolower(int c) {
+    if (c >= 'A' && c <= 'Z') {
+        return c + 0x20;
+    }
+    return c;
+}
+
 void *memcpy(void *dest, const void *src, size_t n) {
     uint8_t *pdest = dest;
     const uint8_t *psrc = src;

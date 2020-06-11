@@ -107,8 +107,22 @@ static int get_edid_info(struct edid_info_struct *buf) {
     return 0;
 }
 
+struct resolution {
+    uint16_t width;
+    uint16_t height;
+    uint16_t bpp;
+};
+
+static struct resolution fallback_resolutions[] = {
+    { 1024, 768, 32 },
+    { 800,  600, 32 },
+    { 640,  480, 32 }
+};
+
 int init_vbe(uint64_t *framebuffer, uint16_t *pitch, uint16_t *target_width, uint16_t *target_height, uint16_t *target_bpp) {
     print("vbe: Initialising...\n");
+
+    size_t current_fallback = 0;
 
     struct vbe_info_struct vbe_info;
     get_vbe_info(&vbe_info);
@@ -141,6 +155,7 @@ int init_vbe(uint64_t *framebuffer, uint16_t *pitch, uint16_t *target_width, uin
               *target_width, *target_height, *target_bpp);
     }
 
+retry:;
     uint16_t *vid_modes = (uint16_t *)rm_desegment(vbe_info.vid_modes_seg,
                                                    vbe_info.vid_modes_off);
 
@@ -159,5 +174,13 @@ int init_vbe(uint64_t *framebuffer, uint16_t *pitch, uint16_t *target_width, uin
         }
     }
 
-    return -1;
+    if (current_fallback < SIZEOF_ARRAY(fallback_resolutions)) {
+        *target_width  = fallback_resolutions[current_fallback].width;
+        *target_height = fallback_resolutions[current_fallback].height;
+        *target_bpp    = fallback_resolutions[current_fallback].bpp;
+        current_fallback++;
+        goto retry;
+    }
+
+    panic("Could not set a video mode");
 }

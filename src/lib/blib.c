@@ -45,9 +45,8 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
     }
 }
 
-extern symbol bss_end;
-static size_t bump_allocator_base = (size_t)bss_end;
-#define BUMP_ALLOCATOR_LIMIT ((size_t)0x80000)
+static size_t bump_allocator_base = 0x10000;
+#define BUMP_ALLOCATOR_LIMIT ((size_t)0x70000)
 
 void brewind(size_t count) {
     bump_allocator_base -= count;

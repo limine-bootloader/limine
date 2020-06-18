@@ -1,9 +1,9 @@
-OUTPUT_FORMAT(elf32-i386)
+OUTPUT_FORMAT(binary)
 ENTRY(main)
 
 SECTIONS
 {
-    . = 0x500;
+    . = 0x60000;
 
     .text : {
         KEEP(*(.entry*))

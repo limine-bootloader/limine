@@ -4,6 +4,7 @@ x86/x86_64 BIOS Bootloader
 ### Supported boot protocols
 * Linux
 * stivale (qloader2's native boot protocol, see STIVALE.md for details)
+* TempleOS
 
 ### Supported filesystems
 * ext2

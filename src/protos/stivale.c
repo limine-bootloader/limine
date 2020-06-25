@@ -52,7 +52,7 @@ struct stivale_struct {
 struct stivale_struct stivale_struct = {0};
 
 void stivale_load(char *cmdline, int boot_drive) {
-    stivale_struct.flags &= (1 << 0);  // set bit 0 since we are BIOS and not UEFI
+    stivale_struct.flags |= (1 << 0);  // set bit 0 since we are BIOS and not UEFI
 
     int kernel_drive; {
         char buf[32];
@@ -216,6 +216,7 @@ void stivale_load(char *cmdline, int boot_drive) {
     stivale_struct.cmdline = (uint64_t)(size_t)cmdline;
 
     stivale_struct.epoch = time();
+    print("stivale: Current epoch: %U\n", stivale_struct.epoch);
 
     stivale_struct.framebuffer_width  = stivale_hdr.framebuffer_width;
     stivale_struct.framebuffer_height = stivale_hdr.framebuffer_height;

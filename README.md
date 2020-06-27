@@ -64,6 +64,7 @@ One can get `echfs-utils` by installing https://github.com/qword-os/echfs.
 
 ## Building from source
 In order to hack qloader2, one must build the GCC toolchain from source first.
+This is required, using `gcc -m32` will not work.
 
 To do so, run the `make_toolchain.sh` script from within the `toolchain` directory;
 keep in mind that the script takes `MAKEFLAGS` as an argument.

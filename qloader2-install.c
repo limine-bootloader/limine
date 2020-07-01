@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
 
     uint32_t stage2_sect = 1;
     if (argc >= 4)
-        sscanf(argv[3], SCNu32, &stage2_sect);
+        sscanf(argv[3], "%" SCNu32, &stage2_sect);
 
     char orig_mbr[64];
     fseek(device, 446, SEEK_SET);
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     free(ql2_stage2);
 
     fseek(device, 0x1b0, SEEK_SET);
-    fprintf(device, PRIu32, stage2_sect);
+    fwrite(&stage2_sect, 1, 4, device);
 
     fseek(device, 446, SEEK_SET);
     fwrite(orig_mbr, 1, 64, device);

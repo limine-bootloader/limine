@@ -22,6 +22,15 @@ int init_config(int drive, int part) {
 
     fread(&f, config_addr, 0, f.size);
 
+    // remove windows carriage returns, if any
+    for (size_t i = 0; i < f.size; i++) {
+        if (config_addr[i] == '\r') {
+            for (size_t j = i; j < f.size - 1; j++)
+                config_addr[j] = config_addr[j+1];
+            f.size--;
+        }
+    }
+
     return 0;
 }
 

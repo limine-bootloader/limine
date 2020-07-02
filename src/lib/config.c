@@ -18,18 +18,21 @@ int init_config(int drive, int part) {
     }
 
     config_addr = balloc(f.size + 1);
-    memset(config_addr, 0, f.size + 1);
 
     fread(&f, config_addr, 0, f.size);
 
+    size_t config_size = f.size;
+
     // remove windows carriage returns, if any
-    for (size_t i = 0; i < f.size; i++) {
+    for (size_t i = 0; i < config_size; i++) {
         if (config_addr[i] == '\r') {
-            for (size_t j = i; j < f.size - 1; j++)
+            for (size_t j = i; j < config_size - 1; j++)
                 config_addr[j] = config_addr[j+1];
-            f.size--;
+            config_size--;
         }
     }
+
+    config_addr[config_size-1] = 0;
 
     return 0;
 }

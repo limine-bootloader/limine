@@ -89,7 +89,7 @@ static int fat32_init_context(struct fat32_context* context, int disk, int parti
     context->hidden_sectors = bpb.hidden_sectors_count;
     context->sectors_per_fat = bpb.sectors_per_fat_32;
     context->root_directory_cluster = bpb.root_directory_cluster;
-    context->fat_start_lba = bpb.reserved_sectors + bpb.hidden_sectors_count;
+    context->fat_start_lba = bpb.reserved_sectors;
     context->data_start_lba = context->fat_start_lba + bpb.fats_count * bpb.sectors_per_fat_32;
 
     return 0;
@@ -148,13 +148,11 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
     uint32_t current_cluster_number = directory->cluster_num_high << 16 | directory->cluster_num_low;
 
     char current_lfn[FAT32_LFN_MAX_FILENAME_LENGTH] = {0};
-    bool has_lfn = false;
 
     do {
         for (size_t sector_in_cluster = 0; sector_in_cluster < context->sectors_per_cluster; sector_in_cluster++) {
             struct fat32_directory_entry directory_entries[FAT32_SECTOR_SIZE / sizeof(struct fat32_directory_entry)];
             error = fat32_load_fat_cluster_to_memory(context, current_cluster_number, directory_entries, sector_in_cluster * FAT32_SECTOR_SIZE, sizeof(directory_entries));
-
             if (error != 0) {
                 return error;
             }
@@ -166,8 +164,6 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
                 }
 
                 if (directory_entries[i].attribute == FAT32_LFN_ATTRIBUTE) {
-                    has_lfn = true;
-
                     struct fat32_lfn_entry* lfn = (struct fat32_lfn_entry*) &directory_entries[i];
 
                     if (lfn->sequence_number & 0b01000000) {
@@ -184,9 +180,7 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
                     fat32_lfncpy(current_lfn + lfn_index + 05, lfn->name2, 6);
                     fat32_lfncpy(current_lfn + lfn_index + 11, lfn->name3, 2);
                     continue;
-                }
 
-                if (has_lfn) {
                     // remove trailing spaces
                     for (int j = SIZEOF_ARRAY(current_lfn) - 2; j >= -1; j--) {
                         if (j == -1 || current_lfn[j] != ' ') {
@@ -194,9 +188,7 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
                             break;
                         }
                     }
-                }
 
-                if (has_lfn) {
                     if (!strcmp(current_lfn, name)) {
                         *file = directory_entries[i];
                         return 0;
@@ -209,8 +201,6 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
                         return 0;
                     }
                 }
-
-                has_lfn = false;
             }
         }
 

@@ -17,11 +17,10 @@ int init_config(int drive, int part) {
         }
     }
 
-    config_addr = balloc(f.size + 1);
+    size_t config_size = f.size + 1;
+    config_addr = balloc(config_size);
 
     fread(&f, config_addr, 0, f.size);
-
-    size_t config_size = f.size;
 
     // remove windows carriage returns, if any
     for (size_t i = 0; i < config_size; i++) {
@@ -31,8 +30,6 @@ int init_config(int drive, int part) {
             config_size--;
         }
     }
-
-    config_addr[config_size-1] = 0;
 
     return 0;
 }

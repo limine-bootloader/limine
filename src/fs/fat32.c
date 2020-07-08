@@ -123,7 +123,7 @@ static void fat32_lfncpy(char* destination, const void* source, unsigned int siz
     }
 }
 
-static void fat32_filename_to_8_3(char *dest, const char *src) {
+static bool fat32_filename_to_8_3(char *dest, const char *src) {
     int i = 0, j = 0;
     bool ext = false;
 
@@ -131,7 +131,7 @@ static void fat32_filename_to_8_3(char *dest, const char *src) {
         if (src[i] == '.') {
             if (ext) {
                 // This is a double extension here, just give up.
-                return;
+                return false;
             }
             ext = true;
             // Pad the rest of the base filename with spaces
@@ -142,11 +142,12 @@ static void fat32_filename_to_8_3(char *dest, const char *src) {
         }
         if (j >= 8+3 || (j >= 8 && !ext)) {
             // Filename too long, give up.
-            return;
+            return false;
         }
         dest[j++] = toupper(src[i++]);
     }
 
+    return true;
 }
 
 static int fat32_open_in(struct fat32_context* context, struct fat32_directory_entry* directory, struct fat32_directory_entry* file, const char* name) {
@@ -203,8 +204,7 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
                     }
                 } else {
                     char fn[8+3];
-                    fat32_filename_to_8_3(fn, name);
-                    if (!strncmp(directory_entries[i].file_name_and_ext, fn, 8+3)) {
+                    if (fat32_filename_to_8_3(fn, name) && !strncmp(directory_entries[i].file_name_and_ext, fn, 8+3)) {
                         *file = directory_entries[i];
                         return 0;
                     }

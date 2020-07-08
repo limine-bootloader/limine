@@ -125,22 +125,28 @@ static void fat32_lfncpy(char* destination, const void* source, unsigned int siz
 
 static void fat32_filename_to_8_3(char *dest, const char *src) {
     int i = 0, j = 0;
+    bool ext = false;
 
-conv:
-    while (src[i] && src[i] != '.')
+    while (src[i]) {
+        if (src[i] == '.') {
+            if (ext) {
+                // This is a double extension here, just give up.
+                return;
+            }
+            ext = true;
+            // Pad the rest of the base filename with spaces
+            while (j < 8)
+                dest[j++] = ' ';
+            i++;
+            continue;
+        }
+        if (j >= 8+3 || (j >= 8 && !ext)) {
+            // Filename too long, give up.
+            return;
+        }
         dest[j++] = toupper(src[i++]);
-
-    if (!src[i]) {
-        while (j < 8+3)
-            dest[j++] = ' ';
-        return;
     }
 
-    i++;
-    while (j < 8)
-        dest[j++] = ' ';
-
-    goto conv;
 }
 
 static int fat32_open_in(struct fat32_context* context, struct fat32_directory_entry* directory, struct fat32_directory_entry* file, const char* name) {
@@ -179,7 +185,9 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
                     fat32_lfncpy(current_lfn + lfn_index + 00, lfn->name1, 5);
                     fat32_lfncpy(current_lfn + lfn_index + 05, lfn->name2, 6);
                     fat32_lfncpy(current_lfn + lfn_index + 11, lfn->name3, 2);
-                    continue;
+
+                    if (lfn_index != 0)
+                        continue;
 
                     // remove trailing spaces
                     for (int j = SIZEOF_ARRAY(current_lfn) - 2; j >= -1; j--) {
@@ -190,7 +198,7 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
                     }
 
                     if (!strcmp(current_lfn, name)) {
-                        *file = directory_entries[i];
+                        *file = directory_entries[i+1];
                         return 0;
                     }
                 } else {

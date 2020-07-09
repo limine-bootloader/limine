@@ -346,22 +346,63 @@ void stivale_load(char *cmdline, int boot_drive) {
             "mov fs, ax\n\t"
             "mov gs, ax\n\t"
             "mov ss, ax\n\t"
-            "mov rsp, [rsi]\n\t"
-            "call [rbx]\n\t"
+
+            "push 0x30\n\t"
+            "push [rsi]\n\t"
+            "pushfq\n\t"
+            "push 0x28\n\t"
+            "push [rbx]\n\t"
+
+            "mov rax, 0x73746976616c6521\n\t"
+
+            "xor rbx, rbx\n\t"
+            "xor rcx, rcx\n\t"
+            "xor rdx, rdx\n\t"
+            "xor rsi, rsi\n\t"
+            "xor rbp, rbp\n\t"
+            "xor r8,  r8\n\t"
+            "xor r9,  r9\n\t"
+            "xor r10, r10\n\t"
+            "xor r11, r11\n\t"
+            "xor r12, r12\n\t"
+            "xor r13, r13\n\t"
+            "xor r14, r14\n\t"
+            "xor r15, r15\n\t"
+
+            "iretq\n\t"
             ".code32\n\t"
             :
             : "a" (pagemap_ptr), "b" (&entry_point),
               "D" (&stivale_struct), "S" (&stivale_hdr.stack)
+            : "memory"
         );
     } else if (bits == 32) {
         asm volatile (
             "cli\n\t"
             "cld\n\t"
-            "mov esp, [esi]\n\t"
-            "push edi\n\t"
-            "call [ebx]\n\t"
+
+            "sub esp, 4\n\t"
+            "mov [esp], edi\n\t"
+
+            "push 0x20\n\t"
+            "push [esi]\n\t"
+            "pushfd\n\t"
+            "push 0x18\n\t"
+            "push [ebx]\n\t"
+
+            "mov edx, 0x73746976\n\t"
+            "mov eax, 0x616c6521\n\t"
+
+            "xor ebx, ebx\n\t"
+            "xor ecx, ecx\n\t"
+            "xor esi, esi\n\t"
+            "xor edi, edi\n\t"
+            "xor ebp, ebp\n\t"
+
+            "iret\n\t"
             :
             : "b" (&entry_point), "D" (&stivale_struct), "S" (&stivale_hdr.stack)
+            : "memory"
         );
     }
 }

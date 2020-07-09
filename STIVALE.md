@@ -73,6 +73,10 @@ PIC/APIC IRQs are all masked.
 
 `rdi` will point to the stivale structure (described below).
 
+`rax` contains the stivale signature `0x73746976616c6521` (`stivale!` in ASCII).
+
+All other general purpose registers are set to 0.
+
 ### 32-bit kernel
 
 `eip` will be the entry point as defined in the ELF file, unless the `entry_point`
@@ -97,8 +101,12 @@ PIC/APIC IRQs are all masked.
 
 `esp` is set to the requested stack as per stivale header.
 
+`edx:eax` contain the stivale signature `0x73746976:0x616c6521` (`stivale!` in ASCII).
+
 A pointer to the stivale structure (described below) is pushed onto this stack
 before the entry point is called.
+
+All other general purpose registers are set to 0.
 
 ## stivale header (.stivalehdr)
 

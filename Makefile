@@ -14,7 +14,7 @@ test.img:
 	dd if=/dev/zero bs=1M count=0 seek=4096 of=test.img
 ifeq ($(OS), Linux)
 	parted -s test.img mklabel msdos
-	parted -s test.img mkpart primary 100%
+	parted -s test.img mkpart primary 0% 100%
 else ifeq ($(OS), FreeBSD)
 	sudo mdconfig -a -t vnode -f test.img -u md9
 	sudo gpart create -s mbr md9

@@ -166,5 +166,6 @@ void linux_load(char *cmdline, int boot_drive) {
         "retf\n\t"
         :
         : "b" (real_mode_code_seg), "c" (kernel_entry_seg)
+        : "memory"
     );
 }

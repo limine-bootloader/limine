@@ -353,8 +353,7 @@ void stivale_load(char *cmdline, int boot_drive) {
             "push 0x28\n\t"
             "push [rbx]\n\t"
 
-            "mov rax, 0x73746976616c6521\n\t"
-
+            "xor rax, rax\n\t"
             "xor rbx, rbx\n\t"
             "xor rcx, rcx\n\t"
             "xor rdx, rdx\n\t"
@@ -390,11 +389,10 @@ void stivale_load(char *cmdline, int boot_drive) {
             "push 0x18\n\t"
             "push [ebx]\n\t"
 
-            "mov edx, 0x73746976\n\t"
-            "mov eax, 0x616c6521\n\t"
-
+            "xor eax, eax\n\t"
             "xor ebx, ebx\n\t"
             "xor ecx, ecx\n\t"
+            "xor edx, edx\n\t"
             "xor esi, esi\n\t"
             "xor edi, edi\n\t"
             "xor ebp, ebp\n\t"

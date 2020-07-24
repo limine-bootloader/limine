@@ -30,7 +30,7 @@ int cpuid(uint32_t leaf, uint32_t subleaf,
 }
 
 __attribute__((noreturn)) void panic(const char *fmt, ...) {
-    asm volatile ("cli");
+    asm volatile ("cli" ::: "memory");
 
     va_list args;
 
@@ -42,7 +42,7 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
     va_end(args);
 
     for (;;) {
-        asm volatile ("hlt");
+        asm volatile ("hlt" ::: "memory");
     }
 }
 

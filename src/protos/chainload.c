@@ -62,5 +62,6 @@ void chainload(void) {
         ".code32\n\t"
         :
         : "d" (drive)
+        : "memory"
     );
 }

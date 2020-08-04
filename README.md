@@ -1,6 +1,8 @@
 # qloader2
 x86/x86_64 BIOS Bootloader
 
+![Reference screenshot](/screenshot.png?raw=true "Reference screenshot")
+
 ### Supported boot protocols
 * Linux
 * stivale (qloader2's native boot protocol, see STIVALE.md for details)

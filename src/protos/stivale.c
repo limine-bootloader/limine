@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <qloader2.h>
 #include <protos/stivale.h>
 #include <lib/elf.h>
 #include <lib/blib.h>
@@ -11,6 +12,7 @@
 #include <lib/print.h>
 #include <lib/rand.h>
 #include <lib/real.h>
+#include <lib/libc.h>
 #include <drivers/vbe.h>
 #include <drivers/vga_textmode.h>
 #include <fs/file.h>
@@ -244,6 +246,9 @@ void stivale_load(char *cmdline, int boot_drive) {
 
     print("stivale: Top used address in ELF: %X\n", top_used_addr);
 
+    strcpy(stivale_struct.bootloader_brand, "qloader2");
+    strcpy(stivale_struct.bootloader_version, QLOADER2_VERSION);
+
     //////////////////////////////////////////////
     // Create firmware struct tag
     //////////////////////////////////////////////
@@ -386,8 +391,11 @@ void stivale_load(char *cmdline, int boot_drive) {
 
     size_t memmap_entries;
     struct e820_entry_t *memmap = get_memmap(&memmap_entries);
+
     tag->entries = (uint64_t)memmap_entries;
-    tag->memmap  = (uint64_t)(size_t)memmap;
+
+    void *tag_memmap = balloc(sizeof(struct e820_entry_t) * memmap_entries);
+    memcpy(tag_memmap, memmap, sizeof(struct e820_entry_t) * memmap_entries);
 
     append_tag(&stivale_struct, (struct stivale_tag *)tag);
     }

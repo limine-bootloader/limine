@@ -14,7 +14,7 @@ stivale will recognise whether the ELF file is 32-bit or 64-bit and load the ker
 into the appropriate CPU mode.
 
 stivale natively supports (only for 64-bit kernels) and encourages higher half kernels.
-The kernel can load itself at `0xffffffff80100000` (as defined in the linker script)
+The kernel can load itself at `0xffffffff80100000` or higher (as defined in the linker script)
 and the bootloader will take care of everything, no AT linker script directives needed.
 
 If the kernel loads itself in the lower half (`0x100000` or higher), the bootloader
@@ -36,15 +36,17 @@ The kernel MUST NOT request to load itself at an address lower than `0x100000`
 field in the stivale header is set to a non-0 value, in which case, it is set to
 the value of `entry_point`.
 
-At entry, the bootloader will have setup paging such that there is a 4GiB identity
-mapped block of memory at `0x0000000000000000`, a 2GiB mapped area of memory
-that maps from `0x0000000000000000` physical to `0x0000000080000000` physical
-to `0xffffffff80000000` virtual. This area is for the higher half kernels.
-Further more, a 4GiB area of memory from `0x0000000000000000` physical to
-`0x0000000100000000` physical to `0xffff800000000000` virtual is mapped.
+At entry, the bootloader will have setup paging mappings as such:
+
+```
+ Base Physical Address -  Top Physical Address  ->  Virtual address
+  0x0000000000000000   -   0x0000000100000000   ->  0x0000000000000000
+  0x0000000000000000   -   0x0000000100000000   ->  0xffff800000000000
+  0x0000000000000000   -   0x0000000080000000   ->  0xffffffff80000000
+```
 
 If the kernel is dynamic and not statically linked, the bootloader will relocate it.
-Furthermore if bit 2 of the flags field in the stivale header is set, the bootloader
+Furthermore if bit 0 of the flags field in the stivale header is set, the bootloader
 will perform kernel address space layout randomisation (KASLR).
 
 The kernel should NOT modify the bootloader page tables, and it should only use them
@@ -62,8 +64,8 @@ IF flag, VM flag, and direction flag are cleared on entry. Other flags undefined
 
 PG is enabled (`cr0`), PE is enabled (`cr0`), PAE is enabled (`cr4`),
 LME is enabled (`EFER`).
-If stivale header flag bit 1 is set, then, if available, 5-level paging is enabled
-(LA57 bit in `cr4`).
+If the stivale header tag for 5-level paging is present, then, if available,
+5-level paging is enabled (LA57 bit in `cr4`).
 
 The A20 gate is enabled.
 
@@ -233,7 +235,7 @@ struct stivale_struct_tag_memmap {
     uint64_t identifier;          // Identifier: 0x2187f79e8612de07
     uint64_t next;
     uint64_t entries;             // Count of memory map entries
-    uint64_t memmap;              // Pointer to array of memory map entries
+    struct stivale_mmap_entry memmap[];  // Array of memory map entries
 } __attribute__((packed));
 ```
 

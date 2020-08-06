@@ -1,19 +1,17 @@
 asm (
     ".section .entry\n\t"
-    "xor dh, dh\n\t"
-    "push edx\n\t"
 
     // Zero out .bss
     "xor al, al\n\t"
-    "lea edi, bss_begin\n\t"
-    "lea ecx, bss_end\n\t"
-    "lea edx, bss_begin\n\t"
-    "sub ecx, edx\n\t"
+    "mov edi, OFFSET bss_begin\n\t"
+    "mov ecx, OFFSET bss_end\n\t"
+    "sub ecx, OFFSET bss_begin\n\t"
     "rep stosb\n\t"
 
-    "call main\n\t"
+    "jmp main\n\t"
 );
 
+#include <qloader2.h>
 #include <drivers/vga_textmode.h>
 #include <lib/real.h>
 #include <lib/blib.h>
@@ -35,7 +33,7 @@ void main(int boot_drive) {
     // Initial prompt.
     init_vga_textmode();
 
-    print("qloader2\n\n");
+    print("qloader2 " QLOADER2_VERSION "\n\n");
 
     print("Boot drive: %x\n", boot_drive);
 

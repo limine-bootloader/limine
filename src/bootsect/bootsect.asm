@@ -103,7 +103,10 @@ stage2:
     mov gs, ax
     mov ss, ax
 
-    jmp 0x8000
+    and edx, 0xff
+    push edx
+
+    call 0x8000
 
 bits 16
 %include 'a20_enabler.inc'

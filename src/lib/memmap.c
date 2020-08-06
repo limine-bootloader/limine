@@ -10,22 +10,32 @@
 #define MEMMAP_BASE ((size_t)0x100000)
 #define MEMMAP_MAX_ENTRIES 256
 
+#define MEMMAP_USABLE                 1
+#define MEMMAP_RESERVED               2
+#define MEMMAP_ACPI_RECLAIMABLE       3
+#define MEMMAP_ACPI_NVS               4
+#define MEMMAP_BAD_MEMORY             5
+#define MEMMAP_BOOTLOADER_RECLAIMABLE 0x1000
+#define MEMMAP_KERNEL_AND_MODULES     0x1001
+
 static struct e820_entry_t memmap[MEMMAP_MAX_ENTRIES];
 static size_t memmap_entries = 0;
 
 static const char *memmap_type(uint32_t type) {
     switch (type) {
-        case 1:
+        case MEMMAP_USABLE:
             return "Usable RAM";
-        case 2:
+        case MEMMAP_RESERVED:
             return "Reserved";
-        case 3:
+        case MEMMAP_ACPI_RECLAIMABLE:
             return "ACPI reclaimable";
-        case 4:
+        case MEMMAP_ACPI_NVS:
             return "ACPI NVS";
-        case 5:
+        case MEMMAP_BAD_MEMORY:
             return "Bad memory";
-        case 10:
+        case MEMMAP_BOOTLOADER_RECLAIMABLE:
+            return "Bootloader reclaimable";
+        case MEMMAP_KERNEL_AND_MODULES:
             return "Kernel/Modules";
         default:
             return "???";
@@ -196,7 +206,7 @@ void memmap_alloc_range(uint64_t base, uint64_t length) {
             }
             target = &memmap[memmap_entries++];
 
-            target->type   = 10;
+            target->type   = MEMMAP_KERNEL_AND_MODULES;
             target->base   = base;
             target->length = length;
 

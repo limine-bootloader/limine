@@ -112,57 +112,138 @@ the header that the bootloader will parse.
 Said header looks like this:
 ```c
 struct stivale_header {
-    uint64_t stack;   // This is the stack address which will be in RSP
-                      // when the kernel is loaded.
+    uint64_t entry_point;   // If not 0, this address will be jumped to as the
+                            // entry point of the kernel.
+                            // If set to 0, the ELF entry point will be used
+                            // instead.
 
-    uint16_t flags;   // Flags
-                      // bit 0  0 = text mode, 1 = graphics framebuffer mode
-                      // bit 1  0 = 4-level paging, 1 = use 5-level paging (if
-                                                        available)
-                                Ignored if booting a 32-bit kernel.
-                      // bit 2  0 = Disable KASLR, 1 = enable KASLR (up to 1GB slide)
-                                Ignored if booting a 32-bit or non-relocatable kernel
-                      // All other bits undefined.
+    uint64_t stack;         // This is the stack address which will be in RSP
+                            // when the kernel is loaded.
+                            // It can be set to a non-valid stack address such as 0
+                            // as long as the OS is 64-bit and sets up a stack on its
+                            // own.
 
-    uint16_t framebuffer_width;   // These 3 values are parsed if a graphics mode
-    uint16_t framebuffer_height;  // is requested. If all values are set to 0
-    uint16_t framebuffer_bpp;     // then the bootloader will pick the best possible
-                                  // video mode automatically (recommended).
-    uint64_t entry_point;      // If not 0, this field will be jumped to at entry
-                               // instead of the ELF entry point.
+    uint64_t flags;         // Bit 0: if 1, enable KASLR
+                            // All other bits undefined
+
+    uint64_t tags;          // Pointer to the first of the linked list of tags.
+                            // see "stivale header tags" section.
+                            // NULL = no tags.
 } __attribute__((packed));
 ```
+
+### stivale header tags
+
+The stivale header uses a mechanism to avoid having protocol versioning, but
+rather, feature-specific support detection.
+
+The kernel executable provides the bootloader with a linked list of structures,
+the first of which is pointed to by the `tags` entry of the stivale header.
+
+Each tag shall contain these 2 fields:
+```c
+struct stivale_hdr_tag {
+    uint64_t identifier;
+    uint64_t next;
+} __attribute__((packed));
+
+```
+
+The `identifier` field identifies what feature the tag is requesting from the
+bootloader.
+
+The `next` field points to another tag in the linked list. A NULL value determines
+the end of the linked list.
+
+Tag structures can have more than just these 2 members, but these 2 members MUST
+appear at the beginning of any given tag.
+
+Tags can have no extra members and just serve as "flags" to enable some behaviour
+that does not require extra parameters.
+
+#### Framebuffer header tag
+
+This tag asks the stivale-compliant bootloader to initialise a graphical framebuffer
+video mode.
+Omitting this tag will make the bootloader default to a CGA-compatible text mode,
+if supported.
+
+```c
+struct stivale_hdr_tag_framebuffer {
+    uint64_t identifier;          // Identifier: 0x3ecc1bc43d0f7971
+    uint64_t next;
+    uint16_t framebuffer_width;   // If all values are set to 0
+    uint16_t framebuffer_height;  // then the bootloader will pick the best possible
+    uint16_t framebuffer_bpp;     // video mode automatically.
+} __attribute__((packed));
+```
+
+#### 5-level paging header tag
+
+The presence of this tag enables support for 5-level paging, if available.
+
+Identifier: `0x932f477032007e8f`
+
+This tag does not have extra members.
 
 ## stivale structure
 
 The stivale structure returned by the bootloader looks like this:
 ```c
 struct stivale_struct {
-    uint64_t cmdline;               // Pointer to a null-terminated cmdline
-    uint64_t memory_map_addr;       // Pointer to the memory map (entries described below)
-    uint64_t memory_map_entries;    // Count of memory map entries
-    uint64_t framebuffer_addr;      // Address of the framebuffer and related info
-    uint16_t framebuffer_pitch;
-    uint16_t framebuffer_width;
-    uint16_t framebuffer_height;
-    uint16_t framebuffer_bpp;
-    uint64_t rsdp;                  // Pointer to the ACPI RSDP structure
-    uint64_t module_count;          // Count of modules that stivale loaded according to config
-    uint64_t modules;               // Pointer to the first entry in the linked list of modules (described below)
-    uint64_t epoch;                 // UNIX epoch at boot, read from system RTC
-    uint64_t flags;                 // Flags
-                                    // bit 0: 1 if booted with BIOS, 0 if booted with UEFI
-                                    // All other bits undefined.
+    char bootloader_brand[64];    // Bootloader null-terminated brand string
+    char bootloader_version[64];  // Bootloader null-terminated version string
+
+    uint64_t tags;          // Pointer to the first of the linked list of tags.
+                            // see "stivale structure tags" section.
+                            // NULL = no tags.
 } __attribute__((packed));
 ```
 
-## Memory map entry
+### stivale structure tags
+
+These tags work *very* similarly to the header tags, with the main difference being
+that these tags are returned to the kernel by the bootloader, instead.
+
+See "stivale header tags".
+
+The kernel is responsible for parsing the tags and the identifiers, and interpreting
+the tags that it supports, while handling in a graceful manner the tags it does not
+recognise.
+
+#### Command line structure tag
+
+This tag reports to the kernel the command line string that was passed to it by
+the bootloader.
 
 ```c
-struct mmap_entry {
+struct stivale_struct_tag_cmdline {
+    uint64_t identifier;          // Identifier: 0xe5e76a1b4597a781
+    uint64_t next;
+    uint64_t cmdline;             // Pointer to a null-terminated cmdline
+} __attribute__((packed));
+```
+
+#### Memory map structure tag
+
+This tag reports to the kernel the memory map built by the bootloader.
+
+```c
+struct stivale_struct_tag_memmap {
+    uint64_t identifier;          // Identifier: 0x2187f79e8612de07
+    uint64_t next;
+    uint64_t entries;             // Count of memory map entries
+    uint64_t memmap;              // Pointer to array of memory map entries
+} __attribute__((packed));
+```
+
+###### Memory map entry
+
+```c
+struct stivale_mmap_entry {
     uint64_t base;      // Base of the memory section
     uint64_t length;    // Length of the section
-    uint32_t type;      // Type (described below)
+    enum stivale_mmap_type type;  // Type (described below)
     uint32_t unused;
 } __attribute__((packed));
 ```
@@ -170,18 +251,21 @@ struct mmap_entry {
 `type` is an enumeration that can have the following values:
 
 ```
-1  - Usable RAM
-2  - Reserved
-3  - ACPI reclaimable
-4  - ACPI NVS
-5  - Bad memory
-10 - Kernel/Modules
+enum stivale_mmap_type : uint32_t {
+    USABLE                 = 1,
+    RESERVED               = 2,
+    ACPI_RECLAIMABLE       = 3,
+    ACPI_NVS               = 4,
+    BAD_MEMORY             = 5,
+    BOOTLOADER_RECLAIMABLE = 0x1000,
+    KERNEL_AND_MODULES     = 0x1001
+};
 ```
 
 All other values are undefined.
 
 The kernel and modules loaded **are not** marked as usable memory. They are marked
-as Kernel/Modules (type 10).
+as Kernel/Modules (type 0x1001).
 
 Usable RAM chunks are guaranteed to be 4096 byte aligned for both base and length.
 
@@ -192,17 +276,75 @@ Usable RAM chunks are guaranteed not to overlap with any other entry.
 To the contrary, all non-usable RAM chunks are not guaranteed any alignment, nor
 is it guaranteed that they do not overlap each other (except usable RAM).
 
-## Modules
+#### Framebuffer structure tag
 
-The `modules` variable points to the first entry of the linked list of module
-structures.
-A module structure looks like this:
+This tag reports to the kernel the currently set up framebuffer details, if any.
+
+```c
+struct stivale_struct_tag_framebuffer {
+    uint64_t identifier;          // Identifier: 0x506461d2950408fa
+    uint64_t next;
+    uint64_t framebuffer_addr;    // Address of the framebuffer and related info
+    uint16_t framebuffer_width;
+    uint16_t framebuffer_height;
+    uint16_t framebuffer_pitch;
+    uint16_t framebuffer_bpp;
+} __attribute__((packed));
+```
+
+#### Modules structure tag
+
+This tag lists modules that the bootloader loaded alongside the kernel, if any.
+
+```c
+struct stivale_struct_tag_modules {
+    uint64_t identifier;          // Identifier: 0x4b6fe466aade04ce
+    uint64_t next;
+    uint64_t module_count;        // Count of loaded modules
+    struct stivale_module modules[]; // Array of module descriptors
+} __attribute__((packed));
+```
+
 ```c
 struct stivale_module {
     uint64_t begin;         // Address where the module is loaded
     uint64_t end;           // End address of the module
-    char     string[128];   // String passed to the module (by config file)
-    uint64_t next;          // Pointer to the next module (if any), check module_count
-                            // in the stivale_struct
+    char string[128];       // 0-terminated string passed to the module
+} __attribute__((packed));
+```
+
+#### RSDP structure tag
+
+This tag reports to the kernel the location of the ACPI RSDP structure in memory.
+
+```c
+struct stivale_struct_tag_rsdp {
+    uint64_t identifier;        // Identifier: 0x9e1786930a375e78
+    uint64_t next;
+    uint64_t rsdp;              // Pointer to the ACPI RSDP structure
+} __attribute__((packed));
+```
+
+#### Epoch structure tag
+
+This tag reports to the kernel the current UNIX epoch, as per RTC.
+
+```c
+struct stivale_struct_tag_epoch {
+    uint64_t identifier;        // Identifier: 0x566a7bed888e1407
+    uint64_t next;
+    uint64_t epoch;             // UNIX epoch at boot, read from system RTC
+} __attribute__((packed));
+```
+
+#### Firmware structure tag
+
+This tag reports to the kernel info about the firmware.
+
+```c
+struct stivale_struct_tag_firmware {
+    uint64_t identifier;        // Identifier: 0x359d837855e3858c
+    uint64_t next;
+    uint64_t flags;             // Bit 0: 0 = UEFI, 1 = BIOS
 } __attribute__((packed));
 ```

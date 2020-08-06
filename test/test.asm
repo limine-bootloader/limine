@@ -4,12 +4,10 @@
 section .stivalehdr
 
 stivale_header:
-    dq stack.top    ; rsp
-    dw 0            ; video mode
-    dw 0          ; fb_width
-    dw 0          ; fb_height
-    dw 0          ; fb_bpp
-    dq 0
+    dq 0         ; entry point
+    dq stack.top ; rsp
+    dq 0         ; flags
+    dq 0         ; tags
 
 section .bss
 

@@ -271,8 +271,6 @@ int elf32_load_section(struct file_handle *fd, void *buffer, const char *name, s
     return 2;
 }
 
-#define FIXED_HIGHER_HALF_OFFSET_64 ((uint64_t)0xffffffff80000000)
-
 int elf64_load(struct file_handle *fd, uint64_t *entry_point, uint64_t *top, uint64_t slide) {
     struct elf64_hdr hdr;
     fread(fd, &hdr, 0, sizeof(struct elf64_hdr));

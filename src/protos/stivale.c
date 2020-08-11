@@ -145,10 +145,10 @@ void stivale_load(char *cmdline, int boot_drive) {
 
     switch (bits) {
         case 64:
-            elf64_load(fd, &entry_point, &top_used_addr, slide);
+            elf64_load(fd, &entry_point, &top_used_addr, slide, 10);
             break;
         case 32:
-            elf32_load(fd, (uint32_t *)&entry_point, (uint32_t *)&top_used_addr);
+            elf32_load(fd, (uint32_t *)&entry_point, (uint32_t *)&top_used_addr, 10);
             break;
     }
 
@@ -192,7 +192,7 @@ void stivale_load(char *cmdline, int boot_drive) {
             ((uint32_t)top_used_addr & ~((uint32_t)0xfff)) + 0x1000 :
             (uint32_t)top_used_addr);
 
-        memmap_alloc_range((size_t)module_addr, f.size);
+        memmap_alloc_range((size_t)module_addr, f.size, 10);
         fread(&f, module_addr, 0, f.size);
 
         m->begin = (uint64_t)(size_t)module_addr;

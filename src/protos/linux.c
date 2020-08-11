@@ -103,7 +103,7 @@ void linux_load(char *cmdline, int boot_drive) {
 
     // load kernel
     print("Loading kernel...\n");
-    memmap_alloc_range(KERNEL_LOAD_ADDR, fd->size - real_mode_code_size);
+    memmap_alloc_range(KERNEL_LOAD_ADDR, fd->size - real_mode_code_size, 0);
     fread(fd, (void *)KERNEL_LOAD_ADDR, real_mode_code_size, fd->size - real_mode_code_size);
 
     char initrd_path[64];
@@ -125,7 +125,7 @@ void linux_load(char *cmdline, int boot_drive) {
     }
 
     print("Loading initrd...\n");
-    memmap_alloc_range(INITRD_LOAD_ADDR, initrd.size);
+    memmap_alloc_range(INITRD_LOAD_ADDR, initrd.size, 0);
     fread(&initrd, (void *)INITRD_LOAD_ADDR, 0, initrd.size);
 
     *((uint32_t *)(real_mode_code + 0x218)) = (uint32_t)INITRD_LOAD_ADDR;

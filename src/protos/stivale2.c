@@ -232,10 +232,10 @@ void stivale2_load(char *cmdline, int boot_drive) {
 
     switch (bits) {
         case 64:
-            elf64_load(fd, &entry_point, &top_used_addr, slide);
+            elf64_load(fd, &entry_point, &top_used_addr, slide, 0x1001);
             break;
         case 32:
-            elf32_load(fd, (uint32_t *)&entry_point, (uint32_t *)&top_used_addr);
+            elf32_load(fd, (uint32_t *)&entry_point, (uint32_t *)&top_used_addr, 0x1001);
             break;
     }
 
@@ -301,7 +301,7 @@ void stivale2_load(char *cmdline, int boot_drive) {
             ((uint32_t)top_used_addr & ~((uint32_t)0xfff)) + 0x1000 :
             (uint32_t)top_used_addr);
 
-        memmap_alloc_range((size_t)module_addr, f.size);
+        memmap_alloc_range((size_t)module_addr, f.size, 0x1001);
         fread(&f, module_addr, 0, f.size);
 
         m->begin = (uint64_t)(size_t)module_addr;
@@ -310,10 +310,10 @@ void stivale2_load(char *cmdline, int boot_drive) {
         top_used_addr = (uint64_t)(size_t)m->end;
 
         print("stivale2: Requested module %u:\n", i);
-        print("         Path:   %s\n", module_file);
-        print("         String: %s\n", m->string);
-        print("         Begin:  %X\n", m->begin);
-        print("         End:    %X\n", m->end);
+        print("          Path:   %s\n", module_file);
+        print("          String: %s\n", m->string);
+        print("          Begin:  %X\n", m->begin);
+        print("          End:    %X\n", m->end);
     }
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);

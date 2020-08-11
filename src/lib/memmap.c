@@ -165,7 +165,7 @@ void init_memmap(void) {
     sanitise_entries();
 }
 
-void memmap_alloc_range(uint64_t base, uint64_t length) {
+void memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type) {
     uint64_t top = base + length;
 
     for (size_t i = 0; i < memmap_entries; i++) {
@@ -206,7 +206,7 @@ void memmap_alloc_range(uint64_t base, uint64_t length) {
             }
             target = &memmap[memmap_entries++];
 
-            target->type   = MEMMAP_KERNEL_AND_MODULES;
+            target->type   = type;
             target->base   = base;
             target->length = length;
 

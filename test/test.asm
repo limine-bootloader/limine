@@ -1,7 +1,7 @@
 ; This is a compliant "kernel" meant for testing purposes.
 
 ; Header
-section .stivalehdr
+section .stivale2hdr
 
 stivale_header:
     dq 0         ; entry point

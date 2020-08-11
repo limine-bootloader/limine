@@ -24,6 +24,7 @@ asm (
 #include <fs/file.h>
 #include <lib/elf.h>
 #include <protos/stivale.h>
+#include <protos/stivale2.h>
 #include <protos/linux.h>
 #include <protos/templeos.h>
 #include <protos/chainload.h>
@@ -71,6 +72,8 @@ void main(int boot_drive) {
 
     if (!strcmp(proto, "stivale")) {
         stivale_load(cmdline, boot_drive);
+    } else if (!strcmp(proto, "stivale2")) {
+        stivale2_load(cmdline, boot_drive);
     } else if (!strcmp(proto, "linux")) {
         linux_load(cmdline, boot_drive);
     } else if (!strcmp(proto, "templeos")) {

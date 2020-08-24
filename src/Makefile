@@ -3,14 +3,14 @@ CC = ../toolchain/bin/i386-elf-gcc
 CFLAGS = -Os -pipe -Wall -Wextra
 
 INTERNAL_CFLAGS = \
+	-std=gnu99 \
 	-ffreestanding \
 	-masm=intel \
 	-fno-pic \
+	-mno-80387 \
+	-mno-mmx \
 	-mno-sse \
 	-mno-sse2 \
-	-mno-mmx \
-	-mno-80387 \
-	-ffreestanding \
 	-fno-stack-protector \
 	-I. \
 	-Wno-address-of-packed-member

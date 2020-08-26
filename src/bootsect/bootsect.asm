@@ -1,6 +1,9 @@
 org 0x7c00
 bits 16
 
+jmp start ; Workaround for some BIOSes that require this stub
+nop
+
 start:
     cli
     cld
@@ -14,7 +17,25 @@ start:
     mov ss, ax
     mov sp, 0x7c00
     sti
+    
+    ; Some BIOSes don't pass the correct boot drive number,
+    ; so we need to do the job
+  .check_drive:
+    ; Qloader2 isn't made for floppy disks, these are dead anyways.
+    ; So if the value the BIOS passed is <0x80, just assume it has passed
+    ; an incorrect value
+    test dl, 0x80
+    jz .fix_drive
 
+    ; Drive numbers from 0x80..0x8f should be valid
+    test dl, 0x70
+    jz .continue
+
+  .fix_drive:
+    ; Try to fix up the mess the BIOS have done
+    mov dl, 0x80
+    
+  .continue:
     mov si, LoadingMsg
     call simple_print
 
@@ -51,10 +72,10 @@ halt:
 
 ; Data
 
-LoadingMsg db 0x0D, 0x0A, '<qloader2>', 0x0D, 0x0A, 0x0A, 0x00
-Stage2Msg db 'stage1: Loading stage2...', 0x00
-ErrReadDiskMsg db 0x0D, 0x0A, 'Error reading disk, system halted.', 0x00
-ErrEnableA20Msg db 0x0D, 0x0A, 'Error enabling a20, system halted.', 0x00
+LoadingMsg db 0x0D, 0x0A, '<ql2>', 0x0D, 0x0A, 0x0A, 0x00
+Stage2Msg db 'Loading stage2...', 0x00
+ErrReadDiskMsg db 0x0D, 0x0A, 'Disk read error, system halted', 0x00
+ErrEnableA20Msg db 0x0D, 0x0A, 'A20 enable error, system halted', 0x00
 DoneMsg db '  DONE', 0x0D, 0x0A, 0x00
 
 times 0xda-($-$$) db 0

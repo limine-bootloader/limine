@@ -1,9 +1,10 @@
 #include <stdint.h>
 #include <lib/real.h>
+#include <lib/asm.h>
 
 __attribute__((naked))
 void rm_flush_irqs(void) {
-    asm (
+    ASM_BASIC(
         // Mask PICs
         "mov al, 0xff\n\t"
         "out 0x21, al\n\t"
@@ -19,7 +20,7 @@ void rm_flush_irqs(void) {
         "push ebp\n\t"
 
         // Jump to real mode
-        "jmp 0x08:1f\n\t"
+        FARJMP32("0x08", "1f")
         "1: .code16\n\t"
         "mov ax, 0x10\n\t"
         "mov ds, ax\n\t"
@@ -30,8 +31,8 @@ void rm_flush_irqs(void) {
         "mov eax, cr0\n\t"
         "and al, 0xfe\n\t"
         "mov cr0, eax\n\t"
-        "jmp 0:2f\n\t"
-        "2:\n\t"
+        FARJMP16("0", "1f")
+        "1:\n\t"
         "mov ax, 0\n\t"
         "mov ds, ax\n\t"
         "mov es, ax\n\t"
@@ -50,8 +51,8 @@ void rm_flush_irqs(void) {
         "mov eax, cr0\n\t"
         "or al, 1\n\t"
         "mov cr0, eax\n\t"
-        "jmp 0x18:4f\n\t"
-        "4: .code32\n\t"
+        FARJMP16("0x18", "1f")
+        "1: .code32\n\t"
         "mov ax, 0x20\n\t"
         "mov ds, ax\n\t"
         "mov es, ax\n\t"
@@ -85,7 +86,7 @@ void rm_flush_irqs(void) {
 
 __attribute__((naked))
 void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs) {
-    asm (
+    ASM_BASIC(
         // Self-modifying code: int $int_no
         "mov al, byte ptr ss:[esp+4]\n\t"
         "mov byte ptr ds:[3f], al\n\t"
@@ -108,7 +109,7 @@ void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs) {
         "push ebp\n\t"
 
         // Jump to real mode
-        "jmp 0x08:1f\n\t"
+        FARJMP32("0x08", "1f")
         "1: .code16\n\t"
         "mov ax, 0x10\n\t"
         "mov ds, ax\n\t"
@@ -119,8 +120,8 @@ void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs) {
         "mov eax, cr0\n\t"
         "and al, 0xfe\n\t"
         "mov cr0, eax\n\t"
-        "jmp 0:2f\n\t"
-        "2:\n\t"
+        FARJMP16("0", "1f")
+        "1:\n\t"
         "mov ax, 0\n\t"
         "mov ds, ax\n\t"
         "mov es, ax\n\t"
@@ -170,8 +171,8 @@ void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs) {
         "mov eax, cr0\n\t"
         "or al, 1\n\t"
         "mov cr0, eax\n\t"
-        "jmp 0x18:4f\n\t"
-        "4: .code32\n\t"
+        FARJMP16("0x18", "1f")
+        "1: .code32\n\t"
         "mov ax, 0x20\n\t"
         "mov ds, ax\n\t"
         "mov es, ax\n\t"
@@ -198,5 +199,4 @@ void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs) {
         "8: .long 0\n\t"
         "   .long 0\n\t"
     );
-    (void)int_no; (void)out_regs; (void)in_regs;
 }

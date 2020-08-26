@@ -5,7 +5,6 @@ CFLAGS = -Os -pipe -Wall -Wextra
 INTERNAL_CFLAGS = \
 	-std=gnu99 \
 	-ffreestanding \
-	-masm=intel \
 	-fno-pic \
 	-mno-80387 \
 	-mno-mmx \

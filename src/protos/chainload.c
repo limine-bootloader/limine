@@ -6,6 +6,7 @@
 #include <lib/blib.h>
 #include <drivers/disk.h>
 #include <drivers/vga_textmode.h>
+#include <lib/asm.h>
 
 void chainload(void) {
     int part; {
@@ -35,9 +36,9 @@ void chainload(void) {
         read(drive, (void *)0x7c00, 0, 512);
     }
 
-    asm volatile (
+    ASM(
         // Jump to real mode
-        "jmp 0x08:1f\n\t"
+        FARJMP32("0x08", "1f")
         "1: .code16\n\t"
         "mov ax, 0x10\n\t"
         "mov ds, ax\n\t"
@@ -48,8 +49,8 @@ void chainload(void) {
         "mov eax, cr0\n\t"
         "and al, 0xfe\n\t"
         "mov cr0, eax\n\t"
-        "jmp 0:2f\n\t"
-        "2:\n\t"
+        FARJMP16("0", "1f")
+        "1:\n\t"
         "mov ax, 0\n\t"
         "mov ds, ax\n\t"
         "mov es, ax\n\t"
@@ -59,8 +60,7 @@ void chainload(void) {
         "push 0\n\t"
         "push 0x7c00\n\t"
         "retf\n\t"
-        ".code32\n\t"
-        :
+        ".code32\n\t",
         : "d" (drive)
         : "memory"
     );

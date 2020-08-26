@@ -14,6 +14,7 @@
 #include <drivers/vbe.h>
 #include <drivers/vga_textmode.h>
 #include <fs/file.h>
+#include <lib/asm.h>
 
 struct stivale_header {
     uint64_t stack;
@@ -253,10 +254,10 @@ void stivale_load(char *cmdline, int boot_drive) {
         void *pagemap_ptr;
         if (level5pg && (stivale_hdr.flags & (1 << 1))) {
             // Enable CR4.LA57
-            asm volatile (
+            ASM(
                 "mov eax, cr4\n\t"
                 "bts eax, 12\n\t"
-                "mov cr4, eax\n\t"
+                "mov cr4, eax\n\t", :: "eax", "memory"
             );
 
             struct pagemap {
@@ -324,7 +325,7 @@ void stivale_load(char *cmdline, int boot_drive) {
                 (&pagemap->pml2_0gb[0])[i] = (i * 0x200000) | 0x03 | (1 << 7);
         }
 
-        asm volatile (
+        ASM(
             "cli\n\t"
             "cld\n\t"
             "mov cr3, eax\n\t"
@@ -338,7 +339,7 @@ void stivale_load(char *cmdline, int boot_drive) {
             "mov eax, cr0\n\t"
             "or eax, 1 << 31\n\t"
             "mov cr0, eax\n\t"
-            "jmp 0x28:1f\n\t"
+            FARJMP32("0x28", "1f")
             "1: .code64\n\t"
             "mov ax, 0x30\n\t"
             "mov ds, ax\n\t"
@@ -369,14 +370,13 @@ void stivale_load(char *cmdline, int boot_drive) {
             "xor r15, r15\n\t"
 
             "iretq\n\t"
-            ".code32\n\t"
-            :
+            ".code32\n\t",
             : "a" (pagemap_ptr), "b" (&entry_point),
               "D" (&stivale_struct), "S" (&stivale_hdr.stack)
             : "memory"
         );
     } else if (bits == 32) {
-        asm volatile (
+        ASM(
             "cli\n\t"
             "cld\n\t"
 
@@ -397,8 +397,7 @@ void stivale_load(char *cmdline, int boot_drive) {
             "xor edi, edi\n\t"
             "xor ebp, ebp\n\t"
 
-            "iret\n\t"
-            :
+            "iret\n\t",
             : "b" (&entry_point), "D" (&stivale_struct), "S" (&stivale_hdr.stack)
             : "memory"
         );

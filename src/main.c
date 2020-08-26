@@ -1,4 +1,6 @@
-asm (
+#include <lib/asm.h>
+
+ASM_BASIC(
     ".section .entry\n\t"
 
     // Zero out .bss
@@ -26,7 +28,6 @@ asm (
 #include <protos/stivale.h>
 #include <protos/stivale2.h>
 #include <protos/linux.h>
-#include <protos/templeos.h>
 #include <protos/chainload.h>
 #include <menu.h>
 
@@ -76,8 +77,6 @@ void main(int boot_drive) {
         stivale2_load(cmdline, boot_drive);
     } else if (!strcmp(proto, "linux")) {
         linux_load(cmdline, boot_drive);
-    } else if (!strcmp(proto, "templeos")) {
-        templeos_load(boot_drive);
     } else if (!strcmp(proto, "chainload")) {
         chainload();
     } else {

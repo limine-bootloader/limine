@@ -8,6 +8,7 @@
 #include <lib/config.h>
 #include <lib/print.h>
 #include <lib/memmap.h>
+#include <lib/asm.h>
 
 #define KERNEL_LOAD_ADDR ((size_t)0x100000)
 #define INITRD_LOAD_ADDR ((size_t)0x1000000)
@@ -136,11 +137,11 @@ void linux_load(char *cmdline, int boot_drive) {
 
     deinit_vga_textmode();
 
-    asm volatile (
+    ASM(
         "cli\n\t"
         "cld\n\t"
 
-        "jmp 0x08:1f\n\t"
+        FARJMP32("0x08", "1f")
         "1: .code16\n\t"
         "mov ax, 0x10\n\t"
         "mov ds, ax\n\t"
@@ -151,8 +152,8 @@ void linux_load(char *cmdline, int boot_drive) {
         "mov eax, cr0\n\t"
         "and al, 0xfe\n\t"
         "mov cr0, eax\n\t"
-        "jmp 0:2f\n\t"
-        "2:\n\t"
+        FARJMP16("0", "1f")
+        "1:\n\t"
         "mov ds, bx\n\t"
         "mov es, bx\n\t"
         "mov fs, bx\n\t"
@@ -163,8 +164,7 @@ void linux_load(char *cmdline, int boot_drive) {
 
         "push cx\n\t"
         "push 0\n\t"
-        "retf\n\t"
-        :
+        "retf\n\t",
         : "b" (real_mode_code_seg), "c" (kernel_entry_seg)
         : "memory"
     );

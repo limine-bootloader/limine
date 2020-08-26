@@ -9,6 +9,7 @@
 #include <lib/cio.h>
 #include <lib/e820.h>
 #include <lib/print.h>
+#include <lib/asm.h>
 
 uint8_t bcd_to_int(uint8_t val) {
     return (val & 0x0f) + ((val & 0xf0) >> 4) * 10;
@@ -17,32 +18,30 @@ uint8_t bcd_to_int(uint8_t val) {
 int cpuid(uint32_t leaf, uint32_t subleaf,
           uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
     uint32_t cpuid_max;
-    asm volatile ("cpuid"
-                  : "=a" (cpuid_max)
-                  : "a" (leaf & 0x80000000)
-                  : "rbx", "rcx", "rdx");
+    ASM("cpuid\n\t", "=a" (cpuid_max)
+                   : "a" (leaf & 0x80000000)
+                   : "rbx", "rcx", "rdx");
     if (leaf > cpuid_max)
         return 1;
-    asm volatile ("cpuid"
-                  : "=a" (*eax), "=b" (*ebx), "=c" (*ecx), "=d" (*edx)
-                  : "a" (leaf), "c" (subleaf));
+    ASM("cpuid\n\t", "=a" (*eax), "=b" (*ebx), "=c" (*ecx), "=d" (*edx)
+                   : "a" (leaf), "c" (subleaf));
     return 0;
 }
 
 __attribute__((noreturn)) void panic(const char *fmt, ...) {
-    asm volatile ("cli" ::: "memory");
+    ASM("cli\n\t", :: "memory");
 
     va_list args;
 
     va_start(args, fmt);
 
-    print("\033[31mPANIC:\033[37;1m\033[40m ");
+    print("\033[31mPANIC\033[37;1m\033[40m: ");
     vprint(fmt, args);
 
     va_end(args);
 
     for (;;) {
-        asm volatile ("hlt" ::: "memory");
+        ASM("hlt\n\t", :: "memory");
     }
 }
 
@@ -76,7 +75,7 @@ void *balloc_aligned(size_t count, size_t alignment) {
 __attribute__((used)) static uint32_t int_08_ticks_counter;
 
 __attribute__((naked)) static void int_08_isr(void) {
-    asm (
+    ASM_BASIC(
         ".code16\n\t"
         "inc dword ptr cs:[int_08_ticks_counter]\n\t"
         "int 0x40\n\t"   // call callback
@@ -100,7 +99,7 @@ __attribute__((used)) static void dehook_int_08(void) {
 // This is a dirty hack but we need to execute this full function in real mode
 __attribute__((naked))
 int pit_sleep_and_quit_on_keypress(uint32_t ticks) {
-    asm (
+    ASM_BASIC(
         "call hook_int_08\n\t"
 
         // pit_ticks in edx
@@ -117,7 +116,7 @@ int pit_sleep_and_quit_on_keypress(uint32_t ticks) {
         "push ebp\n\t"
 
         // Jump to real mode
-        "jmp 0x08:1f\n\t"
+        FARJMP32("0x08", "1f")
         "1: .code16\n\t"
         "mov ax, 0x10\n\t"
         "mov ds, ax\n\t"
@@ -128,8 +127,8 @@ int pit_sleep_and_quit_on_keypress(uint32_t ticks) {
         "mov eax, cr0\n\t"
         "and al, 0xfe\n\t"
         "mov cr0, eax\n\t"
-        "jmp 0:2f\n\t"
-        "2:\n\t"
+        FARJMP16("0", "1f")
+        "1:\n\t"
         "mov ax, 0\n\t"
         "mov ds, ax\n\t"
         "mov es, ax\n\t"
@@ -171,8 +170,8 @@ int pit_sleep_and_quit_on_keypress(uint32_t ticks) {
         "mov ebx, cr0\n\t"
         "or bl, 1\n\t"
         "mov cr0, ebx\n\t"
-        "jmp 0x18:4f\n\t"
-        "4: .code32\n\t"
+        FARJMP16("0x18", "1f")
+        "1: .code32\n\t"
         "mov bx, 0x20\n\t"
         "mov ds, bx\n\t"
         "mov es, bx\n\t"
@@ -192,7 +191,6 @@ int pit_sleep_and_quit_on_keypress(uint32_t ticks) {
         "pop eax\n\t"
         "ret\n\t"
     );
-    (void)ticks;
 }
 
 uint64_t strtoui(const char *s) {

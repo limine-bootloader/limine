@@ -28,10 +28,10 @@ mkdir -p build
 cd build
 
 if [ ! -f binutils-$BINUTILSVERSION.tar.gz ]; then
-    wget https://ftp.gnu.org/gnu/binutils/binutils-$BINUTILSVERSION.tar.gz
+    wget -4 https://ftp.gnu.org/gnu/binutils/binutils-$BINUTILSVERSION.tar.gz
 fi
 if [ ! -f gcc-$GCCVERSION.tar.gz ]; then
-    wget https://ftp.gnu.org/gnu/gcc/gcc-$GCCVERSION/gcc-$GCCVERSION.tar.gz
+    wget -4 https://ftp.gnu.org/gnu/gcc/gcc-$GCCVERSION/gcc-$GCCVERSION.tar.gz
 fi
 
 tar -xf binutils-$BINUTILSVERSION.tar.gz

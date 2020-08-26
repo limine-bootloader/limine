@@ -31,7 +31,7 @@ if [ ! -f binutils-$BINUTILSVERSION.tar.gz ]; then
     wget -4 https://ftp.gnu.org/gnu/binutils/binutils-$BINUTILSVERSION.tar.gz # Force IPv4 otherwise wget hangs
 fi
 if [ ! -f gcc-$GCCVERSION.tar.gz ]; then
-    wget -4 https://ftp.gnu.org/gnu/gcc/gcc-$GCCVERSION/gcc-$GCCVERSION.tar.gz
+    wget -4 https://ftp.gnu.org/gnu/gcc/gcc-$GCCVERSION/gcc-$GCCVERSION.tar.gz # Same as above
 fi
 
 tar -xf binutils-$BINUTILSVERSION.tar.gz

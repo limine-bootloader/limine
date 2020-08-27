@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <lib/libc.h>
+#include <lib/asm.h>
 
 int toupper(int c) {
     if (c >= 'a' && c <= 'z') {
@@ -16,54 +17,88 @@ int tolower(int c) {
     return c;
 }
 
+__attribute__((naked))
 void *memcpy(void *dest, const void *src, size_t n) {
-    uint8_t *pdest = dest;
-    const uint8_t *psrc = src;
-
-    for (size_t i = 0; i < n; i++) {
-        pdest[i] = psrc[i];
-    }
-
-    return dest;
+    ASM_BASIC(
+        "push esi\n\t"
+        "push edi\n\t"
+        "mov eax, dword ptr [esp+12]\n\t"
+        "mov edi, eax\n\t"
+        "mov esi, dword ptr [esp+16]\n\t"
+        "mov ecx, dword ptr [esp+20]\n\t"
+        "rep movsb\n\t"
+        "pop edi\n\t"
+        "pop esi\n\t"
+        "ret\n\t"
+    );
 }
 
+__attribute__((naked))
 void *memset(void *s, int c, size_t n) {
-    uint8_t *p = s;
-
-    for (size_t i = 0; i < n; i++) {
-        p[i] = (uint8_t)c;
-    }
-
-    return s;
+    ASM_BASIC(
+        "push edi\n\t"
+        "mov edx, dword ptr [esp+8]\n\t"
+        "mov edi, edx\n\t"
+        "mov eax, dword ptr [esp+12]\n\t"
+        "mov ecx, dword ptr [esp+16]\n\t"
+        "rep stosb\n\t"
+        "mov eax, edx\n\t"
+        "pop edi\n\t"
+        "ret\n\t"
+    );
 }
 
+__attribute__((naked))
 void *memmove(void *dest, const void *src, size_t n) {
-    uint8_t *pdest = dest;
-    const uint8_t *psrc = src;
+    ASM_BASIC(
+        "push esi\n\t"
+        "push edi\n\t"
+        "mov eax, dword ptr [esp+12]\n\t"
+        "mov edi, eax\n\t"
+        "mov esi, dword ptr [esp+16]\n\t"
+        "mov ecx, dword ptr [esp+20]\n\t"
 
-    if (src > dest) {
-        for (size_t i = 0; i < n; i++) {
-            pdest[i] = psrc[i];
-        }
-    } else if (src < dest) {
-        for (size_t i = n; i > 0; i--) {
-            pdest[i-1] = psrc[i-1];
-        }
-    }
+        "cmp edi, esi\n\t"
+        "ja 1f\n\t"
 
-    return dest;
+        "rep movsb\n\t"
+        "jmp 2f\n\t"
+
+        "1:\n\t"
+        "lea edi, [edi+ecx-1]\n\t"
+        "lea esi, [esi+ecx-1]\n\t"
+        "std\n\t"
+        "rep movsb\n\t"
+        "cld\n\t"
+
+        "2:\n\t"
+        "pop edi\n\t"
+        "pop esi\n\t"
+        "ret\n\t"
+    );
 }
 
+__attribute__((naked))
 int memcmp(const void *s1, const void *s2, size_t n) {
-    const uint8_t *p1 = s1;
-    const uint8_t *p2 = s2;
-
-    for (size_t i = 0; i < n; i++) {
-        if (p1[i] != p2[i])
-            return p1[i] < p2[i] ? -1 : 1;
-    }
-
-    return 0;
+    ASM_BASIC(
+        "push esi\n\t"
+        "push edi\n\t"
+        "mov edi, dword ptr [esp+12]\n\t"
+        "mov esi, dword ptr [esp+16]\n\t"
+        "mov ecx, dword ptr [esp+20]\n\t"
+        "repe cmpsb\n\t"
+        "jecxz 1f\n\t"
+        "mov al, byte ptr [edi-1]\n\t"
+        "sub al, byte ptr [esi-1]\n\t"
+        "movsx eax, al\n\t"
+        "jmp 2f\n\t"
+        "1:\n\t"
+        "mov eax, ecx\n\t"
+        "2:\n\t"
+        "pop edi\n\t"
+        "pop esi\n\t"
+        "ret\n\t"
+    );
 }
 
 char *strcpy(char *dest, const char *src) {

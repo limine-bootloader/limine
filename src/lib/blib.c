@@ -20,7 +20,7 @@ int cpuid(uint32_t leaf, uint32_t subleaf,
     uint32_t cpuid_max;
     ASM("cpuid\n\t", "=a" (cpuid_max)
                    : "a" (leaf & 0x80000000)
-                   : "rbx", "rcx", "rdx");
+                   : "ebx", "ecx", "edx");
     if (leaf > cpuid_max)
         return 1;
     ASM("cpuid\n\t", "=a" (*eax), "=b" (*ebx), "=c" (*ecx), "=d" (*edx)

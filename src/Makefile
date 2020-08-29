@@ -1,4 +1,5 @@
 CC = ../toolchain/bin/i386-elf-gcc
+LD = ../toolchain/bin/i386-elf-gcc
 
 CFLAGS = -Os -pipe -Wall -Wextra
 
@@ -31,7 +32,7 @@ OBJ := $(C_FILES:.c=.o)
 all: qloader2.bin
 
 qloader2.bin: $(OBJ)
-	$(CC) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o stage2.bin
+	$(LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o stage2.bin
 	cd bootsect && nasm bootsect.asm -fbin -o ../qloader2.bin
 
 %.o: %.c

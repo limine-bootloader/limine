@@ -13,7 +13,7 @@ ASM_BASIC(
     "jmp main\n\t"
 );
 
-#include <qloader2.h>
+#include <limine.h>
 #include <drivers/vga_textmode.h>
 #include <lib/real.h>
 #include <lib/blib.h>
@@ -35,7 +35,7 @@ void main(int boot_drive) {
     // Initial prompt.
     init_vga_textmode();
 
-    print("qloader2 " QLOADER2_VERSION "\n\n");
+    print("Limine " LIMINE_VERSION "\n\n");
 
     print("Boot drive: %x\n", boot_drive);
 

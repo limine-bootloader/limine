@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <qloader2.h>
+#include <limine.h>
 #include <menu.h>
 #include <lib/print.h>
 #include <lib/blib.h>
@@ -32,7 +32,7 @@ char *menu(void) {
 
 refresh:
     text_clear();
-    print("\n\n  \e[44m qloader\e[33m2\e[37m " QLOADER2_VERSION " \e[40m\n\n\n");
+    print("\n\n  \e[36m Limine " LIMINE_VERSION " \e[37m\n\n\n");
 
     print("Select an entry:\n\n");
 

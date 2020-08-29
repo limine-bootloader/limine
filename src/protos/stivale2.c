@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <qloader2.h>
+#include <limine.h>
 #include <protos/stivale2.h>
 #include <lib/elf.h>
 #include <lib/blib.h>
@@ -247,8 +247,8 @@ void stivale2_load(char *cmdline, int boot_drive) {
 
     print("stivale2: Top used address in ELF: %X\n", top_used_addr);
 
-    strcpy(stivale2_struct.bootloader_brand, "qloader2");
-    strcpy(stivale2_struct.bootloader_version, QLOADER2_VERSION);
+    strcpy(stivale2_struct.bootloader_brand, "Limine");
+    strcpy(stivale2_struct.bootloader_version, LIMINE_VERSION);
 
     //////////////////////////////////////////////
     // Create firmware struct tag

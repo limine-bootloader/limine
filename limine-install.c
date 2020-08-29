@@ -6,7 +6,7 @@
 
 int main(int argc, char *argv[]) {
     if (argc < 3) {
-        printf("Usage: %s <path to qloader2 binary> <device> [stage2 start sector]\n", argv[0]);
+        printf("Usage: %s <path to bootloader binary> <device> [stage2 start sector]\n", argv[0]);
         return 1;
     }
 

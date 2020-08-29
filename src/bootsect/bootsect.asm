@@ -17,11 +17,11 @@ start:
     mov ss, ax
     mov sp, 0x7c00
     sti
-    
+
     ; Some BIOSes don't pass the correct boot drive number,
     ; so we need to do the job
   .check_drive:
-    ; Qloader2 isn't made for floppy disks, these are dead anyways.
+    ; Limine isn't made for floppy disks, these are dead anyways.
     ; So if the value the BIOS passed is <0x80, just assume it has passed
     ; an incorrect value
     test dl, 0x80
@@ -34,7 +34,7 @@ start:
   .fix_drive:
     ; Try to fix up the mess the BIOS have done
     mov dl, 0x80
-    
+
   .continue:
     mov si, LoadingMsg
     call simple_print
@@ -72,7 +72,7 @@ halt:
 
 ; Data
 
-LoadingMsg db 0x0D, 0x0A, '<ql2>', 0x0D, 0x0A, 0x0A, 0x00
+LoadingMsg db 0x0D, 0x0A, 'Limine', 0x0D, 0x0A, 0x0A, 0x00
 Stage2Msg db 'Loading stage2...', 0x00
 ErrReadDiskMsg db 0x0D, 0x0A, 'Disk read error, system halted', 0x00
 ErrEnableA20Msg db 0x0D, 0x0A, 'A20 enable error, system halted', 0x00

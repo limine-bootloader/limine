@@ -4,4 +4,5 @@
 /bochsout.txt
 /bx_enh_dbg.ini
 .vscode
-!/qloader2.bin
+/limine-install
+!/limine.bin

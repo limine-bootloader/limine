@@ -29,11 +29,11 @@ INTERNAL_LDFLAGS = \
 C_FILES := $(shell find ./ -type f -name '*.c' | sort)
 OBJ := $(C_FILES:.c=.o)
 
-all: qloader2.bin
+all: limine.bin
 
-qloader2.bin: $(OBJ)
+limine.bin: $(OBJ)
 	$(LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o stage2.bin
-	cd bootsect && nasm bootsect.asm -fbin -o ../qloader2.bin
+	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@

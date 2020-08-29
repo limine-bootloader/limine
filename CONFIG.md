@@ -1,6 +1,6 @@
-# qloader2 configuration file
+# Limine configuration file
 
-The qloader2 configuration file is comprised of *assignments* and *entries*.
+The Limine configuration file is comprised of *assignments* and *entries*.
 
 *Entries* describe boot *entries* which the user can select in the *boot menu*.
 

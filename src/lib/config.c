@@ -11,8 +11,8 @@ static char *config_addr;
 int init_config(int drive, int part) {
     struct file_handle f;
 
-    if (fopen(&f, drive, part, "/qloader2.cfg")) {
-        if (fopen(&f, drive, part, "/boot/qloader2.cfg")) {
+    if (fopen(&f, drive, part, "/limine.cfg")) {
+        if (fopen(&f, drive, part, "/boot/limine.cfg")) {
             return -1;
         }
     }

@@ -78,6 +78,13 @@ cd toolchain
 After that is done, simply run `make` in the root of the repo to generate
 `limine.bin`.
 
+### Building from source with Clang
+It is also possible to build Limine with Clang, using the following make command:
+
+```bash
+make CC="clang --target=i386-elf"
+```
+
 ## Discord server
 We have a Discord server if you need support, info, or you just want to
 hang out: https://discord.gg/QEeZMz4

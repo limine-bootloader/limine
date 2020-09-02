@@ -225,11 +225,13 @@ void stivale_load(char *cmdline, int boot_drive) {
     stivale_struct.framebuffer_bpp    = stivale_hdr.framebuffer_bpp;
 
     if (stivale_hdr.flags & (1 << 0)) {
-        init_vbe(&stivale_struct.framebuffer_addr,
+        uint32_t *fb32;
+        init_vbe(&fb32,
                  &stivale_struct.framebuffer_pitch,
                  &stivale_struct.framebuffer_width,
                  &stivale_struct.framebuffer_height,
                  &stivale_struct.framebuffer_bpp);
+        stivale_struct.framebuffer_addr = (uint64_t)(size_t)fb32;
     } else {
         deinit_vga_textmode();
     }

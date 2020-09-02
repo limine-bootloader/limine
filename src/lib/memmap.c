@@ -168,7 +168,7 @@ void init_memmap(void) {
 static size_t ext_mem_balloc_base = 0x100000;
 
 void *ext_mem_balloc(size_t count) {
-    ext_mem_balloc_aligned(count, 4);
+    return ext_mem_balloc_aligned(count, 4);
 }
 
 // TODO: this basically only works for the 1st extended memory entry in the
@@ -186,7 +186,7 @@ void *ext_mem_balloc_aligned(size_t count, size_t alignment) {
         if (base >= entry_base && base < entry_top &&
             top  >= entry_base && top  < entry_top) {
             ext_mem_balloc_base = base + count;
-            return (void *)base;
+            return (void *)(size_t)base;
         }
     }
 

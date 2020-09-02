@@ -374,11 +374,13 @@ void stivale2_load(char *cmdline, int boot_drive) {
         tag->framebuffer_height = hdrtag->framebuffer_height;
         tag->framebuffer_bpp    = hdrtag->framebuffer_bpp;
 
-        init_vbe(&tag->framebuffer_addr,
+        uint32_t *fb32;
+        init_vbe(&fb32,
                  &tag->framebuffer_pitch,
                  &tag->framebuffer_width,
                  &tag->framebuffer_height,
                  &tag->framebuffer_bpp);
+        tag->framebuffer_addr = (uint64_t)(size_t)fb32;
 
         append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }

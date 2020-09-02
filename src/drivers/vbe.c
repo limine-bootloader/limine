@@ -1,9 +1,169 @@
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <drivers/vbe.h>
+#include <lib/memmap.h>
+#include <lib/libc.h>
 #include <lib/blib.h>
 #include <lib/real.h>
 #include <lib/print.h>
+
+#define VGA_FONT_WIDTH  8
+#define VGA_FONT_HEIGHT 16
+#define VGA_FONT_GLYPHS 256
+#define VGA_FONT_MAX    (VGA_FONT_HEIGHT * VGA_FONT_GLYPHS)
+
+static uint8_t *vga_font;
+
+static void vga_font_retrieve(void) {
+    struct rm_regs r = {0};
+
+    r.eax = 0x1130;
+    r.ebx = 0x06;
+    rm_int(0x10, &r, &r);
+
+    vga_font = ext_mem_balloc(VGA_FONT_MAX);
+
+    memcpy(vga_font, (void *)rm_desegment(r.es, r.ebp), VGA_FONT_MAX);
+}
+
+static uint32_t *vbe_framebuffer;
+static uint16_t  vbe_pitch;
+static uint16_t  vbe_width = 0;
+static uint16_t  vbe_height = 0;
+static uint16_t  vbe_bpp = 0;
+
+void vbe_plot_px(int x, int y, uint32_t hex) {
+    size_t fb_i = x + (vbe_pitch / sizeof(uint32_t)) * y;
+
+    vbe_framebuffer[fb_i] = hex;
+}
+
+void vbe_plot_char(struct vbe_char c, int x, int y) {
+    int orig_x = x;
+    uint8_t *glyph = &vga_font[c.c * VGA_FONT_HEIGHT];
+
+    for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
+        for (int j = VGA_FONT_WIDTH - 1; j >= 0; j--)
+            vbe_plot_px(x++, y, (glyph[i] & (1 << j)) ? c.fg : c.bg);
+        y++;
+        x = orig_x;
+    }
+}
+
+static struct vbe_char *grid;
+
+static bool cursor_status = true;
+
+static int cursor_x;
+static int cursor_y;
+
+static uint32_t cursor_fg = 0x00000000;
+static uint32_t cursor_bg = 0x00ffffff;
+static uint32_t text_fg   = 0x00ffffff;
+static uint32_t text_bg   = 0x00000000;
+
+static int rows;
+static int cols;
+
+static void plot_char_grid(struct vbe_char c, int x, int y) {
+    vbe_plot_char(c, x * VGA_FONT_WIDTH, y * VGA_FONT_HEIGHT);
+    grid[x + y * cols] = c;
+}
+
+static void clear_cursor(void) {
+    if (cursor_status) {
+        vbe_plot_char(grid[cursor_x + cursor_y * cols],
+                  cursor_x * VGA_FONT_WIDTH, cursor_y * VGA_FONT_HEIGHT);
+    }
+}
+
+static void draw_cursor(void) {
+    struct vbe_char c = grid[cursor_x + cursor_y * cols];
+    c.fg = cursor_fg;
+    c.bg = cursor_bg;
+    if (cursor_status)
+        vbe_plot_char(c, cursor_x * VGA_FONT_WIDTH, cursor_y * VGA_FONT_HEIGHT);
+}
+
+void vbe_scroll(void) {
+    clear_cursor();
+
+    for (int i = cols; i < rows * cols; i++) {
+        plot_char_grid(grid[i], (i - cols) % cols, (i - cols) / cols);
+    }
+
+    // Clear the last line of the screen.
+    struct vbe_char empty;
+    empty.c  = ' ';
+    empty.fg = text_fg;
+    empty.bg = text_bg;
+    for (int i = rows * cols - cols; i < rows * cols; i++) {
+        plot_char_grid(empty, i % cols, i / cols);
+    }
+
+    draw_cursor();
+}
+
+void vbe_clear(void) {
+    clear_cursor();
+
+    struct vbe_char empty;
+    empty.c  = ' ';
+    empty.fg = text_fg;
+    empty.bg = text_bg;
+    for (int i = 0; i < rows * cols; i++) {
+        plot_char_grid(empty, i % cols, i / cols);
+    }
+
+    cursor_x = 0;
+    cursor_y = 0;
+
+    draw_cursor();
+}
+
+void vbe_enable_cursor(void) {
+    cursor_status = true;
+    draw_cursor();
+}
+
+void vbe_disable_cursor(void) {
+    clear_cursor();
+    cursor_status = false;
+}
+
+void vbe_set_cursor_pos(int x, int y) {
+    clear_cursor();
+    cursor_x = x;
+    cursor_y = y;
+    draw_cursor();
+}
+
+void vbe_get_cursor_pos(int *x, int *y) {
+    *x = cursor_x;
+    *y = cursor_y;
+}
+
+void vbe_set_text_attributes(uint32_t fg, uint32_t bg) {
+    text_fg = fg;
+    text_bg = bg;
+}
+
+void vbe_set_cursor_attributes(uint32_t fg, uint32_t bg) {
+    clear_cursor();
+    cursor_fg = fg;
+    cursor_bg = bg;
+    draw_cursor();
+}
+
+void vbe_tty_init(void) {
+    init_vbe(&vbe_framebuffer, &vbe_pitch, &vbe_width, &vbe_height, &vbe_bpp);
+    vga_font_retrieve();
+    cols = vbe_width / VGA_FONT_WIDTH;
+    rows = vbe_height / VGA_FONT_HEIGHT;
+    grid = ext_mem_balloc(rows * cols * sizeof(struct vbe_char));
+    vbe_clear();
+}
 
 struct vbe_info_struct {
     char     signature[4];
@@ -119,7 +279,7 @@ static struct resolution fallback_resolutions[] = {
     { 640,  480, 32 }
 };
 
-int init_vbe(uint64_t *framebuffer, uint16_t *pitch, uint16_t *target_width, uint16_t *target_height, uint16_t *target_bpp) {
+int init_vbe(uint32_t **framebuffer, uint16_t *pitch, uint16_t *target_width, uint16_t *target_height, uint16_t *target_bpp) {
     print("vbe: Initialising...\n");
 
     size_t current_fallback = 0;
@@ -166,7 +326,7 @@ retry:;
           && vbe_mode_info.res_y == *target_height
           && vbe_mode_info.bpp   == *target_bpp) {
             print("vbe: Found matching mode %x, attempting to set\n", vid_modes[i]);
-            *framebuffer = (uint64_t)vbe_mode_info.framebuffer;
+            *framebuffer = (uint32_t *)vbe_mode_info.framebuffer;
             *pitch       = (int)vbe_mode_info.pitch;
             print("vbe: Framebuffer address: %x\n", vbe_mode_info.framebuffer);
             set_vbe_mode(vid_modes[i]);

@@ -59,11 +59,7 @@ void *balloc(size_t count) {
 
 // Only power of 2 alignments
 void *balloc_aligned(size_t count, size_t alignment) {
-    size_t new_base = bump_allocator_base;
-    if (new_base & (alignment - 1)) {
-        new_base &= ~(alignment - 1);
-        new_base += alignment;
-    }
+    size_t new_base = ALIGN_UP(bump_allocator_base, alignment);
     void *ret = (void *)new_base;
     new_base += count;
     if (new_base >= BUMP_ALLOCATOR_LIMIT)

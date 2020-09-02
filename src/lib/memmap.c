@@ -165,6 +165,34 @@ void init_memmap(void) {
     sanitise_entries();
 }
 
+static size_t ext_mem_balloc_base = 0x100000;
+
+void *ext_mem_balloc(size_t count) {
+    ext_mem_balloc_aligned(count, 4);
+}
+
+// TODO: this basically only works for the 1st extended memory entry in the
+//       memmap and allocates until the first hole following it. Fix that.
+void *ext_mem_balloc_aligned(size_t count, size_t alignment) {
+    uint64_t base = ALIGN_UP(ext_mem_balloc_base, alignment);
+    uint64_t top  = base + count;
+
+    for (size_t i = 0; i < memmap_entries; i++) {
+        if (memmap[i].type != 1)
+            continue;
+
+        uint64_t entry_base = memmap[i].base;
+        uint64_t entry_top  = memmap[i].base + memmap[i].length;
+        if (base >= entry_base && base < entry_top &&
+            top  >= entry_base && top  < entry_top) {
+            ext_mem_balloc_base = base + count;
+            return (void *)base;
+        }
+    }
+
+    panic("High memory allocator: Out of memory");
+}
+
 void memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type) {
     uint64_t top = base + length;
 

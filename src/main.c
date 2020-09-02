@@ -61,29 +61,22 @@ void main(int boot_drive) {
     init_e820();
     init_memmap();
 
-    char buf[32];
-
-    if (config_get_value(buf, 0, 32, "GRAPHICS")) {
-        if (!strcmp(buf, "on")) {
-            term_vbe();
-        }
-    }
-
     char *cmdline = menu();
 
-    if (!config_get_value(buf, 0, 32, "KERNEL_PROTO")) {
-        if (!config_get_value(buf, 0, 32, "PROTOCOL")) {
+    char proto[32];
+    if (!config_get_value(proto, 0, 32, "KERNEL_PROTO")) {
+        if (!config_get_value(proto, 0, 32, "PROTOCOL")) {
             panic("PROTOCOL not specified");
         }
     }
 
-    if (!strcmp(buf, "stivale")) {
+    if (!strcmp(proto, "stivale")) {
         stivale_load(cmdline, boot_drive);
-    } else if (!strcmp(buf, "stivale2")) {
+    } else if (!strcmp(proto, "stivale2")) {
         stivale2_load(cmdline, boot_drive);
-    } else if (!strcmp(buf, "linux")) {
+    } else if (!strcmp(proto, "linux")) {
         linux_load(cmdline, boot_drive);
-    } else if (!strcmp(buf, "chainload")) {
+    } else if (!strcmp(proto, "chainload")) {
         chainload();
     } else {
         panic("Invalid protocol specified");

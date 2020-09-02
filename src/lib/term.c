@@ -24,6 +24,7 @@ void (*set_text_bg)(int bg);
 static int rows, cols;
 
 void term_vbe(void) {
+    term_deinit();
     vbe_tty_init(&rows, &cols);
 
     raw_putchar    = vbe_putchar;
@@ -39,6 +40,7 @@ void term_vbe(void) {
 }
 
 void term_textmode(void) {
+    term_deinit();
     init_vga_textmode(&rows, &cols);
 
     raw_putchar    = text_putchar;

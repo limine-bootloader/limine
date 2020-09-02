@@ -17,13 +17,19 @@ static char config_entry_name[1024];
 char *menu(void) {
     cmdline = balloc(CMDLINE_MAX);
 
-    int timeout; {
-        char buf[32];
-        if (!config_get_value(buf, 0, 32, "TIMEOUT")) {
-            timeout = 5;
-        } else {
-            timeout = (int)strtoui(buf);
+    char buf[16];
+
+    if (config_get_value(buf, 0, 16, "GRAPHICS")) {
+        if (!strcmp(buf, "on")) {
+            term_vbe();
         }
+    }
+
+    int timeout;
+    if (!config_get_value(buf, 0, 16, "TIMEOUT")) {
+        timeout = 5;
+    } else {
+        timeout = (int)strtoui(buf);
     }
 
     disable_cursor();
@@ -85,6 +91,7 @@ refresh:
                     }
                 }
                 clear(true);
+                term_textmode();
                 return cmdline;
             case 'e':
                 config_set_entry(selected_entry);
@@ -97,6 +104,7 @@ refresh:
                 print("\n\n> ");
                 gets(cmdline, cmdline, CMDLINE_MAX);
                 clear(true);
+                term_textmode();
                 return cmdline;
         }
     }

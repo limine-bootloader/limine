@@ -32,7 +32,7 @@ echfs-test: test.img all
 	echfs-utils -m -p0 test.img import test/test.elf boot/test.elf
 	echfs-utils -m -p0 test.img import test/limine.cfg limine.cfg
 	./limine-install src/limine.bin test.img
-	qemu-system-x86_64 -hda test.img -debugcon stdio
+	qemu-system-x86_64 -hda test.img -debugcon stdio -enable-kvm
 
 ext2-test: test.img all
 	$(MAKE) -C test

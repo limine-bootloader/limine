@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <lib/blib.h>
 #include <lib/libc.h>
-#include <drivers/vga_textmode.h>
+#include <lib/term.h>
 #include <lib/real.h>
 #include <lib/cio.h>
 #include <lib/e820.h>
@@ -214,14 +214,14 @@ int getchar(void) {
 
 static void gets_reprint_string(int x, int y, const char *s, size_t limit) {
     int last_x, last_y;
-    text_get_cursor_pos(&last_x, &last_y);
-    text_set_cursor_pos(x, y);
+    get_cursor_pos(&last_x, &last_y);
+    set_cursor_pos(x, y);
     for (size_t i = 0; i < limit; i++) {
-        text_write(" ", 1);
+        term_write(" ", 1);
     }
-    text_set_cursor_pos(x, y);
-    text_write(s, strlen(s));
-    text_set_cursor_pos(last_x, last_y);
+    set_cursor_pos(x, y);
+    term_write(s, strlen(s));
+    set_cursor_pos(last_x, last_y);
 }
 
 void gets(const char *orig_str, char *buf, size_t limit) {
@@ -230,7 +230,7 @@ void gets(const char *orig_str, char *buf, size_t limit) {
     buf[orig_str_len] = 0;
 
     int orig_x, orig_y;
-    text_get_cursor_pos(&orig_x, &orig_y);
+    get_cursor_pos(&orig_x, &orig_y);
 
     print("%s", buf);
 
@@ -240,13 +240,13 @@ void gets(const char *orig_str, char *buf, size_t limit) {
             case GETCHAR_CURSOR_LEFT:
                 if (i) {
                     i--;
-                    text_write("\b", 1);
+                    term_write("\b", 1);
                 }
                 continue;
             case GETCHAR_CURSOR_RIGHT:
                 if (i < strlen(buf)) {
                     i++;
-                    text_write(" ", 1);
+                    term_write(" ", 1);
                     gets_reprint_string(orig_x, orig_y, buf, limit);
                 }
                 continue;
@@ -258,12 +258,12 @@ void gets(const char *orig_str, char *buf, size_t limit) {
                         if (!buf[j])
                             break;
                     }
-                    text_write("\b", 1);
+                    term_write("\b", 1);
                     gets_reprint_string(orig_x, orig_y, buf, limit);
                 }
                 continue;
             case '\r':
-                text_write("\n", 1);
+                term_write("\n", 1);
                 return;
             default:
                 if (strlen(buf) < limit-1) {
@@ -273,7 +273,7 @@ void gets(const char *orig_str, char *buf, size_t limit) {
                             break;
                     }
                     buf[i++] = c;
-                    text_write(" ", 1);
+                    term_write(" ", 1);
                     gets_reprint_string(orig_x, orig_y, buf, limit);
                 }
         }

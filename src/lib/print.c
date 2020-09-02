@@ -4,7 +4,7 @@
 #include <lib/print.h>
 #include <lib/blib.h>
 #include <lib/cio.h>
-#include <drivers/vga_textmode.h>
+#include <lib/term.h>
 
 static const char *base_digits = "0123456789abcdef";
 
@@ -167,7 +167,7 @@ void vprint(const char *fmt, va_list args) {
     }
 
 out:
-    text_write(print_buf, print_buf_i);
+    term_write(print_buf, print_buf_i);
 
 #ifdef E9_OUTPUT
     for (size_t i = 0; i < print_buf_i; i++)

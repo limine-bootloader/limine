@@ -7,7 +7,7 @@
 #include <lib/blib.h>
 #include <lib/libc.h>
 #include <lib/config.h>
-#include <drivers/vga_textmode.h>
+#include <lib/term.h>
 
 static char *cmdline;
 #define CMDLINE_MAX 1024
@@ -26,12 +26,12 @@ char *menu(void) {
         }
     }
 
-    text_disable_cursor();
+    disable_cursor();
     int selected_entry = 0;
     bool skip_timeout = false;
 
 refresh:
-    text_clear();
+    clear(true);
     print("\n\n  \e[36m Limine " LIMINE_VERSION " \e[37m\n\n\n");
 
     print("Select an entry:\n\n");
@@ -78,17 +78,17 @@ refresh:
             case '\r':
             autoboot:
                 config_set_entry(selected_entry);
-                text_enable_cursor();
+                enable_cursor();
                 if (!config_get_value(cmdline, 0, CMDLINE_MAX, "KERNEL_CMDLINE")) {
                     if (!config_get_value(cmdline, 0, CMDLINE_MAX, "CMDLINE")) {
                         cmdline[0] = '\0';
                     }
                 }
-                text_clear();
+                clear(true);
                 return cmdline;
             case 'e':
                 config_set_entry(selected_entry);
-                text_enable_cursor();
+                enable_cursor();
                 if (!config_get_value(cmdline, 0, CMDLINE_MAX, "KERNEL_CMDLINE")) {
                     if (!config_get_value(cmdline, 0, CMDLINE_MAX, "CMDLINE")) {
                         cmdline[0] = '\0';
@@ -96,7 +96,7 @@ refresh:
                 }
                 print("\n\n> ");
                 gets(cmdline, cmdline, CMDLINE_MAX);
-                text_clear();
+                clear(true);
                 return cmdline;
         }
     }

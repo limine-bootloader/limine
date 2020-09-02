@@ -19,7 +19,7 @@ static void vga_font_retrieve(void) {
     struct rm_regs r = {0};
 
     r.eax = 0x1130;
-    r.ebx = 0x06;
+    r.ebx = 0x0600;
     rm_int(0x10, &r, &r);
 
     vga_font = ext_mem_balloc(VGA_FONT_MAX);
@@ -38,6 +38,12 @@ void vbe_plot_px(int x, int y, uint32_t hex) {
 
     vbe_framebuffer[fb_i] = hex;
 }
+
+struct vbe_char {
+    char c;
+    uint32_t fg;
+    uint32_t bg;
+};
 
 void vbe_plot_char(struct vbe_char c, int x, int y) {
     int orig_x = x;
@@ -86,7 +92,7 @@ static void draw_cursor(void) {
         vbe_plot_char(c, cursor_x * VGA_FONT_WIDTH, cursor_y * VGA_FONT_HEIGHT);
 }
 
-void vbe_scroll(void) {
+static void scroll(void) {
     clear_cursor();
 
     for (int i = cols; i < rows * cols; i++) {
@@ -105,7 +111,7 @@ void vbe_scroll(void) {
     draw_cursor();
 }
 
-void vbe_clear(void) {
+void vbe_clear(bool move) {
     clear_cursor();
 
     struct vbe_char empty;
@@ -116,8 +122,10 @@ void vbe_clear(void) {
         plot_char_grid(empty, i % cols, i / cols);
     }
 
-    cursor_x = 0;
-    cursor_y = 0;
+    if (move) {
+        cursor_x = 0;
+        cursor_y = 0;
+    }
 
     draw_cursor();
 }
@@ -144,25 +152,78 @@ void vbe_get_cursor_pos(int *x, int *y) {
     *y = cursor_y;
 }
 
-void vbe_set_text_attributes(uint32_t fg, uint32_t bg) {
-    text_fg = fg;
-    text_bg = bg;
+static uint32_t ansi_colours[] = {
+    0x00000000,              // black
+    0x00aa0000,              // red
+    0x0000aa00,              // green
+    0x00aa5500,              // brown
+    0x000000aa,              // blue
+    0x00aa00aa,              // magenta
+    0x0000aaaa,              // cyan
+    0x00aaaaaa               // grey
+};
+
+void vbe_set_text_fg(int fg) {
+    text_fg = ansi_colours[fg];
 }
 
-void vbe_set_cursor_attributes(uint32_t fg, uint32_t bg) {
-    clear_cursor();
-    cursor_fg = fg;
-    cursor_bg = bg;
-    draw_cursor();
+void vbe_set_text_bg(int bg) {
+    text_bg = ansi_colours[bg];
 }
 
-void vbe_tty_init(void) {
+void vbe_putchar(char c) {
+    switch (c) {
+        case '\b':
+            if (cursor_x || cursor_y) {
+                clear_cursor();
+                if (cursor_x) {
+                    cursor_x--;
+                } else {
+                    cursor_y--;
+                    cursor_x = cols - 1;
+                }
+                draw_cursor();
+            }
+            break;
+        case '\r':
+            vbe_set_cursor_pos(0, cursor_y);
+            break;
+        case '\n':
+            if (cursor_y == (rows - 1)) {
+                vbe_set_cursor_pos(0, rows - 1);
+                scroll();
+            } else {
+                vbe_set_cursor_pos(0, cursor_y + 1);
+            }
+            break;
+        default: {
+            clear_cursor();
+            struct vbe_char ch;
+            ch.c  = c;
+            ch.fg = text_fg;
+            ch.bg = text_bg;
+            plot_char_grid(ch, cursor_x++, cursor_y);
+            if (cursor_x == cols) {
+                cursor_x = 0;
+                cursor_y++;
+            }
+            if (cursor_y == rows) {
+                cursor_y--;
+                scroll();
+            }
+            draw_cursor();
+            break;
+        }
+    }
+}
+
+void vbe_tty_init(int *_rows, int *_cols) {
     init_vbe(&vbe_framebuffer, &vbe_pitch, &vbe_width, &vbe_height, &vbe_bpp);
     vga_font_retrieve();
-    cols = vbe_width / VGA_FONT_WIDTH;
-    rows = vbe_height / VGA_FONT_HEIGHT;
+    *_cols = cols = vbe_width / VGA_FONT_WIDTH;
+    *_rows = rows = vbe_height / VGA_FONT_HEIGHT;
     grid = ext_mem_balloc(rows * cols * sizeof(struct vbe_char));
-    vbe_clear();
+    vbe_clear(true);
 }
 
 struct vbe_info_struct {

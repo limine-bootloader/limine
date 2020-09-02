@@ -5,7 +5,7 @@
 #include <lib/config.h>
 #include <lib/blib.h>
 #include <drivers/disk.h>
-#include <drivers/vga_textmode.h>
+#include <lib/term.h>
 #include <lib/asm.h>
 
 void chainload(void) {
@@ -25,7 +25,7 @@ void chainload(void) {
         drive = (int)strtoui(buf);
     }
 
-    deinit_vga_textmode();
+    term_deinit();
 
     if (part != -1) {
         struct part p;

@@ -1,18 +1,17 @@
 #ifndef __DRIVERS__VGA_TEXTMODE_H__
 #define __DRIVERS__VGA_TEXTMODE_H__
 
-#include <stddef.h>
+#include <stdbool.h>
 
-void init_vga_textmode(void);
-void deinit_vga_textmode(void);
+void init_vga_textmode(int *rows, int *cols);
 
-void text_write(const char *, size_t);
-
-void text_get_cursor_pos(int *x, int *y);
-void text_set_cursor_pos(int x, int y);
-
-void text_clear(void);
+void text_putchar(char c);
+void text_clear(bool move);
 void text_enable_cursor(void);
 void text_disable_cursor(void);
+void text_set_cursor_pos(int x, int y);
+void text_get_cursor_pos(int *x, int *y);
+void text_set_text_fg(int fg);
+void text_set_text_bg(int bg);
 
 #endif

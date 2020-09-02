@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <limine.h>
+#include <protos/stivale.h>
 #include <protos/stivale2.h>
 #include <lib/elf.h>
 #include <lib/blib.h>
@@ -14,7 +15,7 @@
 #include <lib/real.h>
 #include <lib/libc.h>
 #include <drivers/vbe.h>
-#include <drivers/vga_textmode.h>
+#include <lib/term.h>
 #include <drivers/pic.h>
 #include <fs/file.h>
 #include <lib/asm.h>
@@ -364,9 +365,9 @@ void stivale2_load(char *cmdline, int boot_drive) {
     {
     struct stivale2_hdr_tag_framebuffer *hdrtag = get_tag(&stivale2_hdr, STIVALE2_HDR_TAG_FRAMEBUFFER_ID);
 
-    if (hdrtag == NULL) {
-        deinit_vga_textmode();
-    } else {
+    term_deinit();
+
+    if (hdrtag != NULL) {
         struct stivale2_struct_tag_framebuffer *tag = balloc(sizeof(struct stivale2_struct_tag_framebuffer));
         tag->tag.identifier = STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID;
 
@@ -407,169 +408,6 @@ void stivale2_load(char *cmdline, int boot_drive) {
     // Check if 5-level paging tag is requesting support
     bool level5pg_requested = get_tag(&stivale2_hdr, STIVALE2_HDR_TAG_5LV_PAGING_ID) ? true : false;
 
-    if (bits == 64) {
-        // If we're going 64, we might as well call this BIOS interrupt
-        // to tell the BIOS that we are entering Long Mode, since it is in
-        // the specification.
-        struct rm_regs r = {0};
-        r.eax = 0xec00;
-        r.ebx = 0x02;   // Long mode only
-        rm_int(0x15, &r, &r);
-    }
-
-    pic_mask_all();
-    pic_flush();
-
-    if (bits == 64) {
-        void *pagemap_ptr;
-        if (level5pg && level5pg_requested) {
-            // Enable CR4.LA57
-            ASM(
-                "mov eax, cr4\n\t"
-                "bts eax, 12\n\t"
-                "mov cr4, eax\n\t", :: "eax", "memory"
-            );
-
-            struct pagemap {
-                uint64_t pml5[512];
-                uint64_t pml4_lo[512];
-                uint64_t pml4_hi[512];
-                uint64_t pml3_lo[512];
-                uint64_t pml3_hi[512];
-                uint64_t pml2_0gb[512];
-                uint64_t pml2_1gb[512];
-                uint64_t pml2_2gb[512];
-                uint64_t pml2_3gb[512];
-            };
-            struct pagemap *pagemap = balloc_aligned(sizeof(struct pagemap), 0x1000);
-            pagemap_ptr = (void *)pagemap;
-
-            // zero out the pagemap
-            for (uint64_t *p = (uint64_t *)pagemap; p < &pagemap->pml3_hi[512]; p++)
-                *p = 0;
-
-            pagemap->pml5[511]    = (uint64_t)(size_t)pagemap->pml4_hi  | 0x03;
-            pagemap->pml5[0]      = (uint64_t)(size_t)pagemap->pml4_lo  | 0x03;
-            pagemap->pml4_hi[511] = (uint64_t)(size_t)pagemap->pml3_hi  | 0x03;
-            pagemap->pml4_hi[256] = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
-            pagemap->pml4_lo[0]   = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
-            pagemap->pml3_hi[510] = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
-            pagemap->pml3_hi[511] = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;
-            pagemap->pml3_lo[0]   = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
-            pagemap->pml3_lo[1]   = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;
-            pagemap->pml3_lo[2]   = (uint64_t)(size_t)pagemap->pml2_2gb | 0x03;
-            pagemap->pml3_lo[3]   = (uint64_t)(size_t)pagemap->pml2_3gb | 0x03;
-
-            // populate the page directories
-            for (size_t i = 0; i < 512 * 4; i++)
-                (&pagemap->pml2_0gb[0])[i] = (i * 0x200000) | 0x03 | (1 << 7);
-        } else {
-            struct pagemap {
-                uint64_t pml4[512];
-                uint64_t pml3_lo[512];
-                uint64_t pml3_hi[512];
-                uint64_t pml2_0gb[512];
-                uint64_t pml2_1gb[512];
-                uint64_t pml2_2gb[512];
-                uint64_t pml2_3gb[512];
-            };
-            struct pagemap *pagemap = balloc_aligned(sizeof(struct pagemap), 0x1000);
-            pagemap_ptr = (void *)pagemap;
-
-            // zero out the pagemap
-            for (uint64_t *p = (uint64_t *)pagemap; p < &pagemap->pml3_hi[512]; p++)
-                *p = 0;
-
-            pagemap->pml4[511]    = (uint64_t)(size_t)pagemap->pml3_hi  | 0x03;
-            pagemap->pml4[256]    = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
-            pagemap->pml4[0]      = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
-            pagemap->pml3_hi[510] = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
-            pagemap->pml3_hi[511] = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;
-            pagemap->pml3_lo[0]   = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
-            pagemap->pml3_lo[1]   = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;
-            pagemap->pml3_lo[2]   = (uint64_t)(size_t)pagemap->pml2_2gb | 0x03;
-            pagemap->pml3_lo[3]   = (uint64_t)(size_t)pagemap->pml2_3gb | 0x03;
-
-            // populate the page directories
-            for (size_t i = 0; i < 512 * 4; i++)
-                (&pagemap->pml2_0gb[0])[i] = (i * 0x200000) | 0x03 | (1 << 7);
-        }
-
-        ASM(
-            "cli\n\t"
-            "cld\n\t"
-            "mov cr3, eax\n\t"
-            "mov eax, cr4\n\t"
-            "or eax, 1 << 5\n\t"
-            "mov cr4, eax\n\t"
-            "mov ecx, 0xc0000080\n\t"
-            "rdmsr\n\t"
-            "or eax, 1 << 8\n\t"
-            "wrmsr\n\t"
-            "mov eax, cr0\n\t"
-            "or eax, 1 << 31\n\t"
-            "mov cr0, eax\n\t"
-            FARJMP32("0x28", "1f")
-            "1: .code64\n\t"
-            "mov ax, 0x30\n\t"
-            "mov ds, ax\n\t"
-            "mov es, ax\n\t"
-            "mov fs, ax\n\t"
-            "mov gs, ax\n\t"
-            "mov ss, ax\n\t"
-
-            "push 0x30\n\t"
-            "push [rsi]\n\t"
-            "pushfq\n\t"
-            "push 0x28\n\t"
-            "push [rbx]\n\t"
-
-            "xor rax, rax\n\t"
-            "xor rbx, rbx\n\t"
-            "xor rcx, rcx\n\t"
-            "xor rdx, rdx\n\t"
-            "xor rsi, rsi\n\t"
-            "xor rbp, rbp\n\t"
-            "xor r8,  r8\n\t"
-            "xor r9,  r9\n\t"
-            "xor r10, r10\n\t"
-            "xor r11, r11\n\t"
-            "xor r12, r12\n\t"
-            "xor r13, r13\n\t"
-            "xor r14, r14\n\t"
-            "xor r15, r15\n\t"
-
-            "iretq\n\t"
-            ".code32\n\t",
-            : "a" (pagemap_ptr), "b" (&entry_point),
-              "D" (&stivale2_struct), "S" (&stivale2_hdr.stack)
-            : "memory"
-        );
-    } else if (bits == 32) {
-        ASM(
-            "cli\n\t"
-            "cld\n\t"
-
-            "sub esp, 4\n\t"
-            "mov [esp], edi\n\t"
-
-            "push 0x20\n\t"
-            "push [esi]\n\t"
-            "pushfd\n\t"
-            "push 0x18\n\t"
-            "push [ebx]\n\t"
-
-            "xor eax, eax\n\t"
-            "xor ebx, ebx\n\t"
-            "xor ecx, ecx\n\t"
-            "xor edx, edx\n\t"
-            "xor esi, esi\n\t"
-            "xor edi, edi\n\t"
-            "xor ebp, ebp\n\t"
-
-            "iret\n\t",
-            : "b" (&entry_point), "D" (&stivale2_struct), "S" (&stivale2_hdr.stack)
-            : "memory"
-        );
-    }
+    stivale_spinup(bits, level5pg && level5pg_requested,
+                   entry_point, &stivale2_struct, stivale2_hdr.stack);
 }

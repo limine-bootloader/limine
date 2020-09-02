@@ -12,7 +12,7 @@
 #include <lib/rand.h>
 #include <lib/real.h>
 #include <drivers/vbe.h>
-#include <drivers/vga_textmode.h>
+#include <lib/term.h>
 #include <drivers/pic.h>
 #include <fs/file.h>
 #include <lib/asm.h>
@@ -224,6 +224,8 @@ void stivale_load(char *cmdline, int boot_drive) {
     stivale_struct.framebuffer_height = stivale_hdr.framebuffer_height;
     stivale_struct.framebuffer_bpp    = stivale_hdr.framebuffer_bpp;
 
+    term_deinit();
+
     if (stivale_hdr.flags & (1 << 0)) {
         uint32_t *fb32;
         init_vbe(&fb32,
@@ -232,8 +234,6 @@ void stivale_load(char *cmdline, int boot_drive) {
                  &stivale_struct.framebuffer_height,
                  &stivale_struct.framebuffer_bpp);
         stivale_struct.framebuffer_addr = (uint64_t)(size_t)fb32;
-    } else {
-        deinit_vga_textmode();
     }
 
     size_t memmap_entries;
@@ -241,6 +241,12 @@ void stivale_load(char *cmdline, int boot_drive) {
     stivale_struct.memory_map_entries = (uint64_t)memmap_entries;
     stivale_struct.memory_map_addr    = (uint64_t)(size_t)memmap;
 
+    stivale_spinup(bits, level5pg && (stivale_hdr.flags & (1 << 1)),
+                   entry_point, &stivale_struct, stivale_hdr.stack);
+}
+
+__attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
+                 uint64_t entry_point, void *stivale_struct, uint64_t stack) {
     if (bits == 64) {
         // If we're going 64, we might as well call this BIOS interrupt
         // to tell the BIOS that we are entering Long Mode, since it is in
@@ -256,7 +262,7 @@ void stivale_load(char *cmdline, int boot_drive) {
 
     if (bits == 64) {
         void *pagemap_ptr;
-        if (level5pg && (stivale_hdr.flags & (1 << 1))) {
+        if (level5pg) {
             // Enable CR4.LA57
             ASM(
                 "mov eax, cr4\n\t"
@@ -376,7 +382,7 @@ void stivale_load(char *cmdline, int boot_drive) {
             "iretq\n\t"
             ".code32\n\t",
             : "a" (pagemap_ptr), "b" (&entry_point),
-              "D" (&stivale_struct), "S" (&stivale_hdr.stack)
+              "D" (stivale_struct), "S" (&stack)
             : "memory"
         );
     } else if (bits == 32) {
@@ -402,8 +408,9 @@ void stivale_load(char *cmdline, int boot_drive) {
             "xor ebp, ebp\n\t"
 
             "iret\n\t",
-            : "b" (&entry_point), "D" (&stivale_struct), "S" (&stivale_hdr.stack)
+            : "b" (&entry_point), "D" (stivale_struct), "S" (&stack)
             : "memory"
         );
     }
+    for (;;);
 }

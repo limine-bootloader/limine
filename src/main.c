@@ -14,7 +14,7 @@ ASM_BASIC(
 );
 
 #include <limine.h>
-#include <drivers/vga_textmode.h>
+#include <lib/term.h>
 #include <lib/real.h>
 #include <lib/blib.h>
 #include <lib/libc.h>
@@ -32,8 +32,7 @@ ASM_BASIC(
 #include <menu.h>
 
 void main(int boot_drive) {
-    // Initial prompt.
-    init_vga_textmode();
+    term_textmode();
 
     print("Limine " LIMINE_VERSION "\n\n");
 
@@ -59,25 +58,32 @@ void main(int boot_drive) {
         }
     }
 
-    char *cmdline = menu();
-
     init_e820();
     init_memmap();
 
-    char proto[32];
-    if (!config_get_value(proto, 0, 32, "KERNEL_PROTO")) {
-        if (!config_get_value(proto, 0, 32, "PROTOCOL")) {
+    char buf[32];
+
+    if (config_get_value(buf, 0, 32, "GRAPHICS")) {
+        if (!strcmp(buf, "on")) {
+            term_vbe();
+        }
+    }
+
+    char *cmdline = menu();
+
+    if (!config_get_value(buf, 0, 32, "KERNEL_PROTO")) {
+        if (!config_get_value(buf, 0, 32, "PROTOCOL")) {
             panic("PROTOCOL not specified");
         }
     }
 
-    if (!strcmp(proto, "stivale")) {
+    if (!strcmp(buf, "stivale")) {
         stivale_load(cmdline, boot_drive);
-    } else if (!strcmp(proto, "stivale2")) {
+    } else if (!strcmp(buf, "stivale2")) {
         stivale2_load(cmdline, boot_drive);
-    } else if (!strcmp(proto, "linux")) {
+    } else if (!strcmp(buf, "linux")) {
         linux_load(cmdline, boot_drive);
-    } else if (!strcmp(proto, "chainload")) {
+    } else if (!strcmp(buf, "chainload")) {
         chainload();
     } else {
         panic("Invalid protocol specified");

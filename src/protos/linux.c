@@ -4,7 +4,7 @@
 #include <fs/file.h>
 #include <lib/blib.h>
 #include <lib/real.h>
-#include <drivers/vga_textmode.h>
+#include <lib/term.h>
 #include <lib/config.h>
 #include <lib/print.h>
 #include <lib/memmap.h>
@@ -135,7 +135,7 @@ void linux_load(char *cmdline, int boot_drive) {
     uint16_t real_mode_code_seg = rm_seg(real_mode_code);
     uint16_t kernel_entry_seg   = real_mode_code_seg + 0x20;
 
-    deinit_vga_textmode();
+    term_deinit();
 
     ASM(
         "cli\n\t"

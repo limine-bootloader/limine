@@ -13,6 +13,7 @@
 #include <lib/real.h>
 #include <drivers/vbe.h>
 #include <drivers/vga_textmode.h>
+#include <drivers/pic.h>
 #include <fs/file.h>
 #include <lib/asm.h>
 
@@ -248,7 +249,8 @@ void stivale_load(char *cmdline, int boot_drive) {
         rm_int(0x15, &r, &r);
     }
 
-    rm_flush_irqs();
+    pic_mask_all();
+    pic_flush();
 
     if (bits == 64) {
         void *pagemap_ptr;

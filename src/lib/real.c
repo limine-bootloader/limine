@@ -40,16 +40,16 @@ void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs) {
         "mov cr0, eax\n\t"
         FARJMP16("0", "1f")
         "1:\n\t"
-        "mov ax, 0\n\t"
-        "mov ds, ax\n\t"
-        "mov es, ax\n\t"
-        "mov fs, ax\n\t"
-        "mov gs, ax\n\t"
+        "xor ax, ax\n\t"
         "mov ss, ax\n\t"
 
         // Load in_regs
-        "mov dword ptr ds:[5f], esp\n\t"
-        "mov esp, dword ptr ds:[7f]\n\t"
+        "mov dword ptr ss:[5f], esp\n\t"
+        "mov esp, dword ptr ss:[7f]\n\t"
+        "pop gs\n\t"
+        "pop fs\n\t"
+        "pop es\n\t"
+        "pop ds\n\t"
         "popfd\n\t"
         "pop ebp\n\t"
         "pop edi\n\t"
@@ -58,7 +58,7 @@ void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs) {
         "pop ecx\n\t"
         "pop ebx\n\t"
         "pop eax\n\t"
-        "mov esp, dword ptr ds:[5f]\n\t"
+        "mov esp, dword ptr ss:[5f]\n\t"
 
         "sti\n\t"
 
@@ -69,9 +69,9 @@ void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs) {
         "cli\n\t"
 
         // Load out_regs
-        "mov dword ptr ds:[5f], esp\n\t"
-        "mov esp, dword ptr ds:[6f]\n\t"
-        "lea esp, [esp + 8*4]\n\t"
+        "mov dword ptr ss:[5f], esp\n\t"
+        "mov esp, dword ptr ss:[6f]\n\t"
+        "lea esp, [esp + 10*4]\n\t"
         "push eax\n\t"
         "push ebx\n\t"
         "push ecx\n\t"
@@ -80,10 +80,14 @@ void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs) {
         "push edi\n\t"
         "push ebp\n\t"
         "pushfd\n\t"
-        "mov esp, dword ptr ds:[5f]\n\t"
+        "push ds\n\t"
+        "push es\n\t"
+        "push fs\n\t"
+        "push gs\n\t"
+        "mov esp, dword ptr ss:[5f]\n\t"
 
         // Restore GDT
-        "lgdt [8f]\n\t"
+        "lgdt ss:[8f]\n\t"
 
         // Jump back to pmode
         "mov eax, cr0\n\t"

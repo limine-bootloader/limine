@@ -1,7 +1,7 @@
 CC = ../toolchain/bin/i386-elf-gcc
 LD = ../toolchain/bin/i386-elf-gcc
 
-CFLAGS = -Os -pipe -Wall -Wextra
+CFLAGS = -flto -Os -pipe -Wall -Wextra
 
 INTERNAL_CFLAGS = \
 	-std=gnu99 \
@@ -15,7 +15,7 @@ INTERNAL_CFLAGS = \
 	-I. \
 	-Wno-address-of-packed-member
 
-LDFLAGS = -O2
+LDFLAGS = -flto -Os
 
 INTERNAL_LDFLAGS = \
 	-nostdlib \
@@ -27,7 +27,8 @@ INTERNAL_LDFLAGS = \
 .PHONY: all clean
 
 C_FILES := $(shell find ./ -type f -name '*.c' | sort)
-OBJ := $(C_FILES:.c=.o)
+ASM_FILES := $(shell find ./ -type f -name '*.asm' | grep -v bootsect | sort)
+OBJ := $(C_FILES:.c=.o) $(ASM_FILES:.asm=.o)
 
 all: limine.bin
 
@@ -37,6 +38,9 @@ limine.bin: $(OBJ)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
+
+%.o: %.asm
+	nasm $< -f elf32 -o $@
 
 clean:
 	rm -f $(OBJ)

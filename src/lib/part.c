@@ -93,22 +93,22 @@ struct mbr_entry {
 } __attribute__((packed));
 
 static int mbr_get_part(struct part *ret, int drive, int partition) {
-    // Variables.
+    // Check if actually valid mbr
+    uint16_t hint;
+    read(drive, &hint, 444, sizeof(uint16_t));
+    if (hint && hint != 0x5a5a)
+        return INVALID_TABLE;
+
     struct mbr_entry entry;
-    const size_t entry_address = 0x1be + sizeof(struct mbr_entry) * partition;
+    size_t entry_offset = 0x1be + sizeof(struct mbr_entry) * partition;
 
-    // Read the entry of the MBR.
-    int r;
-    if ((r = read(drive, &entry, entry_address, sizeof(struct mbr_entry)))) {
+    int r = read(drive, &entry, entry_offset, sizeof(struct mbr_entry));
+    if (r)
         return r;
-    }
 
-    // Check if the partition exists, fail if it doesnt.
-    if (entry.type == 0) {
+    if (entry.type == 0)
         return NO_PARTITION;
-    }
 
-    // Assign the final fields and return.
     ret->first_sect = entry.first_sect;
     ret->sect_count = entry.sect_count;
     return 0;

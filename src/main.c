@@ -20,6 +20,7 @@ ASM_BASIC(
 #include <lib/term.h>
 #include <lib/real.h>
 #include <lib/blib.h>
+#include <lib/bmp.h>
 #include <lib/libc.h>
 #include <lib/part.h>
 #include <lib/config.h>
@@ -65,6 +66,10 @@ void main(int boot_drive) {
     init_memmap();
 
     char *cmdline = menu();
+
+    draw_background();
+
+    for(;;);
 
     char proto[32];
     if (!config_get_value(proto, 0, 32, "KERNEL_PROTO")) {

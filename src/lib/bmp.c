@@ -7,10 +7,6 @@
 
 uint32_t *bmp_image;
 
-static uint32_t bmp_get_pixel(int x, int y, uint32_t pitch) {
-    return bmp_image[x + (pitch / sizeof(uint32_t)) * y];
-}
-
 void draw_bmp(struct file_handle fd) {
     bmp_file_hdr_t bmp_file_hdr;
     fread(&fd, &bmp_file_hdr, 0, sizeof(bmp_file_hdr_t));
@@ -24,7 +20,7 @@ void draw_bmp(struct file_handle fd) {
 
     for (uint32_t i = 0; i < bmp_file_hdr.bi_height; i++) {
         for (uint32_t j = 0; j < bmp_file_hdr.bi_width; j++) {
-            vbe_plot_px(x++, y, bmp_get_pixel(j, i, pitch));
+            vbe_plot_px(x++, y, get_pixel(j, i, pitch, bmp_image));
         }
         x = 0;
         y--;

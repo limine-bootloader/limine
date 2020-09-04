@@ -280,7 +280,7 @@ void stivale2_load(char *cmdline, int boot_drive) {
 
         tag->module_count++;
 
-        struct stivale2_module *m = balloc(sizeof(struct stivale2_module));
+        struct stivale2_module *m = balloc_aligned(sizeof(struct stivale2_module), 1);
 
         if (!config_get_value(m->string, i, 128, "MODULE_STRING")) {
             m->string[0] = '\0';
@@ -399,7 +399,7 @@ void stivale2_load(char *cmdline, int boot_drive) {
 
     tag->entries = (uint64_t)memmap_entries;
 
-    void *tag_memmap = balloc(sizeof(struct e820_entry_t) * memmap_entries);
+    void *tag_memmap = balloc_aligned(sizeof(struct e820_entry_t) * memmap_entries, 1);
     memcpy(tag_memmap, memmap, sizeof(struct e820_entry_t) * memmap_entries);
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);

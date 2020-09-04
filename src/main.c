@@ -67,6 +67,10 @@ void main(int boot_drive) {
 
     char *cmdline = menu();
 
+    int bruh, lel;
+
+    vbe_tty_init(&lel, &bruh);
+
     draw_image();
 
     for(;;);

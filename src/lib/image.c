@@ -6,7 +6,7 @@
 
 const char *file_extensions[] = { ".bmp" };
 
-void (*image_handler[])(background_image_info_t) = { draw_bmp };
+void (*image_handler[])(struct file_handle) = { draw_bmp };
 
 int get_image_info(background_image_info_t *image_info) {
     char drive[4];
@@ -26,7 +26,10 @@ int get_image_info(background_image_info_t *image_info) {
         }
     }
     
-    *image_info = (background_image_info_t) { (int)strtoui(drive), (int)strtoui(partition), path };
+    background_image_info_t background_image = { (int)strtoui(drive), (int)strtoui(partition) };
+    strcpy(background_image.path, path);
+
+    *image_info = background_image;
 
     return 1;
 }
@@ -37,12 +40,16 @@ void draw_image() {
     if(!get_image_info(&image_info)) 
         return;
 
-    char file_extension[8];
-
-    for(int i = 0; i < SIZEOF_ARRAY(file_extensions); i++) { 
+    for(uint32_t i = 0; i < SIZEOF_ARRAY(file_extensions); i++) { 
         if(!strcmp(file_extensions[i], image_info.path + (strlen(image_info.path) - strlen(file_extensions[i])))) {
-            print("Found extension %s\n", file_extensions[i]);
-            image_handler[i](image_info);
+            struct file_handle fd;
+
+            if(fopen(&fd, 0x80, image_info.part, image_info.path)) {
+                print("%s could not be opened", image_info.path);
+                return;
+            }
+
+            image_handler[i](fd);
         }
     }
 } 

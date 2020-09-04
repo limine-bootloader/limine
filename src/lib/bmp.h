@@ -2,6 +2,7 @@
 #define BMP_H
 
 #include <lib/image.h>
+#include <fs/file.h>
 
 #include <stdint.h>
 
@@ -14,8 +15,8 @@ typedef struct {
     uint32_t bi_size;
     uint32_t bi_width;
     uint32_t bi_height;
-    uint32_t bi_planes;
-    uint32_t bi_bpp;
+    uint16_t bi_planes;
+    uint16_t bi_bpp;
     uint32_t bi_compression;
     uint32_t bi_image_size;
     uint32_t bi_xcount;
@@ -27,6 +28,6 @@ typedef struct {
     uint32_t blue_mask;
 } __attribute__((packed)) bmp_file_hdr_t;
 
-void draw_bmp(background_image_info_t image_info);
+void draw_bmp(struct file_handle fd);
 
 #endif

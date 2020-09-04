@@ -74,6 +74,11 @@ void stivale_load(char *cmdline, int boot_drive) {
         }
     }
 
+    print("drive: %d\n", kernel_drive);
+    print("part: %d\n", kernel_part);
+
+    for(;;);
+
     char *kernel_path = balloc(128);
     if (!config_get_value(kernel_path, 0, 128, "KERNEL_PATH")) {
         panic("KERNEL_PATH not specified");

@@ -60,6 +60,7 @@ ext2-test: limine-install test.img
 	sudo mkdir test_image/boot
 	sudo cp test/test.elf test_image/boot/
 	sudo cp test/limine.cfg test_image/
+	sudo cp test/916768.bmp test_image/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`

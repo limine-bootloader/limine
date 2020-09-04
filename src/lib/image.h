@@ -4,7 +4,7 @@
 typedef struct {
     int part; 
     int drive;
-    char *path;
+    char path[128];
 } background_image_info_t;
 
 int get_image_info(background_image_info_t *background_image_info);

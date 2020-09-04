@@ -30,4 +30,6 @@ typedef struct {
 
 void draw_bmp(struct file_handle fd);
 
+extern uint32_t *bmp_image;
+
 #endif

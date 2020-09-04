@@ -1,17 +1,32 @@
+DESTDIR =
+PREFIX = /usr/local
+
 OS := $(shell uname)
-CC = cc
+CC = clang
+OBJCOPY = llvm-objcopy
+CFLAGS = -O2 -pipe -Wall -Wextra
 
-.PHONY: all clean echfs-test ext2-test test.img
+.PHONY: all install clean echfs-test ext2-test test.img
 
-all:
-	$(MAKE) -C src all
-	cp src/limine.bin ./
+all: limine-install
+
+install: all
+	install -s limine-install $(DESTDIR)$(PREFIX)/bin/
 
 clean:
+	rm -f limine-install
 	$(MAKE) -C src clean
 
-limine-install: limine-install.c
-	$(CC) limine-install.c -o limine-install
+src/limine.bin:
+	$(MAKE) -C src all
+
+limine-install: src/limine.bin limine-install.c
+	$(CC) $(CFLAGS) -c limine-install.c -o limine-install.o
+	# FIXME: GNU objcopy supports `-O default` but for some stupid reason
+	#        llvm-objcopy does not. This needs to be worked around.
+	#        For now hardcode elf64-x86-64.
+	$(OBJCOPY) -I binary -O elf64-x86-64 src/limine.bin limine.o
+	$(CC) $(CFLAGS) limine.o limine-install.o -o limine-install
 
 test.img:
 	rm -f test.img
@@ -26,15 +41,15 @@ else ifeq ($(OS), FreeBSD)
 	sudo mdconfig -d -u md9
 endif
 
-echfs-test: limine-install test.img all
+echfs-test: limine-install test.img
 	$(MAKE) -C test
 	echfs-utils -m -p0 test.img quick-format 32768
 	echfs-utils -m -p0 test.img import test/test.elf boot/test.elf
 	echfs-utils -m -p0 test.img import test/limine.cfg limine.cfg
-	./limine-install src/limine.bin test.img
+	./limine-install test.img
 	qemu-system-x86_64 -hda test.img -debugcon stdio -enable-kvm
 
-ext2-test: limine-install test.img all
+ext2-test: limine-install test.img
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -49,10 +64,10 @@ ext2-test: limine-install test.img all
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	./limine-install src/limine.bin test.img
+	./limine-install test.img
 	qemu-system-x86_64 -hda test.img -debugcon stdio
 
-fat32-test: limine-install test.img all
+fat32-test: limine-install test.img
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -77,5 +92,5 @@ else ifeq ($(OS), FreeBSD)
 	sudo mdconfig -d -u md9
 endif
 	rm -rf test_image loopback_dev
-	./limine-install src/limine.bin test.img
+	./limine-install test.img
 	qemu-system-x86_64 -hda test.img -debugcon stdio

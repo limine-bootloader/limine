@@ -3,6 +3,8 @@
 ASM_BASIC(
     ".section .entry\n\t"
 
+    "cld\n\t"
+
     // Zero out .bss
     "xor al, al\n\t"
     "mov edi, OFFSET bss_begin\n\t"
@@ -10,7 +12,8 @@ ASM_BASIC(
     "sub ecx, OFFSET bss_begin\n\t"
     "rep stosb\n\t"
 
-    "jmp main\n\t"
+    "mov ebx, OFFSET main\n\t"
+    "jmp ebx\n\t"
 );
 
 #include <limine.h>

@@ -1,5 +1,8 @@
 /**/*.o
+/**/*.a
+/**/*.bc
 /**/*.bin
+/**/*.elf
 /**/*.img
 /bochsout.txt
 /bx_enh_dbg.ini

@@ -20,7 +20,7 @@ ASM_BASIC(
 #include <lib/term.h>
 #include <lib/real.h>
 #include <lib/blib.h>
-#include <lib/bmp.h>
+#include <lib/image.h>
 #include <lib/libc.h>
 #include <lib/part.h>
 #include <lib/config.h>
@@ -67,7 +67,7 @@ void main(int boot_drive) {
 
     char *cmdline = menu();
 
-    draw_background();
+    draw_image();
 
     for(;;);
 

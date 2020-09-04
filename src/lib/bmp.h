@@ -1,6 +1,10 @@
 #ifndef BMP_H
 #define BMP_H
 
+#include <lib/image.h>
+
+#include <stdint.h>
+
 typedef struct {
     uint16_t bf_type;
     uint32_t bf_size;
@@ -23,6 +27,6 @@ typedef struct {
     uint32_t blue_mask;
 } __attribute__((packed)) bmp_file_hdr_t;
 
-void draw_background();
+void draw_bmp(background_image_info_t image_info);
 
 #endif

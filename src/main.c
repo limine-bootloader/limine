@@ -67,14 +67,6 @@ void main(int boot_drive) {
 
     char *cmdline = menu();
 
-    int bruh, lel;
-
-    vbe_tty_init(&lel, &bruh);
-
-    draw_image();
-
-    for(;;);
-
     char proto[32];
     if (!config_get_value(proto, 0, 32, "KERNEL_PROTO")) {
         if (!config_get_value(proto, 0, 32, "PROTOCOL")) {

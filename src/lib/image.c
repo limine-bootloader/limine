@@ -26,7 +26,7 @@ int get_image_info(background_image_info_t *image_info) {
         }
     }
     
-    background_image_info_t background_image = { (int)strtoui(drive), (int)strtoui(partition) };
+    background_image_info_t background_image = { (int)strtoui(partition), (int)strtoui(drive) };
     strcpy(background_image.path, path);
 
     *image_info = background_image;
@@ -44,7 +44,7 @@ void draw_image() {
         if(!strcmp(file_extensions[i], image_info.path + (strlen(image_info.path) - strlen(file_extensions[i])))) {
             struct file_handle fd;
 
-            if(fopen(&fd, 0x80, image_info.part, image_info.path)) {
+            if(fopen(&fd, image_info.drive, image_info.part, image_info.path)) {
                 print("%s could not be opened", image_info.path);
                 return;
             }

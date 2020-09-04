@@ -14,11 +14,12 @@ void draw_bmp(struct file_handle fd) {
     uint32_t *data = balloc(pitch); 
     uint32_t cnt = bmp_file_hdr.bf_offset;
 
-    for(int32_t i = bmp_file_hdr.bi_height; i > -1; i--) {
+    for(int32_t i = bmp_file_hdr.bi_height - 1; i > -1; i--) {
         fread(&fd, data, cnt, pitch);
         cnt += pitch;
-        for(uint32_t j = 0; j < bmp_file_hdr.bi_width; j++) {
+        for(uint32_t j = 0; j < bmp_file_hdr.bi_width; j++)
             vbe_plot_px(j, i, data[j]);
-        }
     }
+
+    brewind(pitch);
 }

@@ -8,6 +8,10 @@ const char *file_extensions[] = { ".bmp" };
 
 void (*image_handler[])(struct file_handle) = { draw_bmp };
 
+uint32_t get_pixel(int x, int y, uint32_t pitch, uint32_t *data) {
+    return data[x + (pitch / sizeof(uint32_t)) * y];
+}
+
 int get_image_info(background_image_info_t *image_info) {
     char drive[4];
     char partition[4];

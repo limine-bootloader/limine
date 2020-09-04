@@ -26,7 +26,7 @@ else ifeq ($(OS), FreeBSD)
 	sudo mdconfig -d -u md9
 endif
 
-echfs-test: test.img all
+echfs-test: limine-install test.img all
 	$(MAKE) -C test
 	echfs-utils -m -p0 test.img quick-format 32768
 	echfs-utils -m -p0 test.img import test/test.elf boot/test.elf
@@ -34,7 +34,7 @@ echfs-test: test.img all
 	./limine-install src/limine.bin test.img
 	qemu-system-x86_64 -hda test.img -debugcon stdio -enable-kvm
 
-ext2-test: test.img all
+ext2-test: limine-install test.img all
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -52,7 +52,7 @@ ext2-test: test.img all
 	./limine-install src/limine.bin test.img
 	qemu-system-x86_64 -hda test.img -debugcon stdio
 
-fat32-test: test.img all
+fat32-test: limine-install test.img all
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image

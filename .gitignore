@@ -2,6 +2,7 @@
 /**/*.a
 /**/*.bc
 /**/*.bin
+/**/*.bin.gz
 /**/*.elf
 /**/*.img
 /bochsout.txt

@@ -18,6 +18,7 @@ ASM_BASIC(
 
 #include <stdint.h>
 #include <stddef.h>
+#include <gzip/tinf.h>
 
 __attribute__((noreturn))
 void main(uint8_t *compressed_stage2, size_t stage2_size, uint8_t boot_drive) {
@@ -25,8 +26,7 @@ void main(uint8_t *compressed_stage2, size_t stage2_size, uint8_t boot_drive) {
     // For now, just copy it over as it is not compressed. TODO: implement decompressor.
     volatile uint8_t *dest = (volatile uint8_t *)0x500;
 
-    for (size_t i = 0; i < stage2_size; i++)
-        dest[i] = compressed_stage2[i];
+	tinf_gzip_uncompress(dest, compressed_stage2, stage2_size);
 
     __attribute__((noreturn))
     void (*stage2)(uint8_t boot_drive) = (void *)dest;

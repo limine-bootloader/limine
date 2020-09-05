@@ -146,7 +146,7 @@ incbin '../decompressor/decompressor.bin'
 
 align 16
 stage2:
-incbin '../stage2.bin'
+incbin '../stage2.bin.gz'
 .size: equ $ - stage2
 
 times 32768-($-$$) db 0

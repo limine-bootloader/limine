@@ -68,7 +68,7 @@ struct stivale2_mmap_entry {
 struct stivale2_struct_tag_memmap {
     struct stivale2_tag tag;
     uint64_t entries;
-    uint64_t memmap;
+    struct stivale2_mmap_entry memmap[];
 } __attribute__((packed));
 
 #define STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID 0x506461d2950408fa

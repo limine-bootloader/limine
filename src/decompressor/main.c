@@ -1,15 +1,19 @@
-asm (
+#include <lib/asm.h>
+
+ASM_BASIC(
     ".section .entry\n\t"
+
+    "cld\n\t"
 
     // Zero out .bss
     "xor al, al\n\t"
-    "lea edi, bss_begin\n\t"
-    "lea ecx, bss_end\n\t"
-    "lea edx, bss_begin\n\t"
-    "sub ecx, edx\n\t"
+    "mov edi, OFFSET bss_begin\n\t"
+    "mov ecx, OFFSET bss_end\n\t"
+    "sub ecx, OFFSET bss_begin\n\t"
     "rep stosb\n\t"
 
-    "jmp main\n\t"
+    "mov ebx, OFFSET main\n\t"
+    "jmp ebx\n\t"
 );
 
 #include <stdint.h>

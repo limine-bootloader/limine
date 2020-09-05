@@ -1,41 +1,40 @@
-CC = ../../toolchain/bin/i386-elf-gcc
-
-CFLAGS = -Os -pipe -Wall -Wextra
+OPT_LEVEL = z
+CFLAGS = -pipe -Wall -Wextra
 
 INTERNAL_CFLAGS = \
+	-O$(OPT_LEVEL) \
+	-std=gnu99 \
 	-ffreestanding \
-	-masm=intel \
-	-fno-pic \
+	-flto \
+	-mno-80387 \
+	-mno-mmx \
 	-mno-sse \
 	-mno-sse2 \
-	-mno-mmx \
-	-mno-80387 \
-	-ffreestanding \
-	-fno-stack-protector \
 	-I. \
 	-Wno-address-of-packed-member
 
-LDFLAGS = -O2
-
 INTERNAL_LDFLAGS = \
+	-static \
 	-nostdlib \
-	-no-pie \
-	-lgcc \
-	-static-libgcc \
-	-Tlinker.ld
+	-Tlinker.ld \
+	-no-pie
 
 .PHONY: all clean
 
 C_FILES := $(shell find ./ -type f -name '*.c' | sort)
-OBJ := $(C_FILES:.c=.o)
+BC := $(C_FILES:.c=.bc)
 
 all: decompressor.bin
 
-decompressor.bin: $(OBJ)
-	$(CC) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
+decompressor.bin: $(BC)
+	llvm-link $(BC) -o bundle.bc
+	opt --O$(OPT_LEVEL) bundle.bc -o optimised_bundle.bc
+	clang --target=i386-elf -O$(OPT_LEVEL) -c optimised_bundle.bc -o optimised_bundle.o
+	ld.lld optimised_bundle.o ../libgcc.a $(INTERNAL_LDFLAGS) -o decompressor.elf
+	llvm-objcopy -O binary decompressor.elf decompressor.bin
 
-%.o: %.c
-	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
+%.bc: %.c
+	clang --target=i386-elf $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJ)
+	rm -f decompressor.bin $(BC)

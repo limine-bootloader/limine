@@ -22,10 +22,15 @@ int main(int argc, char *argv[]) {
     if (argc >= 3)
         sscanf(argv[2], "%" SCNu32, &stage2_sect);
 
+    // Save original timestamp
+    uint8_t timestamp[6];
+    fseek(device, 218, SEEK_SET);
+    fread(timestamp, 1, 6, device);
+
     // Save the original partition table of the device
-    char orig_mbr[64];
-    fseek(device, 446, SEEK_SET);
-    fread(orig_mbr, 1, 64, device);
+    uint8_t orig_mbr[70];
+    fseek(device, 440, SEEK_SET);
+    fread(orig_mbr, 1, 70, device);
 
     // Write the bootsector from the bootloader to the device
     fseek(device, 0, SEEK_SET);
@@ -39,9 +44,13 @@ int main(int argc, char *argv[]) {
     fseek(device, 0x1b0, SEEK_SET);
     fwrite(&stage2_sect, 1, sizeof(uint32_t), device);
 
+    // Write back timestamp
+    fseek(device, 218, SEEK_SET);
+    fwrite(timestamp, 1, 6, device);
+
     // Write back the saved partition table to the device
-    fseek(device, 446, SEEK_SET);
-    fwrite(orig_mbr, 1, 64, device);
+    fseek(device, 440, SEEK_SET);
+    fwrite(orig_mbr, 1, 70, device);
 
     fclose(device);
 

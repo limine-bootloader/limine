@@ -76,6 +76,8 @@ limine-install test.img
 
 One can get `echfs-utils` by installing https://github.com/qword-os/echfs.
 
+Limine uses a stripped-down version of https://github.com/jibsen/tinf
+
 ## Discord server
 We have a Discord server if you need support, info, or you just want to
 hang out: https://discord.gg/QEeZMz4

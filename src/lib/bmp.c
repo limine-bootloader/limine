@@ -16,7 +16,7 @@ void draw_bmp(struct file_handle fd) {
 
     uint32_t pitch = bmp_file_hdr.bi_width * (bmp_file_hdr.bi_bpp / 8);
 
-    uint32_t x = 0, y = bmp_file_hdr.bi_height;
+    uint32_t x = 0, y = bmp_file_hdr.bi_height - 1;
 
     for (uint32_t i = 0; i < bmp_file_hdr.bi_height; i++) {
         for (uint32_t j = 0; j < bmp_file_hdr.bi_width; j++) {

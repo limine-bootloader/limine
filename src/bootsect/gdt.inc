@@ -2,7 +2,7 @@ load_gdt:
     pusha
     push es
     push ds
-    push 0x7000
+    push 0x7ff0
     pop es
     xor di, di
     push 0
@@ -19,7 +19,7 @@ load_gdt:
 GDT:
 
 dw .GDTEnd - .GDTStart - 1	; GDT size
-dd 0x70000				; GDT start
+dd 0x7ff00				; GDT start
 
 .GDTStart:
 

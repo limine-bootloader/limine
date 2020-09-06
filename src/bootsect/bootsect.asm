@@ -15,7 +15,7 @@ start:
     mov fs, ax
     mov gs, ax
     mov ss, ax
-    mov sp, 0xfff0
+    mov esp, 0x4000
     sti
 
     ; Some BIOSes don't pass the correct boot drive number,
@@ -39,12 +39,12 @@ start:
     mov si, LoadingMsg
     call simple_print
 
-    ; ****************** Load stage 2 ******************
+    ; ****************** Load stage 1.5 ******************
 
-    mov si, Stage2Msg
+    mov si, Stage15Msg
     call simple_print
 
-    mov eax, dword [stage2_sector]
+    mov eax, dword [stage15_sector]
     mov ebx, 0x7e00
     mov ecx, 1
     call read_sectors
@@ -73,7 +73,7 @@ halt:
 ; Data
 
 LoadingMsg db 0x0D, 0x0A, 'Limine', 0x0D, 0x0A, 0x0A, 0x00
-Stage2Msg db 'Loading stage2...', 0x00
+Stage15Msg db 'Loading stage 1.5...', 0x00
 ErrReadDiskMsg db 0x0D, 0x0A, 'Disk read error, system halted', 0x00
 ErrEnableA20Msg db 0x0D, 0x0A, 'A20 enable error, system halted', 0x00
 DoneMsg db '  DONE', 0x0D, 0x0A, 0x00
@@ -87,7 +87,7 @@ times 6 db 0
 %include 'disk.inc'
 
 times 0x1b0-($-$$) db 0
-stage2_sector: dd 1
+stage15_sector: dd 1
 
 times 0x1b8-($-$$) db 0
 times 510-($-$$) db 0
@@ -97,9 +97,9 @@ dw 0xaa55
 
 stage15:
     push es
-    push 0x6000
+    push 0x7000
     pop es
-    mov eax, dword [stage2_sector]
+    mov eax, dword [stage15_sector]
     inc eax
     xor ebx, ebx
     mov ecx, 62
@@ -132,9 +132,9 @@ stage15:
     push edx
 
     push stage2.size
-    push (stage2 - 0x8000) + 0x60000
+    push (stage2 - 0x8000) + 0x70000
 
-    call 0x60000
+    call 0x70000
 
 bits 16
 %include 'a20_enabler.inc'

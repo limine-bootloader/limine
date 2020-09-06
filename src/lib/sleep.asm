@@ -1,4 +1,4 @@
-section .text
+section .realmode
 
 int_08_ticks_counter: dd 0
 

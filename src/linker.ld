@@ -3,10 +3,11 @@ ENTRY(main)
 
 SECTIONS
 {
-    . = 0x500;
+    . = 0x4000;
 
     .text : {
         KEEP(*(.entry*))
+        KEEP(*(.realmode*))
         *(.text*)
     }
 

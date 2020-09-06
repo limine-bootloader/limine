@@ -1,4 +1,4 @@
-section .text
+section .realmode
 
 global rm_int
 rm_int:

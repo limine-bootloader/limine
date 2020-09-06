@@ -22,9 +22,8 @@ ASM_BASIC(
 
 __attribute__((noreturn))
 void main(uint8_t *compressed_stage2, size_t stage2_size, uint8_t boot_drive) {
-    // The decompressor should decompress compressed_stage2 to address 0x500.
-    // For now, just copy it over as it is not compressed. TODO: implement decompressor.
-    volatile uint8_t *dest = (volatile uint8_t *)0x500;
+    // The decompressor should decompress compressed_stage2 to address 0x4000.
+    volatile uint8_t *dest = (volatile uint8_t *)0x4000;
 
     tinf_gzip_uncompress(dest, compressed_stage2, stage2_size);
 

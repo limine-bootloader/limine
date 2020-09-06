@@ -1,10 +1,17 @@
 org 0x7c00
 bits 16
 
-jmp start ; Workaround for some BIOSes that require this stub
-nop
-
 start:
+    jmp .skip_bpb ; Workaround for some BIOSes that require this stub
+    nop
+
+    ; Some BIOSes will do a funny and decide to overwrite bytes of code in
+    ; the section where a FAT BPB would be, potentially overwriting
+    ; bootsector code.
+    ; Avoid that by filling the BPB area with 0s
+    times 87 db 0
+
+  .skip_bpb:
     cli
     cld
     jmp 0x0000:.initialise_cs
@@ -12,10 +19,8 @@ start:
     xor ax, ax
     mov ds, ax
     mov es, ax
-    mov fs, ax
-    mov gs, ax
     mov ss, ax
-    mov esp, 0x4000
+    mov sp, 0x4000
     sti
 
     ; Some BIOSes don't pass the correct boot drive number,
@@ -41,18 +46,25 @@ start:
 
     ; ****************** Load stage 1.5 ******************
 
-    mov si, Stage15Msg
-    call simple_print
+    ; Make sure int 13h extensions are supported
+    mov ah, 0x41
+    mov bx, 0x55aa
+    int 0x13
+    jc err_reading_disk
+    cmp bx, 0xaa55
+    jne err_reading_disk
+
+    ; If int 13h extensions are supported, then we are definitely running on
+    ; a 386+. We have no idea whether the upper 16 bits of esp are cleared, so
+    ; make sure that is the case now.
+    mov esp, 0x4000
 
     mov eax, dword [stage15_sector]
-    mov ebx, 0x7e00
-    mov ecx, 1
+    mov bx, 0x7e00
+    mov cx, 1
     call read_sectors
 
     jc err_reading_disk
-
-    mov si, DoneMsg
-    call simple_print
 
     jmp 0x7e00
 
@@ -73,10 +85,8 @@ halt:
 ; Data
 
 LoadingMsg db 0x0D, 0x0A, 'Limine', 0x0D, 0x0A, 0x0A, 0x00
-Stage15Msg db 'Loading stage 1.5...', 0x00
-ErrReadDiskMsg db 0x0D, 0x0A, 'Disk read error, system halted', 0x00
-ErrEnableA20Msg db 0x0D, 0x0A, 'A20 enable error, system halted', 0x00
-DoneMsg db '  DONE', 0x0D, 0x0A, 0x00
+ErrReadDiskMsg db 0x0D, 0x0A, 'Disk err', 0x00
+ErrEnableA20Msg db 0x0D, 0x0A, 'A20 err', 0x00
 
 times 0xda-($-$$) db 0
 times 6 db 0
@@ -101,8 +111,8 @@ stage15:
     pop es
     mov eax, dword [stage15_sector]
     inc eax
-    xor ebx, ebx
-    mov ecx, 62
+    xor bx, bx
+    mov cx, 62
     call read_sectors
     pop es
     jc err_reading_disk

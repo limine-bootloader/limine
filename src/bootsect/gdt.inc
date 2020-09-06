@@ -1,7 +1,25 @@
+load_gdt:
+    pusha
+    push es
+    push ds
+    push 0x7000
+    pop es
+    xor di, di
+    push 0
+    pop ds
+    mov si, GDT.GDTStart
+    mov cx, GDT.GDTEnd - GDT.GDTStart
+    rep movsb
+    lgdt [GDT]
+    pop ds
+    pop es
+    popa
+    ret
+
 GDT:
 
 dw .GDTEnd - .GDTStart - 1	; GDT size
-dd .GDTStart				; GDT start
+dd 0x70000				; GDT start
 
 .GDTStart:
 

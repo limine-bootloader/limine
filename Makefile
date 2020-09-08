@@ -30,10 +30,10 @@ limine-install: src/limine.bin limine-install.c
 
 test.img:
 	rm -f test.img
-	dd if=/dev/zero bs=1M count=0 seek=4096 of=test.img
+	dd if=/dev/zero bs=1M count=0 seek=64 of=test.img
 ifeq ($(OS), Linux)
 	parted -s test.img mklabel msdos
-	parted -s test.img mkpart primary 0% 100%
+	parted -s test.img mkpart primary 2048s 100%
 else ifeq ($(OS), FreeBSD)
 	sudo mdconfig -a -t vnode -f test.img -u md9
 	sudo gpart create -s mbr md9
@@ -43,7 +43,7 @@ endif
 
 echfs-test: limine-install test.img
 	$(MAKE) -C test
-	echfs-utils -m -p0 test.img quick-format 32768
+	echfs-utils -m -p0 test.img quick-format 512
 	echfs-utils -m -p0 test.img import test/test.elf boot/test.elf
 	echfs-utils -m -p0 test.img import test/limine.cfg limine.cfg
 	./limine-install test.img

@@ -32,15 +32,11 @@ limine.bin: libgcc.a $(BC) $(ASM_OBJ)
 	llvm-link $(BC) -o bundle.bc
 	opt --O$(OPT_LEVEL) bundle.bc -o optimised_bundle.bc
 	clang --target=i386-elf -O$(OPT_LEVEL) -c optimised_bundle.bc -o optimised_bundle.o
-	ld.lld optimised_bundle.o $(ASM_OBJ) libgcc.a $(INTERNAL_LDFLAGS) -o stage2.elf
+	ld.lld optimised_bundle.o $(ASM_OBJ) $(INTERNAL_LDFLAGS) -o stage2.elf
 	llvm-objcopy -O binary stage2.elf stage2.bin
 	gzip -9 stage2.bin
 	$(MAKE) -C decompressor
 	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
-
-libgcc.a:
-	curl https://mirror.netcologne.de/archlinux/core/os/x86_64/gcc-10.2.0-2-x86_64.pkg.tar.zst | \
-		tar -I zstd -xv --strip-components=6 --occurrence=1 usr/lib/gcc/x86_64-pc-linux-gnu/10.2.0/32/libgcc.a
 
 %.bc: %.c
 	clang --target=i386-elf $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@

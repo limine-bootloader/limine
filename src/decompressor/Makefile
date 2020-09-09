@@ -30,7 +30,7 @@ decompressor.bin: $(BC)
 	llvm-link $(BC) -o bundle.bc
 	opt --O$(OPT_LEVEL) bundle.bc -o optimised_bundle.bc
 	clang --target=i386-elf -O$(OPT_LEVEL) -c optimised_bundle.bc -o optimised_bundle.o
-	ld.lld optimised_bundle.o ../libgcc.a $(INTERNAL_LDFLAGS) -o decompressor.elf
+	ld.lld optimised_bundle.o $(INTERNAL_LDFLAGS) -o decompressor.elf
 	llvm-objcopy -O binary decompressor.elf decompressor.bin
 
 %.bc: %.c

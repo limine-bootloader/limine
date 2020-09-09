@@ -28,7 +28,7 @@ BC := $(C_FILES:.c=.bc)
 
 all: limine.bin
 
-limine.bin: libgcc.a $(BC) $(ASM_OBJ)
+limine.bin: $(BC) $(ASM_OBJ)
 	llvm-link $(BC) -o bundle.bc
 	opt --O$(OPT_LEVEL) bundle.bc -o optimised_bundle.bc
 	clang --target=i386-elf -O$(OPT_LEVEL) -c optimised_bundle.bc -o optimised_bundle.o

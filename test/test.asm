@@ -7,7 +7,13 @@ stivale_header:
     dq 0         ; entry point
     dq stack.top ; rsp
     dq 0         ; flags
-    dq 0         ; tags
+    dq lv5         ; tags
+
+section .rodata
+
+lv5:
+    dq 0x932f477032007e8f
+    dq 0
 
 section .bss
 

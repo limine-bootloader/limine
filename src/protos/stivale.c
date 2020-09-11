@@ -262,7 +262,6 @@ __attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
     pic_flush();
 
     if (bits == 64) {
-        void *pagemap_ptr;
         if (level5pg) {
             // Enable CR4.LA57
             ASM(
@@ -270,55 +269,19 @@ __attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
                 "bts eax, 12\n\t"
                 "mov cr4, eax\n\t", :: "eax", "memory"
             );
+        }
 
-            struct pagemap {
-                uint64_t pml5[512];
-                uint64_t pml4_lo[512];
-                uint64_t pml4_hi[512];
-                uint64_t pml3_lo[512];
-                uint64_t pml3_hi[512];
-                uint64_t pml2_0gb[512];
-                uint64_t pml2_1gb[512];
-                uint64_t pml2_2gb[512];
-                uint64_t pml2_3gb[512];
-            };
-            struct pagemap *pagemap = balloc_aligned(sizeof(struct pagemap), 0x1000);
-            pagemap_ptr = (void *)pagemap;
+        pagemap_t pagemap = new_pagemap(level5pg ? 5 : 4);
 
-            // zero out the pagemap
-            for (uint64_t *p = (uint64_t *)pagemap; p < &pagemap->pml3_hi[512]; p++)
-                *p = 0;
+        // Map 0 to 2GiB at 0xffffffff80000000
+        for (uint64_t i = 0; i < 0x80000000; i += PAGE_SIZE) {
+            map_page(pagemap, i + 0xffffffff80000000, i, 0x03);
+        }
 
-            pagemap->pml5[511]    = (uint64_t)(size_t)pagemap->pml4_hi  | 0x03;
-            pagemap->pml5[0]      = (uint64_t)(size_t)pagemap->pml4_lo  | 0x03;
-            pagemap->pml4_hi[511] = (uint64_t)(size_t)pagemap->pml3_hi  | 0x03;
-            pagemap->pml4_hi[256] = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
-            pagemap->pml4_lo[0]   = (uint64_t)(size_t)pagemap->pml3_lo  | 0x03;
-            pagemap->pml3_hi[510] = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
-            pagemap->pml3_hi[511] = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;
-            pagemap->pml3_lo[0]   = (uint64_t)(size_t)pagemap->pml2_0gb | 0x03;
-            pagemap->pml3_lo[1]   = (uint64_t)(size_t)pagemap->pml2_1gb | 0x03;
-            pagemap->pml3_lo[2]   = (uint64_t)(size_t)pagemap->pml2_2gb | 0x03;
-            pagemap->pml3_lo[3]   = (uint64_t)(size_t)pagemap->pml2_3gb | 0x03;
-
-            // populate the page directories
-            for (size_t i = 0; i < 512 * 4; i++)
-                (&pagemap->pml2_0gb[0])[i] = (i * 0x200000) | 0x03 | (1 << 7);
-        } else {
-            pagemap_t pagemap = new_pagemap();
-
-            // Map 0 to 2GiB at 0xffffffff80000000
-            for (uint64_t i = 0; i < 0x80000000; i += PAGE_SIZE) {
-                map_page(pagemap, i + 0xffffffff80000000, i, 0x03);
-            }
-
-            // Map 0 to 4GiB at 0xffff800000000000 and 0
-            for (uint64_t i = 0; i < 0x100000000; i += PAGE_SIZE) {
-                map_page(pagemap, i, i, 0x03);
-                map_page(pagemap, i + 0xffff800000000000, i, 0x03);
-            }
-
-            pagemap_ptr = (void *)pagemap;
+        // Map 0 to 4GiB at 0xffff800000000000 and 0
+        for (uint64_t i = 0; i < 0x100000000; i += PAGE_SIZE) {
+            map_page(pagemap, i, i, 0x03);
+            map_page(pagemap, i + 0xffff800000000000, i, 0x03);
         }
 
         ASM(
@@ -367,7 +330,7 @@ __attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
 
             "iretq\n\t"
             ".code32\n\t",
-            : "a" (pagemap_ptr), "b" (&entry_point),
+            : "a" (pagemap.top_level), "b" (&entry_point),
               "D" (stivale_struct), "S" (&stack)
             : "memory"
         );

@@ -23,19 +23,35 @@ static pt_entry_t *get_next_level(pt_entry_t *current_level, size_t entry) {
     return ret;
 }
 
-pagemap_t new_pagemap(void) {
-    return (pagemap_t)(size_t)balloc_aligned(PT_SIZE, PT_SIZE);
+pagemap_t new_pagemap(int lv) {
+    pagemap_t pagemap;
+    pagemap.levels    = lv;
+    pagemap.top_level = balloc_aligned(PT_SIZE, PT_SIZE);
+    return pagemap;
 }
 
 void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags) {
     // Calculate the indices in the various tables using the virtual address
+    size_t pml5_entry = (virt_addr & ((uint64_t)0x1ff << 48)) >> 48;
     size_t pml4_entry = (virt_addr & ((uint64_t)0x1ff << 39)) >> 39;
     size_t pml3_entry = (virt_addr & ((uint64_t)0x1ff << 30)) >> 30;
     size_t pml2_entry = (virt_addr & ((uint64_t)0x1ff << 21)) >> 21;
 
-    pt_entry_t *pml4 = (pt_entry_t *)(size_t)pagemap;
-    pt_entry_t *pml3 = get_next_level(pml4, pml4_entry);
-    pt_entry_t *pml2 = get_next_level(pml3, pml3_entry);
+    pt_entry_t *pml5, *pml4, *pml3, *pml2;
+
+    // Paging levels
+    switch (pagemap.levels) {
+        case 5:
+            pml5 = pagemap.top_level;
+            pml4 = get_next_level(pml5, pml5_entry);
+            break;
+        case 4:
+            pml4 = pagemap.top_level;
+            break;
+    }
+
+    pml3 = get_next_level(pml4, pml4_entry);
+    pml2 = get_next_level(pml3, pml3_entry);
 
     // Set the entry as present and point it to the passed physical address
     // Also set the specified flags

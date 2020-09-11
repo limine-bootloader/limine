@@ -36,12 +36,15 @@ The kernel MUST NOT request to load itself at an address lower than `0x100000`
 field in the stivale header is set to a non-0 value, in which case, it is set to
 the value of `entry_point`.
 
-At entry, the bootloader will have setup paging such that there is a 4GiB identity
-mapped block of memory at `0x0000000000000000`, a 2GiB mapped area of memory
-that maps from `0x0000000000000000` physical to `0x0000000080000000` physical
-to `0xffffffff80000000` virtual. This area is for the higher half kernels.
-Further more, a 4GiB area of memory from `0x0000000000000000` physical to
-`0x0000000100000000` physical to `0xffff800000000000` virtual is mapped.
+At entry, the bootloader will have setup paging mappings as such:
+
+```
+ Base Physical Address -                      Size                      ->  Virtual address
+  0x0000000000000000   -   4 GiB plus any additional memory map entry   ->  0x0000000000000000
+  0x0000000000000000   -   4 GiB plus any additional memory map entry   ->  0xffff800000000000 (4-level paging only)
+  0x0000000000000000   -   4 GiB plus any additional memory map entry   ->  0xff00000000000000 (5-level paging only)
+  0x0000000000000000   -                   0x80000000                   ->  0xffffffff80000000
+```
 
 If the kernel is dynamic and not statically linked, the bootloader will relocate it.
 Furthermore if bit 2 of the flags field in the stivale header is set, the bootloader

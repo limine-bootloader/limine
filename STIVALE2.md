@@ -39,10 +39,11 @@ the value of `entry_point`.
 At entry, the bootloader will have setup paging mappings as such:
 
 ```
- Base Physical Address -  Top Physical Address  ->  Virtual address
-  0x0000000000000000   -   0x0000000100000000   ->  0x0000000000000000
-  0x0000000000000000   -   0x0000000100000000   ->  0xffff800000000000
-  0x0000000000000000   -   0x0000000080000000   ->  0xffffffff80000000
+ Base Physical Address -                      Size                      ->  Virtual address
+  0x0000000000000000   -   4 GiB plus any additional memory map entry   ->  0x0000000000000000
+  0x0000000000000000   -   4 GiB plus any additional memory map entry   ->  0xffff800000000000 (4-level paging only)
+  0x0000000000000000   -   4 GiB plus any additional memory map entry   ->  0xff00000000000000 (5-level paging only)
+  0x0000000000000000   -                   0x80000000                   ->  0xffffffff80000000
 ```
 
 If the kernel is dynamic and not statically linked, the bootloader will relocate it.

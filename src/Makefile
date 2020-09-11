@@ -34,7 +34,7 @@ limine.bin: $(BC) $(ASM_OBJ)
 	clang --target=i386-elf -O$(OPT_LEVEL) -c optimised_bundle.bc -o optimised_bundle.o
 	ld.lld optimised_bundle.o $(ASM_OBJ) $(INTERNAL_LDFLAGS) -o stage2.elf
 	llvm-objcopy -O binary stage2.elf stage2.bin
-	gzip -9 stage2.bin
+	gzip -9 < stage2.bin > stage2.bin.gz
 	$(MAKE) -C decompressor
 	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
 

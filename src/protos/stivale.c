@@ -243,11 +243,13 @@ void stivale_load(char *cmdline, int boot_drive) {
     stivale_struct.memory_map_addr    = (uint64_t)(size_t)memmap;
 
     stivale_spinup(bits, level5pg && (stivale_hdr.flags & (1 << 1)),
-                   entry_point, &stivale_struct, stivale_hdr.stack);
+                   entry_point, &stivale_struct, stivale_hdr.stack,
+                   memmap, memmap_entries);
 }
 
 __attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
-                 uint64_t entry_point, void *stivale_struct, uint64_t stack) {
+                 uint64_t entry_point, void *stivale_struct, uint64_t stack,
+                 struct e820_entry_t *memmap, size_t memmap_entries) {
     if (bits == 64) {
         // If we're going 64, we might as well call this BIOS interrupt
         // to tell the BIOS that we are entering Long Mode, since it is in
@@ -272,16 +274,34 @@ __attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
         }
 
         pagemap_t pagemap = new_pagemap(level5pg ? 5 : 4);
+        uint64_t higher_half_base = level5pg ? 0xff00000000000000 : 0xffff800000000000;
 
         // Map 0 to 2GiB at 0xffffffff80000000
         for (uint64_t i = 0; i < 0x80000000; i += PAGE_SIZE) {
-            map_page(pagemap, i + 0xffffffff80000000, i, 0x03);
+            map_page(pagemap, 0xffffffff80000000 + i, i, 0x03);
         }
 
-        // Map 0 to 4GiB at 0xffff800000000000 and 0
+        // Map 0 to 4GiB at higher half base and 0
         for (uint64_t i = 0; i < 0x100000000; i += PAGE_SIZE) {
             map_page(pagemap, i, i, 0x03);
-            map_page(pagemap, i + 0xffff800000000000, i, 0x03);
+            map_page(pagemap, higher_half_base + i, i, 0x03);
+        }
+
+        // Map any other region of memory from the memmap
+        for (size_t i = 0; i < memmap_entries; i++) {
+            uint64_t base   = memmap[i].base;
+            uint64_t length = memmap[i].length;
+            uint64_t top    = base + length;
+
+            uint64_t aligned_base   = ALIGN_DOWN(base, PAGE_SIZE);
+            uint64_t aligned_top    = ALIGN_UP(top, PAGE_SIZE);
+            uint64_t aligned_length = aligned_top - aligned_base;
+
+            for (uint64_t i = 0; i < aligned_length; i += PAGE_SIZE) {
+                uint64_t page = aligned_base + i;
+                map_page(pagemap, page, page, 0x03);
+                map_page(pagemap, higher_half_base + page, page, 0x03);
+            }
         }
 
         ASM(

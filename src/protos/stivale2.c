@@ -387,6 +387,9 @@ void stivale2_load(char *cmdline, int boot_drive) {
     }
     }
 
+    size_t memmap_entries;
+    struct e820_entry_t *memmap;
+
     //////////////////////////////////////////////
     // Create memmap struct tag
     //////////////////////////////////////////////
@@ -394,8 +397,7 @@ void stivale2_load(char *cmdline, int boot_drive) {
     struct stivale2_struct_tag_memmap *tag = balloc(sizeof(struct stivale2_struct_tag_memmap));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_MEMMAP_ID;
 
-    size_t memmap_entries;
-    struct e820_entry_t *memmap = get_memmap(&memmap_entries);
+    memmap = get_memmap(&memmap_entries);
 
     tag->entries = (uint64_t)memmap_entries;
 
@@ -409,5 +411,6 @@ void stivale2_load(char *cmdline, int boot_drive) {
     bool level5pg_requested = get_tag(&stivale2_hdr, STIVALE2_HDR_TAG_5LV_PAGING_ID) ? true : false;
 
     stivale_spinup(bits, level5pg && level5pg_requested,
-                   entry_point, &stivale2_struct, stivale2_hdr.stack);
+                   entry_point, &stivale2_struct, stivale2_hdr.stack,
+                   memmap, memmap_entries);
 }

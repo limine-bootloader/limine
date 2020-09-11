@@ -65,6 +65,10 @@ void *balloc_aligned(size_t count, size_t alignment) {
     if (new_base >= BUMP_ALLOCATOR_LIMIT)
         panic("Memory allocation failed");
     bump_allocator_base = new_base;
+
+    // Zero out allocated space
+    memset(ret, 0, count);
+
     return ret;
 }
 

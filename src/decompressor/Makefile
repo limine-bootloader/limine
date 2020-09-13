@@ -1,5 +1,6 @@
 CC = ../../toolchain/bin/i386-elf-gcc
 LD = ../../toolchain/bin/i386-elf-gcc
+OBJCOPY = ../../toolchain/bin/i386-elf-objcopy
 
 CFLAGS = -flto -Os -pipe -Wall -Wextra
 
@@ -34,7 +35,7 @@ all: decompressor.bin
 
 decompressor.bin: $(OBJ)
 	$(LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o decompressor.elf
-	objcopy -O binary decompressor.elf decompressor.bin
+	$(OBJCOPY) -O binary decompressor.elf decompressor.bin
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@

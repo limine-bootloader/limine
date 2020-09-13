@@ -1,5 +1,6 @@
 CC = ../toolchain/bin/i386-elf-gcc
 LD = ../toolchain/bin/i386-elf-gcc
+OBJCOPY = ../toolchain/bin/i386-elf-objcopy
 
 CFLAGS = -flto -Os -pipe -Wall -Wextra
 
@@ -35,8 +36,8 @@ all: limine.bin
 
 limine.bin: $(OBJ)
 	$(LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o stage2.elf
-	objcopy -O binary stage2.elf stage2.bin
-	gzip -9 < stage2.bin > stage2.bin.gz
+	$(OBJCOPY) -O binary stage2.elf stage2.bin
+	gzip -n -9 < stage2.bin > stage2.bin.gz
 	$(MAKE) -C decompressor
 	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
 

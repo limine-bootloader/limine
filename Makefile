@@ -6,9 +6,13 @@ CC = cc
 OBJCOPY = objcopy
 CFLAGS = -O2 -pipe -Wall -Wextra
 
-.PHONY: all install clean echfs-test ext2-test test.img
+.PHONY: all limine install clean echfs-test ext2-test test.img
 
 all: limine-install
+
+limine:
+	$(MAKE) -C src all
+	cp src/limine.bin ./
 
 install: all
 	install -s limine-install $(DESTDIR)$(PREFIX)/bin/
@@ -17,11 +21,8 @@ clean:
 	rm -f limine-install
 	$(MAKE) -C src clean
 
-src/limine.bin:
-	$(MAKE) -C src all
-
-limine-install: src/limine.bin limine-install.c
-	$(OBJCOPY) -I binary -O default src/limine.bin limine.o
+limine-install: limine.bin limine-install.c
+	$(OBJCOPY) -I binary -O default limine.bin limine.o
 	$(CC) $(CFLAGS) limine.o limine-install.c -o limine-install
 
 test.img:

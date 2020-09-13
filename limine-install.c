@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <inttypes.h>
 
-extern char _binary_src_limine_bin_start[];
+extern char _binary_limine_bin_start[];
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -34,11 +34,11 @@ int main(int argc, char *argv[]) {
 
     // Write the bootsector from the bootloader to the device
     fseek(device, 0, SEEK_SET);
-    fwrite(&_binary_src_limine_bin_start[0], 1, 512, device);
+    fwrite(&_binary_limine_bin_start[0], 1, 512, device);
 
     // Write the rest of stage 2 to the device
     fseek(device, stage2_sect * 512, SEEK_SET);
-    fwrite(&_binary_src_limine_bin_start[512], 63, 512, device);
+    fwrite(&_binary_limine_bin_start[512], 63, 512, device);
 
     // Hardcode in the bootsector the location of stage 2
     fseek(device, 0x1b0, SEEK_SET);

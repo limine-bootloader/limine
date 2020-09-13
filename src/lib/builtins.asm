@@ -1,50 +1,5 @@
 section .text
 
-global __ashldi3
-__ashldi3:
-    push ebx
-    mov eax, dword [esp+8]
-    mov edx, dword [esp+12]
-    mov ecx, dword [esp+16]
-
-    test ecx, ecx
-    jz .done
-  .next:
-    shl edx, 1
-    shl eax, 1
-    setc bl
-    or dl, bl
-    loop .next
-
-  .done:
-    pop ebx
-    ret
-
-global __udivdi3
-__udivdi3:
-    mov eax, dword [esp+4]
-    mov edx, dword [esp+8]
-    div dword [esp+12]
-    xor edx, edx
-    ret
-
-global __divdi3
-__divdi3:
-    mov eax, dword [esp+4]
-    mov edx, dword [esp+8]
-    idiv dword [esp+12]
-    xor edx, edx
-    ret
-
-global __umoddi3
-__umoddi3:
-    mov eax, dword [esp+4]
-    mov edx, dword [esp+8]
-    div dword [esp+12]
-    mov eax, edx
-    xor edx, edx
-    ret
-
 global memcpy
 memcpy:
     push esi

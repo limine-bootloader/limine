@@ -18,14 +18,30 @@ x86/x86_64 BIOS Bootloader
 
 ## Building
 
-### Dependencies
-To build Limine, it is necessary to have an LLVM/Clang toolchain installed.
-More specifically, the following programs need to be present: `clang`, `llvm-objcopy`,
-`llvm-link`, `opt`, `ld.lld`.
-Furthermore, `nasm` also needs to be installed.
-`curl`, `tar`, and `zstd` need to be installed for retrieving `libgcc.a` during build.
+### Building the bootloader
+Building the bootloader is not necessary as a prebuilt copy is shipped in this
+repository (`limine.bin`).
 
-### Compiling
+Should one want to build the bootloader to make sure the shipped copy is authentic,
+to develop, to debug, or any other reason, it is necessary to first build the
+set of tools that the bootloader needs in order to be built.
+
+This can be accomplished by running:
+```bash
+make toolchain
+```
+
+After that is done, the bootloader itself can be built with:
+```bash
+make limine
+```
+
+A newly generated `limine.bin` image should now be present in the root dir of the repo.
+
+This newly built image should match 1:1 (aka, same checksum) as the one shipped with the
+respective commit.
+
+### Compiling `limine-install`
 A simple `make` and `make install` will suffice. Use the PREFIX variable with
 `make install` to specify where to install `limine-install`. It defaults to
 `/usr/local`.
@@ -76,6 +92,7 @@ limine-install test.img
 
 One can get `echfs-utils` by installing https://github.com/qword-os/echfs.
 
+## Acknowledgments
 Limine uses a stripped-down version of https://github.com/jibsen/tinf
 
 ## Discord server

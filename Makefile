@@ -6,9 +6,12 @@ CC = cc
 OBJCOPY = objcopy
 CFLAGS = -O2 -pipe -Wall -Wextra
 
-.PHONY: all limine install clean echfs-test ext2-test test.img
+.PHONY: all toolchain limine install clean echfs-test ext2-test test.img
 
 all: limine-install
+
+toolchain:
+	cd toolchain && ./make_toolchain.sh -j`nproc`
 
 limine:
 	$(MAKE) -C src all

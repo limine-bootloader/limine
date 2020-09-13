@@ -12,8 +12,7 @@ ASM_BASIC(
     "sub ecx, OFFSET bss_begin\n\t"
     "rep stosb\n\t"
 
-    "mov ebx, OFFSET main\n\t"
-    "jmp ebx\n\t"
+    "jmp main\n\t"
 );
 
 #include <limine.h>

@@ -2,8 +2,8 @@ DESTDIR =
 PREFIX = /usr/local
 
 OS := $(shell uname)
-CC = clang
-OBJCOPY = llvm-objcopy
+CC = cc
+OBJCOPY = objcopy
 CFLAGS = -O2 -pipe -Wall -Wextra
 
 .PHONY: all install clean echfs-test ext2-test test.img
@@ -21,12 +21,8 @@ src/limine.bin:
 	$(MAKE) -C src all
 
 limine-install: src/limine.bin limine-install.c
-	$(CC) $(CFLAGS) -c limine-install.c -o limine-install.o
-	# FIXME: GNU objcopy supports `-O default` but for some stupid reason
-	#        llvm-objcopy does not. This needs to be worked around.
-	#        For now hardcode elf64-x86-64.
-	$(OBJCOPY) -I binary -O elf64-x86-64 src/limine.bin limine.o
-	$(CC) $(CFLAGS) limine.o limine-install.o -o limine-install
+	$(OBJCOPY) -I binary -O default src/limine.bin limine.o
+	$(CC) $(CFLAGS) limine.o limine-install.c -o limine-install
 
 test.img:
 	rm -f test.img

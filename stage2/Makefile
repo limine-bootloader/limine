@@ -9,8 +9,10 @@ INTERNAL_CFLAGS =  \
 	-ffreestanding \
 	-fno-stack-protector \
 	-fno-pic \
+	-fomit-frame-pointer \
 	-mno-80387 \
 	-mno-mmx \
+	-mno-3dnow \
 	-mno-sse \
 	-mno-sse2 \
 	-I. \
@@ -28,8 +30,8 @@ INTERNAL_LDFLAGS = \
 
 .PHONY: all clean
 
-C_FILES := $(shell find ./ -type f -name '*.c' | grep -v bootsect | grep -v decompressor | sort)
-ASM_FILES := $(shell find ./ -type f -name '*.asm' | grep -v bootsect | grep -v decompressor | sort)
+C_FILES := $(shell find ./ -type f -name '*.c' | sort)
+ASM_FILES := $(shell find ./ -type f -name '*.asm' | sort)
 OBJ := $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o)
 
 all: limine.bin
@@ -37,9 +39,6 @@ all: limine.bin
 limine.bin: $(OBJ)
 	$(LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o stage2.elf
 	$(OBJCOPY) -O binary stage2.elf stage2.bin
-	gzip -n -9 < stage2.bin > stage2.bin.gz
-	$(MAKE) -C decompressor
-	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
@@ -48,5 +47,4 @@ limine.bin: $(OBJ)
 	nasm $< -f elf32 -o $@
 
 clean:
-	$(MAKE) -C decompressor clean
-	rm -f stage2.bin.gz stage2.bin stage2.elf limine.bin $(OBJ)
+	rm -f stage2.bin stage2.elf $(OBJ)

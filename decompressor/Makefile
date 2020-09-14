@@ -1,6 +1,6 @@
-CC = ../../toolchain/bin/i386-elf-gcc
-LD = ../../toolchain/bin/i386-elf-gcc
-OBJCOPY = ../../toolchain/bin/i386-elf-objcopy
+CC = ../toolchain/bin/i386-elf-gcc
+LD = ../toolchain/bin/i386-elf-gcc
+OBJCOPY = ../toolchain/bin/i386-elf-objcopy
 
 CFLAGS = -flto -Os -pipe -Wall -Wextra
 
@@ -9,8 +9,10 @@ INTERNAL_CFLAGS =  \
 	-ffreestanding \
 	-fno-stack-protector \
 	-fno-pic \
+	-fomit-frame-pointer \
 	-mno-80387 \
 	-mno-mmx \
+	-mno-3dnow \
 	-mno-sse \
 	-mno-sse2 \
 	-I. \

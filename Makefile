@@ -6,27 +6,38 @@ CC = cc
 OBJCOPY = objcopy
 CFLAGS = -O2 -pipe -Wall -Wextra
 
-.PHONY: all toolchain limine install clean echfs-test ext2-test test.img
+.PHONY: all toolchain stage2 stage2-clean decompressor decompressor-clean limine install clean echfs-test ext2-test fat32-test test.img
 
 all: limine-install
 
 toolchain:
 	cd toolchain && ./make_toolchain.sh -j`nproc`
 
-limine:
-	$(MAKE) -C src all
-	cp src/limine.bin ./
+stage2:
+	$(MAKE) -C stage2 all
 
-install: all
-	install -s limine-install $(DESTDIR)$(PREFIX)/bin/
+stage2-clean:
+	$(MAKE) -C stage2 clean
 
-clean:
+decompressor:
+	$(MAKE) -C decompressor all
+
+decompressor-clean:
+	$(MAKE) -C decompressor clean
+
+limine: stage2 decompressor
+	gzip -n -9 < stage2/stage2.bin > stage2/stage2.bin.gz
+	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
+
+clean: stage2-clean decompressor-clean
 	rm -f limine-install
-	$(MAKE) -C src clean
 
 limine-install: limine.bin limine-install.c
 	$(OBJCOPY) -I binary -O default limine.bin limine.o
 	$(CC) $(CFLAGS) limine.o limine-install.c -o limine-install
+
+install: all
+	install -s limine-install $(DESTDIR)$(PREFIX)/bin/
 
 test.img:
 	rm -f test.img

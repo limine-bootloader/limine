@@ -1,26 +1,14 @@
-DESTDIR =
-PREFIX = /usr/local
-
 CC = cc
-OBJCOPY = objcopy
 CFLAGS = -O2 -pipe -Wall -Wextra
 
-.PHONY: all clean install toolchain stage2 stage2-clean decompressor decompressor-clean limine limine-clean test.img echfs-test ext2-test fat32-test
+.PHONY: all clean stage2 stage2-clean decompressor decompressor-clean toolchain test.img echfs-test ext2-test fat32-test
 
-all: limine-install
+all: stage2 decompressor
+	gzip -n -9 < stage2/stage2.bin > stage2/stage2.bin.gz
+	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
 
-limine-install: limine.bin limine-install.c
-	$(OBJCOPY) -I binary -O default limine.bin limine.o
-	$(CC) $(CFLAGS) limine.o limine-install.c -o limine-install
-
-clean:
-	rm -f limine.o limine-install
-
-install: all
-	install -s limine-install $(DESTDIR)$(PREFIX)/bin/
-
-toolchain:
-	cd toolchain && ./make_toolchain.sh -j`nproc`
+clean: stage2-clean decompressor-clean
+	rm -f stage2/stage2.bin.gz
 
 stage2:
 	$(MAKE) -C stage2 all
@@ -34,12 +22,11 @@ decompressor:
 decompressor-clean:
 	$(MAKE) -C decompressor clean
 
-limine: stage2 decompressor
-	gzip -n -9 < stage2/stage2.bin > stage2/stage2.bin.gz
-	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
+toolchain:
+	cd toolchain && ./make_toolchain.sh -j`nproc`
 
-limine-clean: stage2-clean decompressor-clean
-	rm -f stage2/stage2.bin.gz
+limine-install: limine-install.c
+	$(CC) $(CFLAGS) limine-install.c -o limine-install
 
 test.img:
 	rm -f test.img
@@ -52,7 +39,7 @@ echfs-test: limine-install test.img
 	echfs-utils -m -p0 test.img quick-format 512
 	echfs-utils -m -p0 test.img import test/test.elf boot/test.elf
 	echfs-utils -m -p0 test.img import test/limine.cfg limine.cfg
-	./limine-install test.img
+	./limine-install limine.bin test.img
 	qemu-system-x86_64 -hda test.img -debugcon stdio -enable-kvm
 
 ext2-test: limine-install test.img
@@ -70,7 +57,7 @@ ext2-test: limine-install test.img
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	./limine-install test.img
+	./limine-install limine.bin test.img
 	qemu-system-x86_64 -hda test.img -debugcon stdio
 
 fat32-test: limine-install test.img
@@ -88,5 +75,5 @@ fat32-test: limine-install test.img
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	./limine-install test.img
+	./limine-install limine.bin test.img
 	qemu-system-x86_64 -hda test.img -debugcon stdio

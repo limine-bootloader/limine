@@ -30,39 +30,45 @@ This can be accomplished by running:
 ```bash
 make toolchain
 ```
+*The above step may take a while*
 
 After that is done, the bootloader itself can be built with:
 ```bash
-make limine
+make
 ```
 
-A newly generated `limine.bin` image should now be present in the root dir of the repo.
+A newly generated `limine.bin` image should now be present in the root of the repo.
 
-This newly built image should match 1:1 (aka, same checksum) as the one shipped with the
-respective commit.
+This newly built image should match 1:1 (aka, same checksum) with the one shipped
+with the respective commit.
 
 ### Compiling `limine-install`
-A simple `make` and `make install` will suffice. Use the PREFIX variable with
-`make install` to specify where to install `limine-install`. It defaults to
-`/usr/local`.
+To build the `limine-install` program, simply run `make limine-install` in the root
+of the repo.
 
 ## How to use
+### MBR
 In order to install Limine on a MBR device (which can just be a raw image file),
 run the `limine-install` as such:
 
 ```bash
-limine-install <path to device/image>
+limine-install <bootloader image> <path to device/image>
 ```
 
+Where `<bootloader image>` is the path to a `limine.bin` file.
+
+### GPT
 If using a GPT formatted device, it will be necessary to create an extra partition
 (of at least 32K in size) to store stage 2 code. Then it will be necessary to tell
-`limine-install` where this partition is located by specifying the start sector.
+`limine-install` where this partition is located by specifying the start sector
+number (in decimal).
 
 ```bash
 fdisk <device>    # Create bootloader partition using your favourite method
-limine-install <path to device/image> <start sector of boot partition>
+limine-install <bootloader image> <path to device/image> <start sector of boot partition>
 ```
 
+### Configuration
 Then make sure the device/image contains at least 1 partition formatted in
 a supported filesystem containing a `/limine.cfg` or `/boot/limine.cfg` file
 and the kernel/modules one wants to load.
@@ -71,6 +77,7 @@ An example `limine.cfg` file can be found in `test/limine.cfg`.
 
 More info on the format of `limine.cfg` can be found in `CONFIG.md`.
 
+### Example
 For example, to create an empty image file of 64MiB in size, 1 echfs partition
 on the image spanning the whole device, format it, copy the relevant files over,
 and install Limine, one can do:

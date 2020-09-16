@@ -9,7 +9,6 @@
 #include <lib/cio.h>
 #include <lib/e820.h>
 #include <lib/print.h>
-#include <lib/asm.h>
 
 uint8_t bcd_to_int(uint8_t val) {
     return (val & 0x0f) + ((val & 0xf0) >> 4) * 10;
@@ -18,18 +17,20 @@ uint8_t bcd_to_int(uint8_t val) {
 int cpuid(uint32_t leaf, uint32_t subleaf,
           uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
     uint32_t cpuid_max;
-    ASM("cpuid\n\t", "=a" (cpuid_max)
-                   : "a" (leaf & 0x80000000)
-                   : "ebx", "ecx", "edx");
+    asm volatile ("cpuid"
+                  : "=a" (cpuid_max)
+                  : "a" (leaf & 0x80000000)
+                  : "ebx", "ecx", "edx");
     if (leaf > cpuid_max)
         return 1;
-    ASM("cpuid\n\t", "=a" (*eax), "=b" (*ebx), "=c" (*ecx), "=d" (*edx)
-                   : "a" (leaf), "c" (subleaf));
+    asm volatile ("cpuid"
+                  : "=a" (*eax), "=b" (*ebx), "=c" (*ecx), "=d" (*edx)
+                  : "a" (leaf), "c" (subleaf));
     return 0;
 }
 
 __attribute__((noreturn)) void panic(const char *fmt, ...) {
-    ASM("cli\n\t", :: "memory");
+    asm volatile ("cli" ::: "memory");
 
     va_list args;
 
@@ -41,7 +42,7 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
     va_end(args);
 
     for (;;) {
-        ASM("hlt\n\t", :: "memory");
+        asm volatile ("hlt" ::: "memory");
     }
 }
 

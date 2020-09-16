@@ -1,6 +1,4 @@
-#include <lib/asm.h>
-
-ASM_BASIC(
+asm (
     ".section .entry\n\t"
 
     "cld\n\t"

@@ -10,6 +10,7 @@ INTERNAL_CFLAGS =  \
 	-fno-stack-protector \
 	-fno-pic \
 	-fomit-frame-pointer \
+	-masm=intel \
 	-mno-80387 \
 	-mno-mmx \
 	-mno-3dnow \

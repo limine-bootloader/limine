@@ -18,7 +18,6 @@
 #include <lib/term.h>
 #include <drivers/pic.h>
 #include <fs/file.h>
-#include <lib/asm.h>
 
 struct stivale2_tag {
     uint64_t identifier;

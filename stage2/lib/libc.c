@@ -1,7 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <lib/libc.h>
-#include <lib/asm.h>
 
 int toupper(int c) {
     if (c >= 'a' && c <= 'z') {

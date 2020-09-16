@@ -15,7 +15,6 @@
 #include <lib/term.h>
 #include <drivers/pic.h>
 #include <fs/file.h>
-#include <lib/asm.h>
 #include <mm/vmm64.h>
 
 struct stivale_header {
@@ -266,10 +265,10 @@ __attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
     if (bits == 64) {
         if (level5pg) {
             // Enable CR4.LA57
-            ASM(
+            asm volatile (
                 "mov eax, cr4\n\t"
                 "bts eax, 12\n\t"
-                "mov cr4, eax\n\t", :: "eax", "memory"
+                "mov cr4, eax\n\t" ::: "eax", "memory"
             );
         }
 
@@ -304,7 +303,7 @@ __attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
             }
         }
 
-        ASM(
+        asm volatile (
             "cli\n\t"
             "cld\n\t"
             "mov cr3, eax\n\t"
@@ -318,7 +317,7 @@ __attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
             "mov eax, cr0\n\t"
             "or eax, 1 << 31\n\t"
             "mov cr0, eax\n\t"
-            FARJMP32("0x28", "1f")
+            "jmp 0x28:1f\n\t"
             "1: .code64\n\t"
             "mov ax, 0x30\n\t"
             "mov ds, ax\n\t"
@@ -349,13 +348,14 @@ __attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
             "xor r15, r15\n\t"
 
             "iretq\n\t"
-            ".code32\n\t",
+            ".code32\n\t"
+            :
             : "a" (pagemap.top_level), "b" (&entry_point),
               "D" (stivale_struct), "S" (&stack)
             : "memory"
         );
     } else if (bits == 32) {
-        ASM(
+        asm volatile (
             "cli\n\t"
             "cld\n\t"
 
@@ -376,7 +376,8 @@ __attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
             "xor edi, edi\n\t"
             "xor ebp, ebp\n\t"
 
-            "iret\n\t",
+            "iret\n\t"
+            :
             : "b" (&entry_point), "D" (stivale_struct), "S" (&stack)
             : "memory"
         );

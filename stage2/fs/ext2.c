@@ -7,7 +7,14 @@
 #include <lib/blib.h>
 
 /* EXT2 Filesystem States */
-#define EXT2_FS_ERRORS  2
+#define EXT2_FS_UNRECOVERABLE_ERRORS 3
+
+/* Ext2 incompatible features */
+#define EXT2_IF_COMPRESSION 0x01
+#define EXT2_IF_EXTENTS 0x40
+#define EXT2_IF_64BIT 0x80
+#define EXT2_IF_INLINE_DATA 0x8000
+#define EXT2_IF_ENCRYPT 0x10000
 
 #define EXT2_S_MAGIC    0xEF53
 
@@ -74,7 +81,6 @@ struct ext2_bgd {
 
 /* EXT2 Inode Types */
 #define EXT2_INO_DIRECTORY  0x4000
-#define EXT2_INO_FILE       0x8000
 
 /* EXT2 Directory Entry */
 struct ext2_dir_entry {
@@ -89,22 +95,28 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
                       uint64_t drive, struct part *part);
 
 // parse an inode given the partition base and inode number
-static int ext2_get_inode(struct ext2_inode *ret, uint64_t drive, struct part *part, uint64_t inode, struct ext2_superblock *sb) {
+static int ext2_get_inode(struct ext2_inode *ret, uint64_t drive, struct part *part,
+                          uint64_t inode, struct ext2_superblock *sb) {
     if (inode == 0)
         return -1;
 
-    uint64_t ino_blk_grp = (inode - 1) / sb->s_inodes_per_group;
-    uint64_t ino_tbl_idx = (inode - 1) % sb->s_inodes_per_group;
+    const uint64_t ino_blk_grp = (inode - 1) / sb->s_inodes_per_group;
+    const uint64_t ino_tbl_idx = (inode - 1) % sb->s_inodes_per_group;
 
-    uint64_t block_size = ((uint64_t)1024 << sb->s_log_block_size);
+    const uint64_t block_size = ((uint64_t)1024 << sb->s_log_block_size);
 
     struct ext2_bgd target_descriptor;
 
-    uint64_t bgd_start_offset = block_size >= 2048 ? block_size : block_size * 2;
+    const uint64_t bgd_start_offset = block_size >= 2048 ? block_size : block_size * 2;
+    const uint64_t bgd_offset = bgd_start_offset + (sizeof(struct ext2_bgd) * ino_blk_grp);
 
-    read_partition(drive, part, &target_descriptor, bgd_start_offset + (sizeof(struct ext2_bgd) * ino_blk_grp), sizeof(struct ext2_bgd));
+    read_partition(drive, part, &target_descriptor, bgd_offset, sizeof(struct ext2_bgd));
 
-    read_partition(drive, part, ret, (target_descriptor.bg_inode_table * block_size) + (sb->s_inode_size * ino_tbl_idx), sizeof(struct ext2_inode));
+    const uint64_t ino_size = sb->s_rev_level == 0 ? sizeof(struct ext2_inode) : sb->s_inode_size;
+    const uint64_t ino_offset = (target_descriptor.bg_inode_table * block_size) +
+                                (ino_size * ino_tbl_idx);
+
+    read_partition(drive, part, ret, ino_offset, sizeof(struct ext2_inode));
 
     return 0;
 }
@@ -118,7 +130,7 @@ static int ext2_parse_dirent(struct ext2_dir_entry *dir, struct ext2_file_handle
 
     bool escape = false;
 
-    char token[128] = {0};
+    char token[256] = {0};
 
 next:
     for (size_t i = 0; *path != '/' && *path != '\0'; i++, path++)
@@ -136,12 +148,13 @@ next:
                    fd->drive, &fd->part);
 
         // name read
-        char *name = balloc(dir->name_len);
-        inode_read(name, i + sizeof(struct ext2_dir_entry), dir->name_len,
-                   fd->block_size, current_inode,
-                   fd->drive, &fd->part);
+        char *name = balloc(dir->name_len + 1);
 
-        int r = strncmp(token, name, dir->name_len);
+        memset(name, 0, dir->name_len + 1);
+        inode_read(name, i + sizeof(struct ext2_dir_entry), dir->name_len,
+                   fd->block_size, current_inode, fd->drive, &fd->part);
+
+        int r = strcmp(token, name);
 
         brewind(dir->name_len);
 
@@ -164,17 +177,16 @@ next:
 }
 
 int ext2_open(struct ext2_file_handle *ret, int drive, int partition, const char *path) {
-    if (get_part(&ret->part, drive, partition)) {
+    if (get_part(&ret->part, drive, partition))
         panic("Invalid partition");
-    }
 
     ret->drive = drive;
 
     struct ext2_superblock sb;
     read_partition(drive, &ret->part, &sb, 1024, sizeof(struct ext2_superblock));
 
-    if (sb.s_state == EXT2_FS_ERRORS)
-        panic("ext2 fs has errors\n");
+    if (sb.s_state == EXT2_FS_UNRECOVERABLE_ERRORS)
+        panic("EXT2: unrecoverable errors found\n");
 
     ret->block_size = ((uint64_t)1024 << sb.s_log_block_size);
 
@@ -189,15 +201,14 @@ int ext2_open(struct ext2_file_handle *ret, int drive, int partition, const char
     ext2_get_inode(&ret->inode, drive, &ret->part, entry.inode, &sb);
     ret->size = ret->inode.i_size;
 
-    if (ret->inode.i_mode & EXT2_INO_DIRECTORY)
-        panic("Requested file \"%s\" is a directory!", path);
+    if ((ret->inode.i_mode & 0xf000) == EXT2_INO_DIRECTORY)
+        panic("ext2: Requested file \"%s\" is a directory!", path);
 
     return 0;
 }
 
 int ext2_read(struct ext2_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
-    return inode_read(buf, loc, count,
-                      file->block_size, &file->inode,
+    return inode_read(buf, loc, count, file->block_size, &file->inode,
                       file->drive, &file->part);
 }
 
@@ -258,20 +269,28 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
 }
 
 // attempts to initialize the ext2 filesystem
+// and checks if all features are supported
 int ext2_check_signature(int drive, int partition) {
     struct part part;
-    if (get_part(&part, drive, partition)) {
+    if (get_part(&part, drive, partition))
         panic("Invalid partition");
-    }
 
-    uint16_t magic = 0;
+    struct ext2_superblock sb;
+    read_partition(drive, &part, &sb, 1024, sizeof(struct ext2_superblock));
 
-    // read only the checksum of the superblock
-    read_partition(drive, &part, &magic, 1024 + 56, 2);
+    if (sb.s_magic != EXT2_S_MAGIC)
+        return 0;
 
-    if (magic == EXT2_S_MAGIC) {
+    // If the revision level is 0, we can't test for features.
+    if (sb.s_rev_level == 0)
         return 1;
-    }
 
-    return 0;
+    if (sb.s_feature_incompat & EXT2_IF_COMPRESSION ||
+        sb.s_feature_incompat & EXT2_IF_EXTENTS ||
+        sb.s_feature_incompat & EXT2_IF_INLINE_DATA ||
+        sb.s_feature_incompat & EXT2_IF_64BIT ||
+        sb.s_feature_incompat & EXT2_IF_ENCRYPT)
+        panic("EXT2: filesystem has unsupported features");
+
+    return 1;
 }

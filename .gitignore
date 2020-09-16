@@ -4,6 +4,12 @@
 /**/*.bin.gz
 /**/*.elf
 /**/*.img
+/toolchain/bin
+/toolchain/include
+/toolchain/lib
+/toolchain/libexec
+/toolchain/share
+/toolchain/*-elf
 /bochsout.txt
 /bx_enh_dbg.ini
 .vscode

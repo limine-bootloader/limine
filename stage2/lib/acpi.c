@@ -1,4 +1,6 @@
 #include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include <lib/acpi.h>
 #include <lib/blib.h>
 #include <lib/libc.h>
@@ -27,5 +29,41 @@ void *acpi_get_rsdp(void) {
         }
     }
 
+    return NULL;
+}
+
+void *acpi_get_table(const char *signature, int index) {
+    int cnt = 0;
+
+    struct rsdp_rev2 *rsdp = acpi_get_rsdp();
+    if (rsdp == NULL)
+        return NULL;
+
+    bool use_xsdt = false;
+    if (rsdp->rev >= 2 && rsdp->xsdt_addr)
+        use_xsdt = true;
+
+    struct rsdt *rsdt;
+    if (use_xsdt)
+        rsdt = (struct rsdt *)(size_t)rsdp->xsdt_addr;
+    else
+        rsdt = (struct rsdt *)rsdp->rsdt_addr;
+
+    for (size_t i = 0; i < rsdt->length - sizeof(struct sdt); i++) {
+        struct sdt *ptr;
+        if (use_xsdt)
+            ptr = (struct sdt *)(size_t)((uint64_t *)rsdt->ptrs_start)[i];
+        else
+            ptr = (struct sdt *)((uint32_t *)rsdt->ptrs_start)[i];
+
+        if (!memcmp(ptr->signature, signature, 4)
+         && !acpi_checksum(ptr, ptr->length)
+         && cnt++ == index) {
+            print("acpi: Found \"%s\" at %X\n", signature, ptr);
+            return ptr;
+        }
+    }
+
+    print("acpi: \"%s\" not found\n", signature);
     return NULL;
 }

@@ -27,7 +27,7 @@ struct rsdp {
 } __attribute__((packed));
 
 struct rsdp_rev2 {
-    struct rsdp rsdp;
+    struct rsdp;
     uint32_t length;
     uint64_t xsdt_addr;
     uint8_t  ext_checksum;
@@ -35,12 +35,12 @@ struct rsdp_rev2 {
 } __attribute__((packed));
 
 struct rsdt {
-    struct sdt sdt;
-    char       ptrs_start[];
+    struct sdt;
+    char ptrs_start[];
 } __attribute__((packed));
 
 uint8_t acpi_checksum(void *ptr, size_t size);
 void   *acpi_get_rsdp(void);
-void   *acpi_get_table(const char *signature);
+void   *acpi_get_table(const char *signature, int index);
 
 #endif

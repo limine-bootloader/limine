@@ -5,7 +5,8 @@ OBJCOPY = ../toolchain/bin/i386-elf-objcopy
 CFLAGS = -flto -Os -pipe -Wall -Wextra
 
 INTERNAL_CFLAGS =  \
-	-std=gnu99 \
+	-std=gnu11 \
+	-fplan9-extensions \
 	-ffreestanding \
 	-fno-stack-protector \
 	-fno-pic \

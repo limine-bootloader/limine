@@ -367,11 +367,9 @@ __attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
             "cli\n\t"
             "cld\n\t"
 
-            "sub esp, 4\n\t"
-            "mov [esp], edi\n\t"
+            "mov esp, dword ptr [esi]\n\t"
+            "push edi\n\t"
 
-            "push 0x20\n\t"
-            "push [esi]\n\t"
             "pushfd\n\t"
             "push 0x18\n\t"
             "push [ebx]\n\t"
@@ -384,8 +382,7 @@ __attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
             "xor edi, edi\n\t"
             "xor ebp, ebp\n\t"
 
-            "iret\n\t"
-            :
+            "iret\n\t"            :
             : "b" (&entry_point), "D" (stivale_struct), "S" (&stack)
             : "memory"
         );

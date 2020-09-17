@@ -4,14 +4,24 @@
 #include <lib/libc.h>
 #include <lib/print.h>
 
-void *get_rsdp(void) {
-    for (size_t i = 0x80000; i < 0x100000; i += 16) {
-        if (i == 0xa0000) {
-            /* skip video mem and mapped hardware */
-            i = 0xe0000 - 16;
-            continue;
+// Following function based on https://github.com/qword-os/lai/blob/master/helpers/pc-bios.c's function lai_bios_calc_checksum()
+uint8_t acpi_checksum(void *ptr, size_t size) {
+    uint8_t sum = 0, *_ptr = ptr;
+    for (size_t i = 0; i < size; i++)
+        sum += _ptr[i];
+    return sum;
+}
+
+void *acpi_get_rsdp(void) {
+    size_t ebda = EBDA;
+
+    for (size_t i = ebda; i < 0x100000; i += 16) {
+        if (i == ebda + 1024) {
+            // We probed the 1st KiB of the EBDA as per spec, move onto 0xe0000
+            i = 0xe0000;
         }
-        if (!strncmp((char *)i, "RSD PTR ", 8)) {
+        if (!memcmp((char *)i, "RSD PTR ", 8)
+         && !acpi_checksum((void *)i, sizeof(struct rsdp))) {
             print("acpi: Found RSDP at %x\n", i);
             return (void *)i;
         }

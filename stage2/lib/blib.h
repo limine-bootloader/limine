@@ -4,25 +4,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define ALIGN_UP(x, a) ({ \
-    typeof(x) value = x; \
-    typeof(a) align = a; \
-    if ((value & (align - 1)) != 0) { \
-        value &= ~(align - 1); \
-        value += align; \
-    } \
-    value; \
-})
-
-#define ALIGN_DOWN(x, a) ({ \
-    typeof(x) value = x; \
-    typeof(a) align = a; \
-    if ((value & (align - 1)) != 0) { \
-        value &= ~(align - 1); \
-    } \
-    value; \
-})
-
 uint8_t bcd_to_int(uint8_t val);
 
 int cpuid(uint32_t leaf, uint32_t subleaf,
@@ -48,8 +29,22 @@ uint64_t strtoui(const char *s);
 
 #define DIV_ROUNDUP(a, b) (((a) + ((b) - 1)) / (b))
 
-typedef void *symbol[];
+#define ALIGN_UP(x, a) ({ \
+    typeof(x) value = x; \
+    typeof(a) align = a; \
+    value = DIV_ROUNDUP(value, align) * align; \
+    value; \
+})
+
+#define ALIGN_DOWN(x, a) ({ \
+    typeof(x) value = x; \
+    typeof(a) align = a; \
+    value = (value / align) * align; \
+    value; \
+})
 
 #define SIZEOF_ARRAY(array) (sizeof(array) / sizeof(array[0]))
+
+typedef void *symbol[];
 
 #endif

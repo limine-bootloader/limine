@@ -328,7 +328,7 @@ void stivale2_load(char *cmdline, int boot_drive) {
     struct stivale2_struct_tag_rsdp *tag = balloc(sizeof(struct stivale2_struct_tag_rsdp));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_RSDP_ID;
 
-    tag->rsdp = (uint64_t)(size_t)get_rsdp();
+    tag->rsdp = (uint64_t)(size_t)acpi_get_rsdp();
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }

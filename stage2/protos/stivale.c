@@ -213,7 +213,7 @@ void stivale_load(char *cmdline, int boot_drive) {
         print("         End:    %X\n", m->end);
     }
 
-    stivale_struct.rsdp = (uint64_t)(size_t)get_rsdp();
+    stivale_struct.rsdp = (uint64_t)(size_t)acpi_get_rsdp();
 
     stivale_struct.cmdline = (uint64_t)(size_t)cmdline;
 
@@ -325,6 +325,14 @@ __attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
             "mov fs, ax\n\t"
             "mov gs, ax\n\t"
             "mov ss, ax\n\t"
+
+            // Since we don't really know what is now present in the upper
+            // 32 bits of the 64 bit registers, clear up the upper bits
+            // of the registers we use to store stack pointer and instruction
+            // pointer
+            "mov esi, esi\n\t"
+            "mov ebx, ebx\n\t"
+            "mov edi, edi\n\t"
 
             "push 0x30\n\t"
             "push [rsi]\n\t"

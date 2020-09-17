@@ -48,7 +48,7 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
 
 extern symbol bss_end;
 static size_t bump_allocator_base = (size_t)bss_end;
-#define BUMP_ALLOCATOR_LIMIT ((size_t)0x7ff00)
+static size_t bump_allocator_limit = 0;
 
 void brewind(size_t count) {
     bump_allocator_base -= count;
@@ -58,12 +58,21 @@ void *balloc(size_t count) {
     return balloc_aligned(count, 4);
 }
 
-// Only power of 2 alignments
 void *balloc_aligned(size_t count, size_t alignment) {
+    if (!bump_allocator_limit) {
+        // The balloc limit is the beginning of the GDT
+        struct {
+            uint16_t limit;
+            uint32_t ptr;
+        } __attribute__((packed)) gdtr;
+        asm volatile ("sgdt %0" :: "m"(gdtr));
+        bump_allocator_limit = gdtr.ptr;
+    }
+
     size_t new_base = ALIGN_UP(bump_allocator_base, alignment);
     void *ret = (void *)new_base;
     new_base += count;
-    if (new_base >= BUMP_ALLOCATOR_LIMIT)
+    if (new_base >= bump_allocator_limit)
         panic("Memory allocation failed");
     bump_allocator_base = new_base;
 

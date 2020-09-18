@@ -1,5 +1,7 @@
 # Limine
-x86/x86_64 BIOS Bootloader
+
+Limine is an advanced x86/x86_64 BIOS Bootloader which supports *modern* PC features
+such as AMD64, 5-level paging, and SMP (multicore), to name a few.
 
 ![Reference screenshot](/screenshot.png?raw=true "Reference screenshot")
 

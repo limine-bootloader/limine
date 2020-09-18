@@ -88,7 +88,7 @@ struct smp_information *init_smp(size_t   *cpu_count,
     struct gdtr gdtr;
     asm volatile ("sgdt %0" :: "m"(gdtr));
 
-    struct smp_information *ret = balloc(0);
+    struct smp_information *ret = balloc_aligned(0, 1);
     *cpu_count = 1;
 
     // Parse the MADT entries

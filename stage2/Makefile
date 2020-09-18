@@ -18,6 +18,7 @@ INTERNAL_CFLAGS =  \
 	-mno-sse \
 	-mno-sse2 \
 	-I. \
+	-I.. \
 	-Wno-address-of-packed-member
 
 LDFLAGS = -flto -Os

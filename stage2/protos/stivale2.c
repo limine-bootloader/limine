@@ -326,12 +326,23 @@ void stivale2_load(char *cmdline, int boot_drive) {
     struct stivale2_header_tag_smp *smp_hdr_tag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_SMP_ID);
     if (smp_hdr_tag != NULL) {
         struct stivale2_struct_tag_smp *tag = balloc(sizeof(struct stivale2_struct_tag_smp));
+        tag->tag.identifier = STIVALE2_STRUCT_TAG_SMP_ID;
 
         init_smp((size_t*)&tag->cpu_count, bits == 64, level5pg && level5pg_requested,
                  pagemap, smp_hdr_tag->flags & 1);
 
         append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
+    }
+
+    print("Generated tags:\n");
+    struct stivale2_tag *taglist = (void*)(size_t)stivale2_struct.tags;
+    for (size_t i = 0; ; i++) {
+        print("Tag #%u  ID: %X\n", i, taglist->identifier);
+        if (taglist->next)
+            taglist = (void*)(size_t)taglist->next;
+        else
+            break;
     }
 
     stivale_spinup(bits, level5pg && level5pg_requested, pagemap,

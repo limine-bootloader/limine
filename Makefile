@@ -9,6 +9,8 @@ all: stage2 decompressor
 
 clean: stage2-clean decompressor-clean
 	rm -f stage2/stage2.bin.gz
+	rm -f limine-install
+	# We don't remove limine.bin because not everyone wants to build the bootloader themselves.
 
 stage2:
 	$(MAKE) -C stage2 all

@@ -58,6 +58,16 @@ struct stivale2_struct_tag_cmdline {
 
 #define STIVALE2_STRUCT_TAG_MEMMAP_ID 0x2187f79e8612de07
 
+enum {
+    STIVALE2_MMAP_USABLE = 1,
+    STIVALE2_MMAP_RESERVED = 2,
+    STIVALE2_MMAP_ACPI_RECLAIMABLE = 3,
+    STIVALE2_MMAP_ACPI_NVS = 4,
+    STIVALE2_MMAP_BAD_MEMORY = 5,
+    STIVALE2_MMAP_BOOTLOADER_RECLAIMABLE = 0x1000,
+    STIVALE2_MMAP_KERNEL_AND_MODULES = 0x1001
+};
+
 struct stivale2_mmap_entry {
     uint64_t base;
     uint64_t length;

@@ -23,7 +23,7 @@ struct madt_header {
 
 struct madt_lapic {
     struct madt_header;
-    uint8_t  processor_id;
+    uint8_t  acpi_processor_uid;
     uint8_t  lapic_id;
     uint32_t flags;
 } __attribute__((packed));
@@ -114,6 +114,9 @@ struct smp_information *init_smp(size_t   *cpu_count,
 
                 struct smp_information *info_struct =
                         balloc_aligned(sizeof(struct smp_information), 1);
+
+                info_struct->acpi_processor_uid = lapic->acpi_processor_uid;
+                info_struct->lapic_id           = lapic->lapic_id;
 
                 // Try to start the AP
                 if (!smp_start_ap(lapic->lapic_id, &gdtr, info_struct,

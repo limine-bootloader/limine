@@ -385,22 +385,25 @@ struct stivale2_struct_tag_smp {
 
 ```c
 struct stivale2_smp_info {
-    uint32_t processor_id;      // Processor ID as specified by MADT
-    uint32_t lapic_id;          // LAPIC ID as specified by MADT
-    uint64_t target_stack;      // The stack that will be loaded in ESP/RSP
-                                // once the goto_address field is loaded.
-                                // This MUST point to a valid stack of at least
-                                // 256 bytes in size, and 16-byte aligned.
-    uint64_t goto_address;      // This address is polled by the started APs
-                                // until the kernel on another CPU performs an
-                                // atomic write to this field.
-                                // When that happens, bootloader code will
-                                // load up ESP/RSP with the stack value as
-                                // specified in target_stack.
-                                // It will then proceed to load a pointer to
-                                // this very structure into either register
-                                // RDI for 64-bit or on the stack for 32-bit,
-                                // then, goto_address is called and execution is
-                                // handed off.
+    uint32_t acpi_processor_uid; // ACPI Processor UID as specified by MADT
+    uint32_t lapic_id;           // LAPIC ID as specified by MADT
+    uint64_t target_stack;       // The stack that will be loaded in ESP/RSP
+                                 // once the goto_address field is loaded.
+                                 // This MUST point to a valid stack of at least
+                                 // 256 bytes in size, and 16-byte aligned.
+    uint64_t goto_address;       // This address is polled by the started APs
+                                 // until the kernel on another CPU performs an
+                                 // atomic write to this field.
+                                 // When that happens, bootloader code will
+                                 // load up ESP/RSP with the stack value as
+                                 // specified in target_stack.
+                                 // It will then proceed to load a pointer to
+                                 // this very structure into either register
+                                 // RDI for 64-bit or on the stack for 32-bit,
+                                 // then, goto_address is called (a bogus return
+                                 // address is pushed onto the stack) and execution
+                                 // is handed off.
+                                 // All general purpose registers are cleared
+                                 // except ESP/RSP, and RDI in 64-bit mode.
 } __attribute__((packed));
 ```

@@ -5,7 +5,7 @@ OBJCOPY = i386-elf-objcopy
 CFLAGS = -flto -Os -pipe -Wall -Wextra
 
 INTERNAL_CFLAGS =  \
-	-std=gnu99 \
+	-std=gnu11 \
 	-ffreestanding \
 	-fno-stack-protector \
 	-fno-pic \
@@ -32,7 +32,8 @@ INTERNAL_LDFLAGS = \
 .PHONY: all clean
 
 C_FILES := $(shell find ./ -type f -name '*.c' | sort)
-OBJ := $(C_FILES:.c=.o)
+ASM_FILES := $(shell find ./ -type f -name '*.asm' | sort)
+OBJ := $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o)
 
 all: decompressor.bin
 
@@ -42,6 +43,9 @@ decompressor.bin: $(OBJ)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
+
+%.o: %.asm
+	nasm $< -f elf32 -o $@
 
 clean:
 	rm -f decompressor.bin decompressor.elf $(OBJ)

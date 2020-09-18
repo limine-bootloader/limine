@@ -1,18 +1,3 @@
-asm (
-    ".section .entry\n\t"
-
-    "cld\n\t"
-
-    // Zero out .bss
-    "xor al, al\n\t"
-    "mov edi, OFFSET bss_begin\n\t"
-    "mov ecx, OFFSET bss_end\n\t"
-    "sub ecx, OFFSET bss_begin\n\t"
-    "rep stosb\n\t"
-
-    "jmp main\n\t"
-);
-
 #include <limine.h>
 #include <lib/term.h>
 #include <lib/real.h>
@@ -31,7 +16,7 @@ asm (
 #include <protos/chainload.h>
 #include <menu.h>
 
-void main(int boot_drive) {
+void entry(int boot_drive) {
     term_textmode();
 
     print("Limine " LIMINE_VERSION "\n\n");

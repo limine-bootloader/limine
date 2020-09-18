@@ -1,6 +1,6 @@
-CC = ../toolchain/bin/i386-elf-gcc
-LD = ../toolchain/bin/i386-elf-gcc
-OBJCOPY = ../toolchain/bin/i386-elf-objcopy
+CC = i386-elf-gcc
+LD = i386-elf-gcc
+OBJCOPY = i386-elf-objcopy
 
 CFLAGS = -flto -Os -pipe -Wall -Wextra
 

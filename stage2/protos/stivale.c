@@ -363,12 +363,13 @@ __attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
             : "memory"
         );
     } else if (bits == 32) {
-        asm volatile (
+        asm volatile(
             "cli\n\t"
             "cld\n\t"
 
             "mov esp, dword ptr [esi]\n\t"
             "push edi\n\t"
+            "push 0\n\t"
 
             "pushfd\n\t"
             "push 0x18\n\t"
@@ -382,10 +383,10 @@ __attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
             "xor edi, edi\n\t"
             "xor ebp, ebp\n\t"
 
-            "iret\n\t"            :
-            : "b" (&entry_point), "D" (stivale_struct), "S" (&stack)
-            : "memory"
-        );
+            "iret\n\t"
+            :
+            : "b"(&entry_point), "D"(stivale_struct), "S"(&stack)
+            : "memory");
     }
     for (;;);
 }

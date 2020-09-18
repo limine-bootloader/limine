@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <drivers/pic.h>
+#include <sys/pic.h>
 #include <lib/cio.h>
 
 void pic_eoi(int irq) {

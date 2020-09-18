@@ -2,7 +2,7 @@
 #define __LIB__MEMMAP_H__
 
 #include <stdint.h>
-#include <lib/e820.h>
+#include <sys/e820.h>
 
 void init_memmap(void);
 void *ext_mem_balloc(size_t count);

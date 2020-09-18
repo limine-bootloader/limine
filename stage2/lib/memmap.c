@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <lib/memmap.h>
-#include <lib/e820.h>
+#include <sys/e820.h>
 #include <lib/blib.h>
 #include <lib/print.h>
 

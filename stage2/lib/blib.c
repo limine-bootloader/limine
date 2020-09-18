@@ -7,7 +7,7 @@
 #include <lib/term.h>
 #include <lib/real.h>
 #include <lib/cio.h>
-#include <lib/e820.h>
+#include <sys/e820.h>
 #include <lib/print.h>
 
 uint8_t bcd_to_int(uint8_t val) {

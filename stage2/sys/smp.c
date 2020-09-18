@@ -5,8 +5,8 @@
 #include <lib/cio.h>
 #include <lib/blib.h>
 #include <lib/print.h>
-#include <lib/smp.h>
-#include <drivers/lapic.h>
+#include <sys/smp.h>
+#include <sys/lapic.h>
 #include <mm/vmm64.h>
 
 struct madt {

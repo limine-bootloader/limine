@@ -20,7 +20,7 @@ asm (
 #include <lib/libc.h>
 #include <lib/part.h>
 #include <lib/config.h>
-#include <lib/e820.h>
+#include <sys/e820.h>
 #include <lib/memmap.h>
 #include <lib/print.h>
 #include <fs/file.h>

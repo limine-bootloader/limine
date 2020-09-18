@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <lib/e820.h>
+#include <sys/e820.h>
 #include <lib/real.h>
 #include <lib/blib.h>
 #include <lib/print.h>

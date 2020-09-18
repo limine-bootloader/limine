@@ -14,10 +14,10 @@
 #include <lib/rand.h>
 #include <lib/real.h>
 #include <lib/libc.h>
-#include <lib/smp.h>
+#include <sys/smp.h>
 #include <drivers/vbe.h>
 #include <lib/term.h>
-#include <drivers/pic.h>
+#include <sys/pic.h>
 #include <fs/file.h>
 #include <stivale/stivale2.h>
 

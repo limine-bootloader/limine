@@ -13,7 +13,7 @@
 #include <lib/real.h>
 #include <drivers/vbe.h>
 #include <lib/term.h>
-#include <drivers/pic.h>
+#include <sys/pic.h>
 #include <fs/file.h>
 #include <mm/vmm64.h>
 #include <stivale/stivale.h>

@@ -36,15 +36,23 @@ smp_trampoline:
     btr eax, 30
     mov cr0, eax
 
-    cmp dword [smp_tpl_target_mode], 0
-    je parking32
-
-    mov eax, dword [smp_tpl_pagemap]
-    mov cr3, eax
+    test dword [smp_tpl_target_mode], (1 << 0)
+    jz parking32
 
     mov eax, cr4
     bts eax, 5
     mov cr4, eax
+
+    test dword [smp_tpl_target_mode], (1 << 1)
+    jz .no5lv
+
+    mov eax, cr4
+    bts eax, 12
+    mov cr4, eax
+
+  .no5lv:
+    mov eax, dword [smp_tpl_pagemap]
+    mov cr3, eax
 
     mov ecx, 0xc0000080
     rdmsr

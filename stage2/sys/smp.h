@@ -15,6 +15,7 @@ struct smp_information {
 
 struct smp_information *init_smp(size_t   *cpu_count,
                                  bool      longmode,
+                                 bool      lv5,
                                  pagemap_t pagemap,
                                  bool      x2apic);
 

@@ -327,8 +327,8 @@ void stivale2_load(char *cmdline, int boot_drive) {
     if (smp_hdr_tag != NULL) {
         struct stivale2_struct_tag_smp *tag = balloc(sizeof(struct stivale2_struct_tag_smp));
 
-        init_smp((size_t*)&tag->cpu_count, bits == 64, pagemap,
-                 smp_hdr_tag->flags & 1);
+        init_smp((size_t*)&tag->cpu_count, bits == 64, level5pg && level5pg_requested,
+                 pagemap, smp_hdr_tag->flags & 1);
 
         append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }

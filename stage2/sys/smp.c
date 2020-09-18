@@ -47,12 +47,12 @@ uint8_t  smp_tpl_target_mode;
 
 static bool smp_start_ap(uint8_t lapic_id, struct gdtr *gdtr,
                          struct smp_information *info_struct,
-                         uint8_t target_mode, uint32_t pagemap) {
+                         bool longmode, bool lv5, uint32_t pagemap) {
     // Prepare the trampoline
     smp_tpl_info_struct = info_struct;
     smp_tpl_booted_flag = 0;
     smp_tpl_pagemap     = pagemap;
-    smp_tpl_target_mode = target_mode;
+    smp_tpl_target_mode = ((uint32_t)lv5 << 1) | (uint32_t)longmode;
     smp_tpl_gdt         = *gdtr;
 
     // Send the INIT IPI
@@ -76,6 +76,7 @@ static bool smp_start_ap(uint8_t lapic_id, struct gdtr *gdtr,
 
 struct smp_information *init_smp(size_t   *cpu_count,
                                  bool      longmode,
+                                 bool      lv5,
                                  pagemap_t pagemap,
                                  bool      x2apic) {
     // Search for MADT table
@@ -120,11 +121,13 @@ struct smp_information *init_smp(size_t   *cpu_count,
 
                 // Try to start the AP
                 if (!smp_start_ap(lapic->lapic_id, &gdtr, info_struct,
-                                  longmode ? 1 : 0, (uint32_t)pagemap.top_level)) {
+                                  longmode, lv5, (uint32_t)pagemap.top_level)) {
                     print("smp: FAILED to bring-up AP\n");
                     brewind(sizeof(struct smp_information));
                     continue;
                 }
+
+                print("smp: Successfully brought up AP\n");
 
                 (*cpu_count)++;
                 break;

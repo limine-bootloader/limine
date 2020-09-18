@@ -39,11 +39,11 @@ the value of `entry_point`.
 At entry, the bootloader will have setup paging mappings as such:
 
 ```
- Base Physical Address -                      Size                      ->  Virtual address
-  0x0000000000000000   -   4 GiB plus any additional memory map entry   ->  0x0000000000000000
-  0x0000000000000000   -   4 GiB plus any additional memory map entry   ->  0xffff800000000000 (4-level paging only)
-  0x0000000000000000   -   4 GiB plus any additional memory map entry   ->  0xff00000000000000 (5-level paging only)
-  0x0000000000000000   -                   0x80000000                   ->  0xffffffff80000000
+ Base Physical Address -                    Size                    ->  Virtual address
+  0x0000000000000000   - 4 GiB plus any additional memory map entry -> 0x0000000000000000
+  0x0000000000000000   - 4 GiB plus any additional memory map entry -> 0xffff800000000000 (4-level paging only)
+  0x0000000000000000   - 4 GiB plus any additional memory map entry -> 0xff00000000000000 (5-level paging only)
+  0x0000000000000000   -                 0x80000000                 -> 0xffffffff80000000
 ```
 
 If the kernel is dynamic and not statically linked, the bootloader will relocate it.
@@ -72,7 +72,9 @@ The A20 gate is enabled.
 
 PIC/APIC IRQs are all masked.
 
-`rsp` is set to the requested stack as per stivale2 header.
+`rsp` is set to the requested stack as per stivale2 header. If the requested value is
+non-null, an invalid return address of 0 is pushed to the stack before jumping
+to the kernel.
 
 `rdi` will point to the stivale2 structure (described below).
 
@@ -100,7 +102,8 @@ The A20 gate is enabled.
 
 PIC/APIC IRQs are all masked.
 
-`esp` is set to the requested stack as per stivale2 header.
+`esp` is set to the requested stack as per stivale2 header. An invalid return address
+of 0 is pushed to the stack before jumping to the kernel.
 
 A pointer to the stivale2 structure (described below) is pushed onto this stack
 before the entry point is called.
@@ -120,11 +123,12 @@ struct stivale2_header {
                             // If set to 0, the ELF entry point will be used
                             // instead.
 
-    uint64_t stack;         // This is the stack address which will be in RSP
+    uint64_t stack;         // This is the stack address which will be in ESP/RSP
                             // when the kernel is loaded.
-                            // It can be set to a non-valid stack address such as 0
-                            // as long as the OS is 64-bit and sets up a stack on its
-                            // own.
+                            // It can only be set to NULL for 64-bit kernels. 32-bit
+                            // kernels are mandated to provide a vaild stack.
+                            // 64-bit and 32-bit valid stacks must be at least 256 bytes
+                            // in usable space and must be 16 byte aligned addresses.
 
     uint64_t flags;         // Bit 0: if 1, enable KASLR
                             // All other bits undefined

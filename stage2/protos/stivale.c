@@ -334,8 +334,17 @@ __attribute__((noreturn)) void stivale_spinup(int bits, bool level5pg,
             "mov ebx, ebx\n\t"
             "mov edi, edi\n\t"
 
+            // Let's pretend we push a return address
+            "mov rsi, qword ptr [rsi]\n\t"
+            "test rsi, rsi\n\t"
+            "jz 1f\n\t"
+
+            "sub rsi, 8\n\t"
+            "mov qword ptr [rsi], 0\n\t"
+
+            "1:\n\t"
             "push 0x30\n\t"
-            "push [rsi]\n\t"
+            "push rsi\n\t"
             "pushfq\n\t"
             "push 0x28\n\t"
             "push [rbx]\n\t"

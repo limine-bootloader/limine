@@ -136,6 +136,7 @@ struct stivale2_smp_info {
     uint32_t lapic_id;
     uint64_t target_stack;
     uint64_t goto_address;
+    uint64_t extra_argument;
 } __attribute__((packed));
 
 struct stivale2_struct_tag_smp {

@@ -378,8 +378,10 @@ This tag reports to the kernel info about the firmware.
 struct stivale2_struct_tag_smp {
     uint64_t identifier;        // Identifier: 0x34d1d96339647025
     uint64_t next;
-    uint64_t cpu_count;         // Total number of logical CPUs (including BSP)
-    struct stivale2_smp_info smp_info[];
+    uint64_t cpu_count;         // Total number of logical CPUs (excluding BSP)
+    struct stivale2_smp_info smp_info[];  // Array of smp_info structs, one per
+                                          // additional logical processor, note
+                                          // that the BSP does not have one.
 } __attribute__((packed));
 ```
 
@@ -405,5 +407,10 @@ struct stivale2_smp_info {
                                  // is handed off.
                                  // All general purpose registers are cleared
                                  // except ESP/RSP, and RDI in 64-bit mode.
+    uint64_t extra_argument;     // This field is here for the kernel to use
+                                 // for whatever it wants. Writes here should
+                                 // be performed before writing to goto_address
+                                 // so that the receiving processor can safely
+                                 // retrieve the data.
 } __attribute__((packed));
 ```

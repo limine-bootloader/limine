@@ -100,8 +100,8 @@ parking32:
   .out:
     mov esp, dword [edi + 8]
     push 0
-    push eax
     push edi
+    push eax
     xor eax, eax
     xor ebx, ebx
     xor ecx, ecx

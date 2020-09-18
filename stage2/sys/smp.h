@@ -11,6 +11,7 @@ struct smp_information {
     uint32_t lapic_id;
     uint64_t stack_addr;
     uint64_t goto_address;
+    uint64_t extra_argument;
 } __attribute__((packed));
 
 struct smp_information *init_smp(size_t   *cpu_count,

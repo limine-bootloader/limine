@@ -9,6 +9,7 @@
 struct smp_information {
     uint32_t processor_id;
     uint32_t lapic_id;
+    uint64_t stack_addr;
     uint64_t goto_address;
 } __attribute__((packed));
 

@@ -4,6 +4,7 @@
 #include <lib/acpi.h>
 #include <lib/cio.h>
 #include <lib/blib.h>
+#include <lib/print.h>
 #include <lib/smp.h>
 #include <drivers/lapic.h>
 #include <mm/vmm64.h>
@@ -32,6 +33,11 @@ struct gdtr {
     uint32_t ptr;
 } __attribute__((packed));
 
+static void delay(uint32_t cycles) {
+    for (uint32_t i = 0; i < cycles; i++)
+        port_in_b(0x80);
+}
+
 void     smp_trampoline(void);
 extern   struct gdtr smp_tpl_gdt;
 struct   smp_information *smp_tpl_info_struct;
@@ -52,17 +58,17 @@ static bool smp_start_ap(uint8_t lapic_id, struct gdtr *gdtr,
     // Send the INIT IPI
     lapic_write(LAPIC_REG_ICR1, lapic_id << 24);
     lapic_write(LAPIC_REG_ICR0, 0x500);
-    pit_sleep(1);
+    delay(5000);
 
     // Send the Startup IPI
     lapic_write(LAPIC_REG_ICR1, lapic_id << 24);
     lapic_write(LAPIC_REG_ICR0, ((size_t)smp_trampoline / 4096) | 0x600);
 
-    for (int i = 0; i < 20; i++) {
-        pit_sleep(1);
+    for (int i = 0; i < 100; i++) {
         if (locked_read(&smp_tpl_booted_flag) == 1) {
             return true;
         }
+        delay(10000);
     }
 
     return false;

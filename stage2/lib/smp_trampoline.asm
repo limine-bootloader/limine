@@ -77,16 +77,62 @@ section .text
 
 bits 32
 parking32:
-    mov ecx, dword [smp_tpl_info_struct]
+    mov edi, dword [smp_tpl_info_struct]
     mov eax, 1
     lock xchg dword [smp_tpl_booted_flag], eax
-    mov eax, 0xcafebabe
-    jmp $
+
+    xor eax, eax
+  .loop:
+    lock xadd dword [edi + 16], eax
+    test eax, eax
+    jnz .out
+    pause
+    jmp .loop
+
+  .out:
+    mov esp, dword [edi + 8]
+    push 0
+    push eax
+    push edi
+    xor eax, eax
+    xor ebx, ebx
+    xor ecx, ecx
+    xor edx, edx
+    xor esi, esi
+    xor edi, edi
+    xor ebp, ebp
+    ret
 
 bits 64
 parking64:
-    mov ecx, dword [smp_tpl_info_struct]
+    mov edi, dword [smp_tpl_info_struct]
     mov eax, 1
     lock xchg dword [smp_tpl_booted_flag], eax
-    mov eax, 0xdeadbeef
-    jmp $
+
+    xor eax, eax
+  .loop:
+    lock xadd qword [rdi + 16], rax
+    test rax, rax
+    jnz .out
+    pause
+    jmp .loop
+
+  .out:
+    mov rsp, qword [rdi + 8]
+    push 0
+    push rax
+    xor rax, rax
+    xor rbx, rbx
+    xor rcx, rcx
+    xor rdx, rdx
+    xor rsi, rsi
+    xor rbp, rbp
+    xor r8,  r8
+    xor r9,  r9
+    xor r10, r10
+    xor r11, r11
+    xor r12, r12
+    xor r13, r13
+    xor r14, r14
+    xor r15, r15
+    ret

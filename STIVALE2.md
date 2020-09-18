@@ -392,7 +392,7 @@ struct stivale2_smp_info {
                                 // This MUST point to a valid stack of at least
                                 // 256 bytes in size, and 16-byte aligned.
     uint64_t goto_address;      // This address is polled by the started APs
-                                // until the kernel on the BSP performs an
+                                // until the kernel on another CPU performs an
                                 // atomic write to this field.
                                 // When that happens, bootloader code will
                                 // load up ESP/RSP with the stack value as

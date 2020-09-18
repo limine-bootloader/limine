@@ -176,7 +176,7 @@ Omitting this tag will make the bootloader default to a CGA-compatible text mode
 if supported.
 
 ```c
-struct stivale2_hdr_tag_framebuffer {
+struct stivale2_header_tag_framebuffer {
     uint64_t identifier;          // Identifier: 0x3ecc1bc43d0f7971
     uint64_t next;
     uint16_t framebuffer_width;   // If all values are set to 0

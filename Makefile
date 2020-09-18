@@ -42,7 +42,7 @@ echfs-test: limine-install test.img
 	echfs-utils -m -p0 test.img import test/test.elf boot/test.elf
 	echfs-utils -m -p0 test.img import test/limine.cfg limine.cfg
 	./limine-install limine.bin test.img
-	qemu-system-x86_64 -hda test.img -debugcon stdio -enable-kvm
+	qemu-system-x86_64 -net none -smp 4 -hda test.img -debugcon stdio -enable-kvm
 
 ext2-test: limine-install test.img
 	$(MAKE) -C test

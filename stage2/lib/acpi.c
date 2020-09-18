@@ -59,7 +59,7 @@ void *acpi_get_table(const char *signature, int index) {
         if (!memcmp(ptr->signature, signature, 4)
          && !acpi_checksum(ptr, ptr->length)
          && cnt++ == index) {
-            print("acpi: Found \"%s\" at %X\n", signature, ptr);
+            print("acpi: Found \"%s\" at %x\n", signature, ptr);
             return ptr;
         }
     }

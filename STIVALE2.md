@@ -193,6 +193,20 @@ Identifier: `0x932f477032007e8f`
 
 This tag does not have extra members.
 
+#### SMP header tag
+
+The presence of this tag enables support for booting up application processors.
+
+```c
+struct stivale2_header_tag_smp {
+    uint64_t identifier;          // Identifier: 0x1ab015085f3273df
+    uint64_t next;
+    uint64_t flags;               // Flags:
+                                  //   bit 0: 0 = use xAPIC, 1 = use x2APIC
+                                  // All other flags are undefined.
+} __attribute__((packed));
+```
+
 ## stivale2 structure
 
 The stivale2 structure returned by the bootloader looks like this:
@@ -353,5 +367,40 @@ struct stivale2_struct_tag_firmware {
     uint64_t identifier;        // Identifier: 0x359d837855e3858c
     uint64_t next;
     uint64_t flags;             // Bit 0: 0 = UEFI, 1 = BIOS
+} __attribute__((packed));
+```
+
+#### SMP structure tag
+
+This tag reports to the kernel info about the firmware.
+
+```c
+struct stivale2_struct_tag_smp {
+    uint64_t identifier;        // Identifier: 0x34d1d96339647025
+    uint64_t next;
+    uint64_t cpu_count;         // Total number of logical CPUs (including BSP)
+    struct stivale2_smp_info smp_info[];
+} __attribute__((packed));
+```
+
+```c
+struct stivale2_smp_info {
+    uint32_t processor_id;      // Processor ID as specified by MADT
+    uint32_t lapic_id;          // LAPIC ID as specified by MADT
+    uint64_t target_stack;      // The stack that will be loaded in ESP/RSP
+                                // once the goto_address field is loaded.
+                                // This MUST point to a valid stack of at least
+                                // 256 bytes in size, and 16-byte aligned.
+    uint64_t goto_address;      // This address is polled by the started APs
+                                // until the kernel on the BSP performs an
+                                // atomic write to this field.
+                                // When that happens, bootloader code will
+                                // load up ESP/RSP with the stack value as
+                                // specified in target_stack.
+                                // It will then proceed to load a pointer to
+                                // this very structure into either register
+                                // RDI for 64-bit or on the stack for 32-bit,
+                                // then, goto_address is called and execution is
+                                // handed off.
 } __attribute__((packed));
 ```

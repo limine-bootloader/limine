@@ -11,7 +11,7 @@ int cpuid(uint32_t leaf, uint32_t subleaf,
 
 __attribute__((noreturn)) void panic(const char *fmt, ...);
 
-void pit_sleep(uint64_t pit_ticks);
+void pit_sleep(uint32_t pit_ticks);
 int pit_sleep_and_quit_on_keypress(uint32_t pit_ticks);
 
 void brewind(size_t count);

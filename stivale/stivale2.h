@@ -27,6 +27,13 @@ struct stivale2_header_tag_framebuffer {
     uint16_t framebuffer_bpp;
 } __attribute__((packed));
 
+#define STIVALE2_HEADER_TAG_SMP_ID 0x1ab015085f3273df
+
+struct stivale2_header_tag_smp {
+    struct stivale2_tag tag;
+    uint64_t flags;
+} __attribute__((packed));
+
 #define STIVALE2_HEADER_TAG_5LV_PAGING_ID 0x932f477032007e8f
 
 /* --- Struct --------------------------------------------------------------- */
@@ -110,6 +117,23 @@ struct stivale2_struct_tag_epoch {
 struct stivale2_struct_tag_firmware {
     struct stivale2_tag tag;
     uint64_t flags;
+} __attribute__((packed));
+
+#define STIVALE2_STRUCT_TAG_SMP_ID 0x34d1d96339647025
+
+struct stivale2_smp_info {
+    uint32_t processor_id;
+    uint32_t lapic_id;
+    uint64_t target_stack;
+    uint64_t goto_address;
+} __attribute__((packed));
+
+struct stivale2_struct_tag_smp {
+    struct stivale2_tag tag;
+    uint64_t identifier;
+    uint64_t next;
+    uint64_t cpu_count;
+    struct stivale2_smp_info smp_info[];
 } __attribute__((packed));
 
 #endif

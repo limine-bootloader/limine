@@ -13,6 +13,11 @@ section .rodata
 
 lv5:
     dq 0x932f477032007e8f
+    dq smp
+
+smp:
+    dq 0x1ab015085f3273df
+    dq 0
     dq 0
 
 section .bss

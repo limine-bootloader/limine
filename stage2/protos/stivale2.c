@@ -14,6 +14,7 @@
 #include <lib/rand.h>
 #include <lib/real.h>
 #include <lib/libc.h>
+#include <lib/smp.h>
 #include <drivers/vbe.h>
 #include <lib/term.h>
 #include <drivers/pic.h>
@@ -313,7 +314,26 @@ void stivale2_load(char *cmdline, int boot_drive) {
     // Check if 5-level paging tag is requesting support
     bool level5pg_requested = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_5LV_PAGING_ID) ? true : false;
 
-    stivale_spinup(bits, level5pg && level5pg_requested,
-                   entry_point, &stivale2_struct, stivale2_hdr.stack,
-                   memmap, memmap_entries);
+    pagemap_t pagemap = {0};
+    if (bits == 64)
+        pagemap = stivale_build_pagemap(level5pg && level5pg_requested,
+                                        memmap, memmap_entries);
+
+    //////////////////////////////////////////////
+    // Create SMP struct tag
+    //////////////////////////////////////////////
+    {
+    struct stivale2_header_tag_smp *smp_hdr_tag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_SMP_ID);
+    if (smp_hdr_tag != NULL) {
+        struct stivale2_struct_tag_smp *tag = balloc(sizeof(struct stivale2_struct_tag_smp));
+
+        init_smp((size_t*)&tag->cpu_count, bits == 64, pagemap,
+                 smp_hdr_tag->flags & 1);
+
+        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    }
+    }
+
+    stivale_spinup(bits, level5pg && level5pg_requested, pagemap,
+                   entry_point, &stivale2_struct, stivale2_hdr.stack);
 }

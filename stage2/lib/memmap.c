@@ -10,14 +10,6 @@
 #define MEMMAP_BASE ((size_t)0x100000)
 #define MEMMAP_MAX_ENTRIES 256
 
-#define MEMMAP_USABLE                 1
-#define MEMMAP_RESERVED               2
-#define MEMMAP_ACPI_RECLAIMABLE       3
-#define MEMMAP_ACPI_NVS               4
-#define MEMMAP_BAD_MEMORY             5
-#define MEMMAP_BOOTLOADER_RECLAIMABLE 0x1000
-#define MEMMAP_KERNEL_AND_MODULES     0x1001
-
 static struct e820_entry_t memmap[MEMMAP_MAX_ENTRIES];
 static size_t memmap_entries = 0;
 
@@ -165,29 +157,39 @@ void init_memmap(void) {
     sanitise_entries();
 }
 
-static size_t ext_mem_balloc_base = 0x100000;
-
-void *ext_mem_balloc(size_t count) {
-    return ext_mem_balloc_aligned(count, 4);
+void *ext_mem_balloc(size_t count, uint32_t type) {
+    return ext_mem_balloc_aligned(count, 4, type);
 }
 
 // TODO: this basically only works for the 1st extended memory entry in the
 //       memmap and allocates until the first hole following it. Fix that.
-void *ext_mem_balloc_aligned(size_t count, size_t alignment) {
-    uint64_t base = ALIGN_UP(ext_mem_balloc_base, alignment);
-    uint64_t top  = base + count;
-
-    for (size_t i = 0; i < memmap_entries; i++) {
+void *ext_mem_balloc_aligned(size_t count, size_t alignment, uint32_t type) {
+    for (int i = memmap_entries - 1; i >= 0; i--) {
         if (memmap[i].type != 1)
             continue;
 
-        uint64_t entry_base = memmap[i].base;
-        uint64_t entry_top  = memmap[i].base + memmap[i].length;
-        if (base >= entry_base && base < entry_top &&
-            top  >= entry_base && top  < entry_top) {
-            ext_mem_balloc_base = base + count;
-            return (void *)(size_t)base;
+        int64_t entry_base = (int64_t)(memmap[i].base);
+        int64_t entry_top  = (int64_t)(memmap[i].base + memmap[i].length);
+
+        // Let's make sure the entry is not > 4GiB
+        if (entry_base >= 0x100000000 || entry_top >= 0x100000000) {
+            // Theoretically there could be an entry which crosses the 4GiB
+            // boundary, but realistically this does not happen as far as I
+            // have seen. Let's just discard the entry.
+            continue;
         }
+
+        int64_t alloc_base = ALIGN_DOWN(entry_top - (int64_t)count, alignment);
+
+        // This entry is too small for us.
+        if (alloc_base < entry_base)
+            continue;
+
+        // We now reserve the range we need.
+        int64_t aligned_length = entry_top - alloc_base;
+        memmap_alloc_range((uint64_t)alloc_base, (uint64_t)aligned_length, type);
+
+        return (void *)(size_t)alloc_base;
     }
 
     panic("High memory allocator: Out of memory");
@@ -202,8 +204,8 @@ void memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type) {
 
         uint64_t entry_base = memmap[i].base;
         uint64_t entry_top  = memmap[i].base + memmap[i].length;
-        if (base >= entry_base && base < entry_top &&
-            top  >= entry_base && top  < entry_top) {
+        if (base >= entry_base && base <  entry_top &&
+            top  >= entry_base && top  <= entry_top) {
 
             memmap[i].length = base - entry_base;
 

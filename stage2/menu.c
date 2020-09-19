@@ -19,10 +19,9 @@ char *menu(void) {
 
     char buf[16];
 
-    if (config_get_value(buf, 0, 16, "GRAPHICS")) {
-        if (!strcmp(buf, "on")) {
-            term_vbe();
-        }
+    // If there is no TEXTMODE config key or the value is not "on", enable graphics
+    if (config_get_value(buf, 0, 16, "TEXTMODE") == NULL || strcmp(buf, "on")) {
+        term_vbe();
     }
 
     int timeout;
@@ -91,7 +90,6 @@ refresh:
                     }
                 }
                 clear(true);
-                term_textmode();
                 return cmdline;
             case 'e':
                 config_set_entry(selected_entry);
@@ -104,7 +102,6 @@ refresh:
                 print("\n\n> ");
                 gets(cmdline, cmdline, CMDLINE_MAX);
                 clear(true);
-                term_textmode();
                 return cmdline;
         }
     }

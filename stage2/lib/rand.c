@@ -4,6 +4,7 @@
 #include <lib/blib.h>
 #include <lib/print.h>
 #include <lib/rand.h>
+#include <mm/pmm.h>
 
 // TODO: Find where this mersenne twister implementation is inspired from
 //       and properly credit the original author(s).
@@ -64,7 +65,7 @@ static void init_rand(void) {
         seed *= (seed ^ rdrand(uint32_t));
     }
 
-    status = balloc(n);
+    status = conv_mem_alloc(n);
 
     srand(seed);
 

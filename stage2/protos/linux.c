@@ -7,7 +7,7 @@
 #include <lib/term.h>
 #include <lib/config.h>
 #include <lib/print.h>
-#include <lib/memmap.h>
+#include <mm/pmm.h>
 
 #define KERNEL_LOAD_ADDR ((size_t)0x100000)
 #define INITRD_LOAD_ADDR ((size_t)0x1000000)
@@ -31,12 +31,12 @@ void linux_load(char *cmdline, int boot_drive) {
         }
     }
 
-    char *kernel_path = balloc(128);
+    char *kernel_path = conv_mem_alloc(128);
     if (!config_get_value(kernel_path, 0, 128, "KERNEL_PATH")) {
         panic("KERNEL_PATH not specified");
     }
 
-    struct file_handle *fd = balloc(sizeof(struct file_handle));
+    struct file_handle *fd = conv_mem_alloc(sizeof(struct file_handle));
     if (fopen(fd, kernel_drive, kernel_part, kernel_path)) {
         panic("Could not open kernel file");
     }
@@ -63,7 +63,7 @@ void linux_load(char *cmdline, int boot_drive) {
 
     print("linux: Real Mode code size: %x\n", real_mode_code_size);
 
-    void *real_mode_code = balloc_aligned(real_mode_code_size, 0x1000);
+    void *real_mode_code = conv_mem_alloc_aligned(real_mode_code_size, 0x1000);
 
     fread(fd, real_mode_code, 0, real_mode_code_size);
 

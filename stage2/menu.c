@@ -8,6 +8,7 @@
 #include <lib/libc.h>
 #include <lib/config.h>
 #include <lib/term.h>
+#include <mm/pmm.h>
 
 static char *cmdline;
 #define CMDLINE_MAX 1024
@@ -15,7 +16,7 @@ static char *cmdline;
 static char config_entry_name[1024];
 
 char *menu(void) {
-    cmdline = balloc(CMDLINE_MAX);
+    cmdline = conv_mem_alloc(CMDLINE_MAX);
 
     char buf[16];
 

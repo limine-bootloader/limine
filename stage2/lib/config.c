@@ -2,6 +2,7 @@
 #include <lib/config.h>
 #include <lib/libc.h>
 #include <lib/blib.h>
+#include <mm/pmm.h>
 #include <fs/file.h>
 
 #define SEPARATOR '\n'
@@ -18,7 +19,7 @@ int init_config(int drive, int part) {
     }
 
     size_t config_size = f.size + 1;
-    config_addr = balloc(config_size);
+    config_addr = conv_mem_alloc(config_size);
 
     fread(&f, config_addr, 0, f.size);
 

@@ -5,7 +5,6 @@
 #include <lib/elf.h>
 #include <lib/blib.h>
 #include <lib/acpi.h>
-#include <lib/memmap.h>
 #include <lib/config.h>
 #include <lib/time.h>
 #include <lib/print.h>
@@ -16,6 +15,7 @@
 #include <sys/pic.h>
 #include <fs/file.h>
 #include <mm/vmm64.h>
+#include <mm/pmm.h>
 #include <stivale/stivale.h>
 
 #define KASLR_SLIDE_BITMASK 0x03FFFF000u
@@ -43,12 +43,12 @@ void stivale_load(char *cmdline, int boot_drive) {
         }
     }
 
-    char *kernel_path = balloc(128);
+    char *kernel_path = conv_mem_alloc(128);
     if (!config_get_value(kernel_path, 0, 128, "KERNEL_PATH")) {
         panic("KERNEL_PATH not specified");
     }
 
-    struct file_handle *fd = balloc(sizeof(struct file_handle));
+    struct file_handle *fd = conv_mem_alloc(sizeof(struct file_handle));
     if (fopen(fd, kernel_drive, kernel_part, kernel_path)) {
         panic("Could not open kernel file");
     }
@@ -139,7 +139,7 @@ void stivale_load(char *cmdline, int boot_drive) {
 
         stivale_struct.module_count++;
 
-        struct stivale_module *m = balloc(sizeof(struct stivale_module));
+        struct stivale_module *m = conv_mem_alloc(sizeof(struct stivale_module));
 
         if (!config_get_value(m->string, i, 128, "MODULE_STRING")) {
             m->string[0] = '\0';

@@ -8,6 +8,7 @@
 #include <sys/smp.h>
 #include <sys/lapic.h>
 #include <mm/vmm64.h>
+#include <mm/pmm.h>
 
 struct madt {
     struct sdt;
@@ -88,7 +89,7 @@ struct smp_information *init_smp(size_t   *cpu_count,
     struct gdtr gdtr;
     asm volatile ("sgdt %0" :: "m"(gdtr));
 
-    struct smp_information *ret = balloc_aligned(0, 1);
+    struct smp_information *ret = conv_mem_alloc_aligned(0, 1);
     *cpu_count = 0;
 
     // Parse the MADT entries
@@ -104,7 +105,7 @@ struct smp_information *init_smp(size_t   *cpu_count,
                 struct madt_lapic *lapic = (void *)madt_ptr;
 
                 struct smp_information *info_struct =
-                        balloc_aligned(sizeof(struct smp_information), 1);
+                        conv_mem_alloc_aligned(sizeof(struct smp_information), 1);
 
                 info_struct->acpi_processor_uid = lapic->acpi_processor_uid;
                 info_struct->lapic_id           = lapic->lapic_id;
@@ -125,7 +126,7 @@ struct smp_information *init_smp(size_t   *cpu_count,
                 if (!smp_start_ap(lapic->lapic_id, &gdtr, info_struct,
                                   longmode, lv5, (uint32_t)pagemap.top_level)) {
                     print("smp: FAILED to bring-up AP\n");
-                    brewind(sizeof(struct smp_information));
+                    conv_mem_rewind();
                     continue;
                 }
 

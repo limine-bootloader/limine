@@ -3,7 +3,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <lib/memmap.h>
 #include <sys/e820.h>
 #include <mm/vmm64.h>
 

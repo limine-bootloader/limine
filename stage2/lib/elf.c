@@ -4,7 +4,7 @@
 #include <lib/libc.h>
 #include <lib/elf.h>
 #include <lib/print.h>
-#include <lib/memmap.h>
+#include <mm/pmm.h>
 #include <fs/file.h>
 
 #define PT_LOAD     0x00000001

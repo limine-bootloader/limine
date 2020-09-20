@@ -4,7 +4,7 @@
 #include <lib/real.h>
 #include <lib/blib.h>
 #include <lib/print.h>
-#include <lib/memmap.h>
+#include <mm/pmm.h>
 
 struct e820_entry_t *e820_map;
 size_t e820_entries;
@@ -12,7 +12,7 @@ size_t e820_entries;
 void init_e820(void) {
     struct rm_regs r = {0};
 
-    e820_map = balloc(sizeof(struct e820_entry_t));
+    e820_map = conv_mem_alloc(sizeof(struct e820_entry_t));
     for (size_t i = 0; ; i++) {
         struct e820_entry_t entry;
 
@@ -34,7 +34,7 @@ void init_e820(void) {
             break;
         }
 
-        balloc(sizeof(struct e820_entry_t));
+        conv_mem_alloc(sizeof(struct e820_entry_t));
     }
 
     print("E820 memory map:\n");

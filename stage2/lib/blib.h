@@ -13,10 +13,6 @@ __attribute__((noreturn)) void panic(const char *fmt, ...);
 
 int pit_sleep_and_quit_on_keypress(uint32_t pit_ticks);
 
-void brewind(size_t count);
-void *balloc(size_t count);
-void *balloc_aligned(size_t count, size_t alignment);
-
 #define GETCHAR_CURSOR_LEFT  (-10)
 #define GETCHAR_CURSOR_RIGHT (-11)
 #define GETCHAR_CURSOR_UP    (-12)

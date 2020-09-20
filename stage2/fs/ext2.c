@@ -5,6 +5,7 @@
 #include <drivers/disk.h>
 #include <lib/libc.h>
 #include <lib/blib.h>
+#include <mm/pmm.h>
 
 /* EXT2 Filesystem States */
 #define EXT2_FS_UNRECOVERABLE_ERRORS 3
@@ -125,7 +126,7 @@ static int ext2_parse_dirent(struct ext2_dir_entry *dir, struct ext2_file_handle
     if (*path == '/')
         path++;
 
-    struct ext2_inode *current_inode = balloc(sizeof(struct ext2_inode));
+    struct ext2_inode *current_inode = conv_mem_alloc(sizeof(struct ext2_inode));
     *current_inode = fd->root_inode;
 
     bool escape = false;
@@ -148,7 +149,7 @@ next:
                    fd->drive, &fd->part);
 
         // name read
-        char *name = balloc(dir->name_len + 1);
+        char *name = conv_mem_alloc(dir->name_len + 1);
 
         memset(name, 0, dir->name_len + 1);
         inode_read(name, i + sizeof(struct ext2_dir_entry), dir->name_len,
@@ -156,11 +157,11 @@ next:
 
         int r = strcmp(token, name);
 
-        brewind(dir->name_len);
+        conv_mem_rewind();
 
         if (!r) {
             if (escape) {
-                brewind(sizeof(struct ext2_inode));
+                conv_mem_rewind();
                 return 0;
             } else {
                 // update the current inode
@@ -172,7 +173,7 @@ next:
         i += dir->rec_len;
     }
 
-    brewind(sizeof(struct ext2_inode));
+    conv_mem_rewind();
     return -1;
 }
 

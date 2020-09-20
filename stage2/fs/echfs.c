@@ -5,6 +5,7 @@
 #include <lib/print.h>
 #include <drivers/disk.h>
 #include <stdbool.h>
+#include <mm/pmm.h>
 
 struct echfs_identity_table {
     uint8_t  jmp[4];
@@ -123,7 +124,7 @@ found:;
     // Load the allocation map.
     uint64_t file_block_count = DIV_ROUNDUP(ret->dir_entry.size, ret->block_size);
 
-    ret->alloc_map = balloc(file_block_count * sizeof(uint64_t));
+    ret->alloc_map = conv_mem_alloc(file_block_count * sizeof(uint64_t));
 
     ret->alloc_map[0] = ret->dir_entry.payload;
     for (uint64_t i = 1; i < file_block_count; i++) {

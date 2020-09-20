@@ -5,10 +5,11 @@
 #include <fs/ext2.h>
 #include <fs/fat32.h>
 #include <lib/blib.h>
+#include <mm/pmm.h>
 
 int fopen(struct file_handle *ret, int disk, int partition, const char *filename) {
     if (echfs_check_signature(disk, partition)) {
-        struct echfs_file_handle *fd = balloc(sizeof(struct echfs_file_handle));
+        struct echfs_file_handle *fd = conv_mem_alloc(sizeof(struct echfs_file_handle));
 
         int r = echfs_open(fd, disk, partition, filename);
         if (r)
@@ -24,7 +25,7 @@ int fopen(struct file_handle *ret, int disk, int partition, const char *filename
     }
 
     if (ext2_check_signature(disk, partition)) {
-        struct ext2_file_handle *fd = balloc(sizeof(struct ext2_file_handle));
+        struct ext2_file_handle *fd = conv_mem_alloc(sizeof(struct ext2_file_handle));
 
         int r = ext2_open(fd, disk, partition, filename);
         if (r)
@@ -40,7 +41,7 @@ int fopen(struct file_handle *ret, int disk, int partition, const char *filename
     }
 
     if (fat32_check_signature(disk, partition)) {
-        struct fat32_file_handle *fd = balloc(sizeof(struct fat32_file_handle));
+        struct fat32_file_handle *fd = conv_mem_alloc(sizeof(struct fat32_file_handle));
 
         int r = fat32_open(fd, disk, partition, filename);
 

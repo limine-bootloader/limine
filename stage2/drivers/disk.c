@@ -6,6 +6,7 @@
 #include <lib/blib.h>
 #include <lib/part.h>
 #include <lib/print.h>
+#include <mm/pmm.h>
 
 #define SECTOR_SIZE 512
 #define BLOCK_SIZE_IN_SECTORS 16
@@ -29,7 +30,7 @@ static int cache_block(int drive, uint64_t block) {
         return 0;
 
     if (!cache)
-        cache = balloc_aligned(BLOCK_SIZE, 16);
+        cache = conv_mem_alloc_aligned(BLOCK_SIZE, 16);
 
     dap.segment = rm_seg(cache);
     dap.offset  = rm_off(cache);

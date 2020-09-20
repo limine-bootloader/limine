@@ -1,9 +1,10 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <lib/memmap.h>
+#include <mm/pmm.h>
 #include <sys/e820.h>
 #include <lib/blib.h>
+#include <lib/libc.h>
 #include <lib/print.h>
 
 #define PAGE_SIZE   4096
@@ -157,13 +158,20 @@ void init_memmap(void) {
     sanitise_entries();
 }
 
-void *ext_mem_balloc(size_t count, uint32_t type) {
-    return ext_mem_balloc_aligned(count, 4, type);
+void *ext_mem_alloc(size_t count) {
+    return ext_mem_alloc_type(count, MEMMAP_BOOTLOADER_RECLAIMABLE);
 }
 
-// TODO: this basically only works for the 1st extended memory entry in the
-//       memmap and allocates until the first hole following it. Fix that.
-void *ext_mem_balloc_aligned(size_t count, size_t alignment, uint32_t type) {
+void *ext_mem_alloc_aligned(size_t count, size_t alignment) {
+    return ext_mem_alloc_aligned_type(count, alignment, MEMMAP_BOOTLOADER_RECLAIMABLE);
+}
+
+void *ext_mem_alloc_type(size_t count, uint32_t type) {
+    return ext_mem_alloc_aligned_type(count, 4, type);
+}
+
+// Allocate memory top down, hopefully without bumping into kernel or modules
+void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) {
     for (int i = memmap_entries - 1; i >= 0; i--) {
         if (memmap[i].type != 1)
             continue;
@@ -189,7 +197,12 @@ void *ext_mem_balloc_aligned(size_t count, size_t alignment, uint32_t type) {
         int64_t aligned_length = entry_top - alloc_base;
         memmap_alloc_range((uint64_t)alloc_base, (uint64_t)aligned_length, type);
 
-        return (void *)(size_t)alloc_base;
+        void *ret = (void *)(size_t)alloc_base;
+
+        // Zero out allocated space
+        memset(ret, 0, count);
+
+        return ret;
     }
 
     panic("High memory allocator: Out of memory");
@@ -245,4 +258,46 @@ void memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type) {
     }
 
     panic("Out of memory");
+}
+
+extern symbol bss_end;
+static size_t bump_allocator_base = (size_t)bss_end;
+static size_t bump_allocator_limit = 0;
+
+void conv_mem_rewind(void) {
+    size_t *old_base = (size_t *)(bump_allocator_base - sizeof(size_t));
+    bump_allocator_base = *old_base;
+}
+
+void *conv_mem_alloc(size_t count) {
+    return conv_mem_alloc_aligned(count, 4);
+}
+
+void *conv_mem_alloc_aligned(size_t count, size_t alignment) {
+    if (!bump_allocator_limit) {
+        // The balloc limit is the beginning of the GDT
+        struct {
+            uint16_t limit;
+            uint32_t ptr;
+        } __attribute__((packed)) gdtr;
+        asm volatile ("sgdt %0" :: "m"(gdtr));
+        bump_allocator_limit = gdtr.ptr;
+    }
+
+    size_t new_base = ALIGN_UP(bump_allocator_base, alignment);
+    void *ret = (void *)new_base;
+
+    size_t *old_base = (size_t *)(new_base + count);
+    new_base += count + sizeof(size_t);
+
+    if (new_base >= bump_allocator_limit)
+        panic("Memory allocation failed");
+
+    *old_base = bump_allocator_base;
+    bump_allocator_base = new_base;
+
+    // Zero out allocated space
+    memset(ret, 0, count);
+
+    return ret;
 }

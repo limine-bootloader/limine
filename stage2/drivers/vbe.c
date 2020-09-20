@@ -2,11 +2,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <drivers/vbe.h>
-#include <lib/memmap.h>
 #include <lib/libc.h>
 #include <lib/blib.h>
 #include <lib/real.h>
 #include <lib/print.h>
+#include <mm/pmm.h>
 
 #define VGA_FONT_WIDTH  8
 #define VGA_FONT_HEIGHT 16
@@ -22,7 +22,7 @@ static void vga_font_retrieve(void) {
     r.ebx = 0x0600;
     rm_int(0x10, &r, &r);
 
-    vga_font = ext_mem_balloc(VGA_FONT_MAX, MEMMAP_BOOTLOADER_RECLAIMABLE);
+    vga_font = ext_mem_alloc(VGA_FONT_MAX);
 
     memcpy(vga_font, (void *)rm_desegment(r.es, r.ebp), VGA_FONT_MAX);
 }
@@ -222,7 +222,7 @@ void vbe_tty_init(int *_rows, int *_cols) {
     vga_font_retrieve();
     *_cols = cols = vbe_width / VGA_FONT_WIDTH;
     *_rows = rows = vbe_height / VGA_FONT_HEIGHT;
-    grid = ext_mem_balloc(rows * cols * sizeof(struct vbe_char), MEMMAP_BOOTLOADER_RECLAIMABLE);
+    grid = ext_mem_alloc(rows * cols * sizeof(struct vbe_char));
     vbe_clear(true);
 }
 

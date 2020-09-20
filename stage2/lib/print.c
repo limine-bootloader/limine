@@ -111,8 +111,9 @@ void print(const char *fmt, ...) {
     va_end(args);
 }
 
+static char print_buf[PRINT_BUF_MAX];
+
 void vprint(const char *fmt, va_list args) {
-    char  *print_buf = balloc(PRINT_BUF_MAX);
     size_t print_buf_i = 0;
 
     for (;;) {
@@ -173,6 +174,4 @@ out:
     for (size_t i = 0; i < print_buf_i; i++)
         port_out_b(0xe9, print_buf[i]);
 #endif
-
-    brewind(PRINT_BUF_MAX);
 }

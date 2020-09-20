@@ -7,7 +7,6 @@
 #include <lib/elf.h>
 #include <lib/blib.h>
 #include <lib/acpi.h>
-#include <lib/memmap.h>
 #include <lib/config.h>
 #include <lib/time.h>
 #include <lib/print.h>
@@ -19,6 +18,7 @@
 #include <lib/term.h>
 #include <sys/pic.h>
 #include <fs/file.h>
+#include <mm/pmm.h>
 #include <stivale/stivale2.h>
 
 #define KASLR_SLIDE_BITMASK 0x03FFFF000u
@@ -66,12 +66,12 @@ void stivale2_load(char *cmdline, int boot_drive) {
         }
     }
 
-    char *kernel_path = balloc(128);
+    char *kernel_path = conv_mem_alloc(128);
     if (!config_get_value(kernel_path, 0, 128, "KERNEL_PATH")) {
         panic("KERNEL_PATH not specified");
     }
 
-    struct file_handle *fd = balloc(sizeof(struct file_handle));
+    struct file_handle *fd = conv_mem_alloc(sizeof(struct file_handle));
     if (fopen(fd, kernel_drive, kernel_part, kernel_path)) {
         panic("Could not open kernel file");
     }
@@ -160,7 +160,7 @@ void stivale2_load(char *cmdline, int boot_drive) {
     // Create firmware struct tag
     //////////////////////////////////////////////
     {
-    struct stivale2_struct_tag_firmware *tag = balloc(sizeof(struct stivale2_struct_tag_firmware));
+    struct stivale2_struct_tag_firmware *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_firmware));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_FIRMWARE_ID;
 
     tag->flags = 1 << 0;   // bit 0 = BIOS boot
@@ -172,7 +172,7 @@ void stivale2_load(char *cmdline, int boot_drive) {
     // Create modules struct tag
     //////////////////////////////////////////////
     {
-    struct stivale2_struct_tag_modules *tag = balloc(sizeof(struct stivale2_struct_tag_modules));
+    struct stivale2_struct_tag_modules *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_modules));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_MODULES_ID;
 
     tag->module_count = 0;
@@ -184,7 +184,7 @@ void stivale2_load(char *cmdline, int boot_drive) {
 
         tag->module_count++;
 
-        struct stivale2_module *m = balloc_aligned(sizeof(struct stivale2_module), 1);
+        struct stivale2_module *m = conv_mem_alloc_aligned(sizeof(struct stivale2_module), 1);
 
         if (!config_get_value(m->string, i, 128, "MODULE_STRING")) {
             m->string[0] = '\0';
@@ -230,7 +230,7 @@ void stivale2_load(char *cmdline, int boot_drive) {
     // Create RSDP struct tag
     //////////////////////////////////////////////
     {
-    struct stivale2_struct_tag_rsdp *tag = balloc(sizeof(struct stivale2_struct_tag_rsdp));
+    struct stivale2_struct_tag_rsdp *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_rsdp));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_RSDP_ID;
 
     tag->rsdp = (uint64_t)(size_t)acpi_get_rsdp();
@@ -242,7 +242,7 @@ void stivale2_load(char *cmdline, int boot_drive) {
     // Create cmdline struct tag
     //////////////////////////////////////////////
     {
-    struct stivale2_struct_tag_cmdline *tag = balloc(sizeof(struct stivale2_struct_tag_cmdline));
+    struct stivale2_struct_tag_cmdline *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_cmdline));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_CMDLINE_ID;
 
     tag->cmdline = (uint64_t)(size_t)cmdline;
@@ -254,7 +254,7 @@ void stivale2_load(char *cmdline, int boot_drive) {
     // Create epoch struct tag
     //////////////////////////////////////////////
     {
-    struct stivale2_struct_tag_epoch *tag = balloc(sizeof(struct stivale2_struct_tag_epoch));
+    struct stivale2_struct_tag_epoch *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_epoch));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_EPOCH_ID;
 
     tag->epoch = time();
@@ -272,7 +272,7 @@ void stivale2_load(char *cmdline, int boot_drive) {
     term_deinit();
 
     if (hdrtag != NULL) {
-        struct stivale2_struct_tag_framebuffer *tag = balloc(sizeof(struct stivale2_struct_tag_framebuffer));
+        struct stivale2_struct_tag_framebuffer *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_framebuffer));
         tag->tag.identifier = STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID;
 
         tag->framebuffer_width  = hdrtag->framebuffer_width;
@@ -298,14 +298,14 @@ void stivale2_load(char *cmdline, int boot_drive) {
     // Create memmap struct tag
     //////////////////////////////////////////////
     {
-    struct stivale2_struct_tag_memmap *tag = balloc(sizeof(struct stivale2_struct_tag_memmap));
+    struct stivale2_struct_tag_memmap *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_memmap));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_MEMMAP_ID;
 
     memmap = get_memmap(&memmap_entries);
 
     tag->entries = (uint64_t)memmap_entries;
 
-    void *tag_memmap = balloc_aligned(sizeof(struct e820_entry_t) * memmap_entries, 1);
+    void *tag_memmap = conv_mem_alloc_aligned(sizeof(struct e820_entry_t) * memmap_entries, 1);
     memcpy(tag_memmap, memmap, sizeof(struct e820_entry_t) * memmap_entries);
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
@@ -325,7 +325,7 @@ void stivale2_load(char *cmdline, int boot_drive) {
     {
     struct stivale2_header_tag_smp *smp_hdr_tag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_SMP_ID);
     if (smp_hdr_tag != NULL) {
-        struct stivale2_struct_tag_smp *tag = balloc(sizeof(struct stivale2_struct_tag_smp));
+        struct stivale2_struct_tag_smp *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_smp));
         tag->tag.identifier = STIVALE2_STRUCT_TAG_SMP_ID;
 
         init_smp((size_t*)&tag->cpu_count, bits == 64, level5pg && level5pg_requested,

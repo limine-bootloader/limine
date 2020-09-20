@@ -103,21 +103,23 @@ struct smp_information *init_smp(size_t   *cpu_count,
 
                 struct madt_lapic *lapic = (void *)madt_ptr;
 
+                struct smp_information *info_struct =
+                        balloc_aligned(sizeof(struct smp_information), 1);
+
+                info_struct->acpi_processor_uid = lapic->acpi_processor_uid;
+                info_struct->lapic_id           = lapic->lapic_id;
+
                 // Do not try to restart the BSP
-                if (lapic->lapic_id == 0)
+                if (lapic->lapic_id == 0) {
+                    (*cpu_count)++;
                     continue;
+                }
 
                 // Check if we can actually try to start the AP
                 if (!((lapic->flags & 1) ^ ((lapic->flags >> 1) & 1)))
                     continue;
 
                 print("smp: Found candidate AP for bring-up. LAPIC ID: %u\n", lapic->lapic_id);
-
-                struct smp_information *info_struct =
-                        balloc_aligned(sizeof(struct smp_information), 1);
-
-                info_struct->acpi_processor_uid = lapic->acpi_processor_uid;
-                info_struct->lapic_id           = lapic->lapic_id;
 
                 // Try to start the AP
                 if (!smp_start_ap(lapic->lapic_id, &gdtr, info_struct,
@@ -130,7 +132,7 @@ struct smp_information *init_smp(size_t   *cpu_count,
                 print("smp: Successfully brought up AP\n");
 
                 (*cpu_count)++;
-                break;
+                continue;
             }
         }
     }

@@ -378,10 +378,9 @@ This tag reports to the kernel info about the firmware.
 struct stivale2_struct_tag_smp {
     uint64_t identifier;        // Identifier: 0x34d1d96339647025
     uint64_t next;
-    uint64_t cpu_count;         // Total number of logical CPUs (excluding BSP)
+    uint64_t cpu_count;         // Total number of logical CPUs (including BSP)
     struct stivale2_smp_info smp_info[];  // Array of smp_info structs, one per
-                                          // additional logical processor, note
-                                          // that the BSP does not have one.
+                                          // logical processor, including BSP.
 } __attribute__((packed));
 ```
 
@@ -393,6 +392,8 @@ struct stivale2_smp_info {
                                  // once the goto_address field is loaded.
                                  // This MUST point to a valid stack of at least
                                  // 256 bytes in size, and 16-byte aligned.
+                                 // target_stack is an unused field for the
+                                 // struct describing the BSP (lapic_id == 0)
     uint64_t goto_address;       // This address is polled by the started APs
                                  // until the kernel on another CPU performs an
                                  // atomic write to this field.
@@ -405,12 +406,18 @@ struct stivale2_smp_info {
                                  // then, goto_address is called (a bogus return
                                  // address is pushed onto the stack) and execution
                                  // is handed off.
-                                 // All general purpose registers are cleared
-                                 // except ESP/RSP, and RDI in 64-bit mode.
+                                 // The CPU state will be the same as described
+                                 // in kernel entry machine state, with the exception
+                                 // of ESP/RSP and RDI/stack arg being set up as
+                                 // above.
+                                 // goto_address is an unused field for the
+                                 // struct describing the BSP (lapic_id == 0)
     uint64_t extra_argument;     // This field is here for the kernel to use
                                  // for whatever it wants. Writes here should
                                  // be performed before writing to goto_address
                                  // so that the receiving processor can safely
                                  // retrieve the data.
+                                 // extra_argument is an unused field for the
+                                 // struct describing the BSP (lapic_id == 0)
 } __attribute__((packed));
 ```

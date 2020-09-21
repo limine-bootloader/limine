@@ -21,6 +21,7 @@ Some *local assignments* are shared between entries using any *protocol*, while 
 
 *Globally assignable* keys are:
 * `TIMEOUT` - Specifies the timeout in seconds before the first *entry* is automatically booted.
+* `TEXTMODE` - If set to `on`, do not use graphical VESA framebuffer for the boot menu.
 
 *Locally assignable (non protocol specific)* keys are:
 * `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `stivale`, `chainload`.

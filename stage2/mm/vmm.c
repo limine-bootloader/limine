@@ -13,12 +13,12 @@ static pt_entry_t *get_next_level(pt_entry_t *current_level, size_t entry) {
 
     if (current_level[entry] & 0x1) {
         // Present flag set
-        ret = (pt_entry_t *)(current_level[entry] & ~((pt_entry_t)0xfff));
+        ret = (pt_entry_t *)(size_t)(current_level[entry] & ~((pt_entry_t)0xfff));
     } else {
         // Allocate a table for the next level
         ret = ext_mem_alloc_aligned(PT_SIZE, PT_SIZE);
         // Present + writable + user (0b111)
-        current_level[entry] = (pt_entry_t)ret | 0b111;
+        current_level[entry] = (pt_entry_t)(size_t)ret | 0b111;
     }
 
     return ret;

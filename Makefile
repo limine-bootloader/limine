@@ -41,6 +41,7 @@ echfs-test: limine-install test.img
 	echfs-utils -m -p0 test.img quick-format 512
 	echfs-utils -m -p0 test.img import test/test.elf boot/test.elf
 	echfs-utils -m -p0 test.img import test/limine.cfg limine.cfg
+	echfs-utils -m -p0 test.img import test/bg.bmp bg.bmp
 	./limine-install limine.bin test.img
 	qemu-system-x86_64 -net none -smp 4 -hda test.img -debugcon stdio -enable-kvm
 

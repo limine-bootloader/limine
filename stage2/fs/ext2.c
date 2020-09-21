@@ -16,6 +16,9 @@
 #define EXT2_IF_INLINE_DATA 0x8000
 #define EXT2_IF_ENCRYPT 0x10000
 
+/* Ext4 flags */
+#define EXT4_EXTENTS_FLAG 0x80000
+
 #define EXT2_S_MAGIC    0xEF53
 
 /* Superblock Fields */
@@ -88,6 +91,28 @@ struct ext2_dir_entry {
     uint16_t rec_len;
     uint8_t  name_len;
     uint8_t  type;
+} __attribute__((packed));
+
+struct ext4_extent_header {
+    uint16_t magic;
+    uint16_t entries;
+    uint16_t max;
+    uint16_t depth;
+    uint16_t generation;
+} __attribute__((packed));
+
+struct ext4_extent {
+    uint32_t block;
+    uint16_t len;
+    uint16_t start_hi;
+    uint32_t start;
+} __attribute__((packed));
+
+struct ext4_extent_idx {
+    uint32_t block;
+    uint32_t leaf;
+    uint16_t leaf_hi;
+    uint16_t empty;
 } __attribute__((packed));
 
 static int inode_read(void *buf, uint64_t loc, uint64_t count,
@@ -212,6 +237,38 @@ int ext2_read(struct ext2_file_handle *file, void *buf, uint64_t loc, uint64_t c
                       file->drive, &file->part);
 }
 
+static struct ext4_extent_header* ext4_find_leaf(struct ext4_extent_header* ext_block, uint32_t read_block, uint64_t block_size, uint64_t drive, struct part *part) {
+    struct ext4_extent_idx* index;
+    void* buf = NULL;
+
+    while (1) {
+        index = (struct ext4_extent_idx*)((size_t)ext_block + 12);
+
+        #define EXT4_EXT_MAGIC 0xf30a
+        if (ext_block->magic != EXT4_EXT_MAGIC)
+            panic("invalid extent magic");
+
+        if (ext_block->depth == 0) {
+            return ext_block;
+        }
+
+        int i;
+        for (i = 0; i < ext_block->entries; i++) {
+            if(read_block < index[i].block)
+                break;
+        }
+
+        if (--i < 0)
+            panic("extent not found");
+
+        uint64_t block = (index[i].leaf_hi << 32) | index[i].leaf;
+        if(!buf)
+            buf = balloc(block_size);
+        read_partition(drive, part, buf, (block * block_size), block_size);
+        ext_block = buf;
+    }
+}
+
 static int inode_read(void *buf, uint64_t loc, uint64_t count,
                       uint64_t block_size, struct ext2_inode *inode,
                       uint64_t drive, struct part *part) {
@@ -225,7 +282,35 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
 
         uint32_t block_index;
 
-        if (block < 12) {
+        if (inode->i_flags & EXT4_EXTENTS_FLAG) {
+            struct ext4_extent_header *leaf;
+            struct ext4_extent *ext;
+            int i;
+
+            leaf = ext4_find_leaf((struct ext4_extent_header*)inode->i_blocks, block, block_size, drive, part);
+
+            if (!leaf)
+                panic("invalid extent");
+            ext = (struct ext4_extent*)((size_t)leaf + 12);
+
+            for (i = 0; i < leaf->entries; i++) {
+                if (block < ext[i].block) {
+                    break;
+                }
+            }
+
+            if (--i >= 0) {
+                block -= ext[i].block;
+                if (block >= ext[i].len) {
+                    panic("block longer than extent");
+                } else {
+                    uint64_t start = (ext[i].start_hi << 32) + ext[i].start;
+                    block_index = start + block;
+                }
+            } else {
+                panic("extent for block not found");
+            }
+        } else if (block < 12) {
             // Direct block
             block_index = inode->i_blocks[block];
         } else {
@@ -286,11 +371,9 @@ int ext2_check_signature(int drive, int partition) {
         return 1;
 
     if (sb.s_feature_incompat & EXT2_IF_COMPRESSION ||
-        sb.s_feature_incompat & EXT2_IF_EXTENTS ||
         sb.s_feature_incompat & EXT2_IF_INLINE_DATA ||
-        sb.s_feature_incompat & EXT2_IF_64BIT ||
         sb.s_feature_incompat & EXT2_IF_ENCRYPT)
-        panic("EXT2: filesystem has unsupported features");
+        panic("EXT2: filesystem has unsupported features %x", sb.s_feature_incompat);
 
     return 1;
 }

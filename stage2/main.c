@@ -46,7 +46,7 @@ void entry(int boot_drive) {
     init_e820();
     init_memmap();
 
-    char *cmdline = menu();
+    char *cmdline = menu(boot_drive);
 
     char proto[32];
     if (!config_get_value(proto, 0, 32, "KERNEL_PROTO")) {

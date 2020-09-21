@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <lib/term.h>
 #include <lib/real.h>
+#include <lib/image.h>
 #include <drivers/vga_textmode.h>
 #include <drivers/vbe.h>
 
@@ -23,9 +24,9 @@ void (*set_text_bg)(int bg);
 
 static int rows, cols;
 
-void term_vbe(void) {
+void term_vbe(struct image *background) {
     term_deinit();
-    vbe_tty_init(&rows, &cols);
+    vbe_tty_init(&rows, &cols, background);
 
     raw_putchar    = vbe_putchar;
     clear          = vbe_clear;

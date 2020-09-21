@@ -6,6 +6,7 @@
 #include <lib/blib.h>
 #include <lib/real.h>
 #include <lib/print.h>
+#include <lib/image.h>
 #include <mm/pmm.h>
 
 #define VGA_FONT_WIDTH  8
@@ -33,6 +34,8 @@ static uint16_t  vbe_width = 0;
 static uint16_t  vbe_height = 0;
 static uint16_t  vbe_bpp = 0;
 
+static struct image *background;
+
 void vbe_plot_px(int x, int y, uint32_t hex) {
     size_t fb_i = x + (vbe_pitch / sizeof(uint32_t)) * y;
 
@@ -50,8 +53,11 @@ void vbe_plot_char(struct vbe_char c, int x, int y) {
     uint8_t *glyph = &vga_font[c.c * VGA_FONT_HEIGHT];
 
     for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
-        for (int j = VGA_FONT_WIDTH - 1; j >= 0; j--)
-            vbe_plot_px(x++, y, (glyph[i] & (1 << j)) ? c.fg : c.bg);
+        for (int j = VGA_FONT_WIDTH - 1; j >= 0; j--) {
+            uint32_t bg_pixel = background == NULL ? c.bg :
+                background->get_pixel(background, x, y);
+            vbe_plot_px(x++, y, (glyph[i] & (1 << j)) ? c.fg : bg_pixel);
+        }
         y++;
         x = orig_x;
     }
@@ -217,12 +223,13 @@ void vbe_putchar(char c) {
     }
 }
 
-void vbe_tty_init(int *_rows, int *_cols) {
+void vbe_tty_init(int *_rows, int *_cols, struct image *_background) {
     init_vbe(&vbe_framebuffer, &vbe_pitch, &vbe_width, &vbe_height, &vbe_bpp);
     vga_font_retrieve();
     *_cols = cols = vbe_width / VGA_FONT_WIDTH;
     *_rows = rows = vbe_height / VGA_FONT_HEIGHT;
     grid = ext_mem_alloc(rows * cols * sizeof(struct vbe_char));
+    background = _background;
     vbe_clear(true);
 }
 

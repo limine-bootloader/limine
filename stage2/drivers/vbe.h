@@ -3,10 +3,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <lib/image.h>
 
 int init_vbe(uint32_t **framebuffer, uint16_t *pitch, uint16_t *target_width, uint16_t *target_height, uint16_t *target_bpp);
 
-void vbe_tty_init(int *rows, int *cols);
+void vbe_tty_init(int *rows, int *cols, struct image *background);
 
 void vbe_putchar(char c);
 void vbe_clear(bool move);

@@ -262,9 +262,9 @@ static struct ext4_extent_header* ext4_find_leaf(struct ext4_extent_header* ext_
         if (--i < 0)
             panic("extent not found");
 
-        uint64_t block = (index[i].leaf_hi << 32) | index[i].leaf;
+        uint64_t block = ((uint64_t)index[i].leaf_hi << 32) | index[i].leaf;
         if(!buf)
-            buf = balloc(block_size);
+            buf = conv_mem_alloc(block_size);
         read_partition(drive, part, buf, (block * block_size), block_size);
         ext_block = buf;
     }
@@ -305,7 +305,7 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
                 if (block >= ext[i].len) {
                     panic("block longer than extent");
                 } else {
-                    uint64_t start = (ext[i].start_hi << 32) + ext[i].start;
+                    uint64_t start = ((uint64_t)ext[i].start_hi << 32) + ext[i].start;
                     block_index = start + block;
                 }
             } else {

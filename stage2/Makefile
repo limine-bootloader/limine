@@ -11,15 +11,16 @@ INTERNAL_CFLAGS =  \
 	-fno-stack-protector \
 	-fno-pic \
 	-fomit-frame-pointer \
+	-Wno-address-of-packed-member \
 	-masm=intel \
 	-mno-80387 \
 	-mno-mmx \
 	-mno-3dnow \
 	-mno-sse \
 	-mno-sse2 \
+	-MMD \
 	-I. \
-	-I.. \
-	-Wno-address-of-packed-member
+	-I..
 
 LDFLAGS = -flto -Os
 
@@ -36,12 +37,15 @@ INTERNAL_LDFLAGS = \
 C_FILES := $(shell find ./ -type f -name '*.c' | sort)
 ASM_FILES := $(shell find ./ -type f -name '*.asm' | sort)
 OBJ := $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o)
+HEADER_DEPS := $(C_FILES:.c=.d)
 
-all: limine.bin
+all: stage2.bin
 
-limine.bin: $(OBJ)
+stage2.bin: $(OBJ)
 	$(LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o stage2.elf
 	$(OBJCOPY) -O binary stage2.elf stage2.bin
+
+-include $(HEADER_DEPS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@

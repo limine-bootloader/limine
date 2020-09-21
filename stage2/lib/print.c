@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <lib/print.h>
 #include <lib/blib.h>
-#include <lib/cio.h>
+#include <sys/cpu.h>
 #include <lib/term.h>
 
 static const char *base_digits = "0123456789abcdef";

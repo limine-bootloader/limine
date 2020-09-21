@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <sys/pic.h>
-#include <lib/cio.h>
+#include <sys/cpu.h>
 
 void pic_eoi(int irq) {
     if (irq >= 8) {

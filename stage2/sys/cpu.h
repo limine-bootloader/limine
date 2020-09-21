@@ -1,5 +1,5 @@
-#ifndef __CIO_H__
-#define __CIO_H__
+#ifndef __SYS__CPU_H__
+#define __SYS__CPU_H__
 
 #include <stdint.h>
 

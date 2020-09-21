@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/e820.h>
-#include <mm/vmm64.h>
+#include <mm/vmm.h>
 
 void stivale_load(char *cmdline, int boot_drive);
 

@@ -1,10 +1,10 @@
-#ifndef __LIB__SMP_H__
-#define __LIB__SMP_H__
+#ifndef __SYS__SMP_H__
+#define __SYS__SMP_H__
 
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <mm/vmm64.h>
+#include <mm/vmm.h>
 
 struct smp_information {
     uint32_t acpi_processor_uid;

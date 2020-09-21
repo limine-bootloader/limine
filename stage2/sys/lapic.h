@@ -1,9 +1,9 @@
-#ifndef __DRIVERS__APIC_H__
-#define __DRIVERS__APIC_H__
+#ifndef __SYS__APIC_H__
+#define __SYS__APIC_H__
 
 #include <stdint.h>
 #include <stddef.h>
-#include <lib/cio.h>
+#include <sys/cpu.h>
 
 #define LAPIC_REG_ICR0     0x300
 #define LAPIC_REG_ICR1     0x310

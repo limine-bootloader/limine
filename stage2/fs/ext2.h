@@ -1,5 +1,5 @@
-#ifndef __FS_EXT2_H__
-#define __FS_EXT2_H__
+#ifndef __FS__EXT2_H__
+#define __FS__EXT2_H__
 
 #include <stdint.h>
 #include <stddef.h>
@@ -36,7 +36,7 @@ struct ext2_inode {
     uint32_t i_generation;
 
     /* EXT2 v >= 1.0 */
-    uint32_t i_eab; 
+    uint32_t i_eab;
     uint32_t i_maj;
 
     /* EXT2 vAll */

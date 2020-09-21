@@ -14,7 +14,7 @@
 #include <lib/term.h>
 #include <sys/pic.h>
 #include <fs/file.h>
-#include <mm/vmm64.h>
+#include <mm/vmm.h>
 #include <mm/pmm.h>
 #include <stivale/stivale.h>
 

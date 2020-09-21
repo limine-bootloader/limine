@@ -6,7 +6,7 @@
 #include <lib/libc.h>
 #include <lib/term.h>
 #include <lib/real.h>
-#include <lib/cio.h>
+#include <sys/cpu.h>
 #include <sys/e820.h>
 #include <lib/print.h>
 

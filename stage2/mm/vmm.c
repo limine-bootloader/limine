@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <mm/vmm64.h>
+#include <mm/vmm.h>
 #include <mm/pmm.h>
 #include <lib/blib.h>
 

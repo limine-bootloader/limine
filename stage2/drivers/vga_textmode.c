@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <lib/cio.h>
+#include <sys/cpu.h>
 #include <lib/real.h>
 #include <drivers/vga_textmode.h>
 

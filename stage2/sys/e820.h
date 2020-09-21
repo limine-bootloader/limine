@@ -1,5 +1,5 @@
-#ifndef __LIB__E820_H__
-#define __LIB__E820_H__
+#ifndef __SYS__E820_H__
+#define __SYS__E820_H__
 
 #include <stdint.h>
 #include <stddef.h>

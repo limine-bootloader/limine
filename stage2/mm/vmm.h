@@ -1,5 +1,5 @@
-#ifndef __MM__VMM64_H__
-#define __MM__VMM64_H__
+#ifndef __MM__VMM_H__
+#define __MM__VMM_H__
 
 #include <stdint.h>
 

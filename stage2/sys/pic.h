@@ -1,5 +1,5 @@
-#ifndef __DRIVERS__PIT_H__
-#define __DRIVERS__PIT_H__
+#ifndef __SYS__PIC_H__
+#define __SYS__PIC_H__
 
 #include <stdbool.h>
 

@@ -2,12 +2,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <lib/acpi.h>
-#include <lib/cio.h>
+#include <sys/cpu.h>
 #include <lib/blib.h>
 #include <lib/print.h>
 #include <sys/smp.h>
 #include <sys/lapic.h>
-#include <mm/vmm64.h>
+#include <mm/vmm.h>
 #include <mm/pmm.h>
 
 struct madt {

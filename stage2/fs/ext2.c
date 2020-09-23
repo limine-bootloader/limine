@@ -16,6 +16,7 @@
 #define EXT2_IF_64BIT 0x80
 #define EXT2_IF_INLINE_DATA 0x8000
 #define EXT2_IF_ENCRYPT 0x10000
+#define EXT2_FEATURE_INCOMPAT_META_BG 0x0010
 
 /* Ext4 flags */
 #define EXT4_EXTENTS_FLAG 0x80000
@@ -68,6 +69,23 @@ struct ext2_superblock {
     uint64_t s_volume_name[2];
 
     uint64_t s_last_mounted[8];
+
+    uint32_t compression_info;
+    uint8_t prealloc_blocks;
+    uint8_t prealloc_dir_blocks;
+    uint16_t reserved_gdt_blocks;
+    uint8_t journal_uuid[16];
+    uint32_t journal_inum;
+    uint32_t journal_dev;
+    uint32_t last_orphan;
+    uint32_t hash_seed[4];
+    uint8_t def_hash_version;
+    uint8_t jnl_backup_type;
+    uint16_t group_desc_size;
+    uint32_t default_mount_opts;
+    uint32_t first_meta_bg;
+    uint32_t mkfs_time;
+    uint32_t jnl_blocks[17];
 } __attribute__((packed));
 
 /* EXT2 Block Group Descriptor */
@@ -80,7 +98,16 @@ struct ext2_bgd {
     uint16_t bg_free_inodes_count;
     uint16_t bg_dirs_count;
 
-    uint16_t reserved[7];
+    uint16_t pad;
+    uint32_t reserved[3];
+    uint32_t block_id_hi;
+    uint32_t inode_id_hi;
+    uint32_t inode_table_id_hi;
+    uint16_t free_blocks_hi;
+    uint16_t free_inodes_hi;
+    uint16_t used_dirs_hi;
+    uint16_t pad2;
+    uint32_t reserved2[3];
 } __attribute__((packed));
 
 /* EXT2 Inode Types */
@@ -126,6 +153,17 @@ static int ext2_get_inode(struct ext2_inode *ret, uint64_t drive, struct part *p
     if (inode == 0)
         return -1;
 
+    //determine if we need to use 64 bit inode ids
+    bool bit64 = false;
+    if (sb->s_rev_level != 0
+        && (sb->s_feature_incompat & (EXT2_IF_64BIT))
+        && sb->group_desc_size != 0
+        && ((sb->group_desc_size & (sb->group_desc_size - 1)) == 0)) {
+                if(sb->group_desc_size > 32) {
+                    bit64 = true;
+                }
+            }
+
     const uint64_t ino_blk_grp = (inode - 1) / sb->s_inodes_per_group;
     const uint64_t ino_tbl_idx = (inode - 1) % sb->s_inodes_per_group;
 
@@ -139,7 +177,7 @@ static int ext2_get_inode(struct ext2_inode *ret, uint64_t drive, struct part *p
     read_partition(drive, part, &target_descriptor, bgd_offset, sizeof(struct ext2_bgd));
 
     const uint64_t ino_size = sb->s_rev_level == 0 ? sizeof(struct ext2_inode) : sb->s_inode_size;
-    const uint64_t ino_offset = (target_descriptor.bg_inode_table * block_size) +
+    const uint64_t ino_offset = ((target_descriptor.bg_inode_table | (bit64 ? (target_descriptor.inode_id_hi << 32) : 0)) * block_size) +
                                 (ino_size * ino_tbl_idx);
 
     read_partition(drive, part, ret, ino_offset, sizeof(struct ext2_inode));
@@ -373,6 +411,7 @@ int ext2_check_signature(int drive, int partition) {
 
     if (sb.s_feature_incompat & EXT2_IF_COMPRESSION ||
         sb.s_feature_incompat & EXT2_IF_INLINE_DATA ||
+        sb.s_feature_incompat & EXT2_FEATURE_INCOMPAT_META_BG ||
         sb.s_feature_incompat & EXT2_IF_ENCRYPT)
         panic("EXT2: filesystem has unsupported features %x", sb.s_feature_incompat);
 

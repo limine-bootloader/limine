@@ -177,7 +177,7 @@ static int ext2_get_inode(struct ext2_inode *ret, uint64_t drive, struct part *p
     read_partition(drive, part, &target_descriptor, bgd_offset, sizeof(struct ext2_bgd));
 
     const uint64_t ino_size = sb->s_rev_level == 0 ? sizeof(struct ext2_inode) : sb->s_inode_size;
-    const uint64_t ino_offset = ((target_descriptor.bg_inode_table | (bit64 ? (target_descriptor.inode_id_hi << 32) : 0)) * block_size) +
+    const uint64_t ino_offset = ((target_descriptor.bg_inode_table | (bit64 ? ((uint64_t)target_descriptor.inode_id_hi << 32) : 0)) * block_size) +
                                 (ino_size * ino_tbl_idx);
 
     read_partition(drive, part, ret, ino_offset, sizeof(struct ext2_inode));

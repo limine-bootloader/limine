@@ -48,6 +48,7 @@ static uint16_t  vbe_bpp = 0;
 
 static int frame_height;
 static int frame_width;
+static int frame_margin = 64;
 
 static struct image *background;
 
@@ -257,8 +258,6 @@ void vbe_get_cursor_pos(int *x, int *y) {
     *y = cursor_y;
 }
 
-
-
 void vbe_set_text_fg(int fg) {
     text_fg = ansi_colours[fg];
 }
@@ -267,10 +266,14 @@ void vbe_set_text_bg(int bg) {
     text_bg = ansi_colours[bg];
 }
 
-void vge_set_colors(uint32_t *colors){
+void vbe_set_colors(uint32_t *colors){
     memcpy(ansi_colours, colors, sizeof(ansi_colours));
     text_bg = colors[0];
     text_fg = colors[7];
+}
+
+void vbe_set_margin(int margin){
+    frame_margin = margin;
 }
 
 void vbe_putchar(char c) {
@@ -322,8 +325,8 @@ void vbe_putchar(char c) {
 void vbe_tty_init(int *_rows, int *_cols, struct image *_background) {
     init_vbe(&vbe_framebuffer, &vbe_pitch, &vbe_width, &vbe_height, &vbe_bpp);
     vga_font_retrieve();
-    *_cols = cols = (vbe_width - 128) / VGA_FONT_WIDTH;
-    *_rows = rows = (vbe_height - 128) / VGA_FONT_HEIGHT;
+    *_cols = cols = (vbe_width - frame_margin * 2) / VGA_FONT_WIDTH;
+    *_rows = rows = (vbe_height - frame_margin * 2) / VGA_FONT_HEIGHT;
     grid = ext_mem_alloc(rows * cols * sizeof(struct vbe_char));
     background = _background;
 

@@ -16,7 +16,7 @@ static char *cmdline;
 
 static char config_entry_name[1024];
 
-void load_color_from_config(void) {
+void load_theme_from_config(void) {
     char buf[16];
 
     uint32_t colorsheme[9] = {
@@ -31,43 +31,48 @@ void load_color_from_config(void) {
         0x00ffffff, // white
     };
 
-    if (config_get_value(buf, 0, 16, "COLORSCHEME_BLACK")) {
+
+    if (config_get_value(buf, 0, 16, "THEME_BLACK")) {
         colorsheme[0] = (int)strtoui16(buf);
     }
 
-    if (config_get_value(buf, 0, 16, "COLORSCHEME_RED")) {
+    if (config_get_value(buf, 0, 16, "THEME_RED")) {
         colorsheme[1] = (int)strtoui16(buf);
     }
 
-    if (config_get_value(buf, 0, 16, "COLORSCHEME_GREEN")) {
+    if (config_get_value(buf, 0, 16, "THEME_GREEN")) {
         colorsheme[2] = (int)strtoui16(buf);
     }
 
-    if (config_get_value(buf, 0, 16, "COLORSCHEME_BROWN")) {
+    if (config_get_value(buf, 0, 16, "THEME_BROWN")) {
         colorsheme[3] = (int)strtoui16(buf);
     }
 
-    if (config_get_value(buf, 0, 16, "COLORSCHEME_BLUE")) {
+    if (config_get_value(buf, 0, 16, "THEME_BLUE")) {
         colorsheme[4] = (int)strtoui16(buf);
     }
 
-    if (config_get_value(buf, 0, 16, "COLORSCHEME_MAGENTA")) {
+    if (config_get_value(buf, 0, 16, "THEME_MAGENTA")) {
         colorsheme[5] = (int)strtoui16(buf);
     }
 
-    if (config_get_value(buf, 0, 16, "COLORSCHEME_CYAN")) {
+    if (config_get_value(buf, 0, 16, "THEME_CYAN")) {
         colorsheme[6] = (int)strtoui16(buf);
     }
 
-    if (config_get_value(buf, 0, 16, "COLORSCHEME_GREY")) {
+    if (config_get_value(buf, 0, 16, "THEME_GREY")) {
         colorsheme[7] = (int)strtoui16(buf);
     }
 
-    if (config_get_value(buf, 0, 16, "COLORSCHEME_WHITE")) {
+    if (config_get_value(buf, 0, 16, "THEME_WHITE")) {
         colorsheme[8] = (int)strtoui16(buf);
     }
 
-    vge_set_colors(colorsheme);
+    if (config_get_value(buf, 0, 16, "THEME_MARGIN")) {
+        vbe_set_margin((int)strtoui(buf));
+    }
+
+    vbe_set_colors(colorsheme);
 }
 
 char *menu(int boot_drive) {
@@ -77,7 +82,7 @@ char *menu(int boot_drive) {
 
     // If there is no TEXTMODE config key or the value is not "on", enable graphics
     if (config_get_value(buf, 0, 16, "TEXTMODE") == NULL || strcmp(buf, "on")) {
-        load_color_from_config();
+        load_theme_from_config();
 
         int bg_drive;
         if (!config_get_value(buf, 0, 16, "BACKGROUND_DRIVE")) {

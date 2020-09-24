@@ -17,5 +17,7 @@ void vbe_set_cursor_pos(int x, int y);
 void vbe_get_cursor_pos(int *x, int *y);
 void vbe_set_text_fg(int fg);
 void vbe_set_text_bg(int bg);
+void vbe_set_colors(uint32_t *colors);
+void vbe_set_margin(int margin);
 
 #endif

@@ -9,11 +9,66 @@
 #include <lib/config.h>
 #include <lib/term.h>
 #include <mm/pmm.h>
+#include <drivers/vbe.h>
 
 static char *cmdline;
 #define CMDLINE_MAX 1024
 
 static char config_entry_name[1024];
+
+void load_color_from_config(void) {
+    char buf[16];
+
+    uint32_t colorsheme[9] = {
+        0x00191919, // black
+        0x00aa0000, // red
+        0x0000aa00, // green
+        0x00aa5500, // brown
+        0x000000aa, // blue
+        0x009076DE, // magenta
+        0x0000aaaa, // cyan
+        0x00aaaaaa, // grey
+        0x00ffffff, // white
+    };
+
+    if (config_get_value(buf, 0, 16, "COLORSCHEME_BLACK")) {
+        colorsheme[0] = (int)strtoui16(buf);
+    }
+
+    if (config_get_value(buf, 0, 16, "COLORSCHEME_RED")) {
+        colorsheme[1] = (int)strtoui16(buf);
+    }
+
+    if (config_get_value(buf, 0, 16, "COLORSCHEME_GREEN")) {
+        colorsheme[2] = (int)strtoui16(buf);
+    }
+
+    if (config_get_value(buf, 0, 16, "COLORSCHEME_BROWN")) {
+        colorsheme[3] = (int)strtoui16(buf);
+    }
+
+    if (config_get_value(buf, 0, 16, "COLORSCHEME_BLUE")) {
+        colorsheme[4] = (int)strtoui16(buf);
+    }
+
+    if (config_get_value(buf, 0, 16, "COLORSCHEME_MAGENTA")) {
+        colorsheme[5] = (int)strtoui16(buf);
+    }
+
+    if (config_get_value(buf, 0, 16, "COLORSCHEME_CYAN")) {
+        colorsheme[6] = (int)strtoui16(buf);
+    }
+
+    if (config_get_value(buf, 0, 16, "COLORSCHEME_GREY")) {
+        colorsheme[7] = (int)strtoui16(buf);
+    }
+
+    if (config_get_value(buf, 0, 16, "COLORSCHEME_WHITE")) {
+        colorsheme[8] = (int)strtoui16(buf);
+    }
+
+    vge_set_colors(colorsheme);
+}
 
 char *menu(int boot_drive) {
     cmdline = conv_mem_alloc(CMDLINE_MAX);
@@ -22,6 +77,8 @@ char *menu(int boot_drive) {
 
     // If there is no TEXTMODE config key or the value is not "on", enable graphics
     if (config_get_value(buf, 0, 16, "TEXTMODE") == NULL || strcmp(buf, "on")) {
+        load_color_from_config();
+
         int bg_drive;
         if (!config_get_value(buf, 0, 16, "BACKGROUND_DRIVE")) {
             bg_drive = boot_drive;

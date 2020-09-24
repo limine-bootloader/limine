@@ -46,10 +46,31 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
     }
 }
 
+static int char_value(char c) {
+    if (c >= 'a' && c <= 'z') {
+        return (c - 'a') + 10;
+    }
+    if (c >= 'A' && c <= 'Z') {
+        return (c - 'A') + 10;
+    }
+    if (c >= '0' && c <= '9'){
+        return c - '0';
+    }
+
+    return 0;
+}
+
 uint64_t strtoui(const char *s) {
     uint64_t n = 0;
     while (*s)
-        n = n * 10 + ((*(s++)) - '0');
+        n = n * 10 + char_value(*(s++));
+    return n;
+}
+
+uint64_t strtoui16(const char *s) {
+    uint64_t n = 0;
+    while (*s)
+        n = n * 16 + char_value(*(s++));
     return n;
 }
 

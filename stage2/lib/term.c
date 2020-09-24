@@ -113,6 +113,12 @@ static void term_putchar(char c) {
 }
 
 static void sgr(void) {
+    if (esc_value0 == 0){
+        set_text_bg(0);
+        set_text_fg(7);
+        return;
+    }
+
     if (esc_value0 >= 30 && esc_value0 <= 37) {
         set_text_fg(esc_value0 - 30);
         return;

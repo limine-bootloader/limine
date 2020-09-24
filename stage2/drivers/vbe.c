@@ -174,7 +174,8 @@ static uint32_t ansi_colours[] = {
     0x000000aa,              // blue
     0x00aa00aa,              // magenta
     0x0000aaaa,              // cyan
-    0x00aaaaaa               // grey
+    0x00aaaaaa,              // grey
+    0x00ffffff               // white
 };
 
 void vbe_set_text_fg(int fg) {
@@ -183,6 +184,12 @@ void vbe_set_text_fg(int fg) {
 
 void vbe_set_text_bg(int bg) {
     text_bg = ansi_colours[bg];
+}
+
+void vge_set_colors(uint32_t *colors){
+    memcpy(ansi_colours, colors, sizeof(ansi_colours));
+    text_bg = colors[0];
+    text_fg = colors[7];
 }
 
 void vbe_putchar(char c) {
@@ -234,8 +241,8 @@ void vbe_putchar(char c) {
 void vbe_tty_init(int *_rows, int *_cols, struct image *_background) {
     init_vbe(&vbe_framebuffer, &vbe_pitch, &vbe_width, &vbe_height, &vbe_bpp);
     vga_font_retrieve();
-    *_cols = cols = 80;
-    *_rows = rows = 25;
+    *_cols = cols = (vbe_width - 128) / VGA_FONT_WIDTH;
+    *_rows = rows = (vbe_height - 128) / VGA_FONT_HEIGHT;
     grid = ext_mem_alloc(rows * cols * sizeof(struct vbe_char));
     background = _background;
 

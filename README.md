@@ -5,7 +5,7 @@
 Limine is an advanced x86/x86_64 BIOS Bootloader which supports *modern* PC features
 such as Long Mode, 5-level paging, and SMP (multicore), to name a few.
 
-## Limine's boot menu
+### Limine's boot menu
 
 ![Reference screenshot](/screenshot.png?raw=true "Reference screenshot")
 

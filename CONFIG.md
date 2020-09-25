@@ -26,7 +26,7 @@ Some *local assignments* are shared between entries using any *protocol*, while 
 * `THEME_MARGIN` - Set the amount of margin around the terminal.
 
 *Locally assignable (non protocol specific)* keys are:
-* `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `stivale`, `chainload`.
+* `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `stivale`, `stivale2`, `chainload`.
 * `KERNEL_PROTO` - Alias of `PROTOCOL`.
 * `CMDLINE` - The command line string to be passed to the kernel. Can be omitted.
 * `KERNEL_CMDLINE` - Alias of `CMDLINE`.
@@ -38,7 +38,7 @@ Some *local assignments* are shared between entries using any *protocol*, while 
   * `KERNEL_PATH` - The path of the kernel in said partition, forward slashes to delimit directories.
   * `INITRD_PARTITION` - Partition index of the initial ramdisk.
   * `INITRD_PATH` - The path to the initial ramdisk.
-* stivale protocol:
+* stivale and stivale2 protocols:
   * `KERNEL_DRIVE` - The BIOS drive (in decimal) where the kernel resides (if unspecified, boot drive is assumed).
   * `KERNEL_PARTITION` - The index (in decimal) of the partition containing the kernel.
   * `KERNEL_PATH` - The path of the kernel in said partition, forward slashes to delimit directories.

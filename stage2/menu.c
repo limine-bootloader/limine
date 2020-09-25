@@ -31,7 +31,6 @@ void load_theme_from_config(void) {
         0x00ffffff, // white
     };
 
-
     if (config_get_value(buf, 0, 16, "THEME_BLACK")) {
         colorsheme[0] = (int)strtoui16(buf);
     }
@@ -75,6 +74,37 @@ void load_theme_from_config(void) {
     vbe_set_colors(colorsheme);
 }
 
+struct image* load_background_from_config(int boot_drive){
+    char buf[16] = {};
+
+    int background_drive = boot_drive;
+    if (config_get_value(buf, 0, 16, "BACKGROUND_DRIVE")) {
+        background_drive = (int)strtoui(buf);
+    }
+
+    int background_partition = 0;
+    if (config_get_value(buf, 0, 16, "BACKGROUND_PARTITION")) {
+        background_partition = (int)strtoui(buf);
+    }
+
+    char* background_path = conv_mem_alloc(CMDLINE_MAX);
+    if (!config_get_value(background_path, 0, CMDLINE_MAX, "BACKGROUND_PATH")) {
+        return NULL;
+    }
+
+    struct file_handle* background_file = conv_mem_alloc(sizeof(struct file_handle));
+    if (fopen(background_file, background_drive, background_partition, background_path)){
+        return NULL;
+    }
+
+    struct image* background = conv_mem_alloc(sizeof(struct image));
+    if (open_image(background, background_file)) {
+        return NULL;
+    }
+
+    return background;
+}
+
 char *menu(int boot_drive) {
     cmdline = conv_mem_alloc(CMDLINE_MAX);
 
@@ -83,37 +113,7 @@ char *menu(int boot_drive) {
     // If there is no TEXTMODE config key or the value is not "on", enable graphics
     if (config_get_value(buf, 0, 16, "TEXTMODE") == NULL || strcmp(buf, "on")) {
         load_theme_from_config();
-
-        int bg_drive;
-        if (!config_get_value(buf, 0, 16, "BACKGROUND_DRIVE")) {
-            bg_drive = boot_drive;
-        } else {
-            bg_drive = (int)strtoui(buf);
-        }
-        int bg_part;
-        if (!config_get_value(buf, 0, 16, "BACKGROUND_PARTITION")) {
-            goto nobg;
-        } else {
-            bg_part = (int)strtoui(buf);
-        }
-        if (!config_get_value(cmdline, 0, CMDLINE_MAX, "BACKGROUND_PATH"))
-            goto nobg;
-
-        struct file_handle *bg_file = conv_mem_alloc(sizeof(struct file_handle));
-        if (fopen(bg_file, bg_drive, bg_part, cmdline))
-            goto nobg;
-
-        struct image *bg = conv_mem_alloc(sizeof(struct image));
-        if (open_image(bg, bg_file))
-            goto nobg;
-
-        term_vbe(bg);
-        goto yesbg;
-
-    nobg:
-        term_vbe(NULL);
-
-    yesbg:;
+        term_vbe(load_background_from_config(boot_drive));
     }
 
     int timeout;

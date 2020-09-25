@@ -20,7 +20,7 @@ start:
     mov ds, ax
     mov es, ax
     mov ss, ax
-    mov sp, 0x4000
+    mov sp, 0x7c00
     sti
 
     ; Some BIOSes don't pass the correct boot drive number,
@@ -57,7 +57,7 @@ start:
     ; If int 13h extensions are supported, then we are definitely running on
     ; a 386+. We have no idea whether the upper 16 bits of esp are cleared, so
     ; make sure that is the case now.
-    mov esp, 0x4000
+    mov esp, 0x7c00
 
     mov eax, dword [stage15_sector]
     mov bx, 0x7e00

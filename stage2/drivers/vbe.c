@@ -84,28 +84,29 @@ void vbe_blend_px(int x, int y, uint32_t hex) {
 
 void vbe_fill_rect(int x, int y, int width, int height, uint32_t hex)
 {
-    for (int xx = 0; xx < width; xx++)
-        for (int yy = 0; yy < height; yy++)
+    for (int yy = 0; yy < height; yy++)
+        for (int xx = 0; xx < width; xx++)
             vbe_plot_px(x + xx, y + yy, hex);
 }
 
 void vbe_blend_rect(int x, int y, int width, int height, uint32_t hex)
 {
-    for (int xx = 0; xx < width; xx++)
-        for (int yy = 0; yy < height; yy++)
+    for (int yy = 0; yy < height; yy++)
+        for (int xx = 0; xx < width; xx++)
             vbe_blend_px(x + xx, y + yy, hex);
 }
 
 void vbe_plot_background(int x, int y, int width, int height)
 {
     if (background) {
-        for (int xx = 0; xx < width; xx++)
-            for (int yy = 0; yy < height; yy++)
+        for (int yy = 0; yy < height; yy++)
+            for (int xx = 0; xx < width; xx++)
                 vbe_plot_px(x + xx, y + yy, background->get_pixel(background, x + xx, y + yy));
     }
     else{
-        for (int xx = 0; xx < width; xx++)
-            for (int yy = 0; yy < height; yy++) {
+        for (int yy = 0; yy < height; yy++)
+            for (int xx = 0; xx < width; xx++){
+
                 uint32_t pixel = color_blend(ansi_colours[0], 0x000000);
                 vbe_plot_px(x + xx, y + yy, pixel);
             }
@@ -114,14 +115,14 @@ void vbe_plot_background(int x, int y, int width, int height)
 
 void vbe_plot_background_colored(int x, int y, int width, int height, uint32_t hex){
     if (background) {
-        for (int xx = 0; xx < width; xx++)
-            for (int yy = 0; yy < height; yy++){
+        for (int yy = 0; yy < height; yy++)
+            for (int xx = 0; xx < width; xx++) {
                 uint32_t pixel = color_blend(hex, background->get_pixel(background, x + xx, y + yy));
                 vbe_plot_px(x + xx, y + yy, pixel);
             }
     }else{
-        for (int xx = 0; xx < width; xx++)
-            for (int yy = 0; yy < height; yy++) {
+        for (int yy = 0; yy < height; yy++)
+            for (int xx = 0; xx < width; xx++) {
                 uint32_t pixel = color_blend(hex, 0x000000);
                 vbe_plot_px(x + xx, y + yy, pixel);
             }

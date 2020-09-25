@@ -10,7 +10,8 @@
 __attribute__((section(".realmode"), used))
 static void spinup(uint8_t drive) {
     asm volatile (
-        // Jump to real mode
+        "cld\n\t"
+
         "jmp 0x08:1f\n\t"
         "1: .code16\n\t"
         "mov ax, 0x10\n\t"
@@ -30,9 +31,13 @@ static void spinup(uint8_t drive) {
         "mov fs, ax\n\t"
         "mov gs, ax\n\t"
         "mov ss, ax\n\t"
+
+        "sti\n\t"
+
         "push 0\n\t"
         "push 0x7c00\n\t"
         "retf\n\t"
+
         ".code32\n\t"
         :
         : "d" (drive)

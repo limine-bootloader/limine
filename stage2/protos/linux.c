@@ -15,7 +15,6 @@
 __attribute__((section(".realmode"), used))
 static void spinup(uint16_t real_mode_code_seg, uint16_t kernel_entry_seg) {
     asm volatile (
-        "cli\n\t"
         "cld\n\t"
 
         "jmp 0x08:1f\n\t"
@@ -36,8 +35,9 @@ static void spinup(uint16_t real_mode_code_seg, uint16_t kernel_entry_seg) {
         "mov fs, bx\n\t"
         "mov gs, bx\n\t"
         "mov ss, bx\n\t"
+        "mov esp, 0xfdf0\n\t"
 
-        "mov sp, 0xfdf0\n\t"
+        "sti\n\t"
 
         "push cx\n\t"
         "push 0\n\t"

@@ -280,7 +280,7 @@ void *conv_mem_alloc_aligned(size_t count, size_t alignment) {
             uint16_t limit;
             uint32_t ptr;
         } __attribute__((packed)) gdtr;
-        asm volatile ("sgdt %0" :: "m"(gdtr));
+        asm volatile ("sgdt %0" :: "m"(gdtr) : "memory");
         bump_allocator_limit = gdtr.ptr;
     }
 

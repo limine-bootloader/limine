@@ -17,35 +17,44 @@
 static uint8_t *cache        = NULL;
 static uint64_t cached_block = CACHE_INVALID;
 
-static struct {
+struct dap {
     uint16_t size;
     uint16_t count;
     uint16_t offset;
     uint16_t segment;
     uint64_t lba;
-} dap = { 16, BLOCK_SIZE_IN_SECTORS, 0, 0, 0 };
+};
+
+static struct dap *dap = NULL;
 
 static int cache_block(int drive, uint64_t block) {
     if (block == cached_block)
         return 0;
 
+    if (!dap) {
+        dap = conv_mem_alloc(sizeof(struct dap));
+        dap->size  = 16;
+        dap->count = BLOCK_SIZE_IN_SECTORS;
+    }
+
     if (!cache)
         cache = conv_mem_alloc_aligned(BLOCK_SIZE, 16);
 
-    dap.segment = rm_seg(cache);
-    dap.offset  = rm_off(cache);
-    dap.lba     = block * BLOCK_SIZE_IN_SECTORS;
+    dap->segment = rm_seg(cache);
+    dap->offset  = rm_off(cache);
+    dap->lba     = block * BLOCK_SIZE_IN_SECTORS;
 
     struct rm_regs r = {0};
     r.eax = 0x4200;
     r.edx = drive;
-    r.esi = (uint32_t)&dap;
+    r.esi = (uint32_t)rm_off(dap);
+    r.ds  = rm_seg(dap);
 
     rm_int(0x13, &r, &r);
 
     if (r.eflags & EFLAGS_CF) {
         int ah = (r.eax >> 8) & 0xff;
-        panic("Disk error %x. Drive %x, LBA %x.\n", ah, drive, dap.lba);
+        panic("Disk error %x. Drive %x, LBA %x.\n", ah, drive, dap->lba);
         cached_block = CACHE_INVALID;
         return ah;
     }

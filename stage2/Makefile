@@ -2,9 +2,9 @@ CC = i386-elf-gcc
 LD = i386-elf-gcc
 OBJCOPY = i386-elf-objcopy
 
-CFLAGS = -flto -Os -pipe -Wall -Wextra
+CFLAGS = -Os -pipe -Wall -Wextra
 
-INTERNAL_CFLAGS =  \
+INTERNAL_CFLAGS = \
 	-std=gnu11 \
 	-fplan9-extensions \
 	-ffreestanding \
@@ -22,13 +22,14 @@ INTERNAL_CFLAGS =  \
 	-I. \
 	-I..
 
-LDFLAGS = -flto -Os
+LDFLAGS = -Os
 
 INTERNAL_LDFLAGS = \
 	-lgcc \
 	-static-libgcc \
 	-nostdlib \
 	-no-pie \
+	-z max-page-size=0x1000 \
 	-static \
 	-Tlinker.ld
 

@@ -24,4 +24,8 @@ SECTIONS
         *(.bss*)
         bss_end = .;
     }
+
+    /DISCARD/ : {
+        *(*)
+    }
 }

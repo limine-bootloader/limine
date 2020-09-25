@@ -12,6 +12,44 @@
 #define KERNEL_LOAD_ADDR ((size_t)0x100000)
 #define INITRD_LOAD_ADDR ((size_t)0x1000000)
 
+__attribute__((section(".realmode"), used))
+static void spinup(uint16_t real_mode_code_seg, uint16_t kernel_entry_seg) {
+    asm volatile (
+        "cli\n\t"
+        "cld\n\t"
+
+        "jmp 0x08:1f\n\t"
+        "1: .code16\n\t"
+        "mov ax, 0x10\n\t"
+        "mov ds, ax\n\t"
+        "mov es, ax\n\t"
+        "mov fs, ax\n\t"
+        "mov gs, ax\n\t"
+        "mov ss, ax\n\t"
+        "mov eax, cr0\n\t"
+        "and al, 0xfe\n\t"
+        "mov cr0, eax\n\t"
+        "jmp 0x0000:1f\n\t"
+        "1:\n\t"
+        "mov ds, bx\n\t"
+        "mov es, bx\n\t"
+        "mov fs, bx\n\t"
+        "mov gs, bx\n\t"
+        "mov ss, bx\n\t"
+
+        "mov sp, 0xfdf0\n\t"
+
+        "push cx\n\t"
+        "push 0\n\t"
+        "retf\n\t"
+
+        ".code32\n\t"
+        :
+        : "b" (real_mode_code_seg), "c" (kernel_entry_seg)
+        : "memory"
+    );
+}
+
 void linux_load(char *cmdline, int boot_drive) {
     int kernel_drive; {
         char buf[32];
@@ -136,36 +174,5 @@ void linux_load(char *cmdline, int boot_drive) {
 
     term_deinit();
 
-    asm volatile (
-        "cli\n\t"
-        "cld\n\t"
-
-        "jmp 0x08:1f\n\t"
-        "1: .code16\n\t"
-        "mov ax, 0x10\n\t"
-        "mov ds, ax\n\t"
-        "mov es, ax\n\t"
-        "mov fs, ax\n\t"
-        "mov gs, ax\n\t"
-        "mov ss, ax\n\t"
-        "mov eax, cr0\n\t"
-        "and al, 0xfe\n\t"
-        "mov cr0, eax\n\t"
-        "jmp 0x0000:1f\n\t"
-        "1:\n\t"
-        "mov ds, bx\n\t"
-        "mov es, bx\n\t"
-        "mov fs, bx\n\t"
-        "mov gs, bx\n\t"
-        "mov ss, bx\n\t"
-
-        "mov sp, 0xfdf0\n\t"
-
-        "push cx\n\t"
-        "push 0\n\t"
-        "retf\n\t"
-        :
-        : "b" (real_mode_code_seg), "c" (kernel_entry_seg)
-        : "memory"
-    );
+    spinup(real_mode_code_seg, kernel_entry_seg);
 }

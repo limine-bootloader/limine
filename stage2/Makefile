@@ -2,7 +2,7 @@ CC = i386-elf-gcc
 LD = i386-elf-gcc
 OBJCOPY = i386-elf-objcopy
 
-CFLAGS = -Os -pipe -Wall -Wextra
+CFLAGS = -flto -Os -pipe -Wall -Wextra
 
 INTERNAL_CFLAGS = \
 	-std=gnu11 \
@@ -22,7 +22,7 @@ INTERNAL_CFLAGS = \
 	-I. \
 	-I..
 
-LDFLAGS = -Os
+LDFLAGS = -flto -Os
 
 INTERNAL_LDFLAGS = \
 	-lgcc \

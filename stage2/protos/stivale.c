@@ -348,7 +348,7 @@ __attribute__((noreturn)) void stivale_spinup(
             : "memory"
         );
     } else if (bits == 32) {
-        asm volatile(
+        asm volatile (
             "cli\n\t"
             "cld\n\t"
 
@@ -371,7 +371,8 @@ __attribute__((noreturn)) void stivale_spinup(
             "iret\n\t"
             :
             : "b"(&entry_point), "D"(stivale_struct), "S"(&stack)
-            : "memory");
+            : "memory"
+        );
     }
     for (;;);
 }

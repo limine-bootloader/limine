@@ -7,34 +7,8 @@
 #include <drivers/disk.h>
 #include <lib/term.h>
 
-void chainload(void) {
-    int part; {
-        char buf[32];
-        if (!config_get_value(buf, 0, 32, "PARTITION")) {
-            part = -1;
-        } else {
-            part = (int)strtoui(buf);
-        }
-    }
-    int drive; {
-        char buf[32];
-        if (!config_get_value(buf, 0, 32, "DRIVE")) {
-            panic("DRIVE not specified");
-        }
-        drive = (int)strtoui(buf);
-    }
-
-    term_deinit();
-
-    if (part != -1) {
-        struct part p;
-        get_part(&p, drive, part);
-
-        read_partition(drive, &p, (void *)0x7c00, 0, 512);
-    } else {
-        read(drive, (void *)0x7c00, 0, 512);
-    }
-
+__attribute__((section(".realmode"), used))
+static void spinup(uint8_t drive) {
     asm volatile (
         // Jump to real mode
         "jmp 0x08:1f\n\t"
@@ -64,4 +38,35 @@ void chainload(void) {
         : "d" (drive)
         : "memory"
     );
+}
+
+void chainload(void) {
+    int part; {
+        char buf[32];
+        if (!config_get_value(buf, 0, 32, "PARTITION")) {
+            part = -1;
+        } else {
+            part = (int)strtoui(buf);
+        }
+    }
+    int drive; {
+        char buf[32];
+        if (!config_get_value(buf, 0, 32, "DRIVE")) {
+            panic("DRIVE not specified");
+        }
+        drive = (int)strtoui(buf);
+    }
+
+    term_deinit();
+
+    if (part != -1) {
+        struct part p;
+        get_part(&p, drive, part);
+
+        read_partition(drive, &p, (void *)0x7c00, 0, 512);
+    } else {
+        read(drive, (void *)0x7c00, 0, 512);
+    }
+
+    spinup(drive);
 }

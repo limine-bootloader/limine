@@ -87,10 +87,10 @@ struct smp_information *init_smp(size_t   *cpu_count,
         return NULL;
 
     struct gdtr gdtr;
-    asm volatile ("sgdt %0" :: "m"(gdtr));
+    asm volatile ("sgdt %0" :: "m"(gdtr) : "memory");
 
     struct smp_information *ret = conv_mem_alloc_aligned(0, 1);
-    *cpu_count = 0;
+    *cpu_count = 1;
 
     // Parse the MADT entries
     for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;

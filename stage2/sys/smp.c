@@ -90,7 +90,7 @@ struct smp_information *init_smp(size_t   *cpu_count,
     asm volatile ("sgdt %0" :: "m"(gdtr) : "memory");
 
     struct smp_information *ret = conv_mem_alloc_aligned(0, 1);
-    *cpu_count = 1;
+    *cpu_count = 0;
 
     // Parse the MADT entries
     for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
@@ -104,6 +104,10 @@ struct smp_information *init_smp(size_t   *cpu_count,
 
                 struct madt_lapic *lapic = (void *)madt_ptr;
 
+                // Check if we can actually try to start the AP
+                if (!((lapic->flags & 1) ^ ((lapic->flags >> 1) & 1)))
+                    continue;
+
                 struct smp_information *info_struct =
                         conv_mem_alloc_aligned(sizeof(struct smp_information), 1);
 
@@ -115,10 +119,6 @@ struct smp_information *init_smp(size_t   *cpu_count,
                     (*cpu_count)++;
                     continue;
                 }
-
-                // Check if we can actually try to start the AP
-                if (!((lapic->flags & 1) ^ ((lapic->flags >> 1) & 1)))
-                    continue;
 
                 print("smp: Found candidate AP for bring-up. LAPIC ID: %u\n", lapic->lapic_id);
 

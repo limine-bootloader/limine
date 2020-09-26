@@ -316,7 +316,6 @@ void stivale2_load(char *cmdline, int boot_drive) {
     void *tag_memmap = conv_mem_alloc_aligned(sizeof(struct e820_entry_t) * memmap_entries, 1);
     memcpy(tag_memmap, memmap, sizeof(struct e820_entry_t) * memmap_entries);
 
-print_memmap(memmap, memmap_entries);
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
 

@@ -122,30 +122,30 @@ struct vbe_char {
     uint32_t bg;
 };
 
-void vbe_plot_char(struct vbe_char c, int x, int y) {
-    uint8_t *glyph = &vga_font[c.c * VGA_FONT_HEIGHT];
+void vbe_plot_char(struct vbe_char *c, int x, int y) {
+    uint8_t *glyph = &vga_font[c->c * VGA_FONT_HEIGHT];
 
-    vbe_plot_bg_blent_rect(x, y, VGA_FONT_WIDTH, VGA_FONT_HEIGHT, c.bg);
+    vbe_plot_bg_blent_rect(x, y, VGA_FONT_WIDTH, VGA_FONT_HEIGHT, c->bg);
 
     for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
         for (int j = 0; j < VGA_FONT_WIDTH; j++) {
             if ((glyph[i] & (0x80 >> j)))
-                vbe_plot_bg_blent_px(x + j, y + i, c.fg);
+                vbe_plot_bg_blent_px(x + j, y + i, c->fg);
         }
     }
 }
 
-static void plot_char_grid(struct vbe_char c, int x, int y) {
+static void plot_char_grid(struct vbe_char *c, int x, int y) {
     vbe_plot_char(c, x * VGA_FONT_WIDTH + frame_width,
                      y * VGA_FONT_HEIGHT + frame_height);
-    grid[x + y * cols] = c;
+    grid[x + y * cols] = *c;
 }
 
 static void clear_cursor(void) {
     if (cursor_status) {
-        vbe_plot_char(grid[cursor_x + cursor_y * cols],
-                  cursor_x * VGA_FONT_WIDTH + frame_width,
-                  cursor_y * VGA_FONT_HEIGHT + frame_height);
+        vbe_plot_char(&grid[cursor_x + cursor_y * cols],
+                      cursor_x * VGA_FONT_WIDTH + frame_width,
+                      cursor_y * VGA_FONT_HEIGHT + frame_height);
     }
 }
 
@@ -154,15 +154,15 @@ static void draw_cursor(void) {
     c.fg = cursor_fg;
     c.bg = cursor_bg;
     if (cursor_status)
-        vbe_plot_char(c, cursor_x * VGA_FONT_WIDTH + frame_width,
-                         cursor_y * VGA_FONT_HEIGHT + frame_height);
+        vbe_plot_char(&c, cursor_x * VGA_FONT_WIDTH + frame_width,
+                          cursor_y * VGA_FONT_HEIGHT + frame_height);
 }
 
 static void scroll(void) {
     clear_cursor();
 
     for (int i = cols; i < rows * cols; i++) {
-        plot_char_grid(grid[i], (i - cols) % cols, (i - cols) / cols);
+        plot_char_grid(&grid[i], (i - cols) % cols, (i - cols) / cols);
     }
 
     // Clear the last line of the screen.
@@ -171,7 +171,7 @@ static void scroll(void) {
     empty.fg = text_fg;
     empty.bg = text_bg;
     for (int i = rows * cols - cols; i < rows * cols; i++) {
-        plot_char_grid(empty, i % cols, i / cols);
+        plot_char_grid(&empty, i % cols, i / cols);
     }
 
     draw_cursor();
@@ -185,7 +185,7 @@ void vbe_clear(bool move) {
     empty.fg = text_fg;
     empty.bg = text_bg;
     for (int i = 0; i < rows * cols; i++) {
-        plot_char_grid(empty, i % cols, i / cols);
+        plot_char_grid(&empty, i % cols, i / cols);
     }
 
     if (move) {
@@ -257,7 +257,7 @@ void vbe_putchar(char c) {
             ch.c  = c;
             ch.fg = text_fg;
             ch.bg = text_bg;
-            plot_char_grid(ch, cursor_x++, cursor_y);
+            plot_char_grid(&ch, cursor_x++, cursor_y);
             if (cursor_x == cols) {
                 cursor_x = 0;
                 cursor_y++;

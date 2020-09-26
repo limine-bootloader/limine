@@ -219,7 +219,7 @@ struct stivale2_header_tag_smp {
     uint64_t identifier;          // Identifier: 0x1ab015085f3273df
     uint64_t next;
     uint64_t flags;               // Flags:
-                                  //   bit 0: 0 = use xAPIC, 1 = use x2APIC
+                                  //   bit 0: 0 = use xAPIC, 1 = use x2APIC (if available)
                                   // All other flags are undefined.
 } __attribute__((packed));
 ```
@@ -395,6 +395,10 @@ This tag reports to the kernel info about the firmware.
 struct stivale2_struct_tag_smp {
     uint64_t identifier;        // Identifier: 0x34d1d96339647025
     uint64_t next;
+    uint64_t flags;             // Flags:
+                                //   bit 0: Set if x2APIC was requested and it
+                                //          was supported and enabled.
+                                //  All other bits undefined.
     uint64_t cpu_count;         // Total number of logical CPUs (including BSP)
     struct stivale2_smp_info smp_info[];  // Array of smp_info structs, one per
                                           // logical processor, including BSP.

@@ -17,6 +17,7 @@
 #include <drivers/vbe.h>
 #include <lib/term.h>
 #include <sys/pic.h>
+#include <sys/lapic.h>
 #include <fs/file.h>
 #include <mm/pmm.h>
 #include <stivale/stivale2.h>
@@ -327,6 +328,8 @@ void stivale2_load(char *cmdline, int boot_drive) {
     if (smp_hdr_tag != NULL) {
         struct stivale2_struct_tag_smp *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_smp));
         tag->tag.identifier = STIVALE2_STRUCT_TAG_SMP_ID;
+
+        tag->flags |= (smp_hdr_tag->flags & 1) && x2apic_check();
 
         init_smp((size_t*)&tag->cpu_count, bits == 64, level5pg && level5pg_requested,
                  pagemap, smp_hdr_tag->flags & 1);

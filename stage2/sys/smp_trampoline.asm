@@ -36,6 +36,16 @@ smp_trampoline:
     btr eax, 30
     mov cr0, eax
 
+    test dword [smp_tpl_target_mode], (1 << 2)
+    jz .nox2apic
+
+    mov ecx, 0x1b
+    rdmsr
+    bts eax, 10
+    bts eax, 11
+    wrmsr
+
+  .nox2apic:
     test dword [smp_tpl_target_mode], (1 << 0)
     jz parking32
 

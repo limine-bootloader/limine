@@ -18,7 +18,7 @@ lv5:
 smp:
     dq 0x1ab015085f3273df
     dq 0
-    dq 0
+    dq 1
 
 section .bss
 

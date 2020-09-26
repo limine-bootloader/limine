@@ -62,12 +62,12 @@ static int cols;
 #define ARGB(a, r, g, b) (a << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF)
 
 static inline uint32_t colour_blend(uint32_t fg, uint32_t bg) {
-    uint8_t alpha = 255 - A(fg);
-    uint8_t inv_alpha = A(fg) - 1;
+    unsigned alpha = 255 - A(fg);
+    unsigned inv_alpha = A(fg) + 1;
 
-    uint8_t r = (uint8_t)((alpha * R(fg) + inv_alpha * R(bg)) / 255);
-    uint8_t g = (uint8_t)((alpha * G(fg) + inv_alpha * G(bg)) / 255);
-    uint8_t b = (uint8_t)((alpha * B(fg) + inv_alpha * B(bg)) / 255);
+    uint8_t r = (uint8_t)((alpha * R(fg) + inv_alpha * R(bg)) / 256);
+    uint8_t g = (uint8_t)((alpha * G(fg) + inv_alpha * G(bg)) / 256);
+    uint8_t b = (uint8_t)((alpha * B(fg) + inv_alpha * B(bg)) / 256);
 
     return ARGB(0, r, g, b);
 }
@@ -78,9 +78,11 @@ void vbe_plot_px(int x, int y, uint32_t hex) {
     vbe_framebuffer[fb_i] = hex;
 }
 
-void vbe_plot_bg_blent_px(int x, int y, uint32_t hex) {
+static void _vbe_plot_bg_blent_px(int x, int y, uint32_t hex) {
     vbe_plot_px(x, y, colour_blend(hex, background->get_pixel(background, x, y)));
 }
+
+void (*vbe_plot_bg_blent_px)(int x, int y, uint32_t hex) = vbe_plot_px;
 
 void vbe_plot_background(int x, int y, int width, int height) {
     if (background) {
@@ -123,29 +125,12 @@ struct vbe_char {
 void vbe_plot_char(struct vbe_char c, int x, int y) {
     uint8_t *glyph = &vga_font[c.c * VGA_FONT_HEIGHT];
 
-    if (background && A(c.fg)) {
-        if (A(c.bg))
-            vbe_plot_bg_blent_rect(x, y, VGA_FONT_WIDTH, VGA_FONT_HEIGHT, c.bg);
-        else
-            vbe_plot_rect(x, y, VGA_FONT_WIDTH, VGA_FONT_HEIGHT, c.bg);
+    vbe_plot_bg_blent_rect(x, y, VGA_FONT_WIDTH, VGA_FONT_HEIGHT, c.bg);
 
-        for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
-            for (int j = 0; j < VGA_FONT_WIDTH; j++) {
-                if ((glyph[i] & (0x80 >> j)))
-                    vbe_plot_bg_blent_px(x + j, y + i, c.fg);
-            }
-        }
-    } else {
-        if (A(c.bg))
-            vbe_plot_bg_blent_rect(x, y, VGA_FONT_WIDTH, VGA_FONT_HEIGHT, c.bg);
-        else
-            vbe_plot_rect(x, y, VGA_FONT_WIDTH, VGA_FONT_HEIGHT, c.bg);
-
-        for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
-            for (int j = 0; j < VGA_FONT_WIDTH; j++) {
-                if ((glyph[i] & (0x80 >> j)))
-                    vbe_plot_px(x + j, y + i, c.fg);
-            }
+    for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
+        for (int j = 0; j < VGA_FONT_WIDTH; j++) {
+            if ((glyph[i] & (0x80 >> j)))
+                vbe_plot_bg_blent_px(x + j, y + i, c.fg);
         }
     }
 }
@@ -294,6 +279,10 @@ void vbe_tty_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, struc
     *_rows = rows = (vbe_height - _margin * 2) / VGA_FONT_HEIGHT;
     grid = ext_mem_alloc(rows * cols * sizeof(struct vbe_char));
     background = _background;
+
+    if (background)
+        vbe_plot_bg_blent_px = _vbe_plot_bg_blent_px;
+
     memcpy(ansi_colours, _colours, sizeof(ansi_colours));
     text_bg = ansi_colours[0];
     text_fg = ansi_colours[7];

@@ -207,11 +207,13 @@ void stivale_load(char *cmdline, int boot_drive) {
 
     size_t memmap_entries;
     struct e820_entry_t *memmap = get_memmap(&memmap_entries);
-    stivale_struct.memory_map_entries = (uint64_t)memmap_entries;
-    stivale_struct.memory_map_addr    = (uint64_t)(size_t)memmap;
 
     bool want_5lv = level5pg && (stivale_hdr.flags & (1 << 1));
     pagemap_t pagemap = stivale_build_pagemap(want_5lv, memmap, memmap_entries);
+
+    memmap = get_memmap(&memmap_entries);
+    stivale_struct.memory_map_entries = (uint64_t)memmap_entries;
+    stivale_struct.memory_map_addr    = (uint64_t)(size_t)memmap;
 
     stivale_spinup(bits, want_5lv, pagemap,
                    entry_point, &stivale_struct, stivale_hdr.stack);

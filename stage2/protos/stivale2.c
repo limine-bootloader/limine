@@ -292,7 +292,15 @@ void stivale2_load(char *cmdline, int boot_drive) {
     }
 
     size_t memmap_entries;
-    struct e820_entry_t *memmap;
+    struct e820_entry_t *memmap = get_memmap(&memmap_entries);
+
+    // Check if 5-level paging tag is requesting support
+    bool level5pg_requested = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_5LV_PAGING_ID) ? true : false;
+
+    pagemap_t pagemap = {0};
+    if (bits == 64)
+        pagemap = stivale_build_pagemap(level5pg && level5pg_requested,
+                                        memmap, memmap_entries);
 
     //////////////////////////////////////////////
     // Create memmap struct tag
@@ -308,16 +316,9 @@ void stivale2_load(char *cmdline, int boot_drive) {
     void *tag_memmap = conv_mem_alloc_aligned(sizeof(struct e820_entry_t) * memmap_entries, 1);
     memcpy(tag_memmap, memmap, sizeof(struct e820_entry_t) * memmap_entries);
 
+print_memmap(memmap, memmap_entries);
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
-
-    // Check if 5-level paging tag is requesting support
-    bool level5pg_requested = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_5LV_PAGING_ID) ? true : false;
-
-    pagemap_t pagemap = {0};
-    if (bits == 64)
-        pagemap = stivale_build_pagemap(level5pg && level5pg_requested,
-                                        memmap, memmap_entries);
 
     //////////////////////////////////////////////
     // Create SMP struct tag

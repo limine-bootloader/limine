@@ -220,11 +220,11 @@ next:
 
         int r = strcmp(token, name);
 
-        conv_mem_rewind();
+        conv_mem_rewind(dir->name_len + 1);
 
         if (!r) {
             if (escape) {
-                conv_mem_rewind();
+                conv_mem_rewind(sizeof(struct ext2_inode));
                 return 0;
             } else {
                 // update the current inode
@@ -236,7 +236,7 @@ next:
         i += dir->rec_len;
     }
 
-    conv_mem_rewind();
+    conv_mem_rewind(sizeof(struct ext2_inode));
     return -1;
 }
 

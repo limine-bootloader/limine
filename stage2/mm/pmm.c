@@ -264,9 +264,8 @@ extern symbol bss_end;
 static size_t bump_allocator_base = (size_t)bss_end;
 static size_t bump_allocator_limit = 0;
 
-void conv_mem_rewind(void) {
-    size_t *old_base = (size_t *)(bump_allocator_base - sizeof(size_t));
-    bump_allocator_base = *old_base;
+void conv_mem_rewind(size_t count) {
+    bump_allocator_base -= count;
 }
 
 void *conv_mem_alloc(size_t count) {
@@ -286,14 +285,9 @@ void *conv_mem_alloc_aligned(size_t count, size_t alignment) {
 
     size_t new_base = ALIGN_UP(bump_allocator_base, alignment);
     void *ret = (void *)new_base;
-
-    size_t *old_base = (size_t *)(new_base + count);
-    new_base += count + sizeof(size_t);
-
+    new_base += count;
     if (new_base >= bump_allocator_limit)
         panic("Memory allocation failed");
-
-    *old_base = bump_allocator_base;
     bump_allocator_base = new_base;
 
     // Zero out allocated space

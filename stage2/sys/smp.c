@@ -126,7 +126,7 @@ struct smp_information *init_smp(size_t   *cpu_count,
                 if (!smp_start_ap(lapic->lapic_id, &gdtr, info_struct,
                                   longmode, lv5, (uint32_t)pagemap.top_level)) {
                     print("smp: FAILED to bring-up AP\n");
-                    conv_mem_rewind();
+                    conv_mem_rewind(sizeof(struct smp_information));
                     continue;
                 }
 

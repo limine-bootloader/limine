@@ -10,7 +10,6 @@ all: stage2 decompressor
 
 clean: stage2-clean decompressor-clean
 	rm -f stage2/stage2.bin.gz
-	#rm -f limine-install
 
 stage2:
 	$(MAKE) -C stage2 all
@@ -36,16 +35,16 @@ test.img:
 	parted -s test.img mklabel msdos
 	parted -s test.img mkpart primary 2048s 100%
 
-echfs-test: limine-install test.img
+echfs-test: test.img
 	$(MAKE) -C test
 	echfs-utils -m -p0 test.img quick-format 512
 	echfs-utils -m -p0 test.img import test/test.elf boot/test.elf
 	echfs-utils -m -p0 test.img import test/limine.cfg limine.cfg
 	echfs-utils -m -p0 test.img import test/bg.bmp bg.bmp
 	./limine-install limine.bin test.img
-	qemu-system-x86_64 -net none -smp 4 -hda test.img -debugcon stdio -enable-kvm
+	qemu-system-x86_64 -net none -smp 4 -hda test.img -debugcon stdio
 
-ext2-test: limine-install test.img
+ext2-test: test.img
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -61,9 +60,9 @@ ext2-test: limine-install test.img
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
 	./limine-install limine.bin test.img
-	qemu-system-x86_64 -hda test.img -debugcon stdio
+	qemu-system-x86_64 -hda test.img -smp 4 -debugcon stdio
 
-fat32-test: limine-install test.img
+fat32-test: test.img
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -79,4 +78,4 @@ fat32-test: limine-install test.img
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
 	./limine-install limine.bin test.img
-	qemu-system-x86_64 -hda test.img -debugcon stdio
+	qemu-system-x86_64 -hda test.img -smp 4 -debugcon stdio

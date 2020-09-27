@@ -30,13 +30,25 @@ static bool is_block_in_mtrr_range(struct mtrr *mtrr, uint64_t block_base, uint6
 bool mtrr_set_range(uint64_t base, uint64_t size, uint8_t memory_type) {
     uint32_t eax, ebx, ecx, edx;
 
-    cpuid(0x80000008, 0, &eax, &ebx, &ecx, &edx);
+    if (cpuid(0x80000008, 0, &eax, &ebx, &ecx, &edx))
+        return false;
+
     uint8_t maxphysaddr = eax & 0xff;
     print("mtrr: Max phys addr: %u\n", maxphysaddr);
 
     base = ALIGN_DOWN(base, 0x1000);
+
+    // Size must be aligned on a power of 2 (this is a slow method but this is
+    // not time sensitive)
+    for (uint64_t aligned_size = 1; ; aligned_size *= 2) {
+        if (aligned_size >= size) {
+            size = aligned_size;
+            break;
+        }
+    }
+
     size = ALIGN_UP(size, 0x1000);
-    uint64_t mask = (((uint64_t)1 << maxphysaddr) - 1) & ~((uint64_t)size - 1);
+    uint64_t mask = (((uint64_t)1 << maxphysaddr) - 1) & ~(size - 1);
 
     print("mtrr: Base: %X Mask: %X\n", base, mask);
 

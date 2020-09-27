@@ -85,8 +85,8 @@ bool mtrr_set_range(uint64_t base, uint64_t size, uint8_t memory_type) {
             continue;
 
         // Found
-        wrmsr(0x200 + i * 2,     base & memory_type);
-        wrmsr(0x200 + i * 2 + 1, mask & (1 << 11));
+        wrmsr(0x200 + i * 2,     base | memory_type);
+        wrmsr(0x200 + i * 2 + 1, mask | (1 << 11));
 
         print("mtrr: Set range in variable MTRR number %u\n", i);
         return true;

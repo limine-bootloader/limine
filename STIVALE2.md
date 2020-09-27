@@ -442,3 +442,28 @@ struct stivale2_smp_info {
                                  // struct describing the BSP (lapic_id == 0)
 } __attribute__((packed));
 ```
+
+#### MMIO32 UART tag
+
+This tag reports that there is a memory mapped UART port and its address. To write to this port, write the character, zero extended to a 32 bit unsigned integer to the address provided.
+
+```c
+struct stivale2_struct_tag_firmware {
+    uint64_t identifier;        // Identifier: 0xb813f9b8dbc78797
+    uint64_t next;
+    uint64_t addr;              // The address of the UART port
+} __attribute__((packed));
+```
+
+#### Device tree blob tag
+
+This tag describes a device tree blob for the platform.
+
+```c
+struct stivale2_struct_tag_firmware {
+    uint64_t identifier;        // Identifier: 0xabb29bd49a2833fa
+    uint64_t next;
+    uint64_t addr;              // The address of the dtb
+    uint64_t size;              // The size of the dtb
+} __attribute__((packed));
+```

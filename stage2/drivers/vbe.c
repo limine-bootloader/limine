@@ -8,6 +8,7 @@
 #include <lib/print.h>
 #include <lib/image.h>
 #include <mm/pmm.h>
+#include <mm/mtrr.h>
 
 #define VGA_FONT_WIDTH  8
 #define VGA_FONT_HEIGHT 16
@@ -274,6 +275,10 @@ void vbe_putchar(char c) {
 
 void vbe_tty_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, struct image *_background) {
     init_vbe(&vbe_framebuffer, &vbe_pitch, &vbe_width, &vbe_height, &vbe_bpp);
+
+    mtrr_set_range((uint64_t)(size_t)vbe_framebuffer,
+                   (uint64_t)vbe_pitch * vbe_height, MTRR_MEMORY_TYPE_WC);
+
     vga_font_retrieve();
     *_cols = cols = (vbe_width - _margin * 2) / VGA_FONT_WIDTH;
     *_rows = rows = (vbe_height - _margin * 2) / VGA_FONT_HEIGHT;

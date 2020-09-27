@@ -8,6 +8,7 @@
 #include <lib/config.h>
 #include <lib/print.h>
 #include <mm/pmm.h>
+#include <mm/mtrr.h>
 
 #define KERNEL_LOAD_ADDR ((size_t)0x100000)
 #define INITRD_LOAD_ADDR ((size_t)0x1000000)
@@ -173,6 +174,8 @@ void linux_load(char *cmdline, int boot_drive) {
     uint16_t kernel_entry_seg   = real_mode_code_seg + 0x20;
 
     term_deinit();
+
+    mtrr_restore();
 
     spinup(real_mode_code_seg, kernel_entry_seg);
 }

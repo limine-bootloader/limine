@@ -6,6 +6,7 @@
 #include <lib/blib.h>
 #include <drivers/disk.h>
 #include <lib/term.h>
+#include <mm/mtrr.h>
 
 __attribute__((section(".realmode"), used))
 static void spinup(uint8_t drive) {
@@ -72,6 +73,8 @@ void chainload(void) {
     } else {
         read(drive, (void *)0x7c00, 0, 512);
     }
+
+    mtrr_restore();
 
     spinup(drive);
 }

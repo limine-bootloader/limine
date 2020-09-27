@@ -16,6 +16,7 @@
 #include <fs/file.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>
+#include <mm/mtrr.h>
 #include <stivale/stivale.h>
 
 #define KASLR_SLIDE_BITMASK 0x03FFFF000u
@@ -258,6 +259,8 @@ pagemap_t stivale_build_pagemap(bool level5pg, struct e820_entry_t *memmap,
 __attribute__((noreturn)) void stivale_spinup(
                  int bits, bool level5pg, pagemap_t pagemap,
                  uint64_t entry_point, void *stivale_struct, uint64_t stack) {
+    mtrr_restore();
+
     if (bits == 64) {
         // If we're going 64, we might as well call this BIOS interrupt
         // to tell the BIOS that we are entering Long Mode, since it is in

@@ -448,7 +448,7 @@ struct stivale2_smp_info {
 This tag reports that there is a memory mapped UART port and its address. To write to this port, write the character, zero extended to a 32 bit unsigned integer to the address provided.
 
 ```c
-struct stivale2_struct_tag_firmware {
+struct stivale2_struct_tag_mmio32_uart {
     uint64_t identifier;        // Identifier: 0xb813f9b8dbc78797
     uint64_t next;
     uint64_t addr;              // The address of the UART port
@@ -460,7 +460,7 @@ struct stivale2_struct_tag_firmware {
 This tag describes a device tree blob for the platform.
 
 ```c
-struct stivale2_struct_tag_firmware {
+struct stivale2_struct_tag_dtb {
     uint64_t identifier;        // Identifier: 0xabb29bd49a2833fa
     uint64_t next;
     uint64_t addr;              // The address of the dtb

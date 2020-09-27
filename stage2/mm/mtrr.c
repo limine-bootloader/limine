@@ -11,6 +11,15 @@ struct mtrr {
     uint64_t mask;
 };
 
+static bool mtrr_supported(void) {
+    uint32_t eax, ebx, ecx, edx;
+
+    if (cpuid(1, 0, &eax, &ebx, &ecx, &edx))
+        return false;
+
+    return !!(edx & (1 << 12));
+}
+
 static bool is_block_in_mtrr_range(struct mtrr *mtrr, uint64_t block_base, uint64_t block_size) {
     // False if the MTRR is not valid
     if (!(mtrr->mask & (1 << 11)))
@@ -28,6 +37,9 @@ static bool is_block_in_mtrr_range(struct mtrr *mtrr, uint64_t block_base, uint6
 }
 
 bool mtrr_set_range(uint64_t base, uint64_t size, uint8_t memory_type) {
+    if (!mtrr_supported())
+        return false;
+
     uint32_t eax, ebx, ecx, edx;
 
     if (cpuid(0x80000008, 0, &eax, &ebx, &ecx, &edx))
@@ -98,6 +110,9 @@ bool mtrr_set_range(uint64_t base, uint64_t size, uint8_t memory_type) {
 static struct mtrr *saved_mtrr = NULL;
 
 void mtrr_save(void) {
+    if (!mtrr_supported())
+        return;
+
     uint64_t ia32_mtrrcap = rdmsr(0xfe);
 
     uint8_t var_reg_count = ia32_mtrrcap & 0xff;
@@ -112,6 +127,9 @@ void mtrr_save(void) {
 }
 
 void mtrr_restore(void) {
+    if (!mtrr_supported())
+        return;
+
     uint64_t ia32_mtrrcap = rdmsr(0xfe);
 
     uint8_t var_reg_count = ia32_mtrrcap & 0xff;

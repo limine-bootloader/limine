@@ -134,23 +134,26 @@ refresh:
     if (max_entries == 0)
         panic("Config contains no entries.");
 
-    print("\n");
+    print("\nArrows to choose, enter to select, 'e' to edit command line.");
+
+    int c;
 
     if (skip_timeout == false) {
+        print("\n\n");
         for (int i = timeout; i; i--) {
             print("\rBooting automatically in %u, press any key to stop the countdown...", i);
-            if (pit_sleep_and_quit_on_keypress(18)) {
+            if ((c = pit_sleep_and_quit_on_keypress(18))) {
                 skip_timeout = true;
-                goto refresh;
+                print("\e[2K\r\e[2A");
+                goto timeout_aborted;
             }
         }
         goto autoboot;
     }
 
-    print("Arrows to choose, enter to select, 'e' to edit command line.");
-
     for (;;) {
-        int c = getchar();
+        c = getchar();
+timeout_aborted:
         switch (c) {
             case GETCHAR_CURSOR_UP:
                 if (--selected_entry == -1)

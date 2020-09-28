@@ -202,6 +202,19 @@ static void escape_parse(char c) {
                     break;
             }
             break;
+        case 'K':
+            switch (esc_value0) {
+                case 2: {
+                    int x = get_cursor_pos_x();
+                    int y = get_cursor_pos_y();
+                    set_cursor_pos(0, y);
+                    for (int i = 0; i < cols; i++)
+                        raw_putchar(' ');
+                    set_cursor_pos(x, y);
+                    break;
+                }
+            }
+            break;
         default:
             escape = 0;
             raw_putchar('?');

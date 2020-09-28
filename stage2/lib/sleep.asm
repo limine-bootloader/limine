@@ -9,6 +9,8 @@ int_08_isr:
     iret
     bits 32
 
+extern getchar_internal
+
 global pit_sleep_and_quit_on_keypress
 pit_sleep_and_quit_on_keypress:
     ; Hook int 0x08
@@ -69,7 +71,6 @@ pit_sleep_and_quit_on_keypress:
     ; on keypress
     xor ax, ax
     int 0x16
-    mov eax, 1
     jmp .done
 
   .timeout:
@@ -101,5 +102,9 @@ pit_sleep_and_quit_on_keypress:
     ; Dehook int 0x08
     mov edx, dword [0x80*4]
     mov dword [0x08*4], edx
+
+    push eax
+    call getchar_internal
+    pop edx
 
     ret

@@ -74,10 +74,8 @@ uint64_t strtoui16(const char *s) {
     return n;
 }
 
-int getchar(void) {
-    struct rm_regs r = {0};
-    rm_int(0x16, &r, &r);
-    switch ((r.eax >> 8) & 0xff) {
+int getchar_internal(uint32_t eax) {
+    switch ((eax >> 8) & 0xff) {
         case 0x4b:
             return GETCHAR_CURSOR_LEFT;
         case 0x4d:
@@ -87,7 +85,13 @@ int getchar(void) {
         case 0x50:
             return GETCHAR_CURSOR_DOWN;
     }
-    return (char)(r.eax & 0xff);
+    return (char)(eax & 0xff);
+}
+
+int getchar(void) {
+    struct rm_regs r = {0};
+    rm_int(0x16, &r, &r);
+    return getchar_internal(r.eax);
 }
 
 static void gets_reprint_string(int x, int y, const char *s, size_t limit) {

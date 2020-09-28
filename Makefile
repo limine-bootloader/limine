@@ -42,7 +42,7 @@ echfs-test: test.img
 	echfs-utils -m -p0 test.img import test/limine.cfg limine.cfg
 	echfs-utils -m -p0 test.img import test/bg.bmp bg.bmp
 	./limine-install limine.bin test.img
-	qemu-system-x86_64 -net none -smp 4 -hda test.img -debugcon stdio
+	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.img -debugcon stdio
 
 ext2-test: test.img
 	$(MAKE) -C test
@@ -60,7 +60,7 @@ ext2-test: test.img
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
 	./limine-install limine.bin test.img
-	qemu-system-x86_64 -hda test.img -smp 4 -debugcon stdio
+	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.img -debugcon
 
 fat32-test: test.img
 	$(MAKE) -C test
@@ -78,4 +78,4 @@ fat32-test: test.img
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
 	./limine-install limine.bin test.img
-	qemu-system-x86_64 -hda test.img -smp 4 -debugcon stdio
+	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.img -debugcon

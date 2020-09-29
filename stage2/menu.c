@@ -21,8 +21,21 @@ char *menu(int boot_drive) {
 
     char buf[16];
 
-    // If there is no TEXTMODE config key or the value is not "on", enable graphics
-    if (config_get_value(buf, 0, 16, "TEXTMODE") == NULL || strcmp(buf, "on")) {
+    int selected_entry = 0;
+    if (config_get_value(buf, 0, 16, "DEFAULT_ENTRY")) {
+        selected_entry = (int)strtoui(buf);
+    }
+
+    int timeout = 5;
+    if (config_get_value(buf, 0, 16, "TIMEOUT")) {
+        timeout = (int)strtoui(buf);
+    }
+
+    if (!timeout)
+        goto autoboot;
+
+    // If there is GRAPHICS config key and the value is "yes", enable graphics
+    if (config_get_value(buf, 0, 16, "GRAPHICS") && !strcmp(buf, "yes")) {
         // default scheme
         int margin = 64;
         uint32_t colourscheme[] = {
@@ -104,15 +117,7 @@ char *menu(int boot_drive) {
     yesbg:;
     }
 
-    int timeout;
-    if (!config_get_value(buf, 0, 16, "TIMEOUT")) {
-        timeout = 5;
-    } else {
-        timeout = (int)strtoui(buf);
-    }
-
     disable_cursor();
-    int selected_entry = 0;
     bool skip_timeout = false;
 
 refresh:

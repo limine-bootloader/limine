@@ -21,9 +21,10 @@ Some *local assignments* are shared between entries using any *protocol*, while 
 
 *Globally assignable* keys are:
 * `TIMEOUT` - Specifies the timeout in seconds before the first *entry* is automatically booted.
-* `TEXTMODE` - If set to `on`, do not use graphical VESA framebuffer for the boot menu.
-* `THEME_BLACK`, `THEME_RED`, `THEME_GREEN`, `THEME_BROWN`, `THEME_BLUE`, `THEME_MAGENTA`, `THEME_CYAN`, `THEME_GREY`, `THEME_WHITE` - Specifies the colors used by the terminal (RRGGBB).
-* `THEME_MARGIN` - Set the amount of margin around the terminal.
+* `DEFAULT_ENTRY` - 0-based entry index of the entry which will be automatically selected at startup. If unspecified, it is `0`.
+* `GRAPHICS` - If set to `yes`, do use graphical VESA framebuffer for the boot menu.
+* `THEME_BLACK`, `THEME_RED`, `THEME_GREEN`, `THEME_BROWN`, `THEME_BLUE`, `THEME_MAGENTA`, `THEME_CYAN`, `THEME_GREY`, `THEME_WHITE` - Specifies the colors used by the terminal (RRGGBB). Ignored if `GRAPHICS` is not `yes`.
+* `THEME_MARGIN` - Set the amount of margin around the terminal. Ignored if `GRAPHICS` is not `yes`.
 
 *Locally assignable (non protocol specific)* keys are:
 * `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `stivale`, `stivale2`, `chainload`.

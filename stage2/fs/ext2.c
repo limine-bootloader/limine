@@ -98,6 +98,18 @@ struct ext2_bgd {
     uint16_t bg_free_inodes_count;
     uint16_t bg_dirs_count;
 
+    uint16_t reserved[7];
+} __attribute__((packed));
+
+struct ext4_bgd {
+    uint32_t bg_block_bitmap;
+    uint32_t bg_inode_bitmap;
+    uint32_t bg_inode_table;
+
+    uint16_t bg_free_blocks_count;
+    uint16_t bg_free_inodes_count;
+    uint16_t bg_dirs_count;
+
     uint16_t pad;
     uint32_t reserved[3];
     uint32_t block_id_hi;
@@ -168,17 +180,26 @@ static int ext2_get_inode(struct ext2_inode *ret, uint64_t drive, struct part *p
     const uint64_t ino_tbl_idx = (inode - 1) % sb->s_inodes_per_group;
 
     const uint64_t block_size = ((uint64_t)1024 << sb->s_log_block_size);
-
-    struct ext2_bgd target_descriptor;
-
+    uint64_t ino_offset;
     const uint64_t bgd_start_offset = block_size >= 2048 ? block_size : block_size * 2;
     const uint64_t bgd_offset = bgd_start_offset + (sizeof(struct ext2_bgd) * ino_blk_grp);
-
-    read_partition(drive, part, &target_descriptor, bgd_offset, sizeof(struct ext2_bgd));
-
     const uint64_t ino_size = sb->s_rev_level == 0 ? sizeof(struct ext2_inode) : sb->s_inode_size;
-    const uint64_t ino_offset = ((target_descriptor.bg_inode_table | (bit64 ? ((uint64_t)target_descriptor.inode_id_hi << 32) : 0)) * block_size) +
-                                (ino_size * ino_tbl_idx);
+
+    if (!bit64) {
+        struct ext2_bgd target_descriptor;
+
+        read_partition(drive, part, &target_descriptor, bgd_offset, sizeof(struct ext2_bgd));
+
+        ino_offset = ((target_descriptor.bg_inode_table) * block_size) +
+                                    (ino_size * ino_tbl_idx);
+    } else {
+        struct ext4_bgd target_descriptor;
+
+        read_partition(drive, part, &target_descriptor, bgd_offset, sizeof(struct ext4_bgd));
+
+        ino_offset = ((target_descriptor.bg_inode_table | (bit64 ? ((uint64_t)target_descriptor.inode_id_hi << 32) : 0)) * block_size) +
+                                    (ino_size * ino_tbl_idx);
+    }
 
     read_partition(drive, part, ret, ino_offset, sizeof(struct ext2_inode));
 

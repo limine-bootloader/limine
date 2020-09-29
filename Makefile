@@ -8,7 +8,7 @@ all: stage2 decompressor
 	gzip -n -9 < stage2/stage2.bin > stage2/stage2.bin.gz
 	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
 
-clean: stage2-clean decompressor-clean
+clean: stage2-clean decompressor-clean test-clean
 	rm -f stage2/stage2.bin.gz
 
 stage2:
@@ -22,6 +22,9 @@ decompressor:
 
 decompressor-clean:
 	$(MAKE) -C decompressor clean
+
+test-clean:
+	$(MAKE) -C test clean
 
 toolchain:
 	cd toolchain && ./make_toolchain.sh -j`nproc`

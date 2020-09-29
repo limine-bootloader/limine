@@ -1,26 +1,37 @@
-ENTRY(_start)
+ENTRY(stivale_main)
 
-SECTIONS {
-    . = 0xffffffff80100000;
+SECTIONS
+{
+    . = 0x100000;
 
-    .stivalehdr : ALIGN(4K) {
-        *(.stivalehdr)
+    .stivalehdr ALIGN(4K) :
+    {
+        KEEP(*(.stivalehdr))
     }
 
-    .text : ALIGN(4K) {
-        *(.text*)
+    .stivale2hdr ALIGN(4K) :
+    {
+        KEEP(*(.stivale2hdr))
     }
 
-    .rodata : ALIGN(4K) {
-        *(.rodata*)
+    .text ALIGN(4K) :
+    {
+        KEEP(*(.text*))
     }
 
-    .data : ALIGN(4K) {
-        *(.data*)
+    .rodata ALIGN(4K) :
+    {
+        KEEP(*(.rodata*))
     }
 
-    .bss : ALIGN(4K) {
-        *(.bss*)
-        *(COMMON)
+    .data ALIGN(4K) :
+    {
+        KEEP(*(.data*))
+    }
+
+    .bss ALIGN(4K) :
+    {
+        KEEP(*(COMMON))
+        KEEP(*(.bss*))
     }
 }

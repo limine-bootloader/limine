@@ -78,4 +78,4 @@ fat32-test: test.img
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
 	./limine-install limine.bin test.img
-	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.img -debugcon
+	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.img -debugcon stdio

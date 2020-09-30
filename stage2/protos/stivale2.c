@@ -7,6 +7,7 @@
 #include <lib/elf.h>
 #include <lib/blib.h>
 #include <lib/acpi.h>
+#include <lib/image.h>
 #include <lib/config.h>
 #include <lib/time.h>
 #include <lib/print.h>
@@ -49,37 +50,11 @@ static void append_tag(struct stivale2_struct *s, struct stivale2_tag *tag) {
 }
 
 void stivale2_load(char *cmdline, int boot_drive) {
-    int kernel_drive; {
-        char buf[32];
-        if (!config_get_value(buf, 0, 32, "KERNEL_DRIVE")) {
-            kernel_drive = boot_drive;
-        } else {
-            kernel_drive = (int)strtoui(buf);
-        }
-    }
-
-    int kernel_part; {
-        char buf[32];
-        if (!config_get_value(buf, 0, 32, "KERNEL_PARTITION")) {
-            panic("KERNEL_PARTITION not specified");
-        } else {
-            kernel_part = (int)strtoui(buf);
-        }
-    }
-
-    char *kernel_path = conv_mem_alloc(128);
-    if (!config_get_value(kernel_path, 0, 128, "KERNEL_PATH")) {
-        panic("KERNEL_PATH not specified");
-    }
-
-    struct file_handle *fd = conv_mem_alloc(sizeof(struct file_handle));
-    if (fopen(fd, kernel_drive, kernel_part, kernel_path)) {
-        panic("Could not open kernel file");
-    }
+    struct kernel_loc kernel = get_kernel_loc(boot_drive);
 
     struct stivale2_header stivale2_hdr;
 
-    int bits = elf_bits(fd);
+    int bits = elf_bits(kernel.fd);
 
     int ret;
 
@@ -101,20 +76,20 @@ void stivale2_load(char *cmdline, int boot_drive) {
                 level5pg = true;
             }
 
-            ret = elf64_load_section(fd, &stivale2_hdr, ".stivale2hdr", sizeof(struct stivale2_header), slide);
+            ret = elf64_load_section(kernel.fd, &stivale2_hdr, ".stivale2hdr", sizeof(struct stivale2_header), slide);
 
             if (!ret && (stivale2_hdr.flags & 1)) {
                 // KASLR is enabled, set the slide
                 slide = rand64() & KASLR_SLIDE_BITMASK;
 
                 // Re-read the .stivale2hdr with slid relocations
-                ret = elf64_load_section(fd, &stivale2_hdr, ".stivale2hdr", sizeof(struct stivale2_header), slide);
+                ret = elf64_load_section(kernel.fd, &stivale2_hdr, ".stivale2hdr", sizeof(struct stivale2_header), slide);
             }
 
             break;
         }
         case 32:
-            ret = elf32_load_section(fd, &stivale2_hdr, ".stivale2hdr", sizeof(struct stivale2_header));
+            ret = elf32_load_section(kernel.fd, &stivale2_hdr, ".stivale2hdr", sizeof(struct stivale2_header));
             break;
         default:
             panic("stivale2: Not 32 nor 64 bit x86 ELF file.");
@@ -140,10 +115,10 @@ void stivale2_load(char *cmdline, int boot_drive) {
 
     switch (bits) {
         case 64:
-            elf64_load(fd, &entry_point, &top_used_addr, slide, 0x1001);
+            elf64_load(kernel.fd, &entry_point, &top_used_addr, slide, 0x1001);
             break;
         case 32:
-            elf32_load(fd, (uint32_t *)&entry_point, (uint32_t *)&top_used_addr, 0x1001);
+            elf32_load(kernel.fd, (uint32_t *)&entry_point, (uint32_t *)&top_used_addr, 0x1001);
             break;
     }
 
@@ -194,14 +169,14 @@ void stivale2_load(char *cmdline, int boot_drive) {
         int part; {
             char buf[32];
             if (!config_get_value(buf, i, 32, "MODULE_PARTITION")) {
-                part = kernel_part;
+                part = kernel.kernel_part;
             } else {
                 part = (int)strtoui(buf);
             }
         }
 
         struct file_handle f;
-        if (fopen(&f, fd->disk, part, module_file)) {
+        if (fopen(&f, kernel.fd->disk, part, module_file)) {
             panic("Requested module with path \"%s\" not found!\n", module_file);
         }
 

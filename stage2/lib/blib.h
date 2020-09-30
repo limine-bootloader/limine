@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+uint64_t sqrt(uint64_t a_nInput);
+
 uint8_t bcd_to_int(uint8_t val);
 
 int cpuid(uint32_t leaf, uint32_t subleaf,

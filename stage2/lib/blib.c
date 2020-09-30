@@ -10,6 +10,30 @@
 #include <sys/e820.h>
 #include <lib/print.h>
 
+// This integer sqrt implementation has been adapted from:
+// https://stackoverflow.com/questions/1100090/looking-for-an-efficient-integer-square-root-algorithm-for-arm-thumb2
+uint64_t sqrt(uint64_t a_nInput) {
+    uint64_t op  = a_nInput;
+    uint64_t res = 0;
+    uint64_t one = (uint64_t)1 << 62;
+
+    // "one" starts at the highest power of four <= than the argument.
+    while (one > op) {
+        one >>= 2;
+    }
+
+    while (one != 0) {
+        if (op >= res + one) {
+            op = op - (res + one);
+            res = res +  2 * one;
+        }
+        res >>= 1;
+        one >>= 2;
+    }
+
+    return res;
+}
+
 uint8_t bcd_to_int(uint8_t val) {
     return (val & 0x0f) + ((val & 0xf0) >> 4) * 10;
 }

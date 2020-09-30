@@ -24,9 +24,9 @@ void (*set_text_bg)(int bg);
 
 static int rows, cols;
 
-void term_vbe(uint32_t *colours, int margin, struct image *background) {
+void term_vbe(uint32_t *colours, int margin, int margin_gradient, struct image *background) {
     term_deinit();
-    vbe_tty_init(&rows, &cols, colours, margin, background);
+    vbe_tty_init(&rows, &cols, colours, margin, margin_gradient, background);
 
     raw_putchar    = vbe_putchar;
     clear          = vbe_clear;

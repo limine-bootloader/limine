@@ -38,6 +38,7 @@ char *menu(int boot_drive) {
     if (config_get_value(buf, 0, 16, "GRAPHICS") && !strcmp(buf, "yes")) {
         // default scheme
         int margin = 64;
+        int margin_gradient = 20;
         uint32_t colourscheme[] = {
             0x00000000, // black
             0x00aa0000, // red
@@ -85,6 +86,10 @@ char *menu(int boot_drive) {
             margin = (int)strtoui(buf);
         }
 
+        if (config_get_value(buf, 0, 16, "THEME_MARGIN_GRADIENT")) {
+            margin_gradient = (int)strtoui(buf);
+        }
+
         int bg_drive;
         if (!config_get_value(buf, 0, 16, "BACKGROUND_DRIVE")) {
             bg_drive = boot_drive;
@@ -108,11 +113,11 @@ char *menu(int boot_drive) {
         if (open_image(bg, bg_file))
             goto nobg;
 
-        term_vbe(colourscheme, margin, bg);
+        term_vbe(colourscheme, margin, margin_gradient, bg);
         goto yesbg;
 
     nobg:
-        term_vbe(colourscheme, margin, NULL);
+        term_vbe(colourscheme, margin, margin_gradient, NULL);
 
     yesbg:;
     }

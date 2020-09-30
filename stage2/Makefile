@@ -1,6 +1,6 @@
-CC = gcc -m32
-LD = gcc -m32
-OBJCOPY = objcopy
+CC = i386-elf-gcc
+LD = i386-elf-gcc
+OBJCOPY = i386-elf-objcopy
 
 CFLAGS = -flto -Os -pipe -Wall -Wextra
 

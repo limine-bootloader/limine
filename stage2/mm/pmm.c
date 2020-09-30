@@ -75,7 +75,7 @@ static int align_entry(uint64_t *base, uint64_t *length) {
 
 static void sanitise_entries(void) {
     for (size_t i = 0; i < memmap_entries; i++) {
-        if (memmap[i].type != 1)
+        if (memmap[i].type != MEMMAP_USABLE)
             continue;
 
         // Check if the entry overlaps other entries
@@ -132,6 +132,25 @@ static void sanitise_entries(void) {
         struct e820_entry_t min_e = memmap[min_index];
         memmap[min_index] = memmap[p];
         memmap[p] = min_e;
+    }
+
+    // Merge contiguous bootloader-reclaimable entries
+    for (size_t i = 0; i < memmap_entries - 1; i++) {
+        if (memmap[i].type != MEMMAP_BOOTLOADER_RECLAIMABLE)
+            continue;
+
+        if (memmap[i+1].type == MEMMAP_BOOTLOADER_RECLAIMABLE
+         && memmap[i+1].base == memmap[i].base + memmap[i].length) {
+            print("%u: Merging %X %X to %X %X\n", i, memmap[i].base, memmap[i].length, memmap[i+1].base, memmap[i].length + memmap[i+1].length);
+            memmap[i].length += memmap[i+1].length;
+
+            // Eradicate from memmap
+            for (size_t j = i+1; j < memmap_entries - 1; j++) {
+                memmap[j] = memmap[j+1];
+            }
+            memmap_entries--;
+            i--;
+        }
     }
 }
 
@@ -201,6 +220,8 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
 
         // Zero out allocated space
         memset(ret, 0, count);
+
+        sanitise_entries();
 
         return ret;
     }

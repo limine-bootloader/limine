@@ -26,37 +26,11 @@ struct stivale_struct stivale_struct = {0};
 void stivale_load(char *cmdline, int boot_drive) {
     stivale_struct.flags |= (1 << 0);  // set bit 0 since we are BIOS and not UEFI
 
-    int kernel_drive; {
-        char buf[32];
-        if (!config_get_value(buf, 0, 32, "KERNEL_DRIVE")) {
-            kernel_drive = boot_drive;
-        } else {
-            kernel_drive = (int)strtoui(buf);
-        }
-    }
-
-    int kernel_part; {
-        char buf[32];
-        if (!config_get_value(buf, 0, 32, "KERNEL_PARTITION")) {
-            panic("KERNEL_PARTITION not specified");
-        } else {
-            kernel_part = (int)strtoui(buf);
-        }
-    }
-
-    char *kernel_path = conv_mem_alloc(128);
-    if (!config_get_value(kernel_path, 0, 128, "KERNEL_PATH")) {
-        panic("KERNEL_PATH not specified");
-    }
-
-    struct file_handle *fd = conv_mem_alloc(sizeof(struct file_handle));
-    if (fopen(fd, kernel_drive, kernel_part, kernel_path)) {
-        panic("Could not open kernel file");
-    }
+    struct kernel_loc kernel = get_kernel_loc(boot_drive);
 
     struct stivale_header stivale_hdr;
 
-    int bits = elf_bits(fd);
+    int bits = elf_bits(kernel.fd);
 
     int ret;
 
@@ -78,20 +52,20 @@ void stivale_load(char *cmdline, int boot_drive) {
                 level5pg = true;
             }
 
-            ret = elf64_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header), slide);
+            ret = elf64_load_section(kernel.fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header), slide);
 
             if (!ret && ((stivale_hdr.flags >> 2) & 1)) {
                 // KASLR is enabled, set the slide
                 slide = rand64() & KASLR_SLIDE_BITMASK;
 
                 // Re-read the .stivalehdr with slid relocations
-                ret = elf64_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header), slide);
+                ret = elf64_load_section(kernel.fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header), slide);
             }
 
             break;
         }
         case 32:
-            ret = elf32_load_section(fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header));
+            ret = elf32_load_section(kernel.fd, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header));
             break;
         default:
             panic("stivale: Not 32 nor 64 bit x86 ELF file.");
@@ -117,10 +91,10 @@ void stivale_load(char *cmdline, int boot_drive) {
 
     switch (bits) {
         case 64:
-            elf64_load(fd, &entry_point, &top_used_addr, slide, 10);
+            elf64_load(kernel.fd, &entry_point, &top_used_addr, slide, 10);
             break;
         case 32:
-            elf32_load(fd, (uint32_t *)&entry_point, (uint32_t *)&top_used_addr, 10);
+            elf32_load(kernel.fd, (uint32_t *)&entry_point, (uint32_t *)&top_used_addr, 10);
             break;
     }
 
@@ -149,14 +123,14 @@ void stivale_load(char *cmdline, int boot_drive) {
         int part; {
             char buf[32];
             if (!config_get_value(buf, i, 32, "MODULE_PARTITION")) {
-                part = kernel_part;
+                part = kernel.kernel_part;
             } else {
                 part = (int)strtoui(buf);
             }
         }
 
         struct file_handle f;
-        if (fopen(&f, fd->disk, part, module_file)) {
+        if (fopen(&f, kernel.fd->disk, part, module_file)) {
             panic("Requested module with path \"%s\" not found!\n", module_file);
         }
 

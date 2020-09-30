@@ -52,36 +52,10 @@ static void spinup(uint16_t real_mode_code_seg, uint16_t kernel_entry_seg) {
 }
 
 void linux_load(char *cmdline, int boot_drive) {
-    int kernel_drive; {
-        char buf[32];
-        if (!config_get_value(buf, 0, 32, "KERNEL_DRIVE")) {
-            kernel_drive = boot_drive;
-        } else {
-            kernel_drive = (int)strtoui(buf);
-        }
-    }
-
-    int kernel_part; {
-        char buf[32];
-        if (!config_get_value(buf, 0, 32, "KERNEL_PARTITION")) {
-            panic("KERNEL_PARTITION not specified");
-        } else {
-            kernel_part = (int)strtoui(buf);
-        }
-    }
-
-    char *kernel_path = conv_mem_alloc(128);
-    if (!config_get_value(kernel_path, 0, 128, "KERNEL_PATH")) {
-        panic("KERNEL_PATH not specified");
-    }
-
-    struct file_handle *fd = conv_mem_alloc(sizeof(struct file_handle));
-    if (fopen(fd, kernel_drive, kernel_part, kernel_path)) {
-        panic("Could not open kernel file");
-    }
+    struct kernel_loc kernel = get_kernel_loc(boot_drive);
 
     uint32_t signature;
-    fread(fd, &signature, 0x202, sizeof(uint32_t));
+    fread(kernel.fd, &signature, 0x202, sizeof(uint32_t));
 
     // validate signature
     if (signature != 0x53726448) {
@@ -89,7 +63,7 @@ void linux_load(char *cmdline, int boot_drive) {
     }
 
     size_t setup_code_size = 0;
-    fread(fd, &setup_code_size, 0x1f1, 1);
+    fread(kernel.fd, &setup_code_size, 0x1f1, 1);
 
     if (setup_code_size == 0)
         setup_code_size = 4;
@@ -104,7 +78,7 @@ void linux_load(char *cmdline, int boot_drive) {
 
     void *real_mode_code = conv_mem_alloc_aligned(real_mode_code_size, 0x1000);
 
-    fread(fd, real_mode_code, 0, real_mode_code_size);
+    fread(kernel.fd, real_mode_code, 0, real_mode_code_size);
 
     size_t heap_end_ptr = ((real_mode_code_size & 0x0f) + 0x10) - 0x200;
     *((uint16_t *)(real_mode_code + 0x224)) = (uint16_t)heap_end_ptr;
@@ -142,8 +116,8 @@ void linux_load(char *cmdline, int boot_drive) {
 
     // load kernel
     print("Loading kernel...\n");
-    memmap_alloc_range(KERNEL_LOAD_ADDR, fd->size - real_mode_code_size, 0);
-    fread(fd, (void *)KERNEL_LOAD_ADDR, real_mode_code_size, fd->size - real_mode_code_size);
+    memmap_alloc_range(KERNEL_LOAD_ADDR, kernel.fd->size - real_mode_code_size, 0);
+    fread(kernel.fd, (void *)KERNEL_LOAD_ADDR, real_mode_code_size, kernel.fd->size - real_mode_code_size);
 
     char initrd_path[64];
     if (!config_get_value(initrd_path, 0, 64, "INITRD_PATH"))
@@ -152,14 +126,14 @@ void linux_load(char *cmdline, int boot_drive) {
     int initrd_part; {
         char buf[32];
         if (!config_get_value(buf, 0, 32, "INITRD_PARTITION")) {
-            initrd_part = fd->partition;
+            initrd_part = kernel.fd->partition;
         } else {
             initrd_part = (int)strtoui(buf);
         }
     }
 
     struct file_handle initrd;
-    if (fopen(&initrd, fd->disk, initrd_part, initrd_path)) {
+    if (fopen(&initrd, kernel.fd->disk, initrd_part, initrd_path)) {
         panic("Failed to open initrd");
     }
 

@@ -92,6 +92,11 @@ static uint32_t blend_gradient_from_box(int x, int y, uint32_t hex) {
         return hex;
     }
 
+    uint32_t bg_px = background->get_pixel(background, x, y);
+
+    if (margin_gradient == 0)
+        return bg_px;
+
     int distance, x_distance, y_distance;
 
     if (x < frame_width)
@@ -112,8 +117,6 @@ static uint32_t blend_gradient_from_box(int x, int y, uint32_t hex) {
         distance = sqrt((uint64_t)x_distance * (uint64_t)x_distance
                       + (uint64_t)y_distance * (uint64_t)y_distance);
     }
-
-    uint32_t bg_px = background->get_pixel(background, x, y);
 
     if (distance > margin_gradient)
         return bg_px;

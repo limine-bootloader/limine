@@ -182,11 +182,11 @@ static int ext2_get_inode(struct ext2_inode *ret, uint64_t drive, struct part *p
     const uint64_t block_size = ((uint64_t)1024 << sb->s_log_block_size);
     uint64_t ino_offset;
     const uint64_t bgd_start_offset = block_size >= 2048 ? block_size : block_size * 2;
-    const uint64_t bgd_offset = bgd_start_offset + (sizeof(struct ext2_bgd) * ino_blk_grp);
     const uint64_t ino_size = sb->s_rev_level == 0 ? sizeof(struct ext2_inode) : sb->s_inode_size;
 
     if (!bit64) {
         struct ext2_bgd target_descriptor;
+        const uint64_t bgd_offset = bgd_start_offset + (sizeof(struct ext2_bgd) * ino_blk_grp);
 
         read_partition(drive, part, &target_descriptor, bgd_offset, sizeof(struct ext2_bgd));
 
@@ -194,6 +194,7 @@ static int ext2_get_inode(struct ext2_inode *ret, uint64_t drive, struct part *p
                                     (ino_size * ino_tbl_idx);
     } else {
         struct ext4_bgd target_descriptor;
+        const uint64_t bgd_offset = bgd_start_offset + (sizeof(struct ext4_bgd) * ino_blk_grp);
 
         read_partition(drive, part, &target_descriptor, bgd_offset, sizeof(struct ext4_bgd));
 

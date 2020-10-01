@@ -66,8 +66,8 @@ void text_disable_cursor(void) {
 // VGA cursor code taken from: https://wiki.osdev.org/Text_Mode_Cursor
 
 void init_vga_textmode(int *_rows, int *_cols) {
-    port_out_b(0x3d4, 0x0a);
-    port_out_b(0x3d5, 0x20);
+    outb(0x3d4, 0x0a);
+    outb(0x3d5, 0x20);
     text_clear(true);
 
     *_rows = VD_ROWS;

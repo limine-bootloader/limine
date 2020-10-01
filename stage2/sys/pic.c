@@ -6,10 +6,10 @@
 
 void pic_eoi(int irq) {
     if (irq >= 8) {
-        port_out_b(0xa0, 0x20);
+        outb(0xa0, 0x20);
     }
 
-    port_out_b(0x20, 0x20);
+    outb(0x20, 0x20);
 }
 
 // Flush all potentially pending IRQs
@@ -30,14 +30,14 @@ void pic_set_mask(int line, bool status) {
     }
 
     if (!status)
-        value = port_in_b(port) & ~((uint8_t)1 << line);
+        value = inb(port) & ~((uint8_t)1 << line);
     else
-        value = port_in_b(port) | ((uint8_t)1 << line);
+        value = inb(port) | ((uint8_t)1 << line);
 
-    port_out_b(port, value);
+    outb(port, value);
 }
 
 void pic_mask_all(void) {
-    port_out_b(0xa1, 0xff);
-    port_out_b(0x21, 0xff);
+    outb(0xa1, 0xff);
+    outb(0x21, 0xff);
 }

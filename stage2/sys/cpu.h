@@ -10,68 +10,68 @@
 #define DWORD_PTR(PTR) (*((uint32_t *)(PTR)))
 #define QWORD_PTR(PTR) (*((uint64_t *)(PTR)))
 
-static inline void port_out_b(uint16_t port, uint8_t value) {
-    asm volatile ("out dx, al"  : : "a" (value), "d" (port) : "memory");
+static inline void outb(uint16_t port, uint8_t value) {
+    asm volatile ("out %1, al"  : : "a" (value), "Nd" (port) : "memory");
 }
 
-static inline void port_out_w(uint16_t port, uint16_t value) {
-    asm volatile ("out dx, ax"  : : "a" (value), "d" (port) : "memory");
+static inline void outw(uint16_t port, uint16_t value) {
+    asm volatile ("out %1, ax"  : : "a" (value), "Nd" (port) : "memory");
 }
 
-static inline void port_out_d(uint16_t port, uint32_t value) {
-    asm volatile ("out dx, eax" : : "a" (value), "d" (port) : "memory");
+static inline void outd(uint16_t port, uint32_t value) {
+    asm volatile ("out %1, eax" : : "a" (value), "Nd" (port) : "memory");
 }
 
-static inline uint8_t port_in_b(uint16_t port) {
+static inline uint8_t inb(uint16_t port) {
     uint8_t value;
-    asm volatile ("in al, dx"  : "=a" (value) : "d" (port) : "memory");
+    asm volatile ("in al, %1"  : "=a" (value) : "Nd" (port) : "memory");
     return value;
 }
 
-static inline uint16_t port_in_w(uint16_t port) {
+static inline uint16_t inw(uint16_t port) {
     uint16_t value;
-    asm volatile ("in ax, dx"  : "=a" (value) : "d" (port) : "memory");
+    asm volatile ("in ax, %1"  : "=a" (value) : "Nd" (port) : "memory");
     return value;
 }
 
-static inline uint32_t port_in_d(uint16_t port) {
+static inline uint32_t ind(uint16_t port) {
     uint32_t value;
-    asm volatile ("in eax, dx" : "=a" (value) : "d" (port) : "memory");
+    asm volatile ("in eax, %1" : "=a" (value) : "Nd" (port) : "memory");
     return value;
 }
 
 static inline void mmoutb(void *addr, uint8_t value) {
     asm volatile (
-        "mov %0, %1\n\t"
-        : "=m"(BYTE_PTR(addr))
-        : "r"(value)
+        "mov %0, %1"
+        : "=m" (BYTE_PTR(addr))
+        : "g"  (value)
         : "memory"
     );
 }
 
 static inline void mmoutw(void *addr, uint16_t value) {
     asm volatile (
-        "mov %0, %1\n\t"
-        : "=m"(WORD_PTR(addr))
-        : "r"(value)
+        "mov %0, %1"
+        : "=m" (WORD_PTR(addr))
+        : "g"  (value)
         : "memory"
     );
 }
 
 static inline void mmoutd(void *addr, uint32_t value) {
     asm volatile (
-        "mov %0, %1\n\t"
-        : "=m"(DWORD_PTR(addr))
-        : "r"(value)
+        "mov %0, %1"
+        : "=m" (DWORD_PTR(addr))
+        : "g"  (value)
         : "memory"
     );
 }
 
 static inline void mmoutq(void *addr, uint64_t value) {
     asm volatile (
-        "mov %0, %1\n\t"
-        : "=m"(QWORD_PTR(addr))
-        : "r"(value)
+        "mov %0, %1"
+        : "=m" (QWORD_PTR(addr))
+        : "g"  (value)
         : "memory"
     );
 }
@@ -79,9 +79,9 @@ static inline void mmoutq(void *addr, uint64_t value) {
 static inline uint8_t mminb(void *addr) {
     uint8_t ret;
     asm volatile (
-        "mov %0, %1\n\t"
-        : "=r"(ret)
-        : "m"(BYTE_PTR(addr))
+        "mov %0, %1"
+        : "=r" (ret)
+        : "g"  (BYTE_PTR(addr))
         : "memory"
     );
     return ret;
@@ -90,9 +90,9 @@ static inline uint8_t mminb(void *addr) {
 static inline uint16_t mminw(void *addr) {
     uint16_t ret;
     asm volatile (
-        "mov %0, %1\n\t"
-        : "=r"(ret)
-        : "m"(WORD_PTR(addr))
+        "mov %0, %1"
+        : "=r" (ret)
+        : "g"  (WORD_PTR(addr))
         : "memory"
     );
     return ret;
@@ -101,9 +101,9 @@ static inline uint16_t mminw(void *addr) {
 static inline uint32_t mmind(void *addr) {
     uint32_t ret;
     asm volatile (
-        "mov %0, %1\n\t"
-        : "=r"(ret)
-        : "m"(DWORD_PTR(addr))
+        "mov %0, %1"
+        : "=r" (ret)
+        : "g"  (DWORD_PTR(addr))
         : "memory"
     );
     return ret;
@@ -112,9 +112,9 @@ static inline uint32_t mmind(void *addr) {
 static inline uint64_t mminq(void *addr) {
     uint64_t ret;
     asm volatile (
-        "mov %0, %1\n\t"
-        : "=r"(ret)
-        : "m"(QWORD_PTR(addr))
+        "mov %0, %1"
+        : "=r" (ret)
+        : "g"  (QWORD_PTR(addr))
         : "memory"
     );
     return ret;
@@ -139,12 +139,12 @@ static inline void wrmsr(uint32_t msr, uint64_t value) {
 }
 
 #define write_cr(reg, val) ({ \
-    asm volatile ("mov cr" reg ", %0" : : "r" (val)); \
+    asm volatile ("mov cr" reg ", %0" :: "r" (val) : "memory"); \
 })
 
 #define read_cr(reg) ({ \
     size_t cr; \
-    asm volatile ("mov %0, cr" reg : "=r" (cr)); \
+    asm volatile ("mov %0, cr" reg : "=r" (cr) :: "memory"); \
     cr; \
 })
 
@@ -154,7 +154,7 @@ static inline void wrmsr(uint32_t msr, uint64_t value) {
         "lock xadd %1, %0;" \
         : "+r" (ret) \
         : "m" (*(var)) \
-        : "memory", "cc" \
+        : "memory" \
     ); \
     ret; \
 })

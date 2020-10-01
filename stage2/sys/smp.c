@@ -44,7 +44,7 @@ struct gdtr {
 
 static void delay(uint32_t cycles) {
     for (uint32_t i = 0; i < cycles; i++)
-        port_in_b(0x80);
+        inb(0x80);
 }
 
 void     smp_trampoline(void);

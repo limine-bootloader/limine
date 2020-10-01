@@ -74,29 +74,6 @@ void init_vga_textmode(int *_rows, int *_cols) {
     *_cols = VD_COLS / 2;
 }
 
-static void text_set_cursor_palette(uint8_t c) {
-    cursor_palette = c;
-    draw_cursor();
-    return;
-}
-
-static uint8_t text_get_cursor_palette(void) {
-    return cursor_palette;
-}
-
-static void text_set_text_palette(uint8_t c) {
-    text_palette = c;
-    return;
-}
-
-static uint8_t text_get_text_palette(void) {
-    return text_palette;
-}
-
-static int text_get_cursor_pos_x(void) {
-    return (cursor_offset % VD_COLS) / 2;
-}
-
 static int text_get_cursor_pos_y(void) {
     return cursor_offset / VD_COLS;
 }

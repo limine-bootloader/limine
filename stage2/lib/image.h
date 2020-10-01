@@ -12,15 +12,6 @@ struct image {
     void *local;
 };
 
-struct kernel_loc {
-    int kernel_drive; 
-    int kernel_part;
-    char *kernel_path;
-    struct file_handle *fd;
-};
-
 int open_image(struct image *image, struct file_handle *file);
-
-struct kernel_loc get_kernel_loc(int boot_drive);
 
 #endif

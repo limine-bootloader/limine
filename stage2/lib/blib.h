@@ -3,6 +3,16 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <fs/file.h>
+
+struct kernel_loc {
+    int kernel_drive;
+    int kernel_part;
+    char *kernel_path;
+    struct file_handle *fd;
+};
+
+struct kernel_loc get_kernel_loc(int boot_drive);
 
 uint64_t sqrt(uint64_t a_nInput);
 

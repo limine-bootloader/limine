@@ -7,7 +7,6 @@
 #include <lib/elf.h>
 #include <lib/blib.h>
 #include <lib/acpi.h>
-#include <lib/image.h>
 #include <lib/config.h>
 #include <lib/time.h>
 #include <lib/print.h>

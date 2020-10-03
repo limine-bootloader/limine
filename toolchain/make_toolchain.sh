@@ -41,7 +41,7 @@ tar -xf ../gzip-$GZIPVERSION.tar.gz
 
 mkdir build-binutils
 cd build-binutils
-../binutils-$BINUTILSVERSION/configure --target=$TARGET --prefix="$PREFIX" --with-sysroot --disable-nls --disable-werror
+../binutils-$BINUTILSVERSION/configure --target=$TARGET --prefix="$PREFIX" --with-sysroot --disable-nls --disable-werror --enable-64-bit-bfd
 make
 make install
 cd ..

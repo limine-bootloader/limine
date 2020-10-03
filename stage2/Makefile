@@ -55,4 +55,4 @@ stage2.bin: $(OBJ)
 	nasm $< -f elf32 -o $@
 
 clean:
-	rm -f stage2.bin stage2.elf $(OBJ)
+	rm -f stage2.bin stage2.elf $(OBJ) $(HEADER_DEPS)

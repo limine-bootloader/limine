@@ -53,4 +53,4 @@ decompressor.bin: $(OBJ)
 	nasm $< -f elf32 -o $@
 
 clean:
-	rm -f decompressor.bin decompressor.elf $(OBJ)
+	rm -f decompressor.bin decompressor.elf $(OBJ) $(HEADER_DEPS)

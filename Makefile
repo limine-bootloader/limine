@@ -11,6 +11,9 @@ all: stage2 decompressor
 clean: stage2-clean decompressor-clean test-clean
 	rm -f stage2/stage2.bin.gz
 
+distclean: clean
+	rm limine-install
+
 stage2:
 	$(MAKE) -C stage2 all
 
@@ -38,7 +41,7 @@ test.img:
 	parted -s test.img mklabel msdos
 	parted -s test.img mkpart primary 2048s 100%
 
-echfs-test: test.img
+echfs-test: limine-install test.img
 	$(MAKE) -C test
 	echfs-utils -m -p0 test.img quick-format 512
 	echfs-utils -m -p0 test.img import test/test.elf boot/test.elf
@@ -47,7 +50,7 @@ echfs-test: test.img
 	./limine-install limine.bin test.img
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.img -debugcon stdio
 
-ext2-test: test.img
+ext2-test: limine-install test.img
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -65,7 +68,7 @@ ext2-test: test.img
 	./limine-install limine.bin test.img
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.img -debugcon stdio
 
-fat32-test: test.img
+fat32-test: limine-install test.img
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image

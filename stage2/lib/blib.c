@@ -72,21 +72,6 @@ uint8_t bcd_to_int(uint8_t val) {
     return (val & 0x0f) + ((val & 0xf0) >> 4) * 10;
 }
 
-int cpuid(uint32_t leaf, uint32_t subleaf,
-          uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
-    uint32_t cpuid_max;
-    asm volatile ("cpuid"
-                  : "=a" (cpuid_max)
-                  : "a" (leaf & 0x80000000)
-                  : "ebx", "ecx", "edx");
-    if (leaf > cpuid_max)
-        return 1;
-    asm volatile ("cpuid"
-                  : "=a" (*eax), "=b" (*ebx), "=c" (*ecx), "=d" (*edx)
-                  : "a" (leaf), "c" (subleaf));
-    return 0;
-}
-
 __attribute__((noreturn)) void panic(const char *fmt, ...) {
     asm volatile ("cli" ::: "memory");
 

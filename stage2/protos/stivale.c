@@ -13,6 +13,7 @@
 #include <drivers/vbe.h>
 #include <lib/term.h>
 #include <sys/pic.h>
+#include <sys/cpu.h>
 #include <fs/file.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>

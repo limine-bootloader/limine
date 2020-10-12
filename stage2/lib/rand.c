@@ -4,6 +4,7 @@
 #include <lib/blib.h>
 #include <lib/print.h>
 #include <lib/rand.h>
+#include <sys/cpu.h>
 #include <mm/pmm.h>
 
 // TODO: Find where this mersenne twister implementation is inspired from

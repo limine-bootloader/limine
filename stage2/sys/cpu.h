@@ -10,6 +10,21 @@
 #define DWORD_PTR(PTR) (*((uint32_t *)(PTR)))
 #define QWORD_PTR(PTR) (*((uint64_t *)(PTR)))
 
+static inline int cpuid(uint32_t leaf, uint32_t subleaf,
+          uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
+    uint32_t cpuid_max;
+    asm volatile ("cpuid"
+                  : "=a" (cpuid_max)
+                  : "a" (leaf & 0x80000000)
+                  : "ebx", "ecx", "edx");
+    if (leaf > cpuid_max)
+        return 1;
+    asm volatile ("cpuid"
+                  : "=a" (*eax), "=b" (*ebx), "=c" (*ecx), "=d" (*edx)
+                  : "a" (leaf), "c" (subleaf));
+    return 0;
+}
+
 static inline void outb(uint16_t port, uint8_t value) {
     asm volatile ("out %1, al"  : : "a" (value), "Nd" (port) : "memory");
 }

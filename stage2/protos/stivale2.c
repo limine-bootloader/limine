@@ -14,6 +14,7 @@
 #include <lib/real.h>
 #include <lib/libc.h>
 #include <sys/smp.h>
+#include <sys/cpu.h>
 #include <drivers/vbe.h>
 #include <lib/term.h>
 #include <sys/pic.h>

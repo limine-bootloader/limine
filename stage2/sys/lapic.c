@@ -16,12 +16,12 @@ struct dmar {
 
 uint32_t lapic_read(uint32_t reg) {
     size_t lapic_mmio_base = (size_t)(rdmsr(0x1b) & 0xfffff000);
-    return mmind((void *)(lapic_mmio_base + reg));
+    return mmind(lapic_mmio_base + reg);
 }
 
 void lapic_write(uint32_t reg, uint32_t data) {
     size_t lapic_mmio_base = (size_t)(rdmsr(0x1b) & 0xfffff000);
-    mmoutd((void *)(lapic_mmio_base + reg), data);
+    mmoutd(lapic_mmio_base + reg, data);
 }
 
 bool x2apic_check(void) {

@@ -41,96 +41,38 @@ start:
     mov dl, 0x80
 
   .continue:
-    mov si, LoadingMsg
-    call simple_print
-
-    ; ****************** Load stage 1.5 ******************
-
     ; Make sure int 13h extensions are supported
     mov ah, 0x41
     mov bx, 0x55aa
     int 0x13
-    jc err_reading_disk
+    jc err
     cmp bx, 0xaa55
-    jne err_reading_disk
+    jne err
 
     ; If int 13h extensions are supported, then we are definitely running on
     ; a 386+. We have no idea whether the upper 16 bits of esp are cleared, so
     ; make sure that is the case now.
     mov esp, 0x7c00
 
-    mov eax, dword [stage15_sector]
-    mov bx, 0x7e00
-    mov cx, 1
-    call read_sectors
-
-    jc err_reading_disk
-
-    jmp 0x7e00
-
-err_reading_disk:
-    mov si, ErrReadDiskMsg
-    call simple_print
-    jmp halt
-
-err_enabling_a20:
-    mov si, ErrEnableA20Msg
-    call simple_print
-    jmp halt
-
-halt:
-    hlt
-    jmp halt
-
-; Data
-
-LoadingMsg db 0x0D, 0x0A, 'Limine', 0x0D, 0x0A, 0x0A, 0x00
-ErrReadDiskMsg db 0x0D, 0x0A, 'Disk err', 0x00
-ErrEnableA20Msg db 0x0D, 0x0A, 'A20 err', 0x00
-
-times 0xda-($-$$) db 0
-times 6 db 0
-
-; Includes
-
-%include 'simple_print.inc'
-%include 'disk.inc'
-
-times 0x1b0-($-$$) db 0
-stage15_sector: dd 1
-
-times 0x1b8-($-$$) db 0
-times 510-($-$$) db 0
-dw 0xaa55
-
-; ********************* Stage 1.5 *********************
-
-stage15:
-    push es
     push 0x7000
     pop es
-    mov eax, dword [stage15_sector]
-    inc eax
+    mov eax, dword [stage2_sector]
     xor bx, bx
-    mov cx, 62
+    mov cx, 63
     call read_sectors
-    pop es
-    jc err_reading_disk
-
-    call enable_a20
-    jc err_enabling_a20
+    jc err
 
     call load_gdt
 
     cli
 
     mov eax, cr0
-    or al, 1
+    bts ax, 0
     mov cr0, eax
 
-    jmp 0x18:.pmode
+    jmp 0x18:.mode32
     bits 32
-  .pmode:
+  .mode32:
     mov ax, 0x20
     mov ds, ax
     mov es, ax
@@ -142,16 +84,34 @@ stage15:
     push edx
 
     push stage2.size
-    push (stage2 - 0x8000) + 0x70000
+    push (stage2 - decompressor) + 0x70000
 
     call 0x70000
 
 bits 16
-%include 'a20_enabler.inc'
+
+err:
+    hlt
+    jmp err
+
+times 0xda-($-$$) db 0
+times 6 db 0
+
+; Includes
+
+%include 'disk.inc'
 %include 'gdt.inc'
 
-times 1024-($-$$) db 0
+times 0x1b0-($-$$) db 0
+stage2_sector: dd 1
 
+times 0x1b8-($-$$) db 0
+times 510-($-$$) db 0
+dw 0xaa55
+
+; ********************* Stage 2 *********************
+
+decompressor:
 incbin '../decompressor/decompressor.bin'
 
 align 16

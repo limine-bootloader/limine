@@ -6,6 +6,7 @@
 #include <lib/part.h>
 #include <lib/config.h>
 #include <sys/e820.h>
+#include <sys/a20.h>
 #include <lib/print.h>
 #include <fs/file.h>
 #include <lib/elf.h>
@@ -23,6 +24,9 @@ void entry(int boot_drive) {
     term_textmode();
 
     print("Limine " LIMINE_VERSION "\n\n");
+
+    if (!a20_enable())
+        panic("Could not enable A20 line");
 
     print("Boot drive: %x\n", boot_drive);
 

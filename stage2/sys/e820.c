@@ -36,7 +36,4 @@ void init_e820(void) {
 
         conv_mem_alloc(sizeof(struct e820_entry_t));
     }
-
-    print("E820 memory map:\n");
-    print_memmap(e820_map, e820_entries);
 }

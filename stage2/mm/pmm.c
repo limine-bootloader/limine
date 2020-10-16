@@ -141,7 +141,6 @@ static void sanitise_entries(void) {
 
         if (memmap[i+1].type == MEMMAP_BOOTLOADER_RECLAIMABLE
          && memmap[i+1].base == memmap[i].base + memmap[i].length) {
-            print("%u: Merging %X %X to %X %X\n", i, memmap[i].base, memmap[i].length, memmap[i+1].base, memmap[i].length + memmap[i+1].length);
             memmap[i].length += memmap[i+1].length;
 
             // Eradicate from memmap
@@ -158,9 +157,6 @@ struct e820_entry_t *get_memmap(size_t *entries) {
     sanitise_entries();
 
     *entries = memmap_entries;
-
-    print("Memory map requested. Current layout:\n");
-    print_memmap(memmap, memmap_entries);
 
     return memmap;
 }

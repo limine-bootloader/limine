@@ -184,6 +184,8 @@ void stivale2_load(char *cmdline, int boot_drive) {
             ((uint32_t)top_used_addr & ~((uint32_t)0xfff)) + 0x1000 :
             (uint32_t)top_used_addr);
 
+        print("stivale2: Loading module `%s`...\n", module_file);
+
         memmap_alloc_range((size_t)module_addr, f.size, 0x1001);
         fread(&f, module_addr, 0, f.size);
 

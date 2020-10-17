@@ -23,10 +23,7 @@ struct gpt_table_header {
     uint64_t last_usable_lba;
 
     // the guid
-    struct {
-        uint64_t low;
-        uint64_t high;
-    } disk_guid;
+    struct guid disk_guid;
 
     // entries related
     uint64_t partition_entry_lba;
@@ -36,15 +33,9 @@ struct gpt_table_header {
 } __attribute__((packed));
 
 struct gpt_entry {
-    struct {
-        uint64_t low;
-        uint64_t high;
-    } partition_type_guid;
+    struct guid partition_type_guid;
 
-    struct {
-        uint64_t low;
-        uint64_t high;
-    } unique_partition_guid;
+    struct guid unique_partition_guid;
 
     uint64_t starting_lba;
     uint64_t ending_lba;
@@ -74,8 +65,9 @@ static int gpt_get_part(struct part *ret, int drive, int partition) {
          (header.partition_entry_lba * 512) + (partition * sizeof(entry)),
          sizeof(entry));
 
-    if (entry.unique_partition_guid.low  == 0 &&
-        entry.unique_partition_guid.high == 0) return NO_PARTITION;
+    struct guid empty_guid = {0};
+    if (!memcmp(&entry.unique_partition_guid, &empty_guid, sizeof(struct guid)))
+        return NO_PARTITION;
 
     ret->first_sect = entry.starting_lba;
     ret->sect_count = (entry.ending_lba - entry.starting_lba) + 1;

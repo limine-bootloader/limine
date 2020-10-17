@@ -8,6 +8,15 @@
 
 extern uint8_t boot_drive;
 
+struct guid {
+    uint32_t a;
+    uint16_t b;
+    uint16_t c;
+    uint8_t  d[8];
+} __attribute__((packed));
+
+bool string_to_guid(struct guid *guid, const char *s);
+
 bool uri_open(struct file_handle *fd, char *uri);
 
 uint64_t sqrt(uint64_t a_nInput);

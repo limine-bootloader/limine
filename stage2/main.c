@@ -18,7 +18,9 @@
 #include <protos/chainload.h>
 #include <menu.h>
 
-void entry(int boot_drive) {
+void entry(uint8_t _boot_drive) {
+    boot_drive = _boot_drive;
+
     mtrr_save();
 
     term_textmode();
@@ -63,11 +65,11 @@ void entry(int boot_drive) {
     }
 
     if (!strcmp(proto, "stivale")) {
-        stivale_load(cmdline, boot_drive);
+        stivale_load(cmdline);
     } else if (!strcmp(proto, "stivale2")) {
-        stivale2_load(cmdline, boot_drive);
+        stivale2_load(cmdline);
     } else if (!strcmp(proto, "linux")) {
-        linux_load(cmdline, boot_drive);
+        linux_load(cmdline);
     } else if (!strcmp(proto, "chainload")) {
         chainload();
     } else {

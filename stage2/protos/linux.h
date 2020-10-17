@@ -3,6 +3,6 @@
 
 #include <fs/file.h>
 
-void linux_load(char *cmdline, int boot_drive);
+void linux_load(char *cmdline);
 
 #endif

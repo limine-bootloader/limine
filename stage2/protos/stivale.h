@@ -6,7 +6,7 @@
 #include <sys/e820.h>
 #include <mm/vmm.h>
 
-void stivale_load(char *cmdline, int boot_drive);
+void stivale_load(char *cmdline);
 
 pagemap_t stivale_build_pagemap(bool level5pg, struct e820_entry_t *memmap,
                                 size_t memmap_entries);

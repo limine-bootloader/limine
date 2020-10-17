@@ -12,36 +12,55 @@
 #include <lib/config.h>
 #include <mm/pmm.h>
 
-struct kernel_loc get_kernel_loc(int boot_drive) {
-    int kernel_drive; {
-        char buf[32];
-        if (!config_get_value(buf, 0, 32, "KERNEL_DRIVE")) {
-            kernel_drive = boot_drive;
-        } else {
-            kernel_drive = (int)strtoui(buf);
+uint8_t boot_drive;
+
+// BIOS partitions are specified in the <BIOS drive>:<partition> form.
+// The drive may be omitted, the partition cannot.
+static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) {
+    for (size_t i = 0; ; i++) {
+        if (loc[i] == 0)
+            return false;
+
+        if (loc[i] == ':') {
+            loc[i] = 0;
+            if (*loc == 0)
+                *drive = boot_drive;
+            else
+                *drive = strtoui(loc);
+            loc += i + 1;
+            break;
         }
     }
 
-    int kernel_part; {
-        char buf[32];
-        if (!config_get_value(buf, 0, 32, "KERNEL_PARTITION")) {
-            panic("KERNEL_PARTITION not specified");
-        } else {
-            kernel_part = (int)strtoui(buf);
-        }
-    }
+    if (*loc == 0)
+        return false;
 
-    char *kernel_path = conv_mem_alloc(128);
-    if (!config_get_value(kernel_path, 0, 128, "KERNEL_PATH")) {
-        panic("KERNEL_PATH not specified");
-    }
+    *partition = strtoui(loc);
 
-    struct file_handle *fd = conv_mem_alloc(sizeof(struct file_handle));
-    if (fopen(fd, kernel_drive, kernel_part, kernel_path)) {
-        panic("Could not open kernel file");
-    }
+    return true;
+}
 
-    return (struct kernel_loc) { kernel_drive, kernel_part, kernel_path, fd };
+static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
+    uint8_t drive, partition;
+
+    if (!parse_bios_partition(loc, &drive, &partition))
+        return false;
+
+    if (fopen(fd, drive, partition, path))
+        return false;
+
+    return true;
+}
+
+bool uri_open(struct file_handle *fd, char *uri) {
+    char *resource, *root, *path;
+    config_resolve_uri(uri, &resource, &root, &path);
+
+    if (!strcmp(resource, "bios")) {
+        return uri_bios_dispatch(fd, root, path);
+    } else {
+        panic("Resource `%s` not valid.");
+    }
 }
 
 // This integer sqrt implementation has been adapted from:

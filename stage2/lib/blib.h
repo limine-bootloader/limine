@@ -3,16 +3,12 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <fs/file.h>
 
-struct kernel_loc {
-    int kernel_drive;
-    int kernel_part;
-    char *kernel_path;
-    struct file_handle *fd;
-};
+extern uint8_t boot_drive;
 
-struct kernel_loc get_kernel_loc(int boot_drive);
+bool uri_open(struct file_handle *fd, char *uri);
 
 uint64_t sqrt(uint64_t a_nInput);
 

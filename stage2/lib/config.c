@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdbool.h>
 #include <lib/config.h>
 #include <lib/libc.h>
 #include <lib/blib.h>
@@ -115,4 +116,42 @@ char *config_get_value(char *buf, size_t index, size_t limit, const char *key) {
     }
 
     return NULL;
+}
+
+// A URI takes the form of: resource://root/path
+// The following function splits up a URI into its componenets
+bool config_resolve_uri(char *uri, char **resource, char **root, char **path) {
+    *resource = *root = *path = NULL;
+
+    // Get resource
+    for (size_t i = 0; ; i++) {
+        if (strlen(uri + i) < 3)
+            return false;
+
+        if (!memcmp(uri + i, "://", 3)) {
+            *resource = uri;
+            uri[i] = 0;
+            uri += i + 3;
+            break;
+        }
+    }
+
+    for (size_t i = 0; ; i++) {
+        if (uri[i] == 0)
+            return false;
+
+        if (uri[i] == '/') {
+            *root = uri;
+            uri[i] = 0;
+            uri += i + 1;
+            break;
+        }
+    }
+
+    if (*uri == 0)
+        return false;
+
+    *path = uri;
+
+    return true;
 }

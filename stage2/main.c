@@ -32,6 +32,8 @@ void entry(uint8_t _boot_drive) {
 
     print("Boot drive: %x\n", boot_drive);
 
+    part_create_index();
+
     // Look for config file.
     print("Searching for config file...\n");
     struct part parts[4];

@@ -4,9 +4,13 @@
 #include <drivers/disk.h>
 #include <lib/libc.h>
 #include <lib/blib.h>
+#include <lib/real.h>
+#include <lib/print.h>
+#include <mm/pmm.h>
 
 #define NO_PARTITION  (-1)
 #define INVALID_TABLE (-2)
+#define END_OF_TABLE  (-3)
 
 struct gpt_table_header {
     // the head
@@ -53,12 +57,14 @@ static int gpt_get_part(struct part *ret, int drive, int partition) {
 
     // check the header
     // 'EFI PART'
-    if (strncmp(header.signature, "EFI PART", 8)) return INVALID_TABLE;
-    if (header.revision != 0x00010000) return NO_PARTITION;
+    if (strncmp(header.signature, "EFI PART", 8))
+        return INVALID_TABLE;
+    if (header.revision != 0x00010000)
+        return END_OF_TABLE;
 
     // parse the entries if reached here
     if ((uint32_t)partition >= header.number_of_partition_entries)
-        return NO_PARTITION;
+        return END_OF_TABLE;
 
     struct gpt_entry entry = {0};
     read(drive, &entry,
@@ -71,6 +77,7 @@ static int gpt_get_part(struct part *ret, int drive, int partition) {
 
     ret->first_sect = entry.starting_lba;
     ret->sect_count = (entry.ending_lba - entry.starting_lba) + 1;
+    ret->guid       = entry.unique_partition_guid;
 
     return 0;
 }
@@ -91,6 +98,12 @@ static int mbr_get_part(struct part *ret, int drive, int partition) {
     if (hint && hint != 0x5a5a)
         return INVALID_TABLE;
 
+    if (partition > 3)
+        return END_OF_TABLE;
+
+    uint32_t disk_signature;
+    read(drive, &disk_signature, 440, sizeof(uint32_t));
+
     struct mbr_entry entry;
     size_t entry_offset = 0x1be + sizeof(struct mbr_entry) * partition;
 
@@ -103,6 +116,13 @@ static int mbr_get_part(struct part *ret, int drive, int partition) {
 
     ret->first_sect = entry.first_sect;
     ret->sect_count = entry.sect_count;
+
+    // We use the same method of generating GUIDs for MBR partitions as Linux
+    struct guid empty_guid = {0};
+    ret->guid   = empty_guid;
+    ret->guid.a = disk_signature;
+    ret->guid.b = (partition + 1) << 8;
+
     return 0;
 }
 
@@ -118,4 +138,59 @@ int get_part(struct part *part, int drive, int partition) {
         return ret;
 
     return -1;
+}
+
+static struct part *part_index = NULL;
+static size_t part_index_i = 0;
+
+void part_create_index(void) {
+    part_index = conv_mem_alloc(0);
+
+    for (uint8_t drive = 0x80; drive < 0x8f; drive++) {
+        struct rm_regs r = {0};
+        struct bios_drive_params drive_params;
+
+        r.eax = 0x4800;
+        r.edx = drive;
+        r.ds  = rm_seg(&drive_params);
+        r.esi = rm_off(&drive_params);
+
+        drive_params.buf_size = sizeof(struct bios_drive_params);
+
+        rm_int(0x13, &r, &r);
+
+        if (r.eflags & EFLAGS_CF)
+            continue;
+
+        print("Found BIOS drive %x\n", drive);
+        print(" ... %X total %u-byte sectors\n",
+              drive_params.lba_count, drive_params.bytes_per_sect);
+
+        size_t part_count = 0;
+        for (int part = 0; ; part++) {
+            struct part p;
+            int ret = get_part(&p, drive, part);
+
+            if (ret == END_OF_TABLE)
+                break;
+            if (ret == NO_PARTITION)
+                continue;
+
+            part_count++;
+        }
+
+        part_index = conv_mem_alloc(sizeof(struct part) * part_count);
+
+        for (int part = 0; ; part++) {
+            struct part p;
+            int ret = get_part(&p, drive, part);
+
+            if (ret == END_OF_TABLE)
+                break;
+            if (ret == NO_PARTITION)
+                continue;
+
+            part_index[part_index_i++] = p;
+        }
+    }
 }

@@ -168,7 +168,7 @@ bool string_to_guid(struct guid *guid, const char *s) {
     guid_convert_le_cluster((uint8_t *)guid + 4,  s + 9,  4);
     guid_convert_le_cluster((uint8_t *)guid + 6,  s + 14, 4);
     guid_convert_be_cluster((uint8_t *)guid + 8,  s + 19, 4);
-    guid_convert_be_cluster((uint8_t *)guid + 10, s + 24, 16);
+    guid_convert_be_cluster((uint8_t *)guid + 10, s + 24, 12);
 
     return true;
 }

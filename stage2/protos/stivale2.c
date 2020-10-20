@@ -148,19 +148,26 @@ void stivale2_load(char *cmdline, int boot_drive) {
     // Create modules struct tag
     //////////////////////////////////////////////
     {
-    struct stivale2_struct_tag_modules *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_modules));
-    tag->tag.identifier = STIVALE2_STRUCT_TAG_MODULES_ID;
+    size_t module_count;
+    for (module_count = 0; ; module_count++) {
+        char module_file[64];
+        if (!config_get_value(module_file, module_count, 64, "MODULE_PATH"))
+            break;
+    }
 
-    tag->module_count = 0;
+    struct stivale2_struct_tag_modules *tag =
+        conv_mem_alloc(sizeof(struct stivale2_struct_tag_modules)
+                     + sizeof(struct stivale2_module) * module_count);
+
+    tag->tag.identifier = STIVALE2_STRUCT_TAG_MODULES_ID;
+    tag->module_count   = module_count;
 
     for (int i = 0; ; i++) {
         char module_file[64];
         if (!config_get_value(module_file, i, 64, "MODULE_PATH"))
             break;
 
-        tag->module_count++;
-
-        struct stivale2_module *m = conv_mem_alloc_aligned(sizeof(struct stivale2_module), 1);
+        struct stivale2_module *m = &tag->modules[i];
 
         if (!config_get_value(m->string, i, 128, "MODULE_STRING")) {
             m->string[0] = '\0';
@@ -284,15 +291,17 @@ void stivale2_load(char *cmdline, int boot_drive) {
     // Create memmap struct tag
     //////////////////////////////////////////////
     {
-    struct stivale2_struct_tag_memmap *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_memmap));
-    tag->tag.identifier = STIVALE2_STRUCT_TAG_MEMMAP_ID;
-
     memmap = get_memmap(&memmap_entries);
 
+    struct stivale2_struct_tag_memmap *tag =
+        conv_mem_alloc(sizeof(struct stivale2_struct_tag_memmap) +
+                       sizeof(struct e820_entry_t) * memmap_entries);
+
+    tag->tag.identifier = STIVALE2_STRUCT_TAG_MEMMAP_ID;
     tag->entries = (uint64_t)memmap_entries;
 
-    void *tag_memmap = conv_mem_alloc_aligned(sizeof(struct e820_entry_t) * memmap_entries, 1);
-    memcpy(tag_memmap, memmap, sizeof(struct e820_entry_t) * memmap_entries);
+    memcpy((void*)tag + sizeof(struct stivale2_struct_tag_memmap),
+           memmap, sizeof(struct e820_entry_t) * memmap_entries);
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }

@@ -144,8 +144,6 @@ static struct part *part_index = NULL;
 static size_t part_index_i = 0;
 
 void part_create_index(void) {
-    part_index = conv_mem_alloc(0);
-
     for (uint8_t drive = 0x80; drive < 0x8f; drive++) {
         struct rm_regs r = {0};
         struct bios_drive_params drive_params;
@@ -167,6 +165,8 @@ void part_create_index(void) {
               drive_params.lba_count, drive_params.bytes_per_sect);
 
         size_t part_count = 0;
+
+load_up:
         for (int part = 0; ; part++) {
             struct part p;
             int ret = get_part(&p, drive, part);
@@ -176,21 +176,16 @@ void part_create_index(void) {
             if (ret == NO_PARTITION)
                 continue;
 
-            part_count++;
+            if (part_index)
+                part_index[part_index_i++] = p;
+            else
+                part_count++;
         }
+
+        if (part_index)
+            return;
 
         part_index = conv_mem_alloc(sizeof(struct part) * part_count);
-
-        for (int part = 0; ; part++) {
-            struct part p;
-            int ret = get_part(&p, drive, part);
-
-            if (ret == END_OF_TABLE)
-                break;
-            if (ret == NO_PARTITION)
-                continue;
-
-            part_index[part_index_i++] = p;
-        }
+        goto load_up;
     }
 }

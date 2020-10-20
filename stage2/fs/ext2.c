@@ -211,8 +211,7 @@ static int ext2_parse_dirent(struct ext2_dir_entry *dir, struct ext2_file_handle
     if (*path == '/')
         path++;
 
-    struct ext2_inode *current_inode = conv_mem_alloc(sizeof(struct ext2_inode));
-    *current_inode = fd->root_inode;
+    struct ext2_inode current_inode = fd->root_inode;
 
     bool escape = false;
 
@@ -227,30 +226,27 @@ next:
     else
         path++;
 
-    for (uint32_t i = 0; i < current_inode->i_size; ) {
+    for (uint32_t i = 0; i < current_inode.i_size; ) {
         // preliminary read
         inode_read(dir, i, sizeof(struct ext2_dir_entry),
-                   fd->block_size, current_inode,
+                   fd->block_size, &current_inode,
                    fd->drive, &fd->part);
 
         // name read
-        char *name = conv_mem_alloc(dir->name_len + 1);
+        char name[dir->name_len + 1];
 
         memset(name, 0, dir->name_len + 1);
         inode_read(name, i + sizeof(struct ext2_dir_entry), dir->name_len,
-                   fd->block_size, current_inode, fd->drive, &fd->part);
+                   fd->block_size, &current_inode, fd->drive, &fd->part);
 
         int r = strcmp(token, name);
 
-        conv_mem_rewind(dir->name_len + 1);
-
         if (!r) {
             if (escape) {
-                conv_mem_rewind(sizeof(struct ext2_inode));
                 return 0;
             } else {
                 // update the current inode
-                ext2_get_inode(current_inode, fd->drive, &fd->part, dir->inode, sb);
+                ext2_get_inode(&current_inode, fd->drive, &fd->part, dir->inode, sb);
                 goto next;
             }
         }
@@ -258,7 +254,6 @@ next:
         i += dir->rec_len;
     }
 
-    conv_mem_rewind(sizeof(struct ext2_inode));
     return -1;
 }
 

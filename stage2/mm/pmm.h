@@ -22,7 +22,6 @@ void *ext_mem_alloc_type(size_t count, uint32_t type);
 void *ext_mem_alloc_aligned(size_t count, size_t alignment);
 void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type);
 
-void conv_mem_rewind(size_t count);
 void *conv_mem_alloc(size_t count);
 void *conv_mem_alloc_aligned(size_t count, size_t alignment);
 

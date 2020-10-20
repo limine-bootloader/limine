@@ -109,12 +109,47 @@ struct smp_information *init_smp(size_t   *cpu_count,
     struct gdtr gdtr;
     asm volatile ("sgdt %0" :: "m"(gdtr) : "memory");
 
-    struct smp_information *ret = conv_mem_alloc_aligned(0, 1);
     *cpu_count = 0;
 
     x2apic = x2apic && x2apic_enable();
 
-    // Parse the MADT entries
+    // Count the MAX of startable APs and allocate accordingly
+    size_t max_cpus = 0;
+
+    for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
+      (uintptr_t)madt_ptr < (uintptr_t)madt + madt->length;
+      madt_ptr += *(madt_ptr + 1)) {
+        switch (*madt_ptr) {
+            case 0: {
+                // Processor local xAPIC
+                struct madt_lapic *lapic = (void *)madt_ptr;
+
+                // Check if we can actually try to start the AP
+                if ((lapic->flags & 1) ^ ((lapic->flags >> 1) & 1))
+                    max_cpus++;
+
+                continue;
+            }
+            case 9: {
+                // Processor local x2APIC
+                if (!x2apic)
+                    continue;
+
+                struct madt_x2apic *x2apic = (void *)madt_ptr;
+
+                // Check if we can actually try to start the AP
+                if ((x2apic->flags & 1) ^ ((x2apic->flags >> 1) & 1))
+                    max_cpus++;
+
+                continue;
+            }
+        }
+    }
+
+    struct smp_information *ret = ext_mem_alloc(max_cpus * sizeof(struct smp_information));
+    *cpu_count = 0;
+
+    // Try to start all APs
     for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
       (uintptr_t)madt_ptr < (uintptr_t)madt + madt->length;
       madt_ptr += *(madt_ptr + 1)) {
@@ -127,8 +162,7 @@ struct smp_information *init_smp(size_t   *cpu_count,
                 if (!((lapic->flags & 1) ^ ((lapic->flags >> 1) & 1)))
                     continue;
 
-                struct smp_information *info_struct =
-                        conv_mem_alloc_aligned(sizeof(struct smp_information), 1);
+                struct smp_information *info_struct = &ret[*cpu_count];
 
                 info_struct->acpi_processor_uid = lapic->acpi_processor_uid;
                 info_struct->lapic_id           = lapic->lapic_id;
@@ -146,7 +180,6 @@ struct smp_information *init_smp(size_t   *cpu_count,
                                   longmode, lv5, (uint32_t)pagemap.top_level,
                                   x2apic)) {
                     print("smp: FAILED to bring-up AP\n");
-                    conv_mem_rewind(sizeof(struct smp_information));
                     continue;
                 }
 
@@ -166,8 +199,7 @@ struct smp_information *init_smp(size_t   *cpu_count,
                 if (!((x2apic->flags & 1) ^ ((x2apic->flags >> 1) & 1)))
                     continue;
 
-                struct smp_information *info_struct =
-                        conv_mem_alloc_aligned(sizeof(struct smp_information), 1);
+                struct smp_information *info_struct = &ret[*cpu_count];
 
                 info_struct->acpi_processor_uid = x2apic->acpi_processor_uid;
                 info_struct->lapic_id           = x2apic->x2apic_id;
@@ -185,7 +217,6 @@ struct smp_information *init_smp(size_t   *cpu_count,
                                   longmode, lv5, (uint32_t)pagemap.top_level,
                                   true)) {
                     print("smp: FAILED to bring-up AP\n");
-                    conv_mem_rewind(sizeof(struct smp_information));
                     continue;
                 }
 

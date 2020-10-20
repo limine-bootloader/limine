@@ -281,10 +281,6 @@ extern symbol bss_end;
 static size_t bump_allocator_base = (size_t)bss_end;
 static size_t bump_allocator_limit = 0;
 
-void conv_mem_rewind(size_t count) {
-    bump_allocator_base -= count;
-}
-
 void *conv_mem_alloc(size_t count) {
     return conv_mem_alloc_aligned(count, 4);
 }

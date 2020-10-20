@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+extern bool config_ready;
+
 int init_config(int drive, int part);
 int config_get_entry_name(char *ret, size_t index, size_t limit);
 int config_set_entry(size_t index);

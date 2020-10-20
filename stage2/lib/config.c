@@ -8,6 +8,8 @@
 
 #define SEPARATOR '\n'
 
+bool config_ready = false;
+
 static char *config_addr;
 
 int init_config(int drive, int part) {
@@ -32,6 +34,8 @@ int init_config(int drive, int part) {
             config_size--;
         }
     }
+
+    config_ready = true;
 
     return 0;
 }

@@ -3,8 +3,12 @@
 #include <stdint.h>
 #include <lib/print.h>
 #include <lib/blib.h>
-#include <sys/cpu.h>
+#include <lib/config.h>
 #include <lib/term.h>
+#include <lib/libc.h>
+#include <sys/cpu.h>
+
+static int e9_output = -1;
 
 static const char *base_digits = "0123456789abcdef";
 
@@ -114,6 +118,11 @@ void print(const char *fmt, ...) {
 static char print_buf[PRINT_BUF_MAX];
 
 void vprint(const char *fmt, va_list args) {
+    if (config_ready && e9_output == -1) {
+        e9_output = config_get_value(print_buf, 0, PRINT_BUF_MAX, "E9_OUTPUT") &&
+                    !strcmp(print_buf, "yes");
+    }
+
     size_t print_buf_i = 0;
 
     for (;;) {
@@ -170,8 +179,8 @@ void vprint(const char *fmt, va_list args) {
 out:
     term_write(print_buf, print_buf_i);
 
-#ifdef E9_OUTPUT
-    for (size_t i = 0; i < print_buf_i; i++)
-        outb(0xe9, print_buf[i]);
-#endif
+    if (e9_output == 1) {
+        for (size_t i = 0; i < print_buf_i; i++)
+            outb(0xe9, print_buf[i]);
+    }
 }

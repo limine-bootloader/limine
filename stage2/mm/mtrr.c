@@ -14,7 +14,7 @@ struct mtrr {
 static bool mtrr_supported(void) {
     uint32_t eax, ebx, ecx, edx;
 
-    if (cpuid(1, 0, &eax, &ebx, &ecx, &edx))
+    if (!cpuid(1, 0, &eax, &ebx, &ecx, &edx))
         return false;
 
     return !!(edx & (1 << 12));
@@ -42,7 +42,7 @@ bool mtrr_set_range(uint64_t base, uint64_t size, uint8_t memory_type) {
 
     uint32_t eax, ebx, ecx, edx;
 
-    if (cpuid(0x80000008, 0, &eax, &ebx, &ecx, &edx))
+    if (!cpuid(0x80000008, 0, &eax, &ebx, &ecx, &edx))
         return false;
 
     uint8_t maxphysaddr = eax & 0xff;

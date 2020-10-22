@@ -100,6 +100,9 @@ struct smp_information *init_smp(size_t   *cpu_count,
                                  bool      lv5,
                                  pagemap_t pagemap,
                                  bool      x2apic) {
+    if (!lapic_check())
+        return NULL;
+
     // Search for MADT table
     struct madt *madt = acpi_get_table("APIC", 0);
 
@@ -109,9 +112,27 @@ struct smp_information *init_smp(size_t   *cpu_count,
     struct gdtr gdtr;
     asm volatile ("sgdt %0" :: "m"(gdtr) : "memory");
 
-    *cpu_count = 0;
+    uint32_t eax, ebx, ecx, edx;
+
+    if (!cpuid(1, 0, &eax, &ebx, &ecx, &edx))
+        return NULL;
+
+    uint8_t bsp_lapic_id = ebx >> 24;
 
     x2apic = x2apic && x2apic_enable();
+
+    uint32_t bsp_x2apic_id;
+    if (x2apic) {
+        // The Intel manual recommends checking if leaf 0x1f exists first, and
+        // using that in place of 0xb if that's the case
+        if (!cpuid(0x1f, 0, &eax, &ebx, &ecx, &edx))
+            if (!cpuid(0xb, 0, &eax, &ebx, &ecx, &edx))
+                return NULL;
+
+        bsp_x2apic_id = edx;
+    }
+
+    *cpu_count = 0;
 
     // Count the MAX of startable APs and allocate accordingly
     size_t max_cpus = 0;
@@ -168,7 +189,7 @@ struct smp_information *init_smp(size_t   *cpu_count,
                 info_struct->lapic_id           = lapic->lapic_id;
 
                 // Do not try to restart the BSP
-                if (lapic->lapic_id == 0) {
+                if (lapic->lapic_id == bsp_lapic_id) {
                     (*cpu_count)++;
                     continue;
                 }
@@ -205,7 +226,7 @@ struct smp_information *init_smp(size_t   *cpu_count,
                 info_struct->lapic_id           = x2apic->x2apic_id;
 
                 // Do not try to restart the BSP
-                if (x2apic->x2apic_id == 0) {
+                if (x2apic->x2apic_id == bsp_x2apic_id) {
                     (*cpu_count)++;
                     continue;
                 }

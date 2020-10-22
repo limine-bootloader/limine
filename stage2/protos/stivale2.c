@@ -325,17 +325,19 @@ void stivale2_load(char *cmdline) {
         smp_info = init_smp(&cpu_count, bits == 64, level5pg && level5pg_requested,
                             pagemap, smp_hdr_tag->flags & 1);
 
-        struct stivale2_struct_tag_smp *tag =
-            conv_mem_alloc(sizeof(struct stivale2_struct_tag_smp)
-                         + sizeof(struct smp_information) * cpu_count);
-        tag->tag.identifier = STIVALE2_STRUCT_TAG_SMP_ID;
-        tag->cpu_count      = cpu_count;
-        tag->flags         |= (smp_hdr_tag->flags & 1) && x2apic_check();
+        if (smp_info != NULL) {
+            struct stivale2_struct_tag_smp *tag =
+                conv_mem_alloc(sizeof(struct stivale2_struct_tag_smp)
+                             + sizeof(struct smp_information) * cpu_count);
+            tag->tag.identifier = STIVALE2_STRUCT_TAG_SMP_ID;
+            tag->cpu_count      = cpu_count;
+            tag->flags         |= (smp_hdr_tag->flags & 1) && x2apic_check();
 
-        memcpy((void*)tag + sizeof(struct stivale2_struct_tag_smp),
-               smp_info, sizeof(struct smp_information) * cpu_count);
+            memcpy((void*)tag + sizeof(struct stivale2_struct_tag_smp),
+                   smp_info, sizeof(struct smp_information) * cpu_count);
 
-        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+            append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+        }
     }
     }
 

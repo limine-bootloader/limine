@@ -60,9 +60,9 @@ static void init_rand(void) {
     uint32_t eax, ebx, ecx, edx;
 
     // Check for rdseed
-    if (!cpuid(0x07, 0, &eax, &ebx, &ecx, &edx) && (ebx & (1 << 18))) {
+    if (cpuid(0x07, 0, &eax, &ebx, &ecx, &edx) && (ebx & (1 << 18))) {
         seed *= (seed ^ rdseed(uint32_t));
-    } else if (!cpuid(0x01, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 30))) {
+    } else if (cpuid(0x01, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 30))) {
         seed *= (seed ^ rdrand(uint32_t));
     }
 

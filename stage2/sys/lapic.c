@@ -14,6 +14,17 @@ struct dmar {
     symbol  remapping_structures;
 } __attribute__((packed));
 
+bool lapic_check(void) {
+    uint32_t eax, ebx, ecx, edx;
+    if (!cpuid(1, 0, &eax, &ebx, &ecx, &edx))
+        return false;
+
+    if (!(ecx & (1 << 9)))
+        return false;
+
+    return true;
+}
+
 uint32_t lapic_read(uint32_t reg) {
     size_t lapic_mmio_base = (size_t)(rdmsr(0x1b) & 0xfffff000);
     return mmind(lapic_mmio_base + reg);
@@ -26,7 +37,8 @@ void lapic_write(uint32_t reg, uint32_t data) {
 
 bool x2apic_check(void) {
     uint32_t eax, ebx, ecx, edx;
-    cpuid(1, 0, &eax, &ebx, &ecx, &edx);
+    if (!cpuid(1, 0, &eax, &ebx, &ecx, &edx))
+        return false;
 
     if (!(ecx & (1 << 21)))
         return false;

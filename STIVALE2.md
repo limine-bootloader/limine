@@ -389,7 +389,7 @@ struct stivale2_struct_tag_firmware {
 
 #### SMP structure tag
 
-This tag reports to the kernel info about the firmware.
+This tag reports to the kernel info about a multiprocessor environment.
 
 ```c
 struct stivale2_struct_tag_smp {
@@ -404,6 +404,15 @@ struct stivale2_struct_tag_smp {
                                           // logical processor, including BSP.
 } __attribute__((packed));
 ```
+
+*Note: In the code below, the BSP refers to the bootstrap processor,*
+*AKA the processor that the system was started with, and the one whose*
+*control is handed to by stivale2 first.*
+
+*The LAPIC ID of the BSP is in most cases `0`, but this is not guaranteed.*
+*To get the LAPIC ID of the BSP, see `CPUID` leaf `1`, and in case the*
+*x2APIC is used, see `CPUID` leaves `0x1f` and `0xb`. Note that the `CPUID`*
+*instruction has to be executed on the BSP itself.*
 
 ```c
 struct stivale2_smp_info {
@@ -432,14 +441,14 @@ struct stivale2_smp_info {
                                  // of ESP/RSP and RDI/stack arg being set up as
                                  // above.
                                  // goto_address is an unused field for the
-                                 // struct describing the BSP (lapic_id == 0)
+                                 // struct describing the BSP.
     uint64_t extra_argument;     // This field is here for the kernel to use
                                  // for whatever it wants. Writes here should
                                  // be performed before writing to goto_address
                                  // so that the receiving processor can safely
                                  // retrieve the data.
                                  // extra_argument is an unused field for the
-                                 // struct describing the BSP (lapic_id == 0)
+                                 // struct describing the BSP.
 } __attribute__((packed));
 ```
 

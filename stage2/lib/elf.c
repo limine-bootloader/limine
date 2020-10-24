@@ -206,7 +206,7 @@ int elf64_load_section(struct file_handle *fd, void *buffer, const char *name, s
     fread(fd, &shstrtab, hdr.shoff + hdr.shstrndx * sizeof(struct elf64_shdr),
             sizeof(struct elf64_shdr));
 
-    char names[shstrtab.sh_size];
+    char *names = ext_mem_alloc(shstrtab.sh_size);
     fread(fd, names, shstrtab.sh_offset, shstrtab.sh_size);
 
     for (uint16_t i = 0; i < hdr.sh_num; i++) {
@@ -250,7 +250,7 @@ int elf32_load_section(struct file_handle *fd, void *buffer, const char *name, s
     fread(fd, &shstrtab, hdr.shoff + hdr.shstrndx * sizeof(struct elf32_shdr),
             sizeof(struct elf32_shdr));
 
-    char names[shstrtab.sh_size];
+    char *names = ext_mem_alloc(shstrtab.sh_size);
     fread(fd, names, shstrtab.sh_offset, shstrtab.sh_size);
 
     for (uint16_t i = 0; i < hdr.sh_num; i++) {

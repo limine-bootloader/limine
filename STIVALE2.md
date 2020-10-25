@@ -399,20 +399,13 @@ struct stivale2_struct_tag_smp {
                                 //   bit 0: Set if x2APIC was requested and it
                                 //          was supported and enabled.
                                 //  All other bits undefined.
+    uint32_t bsp_lapic_id;      // LAPIC ID of the BSP (bootstrap processor).
+    uint32_t unused;            // Reserved for future use.
     uint64_t cpu_count;         // Total number of logical CPUs (including BSP)
     struct stivale2_smp_info smp_info[];  // Array of smp_info structs, one per
                                           // logical processor, including BSP.
 } __attribute__((packed));
 ```
-
-*Note: In the code below, the BSP refers to the bootstrap processor,*
-*AKA the processor that the system was started with, and the one whose*
-*control is handed to by stivale2 first.*
-
-*The LAPIC ID of the BSP is in most cases `0`, but this is not guaranteed.*
-*To get the LAPIC ID of the BSP, see `CPUID` leaf `1`, and in case the*
-*x2APIC is used, see `CPUID` leaves `0x1f` and `0xb`. Note that the `CPUID`*
-*instruction has to be executed on the BSP itself.*
 
 ```c
 struct stivale2_smp_info {

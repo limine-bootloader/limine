@@ -142,6 +142,8 @@ struct stivale2_smp_info {
 struct stivale2_struct_tag_smp {
     struct stivale2_tag tag;
     uint64_t flags;
+    uint32_t bsp_lapic_id;
+    uint32_t unused;
     uint64_t cpu_count;
     struct stivale2_smp_info smp_info[];
 } __attribute__((packed));

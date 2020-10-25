@@ -15,6 +15,7 @@ struct smp_information {
 } __attribute__((packed));
 
 struct smp_information *init_smp(size_t   *cpu_count,
+                                 uint32_t *_bsp_lapic_id,
                                  bool      longmode,
                                  bool      lv5,
                                  pagemap_t pagemap,

@@ -96,6 +96,7 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
 }
 
 struct smp_information *init_smp(size_t   *cpu_count,
+                                 uint32_t *_bsp_lapic_id,
                                  bool      longmode,
                                  bool      lv5,
                                  pagemap_t pagemap,
@@ -130,6 +131,10 @@ struct smp_information *init_smp(size_t   *cpu_count,
                 return NULL;
 
         bsp_x2apic_id = edx;
+
+        *_bsp_lapic_id = bsp_x2apic_id;
+    } else {
+        *_bsp_lapic_id = bsp_lapic_id;
     }
 
     *cpu_count = 0;

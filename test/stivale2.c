@@ -61,7 +61,7 @@ void stivale2_main(struct stivale2_struct *info) {
             }
             case STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID: {
                 struct stivale2_struct_tag_framebuffer *f = (struct stivale2_struct_tag_framebuffer *)tag;
-                e9_puts("Framebuffer tag:");       
+                e9_puts("Framebuffer tag:");
                 e9_printf("\tAddress: %x", f->framebuffer_addr);
                 e9_printf("\tWidth:   %d", f->framebuffer_width);
                 e9_printf("\tHeight:  %d", f->framebuffer_height);
@@ -100,8 +100,9 @@ void stivale2_main(struct stivale2_struct *info) {
             case STIVALE2_STRUCT_TAG_SMP_ID: {
                 struct stivale2_struct_tag_smp *s = (struct stivale2_struct_tag_smp *)tag;
                 e9_puts("SMP tag:");
-                e9_printf("\tFlags:     %x", s->flags);
-                e9_printf("\tCPU Count: %d", s->cpu_count);
+                e9_printf("\tFlags:        %x", s->flags);
+                e9_printf("\tBSP LAPIC ID: %d", s->bsp_lapic_id);
+                e9_printf("\tCPU Count:    %d", s->cpu_count);
                 for (size_t i = 0; i < s->cpu_count; i++) {
                     struct stivale2_smp_info in = s->smp_info[i];
                     e9_printf("\t\tProcessor ID:   %d", in.processor_id);

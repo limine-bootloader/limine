@@ -14,7 +14,9 @@ struct smp_information {
     uint64_t extra_argument;
 } __attribute__((packed));
 
-struct smp_information *init_smp(size_t   *cpu_count,
+struct smp_information *init_smp(size_t    header_hack_size,
+                                 void    **header_ptr,
+                                 size_t   *cpu_count,
                                  uint32_t *_bsp_lapic_id,
                                  bool      longmode,
                                  bool      lv5,

@@ -3,7 +3,8 @@
 #include <e9print.h>
 #include <stddef.h>
 
-static uint8_t stack[4096] = {0};
+typedef uint8_t stack[4096];
+static stack stacks[10] = {0};
 void stivale2_main(struct stivale2_struct *info);
 
 struct stivale2_header_tag_smp smp_request = {
@@ -27,10 +28,15 @@ struct stivale2_header_tag_framebuffer framebuffer_request = {
 __attribute__((section(".stivale2hdr"), used))
 struct stivale2_header header2 = {
     .entry_point = (uint64_t)stivale2_main,
-    .stack       = (uintptr_t)stack + sizeof(stack),
+    .stack       = (uintptr_t)stacks[0] + sizeof(stack),
     .flags       = 0,
     .tags        = (uint64_t)&framebuffer_request
 };
+
+void ap_entry(struct stivale2_smp_info *s) {
+    e9_printf("AP %u started", s->lapic_id);
+    for (;;);
+}
 
 void stivale2_main(struct stivale2_struct *info) {
     // Print stuff.
@@ -103,12 +109,16 @@ void stivale2_main(struct stivale2_struct *info) {
                 e9_printf("\tFlags:     %x", s->flags);
                 e9_printf("\tCPU Count: %d", s->cpu_count);
                 for (size_t i = 0; i < s->cpu_count; i++) {
-                    struct stivale2_smp_info in = s->smp_info[i];
-                    e9_printf("\t\tProcessor ID:   %d", in.processor_id);
-                    e9_printf("\t\tLAPIC ID:       %d", in.lapic_id);
-                    e9_printf("\t\tTarget Stack:   %x", in.target_stack);
-                    e9_printf("\t\tGOTO Address:   %x", in.goto_address);
-                    e9_printf("\t\tExtra Argument: %x", in.extra_argument);
+                    struct stivale2_smp_info *in = &s->smp_info[i];
+                    e9_printf("\t\tProcessor ID:   %d", in->processor_id);
+                    e9_printf("\t\tLAPIC ID:       %d", in->lapic_id);
+                    e9_printf("\t\tTarget Stack:   %x", in->target_stack);
+                    e9_printf("\t\tGOTO Address:   %x", in->goto_address);
+                    e9_printf("\t\tExtra Argument: %x", in->extra_argument);
+                    if (in->lapic_id != 0) {
+                        in->target_stack = (uintptr_t)stacks[in->lapic_id] + sizeof(stack);
+                        in->goto_address = ap_entry;
+                    }
                 }
                 break;
             }

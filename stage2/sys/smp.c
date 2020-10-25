@@ -95,7 +95,9 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
     return false;
 }
 
-struct smp_information *init_smp(size_t   *cpu_count,
+struct smp_information *init_smp(size_t    header_hack_size,
+                                 void    **header_ptr,
+                                 size_t   *cpu_count,
                                  bool      longmode,
                                  bool      lv5,
                                  pagemap_t pagemap,
@@ -167,7 +169,9 @@ struct smp_information *init_smp(size_t   *cpu_count,
         }
     }
 
-    struct smp_information *ret = ext_mem_alloc(max_cpus * sizeof(struct smp_information));
+    *header_ptr = ext_mem_alloc(
+                  header_hack_size + max_cpus * sizeof(struct smp_information));
+    struct smp_information *ret = *header_ptr + header_hack_size;
     *cpu_count = 0;
 
     // Try to start all APs

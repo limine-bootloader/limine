@@ -19,7 +19,7 @@ bool lapic_check(void) {
     if (!cpuid(1, 0, &eax, &ebx, &ecx, &edx))
         return false;
 
-    if (!(ecx & (1 << 9)))
+    if (!(edx & (1 << 9)))
         return false;
 
     return true;

@@ -127,6 +127,8 @@ int getchar_internal(uint32_t eax) {
             return GETCHAR_CURSOR_UP;
         case 0x50:
             return GETCHAR_CURSOR_DOWN;
+        case 0x53:
+            return GETCHAR_DELETE;
     }
     return (char)(eax & 0xff);
 }

@@ -19,4 +19,6 @@ void term_textmode(void);
 void term_deinit(void);
 void term_write(const char *buf, size_t count);
 
+extern int term_rows, term_cols;
+
 #endif

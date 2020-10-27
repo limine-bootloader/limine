@@ -8,6 +8,7 @@
 #include <lib/libc.h>
 #include <lib/config.h>
 #include <lib/term.h>
+#include <lib/readline.h>
 #include <mm/pmm.h>
 #include <drivers/vbe.h>
 
@@ -193,7 +194,7 @@ timeout_aborted:
                     }
                 }
                 print("\n\n> ");
-                gets(cmdline, cmdline, CMDLINE_MAX);
+                readline(cmdline, cmdline, CMDLINE_MAX);
                 clear(true);
                 return cmdline;
         }

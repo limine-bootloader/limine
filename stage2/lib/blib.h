@@ -28,7 +28,6 @@ int pit_sleep_and_quit_on_keypress(uint32_t pit_ticks);
 #define GETCHAR_CURSOR_DOWN  (-13)
 
 int getchar(void);
-void gets(const char *orig_str, char *buf, size_t limit);
 uint64_t strtoui(const char *s);
 uint64_t strtoui16(const char *s);
 

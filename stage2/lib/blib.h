@@ -31,6 +31,7 @@ int pit_sleep_and_quit_on_keypress(uint32_t pit_ticks);
 #define GETCHAR_CURSOR_RIGHT (-11)
 #define GETCHAR_CURSOR_UP    (-12)
 #define GETCHAR_CURSOR_DOWN  (-13)
+#define GETCHAR_DELETE       (-14)
 
 int getchar(void);
 uint64_t strtoui(const char *s);

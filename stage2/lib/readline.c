@@ -68,6 +68,7 @@ void readline(const char *orig_str, char *buf, size_t limit) {
                 if (i) {
                     i--;
                     cursor_back();
+            case GETCHAR_DELETE:;
                     size_t j;
                     for (j = i; ; j++) {
                         buf[j] = buf[j+1];

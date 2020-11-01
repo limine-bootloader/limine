@@ -23,6 +23,25 @@ such as Long Mode, 5-level paging, and SMP (multicore), to name a few.
 * MBR
 * GPT
 
+## Warning about using `master`
+
+Please refrain from using the `master` branch of this repository directly, unless
+you have a *very* good reason to.
+The `master` branch is unstable, and non-backwards compatible changes are made to it
+routinely.
+
+Use instead a [release](https://github.com/limine-bootloader/limine/releases).
+
+One can clone a release directly using
+```bash
+git clone https://github.com/limine-bootloader/limine.git --branch=v0.5.7
+```
+(replace `v0.5.7` with the chosen release)
+
+Also note that the documentation contained in `master` does not reflect the
+documentation for the specific releases, and one should refer to the releases'
+documentation instead, contained in their files.
+
 ## Building
 
 ### Building the bootloader
@@ -54,6 +73,7 @@ To build the `limine-install` program, simply run `make limine-install` in the r
 of the repo.
 
 ## How to use
+
 ### MBR
 In order to install Limine on a MBR device (which can just be a raw image file),
 run the `limine-install` as such:

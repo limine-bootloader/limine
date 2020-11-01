@@ -130,19 +130,9 @@ void linux_load(char *cmdline) {
     if (!config_get_value(initrd_path, 0, 64, "INITRD_PATH"))
         panic("INITRD_PATH not specified");
 
-    int initrd_part; {
-        char buf[32];
-        if (!config_get_value(buf, 0, 32, "INITRD_PARTITION")) {
-            initrd_part = kernel->partition;
-        } else {
-            initrd_part = (int)strtoui(buf);
-        }
-    }
-
     struct file_handle initrd;
-    if (fopen(&initrd, kernel->disk, initrd_part, initrd_path)) {
-        panic("Failed to open initrd");
-    }
+    if (!uri_open(&initrd, initrd_path))
+        panic("Could not open initrd");
 
     print("Loading initrd...\n");
     memmap_alloc_range(INITRD_LOAD_ADDR, initrd.size, 0);

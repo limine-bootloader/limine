@@ -60,10 +60,8 @@ void entry(uint8_t _boot_drive) {
     char *cmdline = menu(boot_drive);
 
     char proto[32];
-    if (!config_get_value(proto, 0, 32, "KERNEL_PROTO")) {
-        if (!config_get_value(proto, 0, 32, "PROTOCOL")) {
-            panic("PROTOCOL not specified");
-        }
+    if (!config_get_value(proto, 0, 32, "PROTOCOL")) {
+        panic("PROTOCOL not specified");
     }
 
     if (!strcmp(proto, "stivale")) {

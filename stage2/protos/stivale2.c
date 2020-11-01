@@ -181,19 +181,9 @@ void stivale2_load(char *cmdline) {
             m->string[0] = '\0';
         }
 
-        int part; {
-            char buf[32];
-            if (!config_get_value(buf, i, 32, "MODULE_PARTITION")) {
-                part = kernel->partition;
-            } else {
-                part = (int)strtoui(buf);
-            }
-        }
-
         struct file_handle f;
-        if (fopen(&f, kernel->disk, part, module_file)) {
+        if (uri_open(&f, module_file))
             panic("Requested module with path \"%s\" not found!\n", module_file);
-        }
 
         void *module_addr = (void *)(((uint32_t)top_used_addr & 0xfff) ?
             ((uint32_t)top_used_addr & ~((uint32_t)0xfff)) + 0x1000 :

@@ -13,6 +13,8 @@ struct echfs_identity_table {
     uint64_t block_count;
     uint64_t dir_length;
     uint64_t block_size;
+    uint32_t reserved;
+    struct guid guid;
 } __attribute__((packed));
 
 #define ROOT_DIR_ID  (~((uint64_t)0))
@@ -40,20 +42,28 @@ int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t
     return 0;
 }
 
-int echfs_check_signature(int disk, int partition) {
-    struct part part;
-    if (get_part(&part, disk, partition)) {
-        panic("Invalid partition");
-    }
-
+int echfs_check_signature(struct part *part) {
     struct echfs_identity_table id_table;
-    read_partition(disk, &part, &id_table, 0, sizeof(struct echfs_identity_table));
+    read_partition(part->drive, part, &id_table, 0, sizeof(struct echfs_identity_table));
 
     if (strncmp(id_table.signature, "_ECH_FS_", 8)) {
         return 0;
     }
 
     return 1;
+}
+
+bool echfs_get_guid(struct guid *guid, struct part *part) {
+    struct echfs_identity_table id_table;
+    read_partition(part->drive, part, &id_table, 0, sizeof(struct echfs_identity_table));
+
+    if (strncmp(id_table.signature, "_ECH_FS_", 8)) {
+        return false;
+    }
+
+    *guid = id_table.guid;
+
+    return true;
 }
 
 int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const char *path) {

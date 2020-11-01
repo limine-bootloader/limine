@@ -75,9 +75,18 @@ static int gpt_get_part(struct part *ret, int drive, int partition) {
     if (!memcmp(&entry.unique_partition_guid, &empty_guid, sizeof(struct guid)))
         return NO_PARTITION;
 
+    ret->drive      = drive;
+    ret->partition  = partition;
     ret->first_sect = entry.starting_lba;
     ret->sect_count = (entry.ending_lba - entry.starting_lba) + 1;
-    ret->guid       = entry.unique_partition_guid;
+
+    struct guid guid;
+    if (!fs_get_guid(&guid, ret)) {
+        ret->guid_valid = false;
+    } else {
+        ret->guid_valid = true;
+        ret->guid = guid;
+    }
 
     return 0;
 }
@@ -114,14 +123,18 @@ static int mbr_get_part(struct part *ret, int drive, int partition) {
     if (entry.type == 0)
         return NO_PARTITION;
 
+    ret->drive      = drive;
+    ret->partition  = partition;
     ret->first_sect = entry.first_sect;
     ret->sect_count = entry.sect_count;
 
-    // We use the same method of generating GUIDs for MBR partitions as Linux
-    struct guid empty_guid = {0};
-    ret->guid   = empty_guid;
-    ret->guid.a = disk_signature;
-    ret->guid.b = (partition + 1) << 8;
+    struct guid guid;
+    if (!fs_get_guid(&guid, ret)) {
+        ret->guid_valid = false;
+    } else {
+        ret->guid_valid = true;
+        ret->guid = guid;
+    }
 
     return 0;
 }
@@ -188,4 +201,23 @@ load_up:
         part_index = conv_mem_alloc(sizeof(struct part) * part_count);
         goto load_up;
     }
+}
+
+bool part_get_by_guid(int *drive, int *part, struct guid *guid) {
+    for (size_t i = 0; i < part_index_i; i++) {
+        if (!part_index[i].guid_valid)
+            continue;
+        print("%X %X\n",
+            ((uint64_t*)&part_index[i].guid)[0],
+            ((uint64_t*)&part_index[i].guid)[1]);
+        print("%X %X\n",
+            ((uint64_t*)guid)[0],
+            ((uint64_t*)guid)[1]);
+        if (!memcmp(&part_index[i].guid, guid, 16)) {
+            *drive = part_index[i].drive;
+            *part  = part_index[i].partition;
+            return true;
+        }
+    }
+    return false;
 }

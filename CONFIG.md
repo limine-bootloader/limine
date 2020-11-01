@@ -63,3 +63,4 @@ The format for `root` changes depending on the resource used.
 
 A resource can be one of the following:
 * `bios` - The `root` takes the form of `drive:partition`; for example: `bios://3:1/...` would use BIOS drive 3, partition 1. Partitions and BIOS drives are both 1-based. Omitting the drive is possible; for example: `bios://:2/...`. Omitting the drive makes Limine use the boot drive.
+* `guid` - The `root` takes the form of a GUID/UUID, such as `736b5698-5ae1-4dff-be2c-ef8f44a61c52`. It is a filesystem GUID and not a partition GUID.

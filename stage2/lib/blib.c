@@ -10,6 +10,7 @@
 #include <sys/e820.h>
 #include <lib/print.h>
 #include <lib/config.h>
+#include <lib/part.h>
 #include <mm/pmm.h>
 
 uint8_t boot_drive;
@@ -59,14 +60,32 @@ static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
     return true;
 }
 
+static bool uri_guid_dispatch(struct file_handle *fd, char *guid_str, char *path) {
+    struct guid guid;
+
+    if (!string_to_guid(&guid, guid_str))
+        panic("Invalid GUID format");
+
+    int drive, partition;
+    if (!part_get_by_guid(&drive, &partition, &guid))
+        panic("No partition found for GUID: %s", guid_str);
+
+    if (fopen(fd, drive, partition, path))
+        return false;
+
+    return true;
+}
+
 bool uri_open(struct file_handle *fd, char *uri) {
     char *resource, *root, *path;
     config_resolve_uri(uri, &resource, &root, &path);
 
     if (!strcmp(resource, "bios")) {
         return uri_bios_dispatch(fd, root, path);
+    } else if (!strcmp(resource, "guid")) {
+        return uri_guid_dispatch(fd, root, path);
     } else {
-        panic("Resource `%s` not valid.");
+        panic("Resource `%s` not valid.", resource);
     }
 }
 
@@ -148,7 +167,7 @@ static bool is_valid_guid(const char *s) {
         }
     }
 }
-
+/*
 static void guid_convert_le_cluster(uint8_t *dest, const char *s, int len) {
     size_t p = 0;
     for (int i = len - 1; i >= 0; i--) {
@@ -157,7 +176,7 @@ static void guid_convert_le_cluster(uint8_t *dest, const char *s, int len) {
         i % 2 ? (dest[p] = val) : (dest[p++] |= val << 4);
     }
 }
-
+*/
 static void guid_convert_be_cluster(uint8_t *dest, const char *s, int len) {
     size_t p = 0;
     for (int i = 0; i < len; i++) {
@@ -171,9 +190,9 @@ bool string_to_guid(struct guid *guid, const char *s) {
     if (!is_valid_guid(s))
         return false;
 
-    guid_convert_le_cluster((uint8_t *)guid + 0,  s + 0,  8);
-    guid_convert_le_cluster((uint8_t *)guid + 4,  s + 9,  4);
-    guid_convert_le_cluster((uint8_t *)guid + 6,  s + 14, 4);
+    guid_convert_be_cluster((uint8_t *)guid + 0,  s + 0,  8);
+    guid_convert_be_cluster((uint8_t *)guid + 4,  s + 9,  4);
+    guid_convert_be_cluster((uint8_t *)guid + 6,  s + 14, 4);
     guid_convert_be_cluster((uint8_t *)guid + 8,  s + 19, 4);
     guid_convert_be_cluster((uint8_t *)guid + 10, s + 24, 12);
 

@@ -140,6 +140,7 @@ bool config_resolve_uri(char *uri, char **resource, char **root, char **path) {
         }
     }
 
+    // Get root
     for (size_t i = 0; ; i++) {
         if (uri[i] == 0)
             return false;
@@ -152,9 +153,9 @@ bool config_resolve_uri(char *uri, char **resource, char **root, char **path) {
         }
     }
 
+    // Get path
     if (*uri == 0)
         return false;
-
     *path = uri;
 
     return true;

@@ -411,13 +411,9 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
 
 // attempts to initialize the ext2 filesystem
 // and checks if all features are supported
-int ext2_check_signature(int drive, int partition) {
-    struct part part;
-    if (get_part(&part, drive, partition))
-        panic("Invalid partition");
-
+int ext2_check_signature(struct part *part) {
     struct ext2_superblock sb;
-    read_partition(drive, &part, &sb, 1024, sizeof(struct ext2_superblock));
+    read_partition(part->drive, part, &sb, 1024, sizeof(struct ext2_superblock));
 
     if (sb.s_magic != EXT2_S_MAGIC)
         return 0;
@@ -433,4 +429,17 @@ int ext2_check_signature(int drive, int partition) {
         panic("EXT2: filesystem has unsupported features %x", sb.s_feature_incompat);
 
     return 1;
+}
+
+bool ext2_get_guid(struct guid *guid, struct part *part) {
+    struct ext2_superblock sb;
+    read_partition(part->drive, part, &sb, 1024, sizeof(struct ext2_superblock));
+
+    if (sb.s_magic != EXT2_S_MAGIC)
+        return false;
+
+    ((uint64_t *)guid)[0] = sb.s_uuid[0];
+    ((uint64_t *)guid)[1] = sb.s_uuid[1];
+
+    return true;
 }

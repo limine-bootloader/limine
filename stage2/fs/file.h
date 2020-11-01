@@ -2,6 +2,12 @@
 #define __FS__FILE_H__
 
 #include <stdint.h>
+#include <stdbool.h>
+
+struct part;
+struct guid;
+
+bool fs_get_guid(struct guid *guid, struct part *part);
 
 struct file_handle {
     int        disk;

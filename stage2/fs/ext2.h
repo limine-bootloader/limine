@@ -3,7 +3,9 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <lib/part.h>
+#include <lib/blib.h>
 
 struct ext2_linux {
     uint8_t  frag_num;
@@ -54,7 +56,8 @@ struct ext2_file_handle {
     uint64_t block_size;
 };
 
-int ext2_check_signature(int drive, int partition);
+int ext2_check_signature(struct part *part);
+bool ext2_get_guid(struct guid *guid, struct part *part);
 
 int ext2_open(struct ext2_file_handle *ret, int drive, int partition, const char *path);
 int ext2_read(struct ext2_file_handle *file, void *buf, uint64_t loc, uint64_t count);

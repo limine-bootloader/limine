@@ -66,14 +66,12 @@ struct fat32_lfn_entry {
     char name3[4];
 } __attribute__((packed));
 
-static int fat32_init_context(struct fat32_context* context, int disk, int partition) {
-    context->drive = disk;
-    if (get_part(&context->part, disk, partition)) {
-        panic("Invalid partition");
-    }
+static int fat32_init_context(struct fat32_context* context, struct part *part) {
+    context->part  = *part;
+    context->drive = part->drive;
 
     struct fat32_bpb bpb;
-    read_partition(disk, &context->part, &bpb, 0, sizeof(struct fat32_bpb));
+    read_partition(part->drive, &context->part, &bpb, 0, sizeof(struct fat32_bpb));
 
     if (bpb.signature != FAT32_VALID_SIGNATURE_1 && bpb.signature != FAT32_VALID_SIGNATURE_2) {
         return 1;
@@ -223,14 +221,19 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
     return -1;
 }
 
-int fat32_check_signature(int disk, int partition) {
+int fat32_check_signature(struct part *part) {
     struct fat32_context context;
-    return fat32_init_context(&context, disk, partition) == 0;
+    return fat32_init_context(&context, part) == 0;
 }
 
 int fat32_open(struct fat32_file_handle* ret, int disk, int partition, const char* path) {
+    struct part part;
+    if (get_part(&part, disk, partition)) {
+        panic("Invalid partition");
+    }
+
     struct fat32_context context;
-    int r = fat32_init_context(&context, disk, partition);
+    int r = fat32_init_context(&context, &part);
 
     if (r) {
         print("fat32: context init failure (%d)\n", r);

@@ -28,8 +28,7 @@ Some keys take *URIs* as values; these are described in the next section.
 * `THEME_BLACK`, `THEME_RED`, `THEME_GREEN`, `THEME_BROWN`, `THEME_BLUE`, `THEME_MAGENTA`, `THEME_CYAN`, `THEME_GREY` - Specifies the colors used by the terminal (RRGGBB). Ignored if `GRAPHICS` is not `yes`.
 * `THEME_MARGIN` - Set the amount of margin around the terminal. Ignored if `GRAPHICS` is not `yes`.
 * `THEME_MARGIN_GRADIENT` - Set the thickness in pixel for the gradient around the terminal. Ignored if `GRAPHICS` is not `yes`.
-* `BACKGROUND_DRIVE` - Drive where to find the background .BMP file. Assume boot drive if unspecified. Ignored if `GRAPHICS` is not `yes`.
-* `BACKGROUND_PATH` - Path where to find the background .BMP file. Ignored if `GRAPHICS` is not `yes`.
+* `BACKGROUND_PATH` - URI where to find the background .BMP file. Ignored if `GRAPHICS` is not `yes`.
 
 *Locally assignable (non protocol specific)* keys are:
 * `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `stivale`, `stivale2`, `chainload`.
@@ -45,7 +44,8 @@ Some keys take *URIs* as values; these are described in the next section.
   * `MODULE_PATH` - The URI path to a module.
   * `MODULE_STRING` - A string to be passed to a module.
 * Chainload protocol:
-  * `DRIVE` - The URI to a drive to chainload.
+  * `DRIVE` - The 1-based BIOS drive to chainload.
+  * `PARTITION` - The 1-based BIOS partition to chainload, if omitted, chainload drive.
 
   Note that one can define these 3 variable multiple times to specify multiple modules.
   The entries will be matched in order. E.g.: the 1st partition entry will be matched
@@ -63,4 +63,4 @@ The format for `root` changes depending on the resource used.
 
 A resource can be one of the following:
 * `bios` - The `root` takes the form of `drive:partition`; for example: `bios://3:1/...` would use BIOS drive 3, partition 1. Partitions and BIOS drives are both 1-based. Omitting the drive is possible; for example: `bios://:2/...`. Omitting the drive makes Limine use the boot drive.
-* `guid` - The `root` takes the form of a GUID/UUID, such as `736b5698-5ae1-4dff-be2c-ef8f44a61c52`. It is a filesystem GUID and not a partition GUID.
+* `guid` - The `root` takes the form of a GUID/UUID, such as `guid://736b5698-5ae1-4dff-be2c-ef8f44a61c52/...`. It is a filesystem GUID and not a partition GUID.

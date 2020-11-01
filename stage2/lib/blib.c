@@ -62,13 +62,12 @@ static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
 
 static bool uri_guid_dispatch(struct file_handle *fd, char *guid_str, char *path) {
     struct guid guid;
-
     if (!string_to_guid(&guid, guid_str))
-        panic("Invalid GUID format");
+        return false;
 
     int drive, partition;
     if (!part_get_by_guid(&drive, &partition, &guid))
-        panic("No partition found for GUID: %s", guid_str);
+        return false;
 
     if (fopen(fd, drive, partition, path))
         return false;

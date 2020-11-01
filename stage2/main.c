@@ -57,7 +57,7 @@ void entry(uint8_t _boot_drive) {
     init_e820();
     init_memmap();
 
-    char *cmdline = menu(boot_drive);
+    char *cmdline = menu();
 
     char proto[32];
     if (!config_get_value(proto, 0, 32, "PROTOCOL")) {

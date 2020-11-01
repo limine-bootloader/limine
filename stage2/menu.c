@@ -17,7 +17,7 @@ static char *cmdline;
 
 static char config_entry_name[1024];
 
-char *menu(int boot_drive) {
+char *menu(void) {
     cmdline = conv_mem_alloc(CMDLINE_MAX);
 
     char buf[16];
@@ -91,23 +91,11 @@ char *menu(int boot_drive) {
             margin_gradient = (int)strtoui(buf);
         }
 
-        int bg_drive;
-        if (!config_get_value(buf, 0, 16, "BACKGROUND_DRIVE")) {
-            bg_drive = boot_drive;
-        } else {
-            bg_drive = (int)strtoui(buf);
-        }
-        int bg_part;
-        if (!config_get_value(buf, 0, 16, "BACKGROUND_PARTITION")) {
-            goto nobg;
-        } else {
-            bg_part = (int)strtoui(buf);
-        }
         if (!config_get_value(cmdline, 0, CMDLINE_MAX, "BACKGROUND_PATH"))
             goto nobg;
 
         struct file_handle *bg_file = conv_mem_alloc(sizeof(struct file_handle));
-        if (fopen(bg_file, bg_drive, bg_part, cmdline))
+        if (!uri_open(bg_file, cmdline))
             goto nobg;
 
         struct image *bg = conv_mem_alloc(sizeof(struct image));

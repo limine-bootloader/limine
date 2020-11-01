@@ -207,12 +207,6 @@ bool part_get_by_guid(int *drive, int *part, struct guid *guid) {
     for (size_t i = 0; i < part_index_i; i++) {
         if (!part_index[i].guid_valid)
             continue;
-        print("%X %X\n",
-            ((uint64_t*)&part_index[i].guid)[0],
-            ((uint64_t*)&part_index[i].guid)[1]);
-        print("%X %X\n",
-            ((uint64_t*)guid)[0],
-            ((uint64_t*)guid)[1]);
         if (!memcmp(&part_index[i].guid, guid, 16)) {
             *drive = part_index[i].drive;
             *part  = part_index[i].partition;

@@ -10,6 +10,7 @@
 #include <lib/print.h>
 #include <lib/rand.h>
 #include <lib/real.h>
+#include <lib/uri.h>
 #include <drivers/vbe.h>
 #include <lib/term.h>
 #include <sys/pic.h>

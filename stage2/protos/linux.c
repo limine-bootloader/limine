@@ -7,6 +7,7 @@
 #include <lib/term.h>
 #include <lib/config.h>
 #include <lib/print.h>
+#include <lib/uri.h>
 #include <mm/pmm.h>
 #include <mm/mtrr.h>
 

@@ -4,36 +4,18 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <fs/file.h>
 
 extern uint8_t boot_drive;
 
-struct guid {
-    uint32_t a;
-    uint16_t b;
-    uint16_t c;
-    uint8_t  d[8];
-} __attribute__((packed));
-
-bool string_to_guid(struct guid *guid, const char *s);
-
-bool uri_open(struct file_handle *fd, char *uri);
-
 uint64_t sqrt(uint64_t a_nInput);
 
+int digit_to_int(char c);
 uint8_t bcd_to_int(uint8_t val);
 
 __attribute__((noreturn)) void panic(const char *fmt, ...);
 
 int pit_sleep_and_quit_on_keypress(uint32_t pit_ticks);
 
-#define GETCHAR_CURSOR_LEFT  (-10)
-#define GETCHAR_CURSOR_RIGHT (-11)
-#define GETCHAR_CURSOR_UP    (-12)
-#define GETCHAR_CURSOR_DOWN  (-13)
-#define GETCHAR_DELETE       (-14)
-
-int getchar(void);
 uint64_t strtoui(const char *s);
 uint64_t strtoui16(const char *s);
 

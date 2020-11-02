@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <lib/blib.h>
+#include <lib/guid.h>
 
 struct part {
     int drive;

@@ -13,6 +13,7 @@
 #include <lib/rand.h>
 #include <lib/real.h>
 #include <lib/libc.h>
+#include <lib/uri.h>
 #include <sys/smp.h>
 #include <sys/cpu.h>
 #include <drivers/vbe.h>

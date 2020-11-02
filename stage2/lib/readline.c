@@ -4,6 +4,29 @@
 #include <lib/libc.h>
 #include <lib/blib.h>
 #include <lib/term.h>
+#include <lib/real.h>
+
+int getchar_internal(uint32_t eax) {
+    switch ((eax >> 8) & 0xff) {
+        case 0x4b:
+            return GETCHAR_CURSOR_LEFT;
+        case 0x4d:
+            return GETCHAR_CURSOR_RIGHT;
+        case 0x48:
+            return GETCHAR_CURSOR_UP;
+        case 0x50:
+            return GETCHAR_CURSOR_DOWN;
+        case 0x53:
+            return GETCHAR_DELETE;
+    }
+    return (char)(eax & 0xff);
+}
+
+int getchar(void) {
+    struct rm_regs r = {0};
+    rm_int(0x16, &r, &r);
+    return getchar_internal(r.eax);
+}
 
 static void reprint_string(int x, int y, const char *s) {
     int orig_x, orig_y;

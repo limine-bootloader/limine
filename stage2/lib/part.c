@@ -7,6 +7,7 @@
 #include <lib/real.h>
 #include <lib/print.h>
 #include <mm/pmm.h>
+#include <fs/file.h>
 
 #define NO_PARTITION  (-1)
 #define INVALID_TABLE (-2)

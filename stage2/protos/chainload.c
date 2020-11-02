@@ -73,11 +73,11 @@ void chainload(void) {
 
     if (part != -1) {
         struct part p;
-        get_part(&p, drive, part);
+        part_get(&p, drive, part);
 
-        read_partition(drive, &p, (void *)0x7c00, 0, 512);
+        part_read(&p, (void *)0x7c00, 0, 512);
     } else {
-        read(drive, (void *)0x7c00, 0, 512);
+        disk_read(drive, (void *)0x7c00, 0, 512);
     }
 
     mtrr_restore();

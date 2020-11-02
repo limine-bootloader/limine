@@ -19,57 +19,49 @@ bool fs_get_guid(struct guid *guid, struct part *part) {
     return false;
 }
 
-int fopen(struct file_handle *ret, int disk, int partition, const char *filename) {
-    struct part part;
-    if (get_part(&part, disk, partition)) {
-        panic("Invalid partition");
-    }
-
-    if (echfs_check_signature(&part)) {
+int fopen(struct file_handle *ret, struct part *part, const char *filename) {
+    if (echfs_check_signature(part)) {
         struct echfs_file_handle *fd = conv_mem_alloc(sizeof(struct echfs_file_handle));
 
-        int r = echfs_open(fd, disk, partition, filename);
+        int r = echfs_open(fd, part, filename);
         if (r)
             return r;
 
-        ret->fd        = (void *)fd;
-        ret->read      = (void *)echfs_read;
-        ret->disk      = disk;
-        ret->partition = partition;
-        ret->size      = fd->dir_entry.size;
+        ret->fd   = (void *)fd;
+        ret->read = (void *)echfs_read;
+        ret->part = *part;
+        ret->size = fd->dir_entry.size;
 
         return 0;
     }
 
-    if (ext2_check_signature(&part)) {
+    if (ext2_check_signature(part)) {
         struct ext2_file_handle *fd = conv_mem_alloc(sizeof(struct ext2_file_handle));
 
-        int r = ext2_open(fd, disk, partition, filename);
+        int r = ext2_open(fd, part, filename);
         if (r)
             return r;
 
-        ret->fd        = (void *)fd;
-        ret->read      = (void *)ext2_read;
-        ret->disk      = disk;
-        ret->partition = partition;
-        ret->size      = fd->size;
+        ret->fd   = (void *)fd;
+        ret->read = (void *)ext2_read;
+        ret->part = *part;
+        ret->size = fd->size;
 
         return 0;
     }
 
-    if (fat32_check_signature(&part)) {
+    if (fat32_check_signature(part)) {
         struct fat32_file_handle *fd = conv_mem_alloc(sizeof(struct fat32_file_handle));
 
-        int r = fat32_open(fd, disk, partition, filename);
+        int r = fat32_open(fd, part, filename);
 
         if (r)
             return r;
 
-        ret->fd        = (void *)fd;
-        ret->read      = (void *)fat32_read;
-        ret->disk      = disk;
-        ret->partition = partition;
-        ret->size      = fd->size_bytes;
+        ret->fd   = (void *)fd;
+        ret->read = (void *)fat32_read;
+        ret->part = *part;
+        ret->size = fd->size_bytes;
 
         return 0;
     }

@@ -157,10 +157,10 @@ struct ext4_extent_idx {
 
 static int inode_read(void *buf, uint64_t loc, uint64_t count,
                       uint64_t block_size, struct ext2_inode *inode,
-                      uint64_t drive, struct part *part);
+                      struct part *part);
 
 // parse an inode given the partition base and inode number
-static int ext2_get_inode(struct ext2_inode *ret, uint64_t drive, struct part *part,
+static int ext2_get_inode(struct ext2_inode *ret, struct part *part,
                           uint64_t inode, struct ext2_superblock *sb) {
     if (inode == 0)
         return -1;
@@ -188,7 +188,7 @@ static int ext2_get_inode(struct ext2_inode *ret, uint64_t drive, struct part *p
         struct ext2_bgd target_descriptor;
         const uint64_t bgd_offset = bgd_start_offset + (sizeof(struct ext2_bgd) * ino_blk_grp);
 
-        read_partition(drive, part, &target_descriptor, bgd_offset, sizeof(struct ext2_bgd));
+        part_read(part, &target_descriptor, bgd_offset, sizeof(struct ext2_bgd));
 
         ino_offset = ((target_descriptor.bg_inode_table) * block_size) +
                                     (ino_size * ino_tbl_idx);
@@ -196,13 +196,13 @@ static int ext2_get_inode(struct ext2_inode *ret, uint64_t drive, struct part *p
         struct ext4_bgd target_descriptor;
         const uint64_t bgd_offset = bgd_start_offset + (sizeof(struct ext4_bgd) * ino_blk_grp);
 
-        read_partition(drive, part, &target_descriptor, bgd_offset, sizeof(struct ext4_bgd));
+        part_read(part, &target_descriptor, bgd_offset, sizeof(struct ext4_bgd));
 
         ino_offset = ((target_descriptor.bg_inode_table | (bit64 ? ((uint64_t)target_descriptor.inode_id_hi << 32) : 0)) * block_size) +
                                     (ino_size * ino_tbl_idx);
     }
 
-    read_partition(drive, part, ret, ino_offset, sizeof(struct ext2_inode));
+    part_read(part, ret, ino_offset, sizeof(struct ext2_inode));
 
     return 0;
 }
@@ -230,14 +230,14 @@ next:
         // preliminary read
         inode_read(dir, i, sizeof(struct ext2_dir_entry),
                    fd->block_size, &current_inode,
-                   fd->drive, &fd->part);
+                   &fd->part);
 
         // name read
         char name[dir->name_len + 1];
 
         memset(name, 0, dir->name_len + 1);
         inode_read(name, i + sizeof(struct ext2_dir_entry), dir->name_len,
-                   fd->block_size, &current_inode, fd->drive, &fd->part);
+                   fd->block_size, &current_inode, &fd->part);
 
         int r = strcmp(token, name);
 
@@ -246,7 +246,7 @@ next:
                 return 0;
             } else {
                 // update the current inode
-                ext2_get_inode(&current_inode, fd->drive, &fd->part, dir->inode, sb);
+                ext2_get_inode(&current_inode, &fd->part, dir->inode, sb);
                 goto next;
             }
         }
@@ -257,21 +257,19 @@ next:
     return -1;
 }
 
-int ext2_open(struct ext2_file_handle *ret, int drive, int partition, const char *path) {
-    if (get_part(&ret->part, drive, partition))
-        panic("Invalid partition");
-
-    ret->drive = drive;
+int ext2_open(struct ext2_file_handle *ret, struct part *part, const char *path) {
+    ret->part  = *part;
+    ret->drive = part->drive;
 
     struct ext2_superblock sb;
-    read_partition(drive, &ret->part, &sb, 1024, sizeof(struct ext2_superblock));
+    part_read(&ret->part, &sb, 1024, sizeof(struct ext2_superblock));
 
     if (sb.s_state == EXT2_FS_UNRECOVERABLE_ERRORS)
         panic("EXT2: unrecoverable errors found\n");
 
     ret->block_size = ((uint64_t)1024 << sb.s_log_block_size);
 
-    ext2_get_inode(&ret->root_inode, drive, &ret->part, 2, &sb);
+    ext2_get_inode(&ret->root_inode, &ret->part, 2, &sb);
 
     struct ext2_dir_entry entry;
     int r = ext2_parse_dirent(&entry, ret, &sb, path);
@@ -279,7 +277,7 @@ int ext2_open(struct ext2_file_handle *ret, int drive, int partition, const char
     if (r)
         return r;
 
-    ext2_get_inode(&ret->inode, drive, &ret->part, entry.inode, &sb);
+    ext2_get_inode(&ret->inode, &ret->part, entry.inode, &sb);
     ret->size = ret->inode.i_size;
 
     if ((ret->inode.i_mode & 0xf000) == EXT2_INO_DIRECTORY)
@@ -290,10 +288,10 @@ int ext2_open(struct ext2_file_handle *ret, int drive, int partition, const char
 
 int ext2_read(struct ext2_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
     return inode_read(buf, loc, count, file->block_size, &file->inode,
-                      file->drive, &file->part);
+                      &file->part);
 }
 
-static struct ext4_extent_header* ext4_find_leaf(struct ext4_extent_header* ext_block, uint32_t read_block, uint64_t block_size, uint64_t drive, struct part *part) {
+static struct ext4_extent_header* ext4_find_leaf(struct ext4_extent_header* ext_block, uint32_t read_block, uint64_t block_size, struct part *part) {
     struct ext4_extent_idx* index;
     void* buf = NULL;
 
@@ -320,14 +318,14 @@ static struct ext4_extent_header* ext4_find_leaf(struct ext4_extent_header* ext_
         uint64_t block = ((uint64_t)index[i].leaf_hi << 32) | index[i].leaf;
         if(!buf)
             buf = conv_mem_alloc(block_size);
-        read_partition(drive, part, buf, (block * block_size), block_size);
+        part_read(part, buf, (block * block_size), block_size);
         ext_block = buf;
     }
 }
 
 static int inode_read(void *buf, uint64_t loc, uint64_t count,
                       uint64_t block_size, struct ext2_inode *inode,
-                      uint64_t drive, struct part *part) {
+                      struct part *part) {
     for (uint64_t progress = 0; progress < count;) {
         uint64_t block = (loc + progress) / block_size;
 
@@ -343,7 +341,7 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
             struct ext4_extent *ext;
             int i;
 
-            leaf = ext4_find_leaf((struct ext4_extent_header*)inode->i_blocks, block, block_size, drive, part);
+            leaf = ext4_find_leaf((struct ext4_extent_header*)inode->i_blocks, block, block_size, part);
 
             if (!leaf)
                 panic("invalid extent");
@@ -382,26 +380,26 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
                 }
                 uint32_t offset = block % (block_size / sizeof(uint32_t));
                 uint32_t indirect_block;
-                read_partition(
-                    drive, part, &indirect_block,
+                part_read(
+                    part, &indirect_block,
                     inode->i_blocks[13] * block_size + index * sizeof(uint32_t),
                     sizeof(uint32_t)
                 );
-                read_partition(
-                    drive, part, &block_index,
+                part_read(
+                    part, &block_index,
                     indirect_block * block_size + offset * sizeof(uint32_t),
                     sizeof(uint32_t)
                 );
             } else {
-                read_partition(
-                    drive, part, &block_index,
+                part_read(
+                    part, &block_index,
                     inode->i_blocks[12] * block_size + block * sizeof(uint32_t),
                     sizeof(uint32_t)
                 );
             }
         }
 
-        read_partition(drive, part, buf + progress, (block_index * block_size) + offset, chunk);
+        part_read(part, buf + progress, (block_index * block_size) + offset, chunk);
 
         progress += chunk;
     }
@@ -413,7 +411,7 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
 // and checks if all features are supported
 int ext2_check_signature(struct part *part) {
     struct ext2_superblock sb;
-    read_partition(part->drive, part, &sb, 1024, sizeof(struct ext2_superblock));
+    part_read(part, &sb, 1024, sizeof(struct ext2_superblock));
 
     if (sb.s_magic != EXT2_S_MAGIC)
         return 0;
@@ -433,7 +431,7 @@ int ext2_check_signature(struct part *part) {
 
 bool ext2_get_guid(struct guid *guid, struct part *part) {
     struct ext2_superblock sb;
-    read_partition(part->drive, part, &sb, 1024, sizeof(struct ext2_superblock));
+    part_read(part, &sb, 1024, sizeof(struct ext2_superblock));
 
     if (sb.s_magic != EXT2_S_MAGIC)
         return false;

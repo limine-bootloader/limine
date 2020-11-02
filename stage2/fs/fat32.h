@@ -26,7 +26,7 @@ struct fat32_file_handle {
 
 int fat32_check_signature(struct part *part);
 
-int fat32_open(struct fat32_file_handle *ret, int disk, int partition, const char *path);
+int fat32_open(struct fat32_file_handle *ret, struct part *part, const char *path);
 int fat32_read(struct fat32_file_handle *file, void *buf, uint64_t loc, uint64_t count);
 
 #endif

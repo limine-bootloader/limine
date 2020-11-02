@@ -54,7 +54,7 @@ static int gpt_get_part(struct part *ret, int drive, int partition) {
     struct gpt_table_header header = {0};
 
     // read header, located after the first block
-    read(drive, &header, 512, sizeof(header));
+    disk_read(drive, &header, 512, sizeof(header));
 
     // check the header
     // 'EFI PART'
@@ -68,7 +68,7 @@ static int gpt_get_part(struct part *ret, int drive, int partition) {
         return END_OF_TABLE;
 
     struct gpt_entry entry = {0};
-    read(drive, &entry,
+    disk_read(drive, &entry,
          (header.partition_entry_lba * 512) + (partition * sizeof(entry)),
          sizeof(entry));
 
@@ -104,7 +104,7 @@ struct mbr_entry {
 static int mbr_get_part(struct part *ret, int drive, int partition) {
     // Check if actually valid mbr
     uint16_t hint;
-    read(drive, &hint, 444, sizeof(uint16_t));
+    disk_read(drive, &hint, 444, sizeof(uint16_t));
     if (hint && hint != 0x5a5a)
         return INVALID_TABLE;
 
@@ -112,12 +112,12 @@ static int mbr_get_part(struct part *ret, int drive, int partition) {
         return END_OF_TABLE;
 
     uint32_t disk_signature;
-    read(drive, &disk_signature, 440, sizeof(uint32_t));
+    disk_read(drive, &disk_signature, 440, sizeof(uint32_t));
 
     struct mbr_entry entry;
     size_t entry_offset = 0x1be + sizeof(struct mbr_entry) * partition;
 
-    int r = read(drive, &entry, entry_offset, sizeof(struct mbr_entry));
+    int r = disk_read(drive, &entry, entry_offset, sizeof(struct mbr_entry));
     if (r)
         return r;
 
@@ -140,7 +140,7 @@ static int mbr_get_part(struct part *ret, int drive, int partition) {
     return 0;
 }
 
-int get_part(struct part *part, int drive, int partition) {
+int part_get(struct part *part, int drive, int partition) {
     int ret;
 
     ret = gpt_get_part(part, drive, partition);
@@ -183,7 +183,7 @@ void part_create_index(void) {
 load_up:
         for (int part = 0; ; part++) {
             struct part p;
-            int ret = get_part(&p, drive, part);
+            int ret = part_get(&p, drive, part);
 
             if (ret == END_OF_TABLE)
                 break;
@@ -204,15 +204,18 @@ load_up:
     }
 }
 
-bool part_get_by_guid(int *drive, int *part, struct guid *guid) {
+bool part_get_by_guid(struct part *part, struct guid *guid) {
     for (size_t i = 0; i < part_index_i; i++) {
         if (!part_index[i].guid_valid)
             continue;
         if (!memcmp(&part_index[i].guid, guid, 16)) {
-            *drive = part_index[i].drive;
-            *part  = part_index[i].partition;
+            *part = part_index[i];
             return true;
         }
     }
     return false;
+}
+
+int part_read(struct part *part, void *buffer, uint64_t loc, uint64_t count) {
+    return disk_read(part->drive, buffer, loc + (part->first_sect * 512), count);
 }

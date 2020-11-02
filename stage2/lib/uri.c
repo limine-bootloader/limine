@@ -84,7 +84,11 @@ static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
     if (!parse_bios_partition(loc, &drive, &partition))
         return false;
 
-    if (fopen(fd, drive, partition, path))
+    struct part part;
+    if (part_get(&part, drive, partition))
+        return false;
+
+    if (fopen(fd, &part, path))
         return false;
 
     return true;
@@ -95,11 +99,11 @@ static bool uri_guid_dispatch(struct file_handle *fd, char *guid_str, char *path
     if (!string_to_guid(&guid, guid_str))
         return false;
 
-    int drive, partition;
-    if (!part_get_by_guid(&drive, &partition, &guid))
+    struct part part;
+    if (!part_get_by_guid(&part, &guid))
         return false;
 
-    if (fopen(fd, drive, partition, path))
+    if (fopen(fd, &part, path))
         return false;
 
     return true;

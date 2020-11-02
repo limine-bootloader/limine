@@ -1,9 +1,7 @@
 #ifndef __DRIVERS__DISK_H__
 #define __DRIVERS__DISK_H__
 
-#include <stddef.h>
 #include <stdint.h>
-#include <lib/part.h>
 
 struct bios_drive_params {
     uint16_t buf_size;
@@ -16,7 +14,6 @@ struct bios_drive_params {
     uint32_t edd;
 } __attribute__((packed));
 
-int read(int drive, void *buffer, uint64_t loc, uint64_t count);
-int read_partition(int drive, struct part *part, void *buffer, uint64_t loc, uint64_t count);
+int disk_read(int drive, void *buffer, uint64_t loc, uint64_t count);
 
 #endif

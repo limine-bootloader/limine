@@ -23,7 +23,7 @@ struct echfs_identity_table {
 #define DIR_TYPE     1
 
 static int read_block(struct echfs_file_handle *file, void *buf, uint64_t block, uint64_t offset, uint64_t count) {
-    return read_partition(file->disk, &file->part, buf, (file->alloc_map[block] * file->block_size) + offset, count);
+    return part_read(&file->part, buf, (file->alloc_map[block] * file->block_size) + offset, count);
 }
 
 int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
@@ -44,7 +44,7 @@ int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t
 
 int echfs_check_signature(struct part *part) {
     struct echfs_identity_table id_table;
-    read_partition(part->drive, part, &id_table, 0, sizeof(struct echfs_identity_table));
+    part_read(part, &id_table, 0, sizeof(struct echfs_identity_table));
 
     if (strncmp(id_table.signature, "_ECH_FS_", 8)) {
         return 0;
@@ -55,7 +55,7 @@ int echfs_check_signature(struct part *part) {
 
 bool echfs_get_guid(struct guid *guid, struct part *part) {
     struct echfs_identity_table id_table;
-    read_partition(part->drive, part, &id_table, 0, sizeof(struct echfs_identity_table));
+    part_read(part, &id_table, 0, sizeof(struct echfs_identity_table));
 
     if (strncmp(id_table.signature, "_ECH_FS_", 8)) {
         return false;
@@ -66,17 +66,14 @@ bool echfs_get_guid(struct guid *guid, struct part *part) {
     return true;
 }
 
-int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const char *path) {
+int echfs_open(struct echfs_file_handle *ret, struct part *part, const char *path) {
     const char *fullpath = path;
 
-    ret->disk = disk;
-
-    if (get_part(&ret->part, disk, partition)) {
-        panic("Invalid partition");
-    }
+    ret->disk = part->drive;
+    ret->part = *part;
 
     struct echfs_identity_table id_table;
-    read_partition(disk, &ret->part, &id_table, 0, sizeof(struct echfs_identity_table));
+    part_read(&ret->part, &id_table, 0, sizeof(struct echfs_identity_table));
 
     if (strncmp(id_table.signature, "_ECH_FS_", 8)) {
         print("echfs: signature invalid\n");
@@ -109,7 +106,7 @@ next:;
     }
 
     for (uint64_t i = 0; i < ret->dir_length; i += sizeof(struct echfs_dir_entry)) {
-        read_partition(disk, &ret->part, &ret->dir_entry, i + ret->dir_offset, sizeof(struct echfs_dir_entry));
+        part_read(&ret->part, &ret->dir_entry, i + ret->dir_offset, sizeof(struct echfs_dir_entry));
 
         if (!ret->dir_entry.parent_id) {
             break;
@@ -139,7 +136,7 @@ found:;
     ret->alloc_map[0] = ret->dir_entry.payload;
     for (uint64_t i = 1; i < file_block_count; i++) {
         // Read the next block.
-        read_partition(ret->disk, &ret->part,
+        part_read(&ret->part,
             &ret->alloc_map[i],
             ret->alloc_table_offset + ret->alloc_map[i-1] * sizeof(uint64_t),
             sizeof(uint64_t));

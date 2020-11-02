@@ -12,11 +12,11 @@ bool config_ready = false;
 
 static char *config_addr;
 
-int init_config(int drive, int part) {
+int init_config(struct part *part) {
     struct file_handle f;
 
-    if (fopen(&f, drive, part, "/limine.cfg")) {
-        if (fopen(&f, drive, part, "/boot/limine.cfg")) {
+    if (fopen(&f, part, "/limine.cfg")) {
+        if (fopen(&f, part, "/boot/limine.cfg")) {
             return -1;
         }
     }

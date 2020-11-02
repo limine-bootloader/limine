@@ -71,7 +71,7 @@ static int fat32_init_context(struct fat32_context* context, struct part *part) 
     context->drive = part->drive;
 
     struct fat32_bpb bpb;
-    read_partition(part->drive, &context->part, &bpb, 0, sizeof(struct fat32_bpb));
+    part_read(&context->part, &bpb, 0, sizeof(struct fat32_bpb));
 
     if (bpb.signature != FAT32_VALID_SIGNATURE_1 && bpb.signature != FAT32_VALID_SIGNATURE_2) {
         return 1;
@@ -98,7 +98,7 @@ static int fat32_read_cluster_from_map(struct fat32_context* context, uint32_t c
     const uint32_t offset = cluster % (FAT32_SECTOR_SIZE / 4);
 
     uint32_t clusters[FAT32_SECTOR_SIZE / sizeof(uint32_t)];
-    int r = read_partition(context->drive, &context->part, &clusters[0], (context->fat_start_lba + sector) * FAT32_SECTOR_SIZE, sizeof(clusters));
+    int r = part_read(&context->part, &clusters[0], (context->fat_start_lba + sector) * FAT32_SECTOR_SIZE, sizeof(clusters));
 
     if (r) {
         return r;
@@ -110,7 +110,7 @@ static int fat32_read_cluster_from_map(struct fat32_context* context, uint32_t c
 
 static int fat32_load_fat_cluster_to_memory(struct fat32_context* context, uint32_t cluster_number, void* buffer, uint32_t offset, uint32_t limit) {
     const uint32_t sector = context->data_start_lba + (cluster_number - 2) * context->sectors_per_cluster;
-    return read_partition(context->drive, &context->part, buffer, ((uint64_t) sector) * FAT32_SECTOR_SIZE + offset, limit);
+    return part_read(&context->part, buffer, ((uint64_t) sector) * FAT32_SECTOR_SIZE + offset, limit);
 }
 
 // Copy ucs-2 characters to char*
@@ -226,14 +226,9 @@ int fat32_check_signature(struct part *part) {
     return fat32_init_context(&context, part) == 0;
 }
 
-int fat32_open(struct fat32_file_handle* ret, int disk, int partition, const char* path) {
-    struct part part;
-    if (get_part(&part, disk, partition)) {
-        panic("Invalid partition");
-    }
-
+int fat32_open(struct fat32_file_handle* ret, struct part *part, const char* path) {
     struct fat32_context context;
-    int r = fat32_init_context(&context, &part);
+    int r = fat32_init_context(&context, part);
 
     if (r) {
         print("fat32: context init failure (%d)\n", r);

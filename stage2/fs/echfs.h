@@ -36,7 +36,7 @@ struct echfs_file_handle {
 int echfs_check_signature(struct part *part);
 bool echfs_get_guid(struct guid *guid, struct part *part);
 
-int echfs_open(struct echfs_file_handle *ret, int disk, int partition, const char *filename);
+int echfs_open(struct echfs_file_handle *ret, struct part *part, const char *filename);
 int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t count);
 
 #endif

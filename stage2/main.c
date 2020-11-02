@@ -42,12 +42,12 @@ void entry(uint8_t _boot_drive) {
             panic("Config file not found.");
         }
         print("Checking partition %d...\n", i);
-        int ret = get_part(&parts[i], boot_drive, i);
+        int ret = part_get(&parts[i], boot_drive, i);
         if (ret) {
             print("Partition not found.\n");
         } else {
             print("Partition found.\n");
-            if (!init_config(boot_drive, i)) {
+            if (!init_config(&parts[i])) {
                 print("Config file found and loaded.\n");
                 break;
             }

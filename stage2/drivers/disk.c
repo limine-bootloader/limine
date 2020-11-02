@@ -1,10 +1,9 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <lib/libc.h>
 #include <drivers/disk.h>
+#include <lib/libc.h>
 #include <lib/real.h>
 #include <lib/blib.h>
-#include <lib/part.h>
 #include <lib/print.h>
 #include <mm/pmm.h>
 
@@ -61,7 +60,7 @@ static int cache_block(int drive, uint64_t block, int sector_size) {
     return 0;
 }
 
-int read(int drive, void *buffer, uint64_t loc, uint64_t count) {
+int disk_read(int drive, void *buffer, uint64_t loc, uint64_t count) {
     struct rm_regs r = {0};
     struct bios_drive_params drive_params;
 
@@ -99,8 +98,4 @@ int read(int drive, void *buffer, uint64_t loc, uint64_t count) {
     }
 
     return 0;
-}
-
-int read_partition(int drive, struct part *part, void *buffer, uint64_t loc, uint64_t count) {
-    return read(drive, buffer, loc + (part->first_sect * 512), count);
 }

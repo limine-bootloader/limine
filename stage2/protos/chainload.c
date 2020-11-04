@@ -52,10 +52,10 @@ void chainload(void) {
         if (!config_get_value(buf, 0, 32, "PARTITION")) {
             part = -1;
         } else {
-            if (strtoui(buf) < 1 || strtoui(buf) > 256) {
+            if (strtoui(buf, 0, 10) < 1 || strtoui(buf, 0, 10) > 256) {
                 panic("BIOS partition number outside range 1-256");
             }
-            part = (int)strtoui(buf);
+            part = (int)strtoui(buf, 0, 10);
         }
     }
     int drive; {
@@ -63,10 +63,10 @@ void chainload(void) {
         if (!config_get_value(buf, 0, 32, "DRIVE")) {
             panic("DRIVE not specified");
         }
-        if (strtoui(buf) < 1 || strtoui(buf) > 16) {
+        if (strtoui(buf, 0, 10) < 1 || strtoui(buf, 0, 10) > 16) {
             panic("BIOS drive number outside range 1-16");
         }
-        drive = (int)strtoui(buf);
+        drive = (int)strtoui(buf, 0, 10);
     }
 
     term_deinit();

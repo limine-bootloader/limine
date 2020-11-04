@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <lib/libc.h>
 #include <lib/blib.h>
 #include <lib/print.h>
 
@@ -65,16 +66,11 @@ int digit_to_int(char c) {
     return -1;
 }
 
-uint64_t strtoui(const char *s) {
+uint64_t strtoui(const char *s, size_t limit, int base) {
     uint64_t n = 0;
-    while (*s)
-        n = n * 10 + digit_to_int(*(s++));
-    return n;
-}
-
-uint64_t strtoui16(const char *s) {
-    uint64_t n = 0;
-    while (*s)
-        n = n * 16 + digit_to_int(*(s++));
+    if (!limit)
+        limit = strlen(s);
+    for (size_t i = 0; i < limit; i++)
+        n = n * base + digit_to_int(s[i]);
     return n;
 }

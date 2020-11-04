@@ -57,10 +57,10 @@ static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) 
             if (*loc == 0) {
                 *drive = boot_drive;
             } else {
-                if (strtoui(loc) < 1 || strtoui(loc) > 16) {
+                if (strtoui(loc, 0, 10) < 1 || strtoui(loc, 0, 10) > 16) {
                     panic("BIOS drive number outside range 1-16");
                 }
-                *drive = (strtoui(loc) - 1) + 0x80;
+                *drive = (strtoui(loc, 0, 10) - 1) + 0x80;
             }
             loc += i + 1;
             break;
@@ -70,10 +70,10 @@ static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) 
     if (*loc == 0)
         return false;
 
-    if (strtoui(loc) < 1 || strtoui(loc) > 256) {
+    if (strtoui(loc, 0, 10) < 1 || strtoui(loc, 0, 10) > 256) {
         panic("BIOS partition number outside range 1-256");
     }
-    *partition = strtoui(loc) - 1;
+    *partition = strtoui(loc, 0, 10) - 1;
 
     return true;
 }

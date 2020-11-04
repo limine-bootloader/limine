@@ -6,18 +6,15 @@
 load_gdt:
     pusha
     push es
-    push ds
     mov ax, word [0x40e] ; 0x40e contains the value of a segment pointing to the EBDA
     sub ax, ALIGN_UP(gdt.size, 16) / 16
     mov es, ax
     mov word  [gdt.ptr], ax
     shl dword [gdt.ptr], 4
     xor di, di
-    mov ds, di
     mov si, gdt.start
     mov cx, gdt.size
     rep movsb
-    pop ds
     lgdt [gdt]
     pop es
     popa

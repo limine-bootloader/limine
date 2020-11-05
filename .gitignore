@@ -10,3 +10,4 @@
 .vscode
 /limine-install
 !/limine.bin
+!/limine-pxe.bin

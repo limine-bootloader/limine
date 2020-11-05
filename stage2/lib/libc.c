@@ -1,6 +1,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <lib/libc.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <lib/blib.h>
 
 int toupper(int c) {
     if (c >= 'a' && c <= 'z') {
@@ -66,4 +69,25 @@ size_t strlen(const char *str) {
     for (len = 0; str[len]; len++);
 
     return len;
+}
+
+int inet_pton(const char *src, void *dst) {
+    uint8_t array[4] = {};
+    const char *current = src;
+
+    for (int i = 0; i < 4; i++) {
+       long int value = strtoui(current, 0, 10);
+       if (value > 255)
+           return -1;
+       for (int j = 0; j < 3; j++) {
+           if (*current != '\0' && *current != '.')
+                current++;
+           else
+               break;
+       }
+       current++;
+       array[i] = value;
+    }
+    memcpy(dst, array, 4);
+    return 0;
 }

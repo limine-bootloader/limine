@@ -17,8 +17,10 @@
 #include <protos/linux.h>
 #include <protos/chainload.h>
 #include <menu.h>
+#include <pxe/pxe.h>
+#include <pxe/tftp.h>
 
-void entry(uint8_t _boot_drive) {
+void entry(uint8_t _boot_drive, int pxe_boot) {
     boot_drive = _boot_drive;
 
     mtrr_save();
@@ -30,32 +32,39 @@ void entry(uint8_t _boot_drive) {
     if (!a20_enable())
         panic("Could not enable A20 line");
 
-    print("Boot drive: %x\n", boot_drive);
-
     part_create_index();
-
-    // Look for config file.
-    print("Searching for config file...\n");
-    struct part parts[4];
-    for (int i = 0; ; i++) {
-        if (i == 4) {
-            panic("Config file not found.");
+    init_e820();
+    init_memmap();
+    
+    if (pxe_boot) {
+        pxe_init();
+        if(init_config_pxe()) {
+            panic("failed to load config file");
         }
-        print("Checking partition %d...\n", i);
-        int ret = part_get(&parts[i], boot_drive, i);
-        if (ret) {
-            print("Partition not found.\n");
-        } else {
-            print("Partition found.\n");
-            if (!init_config(&parts[i])) {
-                print("Config file found and loaded.\n");
-                break;
+        print("config loaded");
+    } else {
+        print("Boot drive: %x\n", boot_drive);
+        // Look for config file.
+        print("Searching for config file...\n");
+        struct part parts[4];
+        for (int i = 0; ; i++) {
+            if (i == 4) {
+                panic("Config file not found.");
+            }
+            print("Checking partition %d...\n", i);
+            int ret = part_get(&parts[i], boot_drive, i);
+            if (ret) {
+                print("Partition not found.\n");
+            } else {
+                print("Partition found.\n");
+                if (!init_config_disk(&parts[i])) {
+                    print("Config file found and loaded.\n");
+                    break;
+                }
             }
         }
     }
 
-    init_e820();
-    init_memmap();
 
     char *cmdline = menu();
 

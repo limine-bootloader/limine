@@ -5,6 +5,8 @@
 #include <lib/blib.h>
 #include <mm/pmm.h>
 #include <fs/file.h>
+#include <lib/print.h>
+#include <pxe/tftp.h>
 
 #define SEPARATOR '\n'
 
@@ -12,7 +14,7 @@ bool config_ready = false;
 
 static char *config_addr;
 
-int init_config(struct part *part) {
+int init_config_disk(struct part *part) {
     struct file_handle f;
 
     if (fopen(&f, part, "/limine.cfg")) {
@@ -26,6 +28,23 @@ int init_config(struct part *part) {
 
     fread(&f, config_addr, 0, f.size);
 
+    return init_config(config_size);
+}
+
+int init_config_pxe(void) {
+    struct tftp_file_handle cfg;
+    if (tftp_open(&cfg, 0, 69, "limine.cfg")) {
+        return -1;
+    }
+    config_addr = conv_mem_alloc(cfg.file_size);
+    tftp_read(&cfg, config_addr, 0, cfg.file_size);
+
+    print("\nconfig: %s\n", config_addr);
+
+    return init_config(cfg.file_size);
+}
+
+int init_config(size_t config_size) {
     // remove windows carriage returns, if any
     for (size_t i = 0; i < config_size; i++) {
         if (config_addr[i] == '\r') {

@@ -7,6 +7,7 @@ PATH := $(shell pwd)/toolchain/bin:$(PATH)
 all: stage2 decompressor
 	gzip -n -9 < stage2/stage2.bin > stage2/stage2.bin.gz
 	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
+	cd pxeboot && nasm bootsect.asm -fbin -o ../limine-pxe.bin
 
 clean: stage2-clean decompressor-clean test-clean
 	rm -f stage2/stage2.bin.gz

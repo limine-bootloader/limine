@@ -81,12 +81,8 @@ start:
     mov ss, ax
 
     and edx, 0xff
-    push edx
 
-    push stage2.size
-    push (stage2 - decompressor) + 0x70000
-
-    call 0x70000
+    jmp vector
 
 bits 16
 
@@ -101,6 +97,19 @@ times 6 db 0
 
 %include 'disk.inc'
 %include 'gdt.inc'
+
+bits 32
+vector:
+    push 0
+
+    push edx
+
+    push stage2.size
+    push (stage2 - decompressor) + 0x70000
+
+    call 0x70000
+
+bits 16
 
 times 0x1b0-($-$$) db 0
 stage2_sector: dd 1

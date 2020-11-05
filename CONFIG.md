@@ -25,7 +25,7 @@ Some keys take *URIs* as values; these are described in the next section.
 * `TIMEOUT` - Specifies the timeout in seconds before the first *entry* is automatically booted.
 * `DEFAULT_ENTRY` - 0-based entry index of the entry which will be automatically selected at startup. If unspecified, it is `0`.
 * `GRAPHICS` - If set to `yes`, do use graphical VESA framebuffer for the boot menu, else use text mode.
-* `THEME_COLOURS` - Specifies the colour palette used by the terminal (AARRGGBB). It is a `;` separated array of 8 colours: red, green, brown, blue, magenta, cyan, and gray, respectively. Ignored if `GRAPHICS` is not `yes`.
+* `THEME_COLOURS` - Specifies the colour palette used by the terminal (AARRGGBB). It is a `;` separated array of 8 colours: black, red, green, brown, blue, magenta, cyan, and gray, respectively. Ignored if `GRAPHICS` is not `yes`.
 * `THEME_COLORS` - Alias of `THEME_COLOURS`.
 * `THEME_MARGIN` - Set the amount of margin around the terminal. Ignored if `GRAPHICS` is not `yes`.
 * `THEME_MARGIN_GRADIENT` - Set the thickness in pixel for the gradient around the terminal. Ignored if `GRAPHICS` is not `yes`.

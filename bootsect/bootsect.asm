@@ -54,11 +54,11 @@ start:
     ; make sure that is the case now.
     mov esp, 0x7c00
 
-    push 0x7000
+    push 0x6fe0
     pop es
     mov eax, dword [stage2_sector]
     xor bx, bx
-    mov cx, 63
+    mov ecx, 32768
     call read_sectors
     jc err
 
@@ -112,7 +112,7 @@ vector:
 bits 16
 
 times 0x1b0-($-$$) db 0
-stage2_sector: dd 1
+stage2_sector: dd 0
 
 times 0x1b8-($-$$) db 0
 times 510-($-$$) db 0

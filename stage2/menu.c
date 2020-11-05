@@ -21,7 +21,7 @@ static char config_entry_name[1024];
 char *menu(void) {
     cmdline = conv_mem_alloc(CMDLINE_MAX);
 
-    char buf[16];
+    char *buf = conv_mem_alloc(256);
 
     int selected_entry = 0;
     if (config_get_value(buf, 0, 16, "DEFAULT_ENTRY")) {
@@ -52,36 +52,17 @@ char *menu(void) {
             0x00aaaaaa  // grey
         };
 
-        if (config_get_value(buf, 0, 16, "THEME_BLACK")) {
-            colourscheme[0] = (int)strtoui(buf, NULL, 16);
-        }
-
-        if (config_get_value(buf, 0, 16, "THEME_RED")) {
-            colourscheme[1] = (int)strtoui(buf, NULL, 16);
-        }
-
-        if (config_get_value(buf, 0, 16, "THEME_GREEN")) {
-            colourscheme[2] = (int)strtoui(buf, NULL, 16);
-        }
-
-        if (config_get_value(buf, 0, 16, "THEME_BROWN")) {
-            colourscheme[3] = (int)strtoui(buf, NULL, 16);
-        }
-
-        if (config_get_value(buf, 0, 16, "THEME_BLUE")) {
-            colourscheme[4] = (int)strtoui(buf, NULL, 16);
-        }
-
-        if (config_get_value(buf, 0, 16, "THEME_MAGENTA")) {
-            colourscheme[5] = (int)strtoui(buf, NULL, 16);
-        }
-
-        if (config_get_value(buf, 0, 16, "THEME_CYAN")) {
-            colourscheme[6] = (int)strtoui(buf, NULL, 16);
-        }
-
-        if (config_get_value(buf, 0, 16, "THEME_GREY")) {
-            colourscheme[7] = (int)strtoui(buf, NULL, 16);
+        if (config_get_value(buf, 0, 256, "THEME_COLOURS")
+         || config_get_value(buf, 0, 256, "THEME_COLORS")) {
+            const char *first = buf;
+            for (int i = 0; i < 8; i++) {
+                const char *last;
+                uint32_t col = strtoui(first, &last, 16);
+                if (first == last || *last == 0)
+                    break;
+                first = last + 1;
+                colourscheme[i] = col;
+            }
         }
 
         if (config_get_value(buf, 0, 16, "THEME_MARGIN")) {

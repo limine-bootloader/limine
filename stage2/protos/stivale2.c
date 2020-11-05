@@ -259,9 +259,23 @@ void stivale2_load(char *cmdline) {
         struct stivale2_struct_tag_framebuffer *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_framebuffer));
         tag->tag.identifier = STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID;
 
-        tag->framebuffer_width  = hdrtag->framebuffer_width;
-        tag->framebuffer_height = hdrtag->framebuffer_height;
-        tag->framebuffer_bpp    = hdrtag->framebuffer_bpp;
+        if (config_get_value(buf, 0, 128, "FRAMEBUFFER_WIDTH")) {
+            tag->framebuffer_width = (int)strtoui(buf);
+        } else {
+            tag->framebuffer_width = hdrtag->framebuffer_width;
+        }
+
+        if (config_get_value(buf, 0, 128, "FRAMEBUFFER_HEIGHT")) {
+            tag->framebuffer_height = (int)strtoui(buf);
+        } else {
+            tag->framebuffer_height = hdrtag->framebuffer_height;
+        }
+
+        if (config_get_value(buf, 0, 128, "FRAMEBUFFER_BPP")) {
+            tag->framebuffer_bpp = (int)strtoui(buf);
+        } else {
+            tag->framebuffer_bpp = hdrtag->framebuffer_bpp;
+        }
 
         uint32_t *fb32;
         init_vbe(&fb32,

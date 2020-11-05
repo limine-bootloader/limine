@@ -166,9 +166,23 @@ void stivale_load(char *cmdline) {
     stivale_struct.epoch = time();
     print("stivale: Current epoch: %U\n", stivale_struct.epoch);
 
-    stivale_struct.framebuffer_width  = stivale_hdr.framebuffer_width;
-    stivale_struct.framebuffer_height = stivale_hdr.framebuffer_height;
-    stivale_struct.framebuffer_bpp    = stivale_hdr.framebuffer_bpp;
+    if (config_get_value(buf, 0, 128, "FRAMEBUFFER_WIDTH")) {
+        stivale_struct.framebuffer_width = (int)strtoui(buf);
+    } else {
+        stivale_struct.framebuffer_width = stivale_hdr.framebuffer_width;
+    }
+
+    if (config_get_value(buf, 0, 128, "FRAMEBUFFER_HEIGHT")) {
+        stivale_struct.framebuffer_height = (int)strtoui(buf);
+    } else {
+        stivale_struct.framebuffer_height = stivale_hdr.framebuffer_height;
+    }
+
+    if (config_get_value(buf, 0, 128, "FRAMEBUFFER_BPP")) {
+        stivale_struct.framebuffer_bpp = (int)strtoui(buf);
+    } else {
+        stivale_struct.framebuffer_bpp = stivale_hdr.framebuffer_bpp;
+    }
 
     term_deinit();
 

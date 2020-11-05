@@ -43,6 +43,9 @@ Some keys take *URIs* as values; these are described in the next section.
   * `KERNEL_PATH` - The URI path of the kernel.
   * `MODULE_PATH` - The URI path to a module.
   * `MODULE_STRING` - A string to be passed to a module.
+  * `FRAMEBUFFER_WIDTH` - An integer specifying the width of the framebuffer. This overrides the header. If set to 0, the bootloader chooses an optimal width.
+  * `FRAMEBUFFER_HEIGHT` - Same as `FRAMEBUFFER_WIDTH`, but it specifies the height.
+  * `FRAMEBUFFER_BPP` - Same as `FRAMEBUFFER_WIDTH` and `FRAMEBUFFER_HEIGHT`, but it specifies the bits per pixel.
 * Chainload protocol:
   * `DRIVE` - The 1-based BIOS drive to chainload.
   * `PARTITION` - The 1-based BIOS partition to chainload, if omitted, chainload drive.

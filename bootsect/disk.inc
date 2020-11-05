@@ -7,7 +7,7 @@
 ; DL = Drive number
 ; ES = Buffer segment
 ; BX = Buffer offset
-; CX = Sectors count
+; ECX = Byte count
 
 ; OUT:
 ; Carry if error
@@ -15,40 +15,49 @@
 read_sectors:
     pusha
 
-    push es
-    pop word [.target_segment]
-    mov word [.target_offset], bx
-    mov dword [.lba_address_low], eax
+    mov esi, .da_struct
 
-    mov word [.countdown], cx
+    mov word  [si],    16
+    mov word  [si+2],  1
+    mov word  [si+4],  bx
+    mov word  [si+6],  es
+    mov dword [si+8],  eax
+    mov dword [si+12], 0
+
+    ; Get bytes per sector
+    push dx
+    push si
+    mov ah, 0x48
+    mov si, .drive_params
+    mov word [si], 30       ; buf_size
+    int 0x13
+    jc .done
+    mov bp, word [si+24]    ; bytes_per_sect
+    mov ax, cx
+    shr ecx, 16
+    mov dx, cx
+    xor cx, cx
+    div bp
+    test dx, dx
+    adc cx, ax
+    pop si
+    pop dx
 
   .loop:
-    mov esi, .da_struct
     mov ah, 0x42
 
     clc
     int 0x13
     jc .done
 
-    add word [.target_offset], 512
-    inc dword [.lba_address_low]
+    add word  [si+4], bp
+    inc dword [si+8]
 
-    dec word [.countdown]
-    jnz .loop
+    loop .loop
 
   .done:
     popa
     ret
 
-align 2
-  .countdown: dw 0
-
-align 4
-  .da_struct:
-    .packet_size        db  16
-    .unused             db  0
-    .count              dw  1
-    .target_offset      dw  0
-    .target_segment     dw  0
-    .lba_address_low    dd  0
-    .lba_address_high   dd  0
+  .da_struct:    equ 0x8000
+  .drive_params: equ 0x8010

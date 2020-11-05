@@ -8,10 +8,10 @@ int main(int argc, char *argv[]) {
     FILE    *bootloader_file, *device;
     uint8_t *bootloader_img;
     uint8_t  orig_mbr[70], timestamp[6];
-    uint32_t stage2_sect;
+    uint32_t stage2_sect, sect_size;
 
     if (argc < 3) {
-        printf("Usage: %s <bootloader image> <device> [stage2 start sector]\n", argv[0]);
+        printf("Usage: %s <bootloader image> <device> [<stage2 start sector> <sector size>]\n", argv[0]);
         return 1;
     }
 
@@ -41,9 +41,12 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    stage2_sect = 1;
+    stage2_sect = 0;
+    sect_size   = 512;
     if (argc >= 4)
         sscanf(argv[3], "%" SCNu32, &stage2_sect);
+    if (argc >= 5)
+        sscanf(argv[4], "%" SCNu32, &sect_size);
 
     // Save original timestamp
     fseek(device, 218, SEEK_SET);
@@ -58,8 +61,8 @@ int main(int argc, char *argv[]) {
     fwrite(&bootloader_img[0], 1, 512, device);
 
     // Write the rest of stage 2 to the device
-    fseek(device, stage2_sect * 512, SEEK_SET);
-    fwrite(&bootloader_img[512], 63, 512, device);
+    fseek(device, stage2_sect * sect_size, SEEK_SET);
+    fwrite(&bootloader_img[0], 64, 512, device);
 
     // Hardcode in the bootsector the location of stage 2
     fseek(device, 0x1b0, SEEK_SET);

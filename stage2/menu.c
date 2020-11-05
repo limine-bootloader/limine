@@ -25,12 +25,12 @@ char *menu(void) {
 
     int selected_entry = 0;
     if (config_get_value(buf, 0, 16, "DEFAULT_ENTRY")) {
-        selected_entry = (int)strtoui(buf, 0, 10);
+        selected_entry = (int)strtoui(buf, NULL, 10);
     }
 
     int timeout = 5;
     if (config_get_value(buf, 0, 16, "TIMEOUT")) {
-        timeout = (int)strtoui(buf, 0, 10);
+        timeout = (int)strtoui(buf, NULL, 10);
     }
 
     if (!timeout)
@@ -53,43 +53,43 @@ char *menu(void) {
         };
 
         if (config_get_value(buf, 0, 16, "THEME_BLACK")) {
-            colourscheme[0] = (int)strtoui(buf, 0, 16);
+            colourscheme[0] = (int)strtoui(buf, NULL, 16);
         }
 
         if (config_get_value(buf, 0, 16, "THEME_RED")) {
-            colourscheme[1] = (int)strtoui(buf, 0, 16);
+            colourscheme[1] = (int)strtoui(buf, NULL, 16);
         }
 
         if (config_get_value(buf, 0, 16, "THEME_GREEN")) {
-            colourscheme[2] = (int)strtoui(buf, 0, 16);
+            colourscheme[2] = (int)strtoui(buf, NULL, 16);
         }
 
         if (config_get_value(buf, 0, 16, "THEME_BROWN")) {
-            colourscheme[3] = (int)strtoui(buf, 0, 16);
+            colourscheme[3] = (int)strtoui(buf, NULL, 16);
         }
 
         if (config_get_value(buf, 0, 16, "THEME_BLUE")) {
-            colourscheme[4] = (int)strtoui(buf, 0, 16);
+            colourscheme[4] = (int)strtoui(buf, NULL, 16);
         }
 
         if (config_get_value(buf, 0, 16, "THEME_MAGENTA")) {
-            colourscheme[5] = (int)strtoui(buf, 0, 16);
+            colourscheme[5] = (int)strtoui(buf, NULL, 16);
         }
 
         if (config_get_value(buf, 0, 16, "THEME_CYAN")) {
-            colourscheme[6] = (int)strtoui(buf, 0, 16);
+            colourscheme[6] = (int)strtoui(buf, NULL, 16);
         }
 
         if (config_get_value(buf, 0, 16, "THEME_GREY")) {
-            colourscheme[7] = (int)strtoui(buf, 0, 16);
+            colourscheme[7] = (int)strtoui(buf, NULL, 16);
         }
 
         if (config_get_value(buf, 0, 16, "THEME_MARGIN")) {
-            margin = (int)strtoui(buf, 0, 10);
+            margin = (int)strtoui(buf, NULL, 10);
         }
 
         if (config_get_value(buf, 0, 16, "THEME_MARGIN_GRADIENT")) {
-            margin_gradient = (int)strtoui(buf, 0, 10);
+            margin_gradient = (int)strtoui(buf, NULL, 10);
         }
 
         if (!config_get_value(cmdline, 0, CMDLINE_MAX, "BACKGROUND_PATH"))

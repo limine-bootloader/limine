@@ -51,6 +51,8 @@ bool uri_resolve(char *uri, char **resource, char **root, char **path) {
 // BIOS partitions are specified in the <BIOS drive>:<partition> form.
 // The drive may be omitted, the partition cannot.
 static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) {
+    uint64_t val;
+
     for (size_t i = 0; ; i++) {
         if (loc[i] == 0)
             return false;
@@ -60,10 +62,11 @@ static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) 
             if (*loc == 0) {
                 *drive = boot_drive;
             } else {
-                if (strtoui(loc, 0, 10) < 1 || strtoui(loc, 0, 10) > 16) {
+                val = strtoui(loc, NULL, 10);
+                if (val < 1 || val > 16) {
                     panic("BIOS drive number outside range 1-16");
                 }
-                *drive = (strtoui(loc, 0, 10) - 1) + 0x80;
+                *drive = (val - 1) + 0x80;
             }
             loc += i + 1;
             break;
@@ -73,10 +76,11 @@ static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) 
     if (*loc == 0)
         return false;
 
-    if (strtoui(loc, 0, 10) < 1 || strtoui(loc, 0, 10) > 256) {
+    val = strtoui(loc, NULL, 10);
+    if (val < 1 || val > 256) {
         panic("BIOS partition number outside range 1-256");
     }
-    *partition = strtoui(loc, 0, 10) - 1;
+    *partition = val - 1;
 
     return true;
 }

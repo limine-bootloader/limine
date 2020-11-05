@@ -72,21 +72,21 @@ size_t strlen(const char *str) {
 }
 
 int inet_pton(const char *src, void *dst) {
-    uint8_t array[4] = {};
+    uint8_t array[4];
     const char *current = src;
 
     for (int i = 0; i < 4; i++) {
-       long int value = strtoui(current, 0, 10);
-       if (value > 255)
-           return -1;
-       for (int j = 0; j < 3; j++) {
-           if (*current != '\0' && *current != '.')
-                current++;
-           else
-               break;
-       }
-       current++;
-       array[i] = value;
+        const char *newcur;
+        uint64_t value = strtoui(current, &newcur, 10);
+        if (current == newcur)
+            return -1;
+        current = newcur;
+        if (*current == 0 && i < 3)
+            return -1;
+        if (value > 255)
+            return -1;
+        current++;
+        array[i] = value;
     }
     memcpy(dst, array, 4);
     return 0;

@@ -47,15 +47,18 @@ static void spinup(uint8_t drive) {
 }
 
 void chainload(void) {
+    uint64_t val;
+
     int part; {
         char buf[32];
         if (!config_get_value(buf, 0, 32, "PARTITION")) {
             part = -1;
         } else {
-            if (strtoui(buf, 0, 10) < 1 || strtoui(buf, 0, 10) > 256) {
+            val = strtoui(buf, NULL, 10);
+            if (val < 1 || val > 256) {
                 panic("BIOS partition number outside range 1-256");
             }
-            part = (int)strtoui(buf, 0, 10);
+            part = val - 1;
         }
     }
     int drive; {
@@ -63,10 +66,11 @@ void chainload(void) {
         if (!config_get_value(buf, 0, 32, "DRIVE")) {
             panic("DRIVE not specified");
         }
-        if (strtoui(buf, 0, 10) < 1 || strtoui(buf, 0, 10) > 16) {
+        val = strtoui(buf, NULL, 10);
+        if (val < 1 || val > 16) {
             panic("BIOS drive number outside range 1-16");
         }
-        drive = (int)strtoui(buf, 0, 10);
+        drive = (val - 1) + 0x80;
     }
 
     term_deinit();

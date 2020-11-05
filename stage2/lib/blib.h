@@ -16,7 +16,7 @@ __attribute__((noreturn)) void panic(const char *fmt, ...);
 
 int pit_sleep_and_quit_on_keypress(uint32_t pit_ticks);
 
-uint64_t strtoui(const char *s, size_t limit, int base);
+uint64_t strtoui(const char *s, const char **end, int base);
 
 #define DIV_ROUNDUP(a, b) (((a) + ((b) - 1)) / (b))
 

@@ -57,8 +57,10 @@ struct gpt_entry {
 static int gpt_get_part(struct part *ret, int drive, int partition) {
     struct gpt_table_header header = {0};
 
+    int sector_size = disk_get_sector_size(drive);
+
     // read header, located after the first block
-    read(drive, &header, 512, sizeof(header));
+    read(drive, &header, sector_size * 1, sizeof(header));
 
     // check the header
     // 'EFI PART'
@@ -71,14 +73,15 @@ static int gpt_get_part(struct part *ret, int drive, int partition) {
 
     struct gpt_entry entry = {0};
     read(drive, &entry,
-         (header.partition_entry_lba * 512) + (partition * sizeof(entry)),
+         (header.partition_entry_lba * sector_size) + (partition * sizeof(entry)),
          sizeof(entry));
 
     if (entry.unique_partition_guid.low  == 0 &&
         entry.unique_partition_guid.high == 0) return NO_PARTITION;
 
-    ret->first_sect = entry.starting_lba;
-    ret->sect_count = (entry.ending_lba - entry.starting_lba) + 1;
+    ret->first_sect  = entry.starting_lba;
+    ret->sect_count  = (entry.ending_lba - entry.starting_lba) + 1;
+    ret->sector_size = sector_size;
 
     return 0;
 }
@@ -109,8 +112,10 @@ static int mbr_get_part(struct part *ret, int drive, int partition) {
     if (entry.type == 0)
         return NO_PARTITION;
 
-    ret->first_sect = entry.first_sect;
-    ret->sect_count = entry.sect_count;
+    ret->first_sect  = entry.first_sect;
+    ret->sect_count  = entry.sect_count;
+    ret->sector_size = disk_get_sector_size(drive);
+
     return 0;
 }
 

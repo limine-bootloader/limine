@@ -16,6 +16,7 @@ struct bios_drive_params {
     uint32_t edd;
 } __attribute__((packed));
 
+int disk_get_sector_size(int drive);
 int read(int drive, void *buffer, uint64_t loc, uint64_t count);
 int read_partition(int drive, struct part *part, void *buffer, uint64_t loc, uint64_t count);
 

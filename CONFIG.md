@@ -25,7 +25,8 @@ Some keys take *URIs* as values; these are described in the next section.
 * `TIMEOUT` - Specifies the timeout in seconds before the first *entry* is automatically booted.
 * `DEFAULT_ENTRY` - 0-based entry index of the entry which will be automatically selected at startup. If unspecified, it is `0`.
 * `GRAPHICS` - If set to `yes`, do use graphical VESA framebuffer for the boot menu, else use text mode.
-* `THEME_BLACK`, `THEME_RED`, `THEME_GREEN`, `THEME_BROWN`, `THEME_BLUE`, `THEME_MAGENTA`, `THEME_CYAN`, `THEME_GREY` - Specifies the colors used by the terminal (RRGGBB). Ignored if `GRAPHICS` is not `yes`.
+* `THEME_COLOURS` - Specifies the colour palette used by the terminal (AARRGGBB). It is a `;` separated array of 8 colours: red, green, brown, blue, magenta, cyan, and gray, respectively. Ignored if `GRAPHICS` is not `yes`.
+* `THEME_COLORS` - Alias of `THEME_COLOURS`.
 * `THEME_MARGIN` - Set the amount of margin around the terminal. Ignored if `GRAPHICS` is not `yes`.
 * `THEME_MARGIN_GRADIENT` - Set the thickness in pixel for the gradient around the terminal. Ignored if `GRAPHICS` is not `yes`.
 * `BACKGROUND_PATH` - URI where to find the background .BMP file. Ignored if `GRAPHICS` is not `yes`.
@@ -43,13 +44,14 @@ Some keys take *URIs* as values; these are described in the next section.
   * `KERNEL_PATH` - The URI path of the kernel.
   * `MODULE_PATH` - The URI path to a module.
   * `MODULE_STRING` - A string to be passed to a module.
+
+  Note that one can define these 2 last variable multiple times to specify multiple
+  modules.
+  The entries will be matched in order. E.g.: the 1st module path entry will be matched
+  to the 1st module string entry that appear, and so on.
 * Chainload protocol:
   * `DRIVE` - The 1-based BIOS drive to chainload.
   * `PARTITION` - The 1-based BIOS partition to chainload, if omitted, chainload drive.
-
-  Note that one can define these 3 variable multiple times to specify multiple modules.
-  The entries will be matched in order. E.g.: the 1st partition entry will be matched
-  to the 1st path and the 1st string entry that appear, and so on.
 
 ## URIs
 

@@ -5,6 +5,9 @@
 #include <lib/part.h>
 #include <lib/libc.h>
 #include <fs/file.h>
+#include <mm/pmm.h>
+#include <lib/print.h>
+#include <pxe/tftp.h>
 
 // A URI takes the form of: resource://root/path
 // The following function splits up a URI into its componenets
@@ -109,6 +112,28 @@ static bool uri_guid_dispatch(struct file_handle *fd, char *guid_str, char *path
     return true;
 }
 
+static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
+    uint32_t ip;
+    if (!strcmp(root, "")) {
+        ip = 0;
+    } else {
+        if (inet_pton(root, &ip)) {
+            panic("invalid ipv4 address: %s", root);
+        }
+        print("\nip: %x\n", ip);
+    }
+
+    struct tftp_file_handle *cfg = conv_mem_alloc(sizeof(struct tftp_file_handle));
+    if(tftp_open(cfg, ip, 69, path)) {
+        return false;
+    }
+
+    fd->fd = cfg;
+    fd->read = tftp_read;
+    fd->size = cfg->file_size;
+    return true;
+}
+
 bool uri_open(struct file_handle *fd, char *uri) {
     char *resource, *root, *path;
     uri_resolve(uri, &resource, &root, &path);
@@ -117,6 +142,8 @@ bool uri_open(struct file_handle *fd, char *uri) {
         return uri_bios_dispatch(fd, root, path);
     } else if (!strcmp(resource, "guid")) {
         return uri_guid_dispatch(fd, root, path);
+    } else if (!strcmp(resource, "tftp")) {
+        return uri_tftp_dispatch(fd, root, path);
     } else {
         panic("Resource `%s` not valid.", resource);
     }

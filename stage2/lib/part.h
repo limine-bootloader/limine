@@ -8,6 +8,7 @@
 struct part {
     int drive;
     int partition;
+    int sector_size;
     uint64_t first_sect;
     uint64_t sect_count;
     bool guid_valid;

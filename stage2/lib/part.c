@@ -53,8 +53,10 @@ struct gpt_entry {
 static int gpt_get_part(struct part *ret, int drive, int partition) {
     struct gpt_table_header header = {0};
 
+    int sector_size = disk_get_sector_size(drive);
+
     // read header, located after the first block
-    disk_read(drive, &header, 512, sizeof(header));
+    disk_read(drive, &header, sector_size * 1, sizeof(header));
 
     // check the header
     // 'EFI PART'
@@ -69,17 +71,18 @@ static int gpt_get_part(struct part *ret, int drive, int partition) {
 
     struct gpt_entry entry = {0};
     disk_read(drive, &entry,
-         (header.partition_entry_lba * 512) + (partition * sizeof(entry)),
+         (header.partition_entry_lba * sector_size) + (partition * sizeof(entry)),
          sizeof(entry));
 
     struct guid empty_guid = {0};
     if (!memcmp(&entry.unique_partition_guid, &empty_guid, sizeof(struct guid)))
         return NO_PARTITION;
 
-    ret->drive      = drive;
-    ret->partition  = partition;
-    ret->first_sect = entry.starting_lba;
-    ret->sect_count = (entry.ending_lba - entry.starting_lba) + 1;
+    ret->drive       = drive;
+    ret->partition   = partition;
+    ret->sector_size = sector_size;
+    ret->first_sect  = entry.starting_lba;
+    ret->sect_count  = (entry.ending_lba - entry.starting_lba) + 1;
 
     struct guid guid;
     if (!fs_get_guid(&guid, ret)) {
@@ -124,10 +127,11 @@ static int mbr_get_part(struct part *ret, int drive, int partition) {
     if (entry.type == 0)
         return NO_PARTITION;
 
-    ret->drive      = drive;
-    ret->partition  = partition;
-    ret->first_sect = entry.first_sect;
-    ret->sect_count = entry.sect_count;
+    ret->drive       = drive;
+    ret->partition   = partition;
+    ret->sector_size = disk_get_sector_size(drive);
+    ret->first_sect  = entry.first_sect;
+    ret->sect_count  = entry.sect_count;
 
     struct guid guid;
     if (!fs_get_guid(&guid, ret)) {
@@ -217,5 +221,6 @@ bool part_get_by_guid(struct part *part, struct guid *guid) {
 }
 
 int part_read(struct part *part, void *buffer, uint64_t loc, uint64_t count) {
-    return disk_read(part->drive, buffer, loc + (part->first_sect * 512), count);
+    return disk_read(part->drive, buffer,
+                     loc + (part->first_sect * part->sector_size), count);
 }

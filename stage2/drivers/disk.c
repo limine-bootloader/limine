@@ -60,7 +60,7 @@ static int cache_block(int drive, uint64_t block, int sector_size) {
     return 0;
 }
 
-int disk_read(int drive, void *buffer, uint64_t loc, uint64_t count) {
+int disk_get_sector_size(int drive) {
     struct rm_regs r = {0};
     struct bios_drive_params drive_params;
 
@@ -78,7 +78,11 @@ int disk_read(int drive, void *buffer, uint64_t loc, uint64_t count) {
         panic("Disk error %x. Drive %x.\n", ah, drive);
     }
 
-    int sector_size = drive_params.bytes_per_sect;
+    return drive_params.bytes_per_sect;
+}
+
+int disk_read(int drive, void *buffer, uint64_t loc, uint64_t count) {
+    int sector_size = disk_get_sector_size(drive);
 
     uint64_t progress = 0;
     while (progress < count) {

@@ -70,7 +70,11 @@ uint64_t strtoui(const char *s, size_t limit, int base) {
     uint64_t n = 0;
     if (!limit)
         limit = strlen(s);
-    for (size_t i = 0; i < limit; i++)
-        n = n * base + digit_to_int(s[i]);
+    for (size_t i = 0; i < limit; i++) {
+        int d = digit_to_int(s[i]);
+        if (d == -1)
+            break;
+        n = n * base + d;
+    }
     return n;
 }

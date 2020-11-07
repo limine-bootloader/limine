@@ -182,13 +182,12 @@ void stivale_load(char *cmdline) {
         stivale_struct.framebuffer_addr = (uint64_t)(size_t)fb32;
     }
 
+    bool want_5lv = level5pg && (stivale_hdr.flags & (1 << 1));
+    pagemap_t pagemap = stivale_build_pagemap(want_5lv);
+
     size_t memmap_entries;
     struct e820_entry_t *memmap = get_memmap(&memmap_entries);
 
-    bool want_5lv = level5pg && (stivale_hdr.flags & (1 << 1));
-    pagemap_t pagemap = stivale_build_pagemap(want_5lv, memmap, memmap_entries);
-
-    memmap = get_memmap(&memmap_entries);
     stivale_struct.memory_map_entries = (uint64_t)memmap_entries;
     stivale_struct.memory_map_addr    = (uint64_t)(size_t)memmap;
 
@@ -196,8 +195,7 @@ void stivale_load(char *cmdline) {
                    entry_point, &stivale_struct, stivale_hdr.stack);
 }
 
-pagemap_t stivale_build_pagemap(bool level5pg, struct e820_entry_t *memmap,
-                                size_t memmap_entries) {
+pagemap_t stivale_build_pagemap(bool level5pg) {
     pagemap_t pagemap = new_pagemap(level5pg ? 5 : 4);
     uint64_t higher_half_base = level5pg ? 0xff00000000000000 : 0xffff800000000000;
 
@@ -212,8 +210,13 @@ pagemap_t stivale_build_pagemap(bool level5pg, struct e820_entry_t *memmap,
         map_page(pagemap, higher_half_base + i, i, 0x03);
     }
 
+    size_t memmap_entries;
+    struct e820_entry_t *memmap = get_memmap(&memmap_entries);
+
     // Map any other region of memory from the memmap
     for (size_t i = 0; i < memmap_entries; i++) {
+        memmap = get_memmap(&memmap_entries);
+
         uint64_t base   = memmap[i].base;
         uint64_t length = memmap[i].length;
         uint64_t top    = base + length;

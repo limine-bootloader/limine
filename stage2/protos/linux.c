@@ -127,20 +127,28 @@ void linux_load(char *cmdline) {
     memmap_alloc_range(KERNEL_LOAD_ADDR, kernel->size - real_mode_code_size, 0);
     fread(kernel, (void *)KERNEL_LOAD_ADDR, real_mode_code_size, kernel->size - real_mode_code_size);
 
-    char initrd_path[64];
-    if (!config_get_value(initrd_path, 0, 64, "INITRD_PATH"))
-        panic("INITRD_PATH not specified");
+    size_t modules_mem_base = INITRD_LOAD_ADDR;
+    for (size_t i = 0; ; i++) {
+        char module_path[64];
+        if (!config_get_value(module_path, i, 64, "MODULE_PATH"))
+            break;
 
-    struct file_handle initrd;
-    if (!uri_open(&initrd, initrd_path))
-        panic("Could not open initrd");
+        struct file_handle module;
+        if (!uri_open(&module, module_path))
+            panic("Could not open `%s`", module_path);
 
-    print("Loading initrd...\n");
-    memmap_alloc_range(INITRD_LOAD_ADDR, initrd.size, 0);
-    fread(&initrd, (void *)INITRD_LOAD_ADDR, 0, initrd.size);
+        print("Loading module `%s`...\n", module_path);
 
-    *((uint32_t *)(real_mode_code + 0x218)) = (uint32_t)INITRD_LOAD_ADDR;
-    *((uint32_t *)(real_mode_code + 0x21c)) = (uint32_t)initrd.size;
+        memmap_alloc_range(modules_mem_base, module.size, 0);
+        fread(&module, (void *)modules_mem_base, 0, module.size);
+
+        modules_mem_base += module.size;
+    }
+
+    if (modules_mem_base != INITRD_LOAD_ADDR) {
+        *((uint32_t *)(real_mode_code + 0x218)) = (uint32_t)INITRD_LOAD_ADDR;
+        *((uint32_t *)(real_mode_code + 0x21c)) = (uint32_t)(modules_mem_base - INITRD_LOAD_ADDR);
+    }
 
     uint16_t real_mode_code_seg = rm_seg(real_mode_code);
     uint16_t kernel_entry_seg   = real_mode_code_seg + 0x20;

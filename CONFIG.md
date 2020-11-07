@@ -39,7 +39,10 @@ Some keys take *URIs* as values; these are described in the next section.
 *Locally assignable (protocol specific)* keys are:
 * Linux protocol:
   * `KERNEL_PATH` - The URI path of the kernel.
-  * `INITRD_PATH` - The URI path to the initial ramdisk.
+  * `MODULE_PATH` - The URI path to a module (such as initramfs).
+
+  Note that one can define this last variable multiple times to specify multiple
+  modules.
 * stivale and stivale2 protocols:
   * `KERNEL_PATH` - The URI path of the kernel.
   * `MODULE_PATH` - The URI path to a module.

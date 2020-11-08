@@ -73,6 +73,13 @@ void stivale2_main(struct stivale2_struct *info) {
                 e9_printf("\tHeight:  %d", f->framebuffer_height);
                 e9_printf("\tPitch:   %d", f->framebuffer_pitch);
                 e9_printf("\tBPP:     %d", f->framebuffer_bpp);
+                e9_printf("\tMemory model:    %d", f->memory_model);
+                e9_printf("\tRed mask size:   %d", f->red_mask_size);
+                e9_printf("\tRed mask size:   %d", f->red_mask_shift);
+                e9_printf("\tGreen mask size: %d", f->green_mask_size);
+                e9_printf("\tGreen mask size: %d", f->green_mask_shift);
+                e9_printf("\tBlue mask size:  %d", f->blue_mask_size);
+                e9_printf("\tBlue mask size:  %d", f->blue_mask_shift);
                 break;
             }
             case STIVALE2_STRUCT_TAG_MODULES_ID: {

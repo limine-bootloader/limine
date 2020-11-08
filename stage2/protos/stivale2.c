@@ -256,22 +256,28 @@ void stivale2_load(char *cmdline) {
     term_deinit();
 
     if (hdrtag != NULL) {
-        struct stivale2_struct_tag_framebuffer *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_framebuffer));
-        tag->tag.identifier = STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID;
+        struct vbe_framebuffer_info fbinfo;
+        if (init_vbe(&fbinfo,
+                     hdrtag->framebuffer_width,
+                     hdrtag->framebuffer_height,
+                     hdrtag->framebuffer_bpp)) {
+            struct stivale2_struct_tag_framebuffer *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_framebuffer));
+            tag->tag.identifier = STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID;
 
-        tag->framebuffer_width  = hdrtag->framebuffer_width;
-        tag->framebuffer_height = hdrtag->framebuffer_height;
-        tag->framebuffer_bpp    = hdrtag->framebuffer_bpp;
+            tag->memory_model       = STIVALE2_FBUF_MMODEL_RGB;
+            tag->framebuffer_width  = fbinfo.framebuffer_width;
+            tag->framebuffer_height = fbinfo.framebuffer_height;
+            tag->framebuffer_bpp    = fbinfo.framebuffer_bpp;
+            tag->framebuffer_pitch  = fbinfo.framebuffer_pitch;
+            tag->red_mask_size      = fbinfo.red_mask_size;
+            tag->red_mask_shift     = fbinfo.red_mask_shift;
+            tag->green_mask_size    = fbinfo.green_mask_size;
+            tag->green_mask_shift   = fbinfo.green_mask_shift;
+            tag->blue_mask_size     = fbinfo.blue_mask_size;
+            tag->blue_mask_shift    = fbinfo.blue_mask_shift;
 
-        uint32_t *fb32;
-        init_vbe(&fb32,
-                 &tag->framebuffer_pitch,
-                 &tag->framebuffer_width,
-                 &tag->framebuffer_height,
-                 &tag->framebuffer_bpp);
-        tag->framebuffer_addr = (uint64_t)(size_t)fb32;
-
-        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+            append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+        }
     }
     }
 

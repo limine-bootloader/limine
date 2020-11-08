@@ -173,13 +173,16 @@ void stivale_load(char *cmdline) {
     term_deinit();
 
     if (stivale_hdr.flags & (1 << 0)) {
-        uint32_t *fb32;
-        init_vbe(&fb32,
-                 &stivale_struct.framebuffer_pitch,
-                 &stivale_struct.framebuffer_width,
-                 &stivale_struct.framebuffer_height,
-                 &stivale_struct.framebuffer_bpp);
-        stivale_struct.framebuffer_addr = (uint64_t)(size_t)fb32;
+        struct vbe_framebuffer_info fbinfo;
+        init_vbe(&fbinfo,
+                 stivale_struct.framebuffer_width,
+                 stivale_struct.framebuffer_height,
+                 stivale_struct.framebuffer_bpp);
+        stivale_struct.framebuffer_addr   = (uint64_t)fbinfo.framebuffer_addr;
+        stivale_struct.framebuffer_width  = fbinfo.framebuffer_width;
+        stivale_struct.framebuffer_height = fbinfo.framebuffer_height;
+        stivale_struct.framebuffer_bpp    = fbinfo.framebuffer_bpp;
+        stivale_struct.framebuffer_pitch  = fbinfo.framebuffer_pitch;
     }
 
     bool want_5lv = level5pg && (stivale_hdr.flags & (1 << 1));

@@ -323,10 +323,17 @@ struct stivale2_struct_tag_framebuffer {
     uint64_t identifier;          // Identifier: 0x506461d2950408fa
     uint64_t next;
     uint64_t framebuffer_addr;    // Address of the framebuffer and related info
-    uint16_t framebuffer_width;
+    uint16_t framebuffer_width;   // Width and height in pixels
     uint16_t framebuffer_height;
-    uint16_t framebuffer_pitch;
-    uint16_t framebuffer_bpp;
+    uint16_t framebuffer_pitch;   // Pitch in bytes
+    uint16_t framebuffer_bpp;     // Bits per pixel
+    uint8_t  memory_model;        // Memory model: 1=RGB, all other values undefined
+    uint8_t  red_mask_size;       // RGB mask sizes and left shifts
+    uint8_t  red_mask_shift;
+    uint8_t  green_mask_size;
+    uint8_t  green_mask_shift;
+    uint8_t  blue_mask_size;
+    uint8_t  blue_mask_shift;
 } __attribute__((packed));
 ```
 

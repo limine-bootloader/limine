@@ -9,10 +9,6 @@
 #include <mm/pmm.h>
 #include <fs/file.h>
 
-#define NO_PARTITION  (-1)
-#define INVALID_TABLE (-2)
-#define END_OF_TABLE  (-3)
-
 struct gpt_table_header {
     // the head
     char     signature[8];
@@ -155,7 +151,7 @@ int part_get(struct part *part, int drive, int partition) {
     if (ret != INVALID_TABLE)
         return ret;
 
-    return -1;
+    return INVALID_TABLE;
 }
 
 static struct part *part_index = NULL;

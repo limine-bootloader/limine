@@ -5,6 +5,10 @@
 #include <stdbool.h>
 #include <lib/guid.h>
 
+#define NO_PARTITION  (-1)
+#define INVALID_TABLE (-2)
+#define END_OF_TABLE  (-3)
+
 struct part {
     int drive;
     int partition;

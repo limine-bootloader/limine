@@ -94,8 +94,11 @@ number (in decimal).
 
 ```bash
 fdisk <device>    # Create bootloader partition using your favourite method
-limine-install <bootloader image> <path to device/image> <start sector of boot partition>
+limine-install <bootloader image> <path to device/image> <start sector of boot partition> <sector size>
 ```
+
+The `<sector size>` argument is optional. Use it to specify the sector size in bytes
+if it is not Limine's expected default of 512 bytes.
 
 ### Configuration
 Then make sure the device/image contains at least 1 partition formatted in
@@ -123,14 +126,13 @@ echfs-utils -m -p0 test.img import path/to/kernel.elf kernel.elf
 echfs-utils -m -p0 test.img import <path to file> <path in image>
 ...
 limine-install test.img
-
 ```
 
 One can get `echfs-utils` by installing https://github.com/qword-os/echfs.
 
 ## Acknowledgments
-Limine uses a stripped-down version of https://github.com/jibsen/tinf
+Limine uses a stripped-down version of [tinf](https://github.com/jibsen/tinf).
 
 ## Discord server
-We have a Discord server if you need support, info, or you just want to
-hang out: https://discord.gg/QEeZMz4
+We have a [Discord server](https://discord.gg/QEeZMz4) if you need support, info, or
+you just want to hang out with us.

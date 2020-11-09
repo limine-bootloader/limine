@@ -46,21 +46,23 @@ void entry(uint8_t _boot_drive, int pxe_boot) {
         print("Boot drive: %x\n", boot_drive);
         // Look for config file.
         print("Searching for config file...\n");
-        struct part parts[4];
         for (int i = 0; ; i++) {
-            if (i == 4) {
-                panic("Config file not found.");
-            }
+            struct part part;
             print("Checking partition %d...\n", i);
-            int ret = part_get(&parts[i], boot_drive, i);
-            if (ret) {
-                print("Partition not found.\n");
-            } else {
-                print("Partition found.\n");
-                if (!init_config_disk(&parts[i])) {
-                    print("Config file found and loaded.\n");
-                    break;
-                }
+            int ret = part_get(&part, boot_drive, i);
+            switch (ret) {
+                case INVALID_TABLE:
+                    panic("Partition table of boot drive is invalid.");
+                case END_OF_TABLE:
+                    panic("Config file not found.");
+                case NO_PARTITION:
+                    print("Partition not found.\n");
+                    continue;
+            }
+            print("Partition found.\n");
+            if (!init_config_disk(&part)) {
+                print("Config file found and loaded.\n");
+                break;
             }
         }
     }

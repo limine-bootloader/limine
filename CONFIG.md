@@ -1,5 +1,19 @@
 # Limine configuration file
 
+## Location of the config file
+
+Limine scans for a config file on *the boot drive*. Every partition on the boot drive
+is scanned sequentially (first partition first, last partition last) for the presence
+of either a `/limine.cfg` or a `/boot/limine.cfg` file, in that order.
+
+Once the file is located, Limine will use it as its config file. Other possible
+candidates in subsequent partitions or directories are ignored.
+
+It is thus imperative that the intended config file is placed in a location that will
+not be shadowed by another potentially candidate config file.
+
+## Structure of the config file
+
 The Limine configuration file is comprised of *assignments* and *entries*.
 
 *Entries* describe boot *entries* which the user can select in the *boot menu*.

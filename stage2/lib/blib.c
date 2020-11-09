@@ -7,6 +7,32 @@
 
 uint8_t boot_drive;
 
+bool parse_resolution(int *width, int *height, int *bpp, const char *buf) {
+    int res[3] = {0};
+
+    const char *first = buf;
+    for (int i = 0; i < 3; i++) {
+        const char *last;
+        int x = strtoui(first, &last, 10);
+        if (first == last)
+            break;
+        res[i] = x;
+        if (*last == 0)
+            break;
+        first = last + 1;
+    }
+
+    if (res[0] == 0 || res[1] == 0)
+        return false;
+
+    if (res[2] == 0)
+        res[2] = 32;
+
+    *width = res[0], *height = res[1], *bpp = res[2];
+
+    return true;
+}
+
 // This integer sqrt implementation has been adapted from:
 // https://stackoverflow.com/questions/1100090/looking-for-an-efficient-integer-square-root-algorithm-for-arm-thumb2
 uint64_t sqrt(uint64_t a_nInput) {
@@ -53,10 +79,10 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
 }
 
 int digit_to_int(char c) {
-    if (c >= 'a' && c <= 'z') {
+    if (c >= 'a' && c <= 'f') {
         return (c - 'a') + 10;
     }
-    if (c >= 'A' && c <= 'Z') {
+    if (c >= 'A' && c <= 'F') {
         return (c - 'A') + 10;
     }
     if (c >= '0' && c <= '9'){

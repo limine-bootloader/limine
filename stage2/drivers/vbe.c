@@ -7,6 +7,7 @@
 #include <lib/real.h>
 #include <lib/print.h>
 #include <lib/image.h>
+#include <lib/config.h>
 #include <mm/pmm.h>
 #include <mm/mtrr.h>
 
@@ -317,7 +318,17 @@ void vbe_putchar(char c) {
 }
 
 bool vbe_tty_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _margin_gradient, struct image *_background) {
-    init_vbe(&fbinfo, 0, 0, 0);
+    char buf[32];
+
+    int req_width = 0, req_height = 0, req_bpp = 0;
+
+    if (config_get_value(buf, 0, 32, "MENU_RESOLUTION"))
+        parse_resolution(&req_width, &req_height, &req_bpp, buf);
+
+    // We force bpp to 32
+    req_bpp = 32;
+
+    init_vbe(&fbinfo, req_width, req_height, req_bpp);
 
     // Ensure this is xRGB8888, we only support that for the menu
     if (fbinfo.red_mask_size    != 8

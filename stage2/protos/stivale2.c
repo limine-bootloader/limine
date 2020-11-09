@@ -256,15 +256,20 @@ void stivale2_load(char *cmdline) {
     term_deinit();
 
     if (hdrtag != NULL) {
+        int req_width  = hdrtag->framebuffer_width;
+        int req_height = hdrtag->framebuffer_height;
+        int req_bpp    = hdrtag->framebuffer_bpp;
+
+        if (config_get_value(buf, 0, 128, "RESOLUTION"))
+            parse_resolution(&req_width, &req_height, &req_bpp, buf);
+
         struct vbe_framebuffer_info fbinfo;
-        if (init_vbe(&fbinfo,
-                     hdrtag->framebuffer_width,
-                     hdrtag->framebuffer_height,
-                     hdrtag->framebuffer_bpp)) {
+        if (init_vbe(&fbinfo, req_width, req_height, req_bpp)) {
             struct stivale2_struct_tag_framebuffer *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_framebuffer));
             tag->tag.identifier = STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID;
 
             tag->memory_model       = STIVALE2_FBUF_MMODEL_RGB;
+            tag->framebuffer_addr   = fbinfo.framebuffer_addr;
             tag->framebuffer_width  = fbinfo.framebuffer_width;
             tag->framebuffer_height = fbinfo.framebuffer_height;
             tag->framebuffer_bpp    = fbinfo.framebuffer_bpp;

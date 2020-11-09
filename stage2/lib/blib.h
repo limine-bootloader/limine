@@ -7,6 +7,8 @@
 
 extern uint8_t boot_drive;
 
+bool parse_resolution(int *width, int *height, int *bpp, const char *buf);
+
 uint64_t sqrt(uint64_t a_nInput);
 
 int digit_to_int(char c);

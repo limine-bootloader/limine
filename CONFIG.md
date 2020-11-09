@@ -25,6 +25,7 @@ Some keys take *URIs* as values; these are described in the next section.
 * `TIMEOUT` - Specifies the timeout in seconds before the first *entry* is automatically booted.
 * `DEFAULT_ENTRY` - 0-based entry index of the entry which will be automatically selected at startup. If unspecified, it is `0`.
 * `GRAPHICS` - If set to `yes`, do use graphical VESA framebuffer for the boot menu, else use text mode.
+* `MENU_RESOLUTION` - Specify screen resolution to be used by the Limine menu in the form `<width>x<height>`. This will *only* affect the menu, not any booted OS. If not specified, Limine will pick a resolution automatically. If the resolution is not available, Limine will pick another one automatically. Ignored if `GRAPHICS` is not `yes`.
 * `THEME_COLOURS` - Specifies the colour palette used by the terminal (AARRGGBB). It is a `;` separated array of 8 colours: black, red, green, brown, blue, magenta, cyan, and gray, respectively. Ignored if `GRAPHICS` is not `yes`.
 * `THEME_COLORS` - Alias of `THEME_COLOURS`.
 * `THEME_MARGIN` - Set the amount of margin around the terminal. Ignored if `GRAPHICS` is not `yes`.
@@ -52,6 +53,7 @@ Some keys take *URIs* as values; these are described in the next section.
   modules.
   The entries will be matched in order. E.g.: the 1st module path entry will be matched
   to the 1st module string entry that appear, and so on.
+  * `RESOLUTION` - The resolution to be used should the kernel request a graphical framebuffer. This setting takes the form of `<width>x<height>x<bpp>` and *overrides* any resolution requested by the kernel, or automatic resolution requests. If the resolution is not available, Limine will pick another one automatically.
 * Chainload protocol:
   * `DRIVE` - The 1-based BIOS drive to chainload.
   * `PARTITION` - The 1-based BIOS partition to chainload, if omitted, chainload drive.

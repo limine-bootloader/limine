@@ -58,10 +58,12 @@ char *menu(void) {
             for (int i = 0; i < 8; i++) {
                 const char *last;
                 uint32_t col = strtoui(first, &last, 16);
-                if (first == last || *last == 0)
+                if (first == last)
+                    break;
+                colourscheme[i] = col;
+                if (*last == 0)
                     break;
                 first = last + 1;
-                colourscheme[i] = col;
             }
         }
 

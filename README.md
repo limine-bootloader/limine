@@ -9,6 +9,8 @@ such as Long Mode, 5-level paging, and SMP (multicore), to name a few.
 
 ![Reference screenshot](/screenshot.png?raw=true "Reference screenshot")
 
+[Photo by Nishant Aneja from Pexels](https://www.pexels.com/photo/close-up-photo-of-waterdrops-on-glass-2527248/)
+
 ### Supported boot protocols
 * Linux
 * stivale and stivale2 (Limine's native boot protocols, see STIVALE{,2}.md for details)

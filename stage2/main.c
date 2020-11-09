@@ -35,7 +35,7 @@ void entry(uint8_t _boot_drive, int pxe_boot) {
     part_create_index();
     init_e820();
     init_memmap();
-    
+
     if (pxe_boot) {
         pxe_init();
         if(init_config_pxe()) {
@@ -64,7 +64,6 @@ void entry(uint8_t _boot_drive, int pxe_boot) {
             }
         }
     }
-
 
     char *cmdline = menu();
 

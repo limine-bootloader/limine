@@ -43,6 +43,7 @@ static uint32_t get_pixel(struct image *this, int x, int y) {
 
     size_t pixel_offset = local->pitch * (header->bi_height - y - 1) + x * (header->bi_bpp / 8);
 
+    // TODO: Perhaps use masks here, they're there for a reason
     uint32_t composite = 0;
     for (int i = 0; i < header->bi_bpp / 8; i++)
         composite |= (uint32_t)local->image[pixel_offset + i] << (i * 8);

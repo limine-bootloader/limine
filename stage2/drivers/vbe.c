@@ -316,8 +316,17 @@ void vbe_putchar(char c) {
     }
 }
 
-void vbe_tty_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _margin_gradient, struct image *_background) {
+bool vbe_tty_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _margin_gradient, struct image *_background) {
     init_vbe(&fbinfo, 0, 0, 0);
+
+    // Ensure this is xRGB8888, we only support that for the menu
+    if (fbinfo.red_mask_size    != 8
+     || fbinfo.red_mask_shift   != 16
+     || fbinfo.green_mask_size  != 8
+     || fbinfo.green_mask_shift != 8
+     || fbinfo.blue_mask_size   != 8
+     || fbinfo.blue_mask_shift  != 0)
+        return false;
 
     vbe_framebuffer = (void *)fbinfo.framebuffer_addr;
     vbe_width       = fbinfo.framebuffer_width;
@@ -348,6 +357,8 @@ void vbe_tty_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _
 
     vbe_plot_background(0, 0, vbe_width, vbe_height);
     vbe_clear(true);
+
+    return true;
 }
 
 struct vbe_info_struct {

@@ -26,7 +26,11 @@ int term_rows, term_cols;
 
 void term_vbe(uint32_t *colours, int margin, int margin_gradient, struct image *background) {
     term_deinit();
-    vbe_tty_init(&term_rows, &term_cols, colours, margin, margin_gradient, background);
+    if (!vbe_tty_init(&term_rows, &term_cols, colours, margin, margin_gradient, background)) {
+        // Failed to set VBE properly, default to text mode
+        term_textmode();
+        return;
+    }
 
     raw_putchar    = vbe_putchar;
     clear          = vbe_clear;

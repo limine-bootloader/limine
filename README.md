@@ -25,11 +25,11 @@ such as Long Mode, 5-level paging, and SMP (multicore), to name a few.
 * MBR
 * GPT
 
-## Warning about using `master`
+## Warning about using `unstable`
 
-Please refrain from using the `master` branch of this repository directly, unless
+Please refrain from using the `unstable` branch of this repository directly, unless
 you have a *very* good reason to.
-The `master` branch is unstable, and non-backwards compatible changes are made to it
+The `unstable` branch is unstable, and non-backwards compatible changes are made to it
 routinely.
 
 Use instead a [release](https://github.com/limine-bootloader/limine/releases).
@@ -40,7 +40,7 @@ git clone https://github.com/limine-bootloader/limine.git --branch=v0.5.7
 ```
 (replace `v0.5.7` with the chosen release)
 
-Also note that the documentation contained in `master` does not reflect the
+Also note that the documentation contained in `unstable` does not reflect the
 documentation for the specific releases, and one should refer to the releases'
 documentation instead, contained in their files.
 

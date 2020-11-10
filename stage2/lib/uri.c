@@ -12,6 +12,11 @@
 // A URI takes the form of: resource://root/path
 // The following function splits up a URI into its componenets
 bool uri_resolve(char *uri, char **resource, char **root, char **path) {
+    size_t length = strlen(uri) + 1;
+    char *buf = conv_mem_alloc(length);
+    memcpy(buf, uri, length);
+    uri = buf;
+
     *resource = *root = *path = NULL;
 
     // Get resource

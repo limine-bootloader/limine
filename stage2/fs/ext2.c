@@ -214,12 +214,14 @@ static int ext2_parse_dirent(struct ext2_dir_entry *dir, struct ext2_file_handle
     struct ext2_inode current_inode = fd->root_inode;
 
     bool escape = false;
-
     char token[256] = {0};
+    size_t i;
 
 next:
-    for (size_t i = 0; *path != '/' && *path != '\0'; i++, path++)
+    for (i = 0; i < 255 && *path != '/' && *path != '\0'; i++, path++)
         token[i] = *path;
+
+    token[i] = 0;
 
     if (*path == '\0')
         escape = true;

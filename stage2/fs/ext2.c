@@ -209,7 +209,7 @@ static int ext2_get_inode(struct ext2_inode *ret, struct part *part,
 }
 
 static uint32_t *create_alloc_map(struct ext2_file_handle *fd,
-                            struct ext2_inode *inode) {
+                                  struct ext2_inode *inode) {
     if (inode->i_flags & EXT4_EXTENTS_FLAG)
         return NULL;
 

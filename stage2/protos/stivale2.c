@@ -294,26 +294,6 @@ void stivale2_load(char *cmdline) {
         pagemap = stivale_build_pagemap(level5pg && level5pg_requested);
 
     //////////////////////////////////////////////
-    // Create memmap struct tag
-    //////////////////////////////////////////////
-    {
-    size_t memmap_entries;
-    struct e820_entry_t *memmap = get_memmap(&memmap_entries);
-
-    struct stivale2_struct_tag_memmap *tag =
-        conv_mem_alloc(sizeof(struct stivale2_struct_tag_memmap) +
-                       sizeof(struct e820_entry_t) * memmap_entries);
-
-    tag->tag.identifier = STIVALE2_STRUCT_TAG_MEMMAP_ID;
-    tag->entries = (uint64_t)memmap_entries;
-
-    memcpy((void*)tag + sizeof(struct stivale2_struct_tag_memmap),
-           memmap, sizeof(struct e820_entry_t) * memmap_entries);
-
-    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
-    }
-
-    //////////////////////////////////////////////
     // Create SMP struct tag
     //////////////////////////////////////////////
     {
@@ -347,6 +327,26 @@ void stivale2_load(char *cmdline) {
             taglist = (void*)(size_t)taglist->next;
         else
             break;
+    }
+
+    //////////////////////////////////////////////
+    // Create memmap struct tag
+    //////////////////////////////////////////////
+    {
+    size_t memmap_entries;
+    struct e820_entry_t *memmap = get_memmap(&memmap_entries);
+
+    struct stivale2_struct_tag_memmap *tag =
+        conv_mem_alloc(sizeof(struct stivale2_struct_tag_memmap) +
+                       sizeof(struct e820_entry_t) * memmap_entries);
+
+    tag->tag.identifier = STIVALE2_STRUCT_TAG_MEMMAP_ID;
+    tag->entries = (uint64_t)memmap_entries;
+
+    memcpy((void*)tag + sizeof(struct stivale2_struct_tag_memmap),
+           memmap, sizeof(struct e820_entry_t) * memmap_entries);
+
+    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
 
     stivale_spinup(bits, level5pg && level5pg_requested, pagemap,

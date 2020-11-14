@@ -45,7 +45,7 @@ void print_memmap(struct e820_entry_t *mm, size_t size) {
     }
 }
 
-static int align_entry(uint64_t *base, uint64_t *length) {
+static bool align_entry(uint64_t *base, uint64_t *length) {
     if (*length < PAGE_SIZE)
         return -1;
 
@@ -57,7 +57,7 @@ static int align_entry(uint64_t *base, uint64_t *length) {
     *length =  ALIGN_DOWN(*length, PAGE_SIZE);
 
     if (!length)
-        return -1;
+        return false;
 
     uint64_t top = *base + *length;
 
@@ -66,14 +66,14 @@ static int align_entry(uint64_t *base, uint64_t *length) {
             *length -= MEMMAP_BASE - *base;
             *base    = MEMMAP_BASE;
         } else {
-            return -1;
+            return false;
         }
     }
 
-    return 0;
+    return true;
 }
 
-static void sanitise_entries(void) {
+static void sanitise_entries(bool align_entries) {
     for (size_t i = 0; i < memmap_entries; i++) {
         if (memmap[i].type != MEMMAP_USABLE)
             continue;
@@ -109,7 +109,11 @@ static void sanitise_entries(void) {
             memmap[i].length = top - base;
         }
 
-        if (!memmap[i].length || align_entry(&memmap[i].base, &memmap[i].length)) {
+        bool success = true;
+        if (align_entries)
+            success = align_entry(&memmap[i].base, &memmap[i].length);
+
+        if (!memmap[i].length || !success) {
             // Eradicate from memmap
             for (size_t j = i; j < memmap_entries - 1; j++) {
                 memmap[j] = memmap[j+1];
@@ -154,7 +158,7 @@ static void sanitise_entries(void) {
 }
 
 struct e820_entry_t *get_memmap(size_t *entries) {
-    sanitise_entries();
+    sanitise_entries(true);
 
     *entries = memmap_entries;
 
@@ -170,7 +174,7 @@ void init_memmap(void) {
         memmap[memmap_entries++] = e820_map[i];
     }
 
-    sanitise_entries();
+    sanitise_entries(false);
 }
 
 void *ext_mem_alloc(size_t count) {
@@ -217,7 +221,7 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
         // Zero out allocated space
         memset(ret, 0, count);
 
-        sanitise_entries();
+        sanitise_entries(false);
 
         return ret;
     }

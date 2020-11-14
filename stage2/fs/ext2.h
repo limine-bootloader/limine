@@ -54,6 +54,7 @@ struct ext2_file_handle {
     struct ext2_inode root_inode;
     struct ext2_inode inode;
     uint64_t block_size;
+    uint32_t *alloc_map;
 };
 
 int ext2_check_signature(struct part *part);

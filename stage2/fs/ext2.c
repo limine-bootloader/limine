@@ -5,6 +5,7 @@
 #include <drivers/disk.h>
 #include <lib/libc.h>
 #include <lib/blib.h>
+#include <lib/print.h>
 #include <mm/pmm.h>
 
 /* EXT2 Filesystem States */
@@ -157,7 +158,7 @@ struct ext4_extent_idx {
 
 static int inode_read(void *buf, uint64_t loc, uint64_t count,
                       uint64_t block_size, struct ext2_inode *inode,
-                      struct part *part);
+                      struct part *part, uint32_t *alloc_map);
 
 // parse an inode given the partition base and inode number
 static int ext2_get_inode(struct ext2_inode *ret, struct part *part,
@@ -207,6 +208,61 @@ static int ext2_get_inode(struct ext2_inode *ret, struct part *part,
     return 0;
 }
 
+static uint32_t *create_alloc_map(struct ext2_file_handle *fd,
+                            struct ext2_inode *inode) {
+    if (inode->i_flags & EXT4_EXTENTS_FLAG)
+        return NULL;
+
+    size_t entries_per_block = fd->block_size / sizeof(uint32_t);
+
+    // Cache the map of blocks
+    uint32_t *alloc_map = ext_mem_alloc(inode->i_blocks_count * sizeof(uint32_t));
+    for (uint32_t i = 0; i < inode->i_blocks_count; i++) {
+        uint32_t block = i;
+        if (block < 12) {
+            // Direct block
+            alloc_map[i] = inode->i_blocks[block];
+        } else {
+            // Indirect block
+            block -= 12;
+            if (block >= entries_per_block) {
+                // Double indirect block
+                block -= entries_per_block;
+                uint32_t index = block / entries_per_block;
+                if (index >= entries_per_block) {
+                    // Triple indirect block
+                    panic("ext2: triply indirect blocks unsupported");
+                }
+                uint32_t indirect_block;
+                part_read(
+                    &fd->part, &indirect_block,
+                    inode->i_blocks[13] * fd->block_size + index * sizeof(uint32_t),
+                    sizeof(uint32_t)
+                );
+                for (uint32_t j = 0; j < entries_per_block; j++) {
+                    if (i + j >= inode->i_blocks_count)
+                        return alloc_map;
+                    part_read(
+                        &fd->part, &alloc_map[i + j],
+                        indirect_block * fd->block_size + j * sizeof(uint32_t),
+                        sizeof(uint32_t)
+                    );
+                }
+                i += entries_per_block - 1;
+            } else {
+                // Single indirect block
+                part_read(
+                    &fd->part, &alloc_map[i],
+                    inode->i_blocks[12] * fd->block_size + block * sizeof(uint32_t),
+                    sizeof(uint32_t)
+                );
+            }
+        }
+    }
+
+    return alloc_map;
+}
+
 static int ext2_parse_dirent(struct ext2_dir_entry *dir, struct ext2_file_handle *fd, struct ext2_superblock *sb, const char *path) {
     if (*path == '/')
         path++;
@@ -228,18 +284,20 @@ next:
     else
         path++;
 
+    uint32_t *alloc_map = create_alloc_map(fd, &current_inode);
+
     for (uint32_t i = 0; i < current_inode.i_size; ) {
         // preliminary read
         inode_read(dir, i, sizeof(struct ext2_dir_entry),
                    fd->block_size, &current_inode,
-                   &fd->part);
+                   &fd->part, alloc_map);
 
         // name read
         char name[dir->name_len + 1];
 
         memset(name, 0, dir->name_len + 1);
         inode_read(name, i + sizeof(struct ext2_dir_entry), dir->name_len,
-                   fd->block_size, &current_inode, &fd->part);
+                   fd->block_size, &current_inode, &fd->part, alloc_map);
 
         int r = strcmp(token, name);
 
@@ -285,12 +343,14 @@ int ext2_open(struct ext2_file_handle *ret, struct part *part, const char *path)
     if ((ret->inode.i_mode & 0xf000) == EXT2_INO_DIRECTORY)
         panic("ext2: Requested file \"%s\" is a directory!", path);
 
+    ret->alloc_map = create_alloc_map(ret, &ret->inode);
+
     return 0;
 }
 
 int ext2_read(struct ext2_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
     return inode_read(buf, loc, count, file->block_size, &file->inode,
-                      &file->part);
+                      &file->part, file->alloc_map);
 }
 
 static struct ext4_extent_header* ext4_find_leaf(struct ext4_extent_header* ext_block, uint32_t read_block, uint64_t block_size, struct part *part) {
@@ -327,7 +387,7 @@ static struct ext4_extent_header* ext4_find_leaf(struct ext4_extent_header* ext_
 
 static int inode_read(void *buf, uint64_t loc, uint64_t count,
                       uint64_t block_size, struct ext2_inode *inode,
-                      struct part *part) {
+                      struct part *part, uint32_t *alloc_map) {
     for (uint64_t progress = 0; progress < count;) {
         uint64_t block = (loc + progress) / block_size;
 
@@ -366,39 +426,8 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
             } else {
                 panic("extent for block not found");
             }
-        } else if (block < 12) {
-            // Direct block
-            block_index = inode->i_blocks[block];
         } else {
-            // Indirect block
-            block -= 12;
-            if (block * sizeof(uint32_t) >= block_size) {
-                // Double indirect block
-                block -= block_size / sizeof(uint32_t);
-                uint32_t index  = block / (block_size / sizeof(uint32_t));
-                if (index * sizeof(uint32_t) >= block_size) {
-                    // Triple indirect block
-                    panic("ext2: triply indirect blocks unsupported");
-                }
-                uint32_t offset = block % (block_size / sizeof(uint32_t));
-                uint32_t indirect_block;
-                part_read(
-                    part, &indirect_block,
-                    inode->i_blocks[13] * block_size + index * sizeof(uint32_t),
-                    sizeof(uint32_t)
-                );
-                part_read(
-                    part, &block_index,
-                    indirect_block * block_size + offset * sizeof(uint32_t),
-                    sizeof(uint32_t)
-                );
-            } else {
-                part_read(
-                    part, &block_index,
-                    inode->i_blocks[12] * block_size + block * sizeof(uint32_t),
-                    sizeof(uint32_t)
-                );
-            }
+            block_index = alloc_map[block];
         }
 
         part_read(part, buf + progress, (block_index * block_size) + offset, chunk);

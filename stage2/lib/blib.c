@@ -4,6 +4,7 @@
 #include <lib/libc.h>
 #include <lib/blib.h>
 #include <lib/print.h>
+#include <lib/trace.h>
 
 uint8_t boot_drive;
 
@@ -72,6 +73,9 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
     vprint(fmt, args);
 
     va_end(args);
+
+    print("\n");
+    print_stacktrace(NULL);
 
     for (;;) {
         asm volatile ("hlt" ::: "memory");

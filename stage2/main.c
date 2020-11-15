@@ -5,6 +5,7 @@
 #include <lib/libc.h>
 #include <lib/part.h>
 #include <lib/config.h>
+#include <lib/trace.h>
 #include <sys/e820.h>
 #include <sys/a20.h>
 #include <lib/print.h>
@@ -66,6 +67,8 @@ void entry(uint8_t _boot_drive, int pxe_boot) {
             }
         }
     }
+
+    trace_init();
 
     char *cmdline = menu();
 

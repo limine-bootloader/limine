@@ -8,6 +8,7 @@ all: stage2 decompressor
 	gzip -n -9 < stage2/stage2.bin > stage2/stage2.bin.gz
 	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
 	cd pxeboot && nasm bootsect.asm -fbin -o ../limine-pxe.bin
+	cp stage2/stage2.map ./
 
 clean: stage2-clean decompressor-clean test-clean
 	rm -f stage2/stage2.bin.gz
@@ -55,6 +56,7 @@ echfs-test: limine-install test.img
 
 ext2-test: limine-install test.img
 	$(MAKE) -C test
+	cp stage2.map test/
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.img > loopback_dev
@@ -62,8 +64,7 @@ ext2-test: limine-install test.img
 	sudo mkfs.ext2 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp test/test.elf test_image/boot/
-	sudo cp test/limine.cfg test_image/
+	sudo cp -rv test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
@@ -80,8 +81,7 @@ fat32-test: limine-install test.img
 	sudo mkfs.fat -F 32 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp test/test.elf test_image/boot/
-	sudo cp test/limine.cfg test_image/
+	sudo cp -rv test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`

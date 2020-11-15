@@ -1,9 +1,10 @@
 CC = i386-elf-gcc
 LD = i386-elf-gcc
 OBJCOPY = i386-elf-objcopy
+OBJDUMP = i386-elf-objdump
 
 WERROR = -Werror
-CFLAGS = -flto -Os -pipe -Wall -Wextra $(WERROR)
+CFLAGS = -Os -pipe -Wall -Wextra $(WERROR)
 
 INTERNAL_CFLAGS = \
 	-std=gnu11 \
@@ -11,7 +12,7 @@ INTERNAL_CFLAGS = \
 	-ffreestanding \
 	-fno-stack-protector \
 	-fno-pic \
-	-fomit-frame-pointer \
+	-fno-omit-frame-pointer \
 	-Wno-address-of-packed-member \
 	-masm=intel \
 	-mno-80387 \
@@ -23,7 +24,7 @@ INTERNAL_CFLAGS = \
 	-I. \
 	-I..
 
-LDFLAGS = -flto -Os
+LDFLAGS = -Os
 
 INTERNAL_LDFLAGS = \
 	-lgcc \
@@ -41,11 +42,17 @@ ASM_FILES := $(shell find ./ -type f -name '*.asm' | sort)
 OBJ := $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o)
 HEADER_DEPS := $(C_FILES:.c=.d)
 
-all: stage2.bin
+all: stage2.map stage2.bin
 
-stage2.bin: $(OBJ)
-	$(LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o stage2.elf
-	$(OBJCOPY) -O binary stage2.elf stage2.bin
+stage2.map: stage2.elf
+	./gensyms.sh $(OBJDUMP)
+	nasm symlist.gen -f bin -o $@
+
+stage2.bin: stage2.elf
+	$(OBJCOPY) -O binary $< $@
+
+stage2.elf: $(OBJ)
+	$(LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
 -include $(HEADER_DEPS)
 
@@ -56,4 +63,4 @@ stage2.bin: $(OBJ)
 	nasm $< -f elf32 -o $@
 
 clean:
-	rm -f stage2.bin stage2.elf $(OBJ) $(HEADER_DEPS)
+	rm -f symlist.gen stage2.map stage2.bin stage2.elf $(OBJ) $(HEADER_DEPS)

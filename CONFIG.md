@@ -45,6 +45,7 @@ Some keys take *URIs* as values; these are described in the next section.
 * `THEME_MARGIN` - Set the amount of margin around the terminal. Ignored if `GRAPHICS` is not `yes`.
 * `THEME_MARGIN_GRADIENT` - Set the thickness in pixel for the gradient around the terminal. Ignored if `GRAPHICS` is not `yes`.
 * `BACKGROUND_PATH` - URI where to find the background .BMP file. Ignored if `GRAPHICS` is not `yes`.
+* `STAGE2_MAP` - URI where to find the stage2 symbol map file for stacktraces and symbol name resolution at runtime.
 
 *Locally assignable (non protocol specific)* keys are:
 * `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `stivale`, `stivale2`, `chainload`.

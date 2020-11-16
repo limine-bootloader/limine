@@ -322,7 +322,7 @@ bool vbe_tty_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _
 
     int req_width = 0, req_height = 0, req_bpp = 0;
 
-    if (config_get_value(buf, 0, 32, "MENU_RESOLUTION"))
+    if (config_get_value(NULL, buf, 0, 32, "MENU_RESOLUTION"))
         parse_resolution(&req_width, &req_height, &req_bpp, buf);
 
     // We force bpp to 32

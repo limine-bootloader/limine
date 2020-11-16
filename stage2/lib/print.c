@@ -119,7 +119,7 @@ static char print_buf[PRINT_BUF_MAX];
 
 void vprint(const char *fmt, va_list args) {
     if (config_ready && e9_output == -1) {
-        e9_output = config_get_value(print_buf, 0, PRINT_BUF_MAX, "E9_OUTPUT") &&
+        e9_output = config_get_value(NULL, print_buf, 0, PRINT_BUF_MAX, "E9_OUTPUT") &&
                     !strcmp(print_buf, "yes");
     }
 

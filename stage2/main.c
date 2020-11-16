@@ -70,21 +70,22 @@ void entry(uint8_t _boot_drive, int pxe_boot) {
 
     trace_init();
 
-    char *cmdline = menu();
+    char *cmdline;
+    char *config = menu(&cmdline);
 
     char proto[32];
-    if (!config_get_value(proto, 0, 32, "PROTOCOL")) {
+    if (!config_get_value(config, proto, 0, 32, "PROTOCOL")) {
         panic("PROTOCOL not specified");
     }
 
     if (!strcmp(proto, "stivale")) {
-        stivale_load(cmdline);
+        stivale_load(config, cmdline);
     } else if (!strcmp(proto, "stivale2")) {
-        stivale2_load(cmdline);
+        stivale2_load(config, cmdline);
     } else if (!strcmp(proto, "linux")) {
-        linux_load(cmdline);
+        linux_load(config, cmdline);
     } else if (!strcmp(proto, "chainload")) {
-        chainload();
+        chainload(config);
     } else {
         panic("Invalid protocol specified");
     }

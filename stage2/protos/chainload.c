@@ -46,12 +46,12 @@ static void spinup(uint8_t drive) {
     );
 }
 
-void chainload(void) {
+void chainload(char *config) {
     uint64_t val;
 
     int part; {
         char buf[32];
-        if (!config_get_value(buf, 0, 32, "PARTITION")) {
+        if (!config_get_value(config, buf, 0, 32, "PARTITION")) {
             part = -1;
         } else {
             val = strtoui(buf, NULL, 10);
@@ -63,7 +63,7 @@ void chainload(void) {
     }
     int drive; {
         char buf[32];
-        if (!config_get_value(buf, 0, 32, "DRIVE")) {
+        if (!config_get_value(config, buf, 0, 32, "DRIVE")) {
             panic("DRIVE not specified");
         }
         val = strtoui(buf, NULL, 10);

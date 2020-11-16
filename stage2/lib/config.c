@@ -8,6 +8,8 @@
 #include <lib/print.h>
 #include <pxe/tftp.h>
 
+#include <sys/cpu.h>
+
 #define SEPARATOR '\n'
 
 bool config_ready = false;
@@ -44,6 +46,81 @@ int init_config_pxe(void) {
     return init_config(cfg.file_size);
 }
 
+#define NOT_CHILD      (-1)
+#define DIRECT_CHILD   0
+#define INDIRECT_CHILD 1
+
+static int is_child(char *buf, size_t limit,
+                    size_t current_depth, size_t index) {
+    if (!config_get_entry_name(buf, index, limit))
+        return NOT_CHILD;
+    if (strlen(buf) < current_depth + 1)
+        return NOT_CHILD;
+    for (size_t j = 0; j < current_depth; j++)
+        if (buf[j] != ':')
+            return NOT_CHILD;
+    if (buf[current_depth] == ':')
+        return INDIRECT_CHILD;
+    return DIRECT_CHILD;
+}
+
+static bool is_directory(char *buf, size_t limit,
+                         size_t current_depth, size_t index) {
+    switch (is_child(buf, limit, current_depth + 1, index + 1)) {
+        default:
+        case NOT_CHILD:
+            return false;
+        case INDIRECT_CHILD:
+            panic("config: Malformed config file. Parentless child.");
+        case DIRECT_CHILD:
+            return true;
+    }
+}
+
+static struct menu_entry *create_menu_tree(struct menu_entry *parent,
+                                           size_t current_depth, size_t index) {
+    struct menu_entry *root = NULL, *prev = NULL;
+
+    for (size_t i = index; ; i++) {
+        static char name[64];
+
+        switch (is_child(name, 64, current_depth, i)) {
+            case NOT_CHILD:
+                return root;
+            case INDIRECT_CHILD:
+                continue;
+            case DIRECT_CHILD:
+                break;
+        }
+
+        struct menu_entry *entry = conv_mem_alloc(sizeof(struct menu_entry));
+
+        if (root == NULL)
+            root = entry;
+
+        config_get_entry_name(name, i, 64);
+
+        strcpy(entry->name, name + current_depth);
+        entry->parent = parent;
+
+        if (is_directory(name, 64, current_depth, i)) {
+            entry->sub = create_menu_tree(entry, current_depth + 1, i + 1);
+        } else {
+            size_t entry_size;
+            char *config_entry = config_get_entry(&entry_size, i);
+            entry->body = conv_mem_alloc(entry_size + 1);
+            memcpy(entry->body, config_entry, entry_size);
+            entry->body[entry_size] = 0;
+        }
+
+        if (prev != NULL)
+            prev->next = entry;
+        prev = entry;
+    }
+}
+
+struct menu_entry *menu_tree = NULL;
+
 int init_config(size_t config_size) {
     // remove windows carriage returns, if any
     for (size_t i = 0; i < config_size; i++) {
@@ -54,24 +131,28 @@ int init_config(size_t config_size) {
         }
     }
 
+    menu_tree = create_menu_tree(NULL, 1, 0);
+
     config_ready = true;
 
     return 0;
 }
 
-int config_get_entry_name(char *ret, size_t index, size_t limit) {
+bool config_get_entry_name(char *ret, size_t index, size_t limit) {
     char *p = config_addr;
 
     for (size_t i = 0; i <= index; i++) {
         while (*p != ':') {
             if (!*p)
-                return -1;
+                return false;
             p++;
         }
         p++;
         if ((p - 1) != config_addr && *(p - 2) != '\n')
             i--;
     }
+
+    p--;
 
     size_t i;
     for (i = 0; i < (limit - 1); i++) {
@@ -81,16 +162,17 @@ int config_get_entry_name(char *ret, size_t index, size_t limit) {
     }
 
     ret[i] = 0;
-    return 0;
+    return true;
 }
 
-int config_set_entry(size_t index) {
+char *config_get_entry(size_t *size, size_t index) {
+    char *ret;
     char *p = config_addr;
 
     for (size_t i = 0; i <= index; i++) {
         while (*p != ':') {
             if (!*p)
-                return -1;
+                return NULL;
             p++;
         }
         p++;
@@ -98,7 +180,11 @@ int config_set_entry(size_t index) {
             i--;
     }
 
-    config_addr = p;
+    do {
+        p++;
+    } while (*p != '\n');
+
+    ret = p;
 
 cont:
     while (*p != ':' && *p)
@@ -109,29 +195,33 @@ cont:
         goto cont;
     }
 
-    *p = 0;
+    *size = p - ret;
 
-    return 0;
+    return ret;
 }
 
-char *config_get_value(char *buf, size_t index, size_t limit, const char *key) {
+char *config_get_value(const char *config,
+                       char *buf, size_t index, size_t limit, const char *key) {
     if (!limit || !buf || !key)
         return NULL;
 
+    if (config == NULL)
+        config = config_addr;
+
     size_t key_len = strlen(key);
 
-    for (size_t i = 0; config_addr[i]; i++) {
-        if (!strncmp(&config_addr[i], key, key_len) && config_addr[i + key_len] == '=') {
-            if (i && config_addr[i - 1] != SEPARATOR)
+    for (size_t i = 0; config[i]; i++) {
+        if (!strncmp(&config[i], key, key_len) && config[i + key_len] == '=') {
+            if (i && config[i - 1] != SEPARATOR)
                 continue;
             if (index--)
                 continue;
             i += key_len + 1;
             size_t j;
-            for (j = 0; config_addr[i + j] != SEPARATOR && config_addr[i + j]; j++) {
+            for (j = 0; config[i + j] != SEPARATOR && config[i + j]; j++) {
                 if (j == limit - 1)
                     break;
-                buf[j] = config_addr[i + j];
+                buf[j] = config[i + j];
             }
             buf[j] = 0;
             return buf;

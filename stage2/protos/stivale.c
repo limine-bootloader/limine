@@ -25,14 +25,14 @@
 
 struct stivale_struct stivale_struct = {0};
 
-void stivale_load(char *cmdline) {
+void stivale_load(char *config, char *cmdline) {
     char buf[128];
 
     stivale_struct.flags |= (1 << 0);  // set bit 0 since we are BIOS and not UEFI
 
     struct file_handle *kernel = conv_mem_alloc(sizeof(struct file_handle));
 
-    if (!config_get_value(buf, 0, 128, "KERNEL_PATH"))
+    if (!config_get_value(config, buf, 0, 128, "KERNEL_PATH"))
         panic("KERNEL_PATH not specified");
 
     if (!uri_open(kernel, buf))
@@ -117,14 +117,14 @@ void stivale_load(char *cmdline) {
     uint64_t *prev_mod_ptr = &stivale_struct.modules;
     for (int i = 0; ; i++) {
         char module_file[64];
-        if (!config_get_value(module_file, i, 64, "MODULE_PATH"))
+        if (!config_get_value(config, module_file, i, 64, "MODULE_PATH"))
             break;
 
         stivale_struct.module_count++;
 
         struct stivale_module *m = conv_mem_alloc(sizeof(struct stivale_module));
 
-        if (!config_get_value(m->string, i, 128, "MODULE_STRING")) {
+        if (!config_get_value(config, m->string, i, 128, "MODULE_STRING")) {
             m->string[0] = '\0';
         }
 
@@ -171,7 +171,7 @@ void stivale_load(char *cmdline) {
         int req_height = stivale_hdr.framebuffer_height;
         int req_bpp    = stivale_hdr.framebuffer_bpp;
 
-        if (config_get_value(buf, 0, 128, "RESOLUTION"))
+        if (config_get_value(config, buf, 0, 128, "RESOLUTION"))
             parse_resolution(&req_width, &req_height, &req_bpp, buf);
 
         struct vbe_framebuffer_info fbinfo;

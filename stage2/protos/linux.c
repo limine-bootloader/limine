@@ -52,11 +52,11 @@ static void spinup(uint16_t real_mode_code_seg, uint16_t kernel_entry_seg) {
     );
 }
 
-void linux_load(char *cmdline) {
+void linux_load(char *config, char *cmdline) {
     char buf[128];
     struct file_handle *kernel = conv_mem_alloc(sizeof(struct file_handle));
 
-    if (!config_get_value(buf, 0, 128, "KERNEL_PATH"))
+    if (!config_get_value(config, buf, 0, 128, "KERNEL_PATH"))
         panic("KERNEL_PATH not specified");
 
     if (!uri_open(kernel, buf))
@@ -130,7 +130,7 @@ void linux_load(char *cmdline) {
     size_t modules_mem_base = INITRD_LOAD_ADDR;
     for (size_t i = 0; ; i++) {
         char module_path[64];
-        if (!config_get_value(module_path, i, 64, "MODULE_PATH"))
+        if (!config_get_value(config, module_path, i, 64, "MODULE_PATH"))
             break;
 
         struct file_handle module;

@@ -49,8 +49,9 @@ echfs-test: limine-install test.img
 	sed "s/@GUID@/`cat part_guid`/g" < test/limine.cfg > limine.cfg.tmp
 	echfs-utils -m -p0 test.img import limine.cfg.tmp limine.cfg
 	rm -f limine.cfg.tmp part_guid
+	echfs-utils -m -p0 test.img import stage2.map boot/stage2.map
 	echfs-utils -m -p0 test.img import test/test.elf boot/test.elf
-	echfs-utils -m -p0 test.img import test/bg.bmp bg.bmp
+	echfs-utils -m -p0 test.img import test/bg.bmp boot/bg.bmp
 	./limine-install limine.bin test.img
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.img -debugcon stdio
 

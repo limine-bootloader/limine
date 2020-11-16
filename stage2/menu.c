@@ -16,20 +16,50 @@
 static char *cmdline;
 #define CMDLINE_MAX 1024
 
-static char config_entry_name[1024];
+static int print_tree(int level, int base_index, int selected_entry,
+                         struct menu_entry *current_entry,
+                         struct menu_entry **selected_menu_entry) {
+    int max_entries = 0;
+    for (;;) {
+        if (current_entry == NULL)
+            break;
+        for (int i = 0; i < level; i++)
+            print("  ");
+        if (current_entry->sub)
+            print(current_entry->expanded ? "[-] " : "[+] ");
+        else
+            print("    ");
+        if (base_index + max_entries == selected_entry) {
+            *selected_menu_entry = current_entry;
+            print("\e[47m\e[30m");
+        }
+        print(" %s \e[0m\n", current_entry->name);
+        if (current_entry->sub && current_entry->expanded) {
+            max_entries += print_tree(level + 1, base_index + max_entries + 1,
+                                      selected_entry,
+                                      current_entry->sub,
+                                      selected_menu_entry);
+        }
+        max_entries++;
+        current_entry = current_entry->next;
+    }
+    return max_entries;
+}
 
-char *menu(void) {
+char *menu(char **cmdline_ret) {
     cmdline = conv_mem_alloc(CMDLINE_MAX);
 
     char *buf = conv_mem_alloc(256);
 
+    struct menu_entry *selected_menu_entry;
+
     int selected_entry = 0;
-    if (config_get_value(buf, 0, 16, "DEFAULT_ENTRY")) {
+    if (config_get_value(NULL, buf, 0, 16, "DEFAULT_ENTRY")) {
         selected_entry = (int)strtoui(buf, NULL, 10);
     }
 
     int timeout = 5;
-    if (config_get_value(buf, 0, 16, "TIMEOUT")) {
+    if (config_get_value(NULL, buf, 0, 16, "TIMEOUT")) {
         timeout = (int)strtoui(buf, NULL, 10);
     }
 
@@ -37,7 +67,7 @@ char *menu(void) {
         goto autoboot;
 
     // If there is GRAPHICS config key and the value is "yes", enable graphics
-    if (config_get_value(buf, 0, 16, "GRAPHICS") && !strcmp(buf, "yes")) {
+    if (config_get_value(NULL, buf, 0, 16, "GRAPHICS") && !strcmp(buf, "yes")) {
         // default scheme
         int margin = 64;
         int margin_gradient = 20;
@@ -52,8 +82,8 @@ char *menu(void) {
             0x00aaaaaa  // grey
         };
 
-        if (config_get_value(buf, 0, 256, "THEME_COLOURS")
-         || config_get_value(buf, 0, 256, "THEME_COLORS")) {
+        if (config_get_value(NULL, buf, 0, 256, "THEME_COLOURS")
+         || config_get_value(NULL, buf, 0, 256, "THEME_COLORS")) {
             const char *first = buf;
             for (int i = 0; i < 8; i++) {
                 const char *last;
@@ -67,15 +97,15 @@ char *menu(void) {
             }
         }
 
-        if (config_get_value(buf, 0, 16, "THEME_MARGIN")) {
+        if (config_get_value(NULL, buf, 0, 16, "THEME_MARGIN")) {
             margin = (int)strtoui(buf, NULL, 10);
         }
 
-        if (config_get_value(buf, 0, 16, "THEME_MARGIN_GRADIENT")) {
+        if (config_get_value(NULL, buf, 0, 16, "THEME_MARGIN_GRADIENT")) {
             margin_gradient = (int)strtoui(buf, NULL, 10);
         }
 
-        if (!config_get_value(cmdline, 0, CMDLINE_MAX, "BACKGROUND_PATH"))
+        if (!config_get_value(NULL, cmdline, 0, CMDLINE_MAX, "BACKGROUND_PATH"))
             goto nobg;
 
         struct file_handle *bg_file = conv_mem_alloc(sizeof(struct file_handle));
@@ -98,24 +128,17 @@ char *menu(void) {
     disable_cursor();
     bool skip_timeout = false;
 
+    if (menu_tree == NULL)
+        panic("Config contains no entries.");
+
 refresh:
     clear(true);
     print("\n\n  \e[36m Limine " LIMINE_VERSION " \e[37m\n\n\n");
 
     print("Select an entry:\n\n");
 
-    int max_entries;
-    for (max_entries = 0; ; max_entries++) {
-        if (config_get_entry_name(config_entry_name, max_entries, 1024) == -1)
-            break;
-        if (max_entries == selected_entry)
-            print("  \e[47m\e[30m %s \e[40m\e[37m\n", config_entry_name);
-        else
-            print("   %s\n", config_entry_name);
-    }
-
-    if (max_entries == 0)
-        panic("Config contains no entries.");
+    int max_entries = print_tree(0, 0, selected_entry, menu_tree,
+                                 &selected_menu_entry);
 
     print("\nArrows to choose, enter to select, 'e' to edit command line.");
 
@@ -148,27 +171,34 @@ timeout_aborted:
                 goto refresh;
             case '\r':
             autoboot:
-                config_set_entry(selected_entry);
+                if (selected_menu_entry->sub != NULL) {
+                    skip_timeout = true;
+                    selected_menu_entry->expanded = !selected_menu_entry->expanded;
+                    goto refresh;
+                }
                 enable_cursor();
-                if (!config_get_value(cmdline, 0, CMDLINE_MAX, "KERNEL_CMDLINE")) {
-                    if (!config_get_value(cmdline, 0, CMDLINE_MAX, "CMDLINE")) {
+                if (!config_get_value(selected_menu_entry->body, cmdline, 0, CMDLINE_MAX, "KERNEL_CMDLINE")) {
+                    if (!config_get_value(selected_menu_entry->body, cmdline, 0, CMDLINE_MAX, "CMDLINE")) {
                         cmdline[0] = '\0';
                     }
                 }
                 clear(true);
-                return cmdline;
+                *cmdline_ret = cmdline;
+                return selected_menu_entry->body;
             case 'e':
-                config_set_entry(selected_entry);
+                if (selected_menu_entry->sub != NULL)
+                    goto refresh;
                 enable_cursor();
-                if (!config_get_value(cmdline, 0, CMDLINE_MAX, "KERNEL_CMDLINE")) {
-                    if (!config_get_value(cmdline, 0, CMDLINE_MAX, "CMDLINE")) {
+                if (!config_get_value(selected_menu_entry->body, cmdline, 0, CMDLINE_MAX, "KERNEL_CMDLINE")) {
+                    if (!config_get_value(selected_menu_entry->body, cmdline, 0, CMDLINE_MAX, "CMDLINE")) {
                         cmdline[0] = '\0';
                     }
                 }
                 print("\n\n> ");
                 readline(cmdline, cmdline, CMDLINE_MAX);
                 clear(true);
-                return cmdline;
+                *cmdline_ret = cmdline;
+                return selected_menu_entry->body;
         }
     }
 }

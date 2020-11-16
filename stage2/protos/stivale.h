@@ -6,7 +6,7 @@
 #include <sys/e820.h>
 #include <mm/vmm.h>
 
-void stivale_load(char *cmdline);
+void stivale_load(char *config, char *cmdline);
 
 pagemap_t stivale_build_pagemap(bool level5pg);
 __attribute__((noreturn)) void stivale_spinup(

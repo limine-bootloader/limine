@@ -124,7 +124,7 @@ struct smp_information *init_smp(size_t    header_hack_size,
 
     x2apic = x2apic && x2apic_enable();
 
-    uint32_t bsp_x2apic_id;
+    uint32_t bsp_x2apic_id = 0;
     if (x2apic) {
         // The Intel manual recommends checking if leaf 0x1f exists first, and
         // using that in place of 0xb if that's the case

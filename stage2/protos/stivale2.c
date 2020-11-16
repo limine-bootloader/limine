@@ -74,14 +74,12 @@ void stivale2_load(char *cmdline) {
         case 64: {
             // Check if 64 bit CPU
             uint32_t eax, ebx, ecx, edx;
-            cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx);
-            if (!(edx & (1 << 29))) {
-                panic("stivale2: This CPU does not support 64-bit mode.");
+            if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
+                panic("stivale: This CPU does not support 64-bit mode.");
             }
             // Check if 5-level paging is available
-            cpuid(0x00000007, 0, &eax, &ebx, &ecx, &edx);
-            if (ecx & (1 << 16)) {
-                print("stivale2: CPU has 5-level paging support\n");
+            if (cpuid(0x00000007, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 16))) {
+                print("stivale: CPU has 5-level paging support\n");
                 level5pg = true;
             }
 

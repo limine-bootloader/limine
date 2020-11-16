@@ -23,12 +23,27 @@ static int print_tree(int level, int base_index, int selected_entry,
     for (;;) {
         if (current_entry == NULL)
             break;
-        for (int i = 0; i < level; i++)
-            print("  ");
+        if (level) {
+            for (int i = level - 1; i > 0; i--) {
+                struct menu_entry *actual_parent = current_entry;
+                for (int j = 0; j < i; j++)
+                    actual_parent = actual_parent->parent;
+                if (actual_parent->next != NULL)
+                    print(" | ");
+                else
+                    print("   ");
+            }
+            if (current_entry->next == NULL)
+                print(" `-");
+            else
+                print(" |-");
+        }
         if (current_entry->sub)
-            print(current_entry->expanded ? "[-] " : "[+] ");
+            print(current_entry->expanded ? "[-]" : "[+]");
+        else if (level)
+            print("-> ");
         else
-            print("    ");
+            print("   ");
         if (base_index + max_entries == selected_entry) {
             *selected_menu_entry = current_entry;
             print("\e[47m\e[30m");

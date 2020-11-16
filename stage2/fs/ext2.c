@@ -8,6 +8,17 @@
 #include <lib/print.h>
 #include <mm/pmm.h>
 
+/* Inode types */
+#define S_IFIFO  0x1000
+#define S_IFCHR  0x2000
+#define S_IFDIR  0x4000
+#define S_IFBLK  0x6000
+#define S_IFREG  0x8000
+#define S_IFLNK  0xa000
+#define S_IFSOCK 0xc000
+
+#define FMT_MASK 0xf000
+
 /* EXT2 Filesystem States */
 #define EXT2_FS_UNRECOVERABLE_ERRORS 3
 
@@ -23,71 +34,6 @@
 #define EXT4_EXTENTS_FLAG 0x80000
 
 #define EXT2_S_MAGIC    0xEF53
-
-/* Superblock Fields */
-struct ext2_superblock {
-    uint32_t s_inodes_count;
-    uint32_t s_blocks_count;
-    uint32_t s_r_blocks_count;
-    uint32_t s_free_blocks_count;
-    uint32_t s_free_inodes_count;
-    uint32_t s_first_data_block;
-    uint32_t s_log_block_size;
-    uint32_t s_log_frag_size;
-    uint32_t s_blocks_per_group;
-    uint32_t s_frags_per_group;
-    uint32_t s_inodes_per_group;
-    uint32_t s_mtime;
-    uint32_t s_wtime;
-
-    uint16_t s_mnt_count;
-    uint16_t s_max_mnt_count;
-    uint16_t s_magic;
-    uint16_t s_state;
-    uint16_t s_errors;
-    uint16_t s_minor_rev_level;
-
-    uint32_t s_lastcheck;
-    uint32_t s_checkinterval;
-    uint32_t s_creator_os;
-    uint32_t s_rev_level;
-    uint16_t s_def_resuid;
-    uint16_t s_def_gid;
-
-    // if version number >= 1, we have to use the ext2 extended superblock as well
-
-    /* Extended Superblock */
-    uint32_t s_first_ino;
-
-    uint16_t s_inode_size;
-    uint16_t s_block_group_nr;
-
-    uint32_t s_feature_compat;
-    uint32_t s_feature_incompat;
-    uint32_t s_feature_ro_compat;
-
-    uint64_t s_uuid[2];
-    uint64_t s_volume_name[2];
-
-    uint64_t s_last_mounted[8];
-
-    uint32_t compression_info;
-    uint8_t prealloc_blocks;
-    uint8_t prealloc_dir_blocks;
-    uint16_t reserved_gdt_blocks;
-    uint8_t journal_uuid[16];
-    uint32_t journal_inum;
-    uint32_t journal_dev;
-    uint32_t last_orphan;
-    uint32_t hash_seed[4];
-    uint8_t def_hash_version;
-    uint8_t jnl_backup_type;
-    uint16_t group_desc_size;
-    uint32_t default_mount_opts;
-    uint32_t first_meta_bg;
-    uint32_t mkfs_time;
-    uint32_t jnl_blocks[17];
-} __attribute__((packed));
 
 /* EXT2 Block Group Descriptor */
 struct ext2_bgd {
@@ -157,14 +103,17 @@ struct ext4_extent_idx {
 } __attribute__((packed));
 
 static int inode_read(void *buf, uint64_t loc, uint64_t count,
-                      uint64_t block_size, struct ext2_inode *inode,
-                      struct part *part, uint32_t *alloc_map);
+                      struct ext2_inode *inode, struct ext2_file_handle *fd,
+                      uint32_t *alloc_map);
+static bool ext2_parse_dirent(struct ext2_dir_entry *dir, struct ext2_file_handle *fd, const char *path);
 
 // parse an inode given the partition base and inode number
-static int ext2_get_inode(struct ext2_inode *ret, struct part *part,
-                          uint64_t inode, struct ext2_superblock *sb) {
+static bool ext2_get_inode(struct ext2_inode *ret,
+                          struct ext2_file_handle *fd, uint64_t inode) {
     if (inode == 0)
-        return -1;
+        return false;
+
+    struct ext2_superblock *sb = &fd->sb;
 
     //determine if we need to use 64 bit inode ids
     bool bit64 = false;
@@ -189,7 +138,7 @@ static int ext2_get_inode(struct ext2_inode *ret, struct part *part,
         struct ext2_bgd target_descriptor;
         const uint64_t bgd_offset = bgd_start_offset + (sizeof(struct ext2_bgd) * ino_blk_grp);
 
-        part_read(part, &target_descriptor, bgd_offset, sizeof(struct ext2_bgd));
+        part_read(&fd->part, &target_descriptor, bgd_offset, sizeof(struct ext2_bgd));
 
         ino_offset = ((target_descriptor.bg_inode_table) * block_size) +
                                     (ino_size * ino_tbl_idx);
@@ -197,15 +146,15 @@ static int ext2_get_inode(struct ext2_inode *ret, struct part *part,
         struct ext4_bgd target_descriptor;
         const uint64_t bgd_offset = bgd_start_offset + (sizeof(struct ext4_bgd) * ino_blk_grp);
 
-        part_read(part, &target_descriptor, bgd_offset, sizeof(struct ext4_bgd));
+        part_read(&fd->part, &target_descriptor, bgd_offset, sizeof(struct ext4_bgd));
 
         ino_offset = ((target_descriptor.bg_inode_table | (bit64 ? ((uint64_t)target_descriptor.inode_id_hi << 32) : 0)) * block_size) +
                                     (ino_size * ino_tbl_idx);
     }
 
-    part_read(part, ret, ino_offset, sizeof(struct ext2_inode));
+    part_read(&fd->part, ret, ino_offset, sizeof(struct ext2_inode));
 
-    return 0;
+    return true;
 }
 
 static uint32_t *create_alloc_map(struct ext2_file_handle *fd,
@@ -263,21 +212,37 @@ static uint32_t *create_alloc_map(struct ext2_file_handle *fd,
     return alloc_map;
 }
 
-static int ext2_parse_dirent(struct ext2_dir_entry *dir, struct ext2_file_handle *fd, struct ext2_superblock *sb, const char *path) {
+static bool symlink_to_inode(struct ext2_inode *inode, struct ext2_file_handle *fd) {
+    // I cannot find whether this is 0-terminated or not, so I'm gonna take the
+    // safe route here and assume it is not.
+    if (inode->i_size < 59) {
+        struct ext2_dir_entry dir;
+        char *symlink = (char *)inode->i_blocks;
+        symlink[59] = 0;
+        if (!ext2_parse_dirent(&dir, fd, symlink))
+            return false;
+        ext2_get_inode(inode, fd, dir.inode);
+        return true;
+    } else {
+        print("ext2: Symlinks with destination paths longer than 60 chars unsupported\n");
+        return false;
+    }
+}
+
+static bool ext2_parse_dirent(struct ext2_dir_entry *dir, struct ext2_file_handle *fd, const char *path) {
     if (*path == '/')
         path++;
 
     struct ext2_inode current_inode = fd->root_inode;
 
     bool escape = false;
-    char token[256] = {0};
-    size_t i;
+    static char token[256];
 
 next:
-    for (i = 0; i < 255 && *path != '/' && *path != '\0'; i++, path++)
-        token[i] = *path;
+    memset(token, 0, 256);
 
-    token[i] = 0;
+    for (size_t i = 0; i < 255 && *path != '/' && *path != '\0'; i++, path++)
+        token[i] = *path;
 
     if (*path == '\0')
         escape = true;
@@ -289,24 +254,30 @@ next:
     for (uint32_t i = 0; i < current_inode.i_size; ) {
         // preliminary read
         inode_read(dir, i, sizeof(struct ext2_dir_entry),
-                   fd->block_size, &current_inode,
-                   &fd->part, alloc_map);
+                   &current_inode, fd, alloc_map);
 
         // name read
         char name[dir->name_len + 1];
 
         memset(name, 0, dir->name_len + 1);
         inode_read(name, i + sizeof(struct ext2_dir_entry), dir->name_len,
-                   fd->block_size, &current_inode, &fd->part, alloc_map);
+                   &current_inode, fd, alloc_map);
 
-        int r = strcmp(token, name);
-
-        if (!r) {
+        if (!strcmp(token, name)) {
             if (escape) {
-                return 0;
+                return true;
             } else {
                 // update the current inode
-                ext2_get_inode(&current_inode, &fd->part, dir->inode, sb);
+                ext2_get_inode(&current_inode, fd, dir->inode);
+                while ((current_inode.i_mode & FMT_MASK) != S_IFDIR) {
+                    if ((current_inode.i_mode & FMT_MASK) == S_IFLNK) {
+                        if (!symlink_to_inode(&current_inode, fd))
+                            return false;
+                    } else {
+                        print("ext2: Part of path is not directory nor symlink\n");
+                        return false;
+                    }
+                }
                 goto next;
             }
         }
@@ -314,34 +285,41 @@ next:
         i += dir->rec_len;
     }
 
-    return -1;
+    return false;
 }
 
 int ext2_open(struct ext2_file_handle *ret, struct part *part, const char *path) {
-    ret->part  = *part;
-    ret->drive = part->drive;
+    ret->part = *part;
 
-    struct ext2_superblock sb;
-    part_read(&ret->part, &sb, 1024, sizeof(struct ext2_superblock));
+    part_read(&ret->part, &ret->sb, 1024, sizeof(struct ext2_superblock));
 
-    if (sb.s_state == EXT2_FS_UNRECOVERABLE_ERRORS)
-        panic("EXT2: unrecoverable errors found\n");
+    struct ext2_superblock *sb = &ret->sb;
 
-    ret->block_size = ((uint64_t)1024 << sb.s_log_block_size);
+    if (sb->s_state == EXT2_FS_UNRECOVERABLE_ERRORS)
+        panic("ext2: unrecoverable errors found\n");
 
-    ext2_get_inode(&ret->root_inode, &ret->part, 2, &sb);
+    ret->block_size = ((uint64_t)1024 << ret->sb.s_log_block_size);
+
+    ext2_get_inode(&ret->root_inode, ret, 2);
 
     struct ext2_dir_entry entry;
-    int r = ext2_parse_dirent(&entry, ret, &sb, path);
 
-    if (r)
-        return r;
+    if (!ext2_parse_dirent(&entry, ret, path))
+        return -1;
 
-    ext2_get_inode(&ret->inode, &ret->part, entry.inode, &sb);
+    ext2_get_inode(&ret->inode, ret, entry.inode);
+
+    while ((ret->inode.i_mode & FMT_MASK) != S_IFREG) {
+        if ((ret->inode.i_mode & FMT_MASK) == S_IFLNK) {
+            if (!symlink_to_inode(&ret->inode, ret))
+                return -1;
+        } else {
+            print("ext2: Entity is not regular file nor symlink\n");
+            return -1;
+        }
+    }
+
     ret->size = ret->inode.i_size;
-
-    if ((ret->inode.i_mode & 0xf000) == EXT2_INO_DIRECTORY)
-        panic("ext2: Requested file \"%s\" is a directory!", path);
 
     ret->alloc_map = create_alloc_map(ret, &ret->inode);
 
@@ -349,8 +327,7 @@ int ext2_open(struct ext2_file_handle *ret, struct part *part, const char *path)
 }
 
 int ext2_read(struct ext2_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
-    return inode_read(buf, loc, count, file->block_size, &file->inode,
-                      &file->part, file->alloc_map);
+    return inode_read(buf, loc, count, &file->inode, file, file->alloc_map);
 }
 
 static struct ext4_extent_header* ext4_find_leaf(struct ext4_extent_header* ext_block, uint32_t read_block, uint64_t block_size, struct part *part) {
@@ -386,15 +363,15 @@ static struct ext4_extent_header* ext4_find_leaf(struct ext4_extent_header* ext_
 }
 
 static int inode_read(void *buf, uint64_t loc, uint64_t count,
-                      uint64_t block_size, struct ext2_inode *inode,
-                      struct part *part, uint32_t *alloc_map) {
+                      struct ext2_inode *inode, struct ext2_file_handle *fd,
+                      uint32_t *alloc_map) {
     for (uint64_t progress = 0; progress < count;) {
-        uint64_t block = (loc + progress) / block_size;
+        uint64_t block = (loc + progress) / fd->block_size;
 
         uint64_t chunk = count - progress;
-        uint64_t offset = (loc + progress) % block_size;
-        if (chunk > block_size - offset)
-            chunk = block_size - offset;
+        uint64_t offset = (loc + progress) % fd->block_size;
+        if (chunk > fd->block_size - offset)
+            chunk = fd->block_size - offset;
 
         uint32_t block_index;
 
@@ -403,7 +380,7 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
             struct ext4_extent *ext;
             int i;
 
-            leaf = ext4_find_leaf((struct ext4_extent_header*)inode->i_blocks, block, block_size, part);
+            leaf = ext4_find_leaf((struct ext4_extent_header*)inode->i_blocks, block, fd->block_size, &fd->part);
 
             if (!leaf)
                 panic("invalid extent");
@@ -430,7 +407,7 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
             block_index = alloc_map[block];
         }
 
-        part_read(part, buf + progress, (block_index * block_size) + offset, chunk);
+        part_read(&fd->part, buf + progress, (block_index * fd->block_size) + offset, chunk);
 
         progress += chunk;
     }

@@ -44,13 +44,17 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
     switch (pagemap.levels) {
         case 5:
             pml5 = pagemap.top_level;
-            pml4 = get_next_level(pml5, pml5_entry);
-            break;
+            goto level5;
         case 4:
             pml4 = pagemap.top_level;
-            break;
+            goto level4;
+        default:
+            panic("");
     }
 
+level5:
+    pml4 = get_next_level(pml5, pml5_entry);
+level4:
     pml3 = get_next_level(pml4, pml4_entry);
     pml2 = get_next_level(pml3, pml3_entry);
 

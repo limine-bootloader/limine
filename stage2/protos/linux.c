@@ -129,15 +129,14 @@ void linux_load(char *cmdline) {
 
     size_t modules_mem_base = INITRD_LOAD_ADDR;
     for (size_t i = 0; ; i++) {
-        char module_path[64];
-        if (!config_get_value(module_path, i, 64, "MODULE_PATH"))
+        if (!config_get_value(buf, i, 128, "MODULE_PATH"))
             break;
 
         struct file_handle module;
-        if (!uri_open(&module, module_path))
-            panic("Could not open `%s`", module_path);
+        if (!uri_open(&module, buf))
+            panic("Could not open `%s`", buf);
 
-        print("Loading module `%s`...\n", module_path);
+        print("Loading module `%s`...\n", buf);
 
         memmap_alloc_range(modules_mem_base, module.size, 0);
         fread(&module, (void *)modules_mem_base, 0, module.size);

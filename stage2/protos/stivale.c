@@ -116,8 +116,7 @@ void stivale_load(char *config, char *cmdline) {
     stivale_struct.module_count = 0;
     uint64_t *prev_mod_ptr = &stivale_struct.modules;
     for (int i = 0; ; i++) {
-        char module_file[64];
-        if (!config_get_value(config, module_file, i, 64, "MODULE_PATH"))
+        if (!config_get_value(config, buf, i, 128, "MODULE_PATH"))
             break;
 
         stivale_struct.module_count++;
@@ -129,14 +128,14 @@ void stivale_load(char *config, char *cmdline) {
         }
 
         struct file_handle f;
-        if (!uri_open(&f, module_file))
-            panic("Requested module with path \"%s\" not found!", module_file);
+        if (!uri_open(&f, buf))
+            panic("Requested module with path \"%s\" not found!", buf);
 
         void *module_addr = (void *)(((uint32_t)top_used_addr & 0xfff) ?
             ((uint32_t)top_used_addr & ~((uint32_t)0xfff)) + 0x1000 :
             (uint32_t)top_used_addr);
 
-        print("stivale: Loading module `%s`...\n", module_file);
+        print("stivale: Loading module `%s`...\n", buf);
 
         memmap_alloc_range((size_t)module_addr, f.size, 10);
         fread(&f, module_addr, 0, f.size);
@@ -151,7 +150,7 @@ void stivale_load(char *config, char *cmdline) {
         prev_mod_ptr  = &m->next;
 
         print("stivale: Requested module %u:\n", i);
-        print("         Path:   %s\n", module_file);
+        print("         Path:   %s\n", buf);
         print("         String: %s\n", m->string);
         print("         Begin:  %X\n", m->begin);
         print("         End:    %X\n", m->end);

@@ -13,8 +13,186 @@
 #include <mm/pmm.h>
 #include <drivers/vbe.h>
 
+static void cursor_back(void) {
+    int x, y;
+    get_cursor_pos(&x, &y);
+    if (x) {
+        x--;
+    } else if (y) {
+        y--;
+        x = term_cols - 1;
+    }
+    set_cursor_pos(x, y);
+}
+
+static void cursor_fwd(void) {
+    int x, y;
+    get_cursor_pos(&x, &y);
+    if (x < term_cols - 1) {
+        x++;
+    } else if (y < term_rows - 1) {
+        y++;
+        x = 0;
+    }
+    set_cursor_pos(x, y);
+}
+
 static char *cmdline;
 #define CMDLINE_MAX 1024
+
+#define EDITOR_MAX_BUFFER_SIZE 4096
+
+static size_t get_line_offset(size_t *displacement, size_t index, const char *buffer) {
+    size_t offset = 0;
+    size_t _index = index;
+    for (size_t i = 0; buffer[i]; i++) {
+        if (!_index--)
+            break;
+        if (buffer[i] == '\n')
+            offset = i + 1;
+    }
+    if (displacement)
+        *displacement = index - offset;
+    return offset;
+}
+
+static size_t get_line_length(size_t index, const char *buffer) {
+    size_t i;
+    for (i = index; buffer[i] != '\n' && buffer[i] != 0; i++);
+    return i - index;
+}
+
+static size_t get_next_line(size_t index, const char *buffer) {
+    if (buffer[index] == 0)
+        return index;
+    size_t displacement;
+    get_line_offset(&displacement, index, buffer);
+    while (buffer[index++] != '\n');
+    size_t next_line_length = get_line_length(index, buffer);
+    if (displacement > next_line_length)
+        displacement = next_line_length;
+    return index + displacement;
+}
+
+static size_t get_prev_line(size_t index, const char *buffer) {
+    size_t offset, displacement, prev_line_offset, prev_line_length;
+    offset = get_line_offset(&displacement, index, buffer);
+    if (offset) {
+        prev_line_offset = get_line_offset(NULL, offset - 1, buffer);
+        prev_line_length = get_line_length(prev_line_offset, buffer);
+        if (displacement > prev_line_length)
+            displacement = prev_line_length;
+        return prev_line_offset + displacement;
+    }
+    return offset;
+}
+
+static char *config_entry_editor(bool *ret, const char *orig_entry) {
+    size_t cursor_offset = 0;
+    size_t entry_size = strlen(orig_entry);
+
+    // Skip leading newlines
+    while (*orig_entry == '\n') {
+        orig_entry++;
+        entry_size--;
+    }
+
+    if (entry_size >= EDITOR_MAX_BUFFER_SIZE)
+        panic("Entry is too big to be edited.");
+
+    char *buffer = ext_mem_alloc(EDITOR_MAX_BUFFER_SIZE);
+    memcpy(buffer, orig_entry, entry_size);
+    buffer[entry_size] = 0;
+
+refresh:
+    clear(true);
+    disable_cursor();
+    print("\n\n  \e[36m Limine " LIMINE_VERSION " \e[37m\n\n\n");
+
+    print("Editing entry.\n");
+    print("Press esc to return to main menu and discard changes, press F10 to boot.\n");
+
+    print("\n");
+    for (int i = 0; i < term_cols; i++)
+        print("-");
+
+    int cursor_x, cursor_y;
+    for (size_t i = 0; ; i++) {
+        if (i == cursor_offset)
+            get_cursor_pos(&cursor_x, &cursor_y);
+
+        if (buffer[i] == 0)
+            break;
+
+        print("%c", buffer[i]);
+    }
+
+    print("\n");
+    for (int i = 0; i < term_cols; i++)
+        print("-");
+
+    // Hack to redraw the cursor
+    set_cursor_pos(cursor_x, cursor_y);
+    enable_cursor();
+
+    int c = getchar();
+    switch (c) {
+        case 0:
+        case GETCHAR_CURSOR_DOWN:
+            cursor_offset = get_next_line(cursor_offset, buffer);
+            break;
+        case GETCHAR_CURSOR_UP:
+            cursor_offset = get_prev_line(cursor_offset, buffer);
+            break;
+        case GETCHAR_CURSOR_LEFT:
+            if (cursor_offset) {
+                cursor_offset--;
+                cursor_back();
+            }
+            break;
+        case GETCHAR_CURSOR_RIGHT:
+            if (cursor_offset < strlen(buffer)) {
+                cursor_offset++;
+                cursor_fwd();
+            }
+            break;
+        case '\b':
+            if (cursor_offset) {
+                cursor_offset--;
+                cursor_back();
+        case GETCHAR_DELETE:
+                for (size_t i = cursor_offset; ; i++) {
+                    buffer[i] = buffer[i+1];
+                    if (!buffer[i])
+                        break;
+                }
+            }
+            break;
+        case GETCHAR_F10:
+            *ret = false;
+            disable_cursor();
+            return buffer;
+        case '\e':
+            *ret = true;
+            disable_cursor();
+            return (char *)orig_entry;
+        case '\r':
+            c = '\n';
+            // FALLTHRU
+        default:
+            if (strlen(buffer) < EDITOR_MAX_BUFFER_SIZE - 1) {
+                for (size_t i = strlen(buffer); ; i--) {
+                    buffer[i+1] = buffer[i];
+                    if (i == cursor_offset)
+                        break;
+                }
+                buffer[cursor_offset++] = c;
+            }
+            break;
+    }
+
+    goto refresh;
+}
 
 static int print_tree(int level, int base_index, int selected_entry,
                          struct menu_entry *current_entry,
@@ -155,7 +333,7 @@ refresh:
     int max_entries = print_tree(0, 0, selected_entry, menu_tree,
                                  &selected_menu_entry);
 
-    print("\nArrows to choose, enter to select, 'e' to edit command line.");
+    print("\nArrows to choose, enter to select, 'e' to edit selected entry.");
 
     int c;
 
@@ -200,20 +378,16 @@ timeout_aborted:
                 clear(true);
                 *cmdline_ret = cmdline;
                 return selected_menu_entry->body;
-            case 'e':
+            case 'e': {
                 if (selected_menu_entry->sub != NULL)
                     goto refresh;
                 enable_cursor();
-                if (!config_get_value(selected_menu_entry->body, cmdline, 0, CMDLINE_MAX, "KERNEL_CMDLINE")) {
-                    if (!config_get_value(selected_menu_entry->body, cmdline, 0, CMDLINE_MAX, "CMDLINE")) {
-                        cmdline[0] = '\0';
-                    }
-                }
-                print("\n\n> ");
-                readline(cmdline, cmdline, CMDLINE_MAX);
-                clear(true);
-                *cmdline_ret = cmdline;
-                return selected_menu_entry->body;
+                bool ret;
+                selected_menu_entry->body = config_entry_editor(&ret, selected_menu_entry->body);
+                if (ret)
+                    goto refresh;
+                goto autoboot;
+            }
         }
     }
 }

@@ -8,6 +8,8 @@
 
 int getchar_internal(uint32_t eax) {
     switch ((eax >> 8) & 0xff) {
+        case 0x44:
+            return GETCHAR_F10;
         case 0x4b:
             return GETCHAR_CURSOR_LEFT;
         case 0x4d:

@@ -43,7 +43,7 @@ test.img:
 	parted -s test.img mklabel msdos
 	parted -s test.img mkpart primary 2048s 100%
 
-echfs-test: limine-install test.img
+echfs-test: all limine-install test.img
 	$(MAKE) -C test
 	echfs-utils -m -p0 test.img quick-format 512 > part_guid
 	sed "s/@GUID@/`cat part_guid`/g" < test/limine.cfg > limine.cfg.tmp
@@ -55,7 +55,7 @@ echfs-test: limine-install test.img
 	./limine-install limine.bin test.img
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.img -debugcon stdio
 
-ext2-test: limine-install test.img
+ext2-test: all limine-install test.img
 	$(MAKE) -C test
 	cp stage2.map test/
 	rm -rf test_image/
@@ -73,7 +73,7 @@ ext2-test: limine-install test.img
 	./limine-install limine.bin test.img
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.img -debugcon stdio
 
-fat32-test: limine-install test.img
+fat32-test: all limine-install test.img
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image

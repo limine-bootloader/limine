@@ -28,7 +28,7 @@ void pxe_init(void) {
 
     if (pxenv->version < 0x201) {
         //we won't support pxe < 2.1, grub does this too and it seems to work fine
-        panic("\npxe version too old");
+        panic("pxe version too old");
     }
 
     struct bangpxe* bangpxe = (struct bangpxe*)((((pxenv->pxe_ptr & 0xffff0000) >> 16) << 4) + (pxenv->pxe_ptr & 0xffff));

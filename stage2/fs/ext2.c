@@ -296,7 +296,7 @@ int ext2_open(struct ext2_file_handle *ret, struct part *part, const char *path)
     struct ext2_superblock *sb = &ret->sb;
 
     if (sb->s_state == EXT2_FS_UNRECOVERABLE_ERRORS)
-        panic("ext2: unrecoverable errors found\n");
+        panic("ext2: unrecoverable errors found");
 
     ret->block_size = ((uint64_t)1024 << ret->sb.s_log_block_size);
 

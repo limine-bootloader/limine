@@ -45,8 +45,10 @@ char *trace_address(size_t *off, size_t addr) {
 }
 
 void print_stacktrace(size_t *base_ptr) {
-    if (!stage2_map)
-        print("trace: Symbol names won't be resolved due to missing map file.\n");
+    if (!stage2_map) {
+        print("trace: Stack trace omitted due to unavailable map file.\n");
+        return;
+    }
 
     if (base_ptr == NULL) {
         asm volatile (

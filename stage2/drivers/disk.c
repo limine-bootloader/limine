@@ -52,7 +52,7 @@ static int cache_block(int drive, uint64_t block, int sector_size) {
 
     if (r.eflags & EFLAGS_CF) {
         int ah = (r.eax >> 8) & 0xff;
-        panic("Disk error %x. Drive %x, LBA %x.\n", ah, drive, dap->lba);
+        panic("Disk error %x. Drive %x, LBA %x.", ah, drive, dap->lba);
     }
 
     cached_block = block;
@@ -75,7 +75,7 @@ int disk_get_sector_size(int drive) {
 
     if (r.eflags & EFLAGS_CF) {
         int ah = (r.eax >> 8) & 0xff;
-        panic("Disk error %x. Drive %x.\n", ah, drive);
+        panic("Disk error %x. Drive %x.", ah, drive);
     }
 
     return drive_params.bytes_per_sect;

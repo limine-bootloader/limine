@@ -1,28 +1,35 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <drivers/vga_textmode.h>
 #include <sys/cpu.h>
 #include <lib/real.h>
-#include <drivers/vga_textmode.h>
+#include <lib/libc.h>
+#include <mm/pmm.h>
 
 #define VIDEO_BOTTOM ((VD_ROWS * VD_COLS) - 1)
 #define VD_COLS (80 * 2)
 #define VD_ROWS 25
 
+static char *back_buffer = NULL;
+static char *front_buffer = NULL;
 static char *video_mem = (char *)0xb8000;
+
+static char *current_buffer;
+
 static size_t cursor_offset = 0;
 static int cursor_status = 1;
 static uint8_t text_palette = 0x07;
 static uint8_t cursor_palette = 0x70;
 
 static void clear_cursor(void) {
-    video_mem[cursor_offset + 1] = text_palette;
+    current_buffer[cursor_offset + 1] = text_palette;
     return;
 }
 
 static void draw_cursor(void) {
     if (cursor_status) {
-        video_mem[cursor_offset + 1] = cursor_palette;
+        current_buffer[cursor_offset + 1] = cursor_palette;
     }
     return;
 }
@@ -30,11 +37,11 @@ static void draw_cursor(void) {
 static void scroll(void) {
     // move the text up by one row
     for (size_t i = 0; i <= VIDEO_BOTTOM - VD_COLS; i++)
-        video_mem[i] = video_mem[i + VD_COLS];
+        current_buffer[i] = current_buffer[i + VD_COLS];
     // clear the last line of the screen
     for (size_t i = VIDEO_BOTTOM; i > VIDEO_BOTTOM - VD_COLS; i -= 2) {
-        video_mem[i] = text_palette;
-        video_mem[i - 1] = ' ';
+        current_buffer[i] = text_palette;
+        current_buffer[i - 1] = ' ';
     }
     return;
 }
@@ -42,8 +49,8 @@ static void scroll(void) {
 void text_clear(bool move) {
     clear_cursor();
     for (size_t i = 0; i < VIDEO_BOTTOM; i += 2) {
-        video_mem[i] = ' ';
-        video_mem[i + 1] = text_palette;
+        current_buffer[i] = ' ';
+        current_buffer[i + 1] = text_palette;
     }
     if (move)
         cursor_offset = 0;
@@ -68,10 +75,39 @@ void text_disable_cursor(void) {
 void init_vga_textmode(int *_rows, int *_cols) {
     outb(0x3d4, 0x0a);
     outb(0x3d5, 0x20);
-    text_clear(true);
 
     *_rows = VD_ROWS;
     *_cols = VD_COLS / 2;
+
+    text_double_buffer(false);
+}
+
+void text_double_buffer(bool state) {
+    if (state) {
+        if (back_buffer == NULL)
+            back_buffer = ext_mem_alloc(VD_ROWS * VD_COLS);
+        if (front_buffer == NULL)
+            front_buffer = ext_mem_alloc(VD_ROWS * VD_COLS);
+        memset(video_mem, 0, VD_ROWS * VD_COLS);
+        memset(back_buffer, 0, VD_ROWS * VD_COLS);
+        memset(front_buffer, 0, VD_ROWS * VD_COLS);
+        current_buffer = back_buffer;
+        text_clear(true);
+        text_double_buffer_flush();
+    } else {
+        current_buffer = video_mem;
+        text_clear(true);
+    }
+}
+
+void text_double_buffer_flush(void) {
+    for (size_t i = 0; i < VD_ROWS * VD_COLS; i++) {
+        if (back_buffer[i] == front_buffer[i])
+            continue;
+
+        front_buffer[i] = back_buffer[i];
+        video_mem[i]    = back_buffer[i];
+    }
 }
 
 static int text_get_cursor_pos_y(void) {
@@ -122,7 +158,7 @@ void text_putchar(char c) {
             break;
         default:
             clear_cursor();
-            video_mem[cursor_offset] = c;
+            current_buffer[cursor_offset] = c;
             if (cursor_offset >= (VIDEO_BOTTOM - 1)) {
                 scroll();
                 cursor_offset = VIDEO_BOTTOM - (VD_COLS - 1);

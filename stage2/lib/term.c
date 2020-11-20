@@ -22,6 +22,9 @@ void (*get_cursor_pos)(int *x, int *y);
 void (*set_text_fg)(int fg);
 void (*set_text_bg)(int bg);
 
+void (*term_double_buffer)(bool status);
+void (*term_double_buffer_flush)(void);
+
 int term_rows, term_cols;
 
 void term_vbe(uint32_t *colours, int margin, int margin_gradient, struct image *background) {
@@ -41,6 +44,9 @@ void term_vbe(uint32_t *colours, int margin, int margin_gradient, struct image *
     set_text_fg    = vbe_set_text_fg;
     set_text_bg    = vbe_set_text_bg;
 
+    term_double_buffer       = vbe_double_buffer;
+    term_double_buffer_flush = vbe_double_buffer_flush;
+
     term_backend = VBE;
 }
 
@@ -56,6 +62,9 @@ void term_textmode(void) {
     get_cursor_pos = text_get_cursor_pos;
     set_text_fg    = text_set_text_fg;
     set_text_bg    = text_set_text_bg;
+
+    term_double_buffer       = text_double_buffer;
+    term_double_buffer_flush = text_double_buffer_flush;
 
     term_backend = TEXTMODE;
 }

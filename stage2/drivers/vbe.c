@@ -44,6 +44,9 @@ static int frame_height, frame_width;
 static struct image *background;
 
 static struct vbe_char *grid;
+static struct vbe_char *front_grid;
+
+static bool double_buffer_enabled = false;
 
 static bool cursor_status = true;
 
@@ -181,26 +184,27 @@ void vbe_plot_char(struct vbe_char *c, int x, int y) {
 }
 
 static void plot_char_grid(struct vbe_char *c, int x, int y) {
-    vbe_plot_char(c, x * VGA_FONT_WIDTH + frame_width,
-                     y * VGA_FONT_HEIGHT + frame_height);
+    if (!double_buffer_enabled) {
+        vbe_plot_char(c, x * VGA_FONT_WIDTH + frame_width,
+                         y * VGA_FONT_HEIGHT + frame_height);
+    }
     grid[x + y * cols] = *c;
 }
 
 static void clear_cursor(void) {
-    if (cursor_status) {
-        vbe_plot_char(&grid[cursor_x + cursor_y * cols],
-                      cursor_x * VGA_FONT_WIDTH + frame_width,
-                      cursor_y * VGA_FONT_HEIGHT + frame_height);
-    }
+    struct vbe_char c = grid[cursor_x + cursor_y * cols];
+    c.fg = text_fg;
+    c.bg = text_bg;
+    plot_char_grid(&c, cursor_x, cursor_y);
 }
 
 static void draw_cursor(void) {
-    struct vbe_char c = grid[cursor_x + cursor_y * cols];
-    c.fg = cursor_fg;
-    c.bg = cursor_bg;
-    if (cursor_status)
-        vbe_plot_char(&c, cursor_x * VGA_FONT_WIDTH + frame_width,
-                          cursor_y * VGA_FONT_HEIGHT + frame_height);
+    if (cursor_status) {
+        struct vbe_char c = grid[cursor_x + cursor_y * cols];
+        c.fg = cursor_fg;
+        c.bg = cursor_bg;
+        plot_char_grid(&c, cursor_x, cursor_y);
+    }
 }
 
 static void scroll(void) {
@@ -269,6 +273,35 @@ void vbe_set_text_fg(int fg) {
 
 void vbe_set_text_bg(int bg) {
     text_bg = ansi_colours[bg];
+}
+
+void vbe_double_buffer_flush(void) {
+    for (size_t i = 0; i < (size_t)rows * cols; i++) {
+        struct vbe_char c = grid[i];
+
+        if (!memcmp(&c, &front_grid[i], sizeof(struct vbe_char)))
+            continue;
+
+        front_grid[i] = grid[i];
+
+        int x = i % cols;
+        int y = i / cols;
+
+        vbe_plot_char(&c, x * VGA_FONT_WIDTH + frame_width,
+                          y * VGA_FONT_HEIGHT + frame_height);
+    }
+}
+
+void vbe_double_buffer(bool state) {
+    double_buffer_enabled = state;
+    if (state) {
+        memset(grid, 0, rows * cols * sizeof(struct vbe_char));
+        memset(front_grid, 0, rows * cols * sizeof(struct vbe_char));
+        vbe_clear(true);
+        vbe_double_buffer_flush();
+    } else {
+        vbe_clear(true);
+    }
 }
 
 void vbe_putchar(char c) {
@@ -352,6 +385,7 @@ bool vbe_tty_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _
     *_cols = cols = (vbe_width - _margin * 2) / VGA_FONT_WIDTH;
     *_rows = rows = (vbe_height - _margin * 2) / VGA_FONT_HEIGHT;
     grid = ext_mem_alloc(rows * cols * sizeof(struct vbe_char));
+    front_grid = ext_mem_alloc(rows * cols * sizeof(struct vbe_char));
     background = _background;
 
     if (background)

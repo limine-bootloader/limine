@@ -135,6 +135,8 @@ refresh:
     set_cursor_pos(cursor_x, cursor_y);
     enable_cursor();
 
+    term_double_buffer_flush();
+
     int c = getchar();
     switch (c) {
         case 0:
@@ -324,6 +326,8 @@ char *menu(char **cmdline_ret) {
     if (menu_tree == NULL)
         panic("Config contains no entries.");
 
+    term_double_buffer(true);
+
 refresh:
     clear(true);
     print("\n\n  \e[36m Limine " LIMINE_VERSION " \e[37m\n\n\n");
@@ -341,6 +345,7 @@ refresh:
         print("\n\n");
         for (int i = timeout; i; i--) {
             print("\rBooting automatically in %u, press any key to stop the countdown...", i);
+            term_double_buffer_flush();
             if ((c = pit_sleep_and_quit_on_keypress(18))) {
                 skip_timeout = true;
                 print("\e[2K\r\e[2A");
@@ -349,6 +354,8 @@ refresh:
         }
         goto autoboot;
     }
+
+    term_double_buffer_flush();
 
     for (;;) {
         c = getchar();
@@ -377,6 +384,7 @@ timeout_aborted:
                 }
                 clear(true);
                 *cmdline_ret = cmdline;
+                term_double_buffer(false);
                 return selected_menu_entry->body;
             case 'e': {
                 if (selected_menu_entry->sub != NULL)

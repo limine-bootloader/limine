@@ -14,6 +14,9 @@ extern void (*get_cursor_pos)(int *x, int *y);
 extern void (*set_text_fg)(int fg);
 extern void (*set_text_bg)(int bg);
 
+extern void (*term_double_buffer)(bool status);
+extern void (*term_double_buffer_flush)(void);
+
 void term_vbe(uint32_t *colours, int margin, int margin_gradient, struct image *background);
 void term_textmode(void);
 void term_deinit(void);

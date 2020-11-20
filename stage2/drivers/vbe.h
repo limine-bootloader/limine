@@ -34,4 +34,7 @@ void vbe_get_cursor_pos(int *x, int *y);
 void vbe_set_text_fg(int fg);
 void vbe_set_text_bg(int bg);
 
+void vbe_double_buffer_flush(void);
+void vbe_double_buffer(bool state);
+
 #endif

@@ -47,7 +47,7 @@ void print_memmap(struct e820_entry_t *mm, size_t size) {
 
 static bool align_entry(uint64_t *base, uint64_t *length) {
     if (*length < PAGE_SIZE)
-        return -1;
+        return false;
 
     uint64_t orig_base = *base;
 
@@ -109,11 +109,8 @@ static void sanitise_entries(bool align_entries) {
             memmap[i].length = top - base;
         }
 
-        bool success = true;
-        if (align_entries)
-            success = align_entry(&memmap[i].base, &memmap[i].length);
-
-        if (!memmap[i].length || !success) {
+        if (!memmap[i].length
+         || (align_entries && !align_entry(&memmap[i].base, &memmap[i].length))) {
             // Eradicate from memmap
             for (size_t j = i; j < memmap_entries - 1; j++) {
                 memmap[j] = memmap[j+1];

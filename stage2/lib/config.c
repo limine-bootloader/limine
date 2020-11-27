@@ -200,9 +200,8 @@ cont:
     return ret;
 }
 
-char *config_get_value(const char *config,
-                       char *buf, size_t index, size_t limit, const char *key) {
-    if (!limit || !buf || !key)
+char *config_get_value(const char *config, size_t index, const char *key) {
+    if (!key)
         return NULL;
 
     if (config == NULL)
@@ -217,13 +216,12 @@ char *config_get_value(const char *config,
             if (index--)
                 continue;
             i += key_len + 1;
-            size_t j;
-            for (j = 0; config[i + j] != SEPARATOR && config[i + j]; j++) {
-                if (j == limit - 1)
-                    break;
-                buf[j] = config[i + j];
-            }
-            buf[j] = 0;
+            size_t value_len;
+            for (value_len = 0;
+                 config[i + value_len] != SEPARATOR && config[i + value_len];
+                 value_len++);
+            char *buf = ext_mem_alloc(value_len + 1);
+            memcpy(buf, config + i, value_len);
             return buf;
         }
     }

@@ -50,11 +50,11 @@ void chainload(char *config) {
     uint64_t val;
 
     int part; {
-        char buf[32];
-        if (!config_get_value(config, buf, 0, 32, "PARTITION")) {
+        char *part_config = config_get_value(config, 0, "PARTITION");
+        if (part_config == NULL) {
             part = -1;
         } else {
-            val = strtoui(buf, NULL, 10);
+            val = strtoui(part_config, NULL, 10);
             if (val < 1 || val > 256) {
                 panic("BIOS partition number outside range 1-256");
             }
@@ -62,11 +62,11 @@ void chainload(char *config) {
         }
     }
     int drive; {
-        char buf[32];
-        if (!config_get_value(config, buf, 0, 32, "DRIVE")) {
+        char *drive_config = config_get_value(config, 0, "DRIVE");
+        if (drive_config == NULL) {
             panic("DRIVE not specified");
         }
-        val = strtoui(buf, NULL, 10);
+        val = strtoui(drive_config, NULL, 10);
         if (val < 1 || val > 16) {
             panic("BIOS drive number outside range 1-16");
         }

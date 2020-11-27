@@ -73,8 +73,8 @@ void entry(uint8_t _boot_drive, int pxe_boot) {
     char *cmdline;
     char *config = menu(&cmdline);
 
-    char proto[32];
-    if (!config_get_value(config, proto, 0, 32, "PROTOCOL")) {
+    char *proto = config_get_value(config, 0, "PROTOCOL");
+    if (proto == NULL) {
         panic("PROTOCOL not specified");
     }
 

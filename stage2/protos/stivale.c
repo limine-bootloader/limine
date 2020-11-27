@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <protos/stivale.h>
+#include <lib/libc.h>
 #include <lib/elf.h>
 #include <lib/blib.h>
 #include <lib/acpi.h>
@@ -26,16 +27,15 @@
 struct stivale_struct stivale_struct = {0};
 
 void stivale_load(char *config, char *cmdline) {
-    char buf[128];
-
     stivale_struct.flags |= (1 << 0);  // set bit 0 since we are BIOS and not UEFI
 
     struct file_handle *kernel = conv_mem_alloc(sizeof(struct file_handle));
 
-    if (!config_get_value(config, buf, 0, 128, "KERNEL_PATH"))
+    char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
+    if (kernel_path == NULL)
         panic("KERNEL_PATH not specified");
 
-    if (!uri_open(kernel, buf))
+    if (!uri_open(kernel, kernel_path))
         panic("Could not open kernel resource");
 
     struct stivale_header stivale_hdr;
@@ -116,26 +116,34 @@ void stivale_load(char *config, char *cmdline) {
     stivale_struct.module_count = 0;
     uint64_t *prev_mod_ptr = &stivale_struct.modules;
     for (int i = 0; ; i++) {
-        if (!config_get_value(config, buf, i, 128, "MODULE_PATH"))
+        char *module_path = config_get_value(config, i, "MODULE_PATH");
+        if (module_path == NULL)
             break;
 
         stivale_struct.module_count++;
 
         struct stivale_module *m = conv_mem_alloc(sizeof(struct stivale_module));
 
-        if (!config_get_value(config, m->string, i, 128, "MODULE_STRING")) {
+        char *module_string = config_get_value(config, i, "MODULE_STRING");
+        if (module_string == NULL) {
             m->string[0] = '\0';
+        } else {
+            // TODO perhaps change this to be a pointer
+            size_t str_len = strlen(module_string);
+            if (str_len > 127)
+                str_len = 127;
+            memcpy(m->string, module_string, str_len);
         }
 
         struct file_handle f;
-        if (!uri_open(&f, buf))
-            panic("Requested module with path \"%s\" not found!", buf);
+        if (!uri_open(&f, module_path))
+            panic("Requested module with path \"%s\" not found!", module_path);
 
         void *module_addr = (void *)(((uint32_t)top_used_addr & 0xfff) ?
             ((uint32_t)top_used_addr & ~((uint32_t)0xfff)) + 0x1000 :
             (uint32_t)top_used_addr);
 
-        print("stivale: Loading module `%s`...\n", buf);
+        print("stivale: Loading module `%s`...\n", module_path);
 
         memmap_alloc_range((size_t)module_addr, f.size, 10);
         fread(&f, module_addr, 0, f.size);
@@ -150,7 +158,7 @@ void stivale_load(char *config, char *cmdline) {
         prev_mod_ptr  = &m->next;
 
         print("stivale: Requested module %u:\n", i);
-        print("         Path:   %s\n", buf);
+        print("         Path:   %s\n", module_path);
         print("         String: %s\n", m->string);
         print("         Begin:  %X\n", m->begin);
         print("         End:    %X\n", m->end);
@@ -170,8 +178,9 @@ void stivale_load(char *config, char *cmdline) {
         int req_height = stivale_hdr.framebuffer_height;
         int req_bpp    = stivale_hdr.framebuffer_bpp;
 
-        if (config_get_value(config, buf, 0, 128, "RESOLUTION"))
-            parse_resolution(&req_width, &req_height, &req_bpp, buf);
+        char *resolution = config_get_value(config, 0, "RESOLUTION");
+        if (resolution != NULL)
+            parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
         struct vbe_framebuffer_info fbinfo;
         init_vbe(&fbinfo, req_width, req_height, req_bpp);

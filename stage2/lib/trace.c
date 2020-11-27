@@ -11,8 +11,8 @@
 static char *stage2_map = NULL;
 
 void trace_init(void) {
-    char map_filename[80];
-    if (!config_get_value(NULL, map_filename, 0, 80, "STAGE2_MAP"))
+    char *map_filename = config_get_value(NULL, 0, "STAGE2_MAP");
+    if (map_filename == NULL)
         return;
 
     struct file_handle stage2_map_file;

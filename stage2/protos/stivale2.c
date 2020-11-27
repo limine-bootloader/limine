@@ -51,14 +51,13 @@ static void append_tag(struct stivale2_struct *s, struct stivale2_tag *tag) {
 }
 
 void stivale2_load(char *config, char *cmdline) {
-    char buf[128];
-
     struct file_handle *kernel = conv_mem_alloc(sizeof(struct file_handle));
 
-    if (!config_get_value(config, buf, 0, 128, "KERNEL_PATH"))
+    char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
+    if (kernel_path == NULL)
         panic("KERNEL_PATH not specified");
 
-    if (!uri_open(kernel, buf))
+    if (!uri_open(kernel, kernel_path))
         panic("Could not open kernel resource");
 
     struct stivale2_header stivale2_hdr;
@@ -157,8 +156,8 @@ void stivale2_load(char *config, char *cmdline) {
     {
     size_t module_count;
     for (module_count = 0; ; module_count++) {
-        char module_file[64];
-        if (!config_get_value(config, module_file, module_count, 64, "MODULE_PATH"))
+        char *module_file = config_get_value(config, module_count, "MODULE_PATH");
+        if (module_file == NULL)
             break;
     }
 
@@ -169,25 +168,31 @@ void stivale2_load(char *config, char *cmdline) {
     tag->tag.identifier = STIVALE2_STRUCT_TAG_MODULES_ID;
     tag->module_count   = module_count;
 
-    for (int i = 0; ; i++) {
-        if (!config_get_value(config, buf, i, 128, "MODULE_PATH"))
-            break;
+    for (size_t i = 0; i < module_count; i++) {
+        char *module_path = config_get_value(config, i, "MODULE_PATH");
 
         struct stivale2_module *m = &tag->modules[i];
 
-        if (!config_get_value(config, m->string, i, 128, "MODULE_STRING")) {
+        char *module_string = config_get_value(config, i, "MODULE_STRING");
+        if (module_string == NULL) {
             m->string[0] = '\0';
+        } else {
+            // TODO perhaps change this to be a pointer
+            size_t str_len = strlen(module_string);
+            if (str_len > 127)
+                str_len = 127;
+            memcpy(m->string, module_string, str_len);
         }
 
         struct file_handle f;
-        if (!uri_open(&f, buf))
-            panic("Requested module with path \"%s\" not found!", buf);
+        if (!uri_open(&f, module_path))
+            panic("Requested module with path \"%s\" not found!", module_path);
 
         void *module_addr = (void *)(((uint32_t)top_used_addr & 0xfff) ?
             ((uint32_t)top_used_addr & ~((uint32_t)0xfff)) + 0x1000 :
             (uint32_t)top_used_addr);
 
-        print("stivale2: Loading module `%s`...\n", buf);
+        print("stivale2: Loading module `%s`...\n", module_path);
 
         memmap_alloc_range((size_t)module_addr, f.size, 0x1001);
         fread(&f, module_addr, 0, f.size);
@@ -198,7 +203,7 @@ void stivale2_load(char *config, char *cmdline) {
         top_used_addr = (uint64_t)(size_t)m->end;
 
         print("stivale2: Requested module %u:\n", i);
-        print("          Path:   %s\n", buf);
+        print("          Path:   %s\n", module_path);
         print("          String: %s\n", m->string);
         print("          Begin:  %X\n", m->begin);
         print("          End:    %X\n", m->end);
@@ -257,8 +262,9 @@ void stivale2_load(char *config, char *cmdline) {
         int req_height = hdrtag->framebuffer_height;
         int req_bpp    = hdrtag->framebuffer_bpp;
 
-        if (config_get_value(config, buf, 0, 128, "RESOLUTION"))
-            parse_resolution(&req_width, &req_height, &req_bpp, buf);
+        char *resolution = config_get_value(config, 0, "RESOLUTION");
+        if (resolution != NULL)
+            parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
         struct vbe_framebuffer_info fbinfo;
         if (init_vbe(&fbinfo, req_width, req_height, req_bpp)) {

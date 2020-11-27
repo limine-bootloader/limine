@@ -53,13 +53,13 @@ static void spinup(uint16_t real_mode_code_seg, uint16_t kernel_entry_seg) {
 }
 
 void linux_load(char *config, char *cmdline) {
-    char buf[128];
     struct file_handle *kernel = conv_mem_alloc(sizeof(struct file_handle));
 
-    if (!config_get_value(config, buf, 0, 128, "KERNEL_PATH"))
+    char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
+    if (kernel_path == NULL)
         panic("KERNEL_PATH not specified");
 
-    if (!uri_open(kernel, buf))
+    if (!uri_open(kernel, kernel_path))
         panic("Could not open kernel resource");
 
     uint32_t signature;
@@ -129,14 +129,15 @@ void linux_load(char *config, char *cmdline) {
 
     size_t modules_mem_base = INITRD_LOAD_ADDR;
     for (size_t i = 0; ; i++) {
-        if (!config_get_value(config, buf, i, 128, "MODULE_PATH"))
+        char *module_path = config_get_value(config, i, "MODULE_PATH");
+        if (module_path == NULL)
             break;
 
         struct file_handle module;
-        if (!uri_open(&module, buf))
-            panic("Could not open `%s`", buf);
+        if (!uri_open(&module, module_path))
+            panic("Could not open `%s`", module_path);
 
-        print("Loading module `%s`...\n", buf);
+        print("Loading module `%s`...\n", module_path);
 
         memmap_alloc_range(modules_mem_base, module.size, 0);
         fread(&module, (void *)modules_mem_base, 0, module.size);

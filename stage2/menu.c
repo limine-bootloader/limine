@@ -244,25 +244,26 @@ static int print_tree(int level, int base_index, int selected_entry,
 char *menu(char **cmdline_ret) {
     cmdline = conv_mem_alloc(CMDLINE_MAX);
 
-    char *buf = conv_mem_alloc(256);
-
     struct menu_entry *selected_menu_entry;
 
     int selected_entry = 0;
-    if (config_get_value(NULL, buf, 0, 16, "DEFAULT_ENTRY")) {
-        selected_entry = (int)strtoui(buf, NULL, 10);
+    char *default_entry = config_get_value(NULL, 0, "DEFAULT_ENTRY");
+    if (default_entry != NULL) {
+        selected_entry = strtoui(default_entry, NULL, 10);
     }
 
     int timeout = 5;
-    if (config_get_value(NULL, buf, 0, 16, "TIMEOUT")) {
-        timeout = (int)strtoui(buf, NULL, 10);
+    char *timeout_config = config_get_value(NULL, 0, "TIMEOUT");
+    if (timeout_config != NULL) {
+        timeout = strtoui(timeout_config, NULL, 10);
     }
 
     if (!timeout)
         goto autoboot;
 
     // If there is GRAPHICS config key and the value is "yes", enable graphics
-    if (config_get_value(NULL, buf, 0, 16, "GRAPHICS") && !strcmp(buf, "yes")) {
+    char *graphics = config_get_value(NULL, 0, "GRAPHICS");
+    if (graphics != NULL && !strcmp(graphics, "yes")) {
         // default scheme
         int margin = 64;
         int margin_gradient = 20;
@@ -277,9 +278,11 @@ char *menu(char **cmdline_ret) {
             0x00aaaaaa  // grey
         };
 
-        if (config_get_value(NULL, buf, 0, 256, "THEME_COLOURS")
-         || config_get_value(NULL, buf, 0, 256, "THEME_COLORS")) {
-            const char *first = buf;
+        char *colours = config_get_value(NULL, 0, "THEME_COLOURS");
+        if (colours == NULL)
+            colours = config_get_value(NULL, 0, "THEME_COLORS");
+        if (colours != NULL) {
+            const char *first = colours;
             for (int i = 0; i < 8; i++) {
                 const char *last;
                 uint32_t col = strtoui(first, &last, 16);
@@ -292,32 +295,32 @@ char *menu(char **cmdline_ret) {
             }
         }
 
-        if (config_get_value(NULL, buf, 0, 16, "THEME_MARGIN")) {
-            margin = (int)strtoui(buf, NULL, 10);
+        char *theme_margin = config_get_value(NULL, 0, "THEME_MARGIN");
+        if (theme_margin != NULL) {
+            margin = strtoui(theme_margin, NULL, 10);
         }
 
-        if (config_get_value(NULL, buf, 0, 16, "THEME_MARGIN_GRADIENT")) {
-            margin_gradient = (int)strtoui(buf, NULL, 10);
+        char *theme_margin_gradient = config_get_value(NULL, 0, "THEME_MARGIN_GRADIENT");
+        if (theme_margin_gradient != NULL) {
+            margin_gradient = strtoui(theme_margin_gradient, NULL, 10);
         }
 
-        if (!config_get_value(NULL, cmdline, 0, CMDLINE_MAX, "BACKGROUND_PATH"))
+        struct image *bg = NULL;
+
+        char *background_path = config_get_value(NULL, 0, "BACKGROUND_PATH");
+        if (background_path == NULL)
             goto nobg;
 
-        struct file_handle *bg_file = conv_mem_alloc(sizeof(struct file_handle));
-        if (!uri_open(bg_file, cmdline))
+        struct file_handle *bg_file = ext_mem_alloc(sizeof(struct file_handle));
+        if (!uri_open(bg_file, background_path))
             goto nobg;
 
-        struct image *bg = conv_mem_alloc(sizeof(struct image));
+        bg = ext_mem_alloc(sizeof(struct image));
         if (open_image(bg, bg_file))
-            goto nobg;
-
-        term_vbe(colourscheme, margin, margin_gradient, bg);
-        goto yesbg;
+            bg = NULL;
 
     nobg:
-        term_vbe(colourscheme, margin, margin_gradient, NULL);
-
-    yesbg:;
+        term_vbe(colourscheme, margin, margin_gradient, bg);
     }
 
     disable_cursor();
@@ -377,10 +380,12 @@ timeout_aborted:
                     goto refresh;
                 }
                 enable_cursor();
-                if (!config_get_value(selected_menu_entry->body, cmdline, 0, CMDLINE_MAX, "KERNEL_CMDLINE")) {
-                    if (!config_get_value(selected_menu_entry->body, cmdline, 0, CMDLINE_MAX, "CMDLINE")) {
-                        cmdline[0] = '\0';
-                    }
+                cmdline = config_get_value(selected_menu_entry->body, 0, "KERNEL_CMDLINE");
+                if (!cmdline) {
+                    cmdline = config_get_value(selected_menu_entry->body, 0, "CMDLINE");
+                }
+                if (!cmdline) {
+                    cmdline[0] = '\0';
                 }
                 clear(true);
                 *cmdline_ret = cmdline;

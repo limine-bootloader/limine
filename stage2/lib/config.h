@@ -23,7 +23,6 @@ int init_config_pxe(void);
 int init_config(size_t config_size);
 bool config_get_entry_name(char *ret, size_t index, size_t limit);
 char *config_get_entry(size_t *size, size_t index);
-char *config_get_value(const char *config,
-                       char *buf, size_t index, size_t limit, const char *key);
+char *config_get_value(const char *config, size_t index, const char *key);
 
 #endif

@@ -2,7 +2,7 @@ CC = cc
 CFLAGS = -O2 -pipe -Wall -Wextra
 PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
-.PHONY: all clean stage2 stage2-clean decompressor decompressor-clean toolchain test.img echfs-test ext2-test fat32-test
+.PHONY: all clean stage2 stage2-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat32-test
 
 all: stage2 decompressor
 	gzip -n -9 < stage2/stage2.bin > stage2/stage2.bin.gz
@@ -37,30 +37,30 @@ toolchain:
 limine-install: limine-install.c
 	$(CC) $(CFLAGS) limine-install.c -o limine-install
 
-test.img:
-	rm -f test.img
-	dd if=/dev/zero bs=1M count=0 seek=64 of=test.img
-	parted -s test.img mklabel msdos
-	parted -s test.img mkpart primary 2048s 100%
+test.hdd:
+	rm -f test.hdd
+	dd if=/dev/zero bs=1M count=0 seek=64 of=test.hdd
+	parted -s test.hdd mklabel msdos
+	parted -s test.hdd mkpart primary 2048s 100%
 
-echfs-test: all limine-install test.img
+echfs-test: all limine-install test.hdd
 	$(MAKE) -C test
-	echfs-utils -m -p0 test.img quick-format 512 > part_guid
+	echfs-utils -m -p0 test.hdd quick-format 512 > part_guid
 	sed "s/@GUID@/`cat part_guid`/g" < test/limine.cfg > limine.cfg.tmp
-	echfs-utils -m -p0 test.img import limine.cfg.tmp limine.cfg
+	echfs-utils -m -p0 test.hdd import limine.cfg.tmp limine.cfg
 	rm -f limine.cfg.tmp part_guid
-	echfs-utils -m -p0 test.img import stage2.map boot/stage2.map
-	echfs-utils -m -p0 test.img import test/test.elf boot/test.elf
-	echfs-utils -m -p0 test.img import test/bg.bmp boot/bg.bmp
-	./limine-install limine.bin test.img
-	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.img -debugcon stdio
+	echfs-utils -m -p0 test.hdd import stage2.map boot/stage2.map
+	echfs-utils -m -p0 test.hdd import test/test.elf boot/test.elf
+	echfs-utils -m -p0 test.hdd import test/bg.bmp boot/bg.bmp
+	./limine-install limine.bin test.hdd
+	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
-ext2-test: all limine-install test.img
+ext2-test: all limine-install test.hdd
 	$(MAKE) -C test
 	cp stage2.map test/
 	rm -rf test_image/
 	mkdir test_image
-	sudo losetup -Pf --show test.img > loopback_dev
+	sudo losetup -Pf --show test.hdd > loopback_dev
 	sudo partprobe `cat loopback_dev`
 	sudo mkfs.ext2 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
@@ -70,14 +70,14 @@ ext2-test: all limine-install test.img
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	./limine-install limine.bin test.img
-	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.img -debugcon stdio
+	./limine-install limine.bin test.hdd
+	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
-fat32-test: all limine-install test.img
+fat32-test: all limine-install test.hdd
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
-	sudo losetup -Pf --show test.img > loopback_dev
+	sudo losetup -Pf --show test.hdd > loopback_dev
 	sudo partprobe `cat loopback_dev`
 	sudo mkfs.fat -F 32 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
@@ -87,5 +87,5 @@ fat32-test: all limine-install test.img
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	./limine-install limine.bin test.img
-	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.img -debugcon stdio
+	./limine-install limine.bin test.hdd
+	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio

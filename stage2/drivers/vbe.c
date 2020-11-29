@@ -571,12 +571,6 @@ bool init_vbe(struct vbe_framebuffer_info *ret,
     get_vbe_info(&vbe_info);
 
     print("vbe: Version: %u.%u\n", vbe_info.version_maj, vbe_info.version_min);
-
-    if (vbe_info.version_maj < 3) {
-        print("vbe: We do not support VBE versions older than 3.0\n");
-        return false;
-    }
-
     print("vbe: OEM: %s\n", (char *)rm_desegment(vbe_info.oem_seg, vbe_info.oem_off));
     print("vbe: Graphics vendor: %s\n", (char *)rm_desegment(vbe_info.vendor_seg, vbe_info.vendor_off));
     print("vbe: Product name: %s\n", (char *)rm_desegment(vbe_info.prod_name_seg, vbe_info.prod_name_off));
@@ -604,10 +598,10 @@ bool init_vbe(struct vbe_framebuffer_info *ret,
               target_width, target_height, target_bpp);
     }
 
-retry:;
     uint16_t *vid_modes = (uint16_t *)rm_desegment(vbe_info.vid_modes_seg,
                                                    vbe_info.vid_modes_off);
 
+retry:
     for (size_t i = 0; vid_modes[i] != 0xffff; i++) {
         struct vbe_mode_info_struct vbe_mode_info;
         get_vbe_mode_info(&vbe_mode_info, vid_modes[i]);
@@ -617,6 +611,9 @@ retry:;
             // We only support RGB for now
             if (vbe_mode_info.memory_model != 0x06)
                 continue;
+            // We only support linear modes
+            if (!(vbe_mode_info.mode_attributes & (1 << 7)))
+                continue;
             print("vbe: Found matching mode %x, attempting to set...\n", vid_modes[i]);
             if (set_vbe_mode(vid_modes[i]) == 0x01) {
                 print("vbe: Failed to set video mode %x, moving on...\n", vid_modes[i]);
@@ -625,16 +622,26 @@ retry:;
             print("vbe: Framebuffer address: %x\n", vbe_mode_info.framebuffer_addr);
             ret->memory_model       = vbe_mode_info.memory_model;
             ret->framebuffer_addr   = vbe_mode_info.framebuffer_addr;
-            ret->framebuffer_pitch  = vbe_mode_info.lin_bytes_per_scanline;
             ret->framebuffer_width  = vbe_mode_info.res_x;
             ret->framebuffer_height = vbe_mode_info.res_y;
             ret->framebuffer_bpp    = vbe_mode_info.bpp;
-            ret->red_mask_size      = vbe_mode_info.lin_red_mask_size;
-            ret->red_mask_shift     = vbe_mode_info.lin_red_mask_shift;
-            ret->green_mask_size    = vbe_mode_info.lin_green_mask_size;
-            ret->green_mask_shift   = vbe_mode_info.lin_green_mask_shift;
-            ret->blue_mask_size     = vbe_mode_info.lin_blue_mask_size;
-            ret->blue_mask_shift    = vbe_mode_info.lin_blue_mask_shift;
+            if (vbe_info.version_maj < 3) {
+                ret->framebuffer_pitch  = vbe_mode_info.bytes_per_scanline;
+                ret->red_mask_size      = vbe_mode_info.red_mask_size;
+                ret->red_mask_shift     = vbe_mode_info.red_mask_shift;
+                ret->green_mask_size    = vbe_mode_info.green_mask_size;
+                ret->green_mask_shift   = vbe_mode_info.green_mask_shift;
+                ret->blue_mask_size     = vbe_mode_info.blue_mask_size;
+                ret->blue_mask_shift    = vbe_mode_info.blue_mask_shift;
+            } else {
+                ret->framebuffer_pitch  = vbe_mode_info.lin_bytes_per_scanline;
+                ret->red_mask_size      = vbe_mode_info.lin_red_mask_size;
+                ret->red_mask_shift     = vbe_mode_info.lin_red_mask_shift;
+                ret->green_mask_size    = vbe_mode_info.lin_green_mask_size;
+                ret->green_mask_shift   = vbe_mode_info.lin_green_mask_shift;
+                ret->blue_mask_size     = vbe_mode_info.lin_blue_mask_size;
+                ret->blue_mask_shift    = vbe_mode_info.lin_blue_mask_shift;
+            }
             return true;
         }
     }
@@ -647,5 +654,5 @@ retry:;
         goto retry;
     }
 
-    panic("Could not set a video mode");
+    return false;
 }

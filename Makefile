@@ -11,10 +11,10 @@ all: stage2 decompressor
 	cp stage2/stage2.map ./
 
 clean: stage2-clean decompressor-clean test-clean
-	rm -f stage2/stage2.bin.gz
+	rm -f stage2/stage2.bin.gz test/stage2.map test.hdd
 
 distclean: clean
-	rm limine-install
+	rm -f limine-install
 
 stage2:
 	$(MAKE) -C stage2 all

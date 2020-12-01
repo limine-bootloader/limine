@@ -37,9 +37,6 @@ static void cursor_fwd(void) {
     set_cursor_pos(x, y);
 }
 
-static char *cmdline;
-#define CMDLINE_MAX 1024
-
 #define EDITOR_MAX_BUFFER_SIZE 4096
 
 static size_t get_line_offset(size_t *displacement, size_t index, const char *buffer) {
@@ -241,9 +238,7 @@ static int print_tree(int level, int base_index, int selected_entry,
     return max_entries;
 }
 
-char *menu(char **cmdline_ret) {
-    cmdline = conv_mem_alloc(CMDLINE_MAX);
-
+char *menu(char **cmdline) {
     struct menu_entry *selected_menu_entry;
 
     int selected_entry = 0;
@@ -380,15 +375,14 @@ timeout_aborted:
                     goto refresh;
                 }
                 enable_cursor();
-                cmdline = config_get_value(selected_menu_entry->body, 0, "KERNEL_CMDLINE");
-                if (!cmdline) {
-                    cmdline = config_get_value(selected_menu_entry->body, 0, "CMDLINE");
+                *cmdline = config_get_value(selected_menu_entry->body, 0, "KERNEL_CMDLINE");
+                if (!*cmdline) {
+                    *cmdline = config_get_value(selected_menu_entry->body, 0, "CMDLINE");
                 }
-                if (!cmdline) {
-                    cmdline[0] = '\0';
+                if (!*cmdline) {
+                    *cmdline = "";
                 }
                 clear(true);
-                *cmdline_ret = cmdline;
                 term_double_buffer(false);
                 return selected_menu_entry->body;
             case 'e': {

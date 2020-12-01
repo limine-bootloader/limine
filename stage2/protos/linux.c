@@ -54,6 +54,14 @@ static void spinup(uint16_t real_mode_code_seg, uint16_t kernel_entry_seg) {
 }
 
 void linux_load(char *config, char *cmdline) {
+    // The command line needs to be before address 0xa0000, we can use
+    // a conv_mem_alloc() allocated buffer for that.
+    // Allocate the relocation buffer for the command line early so it's allocated
+    // before the real mode code.
+    size_t cmdline_len = strlen(cmdline);
+    char *cmdline_reloc = conv_mem_alloc(cmdline_len + 1);
+    strcpy(cmdline_reloc, cmdline);
+
     struct file_handle *kernel = conv_mem_alloc(sizeof(struct file_handle));
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
@@ -120,12 +128,6 @@ void linux_load(char *config, char *cmdline) {
 
     *((uint8_t *)(real_mode_code + 0x211)) = loadflags;
 
-    // cmdline
-    // the command line needs to be before address 0xa0000, we can use
-    // conv_mem_alloc() for that
-    size_t cmdline_len = strlen(cmdline);
-    char *cmdline_reloc = conv_mem_alloc(cmdline_len + 1);
-    strcpy(cmdline_reloc, cmdline);
     *((uint32_t *)(real_mode_code + 0x228)) = (uint32_t)cmdline_reloc;
 
     // load kernel

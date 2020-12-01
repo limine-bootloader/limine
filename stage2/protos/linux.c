@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <protos/linux.h>
 #include <fs/file.h>
+#include <lib/libc.h>
 #include <lib/blib.h>
 #include <lib/real.h>
 #include <lib/term.h>
@@ -120,7 +121,12 @@ void linux_load(char *config, char *cmdline) {
     *((uint8_t *)(real_mode_code + 0x211)) = loadflags;
 
     // cmdline
-    *((uint32_t *)(real_mode_code + 0x228)) = (uint32_t)cmdline;
+    // the command line needs to be before address 0xa0000, we can use
+    // conv_mem_alloc() for that
+    size_t cmdline_len = strlen(cmdline);
+    char *cmdline_reloc = conv_mem_alloc(cmdline_len + 1);
+    strcpy(cmdline_reloc, cmdline);
+    *((uint32_t *)(real_mode_code + 0x228)) = (uint32_t)cmdline_reloc;
 
     // load kernel
     print("Loading kernel...\n");

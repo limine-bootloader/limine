@@ -100,11 +100,14 @@ static struct menu_entry *create_menu_tree(struct menu_entry *parent,
 
         config_get_entry_name(name, i, 64);
 
-        strcpy(entry->name, name + current_depth);
+        bool default_expanded = name[current_depth] == '+';
+
+        strcpy(entry->name, name + current_depth + default_expanded);
         entry->parent = parent;
 
         if (is_directory(name, 64, current_depth, i)) {
             entry->sub = create_menu_tree(entry, current_depth + 1, i + 1);
+            entry->expanded = default_expanded;
         } else {
             size_t entry_size;
             char *config_entry = config_get_entry(&entry_size, i);

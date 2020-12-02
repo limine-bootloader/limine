@@ -61,6 +61,8 @@ int tftp_open(struct tftp_file_handle* handle, uint32_t server_ip, uint16_t serv
     size_t to_transfer = handle->file_size;
     size_t progress = 0;
 
+    bool slow = false;
+
     while (to_transfer > 0) {
         volatile struct pxenv_read read = {
             .boff = ((uint16_t)rm_off(buf)),
@@ -72,8 +74,9 @@ int tftp_open(struct tftp_file_handle* handle, uint32_t server_ip, uint16_t serv
         }
         memcpy(handle->data + progress, buf, read.bsize);
 
-        if (read.bsize < mtu) {
-            break;
+        if (read.bsize < mtu && !slow) {
+            slow = true;
+            print("Server is sending the file in smaller packets (it sent %d bytes), download might take longer.\n", read.bsize);
         }
         to_transfer -= read.bsize;
         progress += read.bsize;

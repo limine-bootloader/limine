@@ -239,6 +239,7 @@ static int print_tree(int level, int base_index, int selected_entry,
 }
 
 char *menu(char **cmdline) {
+    bool skip_timeout = false;
     struct menu_entry *selected_menu_entry;
 
     int selected_entry = 0;
@@ -319,7 +320,6 @@ char *menu(char **cmdline) {
     }
 
     disable_cursor();
-    bool skip_timeout = false;
 
     if (menu_tree == NULL)
         panic("Config contains no entries.");
@@ -335,7 +335,10 @@ refresh:
     int max_entries = print_tree(0, 0, selected_entry, menu_tree,
                                  &selected_menu_entry);
 
-    print("\nArrows to choose, enter to select, 'e' to edit selected entry.");
+    print("\nArrows to choose, enter to boot, 'e' to edit selected entry.");
+
+    if (selected_menu_entry->sub != NULL)
+        skip_timeout = true;
 
     int c;
 
@@ -370,7 +373,6 @@ timeout_aborted:
             case '\r':
             autoboot:
                 if (selected_menu_entry->sub != NULL) {
-                    skip_timeout = true;
                     selected_menu_entry->expanded = !selected_menu_entry->expanded;
                     goto refresh;
                 }

@@ -194,8 +194,8 @@ refresh:
 }
 
 static int print_tree(int level, int base_index, int selected_entry,
-                         struct menu_entry *current_entry,
-                         struct menu_entry **selected_menu_entry) {
+                      struct menu_entry *current_entry,
+                      struct menu_entry **selected_menu_entry) {
     int max_entries = 0;
     for (;;) {
         if (current_entry == NULL)
@@ -239,23 +239,40 @@ static int print_tree(int level, int base_index, int selected_entry,
 }
 
 char *menu(char **cmdline) {
+    if (menu_tree == NULL)
+        panic("Config contains no valid entries.");
+
     bool skip_timeout = false;
-    struct menu_entry *selected_menu_entry;
+    struct menu_entry *selected_menu_entry = NULL;
 
     int selected_entry = 0;
     char *default_entry = config_get_value(NULL, 0, "DEFAULT_ENTRY");
     if (default_entry != NULL) {
         selected_entry = strtoui(default_entry, NULL, 10);
+        if (selected_entry)
+            selected_entry--;
     }
 
     int timeout = 5;
     char *timeout_config = config_get_value(NULL, 0, "TIMEOUT");
     if (timeout_config != NULL) {
-        timeout = strtoui(timeout_config, NULL, 10);
+        if (!strcmp(timeout_config, "no"))
+            skip_timeout = true;
+        else
+            timeout = strtoui(timeout_config, NULL, 10);
     }
 
-    if (!timeout)
-        goto autoboot;
+    if (!timeout) {
+        // Use print tree to load up selected_menu_entry and determine if the
+        // default entry is valid.
+        print_tree(0, 0, selected_entry, menu_tree, &selected_menu_entry);
+        if (selected_menu_entry == NULL || selected_menu_entry->sub != NULL) {
+            print("Default entry is not valid or directory, booting to menu.\n");
+            skip_timeout = true;
+        } else {
+            goto autoboot;
+        }
+    }
 
     // If there is GRAPHICS config key and the value is "yes", enable graphics
     char *graphics = config_get_value(NULL, 0, "GRAPHICS");
@@ -320,9 +337,6 @@ char *menu(char **cmdline) {
     }
 
     disable_cursor();
-
-    if (menu_tree == NULL)
-        panic("Config contains no entries.");
 
     term_double_buffer(true);
 

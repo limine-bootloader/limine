@@ -3,6 +3,7 @@
 #include <drivers/disk.h>
 #include <lib/libc.h>
 #include <lib/print.h>
+#include <mm/pmm.h>
 #include <stdbool.h>
 
 #define FAT32_LFN_MAX_ENTRIES 20
@@ -108,9 +109,50 @@ static int fat32_read_cluster_from_map(struct fat32_context* context, uint32_t c
     return 0;
 }
 
-static int fat32_load_fat_cluster_to_memory(struct fat32_context* context, uint32_t cluster_number, void* buffer, uint32_t offset, uint32_t limit) {
-    const uint32_t sector = context->data_start_lba + (cluster_number - 2) * context->sectors_per_cluster;
-    return part_read(&context->part, buffer, ((uint64_t) sector) * FAT32_SECTOR_SIZE + offset, limit);
+static uint32_t *cache_cluster_chain(struct fat32_context *context,
+                                     uint32_t initial_cluster,
+                                     size_t *_chain_length) {
+    if (initial_cluster < 0x2 || initial_cluster > 0xfffffef)
+        return NULL;
+    uint32_t cluster = initial_cluster;
+    size_t chain_length;
+    for (chain_length = 1; ; chain_length++) {
+        fat32_read_cluster_from_map(context, cluster, &cluster);
+        if (cluster < 0x2 || cluster > 0xfffffef)
+            break;
+    }
+    uint32_t *cluster_chain = ext_mem_alloc(chain_length * sizeof(uint32_t));
+    cluster = initial_cluster;
+    for (size_t i = 0; i < chain_length; i++) {
+        cluster_chain[i] = cluster;
+        fat32_read_cluster_from_map(context, cluster, &cluster);
+    }
+    *_chain_length = chain_length;
+    return cluster_chain;
+}
+
+static bool read_cluster_chain(struct fat32_context *context,
+                               uint32_t *cluster_chain,
+                               void *buf, uint64_t loc, uint64_t count) {
+    size_t block_size = context->sectors_per_cluster * FAT32_SECTOR_SIZE;
+    for (uint64_t progress = 0; progress < count;) {
+        uint64_t block = (loc + progress) / block_size;
+
+        uint64_t chunk = count - progress;
+        uint64_t offset = (loc + progress) % block_size;
+        if (chunk > block_size - offset)
+            chunk = block_size - offset;
+
+        uint64_t base = (context->data_start_lba + (cluster_chain[block] - 2)) * block_size;
+        int r = part_read(&context->part, buf + progress, base + offset, chunk);
+
+        if (r)
+            return false;
+
+        progress += chunk;
+    }
+
+    return true;
 }
 
 // Copy ucs-2 characters to char*
@@ -149,73 +191,63 @@ static bool fat32_filename_to_8_3(char *dest, const char *src) {
 }
 
 static int fat32_open_in(struct fat32_context* context, struct fat32_directory_entry* directory, struct fat32_directory_entry* file, const char* name) {
-    int error;
-    uint32_t current_cluster_number = directory->cluster_num_high << 16 | directory->cluster_num_low;
-
+    size_t block_size = context->sectors_per_cluster * FAT32_SECTOR_SIZE;
     char current_lfn[FAT32_LFN_MAX_FILENAME_LENGTH] = {0};
 
-    do {
-        for (size_t sector_in_cluster = 0; sector_in_cluster < context->sectors_per_cluster; sector_in_cluster++) {
-            struct fat32_directory_entry directory_entries[FAT32_SECTOR_SIZE / sizeof(struct fat32_directory_entry)];
-            error = fat32_load_fat_cluster_to_memory(context, current_cluster_number, directory_entries, sector_in_cluster * FAT32_SECTOR_SIZE, sizeof(directory_entries));
-            if (error != 0) {
-                return error;
+    uint32_t current_cluster_number = directory->cluster_num_high << 16 | directory->cluster_num_low;
+    size_t   dir_chain_len;
+    uint32_t *directory_cluster_chain = cache_cluster_chain(context, current_cluster_number, &dir_chain_len);
+
+    struct fat32_directory_entry *directory_entries = ext_mem_alloc(dir_chain_len * block_size);
+    if (!read_cluster_chain(context, directory_cluster_chain, directory_entries, 0, dir_chain_len * block_size))
+        return -1;
+
+    for (size_t i = 0; i < (dir_chain_len * block_size) / sizeof(struct fat32_directory_entry); i++) {
+        if (directory_entries[i].file_name_and_ext[0] == 0x00) {
+            // no more entries here
+            break;
+        }
+
+        if (directory_entries[i].attribute == FAT32_LFN_ATTRIBUTE) {
+            struct fat32_lfn_entry* lfn = (struct fat32_lfn_entry*) &directory_entries[i];
+
+            if (lfn->sequence_number & 0b01000000) {
+                // this lfn is the first entry in the table, clear the lfn buffer
+                memset(current_lfn, ' ', sizeof(current_lfn));
             }
 
-            for (unsigned int i = 0; i < SIZEOF_ARRAY(directory_entries); i++) {
-                if (directory_entries[i].file_name_and_ext[0] == 0x00) {
-                    // no more entries here
+            const unsigned int lfn_index = ((lfn->sequence_number & 0b00011111) - 1U) * 13U;
+            if (lfn_index >= FAT32_LFN_MAX_ENTRIES * 13) {
+                continue;
+            }
+
+            fat32_lfncpy(current_lfn + lfn_index + 00, lfn->name1, 5);
+            fat32_lfncpy(current_lfn + lfn_index + 05, lfn->name2, 6);
+            fat32_lfncpy(current_lfn + lfn_index + 11, lfn->name3, 2);
+
+            if (lfn_index != 0)
+                continue;
+
+            // remove trailing spaces
+            for (int j = SIZEOF_ARRAY(current_lfn) - 2; j >= -1; j--) {
+                if (j == -1 || current_lfn[j] != ' ') {
+                    current_lfn[j + 1] = 0;
                     break;
                 }
+            }
 
-                if (directory_entries[i].attribute == FAT32_LFN_ATTRIBUTE) {
-                    struct fat32_lfn_entry* lfn = (struct fat32_lfn_entry*) &directory_entries[i];
-
-                    if (lfn->sequence_number & 0b01000000) {
-                        // this lfn is the first entry in the table, clear the lfn buffer
-                        memset(current_lfn, ' ', sizeof(current_lfn));
-                    }
-
-                    const unsigned int lfn_index = ((lfn->sequence_number & 0b00011111) - 1U) * 13U;
-                    if (lfn_index >= FAT32_LFN_MAX_ENTRIES * 13) {
-                        continue;
-                    }
-
-                    fat32_lfncpy(current_lfn + lfn_index + 00, lfn->name1, 5);
-                    fat32_lfncpy(current_lfn + lfn_index + 05, lfn->name2, 6);
-                    fat32_lfncpy(current_lfn + lfn_index + 11, lfn->name3, 2);
-
-                    if (lfn_index != 0)
-                        continue;
-
-                    // remove trailing spaces
-                    for (int j = SIZEOF_ARRAY(current_lfn) - 2; j >= -1; j--) {
-                        if (j == -1 || current_lfn[j] != ' ') {
-                            current_lfn[j + 1] = 0;
-                            break;
-                        }
-                    }
-
-                    if (!strcmp(current_lfn, name)) {
-                        *file = directory_entries[i+1];
-                        return 0;
-                    }
-                } else {
-                    char fn[8+3];
-                    if (fat32_filename_to_8_3(fn, name) && !strncmp(directory_entries[i].file_name_and_ext, fn, 8+3)) {
-                        *file = directory_entries[i];
-                        return 0;
-                    }
-                }
+            if (!strcmp(current_lfn, name)) {
+                *file = directory_entries[i+1];
+                return 0;
+            }
+        } else {
+            char fn[8+3];
+            if (fat32_filename_to_8_3(fn, name) && !strncmp(directory_entries[i].file_name_and_ext, fn, 8+3)) {
+                *file = directory_entries[i];
+                return 0;
             }
         }
-
-        error = fat32_read_cluster_from_map(context, current_cluster_number, &current_cluster_number);
-
-        if (error != 0) {
-            return error;
-        }
-    } while (current_cluster_number >= 0x00000002 && current_cluster_number <= 0x0FFFFFEF);
+    }
 
     // file not found
     return -1;
@@ -270,7 +302,6 @@ int fat32_open(struct fat32_file_handle* ret, struct part *part, const char* pat
         }
 
         if ((r = fat32_open_in(&context, &current_directory, &current_file, current_part)) != 0) {
-            print("fat32: file %s not found\n", path);
             return r;
         }
 
@@ -281,80 +312,14 @@ int fat32_open(struct fat32_file_handle* ret, struct part *part, const char* pat
             ret->first_cluster = current_file.cluster_num_high << 16 | current_file.cluster_num_low;
             ret->size_clusters = DIV_ROUNDUP(current_file.file_size_bytes, FAT32_SECTOR_SIZE);
             ret->size_bytes = current_file.file_size_bytes;
+            uint32_t file_cluster = current_file.cluster_num_high << 16 | current_file.cluster_num_low;
+            size_t file_chain_len;
+            ret->cluster_chain = cache_cluster_chain(&context, file_cluster, &file_chain_len);
             return 0;
         }
     }
 }
 
 int fat32_read(struct fat32_file_handle* file, void* buf, uint64_t loc, uint64_t count) {
-    int r;
-    uint32_t cluster_size = file->context.sectors_per_cluster * FAT32_SECTOR_SIZE;
-    uint32_t current_cluster_number = file->first_cluster;
-
-    // skip first clusters
-    while (loc >= cluster_size) {
-        r = fat32_read_cluster_from_map(&file->context, current_cluster_number, &current_cluster_number);
-
-        if (r != 0) {
-            print("fat32: failed to read cluster %x from map\n", current_cluster_number);
-            return r;
-        }
-
-        loc -= cluster_size;
-    }
-
-    uint64_t read_total = 0;
-
-    do {
-        // find non-fragmented cluster chains to improve read performance
-        uint32_t non_fragmented_clusters = 1;
-        for (size_t i = 0 ; i < count / cluster_size; i++) {
-            uint32_t next_cluster;
-
-            r = fat32_read_cluster_from_map(&file->context, current_cluster_number + i, &next_cluster);
-
-            if (r != 0) {
-                print("fat32: failed to read cluster %x from map\n", current_cluster_number);
-                return r;
-            }
-
-            if (next_cluster != current_cluster_number + i + 1) {
-                break;
-            }
-
-            non_fragmented_clusters++;
-        }
-
-        // find largest read size
-        uint64_t current_read = count;
-        if (current_read > non_fragmented_clusters * cluster_size - loc) {
-            current_read = non_fragmented_clusters * cluster_size - loc;
-        }
-
-        r = fat32_load_fat_cluster_to_memory(&file->context, current_cluster_number, buf + read_total, loc, current_read);
-
-        if (r != 0) {
-            print("fat32: failed to load cluster %x to memory\n", current_cluster_number);
-            return r;
-        }
-
-        loc = 0;
-        count -= current_read;
-        read_total += current_read;
-
-        if (count == 0) {
-            return 0;
-        }
-
-        // fetch next cluster number
-        r = fat32_read_cluster_from_map(&file->context, current_cluster_number, &current_cluster_number);
-
-        if (r != 0) {
-            print("fat32: failed to read cluster %x from map\n", current_cluster_number);
-            return r;
-        }
-    } while (current_cluster_number >= 0x00000002 && current_cluster_number <= 0x0FFFFFEF);
-
-    print("fat32: read failed, unexpected end of cluster chain\n");
-    return 0;
+    return read_cluster_chain(&file->context, file->cluster_chain, buf, loc, count);
 }

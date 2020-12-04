@@ -75,6 +75,7 @@ ext2-test: all limine-install test.hdd
 
 fat32-test: all limine-install test.hdd
 	$(MAKE) -C test
+	cp stage2.map test/
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev

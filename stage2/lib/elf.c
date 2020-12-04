@@ -375,7 +375,7 @@ int elf32_load(struct file_handle *fd, uint32_t *entry_point, uint32_t *top, uin
         size_t to_zero = (size_t)(phdr.p_memsz - phdr.p_filesz);
 
         if (to_zero) {
-            void *ptr = (void *)(phdr.p_vaddr + phdr.p_filesz);
+            void *ptr = (void *)(phdr.p_paddr + phdr.p_filesz);
             memset(ptr, 0, to_zero);
         }
     }

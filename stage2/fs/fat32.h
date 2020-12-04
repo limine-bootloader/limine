@@ -22,6 +22,7 @@ struct fat32_file_handle {
     uint32_t first_cluster;
     uint32_t size_bytes;
     uint32_t size_clusters;
+    uint32_t *cluster_chain;
 };
 
 int fat32_check_signature(struct part *part);

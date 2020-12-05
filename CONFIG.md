@@ -16,12 +16,26 @@ not be shadowed by another potentially candidate config file.
 
 The Limine configuration file is comprised of *assignments* and *entries*.
 
+### Entries and sub-entries
+
 *Entries* describe boot *entries* which the user can select in the *boot menu*.
 
 An *entry* is simply a line starting with `:` followed by a newline-terminated
 string.
 Any *locally assignable* key that comes after it, and before another *entry*, or
 the end of the file, will be tied to the *entry*.
+
+An *entry* can be a directory, meaning it can hold sub-entries. In order for an
+entry to become a directory, it needs to have a sub-entry following right after it.
+
+A *sub-entry* is an entry with a number of `:` greater than 1 prepended to it.
+Each `:` represents 1 level deeper down the tree hierarchy of directories and
+entries.
+
+Directories can be expanded (meaning they will not show up as collapsed in the
+menu) by default if a `+` is put between the `:`s and the beginning of the entry's name.
+
+### Assignments
 
 *Assignments* are simple `KEY=VALUE` style assignments.
 `VALUE` can have spaces and `=` symbols, without requiring quotations. New lines

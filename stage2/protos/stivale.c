@@ -28,6 +28,7 @@ struct stivale_struct stivale_struct = {0};
 
 void stivale_load(char *config, char *cmdline) {
     stivale_struct.flags |= (1 << 0);  // set bit 0 since we are BIOS and not UEFI
+    stivale_struct.flags |= (1 << 1);  // we give colour information
 
     struct file_handle *kernel = conv_mem_alloc(sizeof(struct file_handle));
 
@@ -183,13 +184,21 @@ void stivale_load(char *config, char *cmdline) {
             parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
         struct vbe_framebuffer_info fbinfo;
-        init_vbe(&fbinfo, req_width, req_height, req_bpp);
+        if (!init_vbe(&fbinfo, req_width, req_height, req_bpp))
+            panic("stivale: Unable to set video mode");
 
-        stivale_struct.framebuffer_addr   = (uint64_t)fbinfo.framebuffer_addr;
-        stivale_struct.framebuffer_width  = fbinfo.framebuffer_width;
-        stivale_struct.framebuffer_height = fbinfo.framebuffer_height;
-        stivale_struct.framebuffer_bpp    = fbinfo.framebuffer_bpp;
-        stivale_struct.framebuffer_pitch  = fbinfo.framebuffer_pitch;
+        stivale_struct.framebuffer_addr    = (uint64_t)fbinfo.framebuffer_addr;
+        stivale_struct.framebuffer_width   = fbinfo.framebuffer_width;
+        stivale_struct.framebuffer_height  = fbinfo.framebuffer_height;
+        stivale_struct.framebuffer_bpp     = fbinfo.framebuffer_bpp;
+        stivale_struct.framebuffer_pitch   = fbinfo.framebuffer_pitch;
+        stivale_struct.fb_memory_model     = STIVALE_FBUF_MMODEL_RGB;
+        stivale_struct.fb_red_mask_size    = fbinfo.red_mask_size;
+        stivale_struct.fb_red_mask_shift   = fbinfo.red_mask_shift;
+        stivale_struct.fb_green_mask_size  = fbinfo.green_mask_size;
+        stivale_struct.fb_green_mask_shift = fbinfo.green_mask_shift;
+        stivale_struct.fb_blue_mask_size   = fbinfo.blue_mask_size;
+        stivale_struct.fb_blue_mask_shift  = fbinfo.blue_mask_shift;
     }
 
     bool want_5lv = level5pg && (stivale_hdr.flags & (1 << 1));

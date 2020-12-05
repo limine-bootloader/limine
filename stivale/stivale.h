@@ -41,6 +41,10 @@ struct stivale_mmap_entry {
     uint32_t unused;
 } __attribute__((packed));
 
+enum {
+    STIVALE_FBUF_MMODEL_RGB = 1
+};
+
 struct stivale_struct {
     uint64_t cmdline;
     uint64_t memory_map_addr;
@@ -55,6 +59,14 @@ struct stivale_struct {
     uint64_t modules;
     uint64_t epoch;
     uint64_t flags; // bit 0: 1 if booted with BIOS, 0 if booted with UEFI
+                    // bit 1: 1 if extended colour information passed, 0 if not
+    uint8_t  fb_memory_model;
+    uint8_t  fb_red_mask_size;
+    uint8_t  fb_red_mask_shift;
+    uint8_t  fb_green_mask_size;
+    uint8_t  fb_green_mask_shift;
+    uint8_t  fb_blue_mask_size;
+    uint8_t  fb_blue_mask_shift;
 } __attribute__((packed));
 
 #endif

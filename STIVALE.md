@@ -179,7 +179,16 @@ struct stivale_struct {
     uint64_t epoch;                 // UNIX epoch at boot, read from system RTC
     uint64_t flags;                 // Flags
                                     // bit 0: 1 if booted with BIOS, 0 if booted with UEFI
+                                    // bit 1: 1 if extended colour information passed, 0 if not
                                     // All other bits undefined.
+    // Extended colour information follows, only access if bit 1 of flags is set.
+    uint8_t  fb_memory_model;       // Memory model: 1=RGB, all other values undefined
+    uint8_t  fb_red_mask_size;      // RGB mask sizes and left shifts
+    uint8_t  fb_red_mask_shift;
+    uint8_t  fb_green_mask_size;
+    uint8_t  fb_green_mask_shift;
+    uint8_t  fb_blue_mask_size;
+    uint8_t  fb_blue_mask_shift;
 } __attribute__((packed));
 ```
 

@@ -33,6 +33,17 @@ void stivale_main(struct stivale_struct *info) {
     e9_printf("\tWidth:  %d", info->framebuffer_width);
     e9_printf("\tHeight: %d", info->framebuffer_height);
     e9_printf("\tBPP:    %d", info->framebuffer_bpp);
+    if (info->flags & (1 << 1)) {
+        e9_printf("\tExtended colour information passed:");
+        e9_printf("\t\tMemory model:     %d", info->fb_memory_model);
+        e9_printf("\t\tRed mask size:    %d", info->fb_red_mask_size);
+        e9_printf("\t\tRed mask shift:   %d", info->fb_red_mask_shift);
+        e9_printf("\t\tGreen mask size:  %d", info->fb_green_mask_size);
+        e9_printf("\t\tGreen mask shift: %d", info->fb_green_mask_shift);
+        e9_printf("\t\tBlue mask size:   %d", info->fb_blue_mask_size);
+        e9_printf("\t\tBlue mask shift:  %d", info->fb_blue_mask_shift);
+    }
+
     e9_printf("RSDP at %x", info->rsdp);
 
     e9_printf("Module map at %x with modules:", info->modules);

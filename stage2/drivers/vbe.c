@@ -8,6 +8,7 @@
 #include <lib/print.h>
 #include <lib/image.h>
 #include <lib/config.h>
+#include <lib/uri.h>
 #include <mm/pmm.h>
 #include <mm/mtrr.h>
 
@@ -380,7 +381,20 @@ bool vbe_tty_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _
     mtrr_set_range((uint64_t)(size_t)vbe_framebuffer,
                    (uint64_t)vbe_pitch * vbe_height, MTRR_MEMORY_TYPE_WC);
 
-    vga_font_retrieve();
+    char *menu_font = config_get_value(NULL, 0, "MENU_FONT");
+    if (menu_font == NULL) {
+        vga_font_retrieve();
+    } else {
+        struct file_handle f;
+        if (!uri_open(&f, menu_font)) {
+            print("menu: Could not open font file.\n");
+            vga_font_retrieve();
+        } else {
+            vga_font = ext_mem_alloc(VGA_FONT_MAX);
+            fread(&f, vga_font, 0, VGA_FONT_MAX);
+        }
+    }
+
     *_cols = cols = (vbe_width - _margin * 2) / VGA_FONT_WIDTH;
     *_rows = rows = (vbe_height - _margin * 2) / VGA_FONT_HEIGHT;
     grid = ext_mem_alloc(rows * cols * sizeof(struct vbe_char));

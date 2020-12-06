@@ -40,19 +40,19 @@ limine-install: limine-install.c
 test.hdd:
 	rm -f test.hdd
 	dd if=/dev/zero bs=1M count=0 seek=64 of=test.hdd
-	parted -s test.hdd mklabel msdos
+	parted -s test.hdd mklabel gpt
 	parted -s test.hdd mkpart primary 2048s 100%
 
 echfs-test: all limine-install test.hdd
 	$(MAKE) -C test
-	echfs-utils -m -p0 test.hdd quick-format 512 > part_guid
+	echfs-utils -g -p0 test.hdd quick-format 512 > part_guid
 	sed "s/@GUID@/`cat part_guid`/g" < test/limine.cfg > limine.cfg.tmp
-	echfs-utils -m -p0 test.hdd import limine.cfg.tmp limine.cfg
+	echfs-utils -g -p0 test.hdd import limine.cfg.tmp limine.cfg
 	rm -f limine.cfg.tmp part_guid
-	echfs-utils -m -p0 test.hdd import stage2.map boot/stage2.map
-	echfs-utils -m -p0 test.hdd import test/test.elf boot/test.elf
-	echfs-utils -m -p0 test.hdd import test/bg.bmp boot/bg.bmp
-	echfs-utils -m -p0 test.hdd import test/font.bin boot/font.bin
+	echfs-utils -g -p0 test.hdd import stage2.map boot/stage2.map
+	echfs-utils -g -p0 test.hdd import test/test.elf boot/test.elf
+	echfs-utils -g -p0 test.hdd import test/bg.bmp boot/bg.bmp
+	echfs-utils -g -p0 test.hdd import test/font.bin boot/font.bin
 	./limine-install limine.bin test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 

@@ -293,13 +293,8 @@ void *conv_mem_alloc(size_t count) {
 
 void *conv_mem_alloc_aligned(size_t count, size_t alignment) {
     if (!bump_allocator_limit) {
-        // The balloc limit is the beginning of the GDT
-        struct {
-            uint16_t limit;
-            uint32_t ptr;
-        } __attribute__((packed)) gdtr;
-        asm volatile ("sgdt %0" :: "m"(gdtr) : "memory");
-        bump_allocator_limit = gdtr.ptr;
+        // The balloc limit is the beginning of the EBDA
+        bump_allocator_limit = *((uint16_t *)0x40e) << 4;
     }
 
     size_t new_base = ALIGN_UP(bump_allocator_base, alignment);

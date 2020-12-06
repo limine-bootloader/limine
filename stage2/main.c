@@ -33,9 +33,10 @@ void entry(uint8_t _boot_drive, int pxe_boot) {
     if (!a20_enable())
         panic("Could not enable A20 line");
 
-    part_create_index();
     init_e820();
     init_memmap();
+
+    part_create_index();
 
     if (pxe_boot) {
         pxe_init();

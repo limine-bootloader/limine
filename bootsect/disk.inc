@@ -1,9 +1,10 @@
-; ***********************************************
-;     Reads a disk sector with an LBA address
-; ***********************************************
+; *****************************
+;     Reads bytes from disk
+; *****************************
 
 ; IN:
-; EAX = LBA sector to load
+; EAX = Start address to load low 32
+; EBP = Start address to load high 32
 ; DL = Drive number
 ; ES = Buffer segment
 ; BX = Buffer offset
@@ -15,32 +16,47 @@
 read_sectors:
     pusha
 
-    mov esi, .da_struct
+    mov si, .da_struct
 
     mov word  [si],    16
     mov word  [si+2],  1
     mov word  [si+4],  bx
     mov word  [si+6],  es
-    mov dword [si+8],  eax
-    mov dword [si+12], 0
 
-    ; Get bytes per sector
     push dx
     push si
+
+    push eax
+    push ebp
+
+    ; Get bytes per sector
     mov ah, 0x48
     mov si, .drive_params
     mov word [si], 30       ; buf_size
     int 0x13
     jc .done
     mov bp, word [si+24]    ; bytes_per_sect
+
+    ; ECX byte count to CX sector count
     mov ax, cx
     shr ecx, 16
     mov dx, cx
     xor cx, cx
     div bp
     test dx, dx
-    adc cx, ax
+    setnz cl
+    add cx, ax
+
+    pop edx
+    pop eax
+
     pop si
+
+    ; EBP:EAX address to EAX LBA sector
+    div ebp
+    mov dword [si+8],  eax
+    mov dword [si+12], edx
+
     pop dx
 
   .loop:
@@ -52,6 +68,7 @@ read_sectors:
 
     add word  [si+4], bp
     inc dword [si+8]
+    adc dword [si+12], 0
 
     loop .loop
 

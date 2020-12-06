@@ -199,7 +199,7 @@ load_up:
         if (part_index)
             return;
 
-        part_index = conv_mem_alloc(sizeof(struct part) * part_count);
+        part_index = ext_mem_alloc(sizeof(struct part) * part_count);
         goto load_up;
     }
 }

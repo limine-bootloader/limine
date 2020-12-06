@@ -10,7 +10,7 @@ start:
     mov ss, ax
     mov sp, 0x7c00
     sti
-    call load_gdt
+    lgdt [gdt]
 
     cli
 
@@ -18,10 +18,10 @@ start:
     bts ax, 0
     mov cr0, eax
 
-    jmp 0x18:.mode32
+    jmp 0x08:.mode32
     bits 32
   .mode32:
-    mov ax, 0x20
+    mov ax, 0x10
     mov ds, ax
     mov es, ax
     mov fs, ax

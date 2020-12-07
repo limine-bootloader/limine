@@ -25,7 +25,7 @@ bool init_vbe(struct vbe_framebuffer_info *ret,
 
 bool vbe_tty_init(int *rows, int *cols, uint32_t *colours, int margin, int margin_gradient, struct image *background);
 
-void vbe_putchar(char c);
+void vbe_putchar(uint8_t c);
 void vbe_clear(bool move);
 void vbe_enable_cursor(void);
 void vbe_disable_cursor(void);

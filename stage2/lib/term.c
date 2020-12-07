@@ -13,7 +13,7 @@ static enum {
     TEXTMODE
 } term_backend = NOT_READY;
 
-void (*raw_putchar)(char c);
+void (*raw_putchar)(uint8_t c);
 void (*clear)(bool move);
 void (*enable_cursor)(void);
 void (*disable_cursor)(void);
@@ -77,7 +77,7 @@ void term_deinit(void) {
     term_backend = NOT_READY;
 }
 
-static void term_putchar(char c);
+static void term_putchar(uint8_t c);
 
 void term_write(const char *buf, size_t count) {
     if (term_backend == NOT_READY)
@@ -98,7 +98,7 @@ static int get_cursor_pos_y(void) {
     return y;
 }
 
-static void escape_parse(char c);
+static void escape_parse(uint8_t c);
 
 static int escape = 0;
 static int esc_value0 = 0;
@@ -108,7 +108,7 @@ static int esc_default0 = 1;
 static int esc_default1 = 1;
 static int *esc_default = &esc_default0;
 
-static void term_putchar(char c) {
+static void term_putchar(uint8_t c) {
     if (escape) {
         escape_parse(c);
         return;
@@ -143,7 +143,7 @@ static void sgr(void) {
     }
 }
 
-static void escape_parse(char c) {
+static void escape_parse(uint8_t c) {
     if (c >= '0' && c <= '9') {
         *esc_value *= 10;
         *esc_value += c - '0';

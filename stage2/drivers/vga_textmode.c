@@ -11,11 +11,11 @@
 #define VD_COLS (80 * 2)
 #define VD_ROWS 25
 
-static char *back_buffer = NULL;
-static char *front_buffer = NULL;
-static char *video_mem = (char *)0xb8000;
+static uint8_t *back_buffer = NULL;
+static uint8_t *front_buffer = NULL;
+static uint8_t *video_mem = (uint8_t *)0xb8000;
 
-static char *current_buffer;
+static uint8_t *current_buffer;
 
 static size_t cursor_offset = 0;
 static int cursor_status = 1;
@@ -135,7 +135,7 @@ void text_set_text_bg(int bg) {
     text_palette = (text_palette & 0x0f) | (ansi_colours[bg] << 4);
 }
 
-void text_putchar(char c) {
+void text_putchar(uint8_t c) {
     switch (c) {
         case '\b':
             if (cursor_offset) {

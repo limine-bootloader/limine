@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <lib/image.h>
 
-extern void (*raw_putchar)(char c);
+extern void (*raw_putchar)(uint8_t c);
 extern void (*clear)(bool move);
 extern void (*enable_cursor)(void);
 extern void (*disable_cursor)(void);

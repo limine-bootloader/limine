@@ -197,6 +197,7 @@ static int print_tree(int level, int base_index, int selected_entry,
                       struct menu_entry *current_entry,
                       struct menu_entry **selected_menu_entry) {
     int max_entries = 0;
+
     for (;;) {
         if (current_entry == NULL)
             break;
@@ -206,19 +207,19 @@ static int print_tree(int level, int base_index, int selected_entry,
                 for (int j = 0; j < i; j++)
                     actual_parent = actual_parent->parent;
                 if (actual_parent->next != NULL)
-                    print(" | ");
+                    print(" \xb3");
                 else
-                    print("   ");
+                    print("  ");
             }
             if (current_entry->next == NULL)
-                print(" `-");
+                print(" \xc0");
             else
-                print(" |-");
+                print(" \xc3");
         }
         if (current_entry->sub)
             print(current_entry->expanded ? "[-]" : "[+]");
         else if (level)
-            print("-> ");
+            print("\xc4> ");
         else
             print("   ");
         if (base_index + max_entries == selected_entry) {

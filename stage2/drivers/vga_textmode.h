@@ -5,7 +5,7 @@
 
 void init_vga_textmode(int *rows, int *cols);
 
-void text_putchar(char c);
+void text_putchar(uint8_t c);
 void text_clear(bool move);
 void text_enable_cursor(void);
 void text_disable_cursor(void);

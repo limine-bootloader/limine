@@ -166,13 +166,13 @@ void vbe_plot_bg_blent_rect(int x, int y, int width, int height, uint32_t hex) {
 }
 
 struct vbe_char {
-    char c;
+    uint8_t  c;
     uint32_t fg;
     uint32_t bg;
 };
 
 void vbe_plot_char(struct vbe_char *c, int x, int y) {
-    uint8_t *glyph = &vga_font[c->c * VGA_FONT_HEIGHT];
+    uint8_t *glyph = &vga_font[(size_t)c->c * VGA_FONT_HEIGHT];
 
     vbe_plot_bg_blent_rect(x, y, VGA_FONT_WIDTH, VGA_FONT_HEIGHT, c->bg);
 
@@ -305,7 +305,7 @@ void vbe_double_buffer(bool state) {
     }
 }
 
-void vbe_putchar(char c) {
+void vbe_putchar(uint8_t c) {
     switch (c) {
         case '\b':
             if (cursor_x || cursor_y) {

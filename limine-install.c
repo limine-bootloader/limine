@@ -30,6 +30,19 @@ struct gpt_table_header {
     uint32_t partition_entry_array_crc32;
 } __attribute__((packed));
 
+struct gpt_entry {
+    uint64_t partition_type_guid[2];
+
+    uint64_t unique_partition_guid[2];
+
+    uint64_t starting_lba;
+    uint64_t ending_lba;
+
+    uint64_t attributes;
+
+    uint16_t partition_name[36];
+} __attribute__((packed));
+
 // This table from https://web.mit.edu/freebsd/head/sys/libkern/crc32.c
 const uint32_t crc32_table[] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
@@ -95,7 +108,7 @@ int main(int argc, char *argv[]) {
     uint8_t  orig_mbr[70], timestamp[6];
 
     if (argc < 3) {
-        printf("Usage: %s <bootloader image> <device>\n", argv[0]);
+        printf("Usage: %s <bootloader image> <device> [GPT partition index]\n", argv[0]);
         return 1;
     }
 
@@ -165,54 +178,105 @@ int main(int argc, char *argv[]) {
     // Default split of stage2 for MBR (consecutive in post MBR gap)
     uint64_t stage2_loc_a = 512;
     uint64_t stage2_loc_b = stage2_loc_a + stage2_size_a;
-    if (stage2_loc_b & 512)
+    if (stage2_loc_b & (512 - 1))
         stage2_loc_b = (stage2_loc_b + 512) & ~(512 - 1);
 
     if (gpt) {
-        stage2_loc_a  = (gpt_header.partition_entry_lba + 32) * lb_size;
-        stage2_loc_a -= stage2_size_a;
-        stage2_loc_a &= ~(lb_size - 1);
-        stage2_loc_b  = (secondary_gpt_header.partition_entry_lba + 32) * lb_size;
-        stage2_loc_b -= stage2_size_b;
-        stage2_loc_b &= ~(lb_size - 1);
+        if (argc > 3) {
+            uint32_t partition_num;
+            sscanf(argv[3], "%" SCNu32, &partition_num);
+            partition_num--;
+            if (partition_num > gpt_header.number_of_partition_entries) {
+                fprintf(stderr, "error: Partition number is too large.\n");
+                abort();
+            }
 
-        size_t partition_entries_per_lb =
-            lb_size / gpt_header.size_of_partition_entry;
-        size_t new_partition_array_lba_size =
-            stage2_loc_a / lb_size - gpt_header.partition_entry_lba;
-        size_t new_partition_entry_count =
-            new_partition_array_lba_size * partition_entries_per_lb;
+            struct gpt_entry gpt_entry;
+            fseek(device, (gpt_header.partition_entry_lba * lb_size)
+                  + (partition_num * sizeof(struct gpt_entry)), SEEK_SET);
+            fread(&gpt_entry, sizeof(struct gpt_entry), 1, device);
 
-        uint8_t *partition_array =
-            malloc(new_partition_entry_count * gpt_header.size_of_partition_entry);
-        assert(partition_array);
+            if (gpt_entry.unique_partition_guid[0] == 0 &&
+              gpt_entry.unique_partition_guid[1] == 0) {
+                fprintf(stderr, "error: No such partition.\n");
+                abort();
+            }
 
-        fseek(device, gpt_header.partition_entry_lba * lb_size, SEEK_SET);
-        fread(partition_array,
-              new_partition_entry_count * gpt_header.size_of_partition_entry,
-              1, device);
+            fprintf(stderr, "GPT partition specified. Installing there instead of embedding.\n");
 
-        uint32_t crc32_partition_array =
-            crc32(partition_array,
-                  new_partition_entry_count * gpt_header.size_of_partition_entry);
+            stage2_loc_a = gpt_entry.starting_lba * lb_size;
+            stage2_loc_b = stage2_loc_a + stage2_size_a;
+            if (stage2_loc_b & (lb_size - 1))
+                stage2_loc_b = (stage2_loc_b + lb_size) & ~(lb_size - 1);
+        } else {
+            fprintf(stderr, "GPT partition NOT specified. Attempting GPT embedding.\n");
 
-        free(partition_array);
+            ssize_t max_partition_entry_used = -1;
+            for (ssize_t i = 0; i < gpt_header.number_of_partition_entries; i++) {
+                struct gpt_entry gpt_entry;
+                fseek(device, (gpt_header.partition_entry_lba * lb_size)
+                      + (i * sizeof(struct gpt_entry)), SEEK_SET);
+                fread(&gpt_entry, sizeof(struct gpt_entry), 1, device);
 
-        gpt_header.partition_entry_array_crc32 = crc32_partition_array;
-        gpt_header.number_of_partition_entries = new_partition_entry_count;
-        gpt_header.crc32 = 0;
-        gpt_header.crc32 = crc32(&gpt_header, sizeof(struct gpt_table_header));
-        fseek(device, lb_size, SEEK_SET);
-        fwrite(&gpt_header, sizeof(struct gpt_table_header), 1, device);
+                if (gpt_entry.unique_partition_guid[0] != 0 ||
+                  gpt_entry.unique_partition_guid[1] != 0) {
+                    if (i > max_partition_entry_used)
+                        max_partition_entry_used = i;
+                }
+            }
 
-        secondary_gpt_header.partition_entry_array_crc32 = crc32_partition_array;
-        secondary_gpt_header.number_of_partition_entries =
-            new_partition_entry_count;
-        secondary_gpt_header.crc32 = 0;
-        secondary_gpt_header.crc32 =
-            crc32(&secondary_gpt_header, sizeof(struct gpt_table_header));
-        fseek(device, lb_size * gpt_header.alternate_lba, SEEK_SET);
-        fwrite(&secondary_gpt_header, sizeof(struct gpt_table_header), 1, device);
+            stage2_loc_a  = (gpt_header.partition_entry_lba + 32) * lb_size;
+            stage2_loc_a -= stage2_size_a;
+            stage2_loc_a &= ~(lb_size - 1);
+            stage2_loc_b  = (secondary_gpt_header.partition_entry_lba + 32) * lb_size;
+            stage2_loc_b -= stage2_size_b;
+            stage2_loc_b &= ~(lb_size - 1);
+
+            size_t partition_entries_per_lb =
+                lb_size / gpt_header.size_of_partition_entry;
+            size_t new_partition_array_lba_size =
+                stage2_loc_a / lb_size - gpt_header.partition_entry_lba;
+            size_t new_partition_entry_count =
+                new_partition_array_lba_size * partition_entries_per_lb;
+
+            if ((ssize_t)new_partition_array_lba_size <= max_partition_entry_used) {
+                fprintf(stderr, "error: Cannot embed because there are too many used partition entries.\n");
+                abort();
+            }
+
+            uint8_t *partition_array =
+                malloc(new_partition_entry_count * gpt_header.size_of_partition_entry);
+            assert(partition_array);
+
+            fseek(device, gpt_header.partition_entry_lba * lb_size, SEEK_SET);
+            fread(partition_array,
+                  new_partition_entry_count * gpt_header.size_of_partition_entry,
+                  1, device);
+
+            uint32_t crc32_partition_array =
+                crc32(partition_array,
+                      new_partition_entry_count * gpt_header.size_of_partition_entry);
+
+            free(partition_array);
+
+            gpt_header.partition_entry_array_crc32 = crc32_partition_array;
+            gpt_header.number_of_partition_entries = new_partition_entry_count;
+            gpt_header.crc32 = 0;
+            gpt_header.crc32 = crc32(&gpt_header, sizeof(struct gpt_table_header));
+            fseek(device, lb_size, SEEK_SET);
+            fwrite(&gpt_header, sizeof(struct gpt_table_header), 1, device);
+
+            secondary_gpt_header.partition_entry_array_crc32 = crc32_partition_array;
+            secondary_gpt_header.number_of_partition_entries =
+                new_partition_entry_count;
+            secondary_gpt_header.crc32 = 0;
+            secondary_gpt_header.crc32 =
+                crc32(&secondary_gpt_header, sizeof(struct gpt_table_header));
+            fseek(device, lb_size * gpt_header.alternate_lba, SEEK_SET);
+            fwrite(&secondary_gpt_header, sizeof(struct gpt_table_header), 1, device);
+        }
+    } else {
+        fprintf(stderr, "Installing to MBR.\n");
     }
 
     fprintf(stderr, "Stage 2 to be located at 0x%" PRIx64 " and 0x%" PRIx64 ".\n",

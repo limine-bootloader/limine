@@ -87,18 +87,21 @@ limine-install <bootloader image> <path to device/image>
 Where `<bootloader image>` is the path to a `limine.bin` file.
 
 ### GPT
-If using a GPT formatted device, it will be necessary to create an extra partition
-(of at least 32K in size) to store stage 2 code. Then it will be necessary to tell
-`limine-install` where this partition is located by specifying the start sector
-number (in decimal).
+If using a GPT formatted device, there are 2 options one can follow for installation:
+* Specifying a dedicated stage 2 partition.
+* Letting `limine-install` attempt to embed stage 2 within GPT structures.
+
+In case one wants to specify a stage 2 partition, create a partition on the GPT
+device of at least 32KiB in size, and pass the 1-based number of the partition
+to `limine-install` as a third argument; such as:
 
 ```bash
-fdisk <device>    # Create bootloader partition using your favourite method
-limine-install <bootloader image> <path to device/image> <start sector of boot partition> <sector size>
+limine-install <bootloader image> <path to device/image> <partition 1-based number>
 ```
 
-The `<sector size>` argument is optional. Use it to specify the sector size in bytes
-if it is not Limine's expected default of 512 bytes.
+In case one wants to let `limine-install` embed stage 2 within GPT's structures,
+simply omit the partition number, and invoke `limine-install` the same as one would
+do for an MBR partitioned device.
 
 ### Configuration
 Then make sure the device/image contains at least 1 partition formatted in
@@ -125,7 +128,7 @@ echfs-utils -m -p0 test.img import path/to/limine.cfg limine.cfg
 echfs-utils -m -p0 test.img import path/to/kernel.elf kernel.elf
 echfs-utils -m -p0 test.img import <path to file> <path in image>
 ...
-limine-install test.img
+./limine-install limine.bin test.img
 ```
 
 One can get `echfs-utils` by installing https://github.com/qword-os/echfs.

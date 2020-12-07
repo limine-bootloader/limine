@@ -54,37 +54,31 @@ start:
     ; make sure that is the case now.
     mov esp, 0x7c00
 
-    push 0x6fe0
+    push 0x7000
     pop es
-    mov eax, dword [stage2_sector]
+    mov di, stage2_locs
+    mov eax, dword [di]
+    mov ebp, dword [di+4]
     xor bx, bx
-    mov ecx, 32768
+    xor ecx, ecx
+    mov cx, word [di-4]
+    call read_sectors
+    jc err
+    mov eax, dword [di+8]
+    mov ebp, dword [di+12]
+    add bx, cx
+    mov cx, word [di-2]
     call read_sectors
     jc err
 
-    call load_gdt
+    lgdt [gdt]
 
     cli
-
     mov eax, cr0
     bts ax, 0
     mov cr0, eax
 
-    jmp 0x18:.mode32
-    bits 32
-  .mode32:
-    mov ax, 0x20
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
-
-    and edx, 0xff
-
-    jmp vector
-
-bits 16
+    jmp 0x08:vector
 
 err:
     hlt
@@ -100,6 +94,15 @@ times 6 db 0
 
 bits 32
 vector:
+    mov eax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+
+    and edx, 0xff
+
     push 0
 
     push edx
@@ -109,10 +112,12 @@ vector:
 
     call 0x70000
 
-bits 16
-
-times 0x1b0-($-$$) db 0
-stage2_sector: dd 0
+times 0x1a4-($-$$) db 0
+stage2_size_a: dw 0
+stage2_size_b: dw 0
+stage2_locs:
+stage2_loc_a:  dq 0
+stage2_loc_b:  dq 0
 
 times 0x1b8-($-$$) db 0
 times 510-($-$$) db 0
@@ -127,5 +132,3 @@ align 16
 stage2:
 incbin '../stage2/stage2.bin.gz'
 .size: equ $ - stage2
-
-times 32768-($-$$) db 0

@@ -6,6 +6,7 @@
 #include <stdbool.h>
 
 extern uint8_t boot_drive;
+extern int     boot_partition;
 
 bool parse_resolution(int *width, int *height, int *bpp, const char *buf);
 

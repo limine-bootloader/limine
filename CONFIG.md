@@ -99,6 +99,7 @@ resource://root/path
 The format for `root` changes depending on the resource used.
 
 A resource can be one of the following:
+* `boot` - The `root` is the 1-based decimal value representing the partition on the boot drive. If omitted, the partition containing the configuration file on the boot drive is used. For example: `boot://2/...` will use partition 2 of the boot drive and `boot:///...` will use the partition containing the config file on the boot drive.
 * `bios` - The `root` takes the form of `drive:partition`; for example: `bios://3:1/...` would use BIOS drive 3, partition 1. Partitions and BIOS drives are both 1-based. Omitting the drive is possible; for example: `bios://:2/...`. Omitting the drive makes Limine use the boot drive.
 * `guid` - The `root` takes the form of a GUID/UUID, such as `guid://736b5698-5ae1-4dff-be2c-ef8f44a61c52/...`. It is a filesystem GUID and not a partition GUID.
 * `tftp` - The `root` is the ip address of the tftp server to load the file from, if the root is left empty (`tftp:///file.elf`) the file will be loaded from the server limine booted from.

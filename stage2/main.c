@@ -40,17 +40,16 @@ void entry(uint8_t _boot_drive, int pxe_boot) {
 
     if (pxe_boot) {
         pxe_init();
-        if(init_config_pxe()) {
-            panic("failed to load config file");
+        if (init_config_pxe()) {
+            panic("Failed to load config file");
         }
-        print("config loaded");
+        print("Config loaded via PXE\n");
     } else {
         print("Boot drive: %x\n", boot_drive);
         // Look for config file.
         print("Searching for config file...\n");
         for (int i = 0; ; i++) {
             struct part part;
-            print("Checking partition %d...\n", i);
             int ret = part_get(&part, boot_drive, i);
             switch (ret) {
                 case INVALID_TABLE:
@@ -58,12 +57,11 @@ void entry(uint8_t _boot_drive, int pxe_boot) {
                 case END_OF_TABLE:
                     panic("Config file not found.");
                 case NO_PARTITION:
-                    print("Partition not found.\n");
                     continue;
             }
-            print("Partition found.\n");
             if (!init_config_disk(&part)) {
                 print("Config file found and loaded.\n");
+                boot_partition = i;
                 break;
             }
         }

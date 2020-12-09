@@ -90,6 +90,33 @@ static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) 
     return true;
 }
 
+static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) {
+    uint8_t partition;
+
+    if (s_part[0] != '\0') {
+        uint64_t val = strtoui(s_part, NULL, 10);
+        if (val < 1 || val > 256) {
+            panic("Partition number outside range 1-256");
+        }
+        partition = val - 1;
+    } else {
+        if (boot_partition != -1) {
+            partition = boot_partition;
+        } else {
+            panic("Boot partition information is unavailable.");
+        }
+    }
+
+    struct part part;
+    if (part_get(&part, boot_drive, partition))
+        return false;
+
+    if (fopen(fd, &part, path))
+        return false;
+
+    return true;
+}
+
 static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
     uint8_t drive, partition;
 
@@ -147,8 +174,14 @@ bool uri_open(struct file_handle *fd, char *uri) {
     char *resource, *root, *path;
     uri_resolve(uri, &resource, &root, &path);
 
+    if (resource == NULL) {
+        panic("No resource specified for URI `%s`.", uri);
+    }
+
     if (!strcmp(resource, "bios")) {
         return uri_bios_dispatch(fd, root, path);
+    } else if (!strcmp(resource, "boot")) {
+        return uri_boot_dispatch(fd, root, path);
     } else if (!strcmp(resource, "guid")) {
         return uri_guid_dispatch(fd, root, path);
     } else if (!strcmp(resource, "tftp")) {

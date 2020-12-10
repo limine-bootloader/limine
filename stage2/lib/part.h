@@ -17,6 +17,8 @@ struct part {
     uint64_t sect_count;
     bool guid_valid;
     struct guid guid;
+    bool part_guid_valid;
+    struct guid part_guid;
 };
 
 void part_create_index(void);

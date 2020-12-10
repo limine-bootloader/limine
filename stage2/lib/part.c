@@ -88,6 +88,9 @@ static int gpt_get_part(struct part *ret, int drive, int partition) {
         ret->guid = guid;
     }
 
+    ret->part_guid_valid = true;
+    ret->part_guid = entry.unique_partition_guid;
+
     return 0;
 }
 
@@ -136,6 +139,8 @@ static int mbr_get_part(struct part *ret, int drive, int partition) {
         ret->guid_valid = true;
         ret->guid = guid;
     }
+
+    ret->part_guid_valid = false;
 
     return 0;
 }
@@ -205,15 +210,21 @@ load_up:
 }
 
 bool part_get_by_guid(struct part *part, struct guid *guid) {
-    for (size_t i = 0; i < part_index_i; i++) {
-        if (!part_index[i].guid_valid)
-            continue;
-        if (!memcmp(&part_index[i].guid, guid, 16)) {
-            *part = part_index[i];
-            return true;
+    size_t i;
+    for (i = 0; i < part_index_i; i++) {
+        if (part_index[i].guid_valid
+         && memcmp(&part_index[i].guid, guid, 16) == 0) {
+            goto found;
+        }
+        if (part_index[i].part_guid_valid
+         && memcmp(&part_index[i].part_guid, guid, 16) == 0) {
+            goto found;
         }
     }
     return false;
+found:
+    *part = part_index[i];
+    return true;
 }
 
 int part_read(struct part *part, void *buffer, uint64_t loc, uint64_t count) {

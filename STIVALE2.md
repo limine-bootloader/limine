@@ -456,6 +456,17 @@ struct stivale2_smp_info {
 } __attribute__((packed));
 ```
 
+#### PXE server info structure tag
+
+This tag reports that the kernel has been booted via PXE, and reports the server ip that it was booted from.
+
+```c
+struct stivale2_struct_tag_pxe_server_info {
+    struct stivale2_tag tag;     // Identifier: 0x29d1e96239247032
+    uint32_t server_ip;          // Server ip in network byte order
+} __attribute__((packed));
+```
+
 #### MMIO32 UART tag
 
 This tag reports that there is a memory mapped UART port and its address. To write to this port, write the character, zero extended to a 32 bit unsigned integer to the address provided.

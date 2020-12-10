@@ -23,6 +23,7 @@
 #include <fs/file.h>
 #include <mm/pmm.h>
 #include <stivale/stivale2.h>
+#include <pxe/tftp.h>
 
 #define KASLR_SLIDE_BITMASK 0x03FFFF000u
 
@@ -50,7 +51,7 @@ static void append_tag(struct stivale2_struct *s, struct stivale2_tag *tag) {
     s->tags   = (uint64_t)(size_t)tag;
 }
 
-void stivale2_load(char *config, char *cmdline) {
+void stivale2_load(char *config, char *cmdline, bool pxe) {
     struct file_handle *kernel = conv_mem_alloc(sizeof(struct file_handle));
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
@@ -350,6 +351,15 @@ void stivale2_load(char *config, char *cmdline) {
            memmap, sizeof(struct e820_entry_t) * memmap_entries);
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    }
+
+    {
+        if (pxe) {
+            struct stivale2_struct_tag_pxe_server_info *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_pxe_server_info));
+            tag->tag.identifier = STIVALE2_STRUCT_TAG_PXE_SERVER_INFO;
+            tag->server_ip = get_boot_server_info();
+            append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+        }
     }
 
     stivale_spinup(bits, level5pg && level5pg_requested, pagemap,

@@ -159,4 +159,11 @@ struct stivale2_struct_tag_smp {
     struct stivale2_smp_info smp_info[];
 } __attribute__((packed));
 
+#define STIVALE2_STRUCT_TAG_PXE_SERVER_INFO 0x29d1e96239247032
+
+struct stivale2_struct_tag_pxe_server_info {
+    struct stivale2_tag tag;
+    uint32_t server_ip;
+} __attribute__((packed));
+
 #endif

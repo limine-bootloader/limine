@@ -80,7 +80,7 @@ void entry(uint8_t _boot_drive, int pxe_boot) {
     if (!strcmp(proto, "stivale")) {
         stivale_load(config, cmdline);
     } else if (!strcmp(proto, "stivale2")) {
-        stivale2_load(config, cmdline);
+        stivale2_load(config, cmdline, pxe_boot);
     } else if (!strcmp(proto, "linux")) {
         linux_load(config, cmdline);
     } else if (!strcmp(proto, "chainload")) {

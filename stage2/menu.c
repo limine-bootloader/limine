@@ -13,6 +13,8 @@
 #include <mm/pmm.h>
 #include <drivers/vbe.h>
 
+static char *menu_branding = NULL;
+
 static void cursor_back(void) {
     int x, y;
     get_cursor_pos(&x, &y);
@@ -104,7 +106,7 @@ static char *config_entry_editor(bool *ret, const char *orig_entry) {
 refresh:
     clear(true);
     disable_cursor();
-    print("\n\n  \e[36m Limine " LIMINE_VERSION " \e[37m\n\n\n");
+    print("\n\n  \e[36m %s \e[37m\n\n\n", menu_branding);
 
     print("Editing entry.\n");
     print("Press esc to return to main menu and discard changes, press F10 to boot.\n");
@@ -240,6 +242,10 @@ static int print_tree(int level, int base_index, int selected_entry,
 }
 
 char *menu(char **cmdline) {
+    menu_branding = config_get_value(NULL, 0, "MENU_BRANDING");
+    if (menu_branding == NULL)
+        menu_branding = "Limine " LIMINE_VERSION;
+
     if (menu_tree == NULL)
         panic("Config contains no valid entries.");
 
@@ -343,7 +349,7 @@ char *menu(char **cmdline) {
 
 refresh:
     clear(true);
-    print("\n\n  \e[36m Limine " LIMINE_VERSION " \e[37m\n\n\n");
+    print("\n\n  \e[36m %s \e[37m\n\n\n", menu_branding);
 
     print("Select an entry:\n\n");
 

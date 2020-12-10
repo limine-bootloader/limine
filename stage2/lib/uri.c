@@ -184,6 +184,8 @@ bool uri_open(struct file_handle *fd, char *uri) {
         return uri_boot_dispatch(fd, root, path);
     } else if (!strcmp(resource, "guid")) {
         return uri_guid_dispatch(fd, root, path);
+    } else if (!strcmp(resource, "uuid")) {
+        return uri_guid_dispatch(fd, root, path);
     } else if (!strcmp(resource, "tftp")) {
         return uri_tftp_dispatch(fd, root, path);
     } else {

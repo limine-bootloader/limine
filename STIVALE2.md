@@ -164,6 +164,10 @@ rather, feature-specific support detection.
 The kernel executable provides the bootloader with a linked list of structures,
 the first of which is pointed to by the `tags` entry of the stivale2 header.
 
+The bootloader is free to ignore kernel tags that it does not recognise.
+The kernel should make sure that the bootloader has properly interpreted the
+provided tags, either by checking returned tags or by other means.
+
 Each tag shall contain these 2 fields:
 ```c
 struct stivale2_hdr_tag {

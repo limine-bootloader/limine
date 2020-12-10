@@ -124,8 +124,8 @@ before switching to its own address space, as unmarked memory areas in use by
 the bootloader may become unavailable.
 
 Once the OS is done needing the bootloader, memory map areas marked as "bootloader
-reclaimable" may be used as usable memory. These areas are not guaranteed to be
-aligned, but they are guaranteed to not overlap other sections of the memory map.
+reclaimable" may be used as usable memory. These areas are guaranteed to be
+4096-byte aligned, and they are guaranteed to not overlap other sections of the memory map.
 
 ## stivale2 header (.stivale2hdr)
 
@@ -305,14 +305,14 @@ All other values are undefined.
 The kernel and modules loaded **are not** marked as usable memory. They are marked
 as Kernel/Modules (type 0x1001).
 
-Usable RAM chunks are guaranteed to be 4096 byte aligned for both base and length.
-
 The entries are guaranteed to be sorted by base address, lowest to highest.
 
-Usable RAM chunks are guaranteed not to overlap with any other entry.
+Usable and bootloader reclaimable entries are guaranteed to be 4096 byte aligned for both base and length.
 
-To the contrary, all non-usable RAM chunks are not guaranteed any alignment, nor
-is it guaranteed that they do not overlap each other (except usable RAM).
+Usable and bootloader reclaimable entries are guaranteed not to overlap with any other entry.
+
+To the contrary, all non-usable entries (including kernel/modules) are not guaranteed any alignment, nor
+is it guaranteed that they do not overlap other entries (except usable and bootloader reclaimable entries).
 
 #### Framebuffer structure tag
 

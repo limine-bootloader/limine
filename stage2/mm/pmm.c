@@ -11,8 +11,8 @@
 #define MEMMAP_BASE ((size_t)0x100000)
 #define MEMMAP_MAX_ENTRIES 256
 
-static struct e820_entry_t memmap[MEMMAP_MAX_ENTRIES];
-static size_t memmap_entries = 0;
+struct e820_entry_t memmap[MEMMAP_MAX_ENTRIES];
+size_t memmap_entries = 0;
 
 static const char *memmap_type(uint32_t type) {
     switch (type) {
@@ -152,12 +152,33 @@ static void sanitise_entries(bool align_entries) {
             i--;
         }
     }
+
+    // Align bootloader-reclaimable entries
+    if (align_entries) {
+        for (size_t i = 0; i < memmap_entries; i++) {
+            if (memmap[i].type != MEMMAP_BOOTLOADER_RECLAIMABLE)
+                continue;
+
+            if (!align_entry(&memmap[i].base, &memmap[i].length)) {
+                // Eradicate from memmap
+                for (size_t j = i; j < memmap_entries - 1; j++) {
+                    memmap[j] = memmap[j+1];
+                }
+                memmap_entries--;
+                i--;
+            }
+        }
+    }
 }
+
+static bool allocations_disallowed = true;
 
 struct e820_entry_t *get_memmap(size_t *entries) {
     sanitise_entries(true);
 
     *entries = memmap_entries;
+
+    allocations_disallowed = true;
 
     return memmap;
 }
@@ -172,6 +193,8 @@ void init_memmap(void) {
     }
 
     sanitise_entries(false);
+
+    allocations_disallowed = false;
 }
 
 void *ext_mem_alloc(size_t count) {
@@ -188,6 +211,9 @@ void *ext_mem_alloc_type(size_t count, uint32_t type) {
 
 // Allocate memory top down, hopefully without bumping into kernel or modules
 void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) {
+    if (allocations_disallowed)
+        panic("Extended memory allocations disallowed");
+
     for (int i = memmap_entries - 1; i >= 0; i--) {
         if (memmap[i].type != 1)
             continue;

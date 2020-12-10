@@ -229,15 +229,16 @@ pagemap_t stivale_build_pagemap(bool level5pg) {
         map_page(pagemap, higher_half_base + i, i, 0x03);
     }
 
-    size_t memmap_entries;
-    struct e820_entry_t *memmap = get_memmap(&memmap_entries);
+    size_t _memmap_entries = memmap_entries;
+    struct e820_entry_t *_memmap =
+        conv_mem_alloc(_memmap_entries * sizeof(struct e820_entry_t));
+    for (size_t i = 0; i < _memmap_entries; i++)
+        _memmap[i] = memmap[i];
 
     // Map any other region of memory from the memmap
-    for (size_t i = 0; i < memmap_entries; i++) {
-        memmap = get_memmap(&memmap_entries);
-
-        uint64_t base   = memmap[i].base;
-        uint64_t length = memmap[i].length;
+    for (size_t i = 0; i < _memmap_entries; i++) {
+        uint64_t base   = _memmap[i].base;
+        uint64_t length = _memmap[i].length;
         uint64_t top    = base + length;
 
         uint64_t aligned_base   = ALIGN_DOWN(base, PAGE_SIZE);

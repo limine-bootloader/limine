@@ -6,7 +6,15 @@
 #include <mm/pmm.h>
 #include <lib/blib.h>
 
-int tftp_open(struct tftp_file_handle* handle, uint32_t server_ip, uint16_t server_port, const char* name) {
+uint32_t get_boot_server_info() {
+    struct pxenv_get_cached_info cachedinfo = { 0 };
+    cachedinfo.packet_type = 2;
+    pxe_call(PXENV_GET_CACHED_INFO, ((uint16_t)rm_seg(&cachedinfo)), (uint16_t)rm_off(&cachedinfo));
+    struct bootph *ph = (struct bootph*)(void *) (((((uint32_t)cachedinfo.buffer) >> 16) << 4) + (((uint32_t)cachedinfo.buffer) & 0xFFFF));
+    return ph->sip;
+}
+
+int tftp_open(struct tftp_file_handle *handle, uint32_t server_ip, uint16_t server_port, const char *name) {
     int ret = 0;
     if (!server_ip) {
         struct pxenv_get_cached_info cachedinfo = { 0 };

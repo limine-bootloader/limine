@@ -54,6 +54,7 @@ Some keys take *URIs* as values; these are described in the next section.
 * `DEFAULT_ENTRY` - 1-based entry index of the entry which will be automatically selected at startup. If unspecified, it is `1`.
 * `GRAPHICS` - If set to `yes`, do use graphical VESA framebuffer for the boot menu, else use text mode.
 * `MENU_RESOLUTION` - Specify screen resolution to be used by the Limine menu in the form `<width>x<height>`. This will *only* affect the menu, not any booted OS. If not specified, Limine will pick a resolution automatically. If the resolution is not available, Limine will pick another one automatically. Ignored if `GRAPHICS` is not `yes`.
+* `MENU_BRANDING` - A string that will be displayed on top of the Limine menu.
 * `MENU_FONT` - URI path to a font file to be used instead of the default one for the menu. The font file must be a code page 437 character set comprised of 256 consecutive 8x16 glyphs bitmaps (4096 byte font file). Each glyph's bitmap must be expressed left to right (1 byte per row), and top to bottom (16 bytes per whole glyph).
 * `THEME_COLOURS` - Specifies the colour palette used by the terminal (AARRGGBB). It is a `;` separated array of 8 colours: black, red, green, brown, blue, magenta, cyan, and gray, respectively. Ignored if `GRAPHICS` is not `yes`.
 * `THEME_COLORS` - Alias of `THEME_COLOURS`.

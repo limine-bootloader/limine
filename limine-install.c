@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
-#include <assert.h>
 #include <inttypes.h>
 
 struct gpt_table_header {
@@ -103,8 +102,9 @@ static uint32_t crc32(void *_stream, size_t len) {
 }
 
 int main(int argc, char *argv[]) {
-    FILE    *bootloader_file, *device;
-    uint8_t *bootloader_img;
+    int      ok = 1;
+    FILE    *bootloader_file = NULL, *device = NULL;
+    uint8_t *bootloader_img = NULL;
     uint8_t  orig_mbr[70], timestamp[6];
 
     if (argc < 3) {
@@ -124,34 +124,31 @@ int main(int argc, char *argv[]) {
     bootloader_img = malloc(bootloader_file_size);
     if (bootloader_img == NULL) {
         perror("Error: ");
-        fclose(bootloader_file);
-        return 1;
+        goto cleanup;
     }
 
     // Load in bootloader image
     fseek(bootloader_file, 0, SEEK_SET);
     fread(bootloader_img, 1, bootloader_file_size, bootloader_file);
-    fclose(bootloader_file);
 
     device = fopen(argv[2], "r+b");
     if (device == NULL) {
         perror("Error: ");
-        free(bootloader_img);
-        return 1;
+        goto cleanup;
     }
 
     // Probe for GPT and logical block size
     int gpt = 0;
     struct gpt_table_header gpt_header;
-    int lb_guesses[] = { 512, 4096 };
-    int lb_size;
+    uint64_t lb_guesses[] = { 512, 4096 };
+    uint64_t lb_size;
     for (size_t i = 0; i < sizeof(lb_guesses) / sizeof(int); i++) {
         fseek(device, lb_guesses[i], SEEK_SET);
         fread(&gpt_header, sizeof(struct gpt_table_header), 1, device);
         if (!strncmp(gpt_header.signature, "EFI PART", 8)) {
             gpt = 1;
             lb_size = lb_guesses[i];
-            fprintf(stderr, "Installing to GPT. Logical block size of %d bytes.\n",
+            fprintf(stderr, "Installing to GPT. Logical block size of %" PRIu64 " bytes.\n",
                     lb_guesses[i]);
             break;
         }
@@ -167,7 +164,7 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Secondary header valid.\n");
         } else {
             fprintf(stderr, "Secondary header not valid, aborting.\n");
-            abort();
+            goto cleanup;
         }
     }
 
@@ -188,7 +185,7 @@ int main(int argc, char *argv[]) {
             partition_num--;
             if (partition_num > gpt_header.number_of_partition_entries) {
                 fprintf(stderr, "error: Partition number is too large.\n");
-                abort();
+                goto cleanup;
             }
 
             struct gpt_entry gpt_entry;
@@ -199,7 +196,7 @@ int main(int argc, char *argv[]) {
             if (gpt_entry.unique_partition_guid[0] == 0 &&
               gpt_entry.unique_partition_guid[1] == 0) {
                 fprintf(stderr, "error: No such partition.\n");
-                abort();
+                goto cleanup;
             }
 
             fprintf(stderr, "GPT partition specified. Installing there instead of embedding.\n");
@@ -241,12 +238,15 @@ int main(int argc, char *argv[]) {
 
             if ((ssize_t)new_partition_array_lba_size <= max_partition_entry_used) {
                 fprintf(stderr, "error: Cannot embed because there are too many used partition entries.\n");
-                abort();
+                goto cleanup;
             }
 
             uint8_t *partition_array =
                 malloc(new_partition_entry_count * gpt_header.size_of_partition_entry);
-            assert(partition_array);
+            if (partition_array == NULL) {
+                perror("Error: ");
+                goto cleanup;
+            }
 
             fseek(device, gpt_header.partition_entry_lba * lb_size, SEEK_SET);
             fread(partition_array,
@@ -315,8 +315,15 @@ int main(int argc, char *argv[]) {
     fseek(device, 440, SEEK_SET);
     fwrite(orig_mbr, 1, 70, device);
 
-    fclose(device);
-    free(bootloader_img);
+    ok = 0;
 
-    return 0;
+cleanup:
+    if (device)
+        fclose(device);
+    if (bootloader_file)
+        fclose(bootloader_file);
+    if (bootloader_img)
+        free(bootloader_img);
+
+    return ok;
 }

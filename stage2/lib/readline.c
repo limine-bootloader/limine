@@ -21,7 +21,12 @@ int getchar_internal(uint32_t eax) {
         case 0x53:
             return GETCHAR_DELETE;
     }
-    return (char)(eax & 0xff);
+    char c = eax & 0xff;
+    switch (c) {
+        case '\r':
+            return '\n';
+    }
+    return c;
 }
 
 int getchar(void) {
@@ -106,7 +111,7 @@ void readline(const char *orig_str, char *buf, size_t limit) {
                     buf[j] = 0;
                 }
                 continue;
-            case '\r':
+            case '\n':
                 term_write("\n", 1);
                 return;
             default:

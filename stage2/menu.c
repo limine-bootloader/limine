@@ -138,7 +138,6 @@ refresh:
 
     int c = getchar();
     switch (c) {
-        case 0:
         case GETCHAR_CURSOR_DOWN:
             cursor_offset = get_next_line(cursor_offset, buffer);
             break;
@@ -177,9 +176,6 @@ refresh:
             *ret = true;
             disable_cursor();
             return (char *)orig_entry;
-        case '\r':
-            c = '\n';
-            // FALLTHRU
         default:
             if (strlen(buffer) < EDITOR_MAX_BUFFER_SIZE - 1) {
                 for (size_t i = strlen(buffer); ; i--) {

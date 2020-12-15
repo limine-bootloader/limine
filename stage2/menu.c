@@ -86,7 +86,7 @@ static size_t get_prev_line(size_t index, const char *buffer) {
     return offset;
 }
 
-static char *config_entry_editor(bool *ret, const char *orig_entry) {
+static char *config_entry_editor(const char *orig_entry) {
     size_t cursor_offset = 0;
     size_t entry_size = strlen(orig_entry);
 
@@ -169,13 +169,11 @@ refresh:
             }
             break;
         case GETCHAR_F10:
-            *ret = false;
             disable_cursor();
             return buffer;
         case '\e':
-            *ret = true;
             disable_cursor();
-            return (char *)orig_entry;
+            return NULL;
         default:
             if (strlen(buffer) < EDITOR_MAX_BUFFER_SIZE - 1) {
                 for (size_t i = strlen(buffer); ; i--) {
@@ -387,7 +385,7 @@ timeout_aborted:
                 if (++selected_entry == max_entries)
                     selected_entry = 0;
                 goto refresh;
-            case '\r':
+            case '\n':
             autoboot:
                 if (selected_menu_entry->sub != NULL) {
                     selected_menu_entry->expanded = !selected_menu_entry->expanded;
@@ -408,10 +406,10 @@ timeout_aborted:
                 if (selected_menu_entry->sub != NULL)
                     goto refresh;
                 enable_cursor();
-                bool ret;
-                selected_menu_entry->body = config_entry_editor(&ret, selected_menu_entry->body);
-                if (ret)
+                char *new_body = config_entry_editor(selected_menu_entry->body);
+                if (new_body == NULL)
                     goto refresh;
+                selected_menu_entry->body = new_body;
                 goto autoboot;
             }
         }

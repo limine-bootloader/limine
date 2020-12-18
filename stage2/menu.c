@@ -72,7 +72,7 @@ static size_t get_prev_line(size_t index, const char *buffer) {
 static char *config_entry_editor(const char *orig_entry) {
     size_t cursor_offset = 0;
     size_t entry_size    = strlen(orig_entry);
-    size_t window_size   = term_rows - 12;
+    size_t window_size   = term_rows - 11;
     size_t window_offset = 0;
 
     // Skip leading newlines
@@ -97,8 +97,18 @@ refresh:
     print("Press esc to return to main menu and discard changes, press F10 to boot.\n");
 
     print("\n\xda");
-    for (int i = 0; i < term_cols - 2; i++)
-        print("\xc4");
+    for (int i = 0; i < term_cols - 2; i++) {
+        switch (i) {
+            case 1: case 2: case 3:
+                if (window_offset > 0) {
+                    print("\x18");
+                    break;
+                }
+                // FALLTHRU
+            default:
+                print("\xc4");
+        }
+    }
     print("\xbf\xb3");
 
     int cursor_x, cursor_y;
@@ -166,8 +176,18 @@ refresh:
         print("\xb3\xc0");
     }
 
-    for (int i = 0; i < term_cols - 2; i++)
-        print("\xc4");
+    for (int i = 0; i < term_cols - 2; i++) {
+        switch (i) {
+            case 1: case 2: case 3:
+                if (current_line - window_offset >= window_size) {
+                    print("\x19");
+                    break;
+                }
+                // FALLTHRU
+            default:
+                print("\xc4");
+        }
+    }
     print("\xd9");
 
     // Hack to redraw the cursor

@@ -13,31 +13,9 @@
 #include <mm/pmm.h>
 #include <drivers/vbe.h>
 
+#include <sys/cpu.h>
+
 static char *menu_branding = NULL;
-
-static void cursor_back(void) {
-    int x, y;
-    get_cursor_pos(&x, &y);
-    if (x) {
-        x--;
-    } else if (y) {
-        y--;
-        x = term_cols - 1;
-    }
-    set_cursor_pos(x, y);
-}
-
-static void cursor_fwd(void) {
-    int x, y;
-    get_cursor_pos(&x, &y);
-    if (x < term_cols - 1) {
-        x++;
-    } else if (y < term_rows - 1) {
-        y++;
-        x = 0;
-    }
-    set_cursor_pos(x, y);
-}
 
 #define EDITOR_MAX_BUFFER_SIZE 4096
 
@@ -66,7 +44,12 @@ static size_t get_next_line(size_t index, const char *buffer) {
         return index;
     size_t displacement;
     get_line_offset(&displacement, index, buffer);
-    while (buffer[index++] != '\n');
+    while (buffer[index] != '\n') {
+        if (buffer[index] == 0)
+            return index;
+        index++;
+    }
+    index++;
     size_t next_line_length = get_line_length(index, buffer);
     if (displacement > next_line_length)
         displacement = next_line_length;
@@ -88,7 +71,9 @@ static size_t get_prev_line(size_t index, const char *buffer) {
 
 static char *config_entry_editor(const char *orig_entry) {
     size_t cursor_offset = 0;
-    size_t entry_size = strlen(orig_entry);
+    size_t entry_size    = strlen(orig_entry);
+    size_t window_size   = term_rows - 12;
+    size_t window_offset = 0;
 
     // Skip leading newlines
     while (*orig_entry == '\n') {
@@ -111,24 +96,79 @@ refresh:
     print("Editing entry.\n");
     print("Press esc to return to main menu and discard changes, press F10 to boot.\n");
 
-    print("\n");
-    for (int i = 0; i < term_cols; i++)
-        print("-");
+    print("\n\xda");
+    for (int i = 0; i < term_cols - 2; i++)
+        print("\xc4");
+    print("\xbf\xb3");
 
     int cursor_x, cursor_y;
+    size_t current_line = 0;
+    bool printed_cursor = false;
     for (size_t i = 0; ; i++) {
-        if (i == cursor_offset)
+        if (buffer[i] == '\n'
+         && current_line <  window_offset + window_size
+         && current_line >= window_offset) {
+            int x, y;
+            get_cursor_pos(&x, &y);
+            if (i == cursor_offset) {
+                cursor_x = x;
+                cursor_y = y;
+                printed_cursor = true;
+            }
+            set_cursor_pos(term_cols - 1, y);
+            if (current_line == window_offset + window_size - 1)
+                print("\xb3\xc0");
+            else
+                print("\xb3\xb3");
+            current_line++;
+            continue;
+        }
+
+        if (i == cursor_offset
+         && current_line <  window_offset + window_size
+         && current_line >= window_offset) {
             get_cursor_pos(&cursor_x, &cursor_y);
+            printed_cursor = true;
+        }
 
-        if (buffer[i] == 0)
+        if (buffer[i] == 0 || current_line >= window_offset + window_size) {
+            if (!printed_cursor) {
+                if (i <= cursor_offset) {
+                    window_offset++;
+                    goto refresh;
+                }
+                if (i > cursor_offset) {
+                    window_offset--;
+                    goto refresh;
+                }
+            }
             break;
+        }
 
-        print("%c", buffer[i]);
+        if (buffer[i] == '\n') {
+            current_line++;
+            continue;
+        }
+
+        if (current_line >= window_offset)
+            print("%c", buffer[i]);
     }
 
-    print("\n");
-    for (int i = 0; i < term_cols; i++)
-        print("-");
+    if (current_line - window_offset < window_size) {
+        int x, y;
+        for (size_t i = 0; i < (window_size - (current_line - window_offset)) - 1; i++) {
+            get_cursor_pos(&x, &y);
+            set_cursor_pos(term_cols - 1, y);
+            print("\xb3\xb3");
+        }
+        get_cursor_pos(&x, &y);
+        set_cursor_pos(term_cols - 1, y);
+        print("\xb3\xc0");
+    }
+
+    for (int i = 0; i < term_cols - 2; i++)
+        print("\xc4");
+    print("\xd9");
 
     // Hack to redraw the cursor
     set_cursor_pos(cursor_x, cursor_y);
@@ -147,19 +187,16 @@ refresh:
         case GETCHAR_CURSOR_LEFT:
             if (cursor_offset) {
                 cursor_offset--;
-                cursor_back();
             }
             break;
         case GETCHAR_CURSOR_RIGHT:
             if (cursor_offset < strlen(buffer)) {
                 cursor_offset++;
-                cursor_fwd();
             }
             break;
         case '\b':
             if (cursor_offset) {
                 cursor_offset--;
-                cursor_back();
         case GETCHAR_DELETE:
                 for (size_t i = cursor_offset; ; i++) {
                     buffer[i] = buffer[i+1];

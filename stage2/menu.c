@@ -13,8 +13,6 @@
 #include <mm/pmm.h>
 #include <drivers/vbe.h>
 
-#include <sys/cpu.h>
-
 static char *menu_branding = NULL;
 
 #define EDITOR_MAX_BUFFER_SIZE 4096
@@ -234,6 +232,16 @@ refresh:
                 cursor_offset++;
             }
             break;
+        case GETCHAR_HOME: {
+            size_t displacement;
+            get_line_offset(&displacement, cursor_offset, buffer);
+            cursor_offset -= displacement;
+            break;
+        }
+        case GETCHAR_END: {
+            cursor_offset += get_line_length(cursor_offset, buffer);
+            break;
+        }
         case '\b':
             if (cursor_offset) {
                 cursor_offset--;

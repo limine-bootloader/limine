@@ -28,4 +28,6 @@ struct rm_regs {
 
 void rm_int(uint8_t int_no, struct rm_regs *out_regs, struct rm_regs *in_regs);
 
+__attribute__((noreturn)) void rm_hcf(void);
+
 #endif

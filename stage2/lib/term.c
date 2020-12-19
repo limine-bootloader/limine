@@ -152,6 +152,10 @@ static void escape_parse(uint8_t c) {
     }
 
     switch (c) {
+        case 0x1b:
+            escape = 0;
+            raw_putchar(0x1b);
+            return;
         case '[':
             return;
         case ';':

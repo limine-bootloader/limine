@@ -20,6 +20,14 @@ int getchar_internal(uint32_t eax) {
             return GETCHAR_CURSOR_DOWN;
         case 0x53:
             return GETCHAR_DELETE;
+        case 0x4f:
+            return GETCHAR_END;
+        case 0x47:
+            return GETCHAR_HOME;
+        case 0x49:
+            return GETCHAR_PGUP;
+        case 0x51:
+            return GETCHAR_PGDOWN;
     }
     char c = eax & 0xff;
     switch (c) {

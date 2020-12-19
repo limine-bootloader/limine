@@ -5,6 +5,7 @@
 #include <lib/blib.h>
 #include <lib/print.h>
 #include <lib/trace.h>
+#include <lib/real.h>
 
 uint8_t boot_drive;
 int     boot_partition = -1;
@@ -78,9 +79,7 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
     print("\n");
     print_stacktrace(NULL);
 
-    for (;;) {
-        asm volatile ("hlt" ::: "memory");
-    }
+    rm_hcf();
 }
 
 int digit_to_int(char c) {

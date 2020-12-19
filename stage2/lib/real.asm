@@ -1,5 +1,35 @@
 section .realmode
 
+global rm_hcf
+rm_hcf:
+    ; Jump to real mode
+    jmp 0x08:.bits16
+  .bits16:
+    bits 16
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    mov eax, cr0
+    btr ax, 0
+    mov cr0, eax
+    jmp 0x00:.cszero
+  .cszero:
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+
+    sti
+  .hang:
+    hlt
+    jmp .hang
+    bits 32
+
 global rm_int
 rm_int:
     ; Self-modifying code: int $int_no

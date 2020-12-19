@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
     struct gpt_table_header gpt_header;
     uint64_t lb_guesses[] = { 512, 4096 };
     uint64_t lb_size;
-    for (size_t i = 0; i < sizeof(lb_guesses) / sizeof(int); i++) {
+    for (size_t i = 0; i < sizeof(lb_guesses) / sizeof(uint64_t); i++) {
         fseek(device, lb_guesses[i], SEEK_SET);
         fread(&gpt_header, sizeof(struct gpt_table_header), 1, device);
         if (!strncmp(gpt_header.signature, "EFI PART", 8)) {

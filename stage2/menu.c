@@ -76,6 +76,8 @@ static char *config_entry_editor(const char *orig_entry) {
     size_t window_offset  = 0;
     size_t line_size      = term_cols - 2;
 
+    bool display_overflow_error = false;
+
     // Skip leading newlines
     while (*orig_entry == '\n') {
         orig_entry++;
@@ -203,6 +205,11 @@ refresh:
     }
     print("\xd9");
 
+    if (display_overflow_error) {
+        print(" ERR: Text buffer not big enough, delete something instead.");
+        display_overflow_error = false;
+    }
+
     // Hack to redraw the cursor
     set_cursor_pos(cursor_x, cursor_y);
     enable_cursor();
@@ -252,6 +259,8 @@ refresh:
                         break;
                 }
                 buffer[cursor_offset++] = c;
+            } else {
+                display_overflow_error = true;
             }
             break;
     }

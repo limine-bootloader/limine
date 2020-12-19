@@ -70,10 +70,11 @@ static size_t get_prev_line(size_t index, const char *buffer) {
 }
 
 static char *config_entry_editor(const char *orig_entry) {
-    size_t cursor_offset = 0;
-    size_t entry_size    = strlen(orig_entry);
-    size_t window_size   = term_rows - 11;
-    size_t window_offset = 0;
+    size_t cursor_offset  = 0;
+    size_t entry_size     = strlen(orig_entry);
+    size_t _window_size   = term_rows - 11;
+    size_t window_offset  = 0;
+    size_t line_size      = term_cols - 2;
 
     // Skip leading newlines
     while (*orig_entry == '\n') {
@@ -112,7 +113,7 @@ refresh:
     print("\xbf\xb3");
 
     int cursor_x, cursor_y;
-    size_t current_line = 0;
+    size_t current_line = 0, line_offset = 0, window_size = _window_size;
     bool printed_cursor = false;
     for (size_t i = 0; ; i++) {
         if (buffer[i] == '\n'
@@ -130,8 +131,17 @@ refresh:
                 print("\xb3\xc0");
             else
                 print("\xb3\xb3");
+            line_offset = 0;
             current_line++;
             continue;
+        }
+
+        if (line_offset && !(line_offset % line_size)) {
+            window_size--;
+            if (current_line == window_offset + window_size)
+                print("\x1a\xc0");
+            else
+                print("\x1a\x1b\x1b");
         }
 
         if (i == cursor_offset
@@ -156,12 +166,15 @@ refresh:
         }
 
         if (buffer[i] == '\n') {
+            line_offset = 0;
             current_line++;
             continue;
         }
 
-        if (current_line >= window_offset)
+        if (current_line >= window_offset) {
+            line_offset++;
             print("%c", buffer[i]);
+        }
     }
 
     if (current_line - window_offset < window_size) {

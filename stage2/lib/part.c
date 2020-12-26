@@ -103,6 +103,55 @@ struct mbr_entry {
 	uint32_t sect_count;
 } __attribute__((packed));
 
+static int mbr_get_logical_part(struct part *ret, struct part *extended_part,
+                                int drive, int partition) {
+    struct mbr_entry entry;
+
+    size_t ebr_sector = 0;
+
+    for (int i = 0; i < partition; i++) {
+        size_t entry_offset = ebr_sector * extended_part->sector_size + 0x1ce;
+
+        int r;
+        r = part_read(extended_part, &entry, entry_offset, sizeof(struct mbr_entry));
+        if (r)
+            return r;
+
+        if (entry.type != 0x0f && entry.type != 0x05)
+            return END_OF_TABLE;
+
+        ebr_sector = entry.first_sect;
+    }
+
+    size_t entry_offset = ebr_sector * extended_part->sector_size + 0x1be;
+
+    int r;
+    r = part_read(extended_part, &entry, entry_offset, sizeof(struct mbr_entry));
+    if (r)
+        return r;
+
+    if (entry.type == 0)
+        return NO_PARTITION;
+
+    ret->drive       = drive;
+    ret->partition   = partition + 4;
+    ret->sector_size = disk_get_sector_size(drive);
+    ret->first_sect  = extended_part->first_sect + ebr_sector + entry.first_sect;
+    ret->sect_count  = entry.sect_count;
+
+    struct guid guid;
+    if (!fs_get_guid(&guid, ret)) {
+        ret->guid_valid = false;
+    } else {
+        ret->guid_valid = true;
+        ret->guid = guid;
+    }
+
+    ret->part_guid_valid = false;
+
+    return 0;
+}
+
 static int mbr_get_part(struct part *ret, int drive, int partition) {
     // Check if actually valid mbr
     uint16_t hint;
@@ -110,13 +159,33 @@ static int mbr_get_part(struct part *ret, int drive, int partition) {
     if (hint && hint != 0x5a5a)
         return INVALID_TABLE;
 
-    if (partition > 3)
-        return END_OF_TABLE;
-
-    uint32_t disk_signature;
-    disk_read(drive, &disk_signature, 440, sizeof(uint32_t));
-
     struct mbr_entry entry;
+
+    if (partition > 3) {
+        for (int i = 0; i < 4; i++) {
+            size_t entry_offset = 0x1be + sizeof(struct mbr_entry) * i;
+
+            int r = disk_read(drive, &entry, entry_offset, sizeof(struct mbr_entry));
+            if (r)
+                return r;
+
+            if (entry.type != 0x0f)
+                continue;
+
+            struct part extended_part;
+
+            extended_part.drive       = drive;
+            extended_part.partition   = i;
+            extended_part.sector_size = disk_get_sector_size(drive);
+            extended_part.first_sect  = entry.first_sect;
+            extended_part.sect_count  = entry.sect_count;
+
+            return mbr_get_logical_part(ret, &extended_part, drive, partition - 4);
+        }
+
+        return END_OF_TABLE;
+    }
+
     size_t entry_offset = 0x1be + sizeof(struct mbr_entry) * partition;
 
     int r = disk_read(drive, &entry, entry_offset, sizeof(struct mbr_entry));

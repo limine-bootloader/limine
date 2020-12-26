@@ -236,10 +236,12 @@ int main(int argc, char *argv[]) {
             size_t new_partition_entry_count =
                 new_partition_array_lba_size * partition_entries_per_lb;
 
-            if ((ssize_t)new_partition_array_lba_size <= max_partition_entry_used) {
+            if ((ssize_t)new_partition_entry_count <= max_partition_entry_used) {
                 fprintf(stderr, "error: Cannot embed because there are too many used partition entries.\n");
                 goto cleanup;
             }
+
+            fprintf(stderr, "New maximum count of partition entries: %zu.\n", new_partition_entry_count);
 
             uint8_t *partition_array =
                 malloc(new_partition_entry_count * gpt_header.size_of_partition_entry);

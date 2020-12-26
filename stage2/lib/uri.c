@@ -8,6 +8,7 @@
 #include <mm/pmm.h>
 #include <lib/print.h>
 #include <pxe/tftp.h>
+#include <lib/tinf.h>
 
 // A URI takes the form of: resource://root/path
 // The following function splits up a URI into its componenets
@@ -170,7 +171,14 @@ static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
     return true;
 }
 
+static int mem_read(void *fd, void *buf, uint64_t loc, uint64_t count) {
+    memcpy(buf, fd + loc, count);
+    return 0;
+}
+
 bool uri_open(struct file_handle *fd, char *uri) {
+    bool ret;
+
     char *resource, *root, *path;
     uri_resolve(uri, &resource, &root, &path);
 
@@ -178,17 +186,37 @@ bool uri_open(struct file_handle *fd, char *uri) {
         panic("No resource specified for URI `%s`.", uri);
     }
 
+    bool compressed = false;
+    if (*resource == '$') {
+        compressed = true;
+        resource++;
+    }
+
     if (!strcmp(resource, "bios")) {
-        return uri_bios_dispatch(fd, root, path);
+        ret = uri_bios_dispatch(fd, root, path);
     } else if (!strcmp(resource, "boot")) {
-        return uri_boot_dispatch(fd, root, path);
+        ret = uri_boot_dispatch(fd, root, path);
     } else if (!strcmp(resource, "guid")) {
-        return uri_guid_dispatch(fd, root, path);
+        ret = uri_guid_dispatch(fd, root, path);
     } else if (!strcmp(resource, "uuid")) {
-        return uri_guid_dispatch(fd, root, path);
+        ret = uri_guid_dispatch(fd, root, path);
     } else if (!strcmp(resource, "tftp")) {
-        return uri_tftp_dispatch(fd, root, path);
+        ret = uri_tftp_dispatch(fd, root, path);
     } else {
         panic("Resource `%s` not valid.", resource);
     }
+
+    if (compressed && ret) {
+        struct file_handle compressed_fd = {0};
+        fread(fd, &compressed_fd.size, fd->size - 4, sizeof(uint32_t));
+        compressed_fd.fd = ext_mem_alloc(compressed_fd.size);
+        void *src = ext_mem_alloc(fd->size);
+        fread(fd, src, 0, fd->size);
+        if (tinf_gzip_uncompress(compressed_fd.fd, src, fd->size))
+            panic("tinf error");
+        compressed_fd.read = mem_read;
+        *fd = compressed_fd;
+    }
+
+    return ret;
 }

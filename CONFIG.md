@@ -105,3 +105,7 @@ A resource can be one of the following:
 * `guid` - The `root` takes the form of a GUID/UUID, such as `guid://736b5698-5ae1-4dff-be2c-ef8f44a61c52/...`. The GUID is that of either a filesystem, when available, or a GPT partition GUID, when using GPT, in a unified namespace.
 * `uuid` - Alias of `guid`.
 * `tftp` - The `root` is the IP address of the tftp server to load the file from. If the root is left empty (`tftp:///...`) the file will be loaded from the server Limine booted from. This resource is only available when booting off PXE.
+
+A URI can optionally be prefixed by a `$` character to indicate that the file
+pointed to be the URI is a gzip-compressed payload to be uncompressed on the
+fly. E.g.: `$boot:///somemodule.gz`.

@@ -311,18 +311,13 @@ void memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type) {
 
 extern symbol bss_end;
 static size_t bump_allocator_base = (size_t)bss_end;
-static size_t bump_allocator_limit = 0;
+static size_t bump_allocator_limit = 0x70000;
 
 void *conv_mem_alloc(size_t count) {
     return conv_mem_alloc_aligned(count, 4);
 }
 
 void *conv_mem_alloc_aligned(size_t count, size_t alignment) {
-    if (!bump_allocator_limit) {
-        // The balloc limit is the beginning of the EBDA
-        bump_allocator_limit = *((uint16_t *)0x40e) << 4;
-    }
-
     size_t new_base = ALIGN_UP(bump_allocator_base, alignment);
     void *ret = (void *)new_base;
     new_base += count;

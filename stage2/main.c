@@ -20,9 +20,11 @@
 #include <menu.h>
 #include <pxe/pxe.h>
 #include <pxe/tftp.h>
+#include <lib/tinf.h>
 
-void entry(uint8_t _boot_drive, int pxe_boot) {
+void entry(uint8_t _boot_drive, int pxe_boot, void *_tinf_gzip_uncompress) {
     boot_drive = _boot_drive;
+    tinf_gzip_uncompress = _tinf_gzip_uncompress;
 
     mtrr_save();
 

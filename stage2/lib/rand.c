@@ -66,7 +66,7 @@ static void init_rand(void) {
         seed *= (seed ^ rdrand(uint32_t));
     }
 
-    status = ext_mem_alloc(n);
+    status = ext_mem_alloc(n * sizeof(uint32_t));
 
     srand(seed);
 

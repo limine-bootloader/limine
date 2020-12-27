@@ -22,7 +22,7 @@
 #include <mm/mtrr.h>
 #include <stivale/stivale.h>
 
-#define KASLR_SLIDE_BITMASK 0x03FFFF000u
+#define KASLR_SLIDE_BITMASK 0x000FFF000u
 
 struct stivale_struct stivale_struct = {0};
 
@@ -61,15 +61,13 @@ void stivale_load(char *config, char *cmdline) {
                 level5pg = true;
             }
 
-            ret = elf64_load_section(kernel, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header), slide);
-
-            if (!ret && ((stivale_hdr.flags >> 2) & 1)) {
+            char *s_kaslr = config_get_value(config, 0, "KASLR");
+            if (s_kaslr != NULL && !strcmp(s_kaslr, "yes")) {
                 // KASLR is enabled, set the slide
                 slide = rand64() & KASLR_SLIDE_BITMASK;
-
-                // Re-read the .stivalehdr with slid relocations
-                ret = elf64_load_section(kernel, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header), slide);
             }
+
+            ret = elf64_load_section(kernel, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header), slide);
 
             break;
         }

@@ -324,10 +324,7 @@ int elf64_load(struct file_handle *fd, uint64_t *entry_point, uint64_t *top, uin
             return -1;
     }
 
-    if (hdr.type == ET_DYN)
-        *entry_point = hdr.entry + slide;
-    else
-        *entry_point = hdr.entry;
+    *entry_point = hdr.entry;
 
     return 0;
 }

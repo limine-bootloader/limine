@@ -25,7 +25,7 @@
 #include <stivale/stivale2.h>
 #include <pxe/tftp.h>
 
-#define KASLR_SLIDE_BITMASK 0x03FFFF000u
+#define KASLR_SLIDE_BITMASK 0x000FFF000u
 
 struct stivale2_struct stivale2_struct = {0};
 
@@ -83,15 +83,13 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
                 level5pg = true;
             }
 
-            ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr", sizeof(struct stivale2_header), slide);
-
-            if (!ret && (stivale2_hdr.flags & 1)) {
+            char *s_kaslr = config_get_value(config, 0, "KASLR");
+            if (s_kaslr != NULL && !strcmp(s_kaslr, "yes")) {
                 // KASLR is enabled, set the slide
                 slide = rand64() & KASLR_SLIDE_BITMASK;
-
-                // Re-read the .stivale2hdr with slid relocations
-                ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr", sizeof(struct stivale2_header), slide);
             }
+
+            ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr", sizeof(struct stivale2_header), slide);
 
             break;
         }

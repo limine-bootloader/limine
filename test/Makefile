@@ -5,10 +5,10 @@ CFLAGS          = -O2
 LD              = ld
 QEMU            = qemu-system-x86_64
 QEMUFLAGS       = -m 1G -enable-kvm -cpu host
-LDINTERNALFLAGS := -Tlinker.ld -static -nostdlib -no-pie
+LDINTERNALFLAGS := -Tlinker.ld -nostdlib -pie -z max-page-size=0x1000
 INTERNALCFLAGS  := -I../stivale -I. -ffreestanding -fno-stack-protector   \
-	-fno-pic -fomit-frame-pointer -mno-80387 -mno-mmx -mno-3dnow -mno-sse \
-	-mno-sse2 -masm=intel -mcmodel=kernel
+	-fpic -fpie -fomit-frame-pointer -mno-red-zone -mno-80387 -mno-mmx -mno-3dnow -mno-sse \
+	-mno-sse2 -masm=intel
 
 all: $(TARGET)
 

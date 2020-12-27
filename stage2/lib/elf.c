@@ -134,9 +134,6 @@ int elf_bits(struct file_handle *fd) {
 }
 
 static int elf64_apply_relocations(struct file_handle *fd, struct elf64_hdr *hdr, void *buffer, uint64_t vaddr, size_t size, uint64_t slide) {
-    if (hdr->type != ET_DYN)
-        return 0; // Nothing to do if the ELF is not relocatable
-
     // Find RELA sections
     for (uint16_t i = 0; i < hdr->sh_num; i++) {
         struct elf64_shdr section;

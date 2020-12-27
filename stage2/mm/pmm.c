@@ -257,7 +257,8 @@ void memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type) {
 
     if (base < 0x100000) {
         // We don't do allocations below 1 MiB
-        panic("Attempt to allocate memory below 1 MiB");
+        panic("Attempt to allocate memory below 1 MiB (%X-%X)",
+              base, base + length);
     }
 
     for (size_t i = 0; i < memmap_entries; i++) {

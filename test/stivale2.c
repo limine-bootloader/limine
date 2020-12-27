@@ -33,7 +33,7 @@ struct stivale2_header header2 = {
     .tags        = (uint64_t)&framebuffer_request
 };
 
-void ap_entry(struct stivale2_smp_info *s) {
+static void ap_entry(struct stivale2_smp_info *s) {
     e9_printf("AP %u started", s->lapic_id);
     for (;;);
 }

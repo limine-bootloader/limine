@@ -43,9 +43,8 @@ At entry, the bootloader will have setup paging mappings as such:
   0x0000000000000000   -                 0x80000000                 -> 0xffffffff80000000
 ```
 
-If the kernel is dynamic and not statically linked, the bootloader will relocate it.
-Furthermore if bit 0 of the flags field in the stivale2 header is set, the bootloader
-will perform kernel address space layout randomisation (KASLR).
+If the kernel is dynamic and not statically linked, the bootloader will relocate it,
+potentially performing KASLR (as specified by the config).
 
 The kernel should NOT modify the bootloader page tables, and it should only use them
 to bootstrap its own virtual memory manager and its own page tables.
@@ -147,7 +146,10 @@ struct stivale2_header {
                             // 64-bit and 32-bit valid stacks must be at least 256 bytes
                             // in usable space and must be 16 byte aligned addresses.
 
-    uint64_t flags;         // Bit 0: if 1, enable KASLR
+    uint64_t flags;         // Bit 0: Formerly used to indicate whether to enable
+                            //        KASLR, this flag is now reserved as KASLR
+                            //        is enabled in the bootloader configuration
+                            //        instead. Presently reserved and unused.
                             // All other bits undefined
 
     uint64_t tags;          // Pointer to the first of the linked list of tags.

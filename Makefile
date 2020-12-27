@@ -51,7 +51,7 @@ echfs-test: all limine-install test.hdd
 	rm -f limine.cfg.tmp part_guid
 	echfs-utils -g -p0 test.hdd import stage2.map boot/stage2.map
 	echfs-utils -g -p0 test.hdd import test/test.elf boot/test.elf
-	echfs-utils -g -p0 test.hdd import test/bg.bmp.gz boot/bg.bmp.gz
+	echfs-utils -g -p0 test.hdd import test/bg.bmp boot/bg.bmp
 	echfs-utils -g -p0 test.hdd import test/font.bin boot/font.bin
 	./limine-install limine.bin test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio

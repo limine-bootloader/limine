@@ -166,7 +166,7 @@ void vbe_plot_bg_blent_rect(int x, int y, int width, int height, uint32_t hex) {
 }
 
 struct vbe_char {
-    uint8_t  c;
+    uint32_t c;
     uint32_t fg;
     uint32_t bg;
 };
@@ -278,9 +278,7 @@ void vbe_set_text_bg(int bg) {
 
 void vbe_double_buffer_flush(void) {
     for (size_t i = 0; i < (size_t)rows * cols; i++) {
-        struct vbe_char c = grid[i];
-
-        if (!memcmp(&c, &front_grid[i], sizeof(struct vbe_char)))
+        if (!memcmp(&grid[i], &front_grid[i], sizeof(struct vbe_char)))
             continue;
 
         front_grid[i] = grid[i];
@@ -288,20 +286,25 @@ void vbe_double_buffer_flush(void) {
         int x = i % cols;
         int y = i / cols;
 
-        vbe_plot_char(&c, x * VGA_FONT_WIDTH + frame_width,
-                          y * VGA_FONT_HEIGHT + frame_height);
+        vbe_plot_char(&grid[i], x * VGA_FONT_WIDTH + frame_width,
+                                y * VGA_FONT_HEIGHT + frame_height);
     }
 }
 
 void vbe_double_buffer(bool state) {
-    double_buffer_enabled = state;
     if (state) {
-        memset(grid, 0, rows * cols * sizeof(struct vbe_char));
-        memset(front_grid, 0, rows * cols * sizeof(struct vbe_char));
+        memcpy(front_grid, grid, rows * cols * sizeof(struct vbe_char));
+        double_buffer_enabled = true;
         vbe_clear(true);
         vbe_double_buffer_flush();
     } else {
+        bool pcs = cursor_status;
+        cursor_status = false;
         vbe_clear(true);
+        vbe_double_buffer_flush();
+        cursor_status = pcs;
+        draw_cursor();
+        double_buffer_enabled = false;
     }
 }
 

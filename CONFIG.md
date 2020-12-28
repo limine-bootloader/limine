@@ -4,7 +4,8 @@
 
 Limine scans for a config file on *the boot drive*. Every partition on the boot drive
 is scanned sequentially (first partition first, last partition last) for the presence
-of either a `/limine.cfg` or a `/boot/limine.cfg` file, in that order.
+of either a `/limine.cfg`, `/boot/limine.cfg`, `/tomatboot.cfg`, or a
+`/boot/tomatboot.cfg` file, in that order.
 
 Once the file is located, Limine will use it as its config file. Other possible
 candidates in subsequent partitions or directories are ignored.

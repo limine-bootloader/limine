@@ -19,10 +19,11 @@ static char *config_addr;
 int init_config_disk(struct part *part) {
     struct file_handle f;
 
-    if (fopen(&f, part, "/limine.cfg")) {
-        if (fopen(&f, part, "/boot/limine.cfg")) {
-            return -1;
-        }
+    if (fopen(&f, part, "/limine.cfg")
+     && fopen(&f, part, "/boot/limine.cfg")
+     && fopen(&f, part, "/tomatboot.cfg")
+     && fopen(&f, part, "/boot/tomatboot.cfg")) {
+        return -1;
     }
 
     size_t config_size = f.size + 1;
@@ -35,7 +36,8 @@ int init_config_disk(struct part *part) {
 
 int init_config_pxe(void) {
     struct tftp_file_handle cfg;
-    if (tftp_open(&cfg, 0, 69, "limine.cfg")) {
+    if (tftp_open(&cfg, 0, 69, "limine.cfg")
+     && tftp_open(&cfg, 0, 69, "tomatboot.cfg")) {
         return -1;
     }
     config_addr = conv_mem_alloc(cfg.file_size);

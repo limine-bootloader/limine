@@ -9,6 +9,7 @@
 #include <sys/cpu.h>
 
 static int e9_output = -1;
+static int com1_output = -1;
 
 static const char *base_digits = "0123456789abcdef";
 
@@ -123,6 +124,22 @@ void vprint(const char *fmt, va_list args) {
         e9_output = e9_output_config != NULL &&
                     !strcmp(e9_output_config, "yes");
     }
+    if (config_ready && com1_output == -1) {
+        char *com1_output_config = config_get_value(NULL, 0, "COM1_OUTPUT");
+        com1_output = com1_output_config != NULL &&
+                    !strcmp(com1_output_config, "yes");
+
+        if (com1_output == 1) {
+            // Init com1
+            outb(0x3F8 + 1, 0x00);
+            outb(0x3F8 + 3, 0x80);
+            outb(0x3F8 + 0, 0x01);
+            outb(0x3F8 + 1, 0x00);
+            outb(0x3F8 + 3, 0x03);
+            outb(0x3F8 + 2, 0xC7);
+            outb(0x3F8 + 4, 0x0B);
+        }
+    }
 
     size_t print_buf_i = 0;
 
@@ -180,8 +197,13 @@ void vprint(const char *fmt, va_list args) {
 out:
     term_write(print_buf, print_buf_i);
 
-    if (e9_output == 1) {
-        for (size_t i = 0; i < print_buf_i; i++)
+    for (size_t i = 0; i < print_buf_i; i++) {
+        if (e9_output == 1)
             outb(0xe9, print_buf[i]);
+        if (com1_output == 1) {
+            if (print_buf[i] == '\n')
+                outb(0x3f8, '\r');
+            outb(0x3f8, print_buf[i]);
+        }
     }
 }

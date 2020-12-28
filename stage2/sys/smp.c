@@ -69,20 +69,20 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
 
     // Send the INIT IPI
     if (x2apic) {
-        x2apic_write(LAPIC_REG_ICR0, ((uint64_t)lapic_id << 32) | 0x500);
+        x2apic_write(LAPIC_REG_ICR0, ((uint64_t)lapic_id << 32) | 0x4500);
     } else {
         lapic_write(LAPIC_REG_ICR1, lapic_id << 24);
-        lapic_write(LAPIC_REG_ICR0, 0x500);
+        lapic_write(LAPIC_REG_ICR0, 0x4500);
     }
     delay(5000);
 
     // Send the Startup IPI
     if (x2apic) {
         x2apic_write(LAPIC_REG_ICR0, ((uint64_t)lapic_id << 32) |
-                                     ((size_t)smp_trampoline / 4096) | 0x600);
+                                     ((size_t)smp_trampoline / 4096) | 0x4600);
     } else {
         lapic_write(LAPIC_REG_ICR1, lapic_id << 24);
-        lapic_write(LAPIC_REG_ICR0, ((size_t)smp_trampoline / 4096) | 0x600);
+        lapic_write(LAPIC_REG_ICR0, ((size_t)smp_trampoline / 4096) | 0x4600);
     }
 
     for (int i = 0; i < 100; i++) {

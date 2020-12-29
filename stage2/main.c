@@ -26,6 +26,8 @@ void entry(uint8_t _boot_drive, int pxe_boot, void *_tinf_gzip_uncompress) {
     boot_drive = _boot_drive;
     tinf_gzip_uncompress = _tinf_gzip_uncompress;
 
+    booted_from_pxe = pxe_boot;
+
     mtrr_save();
 
     term_textmode();

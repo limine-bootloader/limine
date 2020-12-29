@@ -91,33 +91,6 @@ static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) 
     return true;
 }
 
-static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) {
-    uint8_t partition;
-
-    if (s_part[0] != '\0') {
-        uint64_t val = strtoui(s_part, NULL, 10);
-        if (val < 1 || val > 256) {
-            panic("Partition number outside range 1-256");
-        }
-        partition = val - 1;
-    } else {
-        if (boot_partition != -1) {
-            partition = boot_partition;
-        } else {
-            panic("Boot partition information is unavailable.");
-        }
-    }
-
-    struct part part;
-    if (part_get(&part, boot_drive, partition))
-        return false;
-
-    if (fopen(fd, &part, path))
-        return false;
-
-    return true;
-}
-
 static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
     uint8_t drive, partition;
 
@@ -168,6 +141,36 @@ static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
     fd->fd = cfg;
     fd->read = tftp_read;
     fd->size = cfg->file_size;
+    return true;
+}
+
+static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) {
+    if (booted_from_pxe)
+        return uri_tftp_dispatch(fd, s_part, path);
+
+    uint8_t partition;
+
+    if (s_part[0] != '\0') {
+        uint64_t val = strtoui(s_part, NULL, 10);
+        if (val < 1 || val > 256) {
+            panic("Partition number outside range 1-256");
+        }
+        partition = val - 1;
+    } else {
+        if (boot_partition != -1) {
+            partition = boot_partition;
+        } else {
+            panic("Boot partition information is unavailable.");
+        }
+    }
+
+    struct part part;
+    if (part_get(&part, boot_drive, partition))
+        return false;
+
+    if (fopen(fd, &part, path))
+        return false;
+
     return true;
 }
 

@@ -8,6 +8,8 @@
 extern uint8_t boot_drive;
 extern int     boot_partition;
 
+extern bool booted_from_pxe;
+
 bool parse_resolution(int *width, int *height, int *bpp, const char *buf);
 
 uint64_t sqrt(uint64_t a_nInput);

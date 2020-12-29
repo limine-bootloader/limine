@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <string.h>
 #include <inttypes.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 struct gpt_table_header {
     // the head
@@ -101,9 +104,135 @@ static uint32_t crc32(void *_stream, size_t len) {
     return ret;
 }
 
+static enum {
+    CACHE_CLEAN,
+    CACHE_DIRTY
+} cache_state;
+static uint64_t cached_block;
+static uint8_t *cache  = NULL;
+static int      device = -1;
+static size_t   block_size;
+
+static bool device_init(void) {
+    size_t guesses[] = { 512, 2048, 4096 };
+
+    for (size_t i = 0; i < sizeof(guesses) / sizeof(size_t); i++) {
+        void *tmp = realloc(cache, guesses[i]);
+        if (tmp == NULL) {
+            perror("Error: ");
+            return false;
+        }
+        cache = tmp;
+
+        if (lseek(device, 0, SEEK_SET) == (off_t)-1) {
+            perror("Error: ");
+            return false;
+        }
+        block_size = read(device, cache, guesses[i]);
+
+        if (block_size == guesses[i]) {
+            fprintf(stderr, "Physical block size of %zu bytes.\n", block_size);
+
+            cache_state  = CACHE_CLEAN;
+            cached_block = 0;
+            return true;
+        }
+    }
+
+    fprintf(stderr, "Couldn't determine block size of device.\n");
+    return false;
+}
+
+static bool device_flush_cache(void) {
+    if (cache_state == CACHE_CLEAN)
+        return true;
+
+    if (lseek(device, cached_block * block_size, SEEK_SET) == (off_t)-1) {
+        perror("Error: ");
+        return false;
+    }
+
+    if (write(device, cache, block_size) != block_size) {
+        perror("Error: ");
+        return false;
+    }
+
+    cache_state = CACHE_CLEAN;
+    return true;
+}
+
+static bool device_cache_block(uint64_t block) {
+    if (cached_block == block)
+        return true;
+
+    if (cache_state == CACHE_DIRTY) {
+        if (!device_flush_cache())
+            return false;
+    }
+
+    if (lseek(device, block * block_size, SEEK_SET) == (off_t)-1) {
+        perror("Error: ");
+        return false;
+    }
+
+    if (read(device, cache, block_size) != block_size) {
+        perror("Error: ");
+        return false;
+    }
+
+    cached_block = block;
+
+    return true;
+}
+
+static bool device_read(void *buffer, uint64_t loc, size_t count) {
+    uint64_t progress = 0;
+    while (progress < count) {
+        uint64_t block = (loc + progress) / block_size;
+
+        if (!device_cache_block(block)) {
+            perror("Error: ");
+            abort();
+        }
+
+        uint64_t chunk = count - progress;
+        uint64_t offset = (loc + progress) % block_size;
+        if (chunk > block_size - offset)
+            chunk = block_size - offset;
+
+        memcpy(buffer + progress, &cache[offset], chunk);
+        progress += chunk;
+    }
+
+    return true;
+}
+
+static bool device_write(const void *buffer, uint64_t loc, size_t count) {
+    uint64_t progress = 0;
+    while (progress < count) {
+        uint64_t block = (loc + progress) / block_size;
+
+        if (!device_cache_block(block)) {
+            perror("Error: ");
+            abort();
+        }
+
+        uint64_t chunk = count - progress;
+        uint64_t offset = (loc + progress) % block_size;
+        if (chunk > block_size - offset)
+            chunk = block_size - offset;
+
+        memcpy(&cache[offset], buffer + progress, chunk);
+        cache_state = CACHE_DIRTY;
+        progress += chunk;
+    }
+
+    return true;
+}
+
 int main(int argc, char *argv[]) {
     int      ok = 1;
-    FILE    *bootloader_file = NULL, *device = NULL;
+    FILE    *bootloader_file = NULL;
     uint8_t *bootloader_img = NULL;
     uint8_t  orig_mbr[70], timestamp[6];
 
@@ -131,11 +260,14 @@ int main(int argc, char *argv[]) {
     fseek(bootloader_file, 0, SEEK_SET);
     fread(bootloader_img, 1, bootloader_file_size, bootloader_file);
 
-    device = fopen(argv[2], "r+b");
-    if (device == NULL) {
+    device = open(argv[2], O_RDWR);
+    if (device == -1) {
         perror("Error: ");
         goto cleanup;
     }
+
+    if (!device_init())
+        goto cleanup;
 
     // Probe for GPT and logical block size
     int gpt = 0;
@@ -143,8 +275,7 @@ int main(int argc, char *argv[]) {
     uint64_t lb_guesses[] = { 512, 4096 };
     uint64_t lb_size;
     for (size_t i = 0; i < sizeof(lb_guesses) / sizeof(uint64_t); i++) {
-        fseek(device, lb_guesses[i], SEEK_SET);
-        fread(&gpt_header, sizeof(struct gpt_table_header), 1, device);
+        device_read(&gpt_header, lb_guesses[i], sizeof(struct gpt_table_header));
         if (!strncmp(gpt_header.signature, "EFI PART", 8)) {
             gpt = 1;
             lb_size = lb_guesses[i];
@@ -158,8 +289,8 @@ int main(int argc, char *argv[]) {
     if (gpt) {
         fprintf(stderr, "Secondary header at LBA 0x%" PRIx64 ".\n",
                 gpt_header.alternate_lba);
-        fseek(device, lb_size * gpt_header.alternate_lba, SEEK_SET);
-        fread(&secondary_gpt_header, sizeof(struct gpt_table_header), 1, device);
+        device_read(&secondary_gpt_header, lb_size * gpt_header.alternate_lba,
+              sizeof(struct gpt_table_header));
         if (!strncmp(secondary_gpt_header.signature, "EFI PART", 8)) {
             fprintf(stderr, "Secondary header valid.\n");
         } else {
@@ -189,9 +320,10 @@ int main(int argc, char *argv[]) {
             }
 
             struct gpt_entry gpt_entry;
-            fseek(device, (gpt_header.partition_entry_lba * lb_size)
-                  + (partition_num * sizeof(struct gpt_entry)), SEEK_SET);
-            fread(&gpt_entry, sizeof(struct gpt_entry), 1, device);
+            device_read(&gpt_entry,
+                (gpt_header.partition_entry_lba * lb_size)
+                + (partition_num * sizeof(struct gpt_entry)),
+                sizeof(struct gpt_entry));
 
             if (gpt_entry.unique_partition_guid[0] == 0 &&
               gpt_entry.unique_partition_guid[1] == 0) {
@@ -211,9 +343,10 @@ int main(int argc, char *argv[]) {
             ssize_t max_partition_entry_used = -1;
             for (ssize_t i = 0; i < gpt_header.number_of_partition_entries; i++) {
                 struct gpt_entry gpt_entry;
-                fseek(device, (gpt_header.partition_entry_lba * lb_size)
-                      + (i * sizeof(struct gpt_entry)), SEEK_SET);
-                fread(&gpt_entry, sizeof(struct gpt_entry), 1, device);
+                device_read(&gpt_entry,
+                    (gpt_header.partition_entry_lba * lb_size)
+                      + (i * sizeof(struct gpt_entry)),
+                    sizeof(struct gpt_entry));
 
                 if (gpt_entry.unique_partition_guid[0] != 0 ||
                   gpt_entry.unique_partition_guid[1] != 0) {
@@ -250,10 +383,9 @@ int main(int argc, char *argv[]) {
                 goto cleanup;
             }
 
-            fseek(device, gpt_header.partition_entry_lba * lb_size, SEEK_SET);
-            fread(partition_array,
-                  new_partition_entry_count * gpt_header.size_of_partition_entry,
-                  1, device);
+            device_read(partition_array,
+                  gpt_header.partition_entry_lba * lb_size,
+                  new_partition_entry_count * gpt_header.size_of_partition_entry);
 
             uint32_t crc32_partition_array =
                 crc32(partition_array,
@@ -265,8 +397,9 @@ int main(int argc, char *argv[]) {
             gpt_header.number_of_partition_entries = new_partition_entry_count;
             gpt_header.crc32 = 0;
             gpt_header.crc32 = crc32(&gpt_header, sizeof(struct gpt_table_header));
-            fseek(device, lb_size, SEEK_SET);
-            fwrite(&gpt_header, sizeof(struct gpt_table_header), 1, device);
+            device_write(&gpt_header,
+                         lb_size,
+                         sizeof(struct gpt_table_header));
 
             secondary_gpt_header.partition_entry_array_crc32 = crc32_partition_array;
             secondary_gpt_header.number_of_partition_entries =
@@ -274,8 +407,9 @@ int main(int argc, char *argv[]) {
             secondary_gpt_header.crc32 = 0;
             secondary_gpt_header.crc32 =
                 crc32(&secondary_gpt_header, sizeof(struct gpt_table_header));
-            fseek(device, lb_size * gpt_header.alternate_lba, SEEK_SET);
-            fwrite(&secondary_gpt_header, sizeof(struct gpt_table_header), 1, device);
+            device_write(&secondary_gpt_header,
+                         lb_size * gpt_header.alternate_lba,
+                         sizeof(struct gpt_table_header));
         }
     } else {
         fprintf(stderr, "Installing to MBR.\n");
@@ -285,43 +419,41 @@ int main(int argc, char *argv[]) {
             stage2_loc_a, stage2_loc_b);
 
     // Save original timestamp
-    fseek(device, 218, SEEK_SET);
-    fread(timestamp, 1, 6, device);
+    device_read(timestamp, 218, 6);
 
     // Save the original partition table of the device
-    fseek(device, 440, SEEK_SET);
-    fread(orig_mbr, 1, 70, device);
+    device_read(orig_mbr, 440, 70);
 
     // Write the bootsector from the bootloader to the device
-    fseek(device, 0, SEEK_SET);
-    fwrite(&bootloader_img[0], 1, 512, device);
+    device_write(&bootloader_img[0], 0, 512);
 
     // Write the rest of stage 2 to the device
-    fseek(device, stage2_loc_a, SEEK_SET);
-    fwrite(&bootloader_img[512], 1, stage2_size_a, device);
-    fseek(device, stage2_loc_b, SEEK_SET);
-    fwrite(&bootloader_img[512 + stage2_size_a], 1, stage2_size_b, device);
+    device_write(&bootloader_img[512], stage2_loc_a, stage2_size_a);
+    device_write(&bootloader_img[512 + stage2_size_a],
+                 stage2_loc_b, stage2_size_b);
 
     // Hardcode in the bootsector the location of stage 2 halves
-    fseek(device, 0x1a4, SEEK_SET);
-    fwrite(&stage2_size_a, 1, sizeof(uint16_t), device);
-    fwrite(&stage2_size_b, 1, sizeof(uint16_t), device);
-    fwrite(&stage2_loc_a, 1, sizeof(uint64_t), device);
-    fwrite(&stage2_loc_b, 1, sizeof(uint64_t), device);
+    device_write(&stage2_size_a, 0x1a4 + 0,  sizeof(uint16_t));
+    device_write(&stage2_size_b, 0x1a4 + 2,  sizeof(uint16_t));
+    device_write(&stage2_loc_a,  0x1a4 + 4,  sizeof(uint64_t));
+    device_write(&stage2_loc_b,  0x1a4 + 12, sizeof(uint64_t));
 
     // Write back timestamp
-    fseek(device, 218, SEEK_SET);
-    fwrite(timestamp, 1, 6, device);
+    device_write(timestamp, 218, 6);
 
     // Write back the saved partition table to the device
-    fseek(device, 440, SEEK_SET);
-    fwrite(orig_mbr, 1, 70, device);
+    device_write(orig_mbr, 440, 70);
+
+    if (!device_flush_cache())
+        goto cleanup;
 
     ok = 0;
 
 cleanup:
-    if (device)
-        fclose(device);
+    if (cache)
+        free(cache);
+    if (device != -1)
+        close(device);
     if (bootloader_file)
         fclose(bootloader_file);
     if (bootloader_img)

@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <limine.h>
 #include <menu.h>
 #include <lib/print.h>
 #include <lib/blib.h>

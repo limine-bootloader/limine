@@ -3,6 +3,7 @@ LD = i386-elf-gcc
 OBJCOPY = i386-elf-objcopy
 OBJDUMP = i386-elf-objdump
 
+LIMINE_VERSION := $(shell git branch --show-current | sed 's/-branch//')
 WERROR = -Werror
 CFLAGS = -Os -pipe -Wall -Wextra $(WERROR)
 
@@ -21,6 +22,7 @@ INTERNAL_CFLAGS = \
 	-mno-sse \
 	-mno-sse2 \
 	-MMD \
+	-DLIMINE_VERSION='"$(LIMINE_VERSION)"' \
 	-I. \
 	-I..
 

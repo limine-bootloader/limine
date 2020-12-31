@@ -53,12 +53,60 @@ struct tinf_data {
     struct tinf_tree dtree; /* Distance tree */
 };
 
+/* -- Utility functions -- */
+
+static unsigned int read_le16(const unsigned char *p) {
+    return ((unsigned int) p[0])
+         | ((unsigned int) p[1] << 8);
+}
+
+/* Build fixed Huffman trees */
+static void tinf_build_fixed_trees(struct tinf_tree *lt, struct tinf_tree *dt) {
+    int i;
+
+    /* Build fixed literal/length tree */
+    for (i = 0; i < 16; ++i) {
+        lt->counts[i] = 0;
+    }
+
+    lt->counts[7] = 24;
+    lt->counts[8] = 152;
+    lt->counts[9] = 112;
+
+    for (i = 0; i < 24; ++i) {
+        lt->symbols[i] = 256 + i;
+    }
+    for (i = 0; i < 144; ++i) {
+        lt->symbols[24 + i] = i;
+    }
+    for (i = 0; i < 8; ++i) {
+        lt->symbols[24 + 144 + i] = 280 + i;
+    }
+    for (i = 0; i < 112; ++i) {
+        lt->symbols[24 + 144 + 8 + i] = 144 + i;
+    }
+
+    lt->max_sym = 285;
+
+    /* Build fixed distance tree */
+    for (i = 0; i < 16; ++i) {
+        dt->counts[i] = 0;
+    }
+
+    dt->counts[5] = 32;
+
+    for (i = 0; i < 32; ++i) {
+        dt->symbols[i] = i;
+    }
+
+    dt->max_sym = 29;
+}
+
 /* Given an array of code lengths, build a tree */
 static int tinf_build_tree(struct tinf_tree *t, const unsigned char *lengths,
                            unsigned int num) {
     unsigned short offs[16];
     unsigned int i, num_codes, available;
-
 
     for (i = 0; i < 16; ++i) {
         t->counts[i] = 0;
@@ -412,10 +460,10 @@ static int tinf_inflate_uncompressed_block(struct tinf_data *d) {
     }
 
     /* Get length */
-    length = *(d->source);
+    length = read_le16(d->source);
 
     /* Get one's complement of length */
-    invlength = *(d->source + 2);
+    invlength = read_le16(d->source + 2);
 
     /* Check length */
     if (length != (~invlength & 0x0000FFFF)) {
@@ -423,10 +471,6 @@ static int tinf_inflate_uncompressed_block(struct tinf_data *d) {
     }
 
     d->source += 4;
-
-    if ((unsigned int)((d->source_end - d->source)) < length) {
-        return TINF_DATA_ERROR;
-    }
 
     /* Copy block */
     while (length--) {
@@ -440,49 +484,6 @@ static int tinf_inflate_uncompressed_block(struct tinf_data *d) {
     return TINF_OK;
 }
 
-/* Build fixed Huffman trees */
-static void tinf_build_fixed_trees(struct tinf_tree *lt, struct tinf_tree *dt) {
-    int i;
-
-    /* Build fixed literal/length tree */
-    for (i = 0; i < 16; ++i) {
-        lt->counts[i] = 0;
-    }
-
-    lt->counts[7] = 24;
-    lt->counts[8] = 152;
-    lt->counts[9] = 112;
-
-    for (i = 0; i < 24; ++i) {
-        lt->symbols[i] = 256 + i;
-    }
-    for (i = 0; i < 144; ++i) {
-        lt->symbols[24 + i] = i;
-    }
-    for (i = 0; i < 8; ++i) {
-        lt->symbols[24 + 144 + i] = 280 + i;
-    }
-    for (i = 0; i < 112; ++i) {
-        lt->symbols[24 + 144 + 8 + i] = 144 + i;
-    }
-
-    lt->max_sym = 285;
-
-    /* Build fixed distance tree */
-    for (i = 0; i < 16; ++i) {
-        dt->counts[i] = 0;
-    }
-
-    dt->counts[5] = 32;
-
-    for (i = 0; i < 32; ++i) {
-        dt->symbols[i] = i;
-    }
-
-    dt->max_sym = 29;
-}
-
-
 /* Inflate a block of data compressed with fixed Huffman trees */
 static int tinf_inflate_fixed_block(struct tinf_data *d) {
     /* Build fixed Huffman trees */
@@ -491,7 +492,6 @@ static int tinf_inflate_fixed_block(struct tinf_data *d) {
     /* Decode block using fixed trees */
     return tinf_inflate_block_data(d, &d->ltree, &d->dtree);
 }
-
 
 /* Inflate a block of data compressed with dynamic Huffman trees */
 static int tinf_inflate_dynamic_block(struct tinf_data *d) {
@@ -505,6 +505,8 @@ static int tinf_inflate_dynamic_block(struct tinf_data *d) {
     /* Decode block using decoded trees */
     return tinf_inflate_block_data(d, &d->ltree, &d->dtree);
 }
+
+/* -- Public functions -- */
 
 /* Inflate stream from source to dest */
 int tinf_uncompress(void *dest,

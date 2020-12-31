@@ -51,7 +51,7 @@ static void append_tag(struct stivale2_struct *s, struct stivale2_tag *tag) {
 }
 
 void stivale2_load(char *config, char *cmdline, bool pxe) {
-    struct file_handle *kernel = conv_mem_alloc(sizeof(struct file_handle));
+    struct file_handle *kernel = ext_mem_alloc(sizeof(struct file_handle));
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
@@ -140,7 +140,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
     // Create firmware struct tag
     //////////////////////////////////////////////
     {
-    struct stivale2_struct_tag_firmware *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_firmware));
+    struct stivale2_struct_tag_firmware *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_firmware));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_FIRMWARE_ID;
 
     tag->flags = 1 << 0;   // bit 0 = BIOS boot
@@ -160,8 +160,8 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
     }
 
     struct stivale2_struct_tag_modules *tag =
-        conv_mem_alloc(sizeof(struct stivale2_struct_tag_modules)
-                     + sizeof(struct stivale2_module) * module_count);
+        ext_mem_alloc(sizeof(struct stivale2_struct_tag_modules)
+                    + sizeof(struct stivale2_module) * module_count);
 
     tag->tag.identifier = STIVALE2_STRUCT_TAG_MODULES_ID;
     tag->module_count   = module_count;
@@ -214,7 +214,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
     // Create RSDP struct tag
     //////////////////////////////////////////////
     {
-    struct stivale2_struct_tag_rsdp *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_rsdp));
+    struct stivale2_struct_tag_rsdp *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_rsdp));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_RSDP_ID;
 
     tag->rsdp = (uint64_t)(size_t)acpi_get_rsdp();
@@ -226,7 +226,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
     // Create cmdline struct tag
     //////////////////////////////////////////////
     {
-    struct stivale2_struct_tag_cmdline *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_cmdline));
+    struct stivale2_struct_tag_cmdline *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_cmdline));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_CMDLINE_ID;
 
     tag->cmdline = (uint64_t)(size_t)cmdline;
@@ -238,7 +238,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
     // Create epoch struct tag
     //////////////////////////////////////////////
     {
-    struct stivale2_struct_tag_epoch *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_epoch));
+    struct stivale2_struct_tag_epoch *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_epoch));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_EPOCH_ID;
 
     tag->epoch = time();
@@ -266,7 +266,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
 
         struct vbe_framebuffer_info fbinfo;
         if (init_vbe(&fbinfo, req_width, req_height, req_bpp)) {
-            struct stivale2_struct_tag_framebuffer *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_framebuffer));
+            struct stivale2_struct_tag_framebuffer *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_framebuffer));
             tag->tag.identifier = STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID;
 
             tag->memory_model       = STIVALE2_FBUF_MMODEL_RGB;
@@ -320,14 +320,14 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
     }
     }
 
-    print("Generated tags:\n");
-    struct stivale2_tag *taglist = (void*)(size_t)stivale2_struct.tags;
-    for (size_t i = 0; ; i++) {
-        print("Tag #%u  ID: %X\n", i, taglist->identifier);
-        if (taglist->next)
-            taglist = (void*)(size_t)taglist->next;
-        else
-            break;
+    //////////////////////////////////////////////
+    // Create PXE struct tag
+    //////////////////////////////////////////////
+    if (pxe) {
+        struct stivale2_struct_tag_pxe_server_info *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_pxe_server_info));
+        tag->tag.identifier = STIVALE2_STRUCT_TAG_PXE_SERVER_INFO;
+        tag->server_ip = get_boot_server_info();
+        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
 
     //////////////////////////////////////////////
@@ -350,13 +350,17 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
 
-    {
-        if (pxe) {
-            struct stivale2_struct_tag_pxe_server_info *tag = conv_mem_alloc(sizeof(struct stivale2_struct_tag_pxe_server_info));
-            tag->tag.identifier = STIVALE2_STRUCT_TAG_PXE_SERVER_INFO;
-            tag->server_ip = get_boot_server_info();
-            append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
-        }
+    //////////////////////////////////////////////
+    // List tags
+    //////////////////////////////////////////////
+    print("Generated tags:\n");
+    struct stivale2_tag *taglist = (void*)(size_t)stivale2_struct.tags;
+    for (size_t i = 0; ; i++) {
+        print("Tag #%u  ID: %X\n", i, taglist->identifier);
+        if (taglist->next)
+            taglist = (void*)(size_t)taglist->next;
+        else
+            break;
     }
 
     stivale_spinup(bits, level5pg && level5pg_requested, pagemap,

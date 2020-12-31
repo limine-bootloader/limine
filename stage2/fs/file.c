@@ -21,7 +21,7 @@ bool fs_get_guid(struct guid *guid, struct part *part) {
 
 int fopen(struct file_handle *ret, struct part *part, const char *filename) {
     if (echfs_check_signature(part)) {
-        struct echfs_file_handle *fd = conv_mem_alloc(sizeof(struct echfs_file_handle));
+        struct echfs_file_handle *fd = ext_mem_alloc(sizeof(struct echfs_file_handle));
 
         int r = echfs_open(fd, part, filename);
         if (r)
@@ -36,7 +36,7 @@ int fopen(struct file_handle *ret, struct part *part, const char *filename) {
     }
 
     if (ext2_check_signature(part)) {
-        struct ext2_file_handle *fd = conv_mem_alloc(sizeof(struct ext2_file_handle));
+        struct ext2_file_handle *fd = ext_mem_alloc(sizeof(struct ext2_file_handle));
 
         int r = ext2_open(fd, part, filename);
         if (r)
@@ -51,7 +51,7 @@ int fopen(struct file_handle *ret, struct part *part, const char *filename) {
     }
 
     if (fat32_check_signature(part)) {
-        struct fat32_file_handle *fd = conv_mem_alloc(sizeof(struct fat32_file_handle));
+        struct fat32_file_handle *fd = ext_mem_alloc(sizeof(struct fat32_file_handle));
 
         int r = fat32_open(fd, part, filename);
 

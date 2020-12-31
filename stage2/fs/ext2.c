@@ -356,7 +356,7 @@ static struct ext4_extent_header* ext4_find_leaf(struct ext4_extent_header* ext_
 
         uint64_t block = ((uint64_t)index[i].leaf_hi << 32) | index[i].leaf;
         if(!buf)
-            buf = conv_mem_alloc(block_size);
+            buf = ext_mem_alloc(block_size);
         part_read(part, buf, (block * block_size), block_size);
         ext_block = buf;
     }

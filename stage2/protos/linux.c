@@ -62,7 +62,7 @@ void linux_load(char *config, char *cmdline) {
     char *cmdline_reloc = conv_mem_alloc(cmdline_len + 1);
     strcpy(cmdline_reloc, cmdline);
 
-    struct file_handle *kernel = conv_mem_alloc(sizeof(struct file_handle));
+    struct file_handle *kernel = ext_mem_alloc(sizeof(struct file_handle));
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)

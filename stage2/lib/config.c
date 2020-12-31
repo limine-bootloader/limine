@@ -27,7 +27,7 @@ int init_config_disk(struct part *part) {
     }
 
     size_t config_size = f.size + 1;
-    config_addr = conv_mem_alloc(config_size);
+    config_addr = ext_mem_alloc(config_size);
 
     fread(&f, config_addr, 0, f.size);
 
@@ -40,7 +40,7 @@ int init_config_pxe(void) {
      && tftp_open(&cfg, 0, 69, "tomatboot.cfg")) {
         return -1;
     }
-    config_addr = conv_mem_alloc(cfg.file_size);
+    config_addr = ext_mem_alloc(cfg.file_size);
     tftp_read(&cfg, config_addr, 0, cfg.file_size);
 
     print("\nconfig: %s\n", config_addr);
@@ -95,7 +95,7 @@ static struct menu_entry *create_menu_tree(struct menu_entry *parent,
                 break;
         }
 
-        struct menu_entry *entry = conv_mem_alloc(sizeof(struct menu_entry));
+        struct menu_entry *entry = ext_mem_alloc(sizeof(struct menu_entry));
 
         if (root == NULL)
             root = entry;
@@ -113,7 +113,7 @@ static struct menu_entry *create_menu_tree(struct menu_entry *parent,
         } else {
             size_t entry_size;
             char *config_entry = config_get_entry(&entry_size, i);
-            entry->body = conv_mem_alloc(entry_size + 1);
+            entry->body = ext_mem_alloc(entry_size + 1);
             memcpy(entry->body, config_entry, entry_size);
             entry->body[entry_size] = 0;
         }

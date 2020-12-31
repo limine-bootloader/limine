@@ -30,7 +30,7 @@ void stivale_load(char *config, char *cmdline) {
     stivale_struct.flags |= (1 << 0);  // set bit 0 since we are BIOS and not UEFI
     stivale_struct.flags |= (1 << 1);  // we give colour information
 
-    struct file_handle *kernel = conv_mem_alloc(sizeof(struct file_handle));
+    struct file_handle *kernel = ext_mem_alloc(sizeof(struct file_handle));
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
@@ -121,7 +121,7 @@ void stivale_load(char *config, char *cmdline) {
 
         stivale_struct.module_count++;
 
-        struct stivale_module *m = conv_mem_alloc(sizeof(struct stivale_module));
+        struct stivale_module *m = ext_mem_alloc(sizeof(struct stivale_module));
 
         char *module_string = config_get_value(config, i, "MODULE_STRING");
         if (module_string == NULL) {
@@ -229,7 +229,7 @@ pagemap_t stivale_build_pagemap(bool level5pg) {
 
     size_t _memmap_entries = memmap_entries;
     struct e820_entry_t *_memmap =
-        conv_mem_alloc(_memmap_entries * sizeof(struct e820_entry_t));
+        ext_mem_alloc(_memmap_entries * sizeof(struct e820_entry_t));
     for (size_t i = 0; i < _memmap_entries; i++)
         _memmap[i] = memmap[i];
 

@@ -1,20 +1,40 @@
 CC = cc
+OBJCOPY = objcopy
 CFLAGS = -O2 -pipe -Wall -Wextra
+PREFIX = /usr/local
+DESTDIR =
+
 PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
-.PHONY: all clean stage2 stage2-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat32-test
+.PHONY: all clean install bootloader bootloader-clean distclean stage2 stage2-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat32-test
 
-all: stage2 decompressor
+all: limine-install
+
+limine-install: limine-install.c limine.o
+	$(CC) $(CFLAGS) limine.o limine-install.c -o limine-install
+
+limine.o: limine.bin
+	$(OBJCOPY) -I binary -O default limine.bin limine.o
+
+limine.bin: bootloader
+
+clean:
+	rm -f limine.o limine-install
+
+install: all
+	install -d $(DESTDIR)$(PREFIX)/bin
+	install -s limine-install $(DESTDIR)$(PREFIX)/bin/
+
+bootloader: stage2 decompressor
 	gzip -n -9 < stage2/stage2.bin > stage2/stage2.bin.gz
 	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
 	cd pxeboot && nasm bootsect.asm -fbin -o ../limine-pxe.bin
 	cp stage2/stage2.map ./
 
-clean: stage2-clean decompressor-clean test-clean
+bootloader-clean: stage2-clean decompressor-clean test-clean
 	rm -f stage2/stage2.bin.gz test/stage2.map test.hdd
 
-distclean: clean
-	rm -f limine-install
+distclean: clean bootloader-clean
 
 stage2:
 	$(MAKE) -C stage2 all
@@ -34,16 +54,13 @@ test-clean:
 toolchain:
 	cd toolchain && ./make_toolchain.sh -j`nproc`
 
-limine-install: limine-install.c
-	$(CC) $(CFLAGS) limine-install.c -o limine-install
-
 test.hdd:
 	rm -f test.hdd
 	dd if=/dev/zero bs=1M count=0 seek=64 of=test.hdd
 	parted -s test.hdd mklabel gpt
 	parted -s test.hdd mkpart primary 2048s 100%
 
-echfs-test: all limine-install test.hdd
+echfs-test: all test.hdd
 	$(MAKE) -C test
 	echfs-utils -g -p0 test.hdd quick-format 512 > part_guid
 	sed "s/@GUID@/`cat part_guid`/g" < test/limine.cfg > limine.cfg.tmp
@@ -56,7 +73,7 @@ echfs-test: all limine-install test.hdd
 	./limine-install limine.bin test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
-ext2-test: all limine-install test.hdd
+ext2-test: all test.hdd
 	$(MAKE) -C test
 	cp stage2.map test/
 	rm -rf test_image/
@@ -74,7 +91,7 @@ ext2-test: all limine-install test.hdd
 	./limine-install limine.bin test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
-fat32-test: all limine-install test.hdd
+fat32-test: all test.hdd
 	$(MAKE) -C test
 	cp stage2.map test/
 	rm -rf test_image/

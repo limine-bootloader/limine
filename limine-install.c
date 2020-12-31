@@ -230,39 +230,32 @@ static bool device_write(const void *buffer, uint64_t loc, size_t count) {
     return true;
 }
 
+extern uint8_t _binary_limine_bin_start[], _binary_limine_bin_end[];
+
 int main(int argc, char *argv[]) {
     int      ok = 1;
-    FILE    *bootloader_file = NULL;
-    uint8_t *bootloader_img = NULL;
+    uint8_t *bootloader_img = _binary_limine_bin_start;
+    size_t   bootloader_file_size =
+        (size_t)_binary_limine_bin_end - (size_t)_binary_limine_bin_start;
     uint8_t  orig_mbr[70], timestamp[6];
 
-    if (argc < 3) {
-        printf("Usage: %s <bootloader image> <device> [GPT partition index]\n", argv[0]);
+    if (argc > 1 && strstr("limine.bin", argv[1]) != NULL) {
+        fprintf(stderr,
+            "WARNING: Passing the bootloader binary as a file argument is\n"
+            "         deprecated and should be avoided in the future.\n");
+        argc--;
+        argv[1] = argv[0];
+        argv++;
+    }
+
+    if (argc < 2) {
+        printf("Usage: %s <device> [GPT partition index]\n", argv[0]);
         return 1;
     }
 
-    bootloader_file = fopen(argv[1], "rb");
-    if (bootloader_file == NULL) {
-        perror("Error: ");
-        return 1;
-    }
-
-    fseek(bootloader_file, 0, SEEK_END);
-    size_t bootloader_file_size = ftell(bootloader_file);
-
-    bootloader_img = malloc(bootloader_file_size);
-    if (bootloader_img == NULL) {
-        perror("Error: ");
-        goto cleanup;
-    }
-
-    // Load in bootloader image
-    fseek(bootloader_file, 0, SEEK_SET);
-    fread(bootloader_img, 1, bootloader_file_size, bootloader_file);
-
-    device = open(argv[2], O_RDWR);
+    device = open(argv[1], O_RDWR);
     if (device == -1) {
-        perror("Error: ");
+        perror("Error");
         goto cleanup;
     }
 
@@ -454,10 +447,6 @@ cleanup:
         free(cache);
     if (device != -1)
         close(device);
-    if (bootloader_file)
-        fclose(bootloader_file);
-    if (bootloader_img)
-        free(bootloader_img);
 
     return ok;
 }

@@ -62,7 +62,7 @@ make toolchain
 
 After that is done, the bootloader itself can be built with:
 ```bash
-make
+make bootloader
 ```
 
 A newly generated `limine.bin` image should now be present in the root of the repo.
@@ -71,8 +71,15 @@ This newly built image should match 1:1 (aka, same checksum) with the one shippe
 with the respective commit.
 
 ### Compiling `limine-install`
-To build the `limine-install` program, simply run `make limine-install` in the root
-of the repo.
+To build the `limine-install` program, simply run `make` in the root of the repo.
+This will embed the `limine.bin` bootloader image from the repository's root into
+`limine-install`, ready to be deployed to a device.
+
+Then use `make install` to install it, optionally specifying a prefix with a
+`PREFIX=...` option.
+
+Installing `limine-install` is optional as it can also be used from the root of the
+repository just fine.
 
 ## How to use
 
@@ -81,10 +88,8 @@ In order to install Limine on a MBR device (which can just be a raw image file),
 run the `limine-install` as such:
 
 ```bash
-limine-install <bootloader image> <path to device/image>
+limine-install <path to device/image>
 ```
-
-Where `<bootloader image>` is the path to a `limine.bin` file.
 
 ### GPT
 If using a GPT formatted device, there are 2 options one can follow for installation:
@@ -93,10 +98,10 @@ If using a GPT formatted device, there are 2 options one can follow for installa
 
 In case one wants to specify a stage 2 partition, create a partition on the GPT
 device of at least 32KiB in size, and pass the 1-based number of the partition
-to `limine-install` as a third argument; such as:
+to `limine-install` as a second argument; such as:
 
 ```bash
-limine-install <bootloader image> <path to device/image> <partition 1-based number>
+limine-install <path to device/image> <1-based stage 2 partition number>
 ```
 
 In case one wants to let `limine-install` embed stage 2 within GPT's structures,
@@ -128,7 +133,7 @@ echfs-utils -m -p0 test.img import path/to/limine.cfg limine.cfg
 echfs-utils -m -p0 test.img import path/to/kernel.elf kernel.elf
 echfs-utils -m -p0 test.img import <path to file> <path in image>
 ...
-./limine-install limine.bin test.img
+limine-install test.img
 ```
 
 One can get `echfs-utils` by installing https://github.com/qword-os/echfs.

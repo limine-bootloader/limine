@@ -16,8 +16,6 @@ limine-install: limine-install.c limine.o
 limine.o: limine.bin
 	$(OBJCOPY) -I binary -O default limine.bin limine.o
 
-limine.bin: bootloader
-
 clean:
 	rm -f limine.o limine-install
 
@@ -60,7 +58,7 @@ test.hdd:
 	parted -s test.hdd mklabel gpt
 	parted -s test.hdd mkpart primary 2048s 100%
 
-echfs-test: all test.hdd
+echfs-test: test.hdd bootloader | all
 	$(MAKE) -C test
 	echfs-utils -g -p0 test.hdd quick-format 512 > part_guid
 	sed "s/@GUID@/`cat part_guid`/g" < test/limine.cfg > limine.cfg.tmp
@@ -70,10 +68,10 @@ echfs-test: all test.hdd
 	echfs-utils -g -p0 test.hdd import test/test.elf boot/test.elf
 	echfs-utils -g -p0 test.hdd import test/bg.bmp boot/bg.bmp
 	echfs-utils -g -p0 test.hdd import test/font.bin boot/font.bin
-	./limine-install limine.bin test.hdd
+	./limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
-ext2-test: all test.hdd
+ext2-test: test.hdd bootloader | all
 	$(MAKE) -C test
 	cp stage2.map test/
 	rm -rf test_image/
@@ -88,10 +86,10 @@ ext2-test: all test.hdd
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	./limine-install limine.bin test.hdd
+	./limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
-fat32-test: all test.hdd
+fat32-test: test.hdd bootloader | all
 	$(MAKE) -C test
 	cp stage2.map test/
 	rm -rf test_image/
@@ -106,5 +104,5 @@ fat32-test: all test.hdd
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	./limine-install limine.bin test.hdd
+	./limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio

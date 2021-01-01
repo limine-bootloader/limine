@@ -46,7 +46,7 @@ struct gpt_entry {
 } __attribute__((packed));
 
 // This table from https://web.mit.edu/freebsd/head/sys/libkern/crc32.c
-const uint32_t crc32_table[] = {
+static const uint32_t crc32_table[] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
 	0xe963a535, 0x9e6495a3,	0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
 	0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91, 0x1db71064, 0x6ab020f2,
@@ -119,16 +119,21 @@ static bool device_init(void) {
     for (size_t i = 0; i < sizeof(guesses) / sizeof(size_t); i++) {
         void *tmp = realloc(cache, guesses[i]);
         if (tmp == NULL) {
-            perror("Error: ");
+            perror("Error");
             return false;
         }
         cache = tmp;
 
         if (lseek(device, 0, SEEK_SET) == (off_t)-1) {
-            perror("Error: ");
+            perror("Error");
             return false;
         }
-        block_size = read(device, cache, guesses[i]);
+        ssize_t ret = read(device, cache, guesses[i]);
+        if (ret == -1) {
+            perror("Error");
+            return false;
+        }
+        block_size = ret;
 
         if (block_size == guesses[i]) {
             fprintf(stderr, "Physical block size of %zu bytes.\n", block_size);
@@ -139,7 +144,7 @@ static bool device_init(void) {
         }
     }
 
-    fprintf(stderr, "Couldn't determine block size of device.\n");
+    fprintf(stderr, "Error: Couldn't determine block size of device.\n");
     return false;
 }
 
@@ -148,12 +153,17 @@ static bool device_flush_cache(void) {
         return true;
 
     if (lseek(device, cached_block * block_size, SEEK_SET) == (off_t)-1) {
-        perror("Error: ");
+        perror("Error");
         return false;
     }
 
-    if (write(device, cache, block_size) != block_size) {
-        perror("Error: ");
+    ssize_t ret = write(device, cache, block_size);
+    if (ret == -1) {
+        perror("Error");
+        return false;
+    }
+    if ((size_t)ret != block_size) {
+        fprintf(stderr, "Error: Wrote back less bytes than cache size.\n");
         return false;
     }
 
@@ -171,12 +181,17 @@ static bool device_cache_block(uint64_t block) {
     }
 
     if (lseek(device, block * block_size, SEEK_SET) == (off_t)-1) {
-        perror("Error: ");
+        perror("Error");
         return false;
     }
 
-    if (read(device, cache, block_size) != block_size) {
-        perror("Error: ");
+    ssize_t ret = read(device, cache, block_size);
+    if (ret == -1) {
+        perror("Error");
+        return false;
+    }
+    if ((size_t)ret != block_size) {
+        fprintf(stderr, "Error: Read back less bytes than cache size.\n");
         return false;
     }
 
@@ -185,14 +200,14 @@ static bool device_cache_block(uint64_t block) {
     return true;
 }
 
-static bool device_read(void *buffer, uint64_t loc, size_t count) {
+static bool _device_read(void *buffer, uint64_t loc, size_t count) {
     uint64_t progress = 0;
     while (progress < count) {
         uint64_t block = (loc + progress) / block_size;
 
         if (!device_cache_block(block)) {
-            perror("Error: ");
-            abort();
+            fprintf(stderr, "Error: Read error.\n");
+            return false;
         }
 
         uint64_t chunk = count - progress;
@@ -207,14 +222,14 @@ static bool device_read(void *buffer, uint64_t loc, size_t count) {
     return true;
 }
 
-static bool device_write(const void *buffer, uint64_t loc, size_t count) {
+static bool _device_write(const void *buffer, uint64_t loc, size_t count) {
     uint64_t progress = 0;
     while (progress < count) {
         uint64_t block = (loc + progress) / block_size;
 
         if (!device_cache_block(block)) {
-            perror("Error: ");
-            abort();
+            fprintf(stderr, "Error: Write error.\n");
+            return false;
         }
 
         uint64_t chunk = count - progress;
@@ -229,6 +244,18 @@ static bool device_write(const void *buffer, uint64_t loc, size_t count) {
 
     return true;
 }
+
+#define device_read(BUFFER, LOC, COUNT)        \
+    do {                                       \
+        if (!_device_read(BUFFER, LOC, COUNT)) \
+            goto cleanup;                      \
+    } while (0)
+
+#define device_write(BUFFER, LOC, COUNT)        \
+    do {                                        \
+        if (!_device_write(BUFFER, LOC, COUNT)) \
+            goto cleanup;                       \
+    } while (0)
 
 extern uint8_t _binary_limine_bin_start[], _binary_limine_bin_end[];
 
@@ -372,7 +399,7 @@ int main(int argc, char *argv[]) {
             uint8_t *partition_array =
                 malloc(new_partition_entry_count * gpt_header.size_of_partition_entry);
             if (partition_array == NULL) {
-                perror("Error: ");
+                perror("Error");
                 goto cleanup;
             }
 

@@ -174,13 +174,10 @@ static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) 
     return true;
 }
 
-static int mem_read(void *fd, void *buf, uint64_t loc, uint64_t count) {
-    memcpy(buf, fd + loc, count);
-    return 0;
-}
-
 bool uri_open(struct file_handle *fd, char *uri) {
     bool ret;
+
+    memset(fd, 0, sizeof(struct file_handle));
 
     char *resource, *root, *path;
     uri_resolve(uri, &resource, &root, &path);
@@ -217,7 +214,7 @@ bool uri_open(struct file_handle *fd, char *uri) {
         fread(fd, src, 0, fd->size);
         if (tinf_gzip_uncompress(compressed_fd.fd, src, fd->size))
             panic("tinf error");
-        compressed_fd.read = mem_read;
+        compressed_fd.is_memfile = true;
         *fd = compressed_fd;
     }
 

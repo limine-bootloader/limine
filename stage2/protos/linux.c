@@ -132,7 +132,7 @@ void linux_load(char *config, char *cmdline) {
 
     // load kernel
     print("Loading kernel...\n");
-    memmap_alloc_range(KERNEL_LOAD_ADDR, kernel->size - real_mode_code_size, 0);
+    memmap_alloc_range(KERNEL_LOAD_ADDR, kernel->size - real_mode_code_size, 0, true);
     fread(kernel, (void *)KERNEL_LOAD_ADDR, real_mode_code_size, kernel->size - real_mode_code_size);
 
     size_t modules_mem_base = INITRD_LOAD_ADDR;
@@ -147,7 +147,7 @@ void linux_load(char *config, char *cmdline) {
 
         print("Loading module `%s`...\n", module_path);
 
-        memmap_alloc_range(modules_mem_base, module.size, 0);
+        memmap_alloc_range(modules_mem_base, module.size, 0, true);
         fread(&module, (void *)modules_mem_base, 0, module.size);
 
         modules_mem_base += module.size;

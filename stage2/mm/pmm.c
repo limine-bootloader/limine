@@ -237,7 +237,7 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
 
         // We now reserve the range we need.
         int64_t aligned_length = entry_top - alloc_base;
-        memmap_alloc_range((uint64_t)alloc_base, (uint64_t)aligned_length, type);
+        memmap_alloc_range((uint64_t)alloc_base, (uint64_t)aligned_length, type, true);
 
         void *ret = (void *)(size_t)alloc_base;
 
@@ -252,7 +252,7 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
     panic("High memory allocator: Out of memory");
 }
 
-void memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type) {
+void memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only) {
     uint64_t top = base + length;
 
     if (base < 0x100000) {
@@ -262,7 +262,7 @@ void memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type) {
     }
 
     for (size_t i = 0; i < memmap_entries; i++) {
-        if (memmap[i].type != 1)
+        if (free_only && memmap[i].type != 1)
             continue;
 
         uint64_t entry_base = memmap[i].base;

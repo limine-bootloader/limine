@@ -2,13 +2,14 @@
 #define __FS__FILE_H__
 
 #include <stdint.h>
+#include <stddef.h>
 #include <stdbool.h>
 #include <lib/part.h>
 
 bool fs_get_guid(struct guid *guid, struct part *part);
 
 struct file_handle {
-    struct part part;
+    bool       is_memfile;
     void      *fd;
     int      (*read)(void *fd, void *buf, uint64_t loc, uint64_t count);
     uint64_t   size;
@@ -16,5 +17,6 @@ struct file_handle {
 
 int fopen(struct file_handle *ret, struct part *part, const char *filename);
 int fread(struct file_handle *fd, void *buf, uint64_t loc, uint64_t count);
+void *freadall(struct file_handle *fd, uint32_t type);
 
 #endif

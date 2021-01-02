@@ -134,24 +134,15 @@ void stivale_load(char *config, char *cmdline) {
             memcpy(m->string, module_string, str_len);
         }
 
+        print("stivale: Loading module `%s`...\n", module_path);
+
         struct file_handle f;
         if (!uri_open(&f, module_path))
             panic("Requested module with path \"%s\" not found!", module_path);
 
-        void *module_addr = (void *)(((uint32_t)top_used_addr & 0xfff) ?
-            ((uint32_t)top_used_addr & ~((uint32_t)0xfff)) + 0x1000 :
-            (uint32_t)top_used_addr);
-
-        print("stivale: Loading module `%s`...\n", module_path);
-
-        memmap_alloc_range((size_t)module_addr, f.size, 10);
-        fread(&f, module_addr, 0, f.size);
-
-        m->begin = (uint64_t)(size_t)module_addr;
+        m->begin = (uint64_t)(size_t)freadall(&f, STIVALE_MMAP_KERNEL_AND_MODULES);
         m->end   = m->begin + f.size;
         m->next  = 0;
-
-        top_used_addr = (uint64_t)(size_t)m->end;
 
         *prev_mod_ptr = (uint64_t)(size_t)m;
         prev_mod_ptr  = &m->next;

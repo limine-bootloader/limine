@@ -7,6 +7,7 @@
 #include <lib/blib.h>
 #include <mm/pmm.h>
 #include <lib/part.h>
+#include <lib/libc.h>
 
 bool fs_get_guid(struct guid *guid, struct part *part) {
     if (echfs_check_signature(part)) {
@@ -29,7 +30,6 @@ int fopen(struct file_handle *ret, struct part *part, const char *filename) {
 
         ret->fd   = (void *)fd;
         ret->read = (void *)echfs_read;
-        ret->part = *part;
         ret->size = fd->dir_entry.size;
 
         return 0;
@@ -44,7 +44,6 @@ int fopen(struct file_handle *ret, struct part *part, const char *filename) {
 
         ret->fd   = (void *)fd;
         ret->read = (void *)ext2_read;
-        ret->part = *part;
         ret->size = fd->size;
 
         return 0;
@@ -60,7 +59,6 @@ int fopen(struct file_handle *ret, struct part *part, const char *filename) {
 
         ret->fd   = (void *)fd;
         ret->read = (void *)fat32_read;
-        ret->part = *part;
         ret->size = fd->size_bytes;
 
         return 0;
@@ -70,5 +68,23 @@ int fopen(struct file_handle *ret, struct part *part, const char *filename) {
 }
 
 int fread(struct file_handle *fd, void *buf, uint64_t loc, uint64_t count) {
-    return fd->read(fd->fd, buf, loc, count);
+    if (fd->is_memfile) {
+        memcpy(buf, fd->fd + loc, count);
+        return 0;
+    } else {
+        return fd->read(fd->fd, buf, loc, count);
+    }
+}
+
+void *freadall(struct file_handle *fd, uint32_t type) {
+    if (fd->is_memfile) {
+        memmap_alloc_range((uint64_t)(size_t)fd->fd, fd->size, type, false);
+        return fd->fd;
+    } else {
+        void *ret = ext_mem_alloc(fd->size);
+        if (fd->read(fd->fd, ret, 0, fd->size)) {
+            panic("freadall error");
+        }
+        return ret;
+    }
 }

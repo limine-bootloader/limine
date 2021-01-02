@@ -21,6 +21,8 @@ bool fs_get_guid(struct guid *guid, struct part *part) {
 }
 
 int fopen(struct file_handle *ret, struct part *part, const char *filename) {
+    ret->is_memfile = false;
+
     if (echfs_check_signature(part)) {
         struct echfs_file_handle *fd = ext_mem_alloc(sizeof(struct echfs_file_handle));
 

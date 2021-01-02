@@ -138,6 +138,7 @@ static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
         return false;
     }
 
+    fd->is_memfile = false;
     fd->fd = cfg;
     fd->read = tftp_read;
     fd->size = cfg->file_size;
@@ -176,8 +177,6 @@ static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) 
 
 bool uri_open(struct file_handle *fd, char *uri) {
     bool ret;
-
-    memset(fd, 0, sizeof(struct file_handle));
 
     char *resource, *root, *path;
     uri_resolve(uri, &resource, &root, &path);

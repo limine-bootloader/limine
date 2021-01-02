@@ -209,7 +209,7 @@ bool uri_open(struct file_handle *fd, char *uri) {
     if (compressed && ret) {
         struct file_handle compressed_fd = {0};
         fread(fd, &compressed_fd.size, fd->size - 4, sizeof(uint32_t));
-        compressed_fd.fd = ext_mem_alloc(compressed_fd.size);
+        compressed_fd.fd = ext_mem_alloc_aligned(compressed_fd.size, 4096);
         void *src = ext_mem_alloc(fd->size);
         fread(fd, src, 0, fd->size);
         if (tinf_gzip_uncompress(compressed_fd.fd, src, fd->size))

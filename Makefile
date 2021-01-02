@@ -11,7 +11,7 @@ PATH := $(shell pwd)/toolchain/bin:$(PATH)
 all: limine-install
 
 limine-install: limine-install.c limine.o
-	$(CC) $(CFLAGS) limine.o limine-install.c -o limine-install
+	$(CC) $(CFLAGS) -std=c11 limine.o limine-install.c -o limine-install
 
 limine.o: limine.bin
 	$(OBJCOPY) -I binary -O default limine.bin limine.o

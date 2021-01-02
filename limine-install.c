@@ -121,18 +121,18 @@ static bool device_init(void) {
     for (size_t i = 0; i < sizeof(guesses) / sizeof(size_t); i++) {
         void *tmp = realloc(cache, guesses[i]);
         if (tmp == NULL) {
-            perror("Error");
+            perror("ERROR");
             return false;
         }
         cache = tmp;
 
         if (lseek(device, 0, SEEK_SET) == (off_t)-1) {
-            perror("Error");
+            perror("ERROR");
             return false;
         }
         ssize_t ret = read(device, cache, guesses[i]);
         if (ret == -1) {
-            perror("Error");
+            perror("ERROR");
             return false;
         }
         block_size = ret;
@@ -146,7 +146,7 @@ static bool device_init(void) {
         }
     }
 
-    fprintf(stderr, "Error: Couldn't determine block size of device.\n");
+    fprintf(stderr, "ERROR: Couldn't determine block size of device.\n");
     return false;
 }
 
@@ -155,17 +155,17 @@ static bool device_flush_cache(void) {
         return true;
 
     if (lseek(device, cached_block * block_size, SEEK_SET) == (off_t)-1) {
-        perror("Error");
+        perror("ERROR");
         return false;
     }
 
     ssize_t ret = write(device, cache, block_size);
     if (ret == -1) {
-        perror("Error");
+        perror("ERROR");
         return false;
     }
     if ((size_t)ret != block_size) {
-        fprintf(stderr, "Error: Wrote back less bytes than cache size.\n");
+        fprintf(stderr, "ERROR: Wrote back less bytes than cache size.\n");
         return false;
     }
 
@@ -183,17 +183,17 @@ static bool device_cache_block(uint64_t block) {
     }
 
     if (lseek(device, block * block_size, SEEK_SET) == (off_t)-1) {
-        perror("Error");
+        perror("ERROR");
         return false;
     }
 
     ssize_t ret = read(device, cache, block_size);
     if (ret == -1) {
-        perror("Error");
+        perror("ERROR");
         return false;
     }
     if ((size_t)ret != block_size) {
-        fprintf(stderr, "Error: Read back less bytes than cache size.\n");
+        fprintf(stderr, "ERROR: Read back less bytes than cache size.\n");
         return false;
     }
 
@@ -208,7 +208,7 @@ static bool _device_read(void *buffer, uint64_t loc, size_t count) {
         uint64_t block = (loc + progress) / block_size;
 
         if (!device_cache_block(block)) {
-            fprintf(stderr, "Error: Read error.\n");
+            fprintf(stderr, "ERROR: Read error.\n");
             return false;
         }
 
@@ -230,7 +230,7 @@ static bool _device_write(const void *buffer, uint64_t loc, size_t count) {
         uint64_t block = (loc + progress) / block_size;
 
         if (!device_cache_block(block)) {
-            fprintf(stderr, "Error: Write error.\n");
+            fprintf(stderr, "ERROR: Write error.\n");
             return false;
         }
 
@@ -268,6 +268,11 @@ int main(int argc, char *argv[]) {
         (size_t)_binary_limine_bin_end - (size_t)_binary_limine_bin_start;
     uint8_t  orig_mbr[70], timestamp[6];
 
+    if (sizeof(off_t) != 8) {
+        fprintf(stderr, "ERROR: off_t type is not 64-bit.\n");
+        goto cleanup;
+    }
+
     if (argc > 1 && strstr("limine.bin", argv[1]) != NULL) {
         fprintf(stderr,
             "WARNING: Passing the bootloader binary as a file argument is\n"
@@ -279,12 +284,12 @@ int main(int argc, char *argv[]) {
 
     if (argc < 2) {
         printf("Usage: %s <device> [GPT partition index]\n", argv[0]);
-        return 1;
+        goto cleanup;
     }
 
     device = open(argv[1], O_RDWR);
     if (device == -1) {
-        perror("Error");
+        perror("ERROR");
         goto cleanup;
     }
 
@@ -337,7 +342,7 @@ int main(int argc, char *argv[]) {
             sscanf(argv[3], "%" SCNu32, &partition_num);
             partition_num--;
             if (partition_num > gpt_header.number_of_partition_entries) {
-                fprintf(stderr, "error: Partition number is too large.\n");
+                fprintf(stderr, "ERROR: Partition number is too large.\n");
                 goto cleanup;
             }
 
@@ -349,7 +354,7 @@ int main(int argc, char *argv[]) {
 
             if (gpt_entry.unique_partition_guid[0] == 0 &&
               gpt_entry.unique_partition_guid[1] == 0) {
-                fprintf(stderr, "error: No such partition.\n");
+                fprintf(stderr, "ERROR: No such partition.\n");
                 goto cleanup;
             }
 
@@ -392,7 +397,7 @@ int main(int argc, char *argv[]) {
                 new_partition_array_lba_size * partition_entries_per_lb;
 
             if ((ssize_t)new_partition_entry_count <= max_partition_entry_used) {
-                fprintf(stderr, "error: Cannot embed because there are too many used partition entries.\n");
+                fprintf(stderr, "ERROR: Cannot embed because there are too many used partition entries.\n");
                 goto cleanup;
             }
 
@@ -401,7 +406,7 @@ int main(int argc, char *argv[]) {
             uint8_t *partition_array =
                 malloc(new_partition_entry_count * gpt_header.size_of_partition_entry);
             if (partition_array == NULL) {
-                perror("Error");
+                perror("ERROR");
                 goto cleanup;
             }
 
@@ -468,6 +473,8 @@ int main(int argc, char *argv[]) {
 
     if (!device_flush_cache())
         goto cleanup;
+
+    fprintf(stderr, "Limine installed successfully!\n");
 
     ok = 0;
 

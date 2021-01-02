@@ -136,7 +136,7 @@ echfs-utils -m -p0 test.img import <path to file> <path in image>
 limine-install test.img
 ```
 
-One can get `echfs-utils` by installing https://github.com/qword-os/echfs.
+One can get `echfs-utils` by installing https://github.com/echfs/echfs.
 
 ## Acknowledgments
 Limine uses a stripped-down version of [tinf](https://github.com/jibsen/tinf).

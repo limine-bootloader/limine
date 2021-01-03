@@ -321,5 +321,5 @@ int fat32_open(struct fat32_file_handle* ret, struct part *part, const char* pat
 }
 
 int fat32_read(struct fat32_file_handle* file, void* buf, uint64_t loc, uint64_t count) {
-    return read_cluster_chain(&file->context, file->cluster_chain, buf, loc, count);
+    return !read_cluster_chain(&file->context, file->cluster_chain, buf, loc, count);
 }

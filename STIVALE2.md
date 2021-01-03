@@ -113,10 +113,11 @@ usage (such as page tables, GDT, SMP), or for kernel interfacing (such as return
 structures).
 
 stivale2 ensures that none of these areas are found in any of the sections
-marked as "usable" in the memory map.
+marked as "usable" or "kernel/modules" in the memory map.
 
 The location of these areas may vary and it is implementation specific;
-these areas may be in any non-usable memory map section, or in unmarked memory.
+these areas may be in any non-usable memory map section (except kernel/modules),
+or in unmarked memory.
 
 The OS must make sure to be done consuming bootloader information and services
 before switching to its own address space, as unmarked memory areas in use by
@@ -124,7 +125,8 @@ the bootloader may become unavailable.
 
 Once the OS is done needing the bootloader, memory map areas marked as "bootloader
 reclaimable" may be used as usable memory. These areas are guaranteed to be
-4096-byte aligned, and they are guaranteed to not overlap other sections of the memory map.
+4096-byte aligned (both base and length), and they are guaranteed to not overlap
+other sections of the memory map.
 
 ## stivale2 header (.stivale2hdr)
 
@@ -150,7 +152,7 @@ struct stivale2_header {
                             //        KASLR, this flag is now reserved as KASLR
                             //        is enabled in the bootloader configuration
                             //        instead. Presently reserved and unused.
-                            // All other bits undefined
+                            // All other bits are undefined and must be 0.
 
     uint64_t tags;          // Pointer to the first of the linked list of tags.
                             // see "stivale2 header tags" section.
@@ -226,7 +228,7 @@ struct stivale2_header_tag_smp {
     uint64_t next;
     uint64_t flags;               // Flags:
                                   //   bit 0: 0 = use xAPIC, 1 = use x2APIC (if available)
-                                  // All other flags are undefined.
+                                  // All other bits are undefined and must be 0.
 } __attribute__((packed));
 ```
 
@@ -411,7 +413,7 @@ struct stivale2_struct_tag_smp {
     uint64_t flags;             // Flags:
                                 //   bit 0: Set if x2APIC was requested and it
                                 //          was supported and enabled.
-                                //  All other bits undefined.
+                                //  All other bits are undefined and set to 0.
     uint32_t bsp_lapic_id;      // LAPIC ID of the BSP (bootstrap processor).
     uint32_t unused;            // Reserved for future use.
     uint64_t cpu_count;         // Total number of logical CPUs (including BSP)

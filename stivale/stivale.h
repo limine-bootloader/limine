@@ -25,13 +25,14 @@ struct stivale_module {
     uint64_t next;
 } __attribute__((packed));
 
-enum  {
+enum {
     STIVALE_MMAP_USABLE = 1,
     STIVALE_MMAP_RESERVED = 2,
     STIVALE_MMAP_ACPI_RECLAIMABLE = 3,
     STIVALE_MMAP_ACPI_NVS = 4,
     STIVALE_MMAP_BAD_MEMORY = 5,
-    STIVALE_MMAP_KERNEL_AND_MODULES = 10, // Kernel/Modules
+    STIVALE_MMAP_KERNEL_AND_MODULES = 10,
+    STIVALE_MMAP_BOOTLOADER_RECLAIMABLE = 0x1000
 };
 
 struct stivale_mmap_entry {

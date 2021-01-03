@@ -113,10 +113,11 @@ usage (such as page tables, GDT), or for kernel interfacing (such as returned
 structures).
 
 stivale ensures that none of these areas are found in any of the sections
-marked as "usable" in the memory map.
+marked as "usable" or "kernel/modules" in the memory map.
 
 The location of these areas may vary and it is implementation specific;
-these areas may be in any non-usable memory map section, or in unmarked memory.
+these areas may be in any non-usable memory map section (except kernel/modules),
+or in unmarked memory.
 
 The OS must make sure to be done consuming bootloader information and services
 before switching to its own address space, as unmarked memory areas in use by
@@ -124,7 +125,8 @@ the bootloader may become unavailable.
 
 Once the OS is done needing the bootloader, memory map areas marked as "bootloader
 reclaimable" may be used as usable memory. These areas are guaranteed to be
-4096-byte aligned, and they are guaranteed to not overlap other sections of the memory map.
+4096-byte aligned (both base and length), and they are guaranteed to not overlap
+other sections of the memory map.
 
 ## stivale header (.stivalehdr)
 
@@ -150,7 +152,7 @@ struct stivale_header {
                       //        this flag is now reserved as KASLR is enabled in the
                       //        bootloader configuration instead. Presently
                       //        reserved and unused.
-                      // All other bits undefined.
+                      // All other bits are undefined and must be 0.
 
     uint16_t framebuffer_width;   // These 3 values are parsed if a graphics mode
     uint16_t framebuffer_height;  // is requested. If all values are set to 0
@@ -181,7 +183,7 @@ struct stivale_struct {
     uint64_t flags;                 // Flags
                                     // bit 0: 1 if booted with BIOS, 0 if booted with UEFI
                                     // bit 1: 1 if extended colour information passed, 0 if not
-                                    // All other bits undefined.
+                                    // All other bits are undefined and set to 0.
     // Extended colour information follows, only access if bit 1 of flags is set.
     uint8_t  fb_memory_model;       // Memory model: 1=RGB, all other values undefined
     uint8_t  fb_red_mask_size;      // RGB mask sizes and left shifts

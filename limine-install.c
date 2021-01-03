@@ -273,7 +273,7 @@ int main(int argc, char *argv[]) {
         goto cleanup;
     }
 
-    if (argc > 1 && strstr("limine.bin", argv[1]) != NULL) {
+    if (argc > 1 && strstr(argv[1], "limine.bin") != NULL) {
         fprintf(stderr,
             "WARNING: Passing the bootloader binary as a file argument is\n"
             "         deprecated and should be avoided in the future.\n");

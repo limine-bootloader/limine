@@ -36,9 +36,9 @@ Use instead a [release](https://github.com/limine-bootloader/limine/releases).
 
 One can clone a release directly using
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v0.7.2
+git clone https://github.com/limine-bootloader/limine.git --branch=v1.0
 ```
-(replace `v0.7.2` with the chosen release)
+(replace `v1.0` with the chosen release)
 
 Also note that the documentation contained in `unstable` does not reflect the
 documentation for the specific releases, and one should refer to the releases'

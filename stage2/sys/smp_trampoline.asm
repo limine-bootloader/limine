@@ -3,6 +3,14 @@ extern smp_tpl_booted_flag
 extern smp_tpl_pagemap
 extern smp_tpl_target_mode
 
+extern mtrr_restore
+
+section .bss
+
+temp_stack:
+    resb 1024
+  .top:
+
 section .realmode
 
 global smp_trampoline
@@ -46,6 +54,10 @@ smp_trampoline:
     wrmsr
 
   .nox2apic:
+    mov esp, temp_stack.top
+
+    call mtrr_restore
+
     test dword [smp_tpl_target_mode], (1 << 0)
     jz parking32
 

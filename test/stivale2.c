@@ -15,10 +15,15 @@ struct stivale2_header_tag_smp smp_request = {
     .flags = 0
 };
 
+struct stivale2_tag fb_mtrr_request = {
+    .identifier = STIVALE2_HEADER_TAG_FB_MTRR_ID,
+    .next       = (uint64_t)&smp_request
+};
+
 struct stivale2_header_tag_framebuffer framebuffer_request = {
     .tag = {
         .identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID,
-        .next       = (uint64_t)&smp_request
+        .next       = (uint64_t)&fb_mtrr_request
     },
     .framebuffer_width  = 0,
     .framebuffer_height = 0,
@@ -80,6 +85,11 @@ void stivale2_main(struct stivale2_struct *info) {
                 e9_printf("\tGreen mask size: %d", f->green_mask_shift);
                 e9_printf("\tBlue mask size:  %d", f->blue_mask_size);
                 e9_printf("\tBlue mask size:  %d", f->blue_mask_shift);
+                break;
+            }
+            case STIVALE2_STRUCT_TAG_FB_MTRR_ID: {
+                e9_puts("Framebuffer WC MTRR tag:");
+                e9_puts("\tFramebuffer WC MTRR enabled");
                 break;
             }
             case STIVALE2_STRUCT_TAG_MODULES_ID: {

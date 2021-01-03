@@ -210,6 +210,22 @@ struct stivale2_header_tag_framebuffer {
 } __attribute__((packed));
 ```
 
+#### Framebuffer MTRR write-combining header tag
+
+The presence of this tag tells the bootloader to, in case a framebuffer was
+requested, make that framebuffer's caching type write-combining using x86's
+MTRR model specific registers. This caching type helps speed up framebuffer writes
+on real hardware.
+
+It is recommended to use this tag in conjunction with the SMP tag in order to
+let the bootloader make the MTRR settings uniform across all CPUs.
+
+If no framebuffer was requested, this tag has no effect.
+
+Identifier: `0x4c7bb07731282e00`
+
+This tag does not have extra members.
+
 #### 5-level paging header tag
 
 The presence of this tag enables support for 5-level paging, if available.
@@ -344,6 +360,15 @@ struct stivale2_struct_tag_framebuffer {
     uint8_t  blue_mask_shift;
 } __attribute__((packed));
 ```
+
+#### Framebuffer MTRR write-combining structure tag
+
+This tag exists if MTRR write-combining for the framebuffer was requested and
+successfully enabled.
+
+Identifier: `0x6bc1a78ebe871172`
+
+This tag does not have extra members.
 
 #### Modules structure tag
 

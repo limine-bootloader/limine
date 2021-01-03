@@ -21,6 +21,7 @@
 #include <sys/lapic.h>
 #include <fs/file.h>
 #include <mm/pmm.h>
+#include <mm/mtrr.h>
 #include <stivale/stivale2.h>
 #include <pxe/tftp.h>
 
@@ -274,6 +275,19 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
             tag->blue_mask_shift    = fbinfo.blue_mask_shift;
 
             append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+
+            if (get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_FB_MTRR_ID) != NULL) {
+                mtrr_restore();
+                bool ret = mtrr_set_range(tag->framebuffer_addr,
+                    (uint64_t)tag->framebuffer_pitch * tag->framebuffer_height,
+                    MTRR_MEMORY_TYPE_WC);
+                if (ret) {
+                    struct stivale2_tag *tag = ext_mem_alloc(sizeof(struct stivale2_tag));
+                    tag->identifier = STIVALE2_STRUCT_TAG_FB_MTRR_ID;
+                    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+                }
+                mtrr_save();
+            }
         }
     }
     }
@@ -289,6 +303,8 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
     // Create SMP struct tag
     //////////////////////////////////////////////
     {
+    mtrr_restore();
+
     struct stivale2_header_tag_smp *smp_hdr_tag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_SMP_ID);
     if (smp_hdr_tag != NULL) {
         struct stivale2_struct_tag_smp *tag;

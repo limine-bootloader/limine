@@ -33,8 +33,13 @@ bootloader-clean: stage2-clean decompressor-clean test-clean
 	rm -f stage2/stage2.bin.gz test/stage2.map test.hdd
 
 distclean: clean bootloader-clean
+	rm -rf stivale
 
-stage2:
+stivale:
+	git clone https://github.com/stivale/stivale.git
+	cd stivale && git checkout b962c172cbf1cf51098758b9a62ec80c50fb6432
+
+stage2: stivale
 	$(MAKE) -C stage2 all
 
 stage2-clean:

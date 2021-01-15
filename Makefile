@@ -37,7 +37,7 @@ distclean: clean bootloader-clean
 
 stivale:
 	git clone https://github.com/stivale/stivale.git
-	cd stivale && git checkout b962c172cbf1cf51098758b9a62ec80c50fb6432
+	cd stivale && git checkout d0a7ca5642d89654f8d688c2481c2771a8653c99
 
 stage2: stivale
 	$(MAKE) -C stage2 all

@@ -14,7 +14,7 @@ limine-install: limine-install.c limine.o
 	$(CC) $(CFLAGS) -std=c11 limine.o limine-install.c -o limine-install
 
 limine.o: limine.bin
-	$(OBJCOPY) -I binary -O default limine.bin limine.o
+	$(OBJCOPY) -B i8086 -I binary -O default limine.bin limine.o
 
 clean:
 	rm -f limine.o limine-install

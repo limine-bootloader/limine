@@ -32,13 +32,21 @@ you have a *very* good reason to.
 The `unstable` branch is unstable, and non-backwards compatible changes are made to it
 routinely.
 
-Use instead a [release](https://github.com/limine-bootloader/limine/releases).
+Use instead a [release](https://github.com/limine-bootloader/limine/releases), or a [release branch](https://github.com/limine-bootloader/limine/branches) (like v1.0-branch).
+
+Following a release offers a fixed point, immutable snapshot of Limine, while following a release branch tracks the latest changes made to that major release's branch which do not break compatibility (but could break in other, non-obvious ways).
 
 One can clone a release directly using
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v1.0
 ```
 (replace `v1.0` with the chosen release)
+
+or a release branch with
+```bash
+git clone https://github.com/limine-bootloader/limine.git --branch=v1.0-branch
+```
+(replace `v1.0-branch` with the chosen release branch)
 
 Also note that the documentation contained in `unstable` does not reflect the
 documentation for the specific releases, and one should refer to the releases'

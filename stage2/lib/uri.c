@@ -109,12 +109,17 @@ static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
 
 static bool uri_guid_dispatch(struct file_handle *fd, char *guid_str, char *path) {
     struct guid guid;
-    if (!string_to_guid(&guid, guid_str))
+    if (!string_to_guid_be(&guid, guid_str))
         return false;
 
     struct part part;
-    if (!part_get_by_guid(&part, &guid))
-        return false;
+    if (!part_get_by_guid(&part, &guid)) {
+        if (!string_to_guid_mixed(&guid, guid_str))
+            return false;
+
+        if (!part_get_by_guid(&part, &guid))
+            return false;
+    }
 
     if (fopen(fd, &part, path))
         return false;

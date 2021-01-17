@@ -1,12 +1,14 @@
 section .realmode
 
 int_08_ticks_counter: dd 0
+int_08_callback:      dd 0
 
 int_08_isr:
     bits 16
+    pushf
     inc dword [cs:int_08_ticks_counter]
-    int 0x80   ; call callback
-    iret
+    popf
+    jmp far [cs:int_08_callback]
     bits 32
 
 extern getchar_internal
@@ -15,7 +17,7 @@ global pit_sleep_and_quit_on_keypress
 pit_sleep_and_quit_on_keypress:
     ; Hook int 0x08
     mov edx, dword [0x08*4]
-    mov dword [0x80*4], edx
+    mov dword [int_08_callback], edx
     mov edx, int_08_isr
     mov dword [0x08*4], int_08_isr
 
@@ -100,7 +102,7 @@ pit_sleep_and_quit_on_keypress:
     pop ebx
 
     ; Dehook int 0x08
-    mov edx, dword [0x80*4]
+    mov edx, dword [int_08_callback]
     mov dword [0x08*4], edx
 
     push eax

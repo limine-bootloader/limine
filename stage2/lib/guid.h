@@ -12,6 +12,7 @@ struct guid {
 } __attribute__((packed));
 
 bool is_valid_guid(const char *s);
-bool string_to_guid(struct guid *guid, const char *s);
+bool string_to_guid_be(struct guid *guid, const char *s);
+bool string_to_guid_mixed(struct guid *guid, const char *s);
 
 #endif

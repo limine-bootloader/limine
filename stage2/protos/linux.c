@@ -13,7 +13,7 @@
 #include <mm/mtrr.h>
 
 #define KERNEL_LOAD_ADDR ((size_t)0x100000)
-#define KERNEL_HEAP_SIZE ((size_t)0x1000)
+#define KERNEL_HEAP_SIZE ((size_t)0x6000)
 
 __attribute__((section(".realmode"), used))
 static void spinup(uint16_t real_mode_code_seg, uint16_t kernel_entry_seg,
@@ -80,16 +80,11 @@ void linux_load(char *config, char *cmdline) {
 
     setup_code_size *= 512;
 
-    print("linux: Setup code size: %x\n", setup_code_size);
-
     size_t real_mode_code_size = 512 + setup_code_size;
 
-    print("linux: Real Mode code size: %x\n", real_mode_code_size);
+    size_t real_mode_and_heap_size = 0x8000 + KERNEL_HEAP_SIZE;
 
-    size_t real_mode_and_heap_size =
-        ((real_mode_code_size & 0x0f) + 0x10) + KERNEL_HEAP_SIZE;
-
-    void *real_mode_code = conv_mem_alloc_aligned(real_mode_and_heap_size, 0x1000);
+    void *real_mode_code = conv_mem_alloc_aligned(0x10000, 0x1000);
 
     fread(kernel, real_mode_code, 0, real_mode_code_size);
 
@@ -106,12 +101,7 @@ void linux_load(char *config, char *cmdline) {
     size_t heap_end_ptr = real_mode_and_heap_size - 0x200;
     *((uint16_t *)(real_mode_code + 0x224)) = (uint16_t)heap_end_ptr;
 
-    // The command line needs to be before address 0xa0000, we can use
-    // a conv_mem_alloc() allocated buffer for that.
-    // Allocate the relocation buffer for the command line early so it's allocated
-    // before the real mode code.
-    size_t cmdline_len = strlen(cmdline);
-    char *cmdline_reloc = conv_mem_alloc(cmdline_len + 1);
+    char *cmdline_reloc = real_mode_code + real_mode_and_heap_size;
     strcpy(cmdline_reloc, cmdline);
 
     // vid_mode. 0xffff means "normal"
@@ -142,11 +132,14 @@ void linux_load(char *config, char *cmdline) {
     *((uint32_t *)(real_mode_code + 0x228)) = (uint32_t)cmdline_reloc;
 
     // load kernel
-    print("Loading kernel...\n");
+    print("linux: Loading kernel...\n");
     memmap_alloc_range(KERNEL_LOAD_ADDR, kernel->size - real_mode_code_size, 0, true, true);
     fread(kernel, (void *)KERNEL_LOAD_ADDR, real_mode_code_size, kernel->size - real_mode_code_size);
 
     uint32_t modules_mem_base = *((uint32_t *)(real_mode_code + 0x22c)) + 1;
+    if (modules_mem_base == 0)
+        modules_mem_base = 0x38000000;
+
     size_t size_of_all_modules = 0;
 
     for (size_t i = 0; ; i++) {
@@ -180,7 +173,7 @@ void linux_load(char *config, char *cmdline) {
         if (!uri_open(&module, module_path))
             panic("Could not open `%s`", module_path);
 
-        print("Loading module `%s`...\n", module_path);
+        print("linux: Loading module `%s`...\n", module_path);
 
         fread(&module, (void *)_modules_mem_base, 0, module.size);
 

@@ -237,7 +237,7 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
 
         // We now reserve the range we need.
         int64_t aligned_length = entry_top - alloc_base;
-        memmap_alloc_range((uint64_t)alloc_base, (uint64_t)aligned_length, type, true);
+        memmap_alloc_range((uint64_t)alloc_base, (uint64_t)aligned_length, type, true, true);
 
         void *ret = (void *)(size_t)alloc_base;
 
@@ -252,13 +252,17 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
     panic("High memory allocator: Out of memory");
 }
 
-void memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only) {
+bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only, bool do_panic) {
     uint64_t top = base + length;
 
     if (base < 0x100000) {
-        // We don't do allocations below 1 MiB
-        panic("Attempt to allocate memory below 1 MiB (%X-%X)",
-              base, base + length);
+        if (do_panic) {
+            // We don't do allocations below 1 MiB
+            panic("Attempt to allocate memory below 1 MiB (%X-%X)",
+                  base, base + length);
+        } else {
+            return false;
+        }
     }
 
     for (size_t i = 0; i < memmap_entries; i++) {
@@ -303,11 +307,14 @@ void memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
             target->base   = base;
             target->length = length;
 
-            return;
+            return true;
         }
     }
 
-    panic("Out of memory");
+    if (do_panic)
+        panic("Out of memory");
+
+    return false;
 }
 
 extern symbol bss_end;

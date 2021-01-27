@@ -309,7 +309,7 @@ int elf64_load(struct file_handle *fd, uint64_t *entry_point, uint64_t *top, uin
         if (this_top > *top)
             *top = this_top;
 
-        memmap_alloc_range((size_t)load_vaddr, (size_t)phdr.p_memsz, alloc_type, true);
+        memmap_alloc_range((size_t)load_vaddr, (size_t)phdr.p_memsz, alloc_type, true, true);
 
         fread(fd, (void *)(uint32_t)load_vaddr, phdr.p_offset, phdr.p_filesz);
 
@@ -362,7 +362,7 @@ int elf32_load(struct file_handle *fd, uint32_t *entry_point, uint32_t *top, uin
         if (this_top > *top)
             *top = this_top;
 
-        memmap_alloc_range((size_t)phdr.p_paddr, (size_t)phdr.p_memsz, alloc_type, true);
+        memmap_alloc_range((size_t)phdr.p_paddr, (size_t)phdr.p_memsz, alloc_type, true, true);
 
         fread(fd, (void *)phdr.p_paddr, phdr.p_offset, phdr.p_filesz);
 

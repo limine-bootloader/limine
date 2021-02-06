@@ -67,12 +67,12 @@ struct fat32_lfn_entry {
     char name3[4];
 } __attribute__((packed));
 
-static int fat32_init_context(struct fat32_context* context, struct part *part) {
+static int fat32_init_context(struct fat32_context* context, struct volume *part) {
     context->part  = *part;
     context->drive = part->drive;
 
     struct fat32_bpb bpb;
-    part_read(&context->part, &bpb, 0, sizeof(struct fat32_bpb));
+    volume_read(&context->part, &bpb, 0, sizeof(struct fat32_bpb));
 
     if (bpb.signature != FAT32_VALID_SIGNATURE_1 && bpb.signature != FAT32_VALID_SIGNATURE_2) {
         return 1;
@@ -99,7 +99,7 @@ static int fat32_read_cluster_from_map(struct fat32_context* context, uint32_t c
     const uint32_t offset = cluster % (FAT32_SECTOR_SIZE / 4);
 
     uint32_t clusters[FAT32_SECTOR_SIZE / sizeof(uint32_t)];
-    int r = part_read(&context->part, &clusters[0], (context->fat_start_lba + sector) * FAT32_SECTOR_SIZE, sizeof(clusters));
+    int r = volume_read(&context->part, &clusters[0], (context->fat_start_lba + sector) * FAT32_SECTOR_SIZE, sizeof(clusters));
 
     if (r) {
         return r;
@@ -144,7 +144,7 @@ static bool read_cluster_chain(struct fat32_context *context,
             chunk = block_size - offset;
 
         uint64_t base = (context->data_start_lba + (cluster_chain[block] - 2)) * block_size;
-        int r = part_read(&context->part, buf + progress, base + offset, chunk);
+        int r = volume_read(&context->part, buf + progress, base + offset, chunk);
 
         if (r)
             return false;
@@ -253,12 +253,12 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
     return -1;
 }
 
-int fat32_check_signature(struct part *part) {
+int fat32_check_signature(struct volume *part) {
     struct fat32_context context;
     return fat32_init_context(&context, part) == 0;
 }
 
-int fat32_open(struct fat32_file_handle* ret, struct part *part, const char* path) {
+int fat32_open(struct fat32_file_handle* ret, struct volume *part, const char* path) {
     struct fat32_context context;
     int r = fat32_init_context(&context, part);
 

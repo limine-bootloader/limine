@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <lib/part.h>
 
-bool fs_get_guid(struct guid *guid, struct part *part);
+bool fs_get_guid(struct guid *guid, struct volume *part);
 
 struct file_handle {
     bool       is_memfile;
@@ -15,7 +15,7 @@ struct file_handle {
     uint64_t   size;
 };
 
-int fopen(struct file_handle *ret, struct part *part, const char *filename);
+int fopen(struct file_handle *ret, struct volume *part, const char *filename);
 int fread(struct file_handle *fd, void *buf, uint64_t loc, uint64_t count);
 void *freadall(struct file_handle *fd, uint32_t type);
 

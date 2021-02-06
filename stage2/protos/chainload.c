@@ -75,14 +75,10 @@ void chainload(char *config) {
 
     term_deinit();
 
-    if (part != -1) {
-        struct part p;
-        part_get(&p, drive, part);
+    struct volume p;
+    volume_get_by_coord(&p, drive, part);
 
-        part_read(&p, (void *)0x7c00, 0, 512);
-    } else {
-        disk_read(drive, (void *)0x7c00, 0, 512);
-    }
+    volume_read(&p, (void *)0x7c00, 0, 512);
 
     mtrr_restore();
 

@@ -22,7 +22,7 @@ struct echfs_dir_entry {
 
 struct echfs_file_handle {
     int disk;
-    struct part part;
+    struct volume part;
     uint64_t block_size;
     uint64_t block_count;
     uint64_t dir_length;
@@ -33,10 +33,10 @@ struct echfs_file_handle {
     struct echfs_dir_entry dir_entry;
 };
 
-int echfs_check_signature(struct part *part);
-bool echfs_get_guid(struct guid *guid, struct part *part);
+int echfs_check_signature(struct volume *part);
+bool echfs_get_guid(struct guid *guid, struct volume *part);
 
-int echfs_open(struct echfs_file_handle *ret, struct part *part, const char *filename);
+int echfs_open(struct echfs_file_handle *ret, struct volume *part, const char *filename);
 int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t count);
 
 #endif

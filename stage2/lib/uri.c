@@ -97,11 +97,11 @@ static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
     if (!parse_bios_partition(loc, &drive, &partition))
         return false;
 
-    struct part part;
-    if (part_get(&part, drive, partition))
+    struct volume volume;
+    if (!volume_get_by_coord(&volume, drive, partition))
         return false;
 
-    if (fopen(fd, &part, path))
+    if (fopen(fd, &volume, path))
         return false;
 
     return true;
@@ -112,12 +112,12 @@ static bool uri_guid_dispatch(struct file_handle *fd, char *guid_str, char *path
     if (!string_to_guid_be(&guid, guid_str))
         return false;
 
-    struct part part;
-    if (!part_get_by_guid(&part, &guid)) {
+    struct volume part;
+    if (!volume_get_by_guid(&part, &guid)) {
         if (!string_to_guid_mixed(&guid, guid_str))
             return false;
 
-        if (!part_get_by_guid(&part, &guid))
+        if (!volume_get_by_guid(&part, &guid))
             return false;
     }
 
@@ -170,8 +170,8 @@ static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) 
         }
     }
 
-    struct part part;
-    if (part_get(&part, boot_drive, partition))
+    struct volume part;
+    if (!volume_get_by_coord(&part, boot_drive, partition))
         return false;
 
     if (fopen(fd, &part, path))

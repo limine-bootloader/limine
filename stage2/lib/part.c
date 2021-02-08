@@ -232,6 +232,8 @@ static struct part *part_index = NULL;
 static size_t part_index_i = 0;
 
 void part_create_index(void) {
+    size_t part_count = 0;
+
     for (uint8_t drive = 0x80; drive < 0x8f; drive++) {
         struct rm_regs r = {0};
         struct bios_drive_params drive_params;
@@ -252,29 +254,48 @@ void part_create_index(void) {
         print(" ... %X total %u-byte sectors\n",
               drive_params.lba_count, drive_params.bytes_per_sect);
 
-        size_t part_count = 0;
-
-load_up:
         for (int part = 0; ; part++) {
             struct part p;
             int ret = part_get(&p, drive, part);
 
-            if (ret == END_OF_TABLE)
+            if (ret == END_OF_TABLE || ret == INVALID_TABLE)
                 break;
             if (ret == NO_PARTITION)
                 continue;
 
-            if (part_index)
-                part_index[part_index_i++] = p;
-            else
-                part_count++;
+            part_count++;
         }
+    }
 
-        if (part_index)
-            return;
+    part_index = ext_mem_alloc(sizeof(struct part) * part_count);
 
-        part_index = ext_mem_alloc(sizeof(struct part) * part_count);
-        goto load_up;
+    for (uint8_t drive = 0x80; drive < 0x8f; drive++) {
+        struct rm_regs r = {0};
+        struct bios_drive_params drive_params;
+
+        r.eax = 0x4800;
+        r.edx = drive;
+        r.ds  = rm_seg(&drive_params);
+        r.esi = rm_off(&drive_params);
+
+        drive_params.buf_size = sizeof(struct bios_drive_params);
+
+        rm_int(0x13, &r, &r);
+
+        if (r.eflags & EFLAGS_CF)
+            continue;
+
+        for (int part = 0; ; part++) {
+            struct part p;
+            int ret = part_get(&p, drive, part);
+
+            if (ret == END_OF_TABLE || ret == INVALID_TABLE)
+                break;
+            if (ret == NO_PARTITION)
+                continue;
+
+            part_index[part_index_i++] = p;
+        }
     }
 }
 

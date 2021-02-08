@@ -167,6 +167,9 @@ static bool fat32_filename_to_8_3(char *dest, const char *src) {
     int i = 0, j = 0;
     bool ext = false;
 
+    for (size_t i = 0; i < 8+3; i++)
+        dest[i] = ' ';
+
     while (src[i]) {
         if (src[i] == '.') {
             if (ext) {
@@ -174,9 +177,7 @@ static bool fat32_filename_to_8_3(char *dest, const char *src) {
                 return false;
             }
             ext = true;
-            // Pad the rest of the base filename with spaces
-            while (j < 8)
-                dest[j++] = ' ';
+            j = 8;
             i++;
             continue;
         }

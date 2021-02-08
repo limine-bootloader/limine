@@ -9,7 +9,7 @@
 #define INVALID_TABLE (-2)
 #define END_OF_TABLE  (-3)
 
-struct volume {
+struct part {
     int drive;
     int partition;
     int sector_size;
@@ -21,12 +21,11 @@ struct volume {
     struct guid part_guid;
 };
 
-void volume_create_index(void);
+void part_create_index(void);
 
-int part_get(struct volume *part, struct volume *volume, int partition);
-bool volume_get_by_guid(struct volume *part, struct guid *guid);
-bool volume_get_by_coord(struct volume *part, int drive, int partition);
+int part_get(struct part *part, int drive, int partition);
+bool part_get_by_guid(struct part *part, struct guid *guid);
 
-int volume_read(struct volume *part, void *buffer, uint64_t loc, uint64_t count);
+int part_read(struct part *part, void *buffer, uint64_t loc, uint64_t count);
 
 #endif

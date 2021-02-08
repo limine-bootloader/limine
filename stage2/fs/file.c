@@ -9,7 +9,7 @@
 #include <lib/part.h>
 #include <lib/libc.h>
 
-bool fs_get_guid(struct guid *guid, struct volume *part) {
+bool fs_get_guid(struct guid *guid, struct part *part) {
     if (echfs_check_signature(part)) {
         return echfs_get_guid(guid, part);
     }
@@ -20,7 +20,7 @@ bool fs_get_guid(struct guid *guid, struct volume *part) {
     return false;
 }
 
-int fopen(struct file_handle *ret, struct volume *part, const char *filename) {
+int fopen(struct file_handle *ret, struct part *part, const char *filename) {
     ret->is_memfile = false;
 
     if (echfs_check_signature(part)) {

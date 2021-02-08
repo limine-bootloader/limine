@@ -16,7 +16,7 @@ bool config_ready = false;
 
 static char *config_addr;
 
-int init_config_disk(struct volume *part) {
+int init_config_disk(struct part *part) {
     struct file_handle f;
 
     if (fopen(&f, part, "/limine.cfg")

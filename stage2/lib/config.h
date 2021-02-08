@@ -18,7 +18,7 @@ struct menu_entry {
 
 extern struct menu_entry *menu_tree;
 
-int init_config_disk(struct volume *part);
+int init_config_disk(struct part *part);
 int init_config_pxe(void);
 int init_config(size_t config_size);
 bool config_get_entry_name(char *ret, size_t index, size_t limit);

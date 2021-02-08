@@ -39,7 +39,7 @@ void entry(uint8_t _boot_drive, int pxe_boot, void *_tinf_gzip_uncompress) {
     init_e820();
     init_memmap();
 
-    volume_create_index();
+    part_create_index();
 
     if (pxe_boot) {
         pxe_init();
@@ -52,8 +52,8 @@ void entry(uint8_t _boot_drive, int pxe_boot, void *_tinf_gzip_uncompress) {
         // Look for config file.
         print("Searching for config file...\n");
         for (int i = 0; ; i++) {
-            struct volume part;
-            int ret = volume_get_by_coord(&part, boot_drive, i);
+            struct part part;
+            int ret = part_get(&part, boot_drive, i);
             switch (ret) {
                 case INVALID_TABLE:
                     panic("Partition table of boot drive is invalid.");

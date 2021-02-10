@@ -300,7 +300,7 @@ int main(int argc, char *argv[]) {
     int gpt = 0;
     struct gpt_table_header gpt_header;
     uint64_t lb_guesses[] = { 512, 4096 };
-    uint64_t lb_size;
+    uint64_t lb_size = 0;
     for (size_t i = 0; i < sizeof(lb_guesses) / sizeof(uint64_t); i++) {
         device_read(&gpt_header, lb_guesses[i], sizeof(struct gpt_table_header));
         if (!strncmp(gpt_header.signature, "EFI PART", 8)) {

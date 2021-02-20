@@ -72,4 +72,4 @@ stage2.elf: $(OBJ)
 	nasm $< -f elf32 -o $@
 
 clean:
-	rm -f symlist.gen stage2.map stage2.bin stage2.elf stage3.bin $(OBJ) $(HEADER_DEPS)
+	rm -f symlist.gen stages.bin stage2.map stage2.bin stage2.elf stage3.bin $(OBJ) $(HEADER_DEPS)

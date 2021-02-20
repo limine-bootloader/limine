@@ -20,7 +20,7 @@ limine_sys.o: limine.bin
 	$(OBJCOPY) -B i8086 -I binary -O default limine.sys limine_sys.o
 
 clean:
-	rm -f limine.o limine-install
+	rm -f limine.o limine_sys.o limine-install
 
 install: all
 	install -d $(DESTDIR)$(PREFIX)/bin

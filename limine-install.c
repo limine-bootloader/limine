@@ -260,34 +260,53 @@ static bool _device_write(const void *buffer, uint64_t loc, size_t count) {
     } while (0)
 
 extern uint8_t _binary_limine_bin_start[], _binary_limine_bin_end[];
+extern uint8_t _binary_limine_sys_start[], _binary_limine_sys_end[];
 
 int main(int argc, char *argv[]) {
     int      ok = 1;
     uint8_t *bootloader_img = _binary_limine_bin_start;
     size_t   bootloader_file_size =
         (size_t)_binary_limine_bin_end - (size_t)_binary_limine_bin_start;
+    uint8_t *stage3_img = _binary_limine_sys_start;
+    size_t   stage3_file_size =
+        (size_t)_binary_limine_sys_end - (size_t)_binary_limine_sys_start;
     uint8_t  orig_mbr[70], timestamp[6];
+    char *limine_sys_path = NULL;
+    int   limine_sys = -1;
 
     if (sizeof(off_t) != 8) {
         fprintf(stderr, "ERROR: off_t type is not 64-bit.\n");
         goto cleanup;
     }
 
-    if (argc > 1 && strstr(argv[1], "limine.bin") != NULL) {
-        fprintf(stderr,
-            "WARNING: Passing the bootloader binary as a file argument is\n"
-            "         deprecated and should be avoided in the future.\n");
-        argc--;
-        argv[1] = argv[0];
-        argv++;
-    }
-
-    if (argc < 2) {
-        printf("Usage: %s <device> [GPT partition index]\n", argv[0]);
+    if (argc < 3) {
+        printf("Usage: %s <boot directory> <device> [GPT partition index]\n", argv[0]);
         goto cleanup;
     }
 
-    device = open(argv[1], O_RDWR);
+    #define MAX_STAGE3_PATH 1024
+
+    limine_sys_path = malloc(MAX_STAGE3_PATH);
+    if (limine_sys_path == NULL) {
+        perror("ERROR");
+        goto cleanup;
+    }
+
+    snprintf(limine_sys_path, MAX_STAGE3_PATH, "%s/limine.sys", argv[1]);
+
+    limine_sys = creat(limine_sys_path, 0644);
+    if (limine_sys == -1) {
+        perror("ERROR");
+        goto cleanup;
+    }
+
+    if (write(limine_sys, stage3_img, stage3_file_size) !=
+        (ssize_t)stage3_file_size) {
+        perror("ERROR");
+        goto cleanup;
+    }
+
+    device = open(argv[2], O_RDWR);
     if (device == -1) {
         perror("ERROR");
         goto cleanup;
@@ -483,6 +502,10 @@ cleanup:
         free(cache);
     if (device != -1)
         close(device);
+    if (limine_sys_path != NULL)
+        free(limine_sys_path);
+    if (limine_sys != -1)
+        close(limine_sys);
 
     return ok;
 }

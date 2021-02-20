@@ -43,4 +43,7 @@ uint64_t strtoui(const char *s, const char **end, int base);
 
 typedef void *symbol[];
 
+#define stage3_text __attribute__((section(".stage3_text")))
+#define stage3_data __attribute__((section(".stage3_data")))
+
 #endif

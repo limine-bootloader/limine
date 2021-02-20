@@ -5,18 +5,24 @@ SECTIONS
 {
     . = 0x8000;
 
-    .text : {
+    .entry : {
         KEEP(*(.entry*))
-        KEEP(*(.realmode*))
-        *(.text*)
     }
 
-    .rodata : {
+    .realmode : {
+        KEEP(*(.realmode*))
+    }
+
+    .stage2 : {
+        *(.text*)
+        *(.data*)
         *(.rodata*)
     }
 
-    .data : {
-        *(.data*)
+    .stage3 : {
+        stage3_addr = .;
+        *(.stage3_text*)
+        *(.stage3_data*)
     }
 
     .bss : {

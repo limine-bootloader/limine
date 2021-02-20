@@ -10,11 +10,14 @@ PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
 all: limine-install
 
-limine-install: limine-install.c limine.o
-	$(CC) $(CFLAGS) -std=c11 limine.o limine-install.c -o limine-install
+limine-install: limine-install.c limine.o limine_sys.o
+	$(CC) $(CFLAGS) -std=c11 limine.o limine_sys.o limine-install.c -o limine-install
 
 limine.o: limine.bin
 	$(OBJCOPY) -B i8086 -I binary -O default limine.bin limine.o
+
+limine_sys.o: limine.bin
+	$(OBJCOPY) -B i8086 -I binary -O default limine.sys limine_sys.o
 
 clean:
 	rm -f limine.o limine-install
@@ -28,6 +31,7 @@ bootloader: stage2 decompressor
 	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
 	cd pxeboot && nasm bootsect.asm -fbin -o ../limine-pxe.bin
 	cp stage2/stage2.map ./
+	cp stage2/stage3.bin ./limine.sys
 
 bootloader-clean: stage2-clean decompressor-clean test-clean
 	rm -f stage2/stage2.bin.gz test/stage2.map test.hdd
@@ -72,8 +76,8 @@ echfs-test: test.hdd bootloader | all
 	echfs-utils -g -p0 test.hdd import stage2.map boot/stage2.map
 	echfs-utils -g -p0 test.hdd import test/test.elf boot/test.elf
 	echfs-utils -g -p0 test.hdd import test/bg.bmp boot/bg.bmp
-	echfs-utils -g -p0 test.hdd import test/font.bin boot/font.bin
-	./limine-install test.hdd
+	./limine-install ./ test.hdd
+	echfs-utils -g -p0 test.hdd import ./limine.sys boot/limine.sys
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
 ext2-test: test.hdd bootloader | all

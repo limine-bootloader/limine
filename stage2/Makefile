@@ -2,6 +2,7 @@ CC = i386-elf-gcc
 LD = i386-elf-gcc
 OBJCOPY = i386-elf-objcopy
 OBJDUMP = i386-elf-objdump
+READELF = i386-elf-readelf
 
 LIMINE_VERSION := $(shell git branch --show-current | sed 's/-branch//')
 WERROR = -Werror
@@ -44,13 +45,19 @@ ASM_FILES := $(shell find ./ -type f -name '*.asm' | sort)
 OBJ := $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o)
 HEADER_DEPS := $(C_FILES:.c=.d)
 
-all: stage2.map stage2.bin
+all: stage2.map stage2.bin stage3.bin
+
+stage2.bin: stages.bin
+	dd if=stages.bin bs=$$(( 0x$$($(READELF) -S stage2.elf | grep .stage3 | sed 's/^.*] //' | awk '{print $$3}' | sed 's/^0*//') - 0x8000 )) count=1 of=$@
+
+stage3.bin: stages.bin
+	dd if=stages.bin bs=$$(( 0x$$($(READELF) -S stage2.elf | grep .stage3 | sed 's/^.*] //' | awk '{print $$3}' | sed 's/^0*//') - 0x8000 )) skip=1 of=$@
 
 stage2.map: stage2.elf
 	./gensyms.sh $(OBJDUMP)
 	nasm symlist.gen -f bin -o $@
 
-stage2.bin: stage2.elf
+stages.bin: stage2.elf
 	$(OBJCOPY) -O binary $< $@
 
 stage2.elf: $(OBJ)
@@ -65,4 +72,4 @@ stage2.elf: $(OBJ)
 	nasm $< -f elf32 -o $@
 
 clean:
-	rm -f symlist.gen stage2.map stage2.bin stage2.elf $(OBJ) $(HEADER_DEPS)
+	rm -f symlist.gen stage2.map stage2.bin stage2.elf stage3.bin $(OBJ) $(HEADER_DEPS)

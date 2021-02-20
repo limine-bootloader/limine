@@ -17,9 +17,9 @@
 #define VGA_FONT_GLYPHS 256
 #define VGA_FONT_MAX    (VGA_FONT_HEIGHT * VGA_FONT_GLYPHS)
 
-static uint8_t *vga_font;
+stage3_data static uint8_t *vga_font;
 
-static void vga_font_retrieve(void) {
+stage3_text static void vga_font_retrieve(void) {
     struct rm_regs r = {0};
 
     r.eax = 0x1130;
@@ -31,37 +31,37 @@ static void vga_font_retrieve(void) {
     memcpy(vga_font, (void *)rm_desegment(r.es, r.ebp), VGA_FONT_MAX);
 }
 
-static uint32_t ansi_colours[8];
+stage3_data static uint32_t ansi_colours[8];
 
-static struct vbe_framebuffer_info fbinfo;
-static uint32_t *vbe_framebuffer;
-static uint16_t  vbe_pitch;
-static uint16_t  vbe_width;
-static uint16_t  vbe_height;
-static uint16_t  vbe_bpp;
+stage3_data static struct vbe_framebuffer_info fbinfo;
+stage3_data static uint32_t *vbe_framebuffer;
+stage3_data static uint16_t  vbe_pitch;
+stage3_data static uint16_t  vbe_width;
+stage3_data static uint16_t  vbe_height;
+stage3_data static uint16_t  vbe_bpp;
 
-static int frame_height, frame_width;
+stage3_data static int frame_height, frame_width;
 
-static struct image *background;
+stage3_data static struct image *background;
 
-static struct vbe_char *grid;
-static struct vbe_char *front_grid;
+stage3_data static struct vbe_char *grid;
+stage3_data static struct vbe_char *front_grid;
 
-static bool double_buffer_enabled = false;
+stage3_data static bool double_buffer_enabled = false;
 
-static bool cursor_status = true;
+stage3_data static bool cursor_status = true;
 
-static int cursor_x;
-static int cursor_y;
+stage3_data static int cursor_x;
+stage3_data static int cursor_y;
 
-static uint32_t cursor_fg = 0x00000000;
-static uint32_t cursor_bg = 0x00ffffff;
-static uint32_t text_fg;
-static uint32_t text_bg;
+stage3_data static uint32_t cursor_fg = 0x00000000;
+stage3_data static uint32_t cursor_bg = 0x00ffffff;
+stage3_data static uint32_t text_fg;
+stage3_data static uint32_t text_bg;
 
-static int rows;
-static int cols;
-static int margin_gradient;
+stage3_data static int rows;
+stage3_data static int cols;
+stage3_data static int margin_gradient;
 
 #define A(rgb) (uint8_t)(rgb >> 24)
 #define R(rgb) (uint8_t)(rgb >> 16)
@@ -69,7 +69,7 @@ static int margin_gradient;
 #define B(rgb) (uint8_t)(rgb)
 #define ARGB(a, r, g, b) (a << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF)
 
-static inline uint32_t colour_blend(uint32_t fg, uint32_t bg) {
+stage3_text static inline uint32_t colour_blend(uint32_t fg, uint32_t bg) {
     unsigned alpha = 255 - A(fg);
     unsigned inv_alpha = A(fg) + 1;
 
@@ -80,19 +80,19 @@ static inline uint32_t colour_blend(uint32_t fg, uint32_t bg) {
     return ARGB(0, r, g, b);
 }
 
-void vbe_plot_px(int x, int y, uint32_t hex) {
+stage3_text void vbe_plot_px(int x, int y, uint32_t hex) {
     size_t fb_i = x + (vbe_pitch / sizeof(uint32_t)) * y;
 
     vbe_framebuffer[fb_i] = hex;
 }
 
-static void _vbe_plot_bg_blent_px(int x, int y, uint32_t hex) {
+stage3_text static void _vbe_plot_bg_blent_px(int x, int y, uint32_t hex) {
     vbe_plot_px(x, y, colour_blend(hex, background->get_pixel(background, x, y)));
 }
 
-void (*vbe_plot_bg_blent_px)(int x, int y, uint32_t hex) = vbe_plot_px;
+stage3_data void (*vbe_plot_bg_blent_px)(int x, int y, uint32_t hex) = vbe_plot_px;
 
-static uint32_t blend_gradient_from_box(int x, int y, uint32_t hex) {
+stage3_text static uint32_t blend_gradient_from_box(int x, int y, uint32_t hex) {
     if (x >= frame_width  && x < frame_width  + VGA_FONT_WIDTH  * cols
      && y >= frame_height && y < frame_height + VGA_FONT_HEIGHT * rows) {
         return hex;
@@ -133,7 +133,7 @@ static uint32_t blend_gradient_from_box(int x, int y, uint32_t hex) {
     return colour_blend((hex & 0xffffff) | (new_alpha << 24), bg_px);
 }
 
-void vbe_plot_background(int x, int y, int width, int height) {
+stage3_text void vbe_plot_background(int x, int y, int width, int height) {
     if (background) {
         for (int yy = 0; yy < height; yy++) {
             for (int xx = 0; xx < width; xx++) {
@@ -149,7 +149,7 @@ void vbe_plot_background(int x, int y, int width, int height) {
     }
 }
 
-void vbe_plot_rect(int x, int y, int width, int height, uint32_t hex) {
+stage3_text void vbe_plot_rect(int x, int y, int width, int height, uint32_t hex) {
     for (int yy = 0; yy < height; yy++) {
         for (int xx = 0; xx < width; xx++) {
             vbe_plot_px(x + xx, y + yy, hex);
@@ -157,7 +157,7 @@ void vbe_plot_rect(int x, int y, int width, int height, uint32_t hex) {
     }
 }
 
-void vbe_plot_bg_blent_rect(int x, int y, int width, int height, uint32_t hex) {
+stage3_text void vbe_plot_bg_blent_rect(int x, int y, int width, int height, uint32_t hex) {
     for (int yy = 0; yy < height; yy++) {
         for (int xx = 0; xx < width; xx++) {
             vbe_plot_bg_blent_px(x + xx, y + yy, hex);
@@ -171,7 +171,7 @@ struct vbe_char {
     uint32_t bg;
 };
 
-void vbe_plot_char(struct vbe_char *c, int x, int y) {
+stage3_text void vbe_plot_char(struct vbe_char *c, int x, int y) {
     uint8_t *glyph = &vga_font[(size_t)c->c * VGA_FONT_HEIGHT];
 
     vbe_plot_bg_blent_rect(x, y, VGA_FONT_WIDTH, VGA_FONT_HEIGHT, c->bg);
@@ -184,7 +184,7 @@ void vbe_plot_char(struct vbe_char *c, int x, int y) {
     }
 }
 
-static void plot_char_grid(struct vbe_char *c, int x, int y) {
+stage3_text static void plot_char_grid(struct vbe_char *c, int x, int y) {
     if (!double_buffer_enabled) {
         vbe_plot_char(c, x * VGA_FONT_WIDTH + frame_width,
                          y * VGA_FONT_HEIGHT + frame_height);
@@ -192,14 +192,14 @@ static void plot_char_grid(struct vbe_char *c, int x, int y) {
     grid[x + y * cols] = *c;
 }
 
-static void clear_cursor(void) {
+stage3_text static void clear_cursor(void) {
     struct vbe_char c = grid[cursor_x + cursor_y * cols];
     c.fg = text_fg;
     c.bg = text_bg;
     plot_char_grid(&c, cursor_x, cursor_y);
 }
 
-static void draw_cursor(void) {
+stage3_text static void draw_cursor(void) {
     if (cursor_status) {
         struct vbe_char c = grid[cursor_x + cursor_y * cols];
         c.fg = cursor_fg;
@@ -208,7 +208,7 @@ static void draw_cursor(void) {
     }
 }
 
-static void scroll(void) {
+stage3_text static void scroll(void) {
     clear_cursor();
 
     for (int i = cols; i < rows * cols; i++) {
@@ -227,7 +227,7 @@ static void scroll(void) {
     draw_cursor();
 }
 
-void vbe_clear(bool move) {
+stage3_text void vbe_clear(bool move) {
     clear_cursor();
 
     struct vbe_char empty;
@@ -246,37 +246,37 @@ void vbe_clear(bool move) {
     draw_cursor();
 }
 
-void vbe_enable_cursor(void) {
+stage3_text void vbe_enable_cursor(void) {
     cursor_status = true;
     draw_cursor();
 }
 
-void vbe_disable_cursor(void) {
+stage3_text void vbe_disable_cursor(void) {
     clear_cursor();
     cursor_status = false;
 }
 
-void vbe_set_cursor_pos(int x, int y) {
+stage3_text void vbe_set_cursor_pos(int x, int y) {
     clear_cursor();
     cursor_x = x;
     cursor_y = y;
     draw_cursor();
 }
 
-void vbe_get_cursor_pos(int *x, int *y) {
+stage3_text void vbe_get_cursor_pos(int *x, int *y) {
     *x = cursor_x;
     *y = cursor_y;
 }
 
-void vbe_set_text_fg(int fg) {
+stage3_text void vbe_set_text_fg(int fg) {
     text_fg = ansi_colours[fg];
 }
 
-void vbe_set_text_bg(int bg) {
+stage3_text void vbe_set_text_bg(int bg) {
     text_bg = ansi_colours[bg];
 }
 
-void vbe_double_buffer_flush(void) {
+stage3_text void vbe_double_buffer_flush(void) {
     for (size_t i = 0; i < (size_t)rows * cols; i++) {
         if (!memcmp(&grid[i], &front_grid[i], sizeof(struct vbe_char)))
             continue;
@@ -291,7 +291,7 @@ void vbe_double_buffer_flush(void) {
     }
 }
 
-void vbe_double_buffer(bool state) {
+stage3_text void vbe_double_buffer(bool state) {
     if (state) {
         memcpy(front_grid, grid, rows * cols * sizeof(struct vbe_char));
         double_buffer_enabled = true;
@@ -308,7 +308,7 @@ void vbe_double_buffer(bool state) {
     }
 }
 
-void vbe_putchar(uint8_t c) {
+stage3_text void vbe_putchar(uint8_t c) {
     switch (c) {
         case '\b':
             if (cursor_x || cursor_y) {
@@ -354,7 +354,7 @@ void vbe_putchar(uint8_t c) {
     }
 }
 
-bool vbe_tty_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _margin_gradient, struct image *_background) {
+stage3_text bool vbe_tty_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _margin_gradient, struct image *_background) {
     int req_width = 0, req_height = 0, req_bpp = 0;
 
     char *menu_resolution = config_get_value(NULL, 0, "MENU_RESOLUTION");
@@ -495,7 +495,7 @@ struct vbe_mode_info_struct {
     uint8_t  reserved2[189];
 } __attribute__((packed));
 
-static void get_vbe_info(struct vbe_info_struct *buf) {
+stage3_text static void get_vbe_info(struct vbe_info_struct *buf) {
     struct rm_regs r = {0};
 
     r.eax = 0x4f00;
@@ -503,7 +503,7 @@ static void get_vbe_info(struct vbe_info_struct *buf) {
     rm_int(0x10, &r, &r);
 }
 
-static void get_vbe_mode_info(struct vbe_mode_info_struct *buf,
+stage3_text static void get_vbe_mode_info(struct vbe_mode_info_struct *buf,
                               uint16_t mode) {
     struct rm_regs r = {0};
 
@@ -513,7 +513,7 @@ static void get_vbe_mode_info(struct vbe_mode_info_struct *buf,
     rm_int(0x10, &r, &r);
 }
 
-static int set_vbe_mode(uint16_t mode) {
+stage3_text static int set_vbe_mode(uint16_t mode) {
     struct rm_regs r = {0};
 
     r.eax = 0x4f02;
@@ -550,7 +550,7 @@ struct edid_info_struct {
     uint8_t checksum;
 } __attribute__((packed));
 
-static int get_edid_info(struct edid_info_struct *buf) {
+stage3_text static int get_edid_info(struct edid_info_struct *buf) {
     struct rm_regs r = {0};
 
     r.eax = 0x4f15;
@@ -572,13 +572,13 @@ struct resolution {
     uint16_t bpp;
 };
 
-static struct resolution fallback_resolutions[] = {
+stage3_data static struct resolution fallback_resolutions[] = {
     { 1024, 768, 32 },
     { 800,  600, 32 },
     { 640,  480, 32 }
 };
 
-bool init_vbe(struct vbe_framebuffer_info *ret,
+stage3_text bool init_vbe(struct vbe_framebuffer_info *ret,
               uint16_t target_width, uint16_t target_height, uint16_t target_bpp) {
     print("vbe: Initialising...\n");
 

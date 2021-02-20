@@ -339,7 +339,7 @@ int main(int argc, char *argv[]) {
     if (gpt) {
         if (argc > 3) {
             uint32_t partition_num;
-            sscanf(argv[3], "%" SCNu32, &partition_num);
+            sscanf(argv[2], "%" SCNu32, &partition_num);
             partition_num--;
             if (partition_num > gpt_header.number_of_partition_entries) {
                 fprintf(stderr, "ERROR: Partition number is too large.\n");

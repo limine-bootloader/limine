@@ -38,7 +38,7 @@ INTERNAL_LDFLAGS = \
 	-static \
 	-Tlinker.ld
 
-.PHONY: all clean
+.PHONY: all tinf-clean clean
 
 C_FILES := $(shell find -L ./ -type f -name '*.c' | sort)
 ASM_FILES := $(shell find -L ./ -type f -name '*.asm' | sort)
@@ -71,5 +71,8 @@ stage2.elf: $(OBJ)
 %.o: %.asm
 	nasm $< -f elf32 -o $@
 
-clean:
+tinf-clean:
+	rm -f tinf/*.o tinf/*.d
+
+clean: tinf-clean
 	rm -f symlist.gen stages.bin stage2.map stage2.bin stage2.elf stage3.bin $(OBJ) $(HEADER_DEPS)

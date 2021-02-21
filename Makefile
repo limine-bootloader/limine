@@ -44,7 +44,7 @@ stivale:
 	cd stivale && git checkout d0a7ca5642d89654f8d688c2481c2771a8653c99
 
 stage2: stivale
-	$(MAKE) -C stage2 all
+	$(MAKE) -C stage2 tinf-clean all
 
 stage2-clean:
 	$(MAKE) -C stage2 clean

@@ -12,13 +12,12 @@ void entry(uint8_t *compressed_stage2, size_t stage2_size, uint8_t boot_drive, i
     asm volatile (
         "mov esp, 0x7c00\n\t"
         "xor ebp, ebp\n\t"
-        "push %2\n\t"
         "push %1\n\t"
         "push %0\n\t"
         "push 0\n\t"
         "jmp 0x8000\n\t"
         :
-        : "r" ((uint32_t)boot_drive), "r" (pxe), "r" (tinf_gzip_uncompress)
+        : "r" ((uint32_t)boot_drive), "r" (pxe)
         : "memory"
     );
 

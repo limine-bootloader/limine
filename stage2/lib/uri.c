@@ -8,7 +8,7 @@
 #include <mm/pmm.h>
 #include <lib/print.h>
 #include <pxe/tftp.h>
-#include <lib/tinf.h>
+#include <tinf/tinf.h>
 
 // A URI takes the form of: resource://root/path
 // The following function splits up a URI into its componenets

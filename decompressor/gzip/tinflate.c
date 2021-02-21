@@ -23,6 +23,13 @@
  *      distribution.
  */
 
+#ifndef IN_DECOMPRESSOR
+#  include <lib/blib.h>
+#else
+#  define stage3_text
+#  define stage3_data
+#endif
+
 #include "tinf.h"
 
 #include <limits.h>
@@ -55,13 +62,13 @@ struct tinf_data {
 
 /* -- Utility functions -- */
 
-static unsigned int read_le16(const unsigned char *p) {
+stage3_text static unsigned int read_le16(const unsigned char *p) {
     return ((unsigned int) p[0])
          | ((unsigned int) p[1] << 8);
 }
 
 /* Build fixed Huffman trees */
-static void tinf_build_fixed_trees(struct tinf_tree *lt, struct tinf_tree *dt) {
+stage3_text static void tinf_build_fixed_trees(struct tinf_tree *lt, struct tinf_tree *dt) {
     int i;
 
     /* Build fixed literal/length tree */
@@ -103,7 +110,7 @@ static void tinf_build_fixed_trees(struct tinf_tree *lt, struct tinf_tree *dt) {
 }
 
 /* Given an array of code lengths, build a tree */
-static int tinf_build_tree(struct tinf_tree *t, const unsigned char *lengths,
+stage3_text static int tinf_build_tree(struct tinf_tree *t, const unsigned char *lengths,
                            unsigned int num) {
     unsigned short offs[16];
     unsigned int i, num_codes, available;
@@ -167,7 +174,7 @@ static int tinf_build_tree(struct tinf_tree *t, const unsigned char *lengths,
 
 /* -- Decode functions -- */
 
-static void tinf_refill(struct tinf_data *d, int num) {
+stage3_text static void tinf_refill(struct tinf_data *d, int num) {
 
     /* Read bytes until at least num bits available */
     while (d->bitcount < num) {
@@ -182,7 +189,7 @@ static void tinf_refill(struct tinf_data *d, int num) {
 
 }
 
-static unsigned int tinf_getbits_no_refill(struct tinf_data *d, int num) {
+stage3_text static unsigned int tinf_getbits_no_refill(struct tinf_data *d, int num) {
     unsigned int bits;
 
 
@@ -197,18 +204,18 @@ static unsigned int tinf_getbits_no_refill(struct tinf_data *d, int num) {
 }
 
 /* Get num bits from source stream */
-static unsigned int tinf_getbits(struct tinf_data *d, int num) {
+stage3_text static unsigned int tinf_getbits(struct tinf_data *d, int num) {
     tinf_refill(d, num);
     return tinf_getbits_no_refill(d, num);
 }
 
 /* Read a num bit value from stream and add base */
-static unsigned int tinf_getbits_base(struct tinf_data *d, int num, int base) {
+stage3_text static unsigned int tinf_getbits_base(struct tinf_data *d, int num, int base) {
     return base + (num ? tinf_getbits(d, num) : 0);
 }
 
 /* Given a data stream and a tree, decode a symbol */
-static int tinf_decode_symbol(struct tinf_data *d, const struct tinf_tree *t) {
+stage3_text static int tinf_decode_symbol(struct tinf_data *d, const struct tinf_tree *t) {
     int base = 0, offs = 0;
     int len;
 
@@ -241,7 +248,7 @@ static int tinf_decode_symbol(struct tinf_data *d, const struct tinf_tree *t) {
 }
 
 /* Given a data stream, decode dynamic trees from it */
-static int tinf_decode_trees(struct tinf_data *d, struct tinf_tree *lt,
+stage3_text static int tinf_decode_trees(struct tinf_data *d, struct tinf_tree *lt,
                              struct tinf_tree *dt) {
     unsigned char lengths[288 + 32];
 
@@ -367,7 +374,7 @@ static int tinf_decode_trees(struct tinf_data *d, struct tinf_tree *lt,
 /* -- Block inflate functions -- */
 
 /* Given a stream and two trees, inflate a block of data */
-static int tinf_inflate_block_data(struct tinf_data *d, struct tinf_tree *lt,
+stage3_text static int tinf_inflate_block_data(struct tinf_data *d, struct tinf_tree *lt,
                                    struct tinf_tree *dt) {
     /* Extra bits and base tables for length codes */
     static const unsigned char length_bits[30] = {
@@ -452,7 +459,7 @@ static int tinf_inflate_block_data(struct tinf_data *d, struct tinf_tree *lt,
 }
 
 /* Inflate an uncompressed block of data */
-static int tinf_inflate_uncompressed_block(struct tinf_data *d) {
+stage3_text static int tinf_inflate_uncompressed_block(struct tinf_data *d) {
     unsigned int length, invlength;
 
     if (d->source_end - d->source < 4) {
@@ -485,7 +492,7 @@ static int tinf_inflate_uncompressed_block(struct tinf_data *d) {
 }
 
 /* Inflate a block of data compressed with fixed Huffman trees */
-static int tinf_inflate_fixed_block(struct tinf_data *d) {
+stage3_text static int tinf_inflate_fixed_block(struct tinf_data *d) {
     /* Build fixed Huffman trees */
     tinf_build_fixed_trees(&d->ltree, &d->dtree);
 
@@ -494,7 +501,7 @@ static int tinf_inflate_fixed_block(struct tinf_data *d) {
 }
 
 /* Inflate a block of data compressed with dynamic Huffman trees */
-static int tinf_inflate_dynamic_block(struct tinf_data *d) {
+stage3_text static int tinf_inflate_dynamic_block(struct tinf_data *d) {
     /* Decode trees from stream */
     int res = tinf_decode_trees(d, &d->ltree, &d->dtree);
 
@@ -509,7 +516,7 @@ static int tinf_inflate_dynamic_block(struct tinf_data *d) {
 /* -- Public functions -- */
 
 /* Inflate stream from source to dest */
-int tinf_uncompress(void *dest,
+stage3_text int tinf_uncompress(void *dest,
                     const void *source, unsigned int sourceLen) {
     struct tinf_data d;
     int bfinal;

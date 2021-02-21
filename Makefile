@@ -26,7 +26,7 @@ install: all
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install -s limine-install $(DESTDIR)$(PREFIX)/bin/
 
-bootloader: stage2 decompressor
+bootloader: | decompressor decompressor-clean stage2
 	gzip -n -9 < stage2/stage2.bin > stage2/stage2.bin.gz
 	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
 	cd pxeboot && nasm bootsect.asm -fbin -o ../limine-pxe.bin

@@ -5,6 +5,7 @@ OBJCOPY = i386-elf-objcopy
 CFLAGS = -flto -Os -pipe -Wall -Wextra -Werror
 
 INTERNAL_CFLAGS = \
+	-DIN_DECOMPRESSOR \
 	-std=gnu11 \
 	-ffreestanding \
 	-fno-stack-protector \

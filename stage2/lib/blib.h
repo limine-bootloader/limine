@@ -9,6 +9,8 @@ extern uint8_t boot_drive;
 extern int     boot_partition;
 
 extern bool booted_from_pxe;
+extern bool booted_from_cd;
+extern bool stage3_already_loaded;
 
 bool parse_resolution(int *width, int *height, int *bpp, const char *buf);
 

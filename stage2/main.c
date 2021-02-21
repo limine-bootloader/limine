@@ -20,10 +20,18 @@
 #include <pxe/pxe.h>
 #include <pxe/tftp.h>
 
-void entry(uint8_t _boot_drive, int pxe_boot) {
+enum {
+	BOOT_FROM_HDD,
+	BOOT_FROM_PXE,
+	BOOT_FROM_CD
+};
+
+void entry(uint8_t _boot_drive, int boot_from) {
     boot_drive = _boot_drive;
 
-    booted_from_pxe = pxe_boot;
+    booted_from_pxe = (boot_from == BOOT_FROM_PXE);
+    booted_from_cd = (boot_from == BOOT_FROM_CD);
+    stage3_already_loaded = booted_from_cd; // CD loads both stages
 
     mtrr_save();
 
@@ -37,20 +45,15 @@ void entry(uint8_t _boot_drive, int pxe_boot) {
     init_e820();
     init_memmap();
 
+    struct volume part;
     volume_create_index();
 
-    if (pxe_boot) {
-        pxe_init();
-        if (init_config_pxe()) {
-            panic("Failed to load config file");
-        }
-        print("Config loaded via PXE\n");
-    } else {
+    switch (boot_from) {
+    case BOOT_FROM_HDD:
         print("Boot drive: %x\n", boot_drive);
         // Look for config file.
         print("Searching for config file...\n");
         for (int i = 0; ; i++) {
-            struct volume part;
             int ret = volume_get_by_coord(&part, boot_drive, i);
             switch (ret) {
                 case INVALID_TABLE:
@@ -66,6 +69,22 @@ void entry(uint8_t _boot_drive, int pxe_boot) {
                 break;
             }
         }
+        break;
+
+    case BOOT_FROM_PXE:
+        pxe_init();
+        if (init_config_pxe()) {
+            panic("Failed to load config file");
+        }
+        print("Config loaded via PXE\n");
+        break;
+
+    case BOOT_FROM_CD:
+        boot_partition = -1;  // raw device
+        volume_get_by_coord(&part, boot_drive, boot_partition);
+        if (init_config_disk(&part))
+            panic("Failed to load config file");
+        break;
     }
 
     trace_init();
@@ -81,7 +100,7 @@ void entry(uint8_t _boot_drive, int pxe_boot) {
     if (!strcmp(proto, "stivale")) {
         stivale_load(config, cmdline);
     } else if (!strcmp(proto, "stivale2")) {
-        stivale2_load(config, cmdline, pxe_boot);
+        stivale2_load(config, cmdline, boot_from);
     } else if (!strcmp(proto, "linux")) {
         linux_load(config, cmdline);
     } else if (!strcmp(proto, "chainload")) {

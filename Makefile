@@ -29,6 +29,7 @@ install: all
 bootloader: | decompressor stage2
 	gzip -n -9 < stage2/stage2.bin > stage2/stage2.bin.gz
 	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
+	cd cdboot && nasm bootsect.asm -fbin -o ../limine-cd.bin
 	cd pxeboot && nasm bootsect.asm -fbin -o ../limine-pxe.bin
 	cp stage2/stage2.map ./
 	cp stage2/stage3.bin ./limine.sys
@@ -118,3 +119,12 @@ fat32-test: test.hdd bootloader | all
 	rm -rf test_image loopback_dev
 	./limine-install ./ test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+
+iso9660-test: bootloader
+	$(MAKE) -C test
+	cp stage2.map test/
+	rm -rf test_image/
+	mkdir -p test_image/boot
+	cp -rv limine-cd.bin limine.sys stage2/stages.bin test/* test_image/boot/
+	genisoimage -no-emul-boot -b boot/limine-cd.bin -o test.iso test_image/
+	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio

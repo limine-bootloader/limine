@@ -11,6 +11,7 @@ uint8_t boot_drive;
 int     boot_partition = -1;
 
 bool booted_from_pxe = false;
+bool booted_from_cd = false;
 
 bool parse_resolution(int *width, int *height, int *bpp, const char *buf) {
     int res[3] = {0};

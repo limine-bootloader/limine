@@ -94,12 +94,17 @@ static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) 
 static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
     uint8_t drive, partition;
 
-    if (!parse_bios_partition(loc, &drive, &partition))
-        return false;
-
     struct volume volume;
-    if (!volume_get_by_coord(&volume, drive, partition))
-        return false;
+    if(!booted_from_cd) {
+        if (!parse_bios_partition(loc, &drive, &partition))
+            return false;
+        if (!volume_get_by_coord(&volume, drive, partition))
+            return false;
+    } else {
+        volume.drive = boot_drive;
+        volume.sector_size = 2048;
+        volume.first_sect = 0;
+    }
 
     if (fopen(fd, &volume, path))
         return false;
@@ -153,6 +158,8 @@ static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
 static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) {
     if (booted_from_pxe)
         return uri_tftp_dispatch(fd, s_part, path);
+    if (booted_from_cd)
+        return uri_bios_dispatch(fd, s_part, path);
 
     uint8_t partition;
 

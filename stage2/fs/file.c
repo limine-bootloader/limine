@@ -4,6 +4,7 @@
 #include <fs/echfs.h>
 #include <fs/ext2.h>
 #include <fs/fat32.h>
+#include <fs/iso9660.h>
 #include <lib/blib.h>
 #include <mm/pmm.h>
 #include <lib/part.h>
@@ -22,6 +23,20 @@ bool fs_get_guid(struct guid *guid, struct volume *part) {
 
 int fopen(struct file_handle *ret, struct volume *part, const char *filename) {
     ret->is_memfile = false;
+
+    if (iso9660_check_signature(part)) {
+        struct iso9660_file_handle *fd = ext_mem_alloc(sizeof(struct iso9660_file_handle));
+
+        int r = iso9660_open(fd, part, filename);
+        if(r)
+            return r;
+
+        ret->fd = (void *)fd;
+        ret->read = (void *)iso9660_read;
+        ret->size = fd->size;
+
+        return 0;
+    }
 
     if (echfs_check_signature(part)) {
         struct echfs_file_handle *fd = ext_mem_alloc(sizeof(struct echfs_file_handle));

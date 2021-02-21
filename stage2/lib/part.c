@@ -254,7 +254,7 @@ static size_t volume_index_i = 0;
 void volume_create_index(void) {
     size_t volume_count = 0;
 
-    for (uint8_t drive = 0x80; drive < 0x8f; drive++) {
+    for (uint8_t drive = 0x80; drive; drive++) {
         struct rm_regs r = {0};
         struct bios_drive_params drive_params;
 

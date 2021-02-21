@@ -26,7 +26,7 @@ install: all
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install -s limine-install $(DESTDIR)$(PREFIX)/bin/
 
-bootloader: | decompressor decompressor-clean stage2
+bootloader: | decompressor-clean decompressor stage2
 	gzip -n -9 < stage2/stage2.bin > stage2/stage2.bin.gz
 	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
 	cd pxeboot && nasm bootsect.asm -fbin -o ../limine-pxe.bin
@@ -36,7 +36,7 @@ bootloader: | decompressor decompressor-clean stage2
 bootloader-clean: stage2-clean decompressor-clean test-clean
 	rm -f stage2/stage2.bin.gz test/stage2.map test.hdd
 
-distclean: clean bootloader-clean
+distclean: clean bootloader-clean test-clean
 	rm -rf stivale
 
 stivale:
@@ -90,12 +90,12 @@ ext2-test: test.hdd bootloader | all
 	sudo mkfs.ext2 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv test/* test_image/boot/
+	sudo cp -rv ./limine.sys test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	./limine-install test.hdd
+	./limine-install ./ test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
 fat32-test: test.hdd bootloader | all
@@ -108,10 +108,10 @@ fat32-test: test.hdd bootloader | all
 	sudo mkfs.fat -F 32 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv test/* test_image/boot/
+	sudo cp -rv ./limine.sys test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	./limine-install test.hdd
+	./limine-install ./ test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio

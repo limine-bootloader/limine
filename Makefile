@@ -29,6 +29,7 @@ install: all
 bootloader: | decompressor stage2
 	gzip -n -9 < stage2/stage2.bin > stage2/stage2.bin.gz
 	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
+	cd cdboot && nasm bootsect.asm -fbin -o ../limine-cd.bin
 	cd pxeboot && nasm bootsect.asm -fbin -o ../limine-pxe.bin
 	cp stage2/stage2.map ./
 	cp stage2/stage3.bin ./limine.sys
@@ -93,12 +94,12 @@ ext2-test: test.hdd bootloader | all
 	sudo mkfs.ext2 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv test/* test_image/boot/
+	sudo cp -rv ./limine.sys test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	./limine-install test.hdd
+	./limine-install ./ test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
 fat32-test: test.hdd bootloader | all
@@ -111,10 +112,19 @@ fat32-test: test.hdd bootloader | all
 	sudo mkfs.fat -F 32 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv test/* test_image/boot/
+	sudo cp -rv ./limine.sys test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	./limine-install test.hdd
+	./limine-install ./ test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+
+iso9660-test: bootloader
+	$(MAKE) -C test
+	cp stage2.map test/
+	rm -rf test_image/
+	mkdir -p test_image/boot
+	cp -rv limine-cd.bin limine.sys stage2/stages.bin test/* test_image/boot/
+	genisoimage -no-emul-boot -b boot/limine-cd.bin -o test.iso test_image/
+	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio

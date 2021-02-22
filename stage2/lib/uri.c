@@ -94,10 +94,10 @@ static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) 
 static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
     uint8_t drive, partition;
 
+    struct volume volume;
     if (!parse_bios_partition(loc, &drive, &partition))
         return false;
 
-    struct volume volume;
     if (!volume_get_by_coord(&volume, drive, partition))
         return false;
 
@@ -154,7 +154,7 @@ static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) 
     if (booted_from_pxe)
         return uri_tftp_dispatch(fd, s_part, path);
 
-    uint8_t partition;
+    int partition;
 
     if (s_part[0] != '\0') {
         uint64_t val = strtoui(s_part, NULL, 10);
@@ -162,12 +162,10 @@ static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) 
             panic("Partition number outside range 1-256");
         }
         partition = val - 1;
+    } else if (booted_from_cd || boot_partition != -1) {
+        partition = boot_partition;
     } else {
-        if (boot_partition != -1) {
-            partition = boot_partition;
-        } else {
-            panic("Boot partition information is unavailable.");
-        }
+        panic("Boot partition information is unavailable.");
     }
 
     struct volume part;

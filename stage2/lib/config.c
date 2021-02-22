@@ -19,14 +19,16 @@ static char *config_addr;
 extern symbol stage3_addr;
 
 int init_config_disk(struct volume *part) {
-    struct file_handle stage3;
+    if (!stage3_already_loaded) {
+        struct file_handle stage3;
 
-    if (fopen(&stage3, part, "/limine.sys")
-     && fopen(&stage3, part, "/boot/limine.sys")) {
-        panic("Could not open stage 3");
+        if (fopen(&stage3, part, "/limine.sys")
+         && fopen(&stage3, part, "/boot/limine.sys")) {
+            panic("Could not open stage 3");
+        }
+
+        fread(&stage3, stage3_addr, 0, stage3.size);
     }
-
-    fread(&stage3, stage3_addr, 0, stage3.size);
 
     struct file_handle f;
 

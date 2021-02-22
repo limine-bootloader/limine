@@ -6,7 +6,7 @@ DESTDIR =
 
 PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
-.PHONY: all clean install bootloader bootloader-clean distclean stage2 stage2-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat32-test
+.PHONY: all clean install tinf-clean bootloader bootloader-clean distclean stage2 stage2-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat32-test
 
 all: limine-install
 
@@ -26,7 +26,7 @@ install: all
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install -s limine-install $(DESTDIR)$(PREFIX)/bin/
 
-bootloader: | decompressor decompressor-clean stage2
+bootloader: | decompressor stage2
 	gzip -n -9 < stage2/stage2.bin > stage2/stage2.bin.gz
 	cd bootsect && nasm bootsect.asm -fbin -o ../limine.bin
 	cd pxeboot && nasm bootsect.asm -fbin -o ../limine-pxe.bin
@@ -39,17 +39,20 @@ bootloader-clean: stage2-clean decompressor-clean test-clean
 distclean: clean bootloader-clean
 	rm -rf stivale
 
+tinf-clean:
+	cd tinf && rm -rf *.o *.d
+
 stivale:
 	git clone https://github.com/stivale/stivale.git
 	cd stivale && git checkout d0a7ca5642d89654f8d688c2481c2771a8653c99
 
-stage2: stivale
+stage2: tinf-clean stivale
 	$(MAKE) -C stage2 all
 
 stage2-clean:
 	$(MAKE) -C stage2 clean
 
-decompressor:
+decompressor: tinf-clean
 	$(MAKE) -C decompressor all
 
 decompressor-clean:

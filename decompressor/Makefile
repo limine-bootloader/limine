@@ -34,8 +34,8 @@ INTERNAL_LDFLAGS = \
 
 .PHONY: all clean
 
-C_FILES := $(shell find ./ -type f -name '*.c' | sort)
-ASM_FILES := $(shell find ./ -type f -name '*.asm' | sort)
+C_FILES := $(shell find -L ./ -type f -name '*.c' | sort)
+ASM_FILES := $(shell find -L ./ -type f -name '*.asm' | sort)
 OBJ := $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o)
 HEADER_DEPS := $(C_FILES:.c=.d)
 

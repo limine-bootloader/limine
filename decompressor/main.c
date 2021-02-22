@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <gzip/tinf.h>
+#include <tinf/tinf.h>
 
 __attribute__((noreturn))
 void entry(uint8_t *compressed_stage2, size_t stage2_size, uint8_t boot_drive, int pxe) {

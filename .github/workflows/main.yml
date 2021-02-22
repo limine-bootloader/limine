@@ -1,0 +1,54 @@
+name: Limine
+
+on:
+  push:
+    tags:
+    - 'v*'
+
+jobs:
+  build:
+    name: Build, create release, and upload artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install packages
+        run: sudo apt install build-essential gcc-multilib
+
+      - name: Build the toolchain
+        run: make toolchain
+
+      - name: Build the bootloader
+        run: make bootloader
+
+      - name: Build limine-install-linux-x86_64
+        run: make CFLAGS="-O2 -pipe -static" clean all
+
+      - name: Strip limine-install-linux-x86_64
+        run: strip limine-install
+
+      - name: Rename limine-install-linux-x86_64
+        run: mv limine-install limine-install-linux-x86_64
+
+      - name: Build limine-install-linux-x86_32
+        run: make CFLAGS="-m32 -O2 -pipe -static" clean all
+
+      - name: Strip limine-install-linux-x86_32
+        run: strip limine-install
+
+      - name: Rename limine-install-linux-x86_32
+        run: mv limine-install limine-install-linux-x86_32
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          files: |
+            limine-install-linux-x86_64
+            limine-install-linux-x86_32
+            limine-pxe.bin
+            limine-cd.bin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -82,7 +82,7 @@ err:
     jmp err
 
 %include 'iso9660.asm'
-%include '../bootsect/gdt.inc'
+%include '../hddboot/gdt.inc'
 
 BITS 32
 pmode:

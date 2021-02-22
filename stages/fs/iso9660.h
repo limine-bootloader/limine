@@ -13,7 +13,7 @@ struct iso9660_context {
 };
 
 struct iso9660_file_handle {
-    struct iso9660_context *context;
+    struct iso9660_context context;
     uint32_t LBA;
     uint32_t size;
 };

@@ -50,7 +50,7 @@ err:
 
 ; Includes
 
-%include '../bootsect/gdt.inc'
+%include '../hddboot/gdt.inc'
 
 ; ********************* Stage 2 *********************
 
@@ -59,6 +59,6 @@ incbin '../decompressor/decompressor.bin'
 
 align 16
 stage2:
-incbin '../stage2/stage2.bin.gz'
+incbin '../stages/stage2.bin.gz'
 .size: equ $ - stage2
 .fullsize: equ $ - decompressor

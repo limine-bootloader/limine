@@ -45,22 +45,25 @@ ASM_FILES := $(shell find -L ./ -type f -name '*.asm' | sort)
 OBJ := $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o)
 HEADER_DEPS := $(C_FILES:.c=.d)
 
-all: stage2.map stage2.bin stage3.bin
+all: stages.map stages.bin stage2.bin stage2.bin.gz stage3.bin
+
+stage2.bin.gz: stage2.bin
+	gzip -n -9 < stage2.bin > stage2.bin.gz
 
 stage2.bin: stages.bin
-	dd if=stages.bin bs=$$(( 0x$$($(READELF) -S stage2.elf | grep .stage3 | sed 's/^.*] //' | awk '{print $$3}' | sed 's/^0*//') - 0x8000 )) count=1 of=$@
+	dd if=stages.bin bs=$$(( 0x$$($(READELF) -S stages.elf | grep .stage3 | sed 's/^.*] //' | awk '{print $$3}' | sed 's/^0*//') - 0x8000 )) count=1 of=$@
 
 stage3.bin: stages.bin
-	dd if=stages.bin bs=$$(( 0x$$($(READELF) -S stage2.elf | grep .stage3 | sed 's/^.*] //' | awk '{print $$3}' | sed 's/^0*//') - 0x8000 )) skip=1 of=$@
+	dd if=stages.bin bs=$$(( 0x$$($(READELF) -S stages.elf | grep .stage3 | sed 's/^.*] //' | awk '{print $$3}' | sed 's/^0*//') - 0x8000 )) skip=1 of=$@
 
-stage2.map: stage2.elf
+stages.map: stages.elf
 	./gensyms.sh $(OBJDUMP)
 	nasm symlist.gen -f bin -o $@
 
-stages.bin: stage2.elf
+stages.bin: stages.elf
 	$(OBJCOPY) -O binary $< $@
 
-stage2.elf: $(OBJ)
+stages.elf: $(OBJ)
 	$(LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
 -include $(HEADER_DEPS)
@@ -72,4 +75,4 @@ stage2.elf: $(OBJ)
 	nasm $< -f elf32 -o $@
 
 clean:
-	rm -f symlist.gen stages.bin stage2.map stage2.bin stage2.elf stage3.bin $(OBJ) $(HEADER_DEPS)
+	rm -f symlist.gen stages.elf stages.map stages.bin stage2.bin stage2.bin.gz stage3.bin $(OBJ) $(HEADER_DEPS)

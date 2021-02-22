@@ -93,12 +93,12 @@ ext2-test: test.hdd bootloader | all
 	sudo mkfs.ext2 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv test/* test_image/boot/
+	sudo cp -rv ./limine.sys test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	./limine-install test.hdd
+	./limine-install ./ test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
 fat32-test: test.hdd bootloader | all
@@ -111,10 +111,10 @@ fat32-test: test.hdd bootloader | all
 	sudo mkfs.fat -F 32 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv test/* test_image/boot/
+	sudo cp -rv ./limine.sys test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	./limine-install test.hdd
+	./limine-install ./ test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio

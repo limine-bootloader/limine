@@ -68,6 +68,11 @@ struct iso9660_primary_volume {
 
 
 // --- Implementation ---
+struct iso9660_contexts_node {
+    struct iso9660_context context;
+    struct iso9660_contexts_node *next;
+};
+stage3_data struct iso9660_contexts_node *contexts = NULL;
 
 stage3_text static void iso9660_find_PVD(struct iso9660_volume_descriptor *desc, struct volume *vol) {
     uint32_t lba = ISO9660_FIRST_VOLUME_DESCRIPTOR;
@@ -95,6 +100,24 @@ stage3_text static void iso9660_cache_root(struct volume *vol,
     *root_size = pv.root.extent_size.little;
     *root = ext_mem_alloc(*root_size);
     volume_read(vol, *root, pv.root.extent.little * ISO9660_SECTOR_SIZE, *root_size);
+}
+
+stage3_text static struct iso9660_context *iso9660_get_context(struct volume *vol) {
+    struct iso9660_contexts_node *current = contexts;
+    while (current) {
+        if (current->context.vol.drive == vol->drive)
+            return &current->context;
+        current = current->next;
+    }
+
+    // The context is not cached at this point
+    struct iso9660_contexts_node *node = ext_mem_alloc(sizeof(struct iso9660_contexts_node));
+    node->context.vol = *vol;
+    iso9660_cache_root(vol, &node->context.root, &node->context.root_size);
+
+    node->next = contexts;
+    contexts = node;
+    return &node->context;
 }
 
 stage3_text static int iso9660_strcmp(const char *a, const char *b, size_t size) {
@@ -146,15 +169,13 @@ stage3_text int iso9660_check_signature(struct volume *vol) {
 }
 
 stage3_text int iso9660_open(struct iso9660_file_handle *ret, struct volume *vol, const char *path) {
-    iso9660_cache_root(vol, &ret->context.root, &ret->context.root_size);
-
-    ret->context.vol = *vol;
+    ret->context = iso9660_get_context(vol);
 
     while (*path == '/')
         ++path;
 
-    struct iso9660_directory_entry *current = ret->context.root;
-    uint32_t current_size = ret->context.root_size;
+    struct iso9660_directory_entry *current = ret->context->root;
+    uint32_t current_size = ret->context->root_size;
 
     uint32_t next_sector = 0;
     uint32_t next_size = 0;
@@ -187,6 +208,6 @@ stage3_text int iso9660_open(struct iso9660_file_handle *ret, struct volume *vol
 }
 
 stage3_text int iso9660_read(struct iso9660_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
-    volume_read(&file->context.vol, buf, file->LBA * ISO9660_SECTOR_SIZE + loc, count);
+    volume_read(&file->context->vol, buf, file->LBA * ISO9660_SECTOR_SIZE + loc, count);
     return 0;
 }

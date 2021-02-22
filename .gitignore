@@ -15,6 +15,7 @@
 !/limine.bin
 !/limine-pxe.bin
 !/limine-cd.bin
+!/stages.bin
 !/stage2.map
 /stivale
 /test_image

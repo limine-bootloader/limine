@@ -32,6 +32,7 @@ bootloader: | decompressor stages
 	cd pxeboot && nasm bootsect.asm -fbin -o ../limine-pxe.bin
 	cp stages/stages.map ./
 	cp stages/stage3.bin ./limine.sys
+	cp stages/stages.bin ./
 
 bootloader-clean: stages-clean decompressor-clean test-clean
 	rm -f test/stages.map test.hdd
@@ -124,6 +125,6 @@ iso9660-test: bootloader
 	cp stages.map test/
 	rm -rf test_image/
 	mkdir -p test_image/boot
-	cp -rv limine-cd.bin limine.sys stages/stages.bin test/* test_image/boot/
+	cp -rv limine-cd.bin stages.bin test/* test_image/boot/
 	genisoimage -no-emul-boot -b boot/limine-cd.bin -o test.iso test_image/
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio

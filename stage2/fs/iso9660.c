@@ -68,11 +68,8 @@ struct iso9660_primary_volume {
 
 
 // --- Implementation ---
-// Cached root
-static void *root = NULL;
-static uint32_t root_size = 0;
 
-static void iso9660_find_PVD(struct iso9660_volume_descriptor *desc, struct volume *vol) {
+stage3_text static void iso9660_find_PVD(struct iso9660_volume_descriptor *desc, struct volume *vol) {
     uint32_t lba = ISO9660_FIRST_VOLUME_DESCRIPTOR;
     while (true) {
         volume_read(vol, desc, lba * ISO9660_SECTOR_SIZE, ISO9660_SECTOR_SIZE);
@@ -89,16 +86,18 @@ static void iso9660_find_PVD(struct iso9660_volume_descriptor *desc, struct volu
     }
 }
 
-static void iso9660_cache_root(struct volume *vol) {
+stage3_text static void iso9660_cache_root(struct volume *vol,
+                               void **root,
+                               uint32_t *root_size) {
     struct iso9660_primary_volume pv;
     iso9660_find_PVD((struct iso9660_volume_descriptor *)&pv, vol);
 
-    root_size = pv.root.extent_size.little;
-    root = ext_mem_alloc(root_size);
-    volume_read(vol, root, pv.root.extent.little * ISO9660_SECTOR_SIZE, root_size);
+    *root_size = pv.root.extent_size.little;
+    *root = ext_mem_alloc(*root_size);
+    volume_read(vol, *root, pv.root.extent.little * ISO9660_SECTOR_SIZE, *root_size);
 }
 
-static int iso9660_strcmp(const char *a, const char *b, size_t size) {
+stage3_text static int iso9660_strcmp(const char *a, const char *b, size_t size) {
     while (size--) {
         char ca = *a++;
         char cb = *b++;
@@ -109,7 +108,7 @@ static int iso9660_strcmp(const char *a, const char *b, size_t size) {
     return 0;
 }
 
-static struct iso9660_directory_entry *iso9660_find(void *buffer, uint32_t size, const char *filename) {
+stage3_text static struct iso9660_directory_entry *iso9660_find(void *buffer, uint32_t size, const char *filename) {
     // The file can be either FILENAME or FILENAME;1
     uint32_t len = strlen(filename);
     char finalfile[len + 2];
@@ -138,7 +137,7 @@ static struct iso9660_directory_entry *iso9660_find(void *buffer, uint32_t size,
 
 
 // --- Public functions ---
-int iso9660_check_signature(struct volume *vol) {
+stage3_text int iso9660_check_signature(struct volume *vol) {
     char buf[6];
     const uint64_t signature = ISO9660_FIRST_VOLUME_DESCRIPTOR * ISO9660_SECTOR_SIZE + 1;
     volume_read(vol, buf, signature, 5);
@@ -146,20 +145,16 @@ int iso9660_check_signature(struct volume *vol) {
     return !strcmp(buf, "CD001");
 }
 
-int iso9660_open(struct iso9660_file_handle *ret, struct volume *vol, const char *path) {
-    // Is the root directory cached?
-    if (!root)
-        iso9660_cache_root(vol);
+stage3_text int iso9660_open(struct iso9660_file_handle *ret, struct volume *vol, const char *path) {
+    iso9660_cache_root(vol, &ret->context.root, &ret->context.root_size);
 
     ret->context.vol = *vol;
-    ret->context.root = root;
-    ret->context.root_size = root_size;
 
     while (*path == '/')
         ++path;
 
-    struct iso9660_directory_entry *current = root;
-    uint32_t current_size = root_size;
+    struct iso9660_directory_entry *current = ret->context.root;
+    uint32_t current_size = ret->context.root_size;
 
     uint32_t next_sector = 0;
     uint32_t next_size = 0;
@@ -191,7 +186,7 @@ int iso9660_open(struct iso9660_file_handle *ret, struct volume *vol, const char
     return 0;
 }
 
-int iso9660_read(struct iso9660_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
+stage3_text int iso9660_read(struct iso9660_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
     volume_read(&file->context.vol, buf, file->LBA * ISO9660_SECTOR_SIZE + loc, count);
     return 0;
 }

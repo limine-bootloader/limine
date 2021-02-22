@@ -31,7 +31,7 @@ void entry(uint8_t _boot_drive, int boot_from) {
 
     booted_from_pxe = (boot_from == BOOT_FROM_PXE);
     booted_from_cd = (boot_from == BOOT_FROM_CD);
-    stage3_already_loaded = booted_from_cd; // CD loads both stages
+    stage3_loaded = booted_from_cd; // CD loads both stages
 
     mtrr_save();
 

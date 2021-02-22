@@ -12,7 +12,7 @@ int     boot_partition = -1;
 
 bool booted_from_pxe = false;
 bool booted_from_cd = false;
-bool stage3_already_loaded = false;
+bool stage3_loaded = false;
 
 bool parse_resolution(int *width, int *height, int *bpp, const char *buf) {
     int res[3] = {0};

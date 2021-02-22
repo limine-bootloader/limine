@@ -19,7 +19,7 @@ static char *config_addr;
 extern symbol stage3_addr;
 
 int init_config_disk(struct volume *part) {
-    if (!stage3_already_loaded) {
+    if (!stage3_loaded) {
         struct file_handle stage3;
 
         if (fopen(&stage3, part, "/limine.sys")
@@ -28,6 +28,8 @@ int init_config_disk(struct volume *part) {
         }
 
         fread(&stage3, stage3_addr, 0, stage3.size);
+
+        stage3_loaded = true;
     }
 
     struct file_handle f;

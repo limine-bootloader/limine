@@ -10,7 +10,7 @@ extern int     boot_partition;
 
 extern bool booted_from_pxe;
 extern bool booted_from_cd;
-extern bool stage3_already_loaded;
+extern bool stage3_loaded;
 
 bool parse_resolution(int *width, int *height, int *bpp, const char *buf);
 

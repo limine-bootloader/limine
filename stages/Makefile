@@ -4,7 +4,7 @@ OBJCOPY = i386-elf-objcopy
 OBJDUMP = i386-elf-objdump
 READELF = i386-elf-readelf
 
-LIMINE_VERSION := $(shell git branch --show-current | sed 's/-branch//')
+LIMINE_VERSION := $(shell git describe --exact-match --tags `git log -n1 --pretty='%h'` || git log -n1 --pretty='%h')
 WERROR = -Werror
 CFLAGS = -Os -pipe -Wall -Wextra $(WERROR)
 

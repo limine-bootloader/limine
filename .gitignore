@@ -8,13 +8,10 @@
 /**/*.elf
 /**/*.hdd
 /**/*.iso
+/**/*.sys
 /bochsout.txt
 /bx_enh_dbg.ini
 .vscode
 /limine-install
-!/limine.bin
-!/limine-pxe.bin
-!/limine-cd.bin
-!/stage2.map
 /stivale
 /test_image

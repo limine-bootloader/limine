@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install packages
-        run: sudo apt install build-essential gcc-multilib
+        run: sudo apt install build-essential
 
       - name: Build the toolchain
         run: make toolchain
@@ -35,7 +35,7 @@ jobs:
       - name: Build limine-install-linux-x86_32
         uses: mintsuki/ubuntu-18.04-x86@0.1
         with:
-          command: make CFLAGS="-m32 -O2 -pipe -static" clean all
+          command: make CFLAGS="-O2 -pipe -static" clean all
 
       - name: Strip limine-install-linux-x86_32
         uses: mintsuki/ubuntu-18.04-x86@0.1

@@ -81,7 +81,11 @@ This will embed the `limine-hdd.bin` bootloader image from the `bin` directory i
 Then use `make install` to install it, optionally specifying a prefix with a
 `PREFIX=...` option.
 
-Installing `limine-install` is optional as it can also be used from the `bin` directory of the repository just fine.
+This will install `limine-install` in `bin`, as well as the additional binaries
+needed for stage 3, CD, and PXE boot in `share`.
+
+Installing is optional as it can also be used from the `bin` directory of the
+repository just fine.
 
 ## How to use
 
@@ -92,6 +96,9 @@ run `limine-install` as such:
 ```bash
 limine-install <path to device/image>
 ```
+
+The boot device will need to contain the `limine.sys` file in either the root
+or the `boot` directory of one of the partitions.
 
 ### GPT
 If using a GPT formatted device, there are 2 options one can follow for installation:
@@ -109,6 +116,9 @@ limine-install <path to device/image> <1-based stage 2 partition number>
 In case one wants to let `limine-install` embed stage 2 within GPT's structures,
 simply omit the partition number, and invoke `limine-install` the same as one would
 do for an MBR partitioned device.
+
+The boot device will need to contain the `limine.sys` file in either the root
+or the `boot` directory of one of the partitions.
 
 ### CD-ROM ISO creation
 In order to create a bootable ISO with Limine, place the `limine-cd.bin` and
@@ -130,7 +140,7 @@ For example, if it was copied in `<root directory>/boot/limine-cd.bin`, it would
 `boot/limine-cd.bin`.
 
 ### Configuration
-Then make sure the device/image contains at least 1 partition formatted in
+Make sure the device/image contains at least 1 partition formatted in
 a supported filesystem containing a `/limine.cfg` or `/boot/limine.cfg` file
 and the kernel/modules one wants to load.
 

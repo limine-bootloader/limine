@@ -48,7 +48,8 @@ void entry(uint8_t _boot_drive, int boot_from) {
     volume_create_index();
 
     switch (boot_from) {
-    case BOOT_FROM_HDD: {
+    case BOOT_FROM_HDD:
+    case BOOT_FROM_CD: {
         print("Boot drive: %x\n", boot_drive);
         struct volume boot_volume;
         volume_get_by_coord(&boot_volume, boot_drive, -1);

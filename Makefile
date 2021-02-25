@@ -22,6 +22,10 @@ clean:
 install: all
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install -s limine-install $(DESTDIR)$(PREFIX)/bin/
+	install -d $(DESTDIR)$(PREFIX)/share
+	install -m 644 bin/limine.sys $(DESTDIR)$(PREFIX)/share/
+	install -m 644 bin/limine-cd.bin $(DESTDIR)$(PREFIX)/share/
+	install -m 644 bin/limine-pxe.bin $(DESTDIR)$(PREFIX)/share/
 
 bootloader: | decompressor stage23
 	mkdir -p bin

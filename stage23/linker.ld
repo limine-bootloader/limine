@@ -6,11 +6,11 @@ SECTIONS
     . = 0x8000;
 
     .entry : {
-        KEEP(*(.entry*))
+        *(.entry*)
     }
 
     .realmode : {
-        KEEP(*(.realmode*))
+        *(.realmode*)
     }
 
     .stage2.text : {
@@ -24,6 +24,8 @@ SECTIONS
 
     .stage3.text : {
         stage3_addr = .;
+        *(.stage3_entry*)
+        *(.stage3_build_id*)
         *(.stage3_text*)
     }
 
@@ -32,7 +34,8 @@ SECTIONS
     }
 
     .map : {
-        KEEP(*(.map*))
+        *(.map*)
+        limine_sys_size = . - 0x8000;
     }
 
     .bss : {

@@ -16,28 +16,7 @@ bool config_ready = false;
 
 static char *config_addr;
 
-extern symbol stage3_addr;
-
 int init_config_disk(struct volume *part) {
-    if (!stage3_loaded) {
-        struct file_handle stage3;
-
-        if (fopen(&stage3, part, "/limine.sys")
-         && fopen(&stage3, part, "/boot/limine.sys")) {
-            panic("Could not open stage 3");
-        }
-
-        fread(&stage3, stage3_addr,
-              (uintptr_t)stage3_addr - 0x8000,
-              stage3.size - ((uintptr_t)stage3_addr - 0x8000));
-
-        if (build_id != stage3_build_id) {
-            panic("Limine build ID mismatch. Use the correct limine.sys.");
-        }
-
-        stage3_loaded = true;
-    }
-
     struct file_handle f;
 
     if (fopen(&f, part, "/limine.cfg")
@@ -56,12 +35,6 @@ int init_config_disk(struct volume *part) {
 }
 
 int init_config_pxe(void) {
-    struct tftp_file_handle stage3;
-    if (tftp_open(&stage3, 0, 69, "limine.sys")) {
-        panic("Could not open stage 3");
-    }
-    tftp_read(&stage3, stage3_addr, 0, stage3.file_size);
-
     struct tftp_file_handle cfg;
     if (tftp_open(&cfg, 0, 69, "limine.cfg")
      && tftp_open(&cfg, 0, 69, "tomatboot.cfg")) {

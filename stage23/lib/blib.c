@@ -6,9 +6,10 @@
 #include <lib/print.h>
 #include <lib/trace.h>
 #include <lib/real.h>
+#include <fs/file.h>
 
-uint64_t build_id = BUILD_ID;
-stage3_data uint64_t stage3_build_id = BUILD_ID;
+__attribute__((section(".stage3_build_id")))
+uint64_t stage3_build_id = BUILD_ID;
 
 uint8_t boot_drive;
 int     boot_partition = -1;
@@ -16,6 +17,39 @@ int     boot_partition = -1;
 bool booted_from_pxe = false;
 bool booted_from_cd = false;
 bool stage3_loaded = false;
+
+extern symbol stage3_addr;
+extern symbol limine_sys_size;
+
+__attribute__((noreturn))
+void (*stage3)(void) = (void *)stage3_addr;
+
+bool stage3_init(struct volume *part) {
+    struct file_handle stage3;
+
+    if (fopen(&stage3, part, "/limine.sys")
+     && fopen(&stage3, part, "/boot/limine.sys")) {
+        return false;
+    }
+
+    if (stage3.size != (size_t)limine_sys_size) {
+        print("limine.sys size incorrect.\n");
+        return false;
+    }
+
+    fread(&stage3, stage3_addr,
+          (uintptr_t)stage3_addr - 0x8000,
+          stage3.size - ((uintptr_t)stage3_addr - 0x8000));
+
+    if (BUILD_ID != stage3_build_id) {
+        print("limine.sys build ID mismatch.\n");
+        return false;
+    }
+
+    stage3_loaded = true;
+
+    return true;
+}
 
 bool parse_resolution(int *width, int *height, int *bpp, const char *buf) {
     int res[3] = {0};

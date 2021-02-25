@@ -20,20 +20,8 @@ SECTIONS
     .stage2.data : {
         *(.data*)
         *(.rodata*)
-    }
-
-    .stage3.text : {
         stage3_addr = .;
-        *(.stage3_entry*)
         *(.stage3_build_id*)
-        *(.stage3_text*)
-    }
-
-    .stage3.data : {
-        *(.stage3_data*)
-    }
-
-    .map : {
         limine_map = .;
         limine_sys_size = .;
     }

@@ -26,6 +26,7 @@ enum {
 	BOOT_FROM_CD
 };
 
+__attribute__((noreturn))
 void entry(uint8_t _boot_drive, int boot_from) {
     boot_drive = _boot_drive;
 
@@ -44,31 +45,39 @@ void entry(uint8_t _boot_drive, int boot_from) {
     init_e820();
     init_memmap();
 
-    struct volume part;
     volume_create_index();
 
     switch (boot_from) {
-    case BOOT_FROM_HDD:
+    case BOOT_FROM_HDD: {
         print("Boot drive: %x\n", boot_drive);
-        // Look for config file.
-        print("Searching for config file...\n");
+        struct volume boot_volume;
+        volume_get_by_coord(&boot_volume, boot_drive, -1);
+        struct volume part = boot_volume;
+        bool stage3_loaded = false, config_loaded = false;
         for (int i = 0; ; i++) {
-            int ret = volume_get_by_coord(&part, boot_drive, i);
+            if (!stage3_loaded && stage3_init(&part)) {
+                stage3_loaded = true;
+                print("Stage 3 found and loaded.\n");
+            }
+            if (!config_loaded && !init_config_disk(&part)) {
+                config_loaded = true;
+                print("Config file found and loaded.\n");
+                boot_partition = i - 1;
+            }
+            int ret = part_get(&part, &boot_volume, i);
             switch (ret) {
                 case INVALID_TABLE:
-                    panic("Partition table of boot drive is invalid.");
                 case END_OF_TABLE:
-                    panic("Config file not found.");
-                case NO_PARTITION:
-                    continue;
-            }
-            if (!init_config_disk(&part)) {
-                print("Config file found and loaded.\n");
-                boot_partition = i;
-                break;
+                    goto break2;
             }
         }
+break2:
+        if (!stage3_loaded)
+            panic("Stage 3 not loaded.");
+        if (!config_loaded)
+            panic("Config file not found.");
         break;
+    }
 
     case BOOT_FROM_PXE:
         pxe_init();
@@ -77,15 +86,14 @@ void entry(uint8_t _boot_drive, int boot_from) {
         }
         print("Config loaded via PXE\n");
         break;
-
-    case BOOT_FROM_CD:
-        boot_partition = -1;  // raw device
-        volume_get_by_coord(&part, boot_drive, boot_partition);
-        if (init_config_disk(&part))
-            panic("Failed to load config file");
-        break;
     }
 
+    stage3();
+}
+
+__attribute__((noreturn))
+__attribute__((section(".stage3_entry")))
+void stage3_entry(void) {
     char *cmdline;
     char *config = menu(&cmdline);
 
@@ -105,4 +113,6 @@ void entry(uint8_t _boot_drive, int boot_from) {
     } else {
         panic("Invalid protocol specified");
     }
+
+    for (;;);
 }

@@ -4,6 +4,7 @@
 #include <lib/term.h>
 #include <lib/real.h>
 #include <lib/image.h>
+#include <lib/blib.h>
 #include <drivers/vga_textmode.h>
 #include <drivers/vbe.h>
 
@@ -27,6 +28,7 @@ void (*term_double_buffer_flush)(void);
 
 int term_rows, term_cols;
 
+stage3_text
 void term_vbe(uint32_t *colours, int margin, int margin_gradient, struct image *background) {
     term_deinit();
     if (!vbe_tty_init(&term_rows, &term_cols, colours, margin, margin_gradient, background)) {

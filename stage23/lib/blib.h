@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <fs/file.h>
 
 extern uint8_t boot_drive;
 extern int     boot_partition;
@@ -48,7 +49,7 @@ typedef char symbol[];
 #define stage3_text __attribute__((section(".stage3_text")))
 #define stage3_data __attribute__((section(".stage3_data")))
 
-extern uint64_t build_id;
-extern uint64_t stage3_build_id;
+__attribute__((noreturn)) extern void (*stage3)(void);
+bool stage3_init(struct volume *part);
 
 #endif

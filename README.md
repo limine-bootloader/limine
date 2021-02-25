@@ -20,16 +20,18 @@ such as Long Mode, 5-level paging, and SMP (multicore), to name a few.
 * ext2/3/4
 * echfs
 * FAT32
+* ISO9660 (CDs/DVDs)
 
 ### Supported partitioning schemes
 * MBR
 * GPT
+* Unpartitioned media
 
-## Warning about using `unstable`
+## Warning about using `trunk`
 
-Please refrain from using the `unstable` branch of this repository directly, unless
+Please refrain from using the `trunk` branch of this repository directly, unless
 you have a *very* good reason to.
-The `unstable` branch is unstable, and non-backwards compatible changes are made to it
+The `trunk` branch is unstable, and non-backwards compatible changes are made to it
 routinely.
 
 Use instead a [release](https://github.com/limine-bootloader/limine/releases), or a [release branch](https://github.com/limine-bootloader/limine/branches) (like v1.0-branch).
@@ -48,19 +50,15 @@ git clone https://github.com/limine-bootloader/limine.git --branch=v1.0-branch
 ```
 (replace `v1.0-branch` with the chosen release branch)
 
-Also note that the documentation contained in `unstable` does not reflect the
+Also note that the documentation contained in `trunk` does not reflect the
 documentation for the specific releases, and one should refer to the releases'
-documentation instead, contained in their files.
+respective documentation instead, contained in their files.
 
 ## Building
 
 ### Building the bootloader
-Building the bootloader is not necessary as a prebuilt copy is shipped in this
-repository (`limine.bin`).
-
-Should one want to build the bootloader to make sure the shipped copy is authentic,
-to develop, to debug, or any other reason, it is necessary to first build the
-set of tools that the bootloader needs in order to be built.
+It is necessary to first build the set of tools that the bootloader needs
+in order to be built.
 
 This can be accomplished by running:
 ```bash
@@ -73,27 +71,23 @@ After that is done, the bootloader itself can be built with:
 make bootloader
 ```
 
-A newly generated `limine.bin` image should now be present in the root of the repo.
-
-This newly built image should match 1:1 (aka, same checksum) with the one shipped
-with the respective commit.
+The generated bootloader files are going to be in `bin`.
 
 ### Compiling `limine-install`
 To build the `limine-install` program, simply run `make` in the root of the repo.
-This will embed the `limine.bin` bootloader image from the repository's root into
-`limine-install`, ready to be deployed to a device.
+This will embed the `limine-hdd.bin` bootloader image from the `bin` directory into
+`limine-install`, ready to be deployed to a USB/hard drive (or disk image).
 
 Then use `make install` to install it, optionally specifying a prefix with a
 `PREFIX=...` option.
 
-Installing `limine-install` is optional as it can also be used from the root of the
-repository just fine.
+Installing `limine-install` is optional as it can also be used from the `bin` directory of the repository just fine.
 
 ## How to use
 
 ### MBR
 In order to install Limine on a MBR device (which can just be a raw image file),
-run the `limine-install` as such:
+run `limine-install` as such:
 
 ```bash
 limine-install <path to device/image>
@@ -115,6 +109,25 @@ limine-install <path to device/image> <1-based stage 2 partition number>
 In case one wants to let `limine-install` embed stage 2 within GPT's structures,
 simply omit the partition number, and invoke `limine-install` the same as one would
 do for an MBR partitioned device.
+
+### CD-ROM ISO creation
+In order to create a bootable ISO with Limine, place the `limine-cd.bin` and
+`limine.sys` files into a directory which will serve as the root of the created ISO.
+(`limine.sys` must either by in the root or inside a `boot` subdirectory;
+`limine-cd.bin` can reside anywhere).
+
+Place any other file you want to be on the final ISO in said directory, then run:
+```
+genisoimage -no-emul-boot -b <relative path of limine-cd.bin> \
+            -boot-load-size 4 -boot-info-table -o myiso.iso <root directory>
+```
+
+*Note: `genisoimage` is usually part of the `cdrtools` package.*
+
+`<relative path of limine-cd.bin>` is the relative path of `limine-cd.bin` inside
+the root directory.
+For example, if it was copied in `<root directory>/boot/limine-cd.bin`, it would be
+`boot/limine-cd.bin`.
 
 ### Configuration
 Then make sure the device/image contains at least 1 partition formatted in

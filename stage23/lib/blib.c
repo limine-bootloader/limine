@@ -51,6 +51,7 @@ bool stage3_init(struct volume *part) {
     return true;
 }
 
+stage3_text
 bool parse_resolution(int *width, int *height, int *bpp, const char *buf) {
     int res[3] = {0};
 
@@ -79,6 +80,7 @@ bool parse_resolution(int *width, int *height, int *bpp, const char *buf) {
 
 // This integer sqrt implementation has been adapted from:
 // https://stackoverflow.com/questions/1100090/looking-for-an-efficient-integer-square-root-algorithm-for-arm-thumb2
+stage3_text
 uint64_t sqrt(uint64_t a_nInput) {
     uint64_t op  = a_nInput;
     uint64_t res = 0;
@@ -101,6 +103,7 @@ uint64_t sqrt(uint64_t a_nInput) {
     return res;
 }
 
+stage3_text
 uint8_t bcd_to_int(uint8_t val) {
     return (val & 0x0f) + ((val & 0xf0) >> 4) * 10;
 }

@@ -12,6 +12,7 @@
 
 // A URI takes the form of: resource://root/path
 // The following function splits up a URI into its componenets
+stage3_text
 bool uri_resolve(char *uri, char **resource, char **root, char **path) {
     size_t length = strlen(uri) + 1;
     char *buf = ext_mem_alloc(length);
@@ -56,6 +57,7 @@ bool uri_resolve(char *uri, char **resource, char **root, char **path) {
 
 // BIOS partitions are specified in the <BIOS drive>:<partition> form.
 // The drive may be omitted, the partition cannot.
+stage3_text
 static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) {
     uint64_t val;
 
@@ -91,6 +93,7 @@ static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) 
     return true;
 }
 
+stage3_text
 static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
     uint8_t drive, partition;
 
@@ -107,6 +110,7 @@ static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
     return true;
 }
 
+stage3_text
 static bool uri_guid_dispatch(struct file_handle *fd, char *guid_str, char *path) {
     struct guid guid;
     if (!string_to_guid_be(&guid, guid_str))
@@ -127,6 +131,7 @@ static bool uri_guid_dispatch(struct file_handle *fd, char *guid_str, char *path
     return true;
 }
 
+stage3_text
 static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
     uint32_t ip;
     if (!strcmp(root, "")) {
@@ -150,6 +155,7 @@ static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
     return true;
 }
 
+stage3_text
 static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) {
     if (booted_from_pxe)
         return uri_tftp_dispatch(fd, s_part, path);
@@ -178,6 +184,7 @@ static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) 
     return true;
 }
 
+stage3_text
 bool uri_open(struct file_handle *fd, char *uri) {
     bool ret;
 

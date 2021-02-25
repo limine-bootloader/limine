@@ -5,6 +5,7 @@
 #include <lib/blib.h>
 
 // Julian date calculation from https://en.wikipedia.org/wiki/Julian_day
+stage3_text
 static uint64_t get_jdn(uint8_t days, uint8_t months, uint16_t years) {
     return (1461 * (years + 4800 + (months - 14)/12))/4 + (367 *
            (months - 2 - 12 * ((months - 14)/12)))/12 -
@@ -12,6 +13,7 @@ static uint64_t get_jdn(uint8_t days, uint8_t months, uint16_t years) {
            + days - 32075;
 }
 
+stage3_text
 static uint64_t get_unix_epoch(uint8_t seconds, uint8_t minutes, uint8_t  hours,
                                uint8_t days,    uint8_t months,  uint16_t years) {
     uint64_t jdn_current = get_jdn(days, months, years);
@@ -22,6 +24,7 @@ static uint64_t get_unix_epoch(uint8_t seconds, uint8_t minutes, uint8_t  hours,
     return (jdn_diff * (60 * 60 * 24)) + hours * 3600 + minutes * 60 + seconds;
 }
 
+stage3_text
 uint64_t time(void) {
     struct rm_regs r = {0};
 

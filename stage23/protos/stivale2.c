@@ -27,14 +27,17 @@
 
 #define KASLR_SLIDE_BITMASK 0x000FFF000u
 
+stage3_data
 struct stivale2_struct stivale2_struct = {0};
 
+stage3_text
 inline static size_t get_phys_addr(uint64_t addr) {
     if (addr & ((uint64_t)1 << 63))
         return addr - FIXED_HIGHER_HALF_OFFSET_64;
     return addr;
 }
 
+stage3_text
 static void *get_tag(struct stivale2_header *s, uint64_t id) {
     struct stivale2_tag *tag = (void*)get_phys_addr(s->tags);
     for (;;) {
@@ -46,11 +49,13 @@ static void *get_tag(struct stivale2_header *s, uint64_t id) {
     }
 }
 
+stage3_text
 static void append_tag(struct stivale2_struct *s, struct stivale2_tag *tag) {
     tag->next = s->tags;
     s->tags   = (uint64_t)(size_t)tag;
 }
 
+stage3_text
 void stivale2_load(char *config, char *cmdline, bool pxe) {
     struct file_handle *kernel = ext_mem_alloc(sizeof(struct file_handle));
 

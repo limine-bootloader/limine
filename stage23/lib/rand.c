@@ -52,6 +52,7 @@ static bool rand_initialised = false;
 static uint32_t *status;
 static int ctr;
 
+stage3_text
 static void init_rand(void) {
     uint32_t seed = ((uint32_t)0xc597060c * rdtsc(uint32_t))
                   * ((uint32_t)0xce86d624)
@@ -73,12 +74,14 @@ static void init_rand(void) {
     rand_initialised = true;
 }
 
+stage3_text
 void srand(uint32_t s) {
     status[0] = s;
     for (ctr = 1; ctr < n; ctr++)
         status[ctr] = (1812433253 * (status[ctr - 1] ^ (status[ctr - 1] >> 30)) + ctr);
 }
 
+stage3_text
 uint32_t rand32(void) {
     if (!rand_initialised)
         init_rand();
@@ -112,6 +115,7 @@ uint32_t rand32(void) {
     return res;
 }
 
+stage3_text
 uint64_t rand64(void) {
     return (((uint64_t)rand32()) << 32) | (uint64_t)rand32();
 }

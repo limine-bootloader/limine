@@ -7,6 +7,7 @@
 #include <lib/print.h>
 
 // Following function based on https://github.com/qword-os/lai/blob/master/helpers/pc-bios.c's function lai_bios_calc_checksum()
+stage3_text
 uint8_t acpi_checksum(void *ptr, size_t size) {
     uint8_t sum = 0, *_ptr = ptr;
     for (size_t i = 0; i < size; i++)
@@ -14,6 +15,7 @@ uint8_t acpi_checksum(void *ptr, size_t size) {
     return sum;
 }
 
+stage3_text
 void *acpi_get_rsdp(void) {
     size_t ebda = EBDA;
 
@@ -32,6 +34,7 @@ void *acpi_get_rsdp(void) {
     return NULL;
 }
 
+stage3_text
 void *acpi_get_table(const char *signature, int index) {
     int cnt = 0;
 

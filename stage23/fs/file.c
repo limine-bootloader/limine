@@ -24,7 +24,7 @@ bool fs_get_guid(struct guid *guid, struct volume *part) {
 int fopen(struct file_handle *ret, struct volume *part, const char *filename) {
     ret->is_memfile = false;
 
-    if (stage3_loaded && iso9660_check_signature(part)) {
+    if (iso9660_check_signature(part)) {
         struct iso9660_file_handle *fd = ext_mem_alloc(sizeof(struct iso9660_file_handle));
 
         int r = iso9660_open(fd, part, filename);

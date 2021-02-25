@@ -73,4 +73,4 @@ limine.elf: $(OBJ) limine.map.o
 	nasm $< -f elf32 -o $@
 
 clean:
-	rm -f symlist.gen limine.elf limine.sys stage2.bin stage2.bin.gz $(OBJ) $(HEADER_DEPS)
+	rm -f limine.elf limine_nomap.elf limine.map.o limine.sys stage2.bin stage2.bin.gz $(OBJ) $(HEADER_DEPS)

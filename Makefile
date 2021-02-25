@@ -30,9 +30,9 @@ bootloader: | decompressor stage23
 	cd stage1/pxe && nasm bootsect.asm -fbin -o ../../bin/limine-pxe.bin
 	cp stage23/limine.sys ./bin/
 
-bootloader-clean: stage23-clean decompressor-clean test-clean
+bootloader-clean: stage23-clean decompressor-clean
 
-distclean: clean bootloader-clean
+distclean: clean bootloader-clean test-clean
 	rm -rf bin stivale
 
 tinf-clean:
@@ -56,7 +56,7 @@ decompressor-clean:
 
 test-clean:
 	$(MAKE) -C test clean
-	rm -f test/limine.map test.hdd
+	rm -rf test_image test.hdd test.iso
 
 toolchain:
 	cd toolchain && ./make_toolchain.sh -j`nproc`
@@ -67,7 +67,7 @@ test.hdd:
 	parted -s test.hdd mklabel gpt
 	parted -s test.hdd mkpart primary 2048s 100%
 
-echfs-test: test.hdd bootloader | all
+echfs-test: | test-clean test.hdd bootloader all
 	$(MAKE) -C test
 	echfs-utils -g -p0 test.hdd quick-format 512 > part_guid
 	sed "s/@GUID@/`cat part_guid`/g" < test/limine.cfg > limine.cfg.tmp
@@ -80,7 +80,7 @@ echfs-test: test.hdd bootloader | all
 	bin/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
-ext2-test: test.hdd bootloader | all
+ext2-test: | test-clean test.hdd bootloader all
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -97,7 +97,7 @@ ext2-test: test.hdd bootloader | all
 	bin/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
-fat32-test: test.hdd bootloader | all
+fat32-test: | test-clean test.hdd bootloader all
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -114,7 +114,7 @@ fat32-test: test.hdd bootloader | all
 	bin/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
-iso9660-test: bootloader
+iso9660-test: | test-clean test.hdd bootloader all
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir -p test_image/boot

@@ -1,23 +1,24 @@
 BITS 16
 ORG 0x7C00
 
-; Please read bootsect/bootsect.asm before this file
-
-%define ISO9660_BUFFER 0x8000
-%define ROOT_DIRECTORY 156
-%define ROOT_DIRECTORY_BUFFER (ISO9660_BUFFER + ROOT_DIRECTORY)
-
-%define DIRECTORY_RECORD_LENGTH 0
-%define DIRECTORY_RECORD_LBA 2
-%define DIRECTORY_RECORD_SIZE 10
-%define DIRECTORY_RECORD_FILENAME_LENGTH 32
-%define DIRECTORY_RECORD_FILENAME 33
-
+%define STAGE2_LOCATION       0x60000
+%define DECOMPRESSOR_LOCATION 0x70000
 %define BOOT_FROM_CD 2
 
 jmp skip_bpb
 nop
-times 87 db 0
+
+; El Torito Boot Information Table
+; ↓ Set by mkisofs
+times 8-($-$$) db 0
+boot_info:
+    bi_PVD      dd 0
+    bi_boot_LBA dd 0
+    bi_boot_len dd 0
+    bi_checksum dd 0
+    bi_reserved times 40 db 0
+
+times 90-($-$$) db 0
 
 skip_bpb:
     cli
@@ -41,31 +42,24 @@ skip_bpb:
 
     mov esp, 0x7C00
 
-    ; --- Load the stage 2 ---
-    ; Find and load the PVD
-    call findPVD
-    jc err
-
-    ; Load the root directory
-    mov eax, dword [ROOT_DIRECTORY_BUFFER + DIRECTORY_RECORD_LBA]
-    mov ecx, dword [ROOT_DIRECTORY_BUFFER + DIRECTORY_RECORD_SIZE]
-
-    mov esi, ecx  ; Size, for read_file
-    add ecx, 2047
-    shr ecx, 11
+    ; --- Load the decompressor ---
+    mov eax, dword [bi_boot_LBA]
+    add eax, DEC_LBA_OFFSET
+    mov ecx, DEC_LBA_COUNT
+    ; DECOMPRESSOR_LOCATION = 0x70000 = 0x7000:0x0000
+    mov si, 0x7000
+    xor di, di
     call read_2k_sectors
     jc err
 
-    ; Find and load '/BOOT'
-    mov ebx, TXT_BOOT
-    mov cl, TXT_BOOT_SZ
-    call read_file
-    jc err
-
-    ; Find and load '/BOOT/LIMINE.SYS'
-    mov ebx, TXT_LIMINE
-    mov cl, TXT_LIMINE_SZ
-    call read_file  ; esi is set from the last call
+    ; --- Load the stage2.bin.gz ---
+    mov eax, dword [bi_boot_LBA]
+    add eax, STAGE2_LBA_OFFSET
+    mov ecx, STAGE2_LBA_COUNT
+    ; STAGE2_LOCATION = 0x60000 = 0x6000:0x0000
+    mov si, 0x6000
+    xor di, di
+    call read_2k_sectors
     jc err
 
     ; Enable GDT
@@ -81,7 +75,7 @@ err:
     hlt
     jmp err
 
-%include 'iso9660.asm'
+%include 'read_2k_sectors.asm'
 %include '../gdt.asm'
 
 BITS 32
@@ -93,17 +87,28 @@ pmode:
     mov gs, ax
     mov ss, ax
 
-    ; Time to handle control over to the stage 2
+    ; Time to handle control over to the decompressor
     push BOOT_FROM_CD
     and edx, 0xFF
     push edx  ; Boot drive
-    call ISO9660_BUFFER
+    push STAGE2_SIZE
+    push STAGE2_LOCATION
+    call DECOMPRESSOR_LOCATION
     hlt
 
-TXT_BOOT: db "BOOT"
-TXT_BOOT_SZ equ $ - TXT_BOOT
-TXT_LIMINE: db "LIMINE.SYS;1"
-TXT_LIMINE_SZ equ $ - TXT_LIMINE
+%define FILEPOS ($-$$)
+%define UPPER2K ((FILEPOS+2047) & ~2047)
+%define ALIGN2K times UPPER2K - FILEPOS db 0
 
-; Just making sure the entry point (ISO9660_BUFFER) is not reached
-times (0x8000 - 0x7C00) - ($ - $$) db 0
+; Align stage2 to 2K ON DISK
+ALIGN2K
+DEC_LBA_OFFSET equ ($-$$)/2048
+incbin '../../decompressor/decompressor.bin'
+
+ALIGN2K
+STAGE2_START equ $-$$
+STAGE2_LBA_OFFSET equ STAGE2_START/2048
+DEC_LBA_COUNT equ STAGE2_LBA_OFFSET - DEC_LBA_OFFSET
+incbin '../../stage23/stage2.bin.gz'
+STAGE2_SIZE equ ($-$$) - STAGE2_START
+STAGE2_LBA_COUNT equ (2047 + $-$$)/2048

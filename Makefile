@@ -119,5 +119,5 @@ iso9660-test: | test-clean test.hdd bootloader all
 	rm -rf test_image/
 	mkdir -p test_image/boot
 	cp -rv bin/* test/* test_image/boot/
-	genisoimage -no-emul-boot -b boot/limine-cd.bin -o test.iso test_image/
+	genisoimage -no-emul-boot -b boot/limine-cd.bin -boot-load-size 4 -boot-info-table -o test.iso test_image/
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio

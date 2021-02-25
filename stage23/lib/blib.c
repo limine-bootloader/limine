@@ -7,6 +7,9 @@
 #include <lib/trace.h>
 #include <lib/real.h>
 
+uint64_t build_id = BUILD_ID;
+stage3_data uint64_t stage3_build_id = BUILD_ID;
+
 uint8_t boot_drive;
 int     boot_partition = -1;
 

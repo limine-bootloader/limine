@@ -4,6 +4,7 @@ OBJCOPY = i386-elf-objcopy
 OBJDUMP = i386-elf-objdump
 READELF = i386-elf-readelf
 
+BUILD_ID := $(shell dd if=/dev/urandom count=8 bs=1 | od -An -t x8 | sed 's/^ /0x/')
 LIMINE_VERSION := $(shell git describe --exact-match --tags `git log -n1 --pretty='%h'` || git log -n1 --pretty='%h')
 WERROR = -Werror
 CFLAGS = -Os -pipe -Wall -Wextra $(WERROR)
@@ -23,6 +24,7 @@ INTERNAL_CFLAGS = \
 	-mno-sse \
 	-mno-sse2 \
 	-MMD \
+	-DBUILD_ID=$(BUILD_ID) \
 	-DLIMINE_VERSION='"$(LIMINE_VERSION)"' \
 	-I. \
 	-I..

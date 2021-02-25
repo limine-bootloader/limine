@@ -31,6 +31,10 @@ int init_config_disk(struct volume *part) {
               (uintptr_t)stage3_addr - 0x8000,
               stage3.size - ((uintptr_t)stage3_addr - 0x8000));
 
+        if (build_id != stage3_build_id) {
+            panic("Limine build ID mismatch. Use the correct limine.sys.");
+        }
+
         stage3_loaded = true;
     }
 

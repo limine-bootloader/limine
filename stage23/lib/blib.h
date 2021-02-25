@@ -48,4 +48,7 @@ typedef char symbol[];
 #define stage3_text __attribute__((section(".stage3_text")))
 #define stage3_data __attribute__((section(".stage3_data")))
 
+extern uint64_t build_id;
+extern uint64_t stage3_build_id;
+
 #endif

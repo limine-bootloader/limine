@@ -1,6 +1,5 @@
-bin
-/**/*.gen
-/**/*.map
+/bin
+/toolchain
 /**/*.o
 /**/*.d
 /**/*.a
@@ -13,6 +12,5 @@ bin
 /bochsout.txt
 /bx_enh_dbg.ini
 .vscode
-/limine-install
 /stivale
 /test_image

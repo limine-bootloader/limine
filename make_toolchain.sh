@@ -3,17 +3,16 @@
 set -e
 set -x
 
-PREFIX="$(pwd)"
 TARGET=i386-elf
 BINUTILSVERSION=2.36.1
 GCCVERSION=10.2.0
 NASMVERSION=2.15.05
 GZIPVERSION=1.10
 
-if [ -z "$MAKEFLAGS" ]; then
-	MAKEFLAGS="$1"
-fi
-export MAKEFLAGS
+mkdir -p "$1" && cd "$1"
+PREFIX="$(pwd)"
+
+export MAKEFLAGS="$2"
 
 export PATH="$PREFIX/bin:$PATH"
 

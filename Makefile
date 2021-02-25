@@ -33,14 +33,13 @@ bootloader: | decompressor stage23
 bootloader-clean: stage23-clean decompressor-clean
 
 distclean: clean bootloader-clean test-clean
-	rm -rf bin stivale
+	rm -rf bin stivale toolchain
 
 tinf-clean:
 	cd tinf && rm -rf *.o *.d
 
 stivale:
 	git clone https://github.com/stivale/stivale.git
-	cd stivale && git checkout d0a7ca5642d89654f8d688c2481c2771a8653c99
 
 stage23: tinf-clean stivale
 	$(MAKE) -C stage23 all
@@ -59,7 +58,7 @@ test-clean:
 	rm -rf test_image test.hdd test.iso
 
 toolchain:
-	cd toolchain && ./make_toolchain.sh -j`nproc`
+	./make_toolchain.sh ./toolchain -j`nproc`
 
 test.hdd:
 	rm -f test.hdd
@@ -76,7 +75,6 @@ echfs-test: | test-clean test.hdd bootloader all
 	echfs-utils -g -p0 test.hdd import test/test.elf boot/test.elf
 	echfs-utils -g -p0 test.hdd import test/bg.bmp boot/bg.bmp
 	echfs-utils -g -p0 test.hdd import bin/limine.sys boot/limine.sys
-	echfs-utils -g -p0 test.hdd import bin/limine.map boot/limine.map
 	bin/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 

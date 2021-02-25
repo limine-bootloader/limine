@@ -74,18 +74,20 @@ make bootloader
 The generated bootloader files are going to be in `bin`.
 
 ### Compiling `limine-install`
+`limine-install` is a tool that installs Limine's stage 1 and 2 to either
+an MBR or a GPT hard disk device or image.
+
 To build the `limine-install` program, simply run `make` in the root of the repo.
 This will embed the `limine-hdd.bin` bootloader image from the `bin` directory into
 `limine-install`, ready to be deployed to a USB/hard drive (or disk image).
 
-Then use `make install` to install it, optionally specifying a prefix with a
+### Installing Limine binaries
+This step is optional as the bootloader binaries can be used from the `bin`
+directory just fine. This step will only install them in a `share` and `bin`
+directories in the specified `PREFIX` (default is `/usr/local`).
+
+Use `make install` to install Limine binaries, optionally specifying a prefix with a
 `PREFIX=...` option.
-
-This will install `limine-install` in `bin`, as well as the additional binaries
-needed for stage 3, CD, and PXE boot in `share`.
-
-Installing is optional as it can also be used from the `bin` directory of the
-repository just fine.
 
 ## How to use
 
@@ -97,8 +99,9 @@ run `limine-install` as such:
 limine-install <path to device/image>
 ```
 
-The boot device will need to contain the `limine.sys` file in either the root
-or the `boot` directory of one of the partitions.
+The boot device must to contain the `limine.sys` and `limine.cfg` files in
+either the root or the `boot` directory of one of the partitions, formatted
+with a supported file system.
 
 ### GPT
 If using a GPT formatted device, there are 2 options one can follow for installation:
@@ -117,14 +120,16 @@ In case one wants to let `limine-install` embed stage 2 within GPT's structures,
 simply omit the partition number, and invoke `limine-install` the same as one would
 do for an MBR partitioned device.
 
-The boot device will need to contain the `limine.sys` file in either the root
-or the `boot` directory of one of the partitions.
+The boot device must to contain the `limine.sys` and `limine.cfg` files in
+either the root or the `boot` directory of one of the partitions, formatted
+with a supported file system.
 
 ### CD-ROM ISO creation
-In order to create a bootable ISO with Limine, place the `limine-cd.bin` and
-`limine.sys` files into a directory which will serve as the root of the created ISO.
-(`limine.sys` must either by in the root or inside a `boot` subdirectory;
-`limine-cd.bin` can reside anywhere).
+In order to create a bootable ISO with Limine, place the `limine-cd.bin`,
+`limine.sys`, and `limine.cfg` files into a directory which will serve as the root
+of the created ISO.
+(`limine.sys` and `limine.cfg` must either be in the root or inside a `boot`
+subdirectory; `limine-cd.bin` can reside anywhere).
 
 Place any other file you want to be on the final ISO in said directory, then run:
 ```
@@ -139,10 +144,16 @@ the root directory.
 For example, if it was copied in `<root directory>/boot/limine-cd.bin`, it would be
 `boot/limine-cd.bin`.
 
+### PXE boot
+The `limine-pxe.bin` binary is a valid PXE boot image.
+In order to boot Limine from PXE it is necessary to setup a DHCP server with
+support for PXE booting. This can either be accomplished using a single DHCP server
+or your existing DHCP server and a proxy DHCP server such as dnsmasq.
+
+`limine.cfg` and `limine.sys` are expected to be on the server used for boot.
+
 ### Configuration
-Make sure the device/image contains at least 1 partition formatted in
-a supported filesystem containing a `/limine.cfg` or `/boot/limine.cfg` file
-and the kernel/modules one wants to load.
+The `limine.cfg` file contains Limine's configuration.
 
 An example `limine.cfg` file can be found in `test/limine.cfg`.
 
@@ -160,6 +171,7 @@ parted -s test.img mkpart primary 1 100%
 parted -s test.img set 1 boot on # Workaround for buggy BIOSes
 
 echfs-utils -m -p0 test.img quick-format 32768
+echfs-utils -m -p0 test.img import path/to/limine.sys limine.sys
 echfs-utils -m -p0 test.img import path/to/limine.cfg limine.cfg
 echfs-utils -m -p0 test.img import path/to/kernel.elf kernel.elf
 echfs-utils -m -p0 test.img import <path to file> <path in image>

@@ -97,7 +97,7 @@ void entry(uint8_t _boot_drive, int boot_from) {
     if (!strcmp(proto, "stivale")) {
         stivale_load(config, cmdline);
     } else if (!strcmp(proto, "stivale2")) {
-        stivale2_load(config, cmdline, boot_from);
+        stivale2_load(config, cmdline, booted_from_pxe);
     } else if (!strcmp(proto, "linux")) {
         linux_load(config, cmdline);
     } else if (!strcmp(proto, "chainload")) {

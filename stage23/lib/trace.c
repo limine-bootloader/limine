@@ -8,45 +8,30 @@
 #include <fs/file.h>
 #include <mm/pmm.h>
 
-static char *stage2_map = NULL;
-
-void trace_init(void) {
-    char *map_filename = config_get_value(NULL, 0, "STAGE2_MAP");
-    if (map_filename == NULL)
-        return;
-
-    struct file_handle stage2_map_file;
-    if (!uri_open(&stage2_map_file, map_filename))
-        panic("Could not open stage2 map file `%s`", map_filename);
-
-    stage2_map = ext_mem_alloc(stage2_map_file.size);
-    fread(&stage2_map_file, stage2_map, 0, stage2_map_file.size);
-
-    print("trace: Stage 2 map file `%s` loaded.\n", map_filename);
-}
+extern symbol limine_map;
 
 char *trace_address(size_t *off, size_t addr) {
-    if (!stage2_map)
+    if (!stage3_loaded)
         return NULL;
 
     uint32_t prev_addr = 0;
     char    *prev_sym  = NULL;
 
     for (size_t i = 0;;) {
-        if (*((uint32_t *)&stage2_map[i]) >= addr) {
+        if (*((uint32_t *)&limine_map[i]) >= addr) {
             *off = addr - prev_addr;
             return prev_sym;
         }
-        prev_addr = *((uint32_t *)&stage2_map[i]);
+        prev_addr = *((uint32_t *)&limine_map[i]);
         i += sizeof(uint32_t);
-        prev_sym  = &stage2_map[i];
-        while (stage2_map[i++] != 0);
+        prev_sym  = &limine_map[i];
+        while (limine_map[i++] != 0);
     }
 }
 
 void print_stacktrace(size_t *base_ptr) {
-    if (!stage2_map) {
-        print("trace: Stack trace omitted due to unavailable map file.\n");
+    if (!stage3_loaded) {
+        print("trace: Stack trace omitted because stage 3 was not loaded yet.\n");
         return;
     }
 

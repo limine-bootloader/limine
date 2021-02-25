@@ -62,9 +62,9 @@ skip_bpb:
     call read_file
     jc err
 
-    ; Find and load '/BOOT/STAGES.BIN'
-    mov ebx, TXT_STAGES
-    mov cl, TXT_STAGES_SZ
+    ; Find and load '/BOOT/LIMINE.SYS'
+    mov ebx, TXT_LIMINE
+    mov cl, TXT_LIMINE_SZ
     call read_file  ; esi is set from the last call
     jc err
 
@@ -82,7 +82,7 @@ err:
     jmp err
 
 %include 'iso9660.asm'
-%include '../hddboot/gdt.inc'
+%include '../gdt.asm'
 
 BITS 32
 pmode:
@@ -102,8 +102,8 @@ pmode:
 
 TXT_BOOT: db "BOOT"
 TXT_BOOT_SZ equ $ - TXT_BOOT
-TXT_STAGES: db "STAGES.BIN;1"
-TXT_STAGES_SZ equ $ - TXT_STAGES
+TXT_LIMINE: db "LIMINE.SYS;1"
+TXT_LIMINE_SZ equ $ - TXT_LIMINE
 
 ; Just making sure the entry point (ISO9660_BUFFER) is not reached
 times (0x8000 - 0x7C00) - ($ - $$) db 0

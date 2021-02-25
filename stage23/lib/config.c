@@ -27,7 +27,12 @@ int init_config_disk(struct volume *part) {
             panic("Could not open stage 3");
         }
 
-        fread(&stage3, stage3_addr, 0, stage3.size);
+        print("%x %x %x\n", stage3_addr, (uintptr_t)stage3_addr - 0x8000,
+              stage3.size - (uintptr_t)stage3_addr - 0x8000);
+
+        fread(&stage3, stage3_addr,
+              (uintptr_t)stage3_addr - 0x8000,
+              stage3.size - ((uintptr_t)stage3_addr - 0x8000));
 
         stage3_loaded = true;
     }

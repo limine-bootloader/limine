@@ -43,7 +43,7 @@ uint64_t strtoui(const char *s, const char **end, int base);
 
 #define SIZEOF_ARRAY(array) (sizeof(array) / sizeof(array[0]))
 
-typedef void *symbol[];
+typedef char symbol[];
 
 #define stage3_text __attribute__((section(".stage3_text")))
 #define stage3_data __attribute__((section(".stage3_data")))

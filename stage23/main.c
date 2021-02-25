@@ -87,8 +87,6 @@ void entry(uint8_t _boot_drive, int boot_from) {
         break;
     }
 
-    trace_init();
-
     char *cmdline;
     char *config = menu(&cmdline);
 

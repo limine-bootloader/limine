@@ -13,16 +13,26 @@ SECTIONS
         KEEP(*(.realmode*))
     }
 
-    .stage2 : {
+    .stage2.text : {
         *(.text*)
+    }
+
+    .stage2.data : {
         *(.data*)
         *(.rodata*)
     }
 
-    .stage3 : {
+    .stage3.text : {
         stage3_addr = .;
         *(.stage3_text*)
+    }
+
+    .stage3.data : {
         *(.stage3_data*)
+    }
+
+    .map : {
+        KEEP(*(.map*))
     }
 
     .bss : {

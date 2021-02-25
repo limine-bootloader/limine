@@ -89,8 +89,8 @@ times 6 db 0
 
 ; Includes
 
-%include 'disk.inc'
-%include 'gdt.inc'
+%include 'disk.asm'
+%include '../gdt.asm'
 
 bits 32
 vector:
@@ -126,9 +126,9 @@ dw 0xaa55
 ; ********************* Stage 2 *********************
 
 decompressor:
-incbin '../decompressor/decompressor.bin'
+incbin '../../decompressor/decompressor.bin'
 
 align 16
 stage2:
-incbin '../stages/stage2.bin.gz'
+incbin '../../stage23/stage2.bin.gz'
 .size: equ $ - stage2

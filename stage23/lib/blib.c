@@ -22,7 +22,7 @@ extern symbol stage3_addr;
 extern symbol limine_sys_size;
 
 __attribute__((noreturn))
-void (*stage3)(void) = (void *)stage3_addr;
+void (*stage3)(int boot_from) = (void *)stage3_addr;
 
 bool stage3_init(struct volume *part) {
     struct file_handle stage3;

@@ -48,53 +48,63 @@ void entry(uint8_t _boot_drive, int boot_from) {
     volume_create_index();
 
     switch (boot_from) {
-    case BOOT_FROM_HDD:
-    case BOOT_FROM_CD: {
-        print("Boot drive: %x\n", boot_drive);
-        struct volume boot_volume;
-        volume_get_by_coord(&boot_volume, boot_drive, -1);
-        struct volume part = boot_volume;
-        bool stage3_loaded = false, config_loaded = false;
-        for (int i = 0; ; i++) {
-            if (!stage3_loaded && stage3_init(&part)) {
-                stage3_loaded = true;
-                print("Stage 3 found and loaded.\n");
+        case BOOT_FROM_HDD:
+        case BOOT_FROM_CD: {
+            struct volume boot_volume;
+            volume_get_by_coord(&boot_volume, boot_drive, -1);
+            struct volume part = boot_volume;
+            for (int i = 0; ; i++) {
+                if (stage3_init(&part)) {
+                    print("Stage 3 found and loaded.\n");
+                    break;
+                }
+                int ret = part_get(&part, &boot_volume, i);
+                switch (ret) {
+                    case INVALID_TABLE:
+                    case END_OF_TABLE:
+                        panic("Stage 3 not found.");
+                }
             }
-            if (!config_loaded && !init_config_disk(&part)) {
-                config_loaded = true;
-                print("Config file found and loaded.\n");
-                boot_partition = i - 1;
-            }
-            int ret = part_get(&part, &boot_volume, i);
-            switch (ret) {
-                case INVALID_TABLE:
-                case END_OF_TABLE:
-                    goto break2;
-            }
+            break;
         }
-break2:
-        if (!stage3_loaded)
-            panic("Stage 3 not loaded.");
-        if (!config_loaded)
-            panic("Config file not found.");
-        break;
     }
 
-    case BOOT_FROM_PXE:
-        pxe_init();
-        if (init_config_pxe()) {
-            panic("Failed to load config file");
-        }
-        print("Config loaded via PXE\n");
-        break;
-    }
-
-    stage3();
+    stage3(boot_from);
 }
 
 __attribute__((noreturn))
 __attribute__((section(".stage3_entry")))
-void stage3_entry(void) {
+void stage3_entry(int boot_from) {
+    switch (boot_from) {
+        case BOOT_FROM_HDD:
+        case BOOT_FROM_CD: {
+            struct volume boot_volume;
+            volume_get_by_coord(&boot_volume, boot_drive, -1);
+            struct volume part = boot_volume;
+            for (int i = 0; ; i++) {
+                if (!init_config_disk(&part)) {
+                    print("Config file found and loaded.\n");
+                    boot_partition = i - 1;
+                    break;
+                }
+                int ret = part_get(&part, &boot_volume, i);
+                switch (ret) {
+                    case INVALID_TABLE:
+                    case END_OF_TABLE:
+                        panic("Config file not found.");
+                }
+            }
+            break;
+        case BOOT_FROM_PXE:
+            pxe_init();
+            if (init_config_pxe()) {
+                panic("Failed to load config file");
+            }
+            print("Config loaded via PXE\n");
+            break;
+        }
+    }
+
     char *cmdline;
     char *config = menu(&cmdline);
 

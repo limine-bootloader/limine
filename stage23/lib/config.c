@@ -16,6 +16,7 @@ bool config_ready = false;
 
 static char *config_addr;
 
+stage3_text
 int init_config_disk(struct volume *part) {
     struct file_handle f;
 
@@ -34,6 +35,7 @@ int init_config_disk(struct volume *part) {
     return init_config(config_size);
 }
 
+stage3_text
 int init_config_pxe(void) {
     struct tftp_file_handle cfg;
     if (tftp_open(&cfg, 0, 69, "limine.cfg")
@@ -52,6 +54,7 @@ int init_config_pxe(void) {
 #define DIRECT_CHILD   0
 #define INDIRECT_CHILD 1
 
+stage3_text
 static int is_child(char *buf, size_t limit,
                     size_t current_depth, size_t index) {
     if (!config_get_entry_name(buf, index, limit))
@@ -66,6 +69,7 @@ static int is_child(char *buf, size_t limit,
     return DIRECT_CHILD;
 }
 
+stage3_text
 static bool is_directory(char *buf, size_t limit,
                          size_t current_depth, size_t index) {
     switch (is_child(buf, limit, current_depth + 1, index + 1)) {
@@ -79,6 +83,7 @@ static bool is_directory(char *buf, size_t limit,
     }
 }
 
+stage3_text
 static struct menu_entry *create_menu_tree(struct menu_entry *parent,
                                            size_t current_depth, size_t index) {
     struct menu_entry *root = NULL, *prev = NULL;
@@ -126,6 +131,7 @@ static struct menu_entry *create_menu_tree(struct menu_entry *parent,
 
 struct menu_entry *menu_tree = NULL;
 
+stage3_text
 int init_config(size_t config_size) {
     // remove windows carriage returns, if any
     for (size_t i = 0; i < config_size; i++) {
@@ -143,6 +149,7 @@ int init_config(size_t config_size) {
     return 0;
 }
 
+stage3_text
 bool config_get_entry_name(char *ret, size_t index, size_t limit) {
     char *p = config_addr;
 
@@ -170,6 +177,7 @@ bool config_get_entry_name(char *ret, size_t index, size_t limit) {
     return true;
 }
 
+stage3_text
 char *config_get_entry(size_t *size, size_t index) {
     char *ret;
     char *p = config_addr;
@@ -205,6 +213,7 @@ cont:
     return ret;
 }
 
+stage3_text
 char *config_get_value(const char *config, size_t index, const char *key) {
     if (!key)
         return NULL;

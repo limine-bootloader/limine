@@ -14,23 +14,27 @@ SECTIONS
     }
 
     .stage2.text : {
-        *(.text*)
+        *.s2.o(.text*)
+        *libgcc.a:*(.text*)
     }
 
     .stage2.data : {
-        *(.data*)
-        *(.rodata*)
+        *.s2.o(.data*)
+        *.s2.o(.rodata*)
+        *libgcc.a:*(.data*)
+        *libgcc.a:*(.rodata*)
     }
 
     .stage3.text : {
         stage3_addr = .;
         *(.stage3_entry*)
         *(.stage3_build_id*)
-        *(.stage3_text*)
+        *(.text*)
     }
 
     .stage3.data : {
-        *(.stage3_data*)
+        *(.data*)
+        *(.rodata*)
     }
 
     .map : {

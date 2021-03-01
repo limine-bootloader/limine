@@ -24,4 +24,12 @@ void term_write(const char *buf, size_t count);
 
 extern int term_rows, term_cols;
 
+enum {
+    NOT_READY,
+    VBE,
+    TEXTMODE
+};
+
+extern int term_backend;
+
 #endif

@@ -46,7 +46,6 @@ static void spinup(uint8_t drive) {
     );
 }
 
-stage3_text
 void chainload(char *config) {
     uint64_t val;
 

@@ -12,12 +12,10 @@
 #include <mm/pmm.h>
 #include <drivers/vbe.h>
 
-stage3_data
 static char *menu_branding = NULL;
 
 #define EDITOR_MAX_BUFFER_SIZE 4096
 
-stage3_text
 static size_t get_line_offset(size_t *displacement, size_t index, const char *buffer) {
     size_t offset = 0;
     size_t _index = index;
@@ -32,14 +30,12 @@ static size_t get_line_offset(size_t *displacement, size_t index, const char *bu
     return offset;
 }
 
-stage3_text
 static size_t get_line_length(size_t index, const char *buffer) {
     size_t i;
     for (i = index; buffer[i] != '\n' && buffer[i] != 0; i++);
     return i - index;
 }
 
-stage3_text
 static size_t get_next_line(size_t index, const char *buffer) {
     if (buffer[index] == 0)
         return index;
@@ -57,7 +53,6 @@ static size_t get_next_line(size_t index, const char *buffer) {
     return index + displacement;
 }
 
-stage3_text
 static size_t get_prev_line(size_t index, const char *buffer) {
     size_t offset, displacement, prev_line_offset, prev_line_length;
     offset = get_line_offset(&displacement, index, buffer);
@@ -71,7 +66,6 @@ static size_t get_prev_line(size_t index, const char *buffer) {
     return offset;
 }
 
-stage3_text
 static char *config_entry_editor(const char *orig_entry) {
     size_t cursor_offset  = 0;
     size_t entry_size     = strlen(orig_entry);
@@ -281,7 +275,6 @@ refresh:
     goto refresh;
 }
 
-stage3_text
 static int print_tree(int level, int base_index, int selected_entry,
                       struct menu_entry *current_entry,
                       struct menu_entry **selected_menu_entry) {
@@ -328,7 +321,6 @@ static int print_tree(int level, int base_index, int selected_entry,
     return max_entries;
 }
 
-stage3_text
 char *menu(char **cmdline) {
     menu_branding = config_get_value(NULL, 0, "MENU_BRANDING");
     if (menu_branding == NULL)

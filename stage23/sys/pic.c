@@ -5,7 +5,6 @@
 #include <sys/cpu.h>
 #include <lib/blib.h>
 
-stage3_text
 void pic_eoi(int irq) {
     if (irq >= 8) {
         outb(0xa0, 0x20);
@@ -15,13 +14,11 @@ void pic_eoi(int irq) {
 }
 
 // Flush all potentially pending IRQs
-stage3_text
 void pic_flush(void) {
     for (int i = 0; i < 16; i++)
         pic_eoi(i);
 }
 
-stage3_text
 void pic_set_mask(int line, bool status) {
     uint16_t port;
     uint8_t value;
@@ -41,7 +38,6 @@ void pic_set_mask(int line, bool status) {
     outb(port, value);
 }
 
-stage3_text
 void pic_mask_all(void) {
     outb(0xa1, 0xff);
     outb(0x21, 0xff);

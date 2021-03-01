@@ -20,61 +20,14 @@
 #include <pxe/pxe.h>
 #include <pxe/tftp.h>
 
-enum {
-	BOOT_FROM_HDD,
-	BOOT_FROM_PXE,
-	BOOT_FROM_CD
-};
-
-__attribute__((noreturn))
-void entry(uint8_t _boot_drive, int boot_from) {
-    boot_drive = _boot_drive;
-
-    booted_from_pxe = (boot_from == BOOT_FROM_PXE);
-    booted_from_cd = (boot_from == BOOT_FROM_CD);
-
-    mtrr_save();
-
-    term_textmode();
-
-    print("Limine " LIMINE_VERSION "\n\n");
-
-    if (!a20_enable())
-        panic("Could not enable A20 line");
-
-    init_e820();
-    init_memmap();
-
-    volume_create_index();
-
-    switch (boot_from) {
-        case BOOT_FROM_HDD:
-        case BOOT_FROM_CD: {
-            struct volume boot_volume;
-            volume_get_by_coord(&boot_volume, boot_drive, -1);
-            struct volume part = boot_volume;
-            for (int i = 0; ; i++) {
-                if (stage3_init(&part)) {
-                    print("Stage 3 found and loaded.\n");
-                    break;
-                }
-                int ret = part_get(&part, &boot_volume, i);
-                switch (ret) {
-                    case INVALID_TABLE:
-                    case END_OF_TABLE:
-                        panic("Stage 3 not found.");
-                }
-            }
-            break;
-        }
-    }
-
-    stage3(boot_from);
-}
+__attribute__((section(".stage3_build_id")))
+uint64_t stage3_build_id = BUILD_ID;
 
 __attribute__((noreturn))
 __attribute__((section(".stage3_entry")))
 void stage3_entry(int boot_from) {
+    mtrr_save();
+
     switch (boot_from) {
         case BOOT_FROM_HDD:
         case BOOT_FROM_CD: {

@@ -8,7 +8,6 @@
 
 typedef uint64_t pt_entry_t;
 
-stage3_text
 static pt_entry_t *get_next_level(pt_entry_t *current_level, size_t entry) {
     pt_entry_t *ret;
 
@@ -25,7 +24,6 @@ static pt_entry_t *get_next_level(pt_entry_t *current_level, size_t entry) {
     return ret;
 }
 
-stage3_text
 pagemap_t new_pagemap(int lv) {
     pagemap_t pagemap;
     pagemap.levels    = lv;
@@ -33,7 +31,6 @@ pagemap_t new_pagemap(int lv) {
     return pagemap;
 }
 
-stage3_text
 void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags) {
     // Calculate the indices in the various tables using the virtual address
     size_t pml5_entry = (virt_addr & ((uint64_t)0x1ff << 48)) >> 48;

@@ -24,10 +24,8 @@
 
 #define KASLR_SLIDE_BITMASK 0x000FFF000u
 
-stage3_data
 struct stivale_struct stivale_struct = {0};
 
-stage3_text
 void stivale_load(char *config, char *cmdline) {
     stivale_struct.flags |= (1 << 0);  // set bit 0 since we are BIOS and not UEFI
     stivale_struct.flags |= (1 << 1);  // we give colour information
@@ -205,7 +203,6 @@ void stivale_load(char *config, char *cmdline) {
                    entry_point, &stivale_struct, stivale_hdr.stack);
 }
 
-stage3_text
 pagemap_t stivale_build_pagemap(bool level5pg) {
     pagemap_t pagemap = new_pagemap(level5pg ? 5 : 4);
     uint64_t higher_half_base = level5pg ? 0xff00000000000000 : 0xffff800000000000;
@@ -247,7 +244,6 @@ pagemap_t stivale_build_pagemap(bool level5pg) {
     return pagemap;
 }
 
-stage3_text
 __attribute__((noreturn)) void stivale_spinup(
                  int bits, bool level5pg, pagemap_t pagemap,
                  uint64_t entry_point, void *stivale_struct, uint64_t stack) {

@@ -5,7 +5,6 @@
 #include <mm/pmm.h>
 #include <lib/bmp.h>
 
-stage3_text
 int open_image(struct image *image, struct file_handle *file) {
     image->file = file;
 

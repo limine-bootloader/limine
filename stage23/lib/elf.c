@@ -114,7 +114,6 @@ struct elf64_rela {
     uint64_t r_addend;
 };
 
-stage3_text
 int elf_bits(struct file_handle *fd) {
     struct elf64_hdr hdr;
     fread(fd, &hdr, 0, 20);
@@ -134,7 +133,6 @@ int elf_bits(struct file_handle *fd) {
     }
 }
 
-stage3_text
 static int elf64_apply_relocations(struct file_handle *fd, struct elf64_hdr *hdr, void *buffer, uint64_t vaddr, size_t size, uint64_t slide) {
     // Find RELA sections
     for (uint16_t i = 0; i < hdr->sh_num; i++) {
@@ -182,7 +180,6 @@ static int elf64_apply_relocations(struct file_handle *fd, struct elf64_hdr *hdr
     return 0;
 }
 
-stage3_text
 int elf64_load_section(struct file_handle *fd, void *buffer, const char *name, size_t limit, uint64_t slide) {
     struct elf64_hdr hdr;
     fread(fd, &hdr, 0, sizeof(struct elf64_hdr));
@@ -227,7 +224,6 @@ int elf64_load_section(struct file_handle *fd, void *buffer, const char *name, s
     return 2;
 }
 
-stage3_text
 int elf32_load_section(struct file_handle *fd, void *buffer, const char *name, size_t limit) {
     struct elf32_hdr hdr;
     fread(fd, &hdr, 0, sizeof(struct elf32_hdr));
@@ -272,7 +268,6 @@ int elf32_load_section(struct file_handle *fd, void *buffer, const char *name, s
     return 2;
 }
 
-stage3_text
 int elf64_load(struct file_handle *fd, uint64_t *entry_point, uint64_t *top, uint64_t slide, uint32_t alloc_type) {
     struct elf64_hdr hdr;
     fread(fd, &hdr, 0, sizeof(struct elf64_hdr));
@@ -334,7 +329,6 @@ int elf64_load(struct file_handle *fd, uint64_t *entry_point, uint64_t *top, uin
     return 0;
 }
 
-stage3_text
 int elf32_load(struct file_handle *fd, uint32_t *entry_point, uint32_t *top, uint32_t alloc_type) {
     struct elf32_hdr hdr;
     fread(fd, &hdr, 0, sizeof(struct elf32_hdr));

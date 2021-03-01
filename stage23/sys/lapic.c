@@ -14,7 +14,6 @@ struct dmar {
     symbol  remapping_structures;
 } __attribute__((packed));
 
-stage3_text
 bool lapic_check(void) {
     uint32_t eax, ebx, ecx, edx;
     if (!cpuid(1, 0, &eax, &ebx, &ecx, &edx))
@@ -26,19 +25,16 @@ bool lapic_check(void) {
     return true;
 }
 
-stage3_text
 uint32_t lapic_read(uint32_t reg) {
     size_t lapic_mmio_base = (size_t)(rdmsr(0x1b) & 0xfffff000);
     return mmind(lapic_mmio_base + reg);
 }
 
-stage3_text
 void lapic_write(uint32_t reg, uint32_t data) {
     size_t lapic_mmio_base = (size_t)(rdmsr(0x1b) & 0xfffff000);
     mmoutd(lapic_mmio_base + reg, data);
 }
 
-stage3_text
 bool x2apic_check(void) {
     uint32_t eax, ebx, ecx, edx;
     if (!cpuid(1, 0, &eax, &ebx, &ecx, &edx))
@@ -61,7 +57,6 @@ bool x2apic_check(void) {
     return true;
 }
 
-stage3_text
 bool x2apic_enable(void) {
     if (!x2apic_check())
         return false;
@@ -73,12 +68,10 @@ bool x2apic_enable(void) {
     return true;
 }
 
-stage3_text
 uint64_t x2apic_read(uint32_t reg) {
     return rdmsr(0x800 + (reg >> 4));
 }
 
-stage3_text
 void x2apic_write(uint32_t reg, uint64_t data) {
     wrmsr(0x800 + (reg >> 4), data);
 }

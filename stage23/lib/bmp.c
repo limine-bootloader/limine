@@ -34,7 +34,6 @@ struct bmp_local {
     struct bmp_header header;
 };
 
-stage3_text
 static uint32_t get_pixel(struct image *this, int x, int y) {
     struct bmp_local *local = this->local;
     struct bmp_header *header = &local->header;
@@ -52,7 +51,6 @@ static uint32_t get_pixel(struct image *this, int x, int y) {
     return composite;
 }
 
-stage3_text
 int bmp_open_image(struct image *image, struct file_handle *file) {
     struct bmp_header header;
     fread(file, &header, 0, sizeof(struct bmp_header));

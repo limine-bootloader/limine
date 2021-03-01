@@ -66,10 +66,10 @@ limine.sys: limine.elf
 	$(OBJCOPY) -O binary $< $@
 
 limine_nomap.elf: $(OBJ)
-	$(LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -Wl,--gc-sections -Tlinker_stage2only.ld -o $@ || \
+	$(LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
+	$(LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -Wl,--gc-sections -Tlinker_stage2only.ld -o limine_stage2only.elf || \
 		( echo "This error means that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
 		  false )
-	$(LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
 
 limine.elf: $(OBJ) limine.map.o
 	$(LD) $(OBJ) limine.map.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o $@

@@ -14,12 +14,15 @@ SECTIONS
     }
 
     .stage2.text : {
-        *(.text*)
+        *.s2.o(.text*)
+        *libgcc.a:*(.text*)
     }
 
     .stage2.data : {
-        *(.data*)
-        *(.rodata*)
+        *.s2.o(.data*)
+        *.s2.o(.rodata*)
+        *libgcc.a:*(.data*)
+        *libgcc.a:*(.rodata*)
         stage3_addr = .;
         *(.stage3_build_id*)
         limine_map = .;

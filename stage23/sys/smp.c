@@ -42,7 +42,6 @@ struct gdtr {
     uint32_t ptr;
 } __attribute__((packed));
 
-stage3_text
 static void delay(uint32_t cycles) {
     for (uint32_t i = 0; i < cycles; i++)
         inb(0x80);
@@ -55,7 +54,6 @@ uint8_t  smp_tpl_booted_flag;
 uint32_t smp_tpl_pagemap;
 uint8_t  smp_tpl_target_mode;
 
-stage3_text
 static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
                          struct smp_information *info_struct,
                          bool longmode, bool lv5, uint32_t pagemap,
@@ -97,7 +95,6 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
     return false;
 }
 
-stage3_text
 struct smp_information *init_smp(size_t    header_hack_size,
                                  void    **header_ptr,
                                  size_t   *cpu_count,

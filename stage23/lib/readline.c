@@ -6,7 +6,6 @@
 #include <lib/term.h>
 #include <lib/real.h>
 
-stage3_text
 int getchar_internal(uint32_t eax) {
     switch ((eax >> 8) & 0xff) {
         case 0x44:
@@ -38,14 +37,12 @@ int getchar_internal(uint32_t eax) {
     return c;
 }
 
-stage3_text
 int getchar(void) {
     struct rm_regs r = {0};
     rm_int(0x16, &r, &r);
     return getchar_internal(r.eax);
 }
 
-stage3_text
 static void reprint_string(int x, int y, const char *s) {
     int orig_x, orig_y;
     disable_cursor();
@@ -56,7 +53,6 @@ static void reprint_string(int x, int y, const char *s) {
     enable_cursor();
 }
 
-stage3_text
 static void cursor_back(void) {
     int x, y;
     get_cursor_pos(&x, &y);
@@ -69,7 +65,6 @@ static void cursor_back(void) {
     set_cursor_pos(x, y);
 }
 
-stage3_text
 static void cursor_fwd(void) {
     int x, y;
     get_cursor_pos(&x, &y);
@@ -82,7 +77,6 @@ static void cursor_fwd(void) {
     set_cursor_pos(x, y);
 }
 
-stage3_text
 void readline(const char *orig_str, char *buf, size_t limit) {
     size_t orig_str_len = strlen(orig_str);
     memmove(buf, orig_str, orig_str_len);

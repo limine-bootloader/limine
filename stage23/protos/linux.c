@@ -54,7 +54,6 @@ static void spinup(uint16_t real_mode_code_seg, uint16_t kernel_entry_seg,
     );
 }
 
-stage3_text
 void linux_load(char *config, char *cmdline) {
     struct file_handle *kernel = ext_mem_alloc(sizeof(struct file_handle));
 

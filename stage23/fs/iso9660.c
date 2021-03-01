@@ -39,31 +39,34 @@ struct iso9660_volume_descriptor {
     uint8_t type;
     char identifier[5];
     uint8_t version;
-    uint8_t data[2041];
 } __attribute__((packed));
 
 struct iso9660_primary_volume {
-    uint8_t type;
-    char standard_identifier[5];
-    uint8_t version;
-    uint8_t unused0[1];
-    char system_identifier[32];
-    char volume_identifier[32];
-    uint8_t unused1[8];
-    struct BE32_t space_size;
-    uint8_t unused2[32];
-    struct BE16_t set_size;
-    struct BE16_t volume_seq;
-    struct BE16_t LBA_size;
-    struct BE32_t path_table_size;
+    struct iso9660_volume_descriptor;
 
-    uint32_t LBA_path_table_little;
-    uint32_t LBA_optional_path_table_little;
-    uint32_t LBA_path_table_big;
-    uint32_t LBA_optional_path_table_big;
+    union {
+        struct {
+            uint8_t unused0[1];
+            char system_identifier[32];
+            char volume_identifier[32];
+            uint8_t unused1[8];
+            struct BE32_t space_size;
+            uint8_t unused2[32];
+            struct BE16_t set_size;
+            struct BE16_t volume_seq;
+            struct BE16_t LBA_size;
+            struct BE32_t path_table_size;
 
-    struct iso9660_directory_entry root;
-    uint8_t no_one_cares[1858];
+            uint32_t LBA_path_table_little;
+            uint32_t LBA_optional_path_table_little;
+            uint32_t LBA_path_table_big;
+            uint32_t LBA_optional_path_table_big;
+
+            struct iso9660_directory_entry root;
+        } __attribute__((packed));
+
+        uint8_t padding[2041];
+    };
 } __attribute__((packed));
 
 

@@ -5,7 +5,7 @@ set -x
 
 TARGET=i386-elf
 BINUTILSVERSION=2.36.1
-GCCVERSION=10.2.0
+GCCVERSION=11-20210228
 NASMVERSION=2.15.05
 GZIPVERSION=1.10
 
@@ -19,8 +19,8 @@ export PATH="$PREFIX/bin:$PATH"
 if [ ! -f binutils-$BINUTILSVERSION.tar.gz ]; then
     wget https://ftp.gnu.org/gnu/binutils/binutils-$BINUTILSVERSION.tar.gz
 fi
-if [ ! -f gcc-$GCCVERSION.tar.gz ]; then
-    wget https://ftp.gnu.org/gnu/gcc/gcc-$GCCVERSION/gcc-$GCCVERSION.tar.gz
+if [ ! -f gcc-$GCCVERSION.tar.xz ]; then
+    wget https://ftp.nluug.nl/languages/gcc/snapshots/$GCCVERSION/gcc-$GCCVERSION.tar.xz
 fi
 if [ ! -f nasm-$NASMVERSION.tar.gz ]; then
     wget https://www.nasm.us/pub/nasm/releasebuilds/$NASMVERSION/nasm-$NASMVERSION.tar.gz
@@ -34,7 +34,7 @@ mkdir build
 cd build
 
 tar -xf ../binutils-$BINUTILSVERSION.tar.gz
-tar -xf ../gcc-$GCCVERSION.tar.gz
+tar -xf ../gcc-$GCCVERSION.tar.xz
 tar -xf ../nasm-$NASMVERSION.tar.gz
 tar -xf ../gzip-$GZIPVERSION.tar.gz
 

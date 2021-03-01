@@ -23,13 +23,6 @@
  *      distribution.
  */
 
-#ifndef IN_DECOMPRESSOR
-#  include <lib/blib.h>
-#else
-#  define stage3_text
-#  define stage3_data
-#endif
-
 #include "tinf.h"
 
 typedef enum {
@@ -40,7 +33,7 @@ typedef enum {
     FCOMMENT = 16
 } tinf_gzip_flag;
 
-stage3_text int tinf_gzip_uncompress(void *dest,
+int tinf_gzip_uncompress(void *dest,
                          const void *source, unsigned int sourceLen) {
     const unsigned char *src = (const unsigned char *) source;
     unsigned char *dst = (unsigned char *) dest;

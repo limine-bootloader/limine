@@ -6,6 +6,7 @@
 #include <lib/config.h>
 #include <lib/print.h>
 #include <lib/uri.h>
+#include <lib/fb.h>
 #include <mm/mtrr.h>
 #include <mm/pmm.h>
 
@@ -14,7 +15,7 @@
 #define VGA_FONT_GLYPHS 256
 #define VGA_FONT_MAX    (VGA_FONT_HEIGHT * VGA_FONT_GLYPHS)
 
-static struct vbe_framebuffer_info fbinfo;
+static struct fb_info fbinfo;
 static uint32_t *gterm_framebuffer;
 static uint16_t  gterm_pitch;
 static uint16_t  gterm_width;
@@ -351,7 +352,7 @@ bool gterm_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _ma
     // We force bpp to 32
     req_bpp = 32;
 
-    init_vbe(&fbinfo, req_width, req_height, req_bpp);
+    fb_init(&fbinfo, req_width, req_height, req_bpp);
 
     // Ensure this is xRGB8888, we only support that for the menu
     if (fbinfo.red_mask_size    != 8

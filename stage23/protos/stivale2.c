@@ -15,7 +15,7 @@
 #include <lib/uri.h>
 #include <sys/smp.h>
 #include <sys/cpu.h>
-#include <drivers/vbe.h>
+#include <lib/fb.h>
 #include <lib/term.h>
 #include <sys/pic.h>
 #include <sys/lapic.h>
@@ -256,8 +256,8 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
         if (resolution != NULL)
             parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
-        struct vbe_framebuffer_info fbinfo;
-        if (init_vbe(&fbinfo, req_width, req_height, req_bpp)) {
+        struct fb_info fbinfo;
+        if (fb_init(&fbinfo, req_width, req_height, req_bpp)) {
             struct stivale2_struct_tag_framebuffer *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_framebuffer));
             tag->tag.identifier = STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID;
 

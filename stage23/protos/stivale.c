@@ -12,7 +12,7 @@
 #include <lib/rand.h>
 #include <lib/real.h>
 #include <lib/uri.h>
-#include <drivers/vbe.h>
+#include <lib/fb.h>
 #include <lib/term.h>
 #include <sys/pic.h>
 #include <sys/cpu.h>
@@ -172,8 +172,8 @@ void stivale_load(char *config, char *cmdline) {
         if (resolution != NULL)
             parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
-        struct vbe_framebuffer_info fbinfo;
-        if (!init_vbe(&fbinfo, req_width, req_height, req_bpp))
+        struct fb_info fbinfo;
+        if (!fb_init(&fbinfo, req_width, req_height, req_bpp))
             panic("stivale: Unable to set video mode");
 
         stivale_struct.framebuffer_addr    = (uint64_t)fbinfo.framebuffer_addr;

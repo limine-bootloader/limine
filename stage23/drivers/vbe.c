@@ -168,7 +168,7 @@ static struct resolution fallback_resolutions[] = {
     { 640,  480, 32 }
 };
 
-bool init_vbe(struct vbe_framebuffer_info *ret,
+bool init_vbe(struct fb_info *ret,
               uint16_t target_width, uint16_t target_height, uint16_t target_bpp) {
     print("vbe: Initialising...\n");
 

@@ -36,7 +36,7 @@ bootloader: | decompressor stage23
 	cd stage1/pxe && nasm bootsect.asm -fbin -o ../../bin/limine-pxe.bin
 	cp stage23/limine.sys ./bin/
 else ifeq ($(TARGET), uefi)
-bootloader: stage23
+bootloader: | gnu-efi stage23
 	mkdir -p bin
 	cp stage23/BOOTX64.EFI ./bin/
 endif

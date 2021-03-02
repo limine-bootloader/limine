@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <lib/image.h>
 
 struct vbe_framebuffer_info {
     uint8_t  memory_model;
@@ -22,19 +21,5 @@ struct vbe_framebuffer_info {
 
 bool init_vbe(struct vbe_framebuffer_info *ret,
               uint16_t target_width, uint16_t target_height, uint16_t target_bpp);
-
-bool vbe_tty_init(int *rows, int *cols, uint32_t *colours, int margin, int margin_gradient, struct image *background);
-
-void vbe_putchar(uint8_t c);
-void vbe_clear(bool move);
-void vbe_enable_cursor(void);
-void vbe_disable_cursor(void);
-void vbe_set_cursor_pos(int x, int y);
-void vbe_get_cursor_pos(int *x, int *y);
-void vbe_set_text_fg(int fg);
-void vbe_set_text_bg(int bg);
-
-void vbe_double_buffer_flush(void);
-void vbe_double_buffer(bool state);
 
 #endif

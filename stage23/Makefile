@@ -12,7 +12,7 @@ LIMINE_VERSION := $(shell git describe --exact-match --tags `git log -n1 --prett
 WERROR = -Werror
 CFLAGS = -Os -pipe -Wall -Wextra $(WERROR)
 
-INTERNAL_CFLAGS = \
+INTERNAL_CFLAGS := \
 	-std=gnu11 \
 	-fplan9-extensions \
 	-ffreestanding \
@@ -21,11 +21,7 @@ INTERNAL_CFLAGS = \
 	-fno-omit-frame-pointer \
 	-Wno-address-of-packed-member \
 	-masm=intel \
-	-mno-80387 \
-	-mno-mmx \
-	-mno-3dnow \
-	-mno-sse \
-	-mno-sse2 \
+	-mgeneral-regs-only \
 	-MMD \
 	-DBUILD_ID=$(BUILD_ID) \
 	-DLIMINE_VERSION='"$(LIMINE_VERSION)"' \
@@ -36,7 +32,7 @@ INTERNAL_CFLAGS = \
 
 LDFLAGS = -Os
 
-INTERNAL_LDFLAGS = \
+INTERNAL_LDFLAGS := \
 	-lgcc \
 	-static-libgcc \
 	-nostdlib \
@@ -66,13 +62,16 @@ limine.sys: limine.elf
 	$(OBJCOPY) -O binary $< $@
 
 limine_nomap.elf: $(OBJ)
-	$(LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
-	$(LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -Wl,--gc-sections -Tlinker_stage2only.ld -o limine_stage2only.elf || \
+	$(LD) $(OBJ) font.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
+	$(LD) $(OBJ) font.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Wl,--gc-sections -Tlinker_stage2only.ld -o limine_stage2only.elf || \
 		( echo "This error means that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
 		  false )
 
-limine.elf: $(OBJ) limine.map.o
-	$(LD) $(OBJ) limine.map.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o $@
+font.o:
+	$(OBJCOPY) -B i8086 -I binary -O default font.bin $@
+
+limine.elf: $(OBJ) font.o limine.map.o
+	$(LD) $(OBJ) font.o limine.map.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o $@
 
 -include $(HEADER_DEPS)
 
@@ -83,4 +82,4 @@ limine.elf: $(OBJ) limine.map.o
 	nasm $< -f elf32 -o $@
 
 clean:
-	rm -f limine.elf limine_nomap.elf limine_stage2only.elf limine.map.o limine.sys stage2.bin stage2.bin.gz $(OBJ) $(HEADER_DEPS)
+	rm -f limine.elf limine_nomap.elf limine_stage2only.elf font.o limine.map.o limine.sys stage2.bin stage2.bin.gz $(OBJ) $(HEADER_DEPS)

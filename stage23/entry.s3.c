@@ -21,12 +21,15 @@
 #include <pxe/tftp.h>
 
 #if defined (uefi)
+__attribute__((ms_abi))
 EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     (void)ImageHandle;
 
     gST = SystemTable;
     gBS = SystemTable->BootServices;
     gRT = SystemTable->RuntimeServices;
+
+    print("hello world\n");
 
     for (;;);
 }

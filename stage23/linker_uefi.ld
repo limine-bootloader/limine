@@ -7,24 +7,27 @@ SECTIONS
 
     .text : {
         *(.text*)
-    }
-
-    .data : {
         *(.realmode*)
-        *(.data*)
     }
 
     .rodata : {
+        *(.map*)
         *(.rodata*)
     }
 
-    .map : {
-        *(.map*)
+    .data : {
+        *(.data*)
     }
 
     .bss : {
         *(COMMON)
         *(.bss*)
+    }
+
+    .reloc : {
+        LONG(0);
+        LONG(10);
+        SHORT(0);
     }
 
     /DISCARD/ : {

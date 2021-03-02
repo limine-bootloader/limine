@@ -54,6 +54,7 @@ bool uri_resolve(char *uri, char **resource, char **root, char **path) {
     return true;
 }
 
+#if defined (bios)
 // BIOS partitions are specified in the <BIOS drive>:<partition> form.
 // The drive may be omitted, the partition cannot.
 static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) {
@@ -106,6 +107,7 @@ static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
 
     return true;
 }
+#endif
 
 static bool uri_guid_dispatch(struct file_handle *fd, char *guid_str, char *path) {
     struct guid guid;
@@ -127,6 +129,7 @@ static bool uri_guid_dispatch(struct file_handle *fd, char *guid_str, char *path
     return true;
 }
 
+#if defined (bios)
 static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
     uint32_t ip;
     if (!strcmp(root, "")) {
@@ -149,10 +152,13 @@ static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
     fd->size = cfg->file_size;
     return true;
 }
+#endif
 
 static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) {
+#if defined (bios)
     if (booted_from_pxe)
         return uri_tftp_dispatch(fd, s_part, path);
+#endif
 
     int partition;
 
@@ -194,16 +200,21 @@ bool uri_open(struct file_handle *fd, char *uri) {
         resource++;
     }
 
-    if (!strcmp(resource, "bios")) {
+    if (0) {
+#if defined (bios)
+    } else if (!strcmp(resource, "bios")) {
         ret = uri_bios_dispatch(fd, root, path);
+#endif
     } else if (!strcmp(resource, "boot")) {
         ret = uri_boot_dispatch(fd, root, path);
     } else if (!strcmp(resource, "guid")) {
         ret = uri_guid_dispatch(fd, root, path);
     } else if (!strcmp(resource, "uuid")) {
         ret = uri_guid_dispatch(fd, root, path);
+#if defined (bios)
     } else if (!strcmp(resource, "tftp")) {
         ret = uri_tftp_dispatch(fd, root, path);
+#endif
     } else {
         panic("Resource `%s` not valid.", resource);
     }

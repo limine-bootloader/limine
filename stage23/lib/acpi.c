@@ -45,16 +45,16 @@ void *acpi_get_table(const char *signature, int index) {
 
     struct rsdt *rsdt;
     if (use_xsdt)
-        rsdt = (struct rsdt *)(size_t)rsdp->xsdt_addr;
+        rsdt = (struct rsdt *)(uintptr_t)rsdp->xsdt_addr;
     else
-        rsdt = (struct rsdt *)rsdp->rsdt_addr;
+        rsdt = (struct rsdt *)(uintptr_t)rsdp->rsdt_addr;
 
     for (size_t i = 0; i < rsdt->length - sizeof(struct sdt); i++) {
         struct sdt *ptr;
         if (use_xsdt)
-            ptr = (struct sdt *)(size_t)((uint64_t *)rsdt->ptrs_start)[i];
+            ptr = (struct sdt *)(uintptr_t)((uint64_t *)rsdt->ptrs_start)[i];
         else
-            ptr = (struct sdt *)((uint32_t *)rsdt->ptrs_start)[i];
+            ptr = (struct sdt *)(uintptr_t)((uint32_t *)rsdt->ptrs_start)[i];
 
         if (!memcmp(ptr->signature, signature, 4)
          && !acpi_checksum(ptr, ptr->length)

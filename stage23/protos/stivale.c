@@ -249,6 +249,7 @@ __attribute__((noreturn)) void stivale_spinup(
                  uint64_t entry_point, void *stivale_struct, uint64_t stack) {
     mtrr_restore();
 
+#if defined (bios)
     if (bits == 64) {
         // If we're going 64, we might as well call this BIOS interrupt
         // to tell the BIOS that we are entering Long Mode, since it is in
@@ -258,10 +259,12 @@ __attribute__((noreturn)) void stivale_spinup(
         r.ebx = 0x02;   // Long mode only
         rm_int(0x15, &r, &r);
     }
+#endif
 
     pic_mask_all();
     pic_flush();
 
+#if defined (bios)
     if (bits == 64) {
         if (level5pg) {
             // Enable CR4.LA57
@@ -367,5 +370,11 @@ __attribute__((noreturn)) void stivale_spinup(
             : "memory"
         );
     }
+#elif defined (uefi)
+    (void)bits; (void)level5pg; (void)pagemap; (void)entry_point;
+    (void)stivale_struct; (void)stack;
+
+#endif
+
     for (;;);
 }

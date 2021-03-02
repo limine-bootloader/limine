@@ -17,5 +17,9 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
     print("\n");
     print_stacktrace(NULL);
 
+#if defined (bios)
     rm_hcf();
+#elif defined (uefi)
+    for (;;) asm ("hlt");
+#endif
 }

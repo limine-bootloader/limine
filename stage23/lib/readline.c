@@ -4,10 +4,14 @@
 #include <lib/libc.h>
 #include <lib/blib.h>
 #include <lib/term.h>
-#include <lib/real.h>
+#if defined (bios)
+#  include <lib/real.h>
+#elif defined (uefi)
+#  include <efi.h>
+#endif
 
-int getchar_internal(uint32_t eax) {
-    switch ((eax >> 8) & 0xff) {
+int getchar_internal(uint8_t scancode, uint8_t ascii) {
+    switch (scancode) {
         case 0x44:
             return GETCHAR_F10;
         case 0x4b:
@@ -29,19 +33,33 @@ int getchar_internal(uint32_t eax) {
         case 0x51:
             return GETCHAR_PGDOWN;
     }
-    char c = eax & 0xff;
-    switch (c) {
+    switch (ascii) {
         case '\r':
             return '\n';
     }
-    return c;
+    return ascii;
 }
 
+#if defined (bios)
 int getchar(void) {
     struct rm_regs r = {0};
     rm_int(0x16, &r, &r);
-    return getchar_internal(r.eax);
+    return getchar_internal((r.eax >> 8) & 0xff, r.eax);
 }
+#endif
+
+#if defined (uefi)
+int getchar(void) {
+    EFI_INPUT_KEY key = {0};
+    uefi_call_wrapper(gST->ConIn->ReadKeyStroke, 2, gST->ConIn, &key);
+    return getchar_internal(key.ScanCode, key.UnicodeChar);
+}
+
+int pit_sleep_and_quit_on_keypress(uint32_t pit_ticks) {
+    (void)pit_ticks;
+    return getchar();
+}
+#endif
 
 static void reprint_string(int x, int y, const char *s) {
     int orig_x, orig_y;

@@ -1,3 +1,5 @@
+#if defined (bios)
+
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -167,3 +169,5 @@ void text_putchar(uint8_t c) {
             draw_cursor();
     }
 }
+
+#endif

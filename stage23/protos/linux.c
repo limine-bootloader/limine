@@ -1,3 +1,5 @@
+#if defined (bios)
+
 #include <stdint.h>
 #include <stddef.h>
 #include <protos/linux.h>
@@ -194,3 +196,5 @@ void linux_load(char *config, char *cmdline) {
 
     spinup(real_mode_code_seg, kernel_entry_seg, real_mode_and_heap_size);
 }
+
+#endif

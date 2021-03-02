@@ -1,13 +1,25 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <lib/part.h>
-#include <drivers/disk.h>
+#if defined (bios)
+#  include <drivers/disk.h>
+#include <lib/real.h>
+#endif
 #include <lib/libc.h>
 #include <lib/blib.h>
-#include <lib/real.h>
 #include <lib/print.h>
 #include <mm/pmm.h>
 #include <fs/file.h>
+
+size_t volume_get_sector_size(struct volume *volume) {
+#if defined (bios)
+    return disk_get_sector_size(volume->drive);
+#elif defined (uefi)
+    (void)volume;
+    return -1;
+#endif
+
+}
 
 struct gpt_table_header {
     // the head
@@ -46,10 +58,10 @@ struct gpt_entry {
     uint16_t partition_name[36];
 } __attribute__((packed));
 
-static bool gpt_get_guid(struct guid *guid, struct volume *volume) {
+bool gpt_get_guid(struct guid *guid, struct volume *volume) {
     struct gpt_table_header header = {0};
 
-    int sector_size = disk_get_sector_size(volume->drive);
+    int sector_size = volume_get_sector_size(volume);
 
     // read header, located after the first block
     volume_read(volume, &header, sector_size * 1, sizeof(header));
@@ -69,7 +81,7 @@ static bool gpt_get_guid(struct guid *guid, struct volume *volume) {
 static int gpt_get_part(struct volume *ret, struct volume *volume, int partition) {
     struct gpt_table_header header = {0};
 
-    int sector_size = disk_get_sector_size(volume->drive);
+    int sector_size = volume_get_sector_size(volume);
 
     // read header, located after the first block
     volume_read(volume, &header, sector_size * 1, sizeof(header));
@@ -155,7 +167,7 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
 
     ret->drive       = extended_part->drive;
     ret->partition   = partition + 4;
-    ret->sector_size = disk_get_sector_size(extended_part->drive);
+    ret->sector_size = volume_get_sector_size(extended_part);
     ret->first_sect  = extended_part->first_sect + ebr_sector + entry.first_sect;
     ret->sect_count  = entry.sect_count;
 
@@ -174,7 +186,7 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
 
 static int mbr_get_part(struct volume *ret, struct volume *volume, int partition) {
     // Check if actually valid mbr
-    uint16_t hint;
+    uint16_t hint = 0;
     volume_read(volume, &hint, 444, sizeof(uint16_t));
     if (hint && hint != 0x5a5a)
         return INVALID_TABLE;
@@ -196,7 +208,7 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
 
             extended_part.drive       = volume->drive;
             extended_part.partition   = i;
-            extended_part.sector_size = disk_get_sector_size(volume->drive);
+            extended_part.sector_size = volume_get_sector_size(volume);
             extended_part.first_sect  = entry.first_sect;
             extended_part.sect_count  = entry.sect_count;
 
@@ -217,7 +229,7 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
 
     ret->drive       = volume->drive;
     ret->partition   = partition;
-    ret->sector_size = disk_get_sector_size(volume->drive);
+    ret->sector_size = volume_get_sector_size(volume);
     ret->first_sect  = entry.first_sect;
     ret->sect_count  = entry.sect_count;
 
@@ -252,92 +264,11 @@ static struct volume *volume_index = NULL;
 static size_t volume_index_i = 0;
 
 void volume_create_index(void) {
-    size_t volume_count = 0;
+#if defined (bios)
+    volume_index_i = disk_create_index(&volume_index);
+#elif defined (uefi)
 
-    for (uint8_t drive = 0x80; drive; drive++) {
-        struct rm_regs r = {0};
-        struct bios_drive_params drive_params;
-
-        r.eax = 0x4800;
-        r.edx = drive;
-        r.ds  = rm_seg(&drive_params);
-        r.esi = rm_off(&drive_params);
-
-        drive_params.buf_size = sizeof(struct bios_drive_params);
-
-        rm_int(0x13, &r, &r);
-
-        if (r.eflags & EFLAGS_CF)
-            continue;
-
-        print("Found BIOS drive %x\n", drive);
-        print(" ... %X total %u-byte sectors\n",
-              drive_params.lba_count, drive_params.bytes_per_sect);
-
-        volume_count++;
-
-        struct volume block;
-
-        block.drive = drive;
-        block.sector_size = drive_params.bytes_per_sect;
-        block.first_sect = 0;
-        block.sect_count = drive_params.lba_count;
-
-        for (int part = 0; ; part++) {
-            struct volume p;
-            int ret = part_get(&p, &block, part);
-
-            if (ret == END_OF_TABLE || ret == INVALID_TABLE)
-                break;
-            if (ret == NO_PARTITION)
-                continue;
-
-            volume_count++;
-        }
-    }
-
-    volume_index = ext_mem_alloc(sizeof(struct volume) * volume_count);
-
-    for (uint8_t drive = 0x80; drive; drive++) {
-        struct rm_regs r = {0};
-        struct bios_drive_params drive_params;
-
-        r.eax = 0x4800;
-        r.edx = drive;
-        r.ds  = rm_seg(&drive_params);
-        r.esi = rm_off(&drive_params);
-
-        drive_params.buf_size = sizeof(struct bios_drive_params);
-
-        rm_int(0x13, &r, &r);
-
-        if (r.eflags & EFLAGS_CF)
-            continue;
-
-        struct volume *block = &volume_index[volume_index_i++];
-
-        block->drive = drive;
-        block->partition = -1;
-        block->sector_size = drive_params.bytes_per_sect;
-        block->first_sect = 0;
-        block->sect_count = drive_params.lba_count;
-
-        if (gpt_get_guid(&block->guid, block)) {
-            block->guid_valid = true;
-        }
-
-        for (int part = 0; ; part++) {
-            struct volume p;
-            int ret = part_get(&p, block, part);
-
-            if (ret == END_OF_TABLE || ret == INVALID_TABLE)
-                break;
-            if (ret == NO_PARTITION)
-                continue;
-
-            volume_index[volume_index_i++] = p;
-        }
-    }
+#endif
 }
 
 bool volume_get_by_guid(struct volume *part, struct guid *guid) {
@@ -358,7 +289,7 @@ found:
     return true;
 }
 
-bool volume_get_by_coord(struct volume *part, int drive, int partition) {
+bool volume_get_by_coord(struct volume *part, drive_t drive, int partition) {
     size_t i;
     for (i = 0; i < volume_index_i; i++) {
         if (volume_index[i].drive == drive
@@ -373,6 +304,11 @@ found:
 }
 
 int volume_read(struct volume *part, void *buffer, uint64_t loc, uint64_t count) {
+#if defined (bios)
     return disk_read(part->drive, buffer,
                      loc + (part->first_sect * part->sector_size), count);
+#elif defined (uefi)
+    (void)part; (void)buffer; (void)loc; (void)count;
+    return -1;
+#endif
 }

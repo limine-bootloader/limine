@@ -34,6 +34,7 @@ int init_config_disk(struct volume *part) {
     return init_config(config_size);
 }
 
+#if defined (bios)
 int init_config_pxe(void) {
     struct tftp_file_handle cfg;
     if (tftp_open(&cfg, 0, 69, "limine.cfg")
@@ -47,6 +48,7 @@ int init_config_pxe(void) {
 
     return init_config(cfg.file_size);
 }
+#endif
 
 #define NOT_CHILD      (-1)
 #define DIRECT_CHILD   0

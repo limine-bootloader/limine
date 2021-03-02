@@ -20,6 +20,18 @@
 #include <pxe/pxe.h>
 #include <pxe/tftp.h>
 
+#if defined (uefi)
+EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
+    (void)ImageHandle;
+
+    gST = SystemTable;
+    gBS = SystemTable->BootServices;
+    gRT = SystemTable->RuntimeServices;
+
+    for (;;);
+}
+#endif
+
 __attribute__((section(".stage3_build_id")))
 uint64_t stage3_build_id = BUILD_ID;
 

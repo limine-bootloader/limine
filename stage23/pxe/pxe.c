@@ -1,3 +1,5 @@
+#if defined (bios)
+
 #include <lib/print.h>
 #include <lib/real.h>
 #include <pxe/pxe.h>
@@ -41,3 +43,5 @@ void pxe_init(void) {
     set_pxe_fp(bangpxe->rm_entry);
     print("Successfully initialized pxe");
 }
+
+#endif

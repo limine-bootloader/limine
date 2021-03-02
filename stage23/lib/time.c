@@ -1,7 +1,11 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <lib/time.h>
-#include <lib/real.h>
+#if defined (bios)
+#  include <lib/real.h>
+#elif defined (uefi)
+#  include <efi.h>
+#endif
 #include <lib/blib.h>
 
 // Julian date calculation from https://en.wikipedia.org/wiki/Julian_day
@@ -22,6 +26,7 @@ static uint64_t get_unix_epoch(uint8_t seconds, uint8_t minutes, uint8_t  hours,
     return (jdn_diff * (60 * 60 * 24)) + hours * 3600 + minutes * 60 + seconds;
 }
 
+#if defined (bios)
 uint64_t time(void) {
     struct rm_regs r = {0};
 
@@ -42,3 +47,14 @@ uint64_t time(void) {
 
     return get_unix_epoch(second, minute, hour, day, month, year);
 }
+#endif
+
+#if defined (uefi)
+uint64_t time(void) {
+    EFI_TIME time;
+    uefi_call_wrapper(gRT->GetTime, 2, &time, NULL);
+
+    return get_unix_epoch(time.Second, time.Minute, time.Hour,
+                          time.Day, time.Month, time.Year);
+}
+#endif

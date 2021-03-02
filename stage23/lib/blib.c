@@ -8,6 +8,12 @@
 #include <lib/real.h>
 #include <fs/file.h>
 
+#if defined (uefi)
+EFI_SYSTEM_TABLE *gST;
+EFI_BOOT_SERVICES *gBS;
+EFI_RUNTIME_SERVICES *gRT;
+#endif
+
 bool parse_resolution(int *width, int *height, int *bpp, const char *buf) {
     int res[3] = {0};
 

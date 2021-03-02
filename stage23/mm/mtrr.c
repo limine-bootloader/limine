@@ -118,7 +118,7 @@ void mtrr_save(void) {
     uint8_t var_reg_count = ia32_mtrrcap & 0xff;
 
     if (!saved_mtrr)
-        saved_mtrr = conv_mem_alloc(var_reg_count * sizeof(struct mtrr));
+        saved_mtrr = ext_mem_alloc(var_reg_count * sizeof(struct mtrr));
 
     for (uint8_t i = 0; i < var_reg_count; i++) {
         saved_mtrr[i].base = rdmsr(0x200 + i * 2);

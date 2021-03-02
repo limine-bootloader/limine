@@ -1,3 +1,5 @@
+#if defined (bios)
+
 #include <stdint.h>
 #include <stddef.h>
 #include <sys/e820.h>
@@ -43,3 +45,5 @@ load_up:
     e820_map = conv_mem_alloc(sizeof(struct e820_entry_t) * e820_entries);
     goto load_up;
 }
+
+#endif

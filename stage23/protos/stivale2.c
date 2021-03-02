@@ -327,6 +327,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
     }
     }
 
+#if defined (bios)
     //////////////////////////////////////////////
     // Create PXE struct tag
     //////////////////////////////////////////////
@@ -336,7 +337,11 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
         tag->server_ip = get_boot_server_info();
         append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
+#else
+    (void)pxe;
+#endif
 
+#if defined (bios)
     //////////////////////////////////////////////
     // Create memmap struct tag
     //////////////////////////////////////////////
@@ -356,6 +361,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
+#endif
 
     //////////////////////////////////////////////
     // List tags

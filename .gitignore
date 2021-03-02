@@ -1,8 +1,11 @@
 /bin
 /toolchain
+/gnu-efi
+/ovmf
 /**/*.o
 /**/*.d
 /**/*.a
+/**/*.EFI
 /**/*.bin
 /**/*.bin.gz
 /**/*.elf
@@ -14,3 +17,4 @@
 .vscode
 /stivale
 /test_image
+!/stage23/font.bin

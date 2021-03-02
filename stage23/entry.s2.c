@@ -22,11 +22,14 @@
 
 extern uint64_t stage3_build_id;
 
-uint8_t boot_drive;
+drive_t boot_drive;
 int     boot_partition = -1;
 
 bool booted_from_pxe = false;
 bool booted_from_cd = false;
+
+#if defined (bios)
+
 bool stage3_loaded = false;
 
 extern symbol stage3_addr;
@@ -105,3 +108,5 @@ void entry(uint8_t _boot_drive, int boot_from) {
 
     stage3(boot_from);
 }
+
+#endif

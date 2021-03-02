@@ -69,7 +69,6 @@ struct fat32_lfn_entry {
 
 static int fat32_init_context(struct fat32_context* context, struct volume *part) {
     context->part  = *part;
-    context->drive = part->drive;
 
     struct fat32_bpb bpb;
     volume_read(&context->part, &bpb, 0, sizeof(struct fat32_bpb));

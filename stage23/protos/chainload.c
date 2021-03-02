@@ -1,3 +1,5 @@
+#if defined (bios)
+
 #include <stddef.h>
 #include <stdint.h>
 #include <protos/chainload.h>
@@ -84,3 +86,5 @@ void chainload(char *config) {
 
     spinup(drive);
 }
+
+#endif

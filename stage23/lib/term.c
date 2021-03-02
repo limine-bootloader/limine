@@ -10,8 +10,10 @@ void term_vbe(uint32_t *colours, int margin, int margin_gradient, struct image *
     term_deinit();
 
     if (!gterm_init(&term_rows, &term_cols, colours, margin, margin_gradient, background)) {
+#if defined (bios)
         // Failed to set VBE properly, default to text mode
         term_textmode();
+#endif
         return;
     }
 

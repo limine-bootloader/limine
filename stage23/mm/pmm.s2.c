@@ -6,6 +6,9 @@
 #include <lib/blib.h>
 #include <lib/libc.h>
 #include <lib/print.h>
+#if defined (uefi)
+#  include <efi.h>
+#endif
 
 #define PAGE_SIZE   4096
 #define MEMMAP_BASE ((size_t)0x100000)
@@ -183,6 +186,7 @@ struct e820_entry_t *get_memmap(size_t *entries) {
     return memmap;
 }
 
+#if defined (bios)
 void init_memmap(void) {
     for (size_t i = 0; i < e820_entries; i++) {
         if (memmap_entries == MEMMAP_MAX_ENTRIES) {
@@ -196,6 +200,7 @@ void init_memmap(void) {
 
     allocations_disallowed = false;
 }
+#endif
 
 void *ext_mem_alloc(size_t count) {
     return ext_mem_alloc_type(count, MEMMAP_BOOTLOADER_RECLAIMABLE);
@@ -209,6 +214,7 @@ void *ext_mem_alloc_type(size_t count, uint32_t type) {
     return ext_mem_alloc_aligned_type(count, 4, type);
 }
 
+#if defined (bios)
 // Allocate memory top down, hopefully without bumping into kernel or modules
 void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) {
     if (allocations_disallowed)
@@ -251,6 +257,24 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
 
     panic("High memory allocator: Out of memory");
 }
+#endif
+
+#if defined (uefi)
+void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) {
+    (void)type;
+
+    void *ret;
+
+    if (alignment && alignment % 4096 == 0) {
+        uefi_call_wrapper(gBS->AllocatePages, 4, 0, 2, DIV_ROUNDUP(count, 4096),
+                          &ret);
+    } else {
+        uefi_call_wrapper(gBS->AllocatePool, 3, 4, count, &ret);
+    }
+
+    return ret;
+}
+#endif
 
 bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only, bool do_panic) {
     uint64_t top = base + length;
@@ -317,6 +341,7 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
     return false;
 }
 
+#if defined (bios)
 extern symbol bss_end;
 static size_t bump_allocator_base = (size_t)bss_end;
 static size_t bump_allocator_limit = 0x70000;
@@ -338,3 +363,4 @@ void *conv_mem_alloc_aligned(size_t count, size_t alignment) {
 
     return ret;
 }
+#endif

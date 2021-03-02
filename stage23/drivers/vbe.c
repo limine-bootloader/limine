@@ -1,3 +1,5 @@
+#if defined (bios)
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -263,3 +265,5 @@ retry:
 
     return false;
 }
+
+#endif

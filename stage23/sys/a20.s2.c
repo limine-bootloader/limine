@@ -1,3 +1,5 @@
+#if defined (bios)
+
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -52,3 +54,5 @@ bool a20_enable(void) {
 
     return false;
 }
+
+#endif

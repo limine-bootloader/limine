@@ -11,33 +11,41 @@
 extern symbol limine_map;
 
 char *trace_address(size_t *off, size_t addr) {
+#if defined (bios)
     if (!stage3_loaded)
         return NULL;
+#endif
 
-    uint32_t prev_addr = 0;
-    char    *prev_sym  = NULL;
+    uintptr_t prev_addr = 0;
+    char     *prev_sym  = NULL;
 
     for (size_t i = 0;;) {
-        if (*((uint32_t *)&limine_map[i]) >= addr) {
+        if (*((uintptr_t *)&limine_map[i]) >= addr) {
             *off = addr - prev_addr;
             return prev_sym;
         }
-        prev_addr = *((uint32_t *)&limine_map[i]);
-        i += sizeof(uint32_t);
+        prev_addr = *((uintptr_t *)&limine_map[i]);
+        i += sizeof(uintptr_t);
         prev_sym  = &limine_map[i];
         while (limine_map[i++] != 0);
     }
 }
 
 void print_stacktrace(size_t *base_ptr) {
+#if defined (bios)
     if (!stage3_loaded) {
         print("trace: Stack trace omitted because stage 3 was not loaded yet.\n");
         return;
     }
+#endif
 
     if (base_ptr == NULL) {
         asm volatile (
+#if defined (bios)
             "mov %0, ebp"
+#elif defined (uefi)
+            "mov %0, rbp"
+#endif
             : "=g"(base_ptr)
             :: "memory"
         );

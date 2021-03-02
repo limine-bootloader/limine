@@ -3,6 +3,7 @@ OBJCOPY = objcopy
 CFLAGS = -O2 -pipe -Wall -Wextra
 PREFIX = /usr/local
 DESTDIR =
+TARGET = bios
 
 PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
@@ -27,31 +28,36 @@ install: all
 	install -m 644 bin/limine-cd.bin $(DESTDIR)$(PREFIX)/share/
 	install -m 644 bin/limine-pxe.bin $(DESTDIR)$(PREFIX)/share/
 
+ifeq ($(TARGET), bios)
 bootloader: | decompressor stage23
 	mkdir -p bin
 	cd stage1/hdd && nasm bootsect.asm -fbin -o ../../bin/limine-hdd.bin
 	cd stage1/cd  && nasm bootsect.asm -fbin -o ../../bin/limine-cd.bin
 	cd stage1/pxe && nasm bootsect.asm -fbin -o ../../bin/limine-pxe.bin
 	cp stage23/limine.sys ./bin/
+else ifeq ($(TARGET), uefi)
+bootloader: stage23
+	mkdir -p bin
+	cp stage23/BOOTX64.EFI ./bin/
+endif
 
 bootloader-clean: stage23-clean decompressor-clean
 
 distclean: clean bootloader-clean test-clean
 	rm -rf bin stivale toolchain
 
-tinf-clean:
-	cd tinf && rm -rf *.o *.d
-
 stivale:
 	git clone https://github.com/stivale/stivale.git
 
-stage23: tinf-clean stivale
-	$(MAKE) -C stage23 all
+stage23: stivale
+	cd tinf && rm -rf *.o *.d
+	$(MAKE) -C stage23 all TARGET=$(TARGET)
 
 stage23-clean:
 	$(MAKE) -C stage23 clean
 
-decompressor: tinf-clean
+decompressor:
+	cd tinf && rm -rf *.o *.d
 	$(MAKE) -C decompressor all
 
 decompressor-clean:
@@ -63,6 +69,14 @@ test-clean:
 
 toolchain:
 	./make_toolchain.sh ./toolchain -j`nproc`
+
+gnu-efi:
+	git clone https://git.code.sf.net/p/gnu-efi/code --branch=3.0.12 --depth=1 $@
+
+ovmf:
+	mkdir -p ovmf
+	wget https://efi.akeo.ie/OVMF/OVMF-X64.zip
+	cd ovmf && 7z x OVMF-X64.zip
 
 test.hdd:
 	rm -f test.hdd
@@ -109,12 +123,20 @@ fat32-test: | test-clean test.hdd bootloader all
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
 	sudo cp -rv bin/* test/* test_image/boot/
+ifeq ($(TARGET), uefi)
+	sudo mkdir -p test_image/EFI/BOOT
+	sudo cp bin/BOOTX64.EFI test_image/EFI/BOOT/
+endif
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
 	bin/limine-install test.hdd
+ifeq ($(TARGET), bios)
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+else ifeq ($(TARGET), uefi)
+	qemu-system-x86_64 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+endif
 
 iso9660-test: | test-clean test.hdd bootloader all
 	$(MAKE) -C test

@@ -23,6 +23,7 @@ void (*term_double_buffer_flush)(void);
 
 int term_rows, term_cols;
 
+#if defined (bios)
 void term_textmode(void) {
     term_deinit();
     init_vga_textmode(&term_rows, &term_cols);
@@ -41,11 +42,14 @@ void term_textmode(void) {
 
     term_backend = TEXTMODE;
 }
+#endif
 
 void term_deinit(void) {
+#if defined (bios)
     struct rm_regs r = {0};
     r.eax = 0x0003;
     rm_int(0x10, &r, &r);
+#endif
 
     term_backend = NOT_READY;
 }

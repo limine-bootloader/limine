@@ -207,7 +207,7 @@ struct smp_information *init_smp(size_t    header_hack_size,
 
                 // Try to start the AP
                 if (!smp_start_ap(lapic->lapic_id, &gdtr, info_struct,
-                                  longmode, lv5, (uint32_t)pagemap.top_level,
+                                  longmode, lv5, (uintptr_t)pagemap.top_level,
                                   x2apic)) {
                     print("smp: FAILED to bring-up AP\n");
                     continue;
@@ -244,7 +244,7 @@ struct smp_information *init_smp(size_t    header_hack_size,
 
                 // Try to start the AP
                 if (!smp_start_ap(x2apic->x2apic_id, &gdtr, info_struct,
-                                  longmode, lv5, (uint32_t)pagemap.top_level,
+                                  longmode, lv5, (uintptr_t)pagemap.top_level,
                                   true)) {
                     print("smp: FAILED to bring-up AP\n");
                     continue;

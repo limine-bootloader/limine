@@ -363,7 +363,7 @@ bool gterm_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _ma
      || fbinfo.blue_mask_shift  != 0)
         return false;
 
-    gterm_framebuffer = (void *)fbinfo.framebuffer_addr;
+    gterm_framebuffer = (void *)(uintptr_t)fbinfo.framebuffer_addr;
     gterm_width       = fbinfo.framebuffer_width;
     gterm_height      = fbinfo.framebuffer_height;
     gterm_bpp         = fbinfo.framebuffer_bpp;

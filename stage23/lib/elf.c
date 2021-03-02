@@ -311,16 +311,16 @@ int elf64_load(struct file_handle *fd, uint64_t *entry_point, uint64_t *top, uin
 
         memmap_alloc_range((size_t)load_vaddr, (size_t)phdr.p_memsz, alloc_type, true, true);
 
-        fread(fd, (void *)(uint32_t)load_vaddr, phdr.p_offset, phdr.p_filesz);
+        fread(fd, (void *)(uintptr_t)load_vaddr, phdr.p_offset, phdr.p_filesz);
 
         size_t to_zero = (size_t)(phdr.p_memsz - phdr.p_filesz);
 
         if (to_zero) {
-            void *ptr = (void *)(uint32_t)(load_vaddr + phdr.p_filesz);
+            void *ptr = (void *)(uintptr_t)(load_vaddr + phdr.p_filesz);
             memset(ptr, 0, to_zero);
         }
 
-        if (elf64_apply_relocations(fd, &hdr, (void *)(uint32_t)load_vaddr, phdr.p_vaddr, phdr.p_memsz, slide))
+        if (elf64_apply_relocations(fd, &hdr, (void *)(uintptr_t)load_vaddr, phdr.p_vaddr, phdr.p_memsz, slide))
             return -1;
     }
 
@@ -364,12 +364,12 @@ int elf32_load(struct file_handle *fd, uint32_t *entry_point, uint32_t *top, uin
 
         memmap_alloc_range((size_t)phdr.p_paddr, (size_t)phdr.p_memsz, alloc_type, true, true);
 
-        fread(fd, (void *)phdr.p_paddr, phdr.p_offset, phdr.p_filesz);
+        fread(fd, (void *)(uintptr_t)phdr.p_paddr, phdr.p_offset, phdr.p_filesz);
 
         size_t to_zero = (size_t)(phdr.p_memsz - phdr.p_filesz);
 
         if (to_zero) {
-            void *ptr = (void *)(phdr.p_paddr + phdr.p_filesz);
+            void *ptr = (void *)(uintptr_t)(phdr.p_paddr + phdr.p_filesz);
             memset(ptr, 0, to_zero);
         }
     }

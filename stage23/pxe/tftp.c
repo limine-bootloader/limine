@@ -1,3 +1,5 @@
+#if defined (bios)
+
 #include <pxe/tftp.h>
 #include <pxe/pxe.h>
 #include <lib/real.h>
@@ -23,13 +25,13 @@ int tftp_open(struct tftp_file_handle *handle, uint32_t server_ip, uint16_t serv
         struct bootph *ph = (struct bootph*)(void *) (((((uint32_t)cachedinfo.buffer) >> 16) << 4) + (((uint32_t)cachedinfo.buffer) & 0xFFFF));
         server_ip = ph->sip;
     }
-  
+
     struct PXENV_UNDI_GET_INFORMATION undi_info = { 0 };
     ret = pxe_call(UNDI_GET_INFORMATION, ((uint16_t)rm_seg(&undi_info)), (uint16_t)rm_off(&undi_info));
     if (ret) {
         return -1;
     }
-   
+
     //TODO figure out a more proper way to do this.
     uint16_t mtu = undi_info.MaxTranUnit - 48;
 
@@ -106,3 +108,5 @@ int tftp_read(void* fd, void *buf, uint64_t loc, uint64_t count) {
     memcpy(buf, handle->data + loc, count);
     return 0;
 }
+
+#endif

@@ -139,4 +139,4 @@ else ifeq ($(TARGET), uefi)
 endif
 
 clean:
-	rm -f limine.elf limine_nomap.elf limine_stage2only.elf font.o limine.map.o limine.sys stage2.bin stage2.bin.gz $(OBJ) $(HEADER_DEPS)
+	rm -f limine.elf limine_nomap.elf limine_stage2only.elf font.o limine.map.o limine.sys stage2.bin stage2.bin.gz BOOTX64.EFI $(OBJ) $(HEADER_DEPS)

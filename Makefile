@@ -44,7 +44,7 @@ endif
 bootloader-clean: stage23-clean decompressor-clean
 
 distclean: clean bootloader-clean test-clean
-	rm -rf bin stivale toolchain
+	rm -rf bin stivale toolchain ovmf gnu-efi
 
 stivale:
 	git clone https://github.com/stivale/stivale.git
@@ -75,8 +75,7 @@ gnu-efi:
 
 ovmf:
 	mkdir -p ovmf
-	wget https://efi.akeo.ie/OVMF/OVMF-X64.zip
-	cd ovmf && 7z x OVMF-X64.zip
+	cd ovmf && wget https://efi.akeo.ie/OVMF/OVMF-X64.zip && 7z x OVMF-X64.zip
 
 test.hdd:
 	rm -f test.hdd

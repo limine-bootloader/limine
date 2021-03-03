@@ -105,8 +105,13 @@ pit_sleep_and_quit_on_keypress:
     mov edx, dword [int_08_callback]
     mov dword [0x08*4], edx
 
+    xor edx, edx
+    mov dl, ah
+    xor ah, ah
     push eax
+    push edx
     call getchar_internal
+    pop edx
     pop edx
 
     ret

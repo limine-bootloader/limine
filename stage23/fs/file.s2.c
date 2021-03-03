@@ -5,6 +5,7 @@
 #include <fs/ext2.h>
 #include <fs/fat32.h>
 #include <fs/iso9660.h>
+#include <lib/print.h>
 #include <lib/blib.h>
 #include <mm/pmm.h>
 #include <lib/part.h>

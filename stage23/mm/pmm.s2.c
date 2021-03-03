@@ -263,14 +263,22 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
 void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) {
     (void)type;
 
+    EFI_STATUS status;
+
     void *ret;
 
     if (alignment && alignment % 4096 == 0) {
-        uefi_call_wrapper(gBS->AllocatePages, 4, 0, 2, DIV_ROUNDUP(count, 4096),
-                          &ret);
+        status = uefi_call_wrapper(gBS->AllocatePages, 4, 0, 2,
+                                   DIV_ROUNDUP(count, 4096), &ret);
     } else {
-        uefi_call_wrapper(gBS->AllocatePool, 3, 4, count, &ret);
+        status = uefi_call_wrapper(gBS->AllocatePool, 3, 4, count, &ret);
     }
+
+    if (status) {
+        panic("Memory allocation error %x\n", status);
+    }
+
+    memset(ret, 0, count);
 
     return ret;
 }

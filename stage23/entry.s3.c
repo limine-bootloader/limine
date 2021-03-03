@@ -20,6 +20,8 @@
 #include <pxe/pxe.h>
 #include <pxe/tftp.h>
 
+void stage3_common(void);
+
 #if defined (uefi)
 __attribute__((ms_abi))
 EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
@@ -29,12 +31,41 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     gBS = SystemTable->BootServices;
     gRT = SystemTable->RuntimeServices;
 
-    print("hello world\n");
+    print("Limine " LIMINE_VERSION "\n\n");
+
+    //volume_create_index();
+
+    EFI_GUID loaded_img_prot_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
+    EFI_LOADED_IMAGE_PROTOCOL *loaded_image = NULL;
+
+    uefi_call_wrapper(gBS->HandleProtocol, 3, ImageHandle, &loaded_img_prot_guid,
+                      &loaded_image);
+
+    EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
+    EFI_BLOCK_IO *drive;
+
+    uefi_call_wrapper(gBS->HandleProtocol, 3, loaded_image->DeviceHandle,
+                      &block_io_guid, &drive);
+
+    struct volume boot_volume;
+    boot_volume.drive = drive;
+    boot_volume.partition = -1;
+    boot_volume.sector_size = drive->Media->BlockSize;
+    boot_volume.first_sect = 0;
+    boot_volume.sect_count = drive->Media->LastBlock + 1;
+
+    if (!init_config_disk(&boot_volume)) {
+        print("Config file found and loaded.\n");
+    } else {
+        panic("Config file not found.");
+    }
 
     for (;;);
+    //stage3_common();
 }
 #endif
 
+#if defined (bios)
 __attribute__((section(".stage3_build_id")))
 uint64_t stage3_build_id = BUILD_ID;
 
@@ -48,19 +79,15 @@ void stage3_entry(int boot_from) {
         case BOOT_FROM_CD: {
             struct volume boot_volume = {0};
             volume_get_by_coord(&boot_volume, boot_drive, -1);
-            struct volume part = boot_volume;
-            for (int i = 0; ; i++) {
-                if (!init_config_disk(&part)) {
+
+            if (!volume_iterate_parts(boot_volume,
+                if (!init_config_disk(&_PART_)) {
                     print("Config file found and loaded.\n");
-                    boot_partition = i - 1;
+                    boot_partition = _PARTNUM_;
                     break;
                 }
-                int ret = part_get(&part, &boot_volume, i);
-                switch (ret) {
-                    case INVALID_TABLE:
-                    case END_OF_TABLE:
-                        panic("Config file not found.");
-                }
+            )) {
+                panic("Config file not found.");
             }
             break;
         case BOOT_FROM_PXE:
@@ -73,6 +100,12 @@ void stage3_entry(int boot_from) {
         }
     }
 
+    stage3_common();
+}
+#endif
+
+__attribute__((noreturn))
+void stage3_common(void) {
     char *cmdline;
     char *config = menu(&cmdline);
 
@@ -81,17 +114,19 @@ void stage3_entry(int boot_from) {
         panic("PROTOCOL not specified");
     }
 
-    if (!strcmp(proto, "stivale")) {
+    if (0) {
+
+    } else if (!strcmp(proto, "stivale")) {
         stivale_load(config, cmdline);
     } else if (!strcmp(proto, "stivale2")) {
         stivale2_load(config, cmdline, booted_from_pxe);
+#if defined (bios)
     } else if (!strcmp(proto, "linux")) {
         linux_load(config, cmdline);
     } else if (!strcmp(proto, "chainload")) {
         chainload(config);
-    } else {
-        panic("Invalid protocol specified");
+#endif
     }
 
-    for (;;);
+    panic("Invalid protocol specified");
 }

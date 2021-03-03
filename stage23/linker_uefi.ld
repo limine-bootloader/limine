@@ -8,6 +8,7 @@ SECTIONS
     .text : {
         *(.text*)
         *(.realmode*)
+        *(.stage3_entry*)
     }
 
     .rodata : {

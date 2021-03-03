@@ -15,7 +15,7 @@
 #if defined (bios)
 typedef int drive_t;
 #elif defined (uefi)
-typedef EFI_HANDLE drive_t;
+typedef EFI_BLOCK_IO *drive_t;
 #endif
 
 struct volume {
@@ -42,5 +42,24 @@ bool volume_get_by_guid(struct volume *part, struct guid *guid);
 bool volume_get_by_coord(struct volume *part, drive_t drive, int partition);
 
 bool volume_read(struct volume *part, void *buffer, uint64_t loc, uint64_t count);
+
+#define volume_iterate_parts(_VOLUME_, _BODY_) ({   \
+    bool _OK_ = true;                               \
+    struct volume _PART_ = _VOLUME_;                \
+    for (int i = 0; ; i++) {                        \
+        int _PARTNUM_ = i - 1;                      \
+        _BODY_ ;                                    \
+        switch (part_get(&_PART_, &_VOLUME_, i)) {  \
+            case INVALID_TABLE:                     \
+            case END_OF_TABLE:                      \
+                _OK_ = false;                       \
+                break;                              \
+            default:                                \
+                continue;                           \
+        }                                           \
+        break;                                      \
+    }                                               \
+    _OK_;                                           \
+})
 
 #endif

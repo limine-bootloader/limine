@@ -1,9 +1,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <lib/part.h>
+#include <drivers/disk.h>
 #if defined (bios)
-#  include <drivers/disk.h>
-#include <lib/real.h>
+#  include <lib/real.h>
 #endif
 #include <lib/libc.h>
 #include <lib/blib.h>
@@ -295,11 +295,7 @@ static struct volume *volume_index = NULL;
 static size_t volume_index_i = 0;
 
 void volume_create_index(void) {
-#if defined (bios)
     volume_index_i = disk_create_index(&volume_index);
-#elif defined (uefi)
-
-#endif
 }
 
 bool volume_get_by_guid(struct volume *part, struct guid *guid) {

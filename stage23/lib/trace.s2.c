@@ -30,11 +30,6 @@ char *trace_address(size_t *off, size_t addr) {
 }
 
 void print_stacktrace(size_t *base_ptr) {
-    if (!stage3_loaded) {
-        print("trace: Stack trace omitted because stage 3 was not loaded yet.\n");
-        return;
-    }
-
     if (base_ptr == NULL) {
         asm volatile (
             "mov %0, ebp"

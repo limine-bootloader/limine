@@ -311,10 +311,6 @@ void volume_create_index(void) {
         if (r.eflags & EFLAGS_CF)
             continue;
 
-        // Non present CD-ROM?
-        if (drive_params.lba_count == (uint64_t)-1)
-            continue;
-
         print("Found BIOS drive %x\n", drive);
         print(" ... %X total %u-byte sectors\n",
               drive_params.lba_count, drive_params.bytes_per_sect);
@@ -327,6 +323,13 @@ void volume_create_index(void) {
         block.sector_size = drive_params.bytes_per_sect;
         block.first_sect = 0;
         block.sect_count = drive_params.lba_count;
+
+        // The medium could not be present (e.g.: CD-ROMs)
+        // Do a test run to see if we can actually read it
+        if (!disk_read_sectors(&block, NULL, 0, 1)) {
+            print(" ... Ignoring drive...\n");
+            continue;
+        }
 
         for (int part = 0; ; part++) {
             struct volume p = {0};
@@ -359,10 +362,6 @@ void volume_create_index(void) {
         if (r.eflags & EFLAGS_CF)
             continue;
 
-        // Non present CD-ROM?
-        if (drive_params.lba_count == (uint64_t)-1)
-            continue;
-
         struct volume *block = &volume_index[volume_index_i++];
 
         block->drive = drive;
@@ -370,6 +369,13 @@ void volume_create_index(void) {
         block->sector_size = drive_params.bytes_per_sect;
         block->first_sect = 0;
         block->sect_count = drive_params.lba_count;
+
+        // The medium could not be present (e.g.: CD-ROMs)
+        // Do a test run to see if we can actually read it
+        if (!disk_read_sectors(block, NULL, 0, 1)) {
+            volume_index_i--;
+            continue;
+        }
 
         if (gpt_get_guid(&block->guid, block)) {
             block->guid_valid = true;

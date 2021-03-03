@@ -50,10 +50,17 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
 
     if (r.eflags & EFLAGS_CF) {
         int ah = (r.eax >> 8) & 0xff;
-        panic("Disk error %x. Drive %x, LBA %x.", ah, volume->drive, dap->lba);
+        switch (ah) {
+            case 0x0c:
+                return false;
+            default:
+                panic("Disk error %x. Drive %x, LBA %x.",
+                      ah, volume->drive, dap->lba);
+        }
     }
 
-    memcpy(buf, xfer_buf, count * volume->sector_size);
+    if (buf != NULL)
+        memcpy(buf, xfer_buf, count * volume->sector_size);
 
     return true;
 }
@@ -90,6 +97,13 @@ size_t disk_create_index(struct volume **ret) {
         block.sector_size = drive_params.bytes_per_sect;
         block.first_sect = 0;
         block.sect_count = drive_params.lba_count;
+
+        // The medium could not be present (e.g.: CD-ROMs)
+        // Do a test run to see if we can actually read it
+        if (!disk_read_sectors(&block, NULL, 0, 1)) {
+            print(" ... Ignoring drive...\n");
+            continue;
+        }
 
         for (int part = 0; ; part++) {
             struct volume p;
@@ -129,6 +143,12 @@ size_t disk_create_index(struct volume **ret) {
         block->sector_size = drive_params.bytes_per_sect;
         block->first_sect = 0;
         block->sect_count = drive_params.lba_count;
+
+        // The medium could not be present (e.g.: CD-ROMs)
+        // Do a test run to see if we can actually read it
+        if (!disk_read_sectors(block, NULL, 0, 1)) {
+            continue;
+        }
 
         if (gpt_get_guid(&block->guid, block)) {
             block->guid_valid = true;

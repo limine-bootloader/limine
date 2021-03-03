@@ -20,7 +20,7 @@ E9_OUTPUT = false
 BUILD_ID := $(shell dd if=/dev/urandom count=8 bs=1 | od -An -t x8 | sed 's/^ /0x/')
 LIMINE_VERSION := $(shell git describe --exact-match --tags `git log -n1 --pretty='%h'` || git log -n1 --pretty='%h')
 WERROR = -Werror
-CFLAGS = -Os -pipe -Wall -Wextra $(WERROR)
+CFLAGS = -Os -g -pipe -Wall -Wextra $(WERROR)
 
 INTERNAL_CFLAGS := \
 	-std=gnu11 \
@@ -52,7 +52,7 @@ ifeq ($(TARGET), uefi)
 		-mcmodel=small
 endif
 
-LDFLAGS = -Os
+LDFLAGS = -Os -g
 
 INTERNAL_LDFLAGS := \
 	-fno-lto \
@@ -85,9 +85,9 @@ endif
 HEADER_DEPS := $(C_FILES:.c=.d)
 
 ifeq ($(TARGET), bios)
-all: limine.sys stage2.bin stage2.bin.gz
+all: limine_dbg.elf limine.sys stage2.bin stage2.bin.gz
 else ifeq ($(TARGET), uefi)
-all: BOOTX64.EFI
+all: limine_dbg.elf BOOTX64.EFI
 endif
 
 BOOTX64.EFI: limine.elf
@@ -109,13 +109,16 @@ endif
 limine.sys: limine.elf
 	$(OBJCOPY) -O binary $< $@
 
-limine_nomap.elf: $(OBJ)
+limine_nomap.elf: $(OBJ) font.o
 	$(LD) $(OBJ) font.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap_$(TARGET).ld -o $@
 ifeq ($(TARGET), bios)
 	$(LD) $(OBJ) font.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Wl,--gc-sections -Tlinker_stage2only.ld -o limine_stage2only.elf || \
 		( echo "This error means that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
 		  false )
 endif
+
+limine_dbg.elf: $(OBJ) font.o
+	$(LD) $(OBJ) font.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o $@
 
 font.o:
 	$(OBJCOPY) -B i8086 -I binary -O default font.bin $@

@@ -61,13 +61,13 @@ limine.map.o: limine_nomap.elf
 limine.sys: limine.elf
 	$(OBJCOPY) -O binary $< $@
 
-limine_nomap.elf: $(OBJ)
+limine_nomap.elf: $(OBJ) font.o
 	$(LD) $(OBJ) font.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
 	$(LD) $(OBJ) font.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Wl,--gc-sections -Tlinker_stage2only.ld -o limine_stage2only.elf || \
 		( echo "This error means that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
 		  false )
 
-limine_dbg.elf: $(OBJ)
+limine_dbg.elf: $(OBJ) font.o
 	$(LD) $(OBJ) font.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o $@
 
 font.o:

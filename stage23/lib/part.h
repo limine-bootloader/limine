@@ -22,6 +22,9 @@ struct volume {
     drive_t drive;
     int partition;
     int sector_size;
+    int cache_status;
+    uint8_t *cache;
+    uint64_t cached_block;
     uint64_t first_sect;
     uint64_t sect_count;
     bool guid_valid;
@@ -38,6 +41,6 @@ int part_get(struct volume *part, struct volume *volume, int partition);
 bool volume_get_by_guid(struct volume *part, struct guid *guid);
 bool volume_get_by_coord(struct volume *part, drive_t drive, int partition);
 
-int volume_read(struct volume *part, void *buffer, uint64_t loc, uint64_t count);
+bool volume_read(struct volume *part, void *buffer, uint64_t loc, uint64_t count);
 
 #endif

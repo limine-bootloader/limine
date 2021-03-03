@@ -22,7 +22,7 @@ struct echfs_identity_table {
 #define FILE_TYPE    0
 #define DIR_TYPE     1
 
-static int read_block(struct echfs_file_handle *file, void *buf, uint64_t block, uint64_t offset, uint64_t count) {
+static bool read_block(struct echfs_file_handle *file, void *buf, uint64_t block, uint64_t offset, uint64_t count) {
     return volume_read(&file->part, buf, (file->alloc_map[block] * file->block_size) + offset, count);
 }
 

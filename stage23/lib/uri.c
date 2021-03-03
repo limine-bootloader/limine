@@ -95,7 +95,7 @@ static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) 
 static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
     uint8_t drive, partition;
 
-    struct volume volume;
+    struct volume volume = {0};
     if (!parse_bios_partition(loc, &drive, &partition))
         return false;
 
@@ -114,7 +114,7 @@ static bool uri_guid_dispatch(struct file_handle *fd, char *guid_str, char *path
     if (!string_to_guid_be(&guid, guid_str))
         return false;
 
-    struct volume part;
+    struct volume part = {0};
     if (!volume_get_by_guid(&part, &guid)) {
         if (!string_to_guid_mixed(&guid, guid_str))
             return false;
@@ -174,7 +174,7 @@ static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) 
         panic("Boot partition information is unavailable.");
     }
 
-    struct volume part;
+    struct volume part = {0};
     if (!volume_get_by_coord(&part, boot_drive, partition))
         return false;
 

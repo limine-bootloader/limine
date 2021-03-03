@@ -2,6 +2,9 @@
 #define __DRIVERS__DISK_H__
 
 #include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include <lib/part.h>
 
 struct bios_drive_params {
     uint16_t buf_size;
@@ -15,6 +18,6 @@ struct bios_drive_params {
 } __attribute__((packed));
 
 int disk_get_sector_size(int drive);
-int disk_read(int drive, void *buffer, uint64_t loc, uint64_t count);
+bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t count);
 
 #endif

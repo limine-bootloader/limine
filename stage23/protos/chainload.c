@@ -75,7 +75,7 @@ void chainload(char *config) {
 
     term_deinit();
 
-    struct volume p;
+    struct volume p = {0};
     volume_get_by_coord(&p, drive, part);
 
     volume_read(&p, (void *)0x7c00, 0, 512);

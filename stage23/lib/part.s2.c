@@ -9,6 +9,57 @@
 #include <mm/pmm.h>
 #include <fs/file.h>
 
+#define BLOCK_SIZE_IN_SECTORS 8
+
+enum {
+    CACHE_NOT_READY = 0,
+    CACHE_READY
+};
+
+static bool cache_block(struct volume *volume, uint64_t block) {
+    if (volume->cache_status == CACHE_READY && block == volume->cached_block)
+        return true;
+
+    volume->cache_status = CACHE_NOT_READY;
+
+    if (volume->cache == NULL)
+        volume->cache =
+            ext_mem_alloc_aligned(BLOCK_SIZE_IN_SECTORS * volume->sector_size,
+                                  4096);
+
+    if (!disk_read_sectors(volume, volume->cache,
+                           volume->first_sect + block * BLOCK_SIZE_IN_SECTORS,
+                           BLOCK_SIZE_IN_SECTORS))
+        return false;
+
+    volume->cache_status = CACHE_READY;
+    volume->cached_block = block;
+
+    return true;
+}
+
+bool volume_read(struct volume *volume, void *buffer, uint64_t loc, uint64_t count) {
+    uint64_t block_size = BLOCK_SIZE_IN_SECTORS * volume->sector_size;
+
+    uint64_t progress = 0;
+    while (progress < count) {
+        uint64_t block = (loc + progress) / block_size;
+
+        if (!cache_block(volume, block))
+            return false;
+
+        uint64_t chunk = count - progress;
+        uint64_t offset = (loc + progress) % block_size;
+        if (chunk > block_size - offset)
+            chunk = block_size - offset;
+
+        memcpy(buffer + progress, &volume->cache[offset], chunk);
+        progress += chunk;
+    }
+
+    return true;
+}
+
 struct gpt_table_header {
     // the head
     char     signature[8];
@@ -49,7 +100,7 @@ struct gpt_entry {
 static bool gpt_get_guid(struct guid *guid, struct volume *volume) {
     struct gpt_table_header header = {0};
 
-    int sector_size = disk_get_sector_size(volume->drive);
+    int sector_size = volume->sector_size;
 
     // read header, located after the first block
     volume_read(volume, &header, sector_size * 1, sizeof(header));
@@ -69,7 +120,7 @@ static bool gpt_get_guid(struct guid *guid, struct volume *volume) {
 static int gpt_get_part(struct volume *ret, struct volume *volume, int partition) {
     struct gpt_table_header header = {0};
 
-    int sector_size = disk_get_sector_size(volume->drive);
+    int sector_size = volume->sector_size;
 
     // read header, located after the first block
     volume_read(volume, &header, sector_size * 1, sizeof(header));
@@ -132,10 +183,7 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
     for (int i = 0; i < partition; i++) {
         size_t entry_offset = ebr_sector * extended_part->sector_size + 0x1ce;
 
-        int r;
-        r = volume_read(extended_part, &entry, entry_offset, sizeof(struct mbr_entry));
-        if (r)
-            return r;
+        volume_read(extended_part, &entry, entry_offset, sizeof(struct mbr_entry));
 
         if (entry.type != 0x0f && entry.type != 0x05)
             return END_OF_TABLE;
@@ -145,17 +193,14 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
 
     size_t entry_offset = ebr_sector * extended_part->sector_size + 0x1be;
 
-    int r;
-    r = volume_read(extended_part, &entry, entry_offset, sizeof(struct mbr_entry));
-    if (r)
-        return r;
+    volume_read(extended_part, &entry, entry_offset, sizeof(struct mbr_entry));
 
     if (entry.type == 0)
         return NO_PARTITION;
 
     ret->drive       = extended_part->drive;
     ret->partition   = partition + 4;
-    ret->sector_size = disk_get_sector_size(extended_part->drive);
+    ret->sector_size = extended_part->sector_size;
     ret->first_sect  = extended_part->first_sect + ebr_sector + entry.first_sect;
     ret->sect_count  = entry.sect_count;
 
@@ -185,18 +230,16 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
         for (int i = 0; i < 4; i++) {
             size_t entry_offset = 0x1be + sizeof(struct mbr_entry) * i;
 
-            int r = volume_read(volume, &entry, entry_offset, sizeof(struct mbr_entry));
-            if (r)
-                return r;
+            volume_read(volume, &entry, entry_offset, sizeof(struct mbr_entry));
 
             if (entry.type != 0x0f)
                 continue;
 
-            struct volume extended_part;
+            struct volume extended_part = {0};
 
             extended_part.drive       = volume->drive;
             extended_part.partition   = i;
-            extended_part.sector_size = disk_get_sector_size(volume->drive);
+            extended_part.sector_size = volume->sector_size;
             extended_part.first_sect  = entry.first_sect;
             extended_part.sect_count  = entry.sect_count;
 
@@ -208,16 +251,14 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
 
     size_t entry_offset = 0x1be + sizeof(struct mbr_entry) * partition;
 
-    int r = volume_read(volume, &entry, entry_offset, sizeof(struct mbr_entry));
-    if (r)
-        return r;
+    volume_read(volume, &entry, entry_offset, sizeof(struct mbr_entry));
 
     if (entry.type == 0)
         return NO_PARTITION;
 
     ret->drive       = volume->drive;
     ret->partition   = partition;
-    ret->sector_size = disk_get_sector_size(volume->drive);
+    ret->sector_size = volume->sector_size;
     ret->first_sect  = entry.first_sect;
     ret->sect_count  = entry.sect_count;
 
@@ -254,7 +295,7 @@ static size_t volume_index_i = 0;
 void volume_create_index(void) {
     size_t volume_count = 0;
 
-    for (uint8_t drive = 0x80; drive; drive++) {
+    for (int drive = 0x80; drive <= 0xff; drive++) {
         struct rm_regs r = {0};
         struct bios_drive_params drive_params;
 
@@ -270,13 +311,17 @@ void volume_create_index(void) {
         if (r.eflags & EFLAGS_CF)
             continue;
 
+        // Non present CD-ROM?
+        if (drive_params.lba_count == (uint64_t)-1)
+            continue;
+
         print("Found BIOS drive %x\n", drive);
         print(" ... %X total %u-byte sectors\n",
               drive_params.lba_count, drive_params.bytes_per_sect);
 
         volume_count++;
 
-        struct volume block;
+        struct volume block = {0};
 
         block.drive = drive;
         block.sector_size = drive_params.bytes_per_sect;
@@ -284,7 +329,7 @@ void volume_create_index(void) {
         block.sect_count = drive_params.lba_count;
 
         for (int part = 0; ; part++) {
-            struct volume p;
+            struct volume p = {0};
             int ret = part_get(&p, &block, part);
 
             if (ret == END_OF_TABLE || ret == INVALID_TABLE)
@@ -298,7 +343,7 @@ void volume_create_index(void) {
 
     volume_index = ext_mem_alloc(sizeof(struct volume) * volume_count);
 
-    for (uint8_t drive = 0x80; drive; drive++) {
+    for (int drive = 0x80; drive <= 0xff; drive++) {
         struct rm_regs r = {0};
         struct bios_drive_params drive_params;
 
@@ -312,6 +357,10 @@ void volume_create_index(void) {
         rm_int(0x13, &r, &r);
 
         if (r.eflags & EFLAGS_CF)
+            continue;
+
+        // Non present CD-ROM?
+        if (drive_params.lba_count == (uint64_t)-1)
             continue;
 
         struct volume *block = &volume_index[volume_index_i++];
@@ -327,7 +376,7 @@ void volume_create_index(void) {
         }
 
         for (int part = 0; ; part++) {
-            struct volume p;
+            struct volume p = {0};
             int ret = part_get(&p, block, part);
 
             if (ret == END_OF_TABLE || ret == INVALID_TABLE)
@@ -370,9 +419,4 @@ bool volume_get_by_coord(struct volume *part, int drive, int partition) {
 found:
     *part = volume_index[i];
     return true;
-}
-
-int volume_read(struct volume *part, void *buffer, uint64_t loc, uint64_t count) {
-    return disk_read(part->drive, buffer,
-                     loc + (part->first_sect * part->sector_size), count);
 }

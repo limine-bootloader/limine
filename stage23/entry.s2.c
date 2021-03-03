@@ -81,7 +81,7 @@ void entry(uint8_t _boot_drive, int boot_from) {
     switch (boot_from) {
         case BOOT_FROM_HDD:
         case BOOT_FROM_CD: {
-            struct volume boot_volume;
+            struct volume boot_volume = {0};
             volume_get_by_coord(&boot_volume, boot_drive, -1);
             struct volume part = boot_volume;
             for (int i = 0; ; i++) {

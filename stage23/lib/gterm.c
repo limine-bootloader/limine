@@ -24,7 +24,7 @@ static uint16_t  gterm_bpp;
 
 extern symbol _binary_font_bin_start;
 
-static uint8_t *vga_font = (void *)_binary_font_bin_start;
+static uint8_t *vga_font;
 
 static uint32_t ansi_colours[8];
 
@@ -371,6 +371,8 @@ bool gterm_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _ma
 
     mtrr_set_range((uint64_t)(size_t)gterm_framebuffer,
                    (uint64_t)gterm_pitch * gterm_height, MTRR_MEMORY_TYPE_WC);
+
+    vga_font = (void *)_binary_font_bin_start;
 
     char *menu_font = config_get_value(NULL, 0, "MENU_FONT");
     if (menu_font != NULL) {

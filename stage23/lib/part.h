@@ -2,6 +2,7 @@
 #define __LIB__PART_H__
 
 #include <stdint.h>
+#include <stddef.h>
 #include <stdbool.h>
 #include <lib/guid.h>
 #if defined (uefi)
@@ -15,7 +16,7 @@
 #if defined (bios)
 typedef int drive_t;
 #elif defined (uefi)
-typedef EFI_BLOCK_IO *drive_t;
+typedef EFI_HANDLE drive_t;
 #endif
 
 struct volume {
@@ -32,6 +33,9 @@ struct volume {
     bool part_guid_valid;
     struct guid part_guid;
 };
+
+extern struct volume *volume_index;
+extern size_t volume_index_i;
 
 void volume_create_index(void);
 

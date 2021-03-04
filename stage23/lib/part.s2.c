@@ -291,8 +291,8 @@ int part_get(struct volume *part, struct volume *volume, int partition) {
     return INVALID_TABLE;
 }
 
-static struct volume *volume_index = NULL;
-static size_t volume_index_i = 0;
+struct volume *volume_index = NULL;
+size_t volume_index_i = 0;
 
 void volume_create_index(void) {
     volume_index_i = disk_create_index(&volume_index);

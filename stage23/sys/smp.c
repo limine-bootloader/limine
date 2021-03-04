@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <lib/libc.h>
 #include <lib/acpi.h>
 #include <sys/cpu.h>
 #include <lib/blib.h>
@@ -9,6 +10,7 @@
 #include <sys/lapic.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>
+#include <mm/mtrr.h>
 
 struct madt {
     struct sdt;
@@ -47,25 +49,50 @@ static void delay(uint32_t cycles) {
         inb(0x80);
 }
 
-void     smp_trampoline(void);
-extern   struct gdtr smp_tpl_gdt;
-struct   smp_information *smp_tpl_info_struct;
-uint8_t  smp_tpl_booted_flag;
-uint32_t smp_tpl_pagemap;
-uint8_t  smp_tpl_target_mode;
+extern symbol _binary_sys_smp_trampoline_bin_start;
+extern symbol _binary_sys_smp_trampoline_bin_end;
+
+struct trampoline_passed_info {
+    uint8_t  smp_tpl_booted_flag;
+    uint8_t  smp_tpl_target_mode;
+    uint32_t smp_tpl_pagemap;
+    void *mtrr_restore_vector;
+    struct smp_information *smp_tpl_info_struct;
+    struct gdtr smp_tpl_gdt;
+} __attribute__((packed));
 
 static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
                          struct smp_information *info_struct,
                          bool longmode, bool lv5, uint32_t pagemap,
                          bool x2apic) {
+    size_t trampoline_size = (size_t)_binary_sys_smp_trampoline_bin_end
+                           - (size_t)_binary_sys_smp_trampoline_bin_start;
+
     // Prepare the trampoline
-    smp_tpl_info_struct = info_struct;
-    smp_tpl_booted_flag = 0;
-    smp_tpl_pagemap     = pagemap;
-    smp_tpl_target_mode = ((uint32_t)x2apic << 2)
+    static void *trampoline = NULL;
+    if (trampoline == NULL) {
+        trampoline = conv_mem_alloc_aligned(trampoline_size, 4096);
+
+        memcpy(trampoline, _binary_sys_smp_trampoline_bin_start, trampoline_size);
+    }
+
+    static struct trampoline_passed_info *passed_info = NULL;
+    if (passed_info == NULL) {
+        passed_info = (void *)(((uintptr_t)trampoline + trampoline_size)
+                               - sizeof(struct trampoline_passed_info));
+    }
+
+    passed_info->smp_tpl_info_struct = info_struct;
+    passed_info->smp_tpl_booted_flag = 0;
+    passed_info->smp_tpl_pagemap     = pagemap;
+    passed_info->smp_tpl_target_mode = ((uint32_t)x2apic << 2)
                         | ((uint32_t)lv5 << 1)
                         | (uint32_t)longmode;
-    smp_tpl_gdt         = *gdtr;
+    passed_info->smp_tpl_gdt         = *gdtr;
+    passed_info->mtrr_restore_vector = mtrr_restore;
+    passed_info->smp_tpl_booted_flag = 0;
+
+    asm volatile ("" ::: "memory");
 
     // Send the INIT IPI
     if (x2apic) {
@@ -79,14 +106,14 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
     // Send the Startup IPI
     if (x2apic) {
         x2apic_write(LAPIC_REG_ICR0, ((uint64_t)lapic_id << 32) |
-                                     ((size_t)smp_trampoline / 4096) | 0x4600);
+                                     ((size_t)trampoline / 4096) | 0x4600);
     } else {
         lapic_write(LAPIC_REG_ICR1, lapic_id << 24);
-        lapic_write(LAPIC_REG_ICR0, ((size_t)smp_trampoline / 4096) | 0x4600);
+        lapic_write(LAPIC_REG_ICR0, ((size_t)trampoline / 4096) | 0x4600);
     }
 
     for (int i = 0; i < 100; i++) {
-        if (locked_read(&smp_tpl_booted_flag) == 1) {
+        if (locked_read(&passed_info->smp_tpl_booted_flag) == 1) {
             return true;
         }
         delay(10000);

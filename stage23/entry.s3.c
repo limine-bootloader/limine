@@ -32,7 +32,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     gBS = SystemTable->BootServices;
     gRT = SystemTable->RuntimeServices;
 
-    print("Limine " LIMINE_VERSION "\n\n");
+    print("Limine " LIMINE_VERSION "\n%X\n", print);
 
     volume_create_index();
 

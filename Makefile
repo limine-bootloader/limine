@@ -72,6 +72,7 @@ toolchain:
 
 gnu-efi:
 	git clone https://git.code.sf.net/p/gnu-efi/code --branch=3.0.12 --depth=1 $@
+	$(MAKE) -C gnu-efi
 
 ovmf:
 	mkdir -p ovmf

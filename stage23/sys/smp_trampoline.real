@@ -1,35 +1,27 @@
-extern smp_tpl_info_struct
-extern smp_tpl_booted_flag
-extern smp_tpl_pagemap
-extern smp_tpl_target_mode
+org 0
 
-extern mtrr_restore
-
-section .bss
-
-temp_stack:
-    resb 1024
-  .top:
-
-section .realmode
-
-global smp_trampoline
-align 0x1000
 bits 16
 smp_trampoline:
     cli
     cld
 
-    xor ax, ax
-    mov ds, ax
+    mov ebx, cs
+    shl ebx, 4
 
-    lgdt [smp_tpl_gdt]
+    lgdt [cs:passed_info.gdtr]
+
+    lea eax, [ebx + .mode32]
+    mov [cs:.farjmp_off], eax
 
     mov eax, cr0
     bts eax, 0
     mov cr0, eax
+    o32 jmp far [cs:.farjmp]
 
-    jmp 0x18:.mode32
+  .farjmp:
+    .farjmp_off: dd 0
+    .farjmp_seg: dd 0x18
+
     bits 32
   .mode32:
     mov ax, 0x20
@@ -44,7 +36,7 @@ smp_trampoline:
     btr eax, 30
     mov cr0, eax
 
-    test dword [smp_tpl_target_mode], (1 << 2)
+    test dword [ebx + passed_info.target_mode], (1 << 2)
     jz .nox2apic
 
     mov ecx, 0x1b
@@ -54,18 +46,18 @@ smp_trampoline:
     wrmsr
 
   .nox2apic:
-    mov esp, temp_stack.top
+    lea esp, [ebx + temp_stack.top]
 
-    call mtrr_restore
+    call [ebx + passed_info.mtrr_restore_vector]
 
-    test dword [smp_tpl_target_mode], (1 << 0)
+    test dword [ebx + passed_info.target_mode], (1 << 0)
     jz parking32
 
     mov eax, cr4
     bts eax, 5
     mov cr4, eax
 
-    test dword [smp_tpl_target_mode], (1 << 1)
+    test dword [ebx + passed_info.target_mode], (1 << 1)
     jz .no5lv
 
     mov eax, cr4
@@ -73,7 +65,7 @@ smp_trampoline:
     mov cr4, eax
 
   .no5lv:
-    mov eax, dword [smp_tpl_pagemap]
+    mov eax, dword [ebx + passed_info.pagemap]
     mov cr3, eax
 
     mov ecx, 0xc0000080
@@ -85,7 +77,12 @@ smp_trampoline:
     bts eax, 31
     mov cr0, eax
 
-    jmp 0x28:.mode64
+    mov eax, .mode64
+    add eax, ebx
+    push 0x28
+    push eax
+    retf
+
     bits 64
   .mode64:
     mov ax, 0x30
@@ -97,19 +94,11 @@ smp_trampoline:
 
     jmp parking64
 
-global smp_tpl_gdt
-align 16
-smp_tpl_gdt:
-    dw 0
-    dd 0
-
-section .text
-
 bits 32
 parking32:
-    mov edi, dword [smp_tpl_info_struct]
+    mov edi, dword [ebx + passed_info.smp_info_struct]
     mov eax, 1
-    lock xchg dword [smp_tpl_booted_flag], eax
+    lock xchg dword [ebx + passed_info.booted_flag], eax
 
     xor eax, eax
   .loop:
@@ -135,9 +124,10 @@ parking32:
 
 bits 64
 parking64:
-    mov edi, dword [smp_tpl_info_struct]
+    mov ebx, ebx
+    mov edi, dword [rbx + passed_info.smp_info_struct]
     mov eax, 1
-    lock xchg dword [smp_tpl_booted_flag], eax
+    lock xchg dword [rbx + passed_info.booted_flag], eax
 
     xor eax, eax
   .loop:
@@ -166,3 +156,19 @@ parking64:
     xor r14, r14
     xor r15, r15
     ret
+
+align 16
+temp_stack:
+    times 1024 db 0
+  .top:
+
+align 16
+passed_info:
+    .booted_flag db 0
+    .target_mode db 0
+    .pagemap dd 0
+    .mtrr_restore_vector dd 0
+    .smp_info_struct dd 0
+    .gdtr:
+        dw 0
+        dd 0

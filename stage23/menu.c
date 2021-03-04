@@ -448,7 +448,7 @@ refresh:
         for (int i = timeout; i; i--) {
             print("\rBooting automatically in %u, press any key to stop the countdown...", i);
             term_double_buffer_flush();
-            if ((c = pit_sleep_and_quit_on_keypress(18))) {
+            if ((c = pit_sleep_and_quit_on_keypress(1))) {
                 skip_timeout = true;
                 print("\e[2K\r\e[2A");
                 goto timeout_aborted;

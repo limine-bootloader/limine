@@ -19,7 +19,8 @@ bool init_gop(struct fb_info *ret,
     uefi_call_wrapper(gBS->LocateProtocol, 3, &gop_guid, NULL, (void **)&gop);
 
     EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *mode_info;
-    UINTN mode_info_size, native_mode, modes_count;
+    UINTN mode_info_size;
+    //UINTN native_mode, modes_count;
 
     status = uefi_call_wrapper(gop->QueryMode, 4, gop,
                                gop->Mode == NULL ? 0 : gop->Mode->Mode,

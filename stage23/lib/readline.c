@@ -12,6 +12,7 @@
 
 int getchar_internal(uint8_t scancode, uint8_t ascii) {
     switch (scancode) {
+#if defined (bios)
         case 0x44:
             return GETCHAR_F10;
         case 0x4b:
@@ -32,6 +33,30 @@ int getchar_internal(uint8_t scancode, uint8_t ascii) {
             return GETCHAR_PGUP;
         case 0x51:
             return GETCHAR_PGDOWN;
+#elif defined (uefi)
+        case SCAN_F10:
+            return GETCHAR_F10;
+        case SCAN_LEFT:
+            return GETCHAR_CURSOR_LEFT;
+        case SCAN_RIGHT:
+            return GETCHAR_CURSOR_RIGHT;
+        case SCAN_UP:
+            return GETCHAR_CURSOR_UP;
+        case SCAN_DOWN:
+            return GETCHAR_CURSOR_DOWN;
+        case SCAN_DELETE:
+            return GETCHAR_DELETE;
+        case SCAN_END:
+            return GETCHAR_END;
+        case SCAN_HOME:
+            return GETCHAR_HOME;
+        case SCAN_PAGE_UP:
+            return GETCHAR_PGUP;
+        case SCAN_PAGE_DOWN:
+            return GETCHAR_PGDOWN;
+        case SCAN_ESC:
+            return '\e';
+#endif
     }
     switch (ascii) {
         case '\r':
@@ -46,18 +71,52 @@ int getchar(void) {
     rm_int(0x16, &r, &r);
     return getchar_internal((r.eax >> 8) & 0xff, r.eax);
 }
+
+int _pit_sleep_and_quit_on_keypress(uint32_t ticks);
+
+int pit_sleep_and_quit_on_keypress(int seconds) {
+    return _pit_sleep_and_quit_on_keypress(seconds * 18);
+}
 #endif
 
 #if defined (uefi)
 int getchar(void) {
     EFI_INPUT_KEY key = {0};
+
+    UINTN which;
+
+    uefi_call_wrapper(
+        gBS->WaitForEvent, 3, 1, (EFI_EVENT[]){ gST->ConIn->WaitForKey }, &which);
+
     uefi_call_wrapper(gST->ConIn->ReadKeyStroke, 2, gST->ConIn, &key);
+
     return getchar_internal(key.ScanCode, key.UnicodeChar);
 }
 
-int pit_sleep_and_quit_on_keypress(uint32_t pit_ticks) {
-    (void)pit_ticks;
-    return getchar();
+int pit_sleep_and_quit_on_keypress(int seconds) {
+    EFI_INPUT_KEY key = {0};
+
+    UINTN which;
+
+    EFI_EVENT events[2];
+
+    events[0] = gST->ConIn->WaitForKey;
+
+    uefi_call_wrapper(
+        gBS->CreateEvent, 5, EVT_TIMER, TPL_CALLBACK, NULL, NULL, &events[1]);
+
+    uefi_call_wrapper(
+        gBS->SetTimer, 3, events[1], TimerRelative, 10000000 * seconds);
+
+    uefi_call_wrapper(gBS->WaitForEvent, 3, 2, events, &which);
+
+    if (which == 1) {
+        return 0;
+    }
+
+    uefi_call_wrapper(gST->ConIn->ReadKeyStroke, 2, gST->ConIn, &key);
+
+    return getchar_internal(key.ScanCode, key.UnicodeChar);
 }
 #endif
 

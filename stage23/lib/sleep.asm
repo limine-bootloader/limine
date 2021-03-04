@@ -13,8 +13,8 @@ int_08_isr:
 
 extern getchar_internal
 
-global pit_sleep_and_quit_on_keypress
-pit_sleep_and_quit_on_keypress:
+global _pit_sleep_and_quit_on_keypress
+_pit_sleep_and_quit_on_keypress:
     ; Hook int 0x08
     mov edx, dword [0x08*4]
     mov dword [int_08_callback], edx

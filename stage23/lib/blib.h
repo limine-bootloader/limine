@@ -32,7 +32,7 @@ uint8_t bcd_to_int(uint8_t val);
 
 __attribute__((noreturn)) void panic(const char *fmt, ...);
 
-int pit_sleep_and_quit_on_keypress(uint32_t pit_ticks);
+int pit_sleep_and_quit_on_keypress(int seconds);
 
 uint64_t strtoui(const char *s, const char **end, int base);
 

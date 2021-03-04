@@ -55,7 +55,7 @@ read_sectors:
     ; EBP:EAX address to EAX LBA sector
     div ebp
     mov dword [si+8],  eax
-    mov dword [si+12], edx
+    mov dword [si+12], 0
 
     pop dx
 

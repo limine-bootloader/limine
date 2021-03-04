@@ -84,8 +84,8 @@ else ifeq ($(TARGET), uefi)
 all: BOOTX64.EFI
 endif
 
-BOOTX64.EFI: limine-efi.elf
-	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym  -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 limine-efi.elf $@
+BOOTX64.EFI: limine_efi.elf
+	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym  -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 limine_efi.elf $@
 
 stage2.bin.gz: stage2.bin
 	gzip -n -9 < stage2.bin > stage2.bin.gz
@@ -120,7 +120,7 @@ font.o: font.bin
 limine.elf: $(OBJ) font.o sys/smp_trampoline.o limine.map.o
 	$(CC) $(OBJ) font.o sys/smp_trampoline.o limine.map.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o $@
 
-limine-efi.elf: $(OBJ) font.o sys/smp_trampoline.o
+limine_efi.elf: $(OBJ) font.o sys/smp_trampoline.o
 	$(LD) -shared -Bsymbolic \
 		-T../gnu-efi/gnuefi/elf_x86_64_efi.lds \
 		../gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o \
@@ -131,11 +131,9 @@ limine-efi.elf: $(OBJ) font.o sys/smp_trampoline.o
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
-%.o: %.S
-	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 
 %.o: %.asm
 	nasm $< -F dwarf -g -f elf32 -o $@
 
 clean:
-	rm -f limine.elf limine_nomap.elf limine_stage2only.elf font.o limine.map.o limine.sys stage2.bin stage2.bin.gz BOOTX64.EFI sys/smp_trampoline.bin sys/smp_trampoline.o $(OBJ) $(HEADER_DEPS)
+	rm -f limine.elf limine_efi.elf limine_dbg.elf limine_nomap.elf limine_stage2only.elf font.o limine.map.o limine.sys stage2.bin stage2.bin.gz BOOTX64.EFI sys/smp_trampoline.bin sys/smp_trampoline.o $(OBJ) $(HEADER_DEPS)

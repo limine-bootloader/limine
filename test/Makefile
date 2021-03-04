@@ -17,4 +17,4 @@ test.elf: stivale.o stivale2.o e9print.o
 	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -c $< -o $@
 
 clean:
-	rm -rf $(TARGET) stivale.o stivale2.o e9print.o
+	rm -rf test.elf stivale.o stivale2.o e9print.o

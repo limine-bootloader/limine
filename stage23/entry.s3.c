@@ -21,7 +21,7 @@
 #include <pxe/tftp.h>
 #include <drivers/disk.h>
 
-void stage3_common(void);
+void stage3_common(struct volume *boot_volume);
 
 #if defined (uefi)
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
@@ -44,49 +44,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
         panic("Can't determine boot disk");
     }
 
-    if (boot_volume->backing_dev != NULL) {
-        boot_volume = boot_volume->backing_dev;
-
-        int part_cnt = 0;
-        for (size_t i = 0; ; i++) {
-            if (part_cnt > boot_volume->max_partition)
-                break;
-
-            struct volume *volume = volume_get_by_coord(boot_volume->drive, i);
-            if (volume == NULL)
-                continue;
-
-            part_cnt++;
-
-            if (!init_config_disk(volume)) {
-                print("Config file found and loaded.\n");
-                boot_partition = i;
-                boot_drive = boot_volume->drive;
-                goto config_loaded;
-            }
-        }
-
-        panic("Config file not found.");
-    } else {
-        struct volume *volume = volume_get_by_coord(boot_volume->drive, -1);
-        if (volume == NULL)
-            panic("Config file not found.");
-
-        if (!init_config_disk(volume)) {
-            print("Config file found and loaded.\n");
-            boot_partition = -1;
-            boot_drive = boot_volume->drive;
-            goto config_loaded;
-        }
-
-        panic("Config file not found.");
-    }
-
-config_loaded:
-    print("Boot drive: %x\n", boot_drive);
-    print("Boot partition: %d\n", boot_partition);
-
-    stage3_common();
+    stage3_common(boot_volume);
 }
 #endif
 
@@ -99,25 +57,33 @@ __attribute__((section(".stage3_entry")))
 void stage3_entry(int boot_from) {
     (void)boot_from;
 
-    mtrr_save();
-
     struct volume *boot_volume = volume_get_by_coord(boot_drive, -1);
 
+    stage3_common(boot_volume);
+}
+#endif
+
+__attribute__((noreturn))
+void stage3_common(struct volume *boot_volume) {
+    bool got_config = false;
     volume_iterate_parts(boot_volume,
         if (!init_config_disk(_PART)) {
             print("Config file found and loaded.\n");
             boot_partition = _PARTNO;
             boot_drive = _PART->drive;
+            got_config = true;
             break;
         }
     );
 
-    stage3_common();
-}
-#endif
+    if (!got_config)
+        panic("Config file not found.");
 
-__attribute__((noreturn))
-void stage3_common(void) {
+    print("Boot drive: %x\n", boot_drive);
+    print("Boot partition: %d\n", boot_partition);
+
+    mtrr_save();
+
     char *cmdline;
     char *config = menu(&cmdline);
 

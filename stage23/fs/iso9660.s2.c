@@ -108,14 +108,14 @@ static void iso9660_cache_root(struct volume *vol,
 static struct iso9660_context *iso9660_get_context(struct volume *vol) {
     struct iso9660_contexts_node *current = contexts;
     while (current) {
-        if (current->context.vol.drive == vol->drive)
+        if (current->context.vol == vol)
             return &current->context;
         current = current->next;
     }
 
     // The context is not cached at this point
     struct iso9660_contexts_node *node = ext_mem_alloc(sizeof(struct iso9660_contexts_node));
-    node->context.vol = *vol;
+    node->context.vol = vol;
     iso9660_cache_root(vol, &node->context.root, &node->context.root_size);
 
     node->next = contexts;
@@ -211,6 +211,6 @@ int iso9660_open(struct iso9660_file_handle *ret, struct volume *vol, const char
 }
 
 int iso9660_read(struct iso9660_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
-    volume_read(&file->context->vol, buf, file->LBA * ISO9660_SECTOR_SIZE + loc, count);
+    volume_read(file->context->vol, buf, file->LBA * ISO9660_SECTOR_SIZE + loc, count);
     return 0;
 }

@@ -19,11 +19,12 @@
 #include <menu.h>
 #include <pxe/pxe.h>
 #include <pxe/tftp.h>
+#include <drivers/disk.h>
 
 extern uint64_t stage3_build_id;
 
-drive_t boot_drive;
-int     boot_partition = -1;
+int boot_drive;
+int boot_partition = -1;
 
 bool booted_from_pxe = false;
 bool booted_from_cd = false;
@@ -79,29 +80,18 @@ void entry(uint8_t _boot_drive, int boot_from) {
     init_e820();
     init_memmap();
 
-    volume_create_index();
+    disk_create_index();
 
-    switch (boot_from) {
-        case BOOT_FROM_HDD:
-        case BOOT_FROM_CD: {
-            struct volume boot_volume = {0};
-            volume_get_by_coord(&boot_volume, boot_drive, -1);
-            struct volume part = boot_volume;
-            for (int i = 0; ; i++) {
-                if (stage3_init(&part)) {
-                    print("Stage 3 found and loaded.\n");
-                    break;
-                }
-                int ret = part_get(&part, &boot_volume, i);
-                switch (ret) {
-                    case INVALID_TABLE:
-                    case END_OF_TABLE:
-                        panic("Stage 3 not found.");
-                }
-            }
+    struct volume *boot_volume = volume_get_by_coord(boot_drive, -1);
+
+    volume_iterate_parts(boot_volume,
+        if (stage3_init(_PART)) {
             break;
         }
-    }
+    );
+
+    if (!stage3_loaded)
+        panic("Failed to load stage 3.\n");
 
     __attribute__((noreturn))
     void (*stage3)(int boot_from) = (void *)stage3_addr;

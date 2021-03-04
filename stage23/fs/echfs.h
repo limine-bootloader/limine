@@ -21,7 +21,7 @@ struct echfs_dir_entry {
 } __attribute__((packed));
 
 struct echfs_file_handle {
-    struct volume part;
+    struct volume *part;
     uint64_t block_size;
     uint64_t block_count;
     uint64_t dir_length;

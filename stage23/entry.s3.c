@@ -31,7 +31,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
     print("Limine " LIMINE_VERSION "\n\n", print);
 
-    volume_create_index();
+    disk_create_index();
 
     EFI_GUID loaded_img_prot_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
     EFI_LOADED_IMAGE_PROTOCOL *loaded_image = NULL;
@@ -39,23 +39,54 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     uefi_call_wrapper(gBS->HandleProtocol, 3, ImageHandle, &loaded_img_prot_guid,
                       &loaded_image);
 
-    struct volume boot_volume = {0};
-    if (!disk_volume_from_efi_handle(&boot_volume, loaded_image->DeviceHandle)) {
+    struct volume *boot_volume = disk_volume_from_efi_handle(loaded_image->DeviceHandle);
+    if (boot_volume == NULL) {
         panic("Can't determine boot disk");
     }
 
-    if (!volume_iterate_parts(boot_volume,
-        if (!init_config_disk(&_PART_)) {
-            print("Config file found and loaded.\n");
-            boot_partition = _PARTNUM_;
-            break;
+    if (boot_volume->backing_dev != NULL) {
+        boot_volume = boot_volume->backing_dev;
+
+        int part_cnt = 0;
+        for (size_t i = 0; ; i++) {
+            if (part_cnt > boot_volume->max_partition)
+                break;
+
+            struct volume *volume = volume_get_by_coord(boot_volume->drive, i);
+            if (volume == NULL)
+                continue;
+
+            part_cnt++;
+
+            if (!init_config_disk(volume)) {
+                print("Config file found and loaded.\n");
+                boot_partition = i;
+                boot_drive = boot_volume->drive;
+                goto config_loaded;
+            }
         }
-    )) {
+
+        panic("Config file not found.");
+    } else {
+        struct volume *volume = volume_get_by_coord(boot_volume->drive, -1);
+        if (volume == NULL)
+            panic("Config file not found.");
+
+        if (!init_config_disk(volume)) {
+            print("Config file found and loaded.\n");
+            boot_partition = -1;
+            boot_drive = boot_volume->drive;
+            goto config_loaded;
+        }
+
         panic("Config file not found.");
     }
 
-    for (;;);
-    //stage3_common();
+config_loaded:
+    print("Boot drive: %x\n", boot_drive);
+    print("Boot partition: %d\n", boot_partition);
+
+    stage3_common();
 }
 #endif
 
@@ -66,33 +97,20 @@ uint64_t stage3_build_id = BUILD_ID;
 __attribute__((noreturn))
 __attribute__((section(".stage3_entry")))
 void stage3_entry(int boot_from) {
+    (void)boot_from;
+
     mtrr_save();
 
-    switch (boot_from) {
-        case BOOT_FROM_HDD:
-        case BOOT_FROM_CD: {
-            struct volume boot_volume = {0};
-            volume_get_by_coord(&boot_volume, boot_drive, -1);
+    struct volume *boot_volume = volume_get_by_coord(boot_drive, -1);
 
-            if (!volume_iterate_parts(boot_volume,
-                if (!init_config_disk(&_PART_)) {
-                    print("Config file found and loaded.\n");
-                    boot_partition = _PARTNUM_;
-                    break;
-                }
-            )) {
-                panic("Config file not found.");
-            }
-            break;
-        case BOOT_FROM_PXE:
-            pxe_init();
-            if (init_config_pxe()) {
-                panic("Failed to load config file");
-            }
-            print("Config loaded via PXE\n");
+    volume_iterate_parts(boot_volume,
+        if (!init_config_disk(_PART)) {
+            print("Config file found and loaded.\n");
+            boot_partition = _PARTNO;
+            boot_drive = _PART->drive;
             break;
         }
-    }
+    );
 
     stage3_common();
 }

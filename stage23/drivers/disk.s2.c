@@ -80,9 +80,8 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
     return true;
 }
 
-size_t disk_create_index(struct volume **ret) {
-    struct volume *volume_index;
-    size_t volume_count = 0, volume_index_i = 0;
+void disk_create_index(void) {
+    size_t volume_count = 0;
 
     for (uint8_t drive = 0x80; drive; drive++) {
         struct rm_regs r = {0};
@@ -104,8 +103,6 @@ size_t disk_create_index(struct volume **ret) {
         print(" ... %X total %u-byte sectors\n",
               drive_params.lba_count, drive_params.bytes_per_sect);
 
-        volume_count++;
-
         struct volume block = {0};
 
         block.drive = drive;
@@ -119,6 +116,8 @@ size_t disk_create_index(struct volume **ret) {
             print(" ... Ignoring drive...\n");
             continue;
         }
+
+        volume_count++;
 
         for (int part = 0; ; part++) {
             struct volume p = {0};
@@ -151,7 +150,7 @@ size_t disk_create_index(struct volume **ret) {
         if (r.eflags & EFLAGS_CF)
             continue;
 
-        struct volume *block = &volume_index[volume_index_i++];
+        struct volume *block = ext_mem_alloc(sizeof(struct volume));
 
         block->drive = drive;
         block->partition = -1;
@@ -165,13 +164,15 @@ size_t disk_create_index(struct volume **ret) {
             continue;
         }
 
+        volume_index[volume_index_i++] = block;
+
         if (gpt_get_guid(&block->guid, block)) {
             block->guid_valid = true;
         }
 
         for (int part = 0; ; part++) {
-            struct volume p = {0};
-            int ret = part_get(&p, block, part);
+            struct volume *p = ext_mem_alloc(sizeof(struct volume));
+            int ret = part_get(p, block, part);
 
             if (ret == END_OF_TABLE || ret == INVALID_TABLE)
                 break;
@@ -181,17 +182,14 @@ size_t disk_create_index(struct volume **ret) {
             volume_index[volume_index_i++] = p;
         }
     }
-
-    *ret = volume_index;
-    return volume_count;
 }
 
 #endif
 
 #if defined (uefi)
 
-bool disk_volume_from_efi_handle(struct volume *ret, EFI_HANDLE *efi_handle) {
-    bool ok = false;
+struct volume *disk_volume_from_efi_handle(EFI_HANDLE *efi_handle) {
+    struct volume *ret = NULL;
 
     EFI_GUID disk_io_guid = DISK_IO_PROTOCOL;
     EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
@@ -217,20 +215,19 @@ bool disk_volume_from_efi_handle(struct volume *ret, EFI_HANDLE *efi_handle) {
         EFI_DISK_IO *cur_disk_io = NULL;
         EFI_BLOCK_IO *cur_block_io = NULL;
 
-        uefi_call_wrapper(gBS->HandleProtocol, 3, volume_index[i].drive,
+        uefi_call_wrapper(gBS->HandleProtocol, 3, volume_index[i]->efi_handle,
                           &disk_io_guid, &cur_disk_io);
-        uefi_call_wrapper(gBS->HandleProtocol, 3, volume_index[i].drive,
+        uefi_call_wrapper(gBS->HandleProtocol, 3, volume_index[i]->efi_handle,
                           &block_io_guid, &cur_block_io);
 
         uefi_call_wrapper(cur_disk_io->ReadDisk, 5, cur_disk_io,
                           cur_block_io->Media->MediaId,
                           0 +
-                          volume_index[i].first_sect * volume_index[i].sector_size,
+                          volume_index[i]->first_sect * volume_index[i]->sector_size,
                           sizeof(uint64_t), &compare);
 
         if (compare == signature) {
-            *ret = volume_index[i];
-            ok = true;
+            ret = volume_index[i];
             break;
         }
     }
@@ -238,7 +235,7 @@ bool disk_volume_from_efi_handle(struct volume *ret, EFI_HANDLE *efi_handle) {
     uefi_call_wrapper(disk_io->WriteDisk, 5, disk_io, block_io->Media->MediaId, 0,
                       sizeof(uint64_t), &orig);
 
-    return ok;
+    return ret;
 }
 
 bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t count) {
@@ -247,7 +244,7 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
     EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
     EFI_BLOCK_IO *block_io = NULL;
 
-    status = uefi_call_wrapper(gBS->HandleProtocol, 3, volume->drive,
+    status = uefi_call_wrapper(gBS->HandleProtocol, 3, volume->efi_handle,
                                &block_io_guid, &block_io);
 
     status = uefi_call_wrapper(block_io->ReadBlocks, 5, block_io,
@@ -261,11 +258,9 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
     return true;
 }
 
-size_t disk_create_index(struct volume **ret) {
+void disk_create_index(void) {
     EFI_STATUS status;
 
-    struct volume *volume_index = NULL;
-    size_t volume_index_i = 0;
     size_t volume_count = 0;
 
     EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
@@ -296,14 +291,14 @@ size_t disk_create_index(struct volume **ret) {
 
         volume_count++;
 
-        block.drive = handles[i];
+        block.efi_handle = handles[i];
         block.sector_size = block_io->Media->BlockSize;
         block.first_sect = 0;
         block.sect_count = block_io->Media->LastBlock + 1;
 
         for (int part = 0; ; part++) {
-            struct volume p = {0};
-            int ret = part_get(&p, &block, part);
+            struct volume trash = {0};
+            int ret = part_get(&trash, &block, part);
 
             if (ret == END_OF_TABLE || ret == INVALID_TABLE)
                 break;
@@ -315,6 +310,8 @@ size_t disk_create_index(struct volume **ret) {
     }
 
     volume_index = ext_mem_alloc(sizeof(struct volume) * volume_count);
+
+    size_t drives_counter = 0x80;
 
     for (size_t i = 0; i < handles_size / sizeof(EFI_HANDLE); i++) {
         EFI_BLOCK_IO *drive = NULL;
@@ -328,17 +325,20 @@ size_t disk_create_index(struct volume **ret) {
         if (drive->Media->LogicalPartition)
             continue;
 
-        struct volume *block = &volume_index[volume_index_i++];
+        struct volume *block = ext_mem_alloc(sizeof(struct volume));
 
-        block->drive = handles[i];
+        block->drive = drives_counter++;
+        block->efi_handle = handles[i];
         block->partition = -1;
         block->sector_size = drive->Media->BlockSize;
         block->first_sect = 0;
         block->sect_count = drive->Media->LastBlock + 1;
 
+        volume_index[volume_index_i++] = block;
+
         for (int part = 0; ; part++) {
-            struct volume p = {0};
-            int ret = part_get(&p, block, part);
+            struct volume *p = ext_mem_alloc(sizeof(struct volume));
+            int ret = part_get(p, block, part);
 
             if (ret == END_OF_TABLE || ret == INVALID_TABLE)
                 break;
@@ -348,9 +348,6 @@ size_t disk_create_index(struct volume **ret) {
             volume_index[volume_index_i++] = p;
         }
     }
-
-    *ret = volume_index;
-    return volume_count;
 }
 
 #endif

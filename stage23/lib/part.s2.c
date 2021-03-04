@@ -147,11 +147,15 @@ static int gpt_get_part(struct volume *ret, struct volume *volume, int partition
     if (!memcmp(&entry.unique_partition_guid, &empty_guid, sizeof(struct guid)))
         return NO_PARTITION;
 
+#if defined (uefi)
+    ret->efi_handle  = volume->efi_handle;
+#endif
     ret->drive       = volume->drive;
     ret->partition   = partition;
     ret->sector_size = sector_size;
     ret->first_sect  = entry.starting_lba;
     ret->sect_count  = (entry.ending_lba - entry.starting_lba) + 1;
+    ret->backing_dev = volume;
 
     struct guid guid;
     if (!fs_get_guid(&guid, ret)) {
@@ -200,11 +204,15 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
     if (entry.type == 0)
         return NO_PARTITION;
 
+#if defined (uefi)
+    ret->efi_handle  = extended_part->efi_handle;
+#endif
     ret->drive       = extended_part->drive;
     ret->partition   = partition + 4;
     ret->sector_size = extended_part->sector_size;
     ret->first_sect  = extended_part->first_sect + ebr_sector + entry.first_sect;
     ret->sect_count  = entry.sect_count;
+    ret->backing_dev = extended_part->backing_dev;
 
     struct guid guid;
     if (!fs_get_guid(&guid, ret)) {
@@ -239,11 +247,15 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
 
             struct volume extended_part = {0};
 
+#if defined (uefi)
+            extended_part.efi_handle  = volume->efi_handle;
+#endif
             extended_part.drive       = volume->drive;
             extended_part.partition   = i;
             extended_part.sector_size = volume->sector_size;
             extended_part.first_sect  = entry.first_sect;
             extended_part.sect_count  = entry.sect_count;
+            extended_part.backing_dev = volume;
 
             return mbr_get_logical_part(ret, &extended_part, partition - 4);
         }
@@ -258,11 +270,15 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
     if (entry.type == 0)
         return NO_PARTITION;
 
+#if defined (uefi)
+    ret->efi_handle  = volume->efi_handle;
+#endif
     ret->drive       = volume->drive;
     ret->partition   = partition;
     ret->sector_size = volume->sector_size;
     ret->first_sect  = entry.first_sect;
     ret->sect_count  = entry.sect_count;
+    ret->backing_dev = volume;
 
     struct guid guid;
     if (!fs_get_guid(&guid, ret)) {
@@ -291,41 +307,31 @@ int part_get(struct volume *part, struct volume *volume, int partition) {
     return INVALID_TABLE;
 }
 
-struct volume *volume_index = NULL;
+struct volume **volume_index = NULL;
 size_t volume_index_i = 0;
 
-void volume_create_index(void) {
-    volume_index_i = disk_create_index(&volume_index);
-}
-
-bool volume_get_by_guid(struct volume *part, struct guid *guid) {
-    size_t i;
-    for (i = 0; i < volume_index_i; i++) {
-        if (volume_index[i].guid_valid
-         && memcmp(&volume_index[i].guid, guid, 16) == 0) {
-            goto found;
+struct volume *volume_get_by_guid(struct guid *guid) {
+    for (size_t i = 0; i < volume_index_i; i++) {
+        if (volume_index[i]->guid_valid
+         && memcmp(&volume_index[i]->guid, guid, 16) == 0) {
+            return volume_index[i];
         }
-        if (volume_index[i].part_guid_valid
-         && memcmp(&volume_index[i].part_guid, guid, 16) == 0) {
-            goto found;
+        if (volume_index[i]->part_guid_valid
+         && memcmp(&volume_index[i]->part_guid, guid, 16) == 0) {
+            return volume_index[i];
         }
     }
-    return false;
-found:
-    *part = volume_index[i];
-    return true;
+
+    return NULL;
 }
 
-bool volume_get_by_coord(struct volume *part, drive_t drive, int partition) {
-    size_t i;
-    for (i = 0; i < volume_index_i; i++) {
-        if (volume_index[i].drive == drive
-         && volume_index[i].partition == partition) {
-            goto found;
+struct volume *volume_get_by_coord(int drive, int partition) {
+    for (size_t i = 0; i < volume_index_i; i++) {
+        if (volume_index[i]->drive == drive
+         && volume_index[i]->partition == partition) {
+            return volume_index[i];
         }
     }
-    return false;
-found:
-    *part = volume_index[i];
-    return true;
+
+    return NULL;
 }

@@ -16,8 +16,8 @@ extern EFI_BOOT_SERVICES *gBS;
 extern EFI_RUNTIME_SERVICES *gRT;
 #endif
 
-extern drive_t boot_drive;
-extern int     boot_partition;
+extern int boot_drive;
+extern int boot_partition;
 
 extern bool booted_from_pxe;
 extern bool booted_from_cd;

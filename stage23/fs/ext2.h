@@ -113,7 +113,7 @@ struct ext2_inode {
 } __attribute__((packed));
 
 struct ext2_file_handle {
-    struct volume part;
+    struct volume *part;
     struct ext2_superblock sb;
     int size;
     struct ext2_inode root_inode;

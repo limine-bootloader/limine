@@ -68,10 +68,10 @@ struct fat32_lfn_entry {
 } __attribute__((packed));
 
 static int fat32_init_context(struct fat32_context* context, struct volume *part) {
-    context->part  = *part;
+    context->part = part;
 
     struct fat32_bpb bpb;
-    volume_read(&context->part, &bpb, 0, sizeof(struct fat32_bpb));
+    volume_read(context->part, &bpb, 0, sizeof(struct fat32_bpb));
 
     if (bpb.signature != FAT32_VALID_SIGNATURE_1 && bpb.signature != FAT32_VALID_SIGNATURE_2) {
         return 1;
@@ -98,7 +98,7 @@ static int fat32_read_cluster_from_map(struct fat32_context* context, uint32_t c
     const uint32_t offset = cluster % (FAT32_SECTOR_SIZE / 4);
 
     uint32_t clusters[FAT32_SECTOR_SIZE / sizeof(uint32_t)];
-    volume_read(&context->part, &clusters[0], (context->fat_start_lba + sector) * FAT32_SECTOR_SIZE, sizeof(clusters));
+    volume_read(context->part, &clusters[0], (context->fat_start_lba + sector) * FAT32_SECTOR_SIZE, sizeof(clusters));
 
     *out = clusters[offset] & 0x0FFFFFFF;
     return 0;
@@ -139,7 +139,7 @@ static bool read_cluster_chain(struct fat32_context *context,
             chunk = block_size - offset;
 
         uint64_t base = (context->data_start_lba + (cluster_chain[block] - 2)) * block_size;
-        volume_read(&context->part, buf + progress, base + offset, chunk);
+        volume_read(context->part, buf + progress, base + offset, chunk);
 
         progress += chunk;
     }

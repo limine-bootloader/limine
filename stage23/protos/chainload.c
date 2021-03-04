@@ -77,10 +77,9 @@ void chainload(char *config) {
 
     term_deinit();
 
-    struct volume p = {0};
-    volume_get_by_coord(&p, drive, part);
+    struct volume *p = volume_get_by_coord(drive, part);
 
-    volume_read(&p, (void *)0x7c00, 0, 512);
+    volume_read(p, (void *)0x7c00, 0, 512);
 
     mtrr_restore();
 

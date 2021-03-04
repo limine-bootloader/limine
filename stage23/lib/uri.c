@@ -95,14 +95,14 @@ static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) 
 static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
     uint8_t drive, partition;
 
-    struct volume volume = {0};
     if (!parse_bios_partition(loc, &drive, &partition))
         return false;
 
-    if (!volume_get_by_coord(&volume, drive, partition))
+    struct volume *volume = volume_get_by_coord(drive, partition);
+    if (volume == NULL)
         return false;
 
-    if (fopen(fd, &volume, path))
+    if (fopen(fd, volume, path))
         return false;
 
     return true;
@@ -114,16 +114,17 @@ static bool uri_guid_dispatch(struct file_handle *fd, char *guid_str, char *path
     if (!string_to_guid_be(&guid, guid_str))
         return false;
 
-    struct volume part = {0};
-    if (!volume_get_by_guid(&part, &guid)) {
+    struct volume *volume = volume_get_by_guid(&guid);
+    if (volume == NULL) {
         if (!string_to_guid_mixed(&guid, guid_str))
             return false;
 
-        if (!volume_get_by_guid(&part, &guid))
+        volume = volume_get_by_guid(&guid);
+        if (volume == NULL)
             return false;
     }
 
-    if (fopen(fd, &part, path))
+    if (fopen(fd, volume, path))
         return false;
 
     return true;
@@ -174,11 +175,11 @@ static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) 
         panic("Boot partition information is unavailable.");
     }
 
-    struct volume part = {0};
-    if (!volume_get_by_coord(&part, boot_drive, partition))
+    struct volume *volume = volume_get_by_coord(boot_drive, partition);
+    if (volume == NULL)
         return false;
 
-    if (fopen(fd, &part, path))
+    if (fopen(fd, volume, path))
         return false;
 
     return true;

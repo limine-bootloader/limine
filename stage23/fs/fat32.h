@@ -5,7 +5,7 @@
 #include <lib/part.h>
 
 struct fat32_context {
-    struct volume part;
+    struct volume *part;
     uint8_t sectors_per_cluster;
     uint16_t reserved_sectors;
     uint8_t number_of_fats;

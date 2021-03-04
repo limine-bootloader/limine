@@ -138,7 +138,7 @@ static bool ext2_get_inode(struct ext2_inode *ret,
         struct ext2_bgd target_descriptor;
         const uint64_t bgd_offset = bgd_start_offset + (sizeof(struct ext2_bgd) * ino_blk_grp);
 
-        volume_read(&fd->part, &target_descriptor, bgd_offset, sizeof(struct ext2_bgd));
+        volume_read(fd->part, &target_descriptor, bgd_offset, sizeof(struct ext2_bgd));
 
         ino_offset = ((target_descriptor.bg_inode_table) * block_size) +
                                     (ino_size * ino_tbl_idx);
@@ -146,13 +146,13 @@ static bool ext2_get_inode(struct ext2_inode *ret,
         struct ext4_bgd target_descriptor;
         const uint64_t bgd_offset = bgd_start_offset + (sizeof(struct ext4_bgd) * ino_blk_grp);
 
-        volume_read(&fd->part, &target_descriptor, bgd_offset, sizeof(struct ext4_bgd));
+        volume_read(fd->part, &target_descriptor, bgd_offset, sizeof(struct ext4_bgd));
 
         ino_offset = ((target_descriptor.bg_inode_table | (bit64 ? ((uint64_t)target_descriptor.inode_id_hi << 32) : 0)) * block_size) +
                                     (ino_size * ino_tbl_idx);
     }
 
-    volume_read(&fd->part, ret, ino_offset, sizeof(struct ext2_inode));
+    volume_read(fd->part, ret, ino_offset, sizeof(struct ext2_inode));
 
     return true;
 }
@@ -184,7 +184,7 @@ static uint32_t *create_alloc_map(struct ext2_file_handle *fd,
                 }
                 uint32_t indirect_block;
                 volume_read(
-                    &fd->part, &indirect_block,
+                    fd->part, &indirect_block,
                     inode->i_blocks[13] * fd->block_size + index * sizeof(uint32_t),
                     sizeof(uint32_t)
                 );
@@ -192,7 +192,7 @@ static uint32_t *create_alloc_map(struct ext2_file_handle *fd,
                     if (i + j >= inode->i_blocks_count)
                         return alloc_map;
                     volume_read(
-                        &fd->part, &alloc_map[i + j],
+                        fd->part, &alloc_map[i + j],
                         indirect_block * fd->block_size + j * sizeof(uint32_t),
                         sizeof(uint32_t)
                     );
@@ -201,7 +201,7 @@ static uint32_t *create_alloc_map(struct ext2_file_handle *fd,
             } else {
                 // Single indirect block
                 volume_read(
-                    &fd->part, &alloc_map[i],
+                    fd->part, &alloc_map[i],
                     inode->i_blocks[12] * fd->block_size + block * sizeof(uint32_t),
                     sizeof(uint32_t)
                 );
@@ -289,9 +289,9 @@ next:
 }
 
 int ext2_open(struct ext2_file_handle *ret, struct volume *part, const char *path) {
-    ret->part = *part;
+    ret->part = part;
 
-    volume_read(&ret->part, &ret->sb, 1024, sizeof(struct ext2_superblock));
+    volume_read(ret->part, &ret->sb, 1024, sizeof(struct ext2_superblock));
 
     struct ext2_superblock *sb = &ret->sb;
 
@@ -380,7 +380,7 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
             struct ext4_extent *ext;
             int i;
 
-            leaf = ext4_find_leaf((struct ext4_extent_header*)inode->i_blocks, block, fd->block_size, &fd->part);
+            leaf = ext4_find_leaf((struct ext4_extent_header*)inode->i_blocks, block, fd->block_size, fd->part);
 
             if (!leaf)
                 panic("invalid extent");
@@ -407,7 +407,7 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
             block_index = alloc_map[block];
         }
 
-        volume_read(&fd->part, buf + progress, (block_index * fd->block_size) + offset, chunk);
+        volume_read(fd->part, buf + progress, (block_index * fd->block_size) + offset, chunk);
 
         progress += chunk;
     }

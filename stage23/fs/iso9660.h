@@ -7,7 +7,7 @@
 #define ISO9660_SECTOR_SIZE (2 << 10)
 
 struct iso9660_context {
-    struct volume vol;
+    struct volume *vol;
     void* root;
     uint32_t root_size;
 };

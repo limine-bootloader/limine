@@ -10,7 +10,8 @@ E9_OUTPUT = false
 BUILD_ID := $(shell dd if=/dev/urandom count=8 bs=1 | od -An -t x8 | sed 's/^ /0x/')
 LIMINE_VERSION := $(shell git describe --exact-match --tags `git log -n1 --pretty='%h'` || git log -n1 --pretty='%h')
 WERROR = -Werror
-CFLAGS = -Os -g -pipe -Wall -Wextra $(WERROR)
+CFLAGS = -O3 -g -pipe -Wall -Wextra $(WERROR)
+S2CFLAGS = -Os -g -pipe -Wall -Wextra $(WERROR)
 
 INTERNAL_CFLAGS := \
 	-std=gnu11 \
@@ -30,7 +31,7 @@ INTERNAL_CFLAGS := \
 	-I. \
 	-I..
 
-LDFLAGS = -Os -g
+LDFLAGS = -O3 -g
 
 INTERNAL_LDFLAGS := \
 	-lgcc \
@@ -80,6 +81,11 @@ limine.elf: $(OBJ) font.o limine.map.o
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
+
+ifeq ($(TARGET), bios)
+%.s2.o: %.s2.c
+	$(CC) $(S2CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
+endif
 
 %.o: %.asm
 	nasm $< -f elf32 -o $@

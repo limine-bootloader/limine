@@ -192,6 +192,9 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
     size_t   dir_chain_len;
     uint32_t *directory_cluster_chain = cache_cluster_chain(context, current_cluster_number, &dir_chain_len);
 
+    if (directory_cluster_chain == NULL)
+        return -1;
+
     struct fat32_directory_entry *directory_entries = ext_mem_alloc(dir_chain_len * block_size);
     if (!read_cluster_chain(context, directory_cluster_chain, directory_entries, 0, dir_chain_len * block_size))
         return -1;

@@ -12,6 +12,9 @@
 
 #define CACHE_INVALID (~((uint64_t)0))
 
+#define MAX_CACHE 16384
+
+static int      cached_drive = -1;
 static uint8_t *cache        = NULL;
 static uint64_t cached_block = CACHE_INVALID;
 
@@ -26,7 +29,7 @@ struct dap {
 static struct dap *dap = NULL;
 
 static int cache_block(int drive, uint64_t block, int sector_size) {
-    if (block == cached_block)
+    if (drive == cached_drive && block == cached_block)
         return 0;
 
     if (!dap) {
@@ -36,7 +39,10 @@ static int cache_block(int drive, uint64_t block, int sector_size) {
     }
 
     if (!cache)
-        cache = conv_mem_alloc_aligned(BLOCK_SIZE, 16);
+        cache = conv_mem_alloc_aligned(MAX_CACHE, 16);
+
+    if (BLOCK_SIZE > MAX_CACHE)
+        panic("Disk cache overflow");
 
     dap->segment = rm_seg(cache);
     dap->offset  = rm_off(cache);
@@ -56,6 +62,7 @@ static int cache_block(int drive, uint64_t block, int sector_size) {
     }
 
     cached_block = block;
+    cached_drive = drive;
 
     return 0;
 }

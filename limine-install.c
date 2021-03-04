@@ -10,6 +10,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#define DIV_ROUNDUP(a, b) (((a) + ((b) - 1)) / (b))
+
 struct gpt_table_header {
     // the head
     char     signature[8];
@@ -318,8 +320,11 @@ int main(int argc, char *argv[]) {
     }
 
     size_t   stage2_size   = bootloader_file_size - 512;
-    uint16_t stage2_size_a = stage2_size / 2 + stage2_size % 2;
-    uint16_t stage2_size_b = stage2_size / 2;
+
+    size_t   stage2_sects  = DIV_ROUNDUP(stage2_size, 512);
+
+    uint16_t stage2_size_a = (stage2_sects / 2) * 512 + (stage2_sects % 2 ? 512 : 0);
+    uint16_t stage2_size_b = (stage2_sects / 2) * 512;
 
     // Default split of stage2 for MBR (consecutive in post MBR gap)
     uint64_t stage2_loc_a = 512;

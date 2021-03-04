@@ -123,20 +123,12 @@ fat32-test: | test-clean test.hdd bootloader all
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
 	sudo cp -rv bin/* test/* test_image/boot/
-ifeq ($(TARGET), uefi)
-	sudo mkdir -p test_image/EFI/BOOT
-	sudo cp bin/BOOTX64.EFI test_image/EFI/BOOT/
-endif
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
 	bin/limine-install test.hdd
-ifeq ($(TARGET), bios)
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
-else ifeq ($(TARGET), uefi)
-	qemu-system-x86_64 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
-endif
 
 iso9660-test: | test-clean test.hdd bootloader
 	$(MAKE) -C test

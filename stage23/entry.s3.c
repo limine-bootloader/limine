@@ -24,15 +24,12 @@
 void stage3_common(void);
 
 #if defined (uefi)
-__attribute__((ms_abi))
-EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
-    (void)ImageHandle;
-
+EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     gST = SystemTable;
     gBS = SystemTable->BootServices;
     gRT = SystemTable->RuntimeServices;
 
-    print("Limine " LIMINE_VERSION "\n%X\n", print);
+    print("Limine " LIMINE_VERSION "\n\n", print);
 
     volume_create_index();
 

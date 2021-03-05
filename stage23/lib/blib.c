@@ -78,14 +78,7 @@ bool efi_exit_boot_services(void) {
     uefi_call_wrapper(gBS->GetMemoryMap, 5,
         &mmap_size, tmp_mmap, &mmap_key, &desc_size, &desc_ver);
 
-    EFI_MEMORY_DESCRIPTOR *efi_mmap = ext_mem_alloc(mmap_size);
-
-    uefi_call_wrapper(gBS->GetMemoryMap, 5,
-        &mmap_size, efi_mmap, &mmap_key, &desc_size, &desc_ver);
-
     uefi_call_wrapper(gBS->ExitBootServices, 2, efi_image_handle, mmap_key);
-
-    pmm_mmap_efi2ours(efi_mmap, desc_size, mmap_size / desc_size);
 
     efi_boot_services_exited = true;
 

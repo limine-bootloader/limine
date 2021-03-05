@@ -33,6 +33,8 @@ static const char *memmap_type(uint32_t type) {
             return "Bootloader reclaimable";
         case MEMMAP_KERNEL_AND_MODULES:
             return "Kernel/Modules";
+        case MEMMAP_EFI_RECLAIMABLE:
+            return "EFI reclaimable";
         default:
             return "???";
     }
@@ -202,6 +204,86 @@ void init_memmap(void) {
 }
 #endif
 
+#if defined (uefi)
+void init_memmap(void) {
+    EFI_STATUS status;
+
+    EFI_MEMORY_DESCRIPTOR tmp_mmap[1];
+    UINTN mmap_size = sizeof(tmp_mmap);
+    UINTN mmap_key = 0, desc_size = 0, desc_ver = 0;
+
+    status = uefi_call_wrapper(gBS->GetMemoryMap, 5,
+        &mmap_size, tmp_mmap, &mmap_key, &desc_size, &desc_ver);
+
+    EFI_MEMORY_DESCRIPTOR *efi_mmap;
+
+    mmap_size += 4096;
+
+    status = uefi_call_wrapper(gBS->AllocatePool, 3,
+        EfiLoaderData, mmap_size, &efi_mmap);
+
+    status = uefi_call_wrapper(gBS->GetMemoryMap, 5,
+        &mmap_size, efi_mmap, &mmap_key, &desc_size, &desc_ver);
+
+    size_t entry_count = mmap_size / desc_size;
+
+    for (size_t i = 0; i < entry_count; i++) {
+        EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * desc_size;
+
+        uint32_t our_type;
+        switch (entry->Type) {
+            case EfiReservedMemoryType:
+            case EfiRuntimeServicesCode:
+            case EfiRuntimeServicesData:
+            case EfiUnusableMemory:
+            case EfiMemoryMappedIO:
+            case EfiMemoryMappedIOPortSpace:
+            case EfiPalCode:
+            default:
+                our_type = MEMMAP_RESERVED; break;
+            case EfiBootServicesCode:
+            case EfiBootServicesData:
+            case EfiLoaderCode:
+            case EfiLoaderData:
+                our_type = MEMMAP_BOOTLOADER_RECLAIMABLE; break;
+            case EfiACPIReclaimMemory:
+                our_type = MEMMAP_ACPI_RECLAIMABLE; break;
+            case EfiACPIMemoryNVS:
+                our_type = MEMMAP_ACPI_NVS; break;
+            case EfiConventionalMemory:
+                our_type = MEMMAP_USABLE; break;
+        }
+
+        memmap[memmap_entries].type = our_type;
+        memmap[memmap_entries].base = entry->PhysicalStart;
+        memmap[memmap_entries].length = entry->NumberOfPages * 4096;
+
+        memmap_entries++;
+    }
+
+    sanitise_entries(false);
+
+    allocations_disallowed = false;
+
+    // Let's leave 64MiB to the firmware
+    ext_mem_alloc_aligned_type(65536, 4096, MEMMAP_EFI_RECLAIMABLE);
+
+    // Now own all the usable entries
+    for (size_t i = 0; i < memmap_entries; i++) {
+        if (memmap[i].type != MEMMAP_USABLE)
+            continue;
+
+        EFI_PHYSICAL_ADDRESS base = memmap[i].base;
+
+        status = uefi_call_wrapper(gBS->AllocatePages, 4,
+          AllocateAddress, EfiLoaderData, memmap[i].length / 4096, &base);
+
+        if (status)
+            panic("AllocatePages %x", status);
+    }
+}
+#endif
+
 void *ext_mem_alloc(size_t count) {
     return ext_mem_alloc_type(count, MEMMAP_BOOTLOADER_RECLAIMABLE);
 }
@@ -215,7 +297,7 @@ void *ext_mem_alloc_type(size_t count, uint32_t type) {
 }
 
 // Allocate memory top down, hopefully without bumping into kernel or modules
-static void *_ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) {
+void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) {
     if (allocations_disallowed)
         panic("Extended memory allocations disallowed");
 
@@ -256,88 +338,6 @@ static void *_ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_
 
     panic("High memory allocator: Out of memory");
 }
-
-#if defined (bios)
-void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) {
-    return _ext_mem_alloc_aligned_type(count, alignment, type);
-}
-#endif
-
-#if defined (uefi)
-bool pmm_mmap_efi2ours(EFI_MEMORY_DESCRIPTOR *efi_mmap,
-                       size_t desc_size, size_t entry_count) {
-    for (size_t i = 0; i < entry_count; i++) {
-        EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * desc_size;
-
-        uint32_t our_type;
-        switch (entry->Type) {
-            case EfiReservedMemoryType:
-            case EfiRuntimeServicesCode:
-            case EfiRuntimeServicesData:
-            case EfiUnusableMemory:
-            case EfiMemoryMappedIO:
-            case EfiMemoryMappedIOPortSpace:
-            case EfiPalCode:
-            default:
-                our_type = MEMMAP_RESERVED; break;
-            case EfiBootServicesCode:
-            case EfiBootServicesData:
-            case EfiLoaderCode:
-            case EfiLoaderData:
-                our_type = MEMMAP_BOOTLOADER_RECLAIMABLE; break;
-            case EfiACPIReclaimMemory:
-                our_type = MEMMAP_ACPI_RECLAIMABLE; break;
-            case EfiACPIMemoryNVS:
-                our_type = MEMMAP_ACPI_NVS; break;
-            case EfiConventionalMemory:
-                our_type = MEMMAP_USABLE; break;
-        }
-
-        memmap[memmap_entries].type = our_type;
-        memmap[memmap_entries].base = entry->PhysicalStart;
-        memmap[memmap_entries].length = entry->NumberOfPages * 4096;
-
-        memmap_entries++;
-    }
-
-    sanitise_entries(false);
-
-    print_memmap(memmap, memmap_entries);
-
-    allocations_disallowed = false;
-
-    return true;
-}
-
-void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) {
-    if (efi_boot_services_exited) {
-        return _ext_mem_alloc_aligned_type(count, alignment, type);
-    }
-
-    EFI_STATUS status;
-
-    void *ret;
-
-    if (alignment && alignment % 4096 == 0) {
-        status = uefi_call_wrapper(gBS->AllocatePages, 4, 0, 2,
-                                   DIV_ROUNDUP(count, 4096), &ret);
-    } else {
-        status = uefi_call_wrapper(gBS->AllocatePool, 3, 4, count, &ret);
-    }
-
-    if (status) {
-        panic("Memory allocation error %x", status);
-    }
-
-    if ((uintptr_t)ret % alignment) {
-        panic("Memory alloc align bad");
-    }
-
-    memset(ret, 0, count);
-
-    return ret;
-}
-#endif
 
 bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only, bool do_panic) {
     uint64_t top = base + length;

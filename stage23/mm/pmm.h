@@ -13,16 +13,10 @@
 #define MEMMAP_BAD_MEMORY             5
 #define MEMMAP_BOOTLOADER_RECLAIMABLE 0x1000
 #define MEMMAP_KERNEL_AND_MODULES     0x1001
+#define MEMMAP_EFI_RECLAIMABLE        0x2000
 
 extern struct e820_entry_t memmap[];
 extern size_t memmap_entries;
-
-#if defined (uefi)
-#include <efi.h>
-
-bool pmm_mmap_efi2ours(EFI_MEMORY_DESCRIPTOR *efi_mmap,
-                       size_t desc_size, size_t entry_count);
-#endif
 
 void init_memmap(void);
 struct e820_entry_t *get_memmap(size_t *entries);

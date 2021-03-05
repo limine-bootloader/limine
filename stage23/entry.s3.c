@@ -32,6 +32,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
     print("Limine " LIMINE_VERSION "\n\n", print);
 
+    init_memmap();
+
     disk_create_index();
 
     EFI_GUID loaded_img_prot_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
@@ -87,10 +89,6 @@ void stage3_common(struct volume *boot_volume) {
 
     char *cmdline;
     char *config = menu(&cmdline);
-
-#if defined (uefi)
-    efi_exit_boot_services();
-#endif
 
     char *proto = config_get_value(config, 0, "PROTOCOL");
     if (proto == NULL) {

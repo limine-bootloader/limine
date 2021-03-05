@@ -142,6 +142,13 @@ static struct iso9660_directory_entry *iso9660_find(void *buffer, uint32_t size,
     finalfile[len + 0] = ';';
     finalfile[len + 1] = '1';
 
+    // Now, in case the file doesn't have extension
+    char finalfile_noext[len+3];
+    strcpy(finalfile_noext, filename);
+    finalfile_noext[len + 0] = '.';
+    finalfile_noext[len + 1] = ';';
+    finalfile_noext[len + 2] = '1';
+
     while (size) {
         struct iso9660_directory_entry *entry = buffer;
         char* entry_filename = (char*)entry + sizeof(struct iso9660_directory_entry);
@@ -151,6 +158,8 @@ static struct iso9660_directory_entry *iso9660_find(void *buffer, uint32_t size,
         } else if (entry->filename_size == len && !iso9660_strcmp(filename, entry_filename, len)) {
             return buffer;
         } else if (entry->filename_size == len+2 && !iso9660_strcmp(finalfile, entry_filename, len+2)) {
+            return buffer;
+        } else if (entry->filename_size == len+3 && !iso9660_strcmp(finalfile_noext, entry_filename, len+3)) {
             return buffer;
         } else {
             size -= entry->length;

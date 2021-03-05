@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <drivers/vbe.h>
+#include <drivers/edid.h>
 #include <lib/libc.h>
 #include <lib/blib.h>
 #include <lib/real.h>
@@ -12,7 +13,6 @@
 #include <lib/config.h>
 #include <lib/uri.h>
 #include <mm/pmm.h>
-#include <mm/mtrr.h>
 
 struct vbe_info_struct {
     char     signature[4];
@@ -115,49 +115,6 @@ static int set_vbe_mode(uint16_t mode) {
     return r.eax & 0xff;
 }
 
-struct edid_info_struct {
-    uint8_t padding[8];
-    uint16_t manufacturer_id_be;
-    uint16_t edid_id_code;
-    uint32_t serial_num;
-    uint8_t man_week;
-    uint8_t man_year;
-    uint8_t edid_version;
-    uint8_t edid_revision;
-    uint8_t video_input_type;
-    uint8_t max_hor_size;
-    uint8_t max_ver_size;
-    uint8_t gamma_factor;
-    uint8_t dpms_flags;
-    uint8_t chroma_info[10];
-    uint8_t est_timings1;
-    uint8_t est_timings2;
-    uint8_t man_res_timing;
-    uint16_t std_timing_id[8];
-    uint8_t det_timing_desc1[18];
-    uint8_t det_timing_desc2[18];
-    uint8_t det_timing_desc3[18];
-    uint8_t det_timing_desc4[18];
-    uint8_t unused;
-    uint8_t checksum;
-} __attribute__((packed));
-
-static int get_edid_info(struct edid_info_struct *buf) {
-    struct rm_regs r = {0};
-
-    r.eax = 0x4f15;
-    r.ebx = 0x0001;
-    r.edi = (uint32_t)buf;
-    rm_int(0x10, &r, &r);
-
-    if ((r.eax & 0x00ff) != 0x4f)
-        return -1;
-    if ((r.eax & 0xff00) != 0)
-        return -1;
-
-    return 0;
-}
-
 struct resolution {
     uint16_t width;
     uint16_t height;
@@ -185,16 +142,16 @@ bool init_vbe(struct fb_info *ret,
     print("vbe: Product name: %s\n", (char *)rm_desegment(vbe_info.prod_name_seg, vbe_info.prod_name_off));
     print("vbe: Product revision: %s\n", (char *)rm_desegment(vbe_info.prod_rev_seg, vbe_info.prod_rev_off));
 
-    struct edid_info_struct edid_info;
     if (!target_width || !target_height || !target_bpp) {
         target_width  = 1024;
         target_height = 768;
         target_bpp    = 32;
-        if (!get_edid_info(&edid_info)) {
-            int edid_width   = (int)edid_info.det_timing_desc1[2];
-                edid_width  += ((int)edid_info.det_timing_desc1[4] & 0xf0) << 4;
-            int edid_height  = (int)edid_info.det_timing_desc1[5];
-                edid_height += ((int)edid_info.det_timing_desc1[7] & 0xf0) << 4;
+        struct edid_info_struct *edid_info = get_edid_info();
+        if (edid_info != NULL) {
+            int edid_width   = (int)edid_info->det_timing_desc1[2];
+                edid_width  += ((int)edid_info->det_timing_desc1[4] & 0xf0) << 4;
+            int edid_height  = (int)edid_info->det_timing_desc1[5];
+                edid_height += ((int)edid_info->det_timing_desc1[7] & 0xf0) << 4;
             if (edid_width && edid_height) {
                 target_width  = edid_width;
                 target_height = edid_height;

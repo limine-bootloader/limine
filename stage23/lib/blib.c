@@ -7,11 +7,13 @@
 #include <lib/trace.h>
 #include <lib/real.h>
 #include <fs/file.h>
+#include <mm/pmm.h>
 
 #if defined (uefi)
 EFI_SYSTEM_TABLE *gST;
 EFI_BOOT_SERVICES *gBS;
 EFI_RUNTIME_SERVICES *gRT;
+EFI_HANDLE efi_image_handle;
 #endif
 
 bool parse_resolution(int *width, int *height, int *bpp, const char *buf) {
@@ -63,3 +65,33 @@ uint64_t sqrt(uint64_t a_nInput) {
 
     return res;
 }
+
+#if defined (uefi)
+
+bool efi_boot_services_exited = false;
+
+bool efi_exit_boot_services(void) {
+    EFI_MEMORY_DESCRIPTOR tmp_mmap[1];
+    UINTN mmap_size = sizeof(tmp_mmap);
+    UINTN mmap_key = 0, desc_size = 0, desc_ver = 0;
+
+    uefi_call_wrapper(gBS->GetMemoryMap, 5,
+        &mmap_size, tmp_mmap, &mmap_key, &desc_size, &desc_ver);
+
+    EFI_MEMORY_DESCRIPTOR *efi_mmap = ext_mem_alloc(mmap_size);
+
+    uefi_call_wrapper(gBS->GetMemoryMap, 5,
+        &mmap_size, efi_mmap, &mmap_key, &desc_size, &desc_ver);
+
+    uefi_call_wrapper(gBS->ExitBootServices, 2, efi_image_handle, mmap_key);
+
+    pmm_mmap_efi2ours(efi_mmap, desc_size, mmap_size / desc_size);
+
+    efi_boot_services_exited = true;
+
+    print("efi: Exited boot services.\n");
+
+    return true;
+}
+
+#endif

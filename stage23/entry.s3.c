@@ -28,6 +28,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     gST = SystemTable;
     gBS = SystemTable->BootServices;
     gRT = SystemTable->RuntimeServices;
+    efi_image_handle = ImageHandle;
 
     print("Limine " LIMINE_VERSION "\n\n", print);
 
@@ -86,6 +87,10 @@ void stage3_common(struct volume *boot_volume) {
 
     char *cmdline;
     char *config = menu(&cmdline);
+
+#if defined (uefi)
+    efi_exit_boot_services();
+#endif
 
     char *proto = config_get_value(config, 0, "PROTOCOL");
     if (proto == NULL) {

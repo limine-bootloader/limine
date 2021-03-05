@@ -14,6 +14,10 @@
 extern EFI_SYSTEM_TABLE *gST;
 extern EFI_BOOT_SERVICES *gBS;
 extern EFI_RUNTIME_SERVICES *gRT;
+extern EFI_HANDLE efi_image_handle;
+
+extern bool efi_boot_services_exited;
+bool efi_exit_boot_services(void);
 #endif
 
 extern int boot_drive;

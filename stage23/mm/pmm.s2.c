@@ -214,9 +214,8 @@ void *ext_mem_alloc_type(size_t count, uint32_t type) {
     return ext_mem_alloc_aligned_type(count, 4, type);
 }
 
-#if defined (bios)
 // Allocate memory top down, hopefully without bumping into kernel or modules
-void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) {
+static void *_ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) {
     if (allocations_disallowed)
         panic("Extended memory allocations disallowed");
 
@@ -257,11 +256,63 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
 
     panic("High memory allocator: Out of memory");
 }
+
+#if defined (bios)
+void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) {
+    return _ext_mem_alloc_aligned_type(count, alignment, type);
+}
 #endif
 
 #if defined (uefi)
+bool pmm_mmap_efi2ours(EFI_MEMORY_DESCRIPTOR *efi_mmap,
+                       size_t desc_size, size_t entry_count) {
+    for (size_t i = 0; i < entry_count; i++) {
+        EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * desc_size;
+
+        uint32_t our_type;
+        switch (entry->Type) {
+            case EfiReservedMemoryType:
+            case EfiRuntimeServicesCode:
+            case EfiRuntimeServicesData:
+            case EfiUnusableMemory:
+            case EfiMemoryMappedIO:
+            case EfiMemoryMappedIOPortSpace:
+            case EfiPalCode:
+            default:
+                our_type = MEMMAP_RESERVED; break;
+            case EfiBootServicesCode:
+            case EfiBootServicesData:
+            case EfiLoaderCode:
+            case EfiLoaderData:
+                our_type = MEMMAP_BOOTLOADER_RECLAIMABLE; break;
+            case EfiACPIReclaimMemory:
+                our_type = MEMMAP_ACPI_RECLAIMABLE; break;
+            case EfiACPIMemoryNVS:
+                our_type = MEMMAP_ACPI_NVS; break;
+            case EfiConventionalMemory:
+                our_type = MEMMAP_USABLE; break;
+        }
+
+        memmap[memmap_entries].type = our_type;
+        memmap[memmap_entries].base = entry->PhysicalStart;
+        memmap[memmap_entries].length = entry->NumberOfPages * 4096;
+
+        memmap_entries++;
+    }
+
+    sanitise_entries(false);
+
+    print_memmap(memmap, memmap_entries);
+
+    allocations_disallowed = false;
+
+    return true;
+}
+
 void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) {
-    (void)type;
+    if (efi_boot_services_exited) {
+        return _ext_mem_alloc_aligned_type(count, alignment, type);
+    }
 
     EFI_STATUS status;
 
@@ -275,7 +326,11 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
     }
 
     if (status) {
-        panic("Memory allocation error %x\n", status);
+        panic("Memory allocation error %x", status);
+    }
+
+    if ((uintptr_t)ret % alignment) {
+        panic("Memory alloc align bad");
     }
 
     memset(ret, 0, count);

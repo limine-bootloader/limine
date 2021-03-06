@@ -124,9 +124,9 @@ limine.elf: $(OBJ) font.o sys/smp_trampoline.o limine.map.o
 limine_efi.elf: $(OBJ) font.o sys/smp_trampoline.o
 	$(LD) -shared -Bsymbolic \
 		-T../gnu-efi/gnuefi/elf_x86_64_efi.lds \
-		../gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o \
-		../gnu-efi/x86_64/gnuefi/libgnuefi.a \
-		../gnu-efi/x86_64/lib/x86_64/efi_stub.o \
+		../gnu-efi/gnuefi/crt0-efi-x86_64.o \
+		../gnu-efi/gnuefi/libgnuefi.a \
+		../gnu-efi/lib/x86_64/efi_stub.o \
 		$(OBJ) font.o sys/smp_trampoline.o -o $@
 
 -include $(HEADER_DEPS)

@@ -68,11 +68,12 @@ test-clean:
 	rm -rf test_image test.hdd test.iso
 
 toolchain:
-	./make_toolchain.sh ./toolchain -j`nproc`
+	scripts/make_toolchain.sh "`realpath ./toolchain`" -j`nproc`
 
 gnu-efi:
 	git clone https://git.code.sf.net/p/gnu-efi/code --branch=3.0.12 --depth=1 $@
-	$(MAKE) -C gnu-efi
+	$(MAKE) -C gnu-efi/gnuefi CC=x86_64-elf-gcc AR=x86_64-elf-ar
+	$(MAKE) -C gnu-efi/lib CC=x86_64-elf-gcc ARCH=x86_64 x86_64/efi_stub.o
 
 ovmf:
 	mkdir -p ovmf

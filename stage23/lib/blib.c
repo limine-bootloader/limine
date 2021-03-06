@@ -71,6 +71,8 @@ uint64_t sqrt(uint64_t a_nInput) {
 bool efi_boot_services_exited = false;
 
 bool efi_exit_boot_services(void) {
+    EFI_STATUS status;
+
     EFI_MEMORY_DESCRIPTOR tmp_mmap[1];
     UINTN mmap_size = sizeof(tmp_mmap);
     UINTN mmap_key = 0, desc_size = 0, desc_ver = 0;
@@ -78,7 +80,12 @@ bool efi_exit_boot_services(void) {
     uefi_call_wrapper(gBS->GetMemoryMap, 5,
         &mmap_size, tmp_mmap, &mmap_key, &desc_size, &desc_ver);
 
-    uefi_call_wrapper(gBS->ExitBootServices, 2, efi_image_handle, mmap_key);
+    status = uefi_call_wrapper(gBS->ExitBootServices, 2, efi_image_handle, mmap_key);
+
+    if (status)
+        panic("efi: Failed to exit boot services\n");
+
+    asm volatile ("cli" ::: "memory");
 
     efi_boot_services_exited = true;
 

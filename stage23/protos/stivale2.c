@@ -376,6 +376,6 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
             break;
     }
 
-    stivale_spinup(bits, level5pg && level5pg_requested, pagemap,
+    stivale_spinup(bits, level5pg && level5pg_requested, &pagemap,
                    entry_point, &stivale2_struct, stivale2_hdr.stack);
 }

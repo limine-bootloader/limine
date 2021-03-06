@@ -8,6 +8,7 @@
 #include <lib/print.h>
 #include <sys/smp.h>
 #include <sys/lapic.h>
+#include <sys/gdt.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>
 #include <mm/mtrr.h>
@@ -37,11 +38,6 @@ struct madt_x2apic {
     uint32_t x2apic_id;
     uint32_t flags;
     uint32_t acpi_processor_uid;
-} __attribute__((packed));
-
-struct gdtr {
-    uint16_t limit;
-    uint32_t ptr;
 } __attribute__((packed));
 
 static void delay(uint32_t cycles) {

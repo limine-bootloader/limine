@@ -8,6 +8,8 @@ else
 	$(error Invalid target)
 endif
 
+CC32 = i386-elf-gcc
+
 CC = $(TOOLCHAIN)-gcc
 LD = $(TOOLCHAIN)-ld
 OBJCOPY = $(TOOLCHAIN)-objcopy
@@ -76,6 +78,9 @@ C_FILES := $(shell find -L ./ -type f -name '*.c' | sort)
 ifeq ($(TARGET), bios)
 ASM_FILES := $(shell find -L ./ -type f -name '*.asm' | sort)
 endif
+ifeq ($(TARGET), uefi)
+ASM_FILES := lib/do_32.asm
+endif
 OBJ := $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o)
 HEADER_DEPS := $(C_FILES:.c=.d)
 
@@ -139,8 +144,21 @@ ifeq ($(TARGET), bios)
 	$(CC) $(S2CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 endif
 
+ifeq ($(TARGET), uefi)
+%.32.o: %.32.c
+	$(CC32) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@.32
+	$(OBJCOPY) -I elf32-i386 -O elf64-x86-64 $@.32 $@
+	rm $@.32
+endif
+
+ifeq ($(TARGET), bios)
 %.o: %.asm
 	nasm $< -F dwarf -g -f elf32 -o $@
+endif
+ifeq ($(TARGET), uefi)
+%.o: %.asm
+	nasm $< -F dwarf -g -f elf64 -o $@
+endif
 
 clean:
 	rm -f limine.elf limine_efi.elf limine_dbg.elf limine_nomap.elf limine_stage2only.elf font.o limine.map.o limine.sys stage2.bin stage2.bin.gz BOOTX64.EFI sys/smp_trampoline.bin sys/smp_trampoline.o $(OBJ) $(HEADER_DEPS)

@@ -16,6 +16,7 @@
 #include <lib/term.h>
 #include <sys/pic.h>
 #include <sys/cpu.h>
+#include <sys/gdt.h>
 #include <fs/file.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>
@@ -199,7 +200,7 @@ void stivale_load(char *config, char *cmdline) {
     stivale_struct.memory_map_entries = (uint64_t)memmap_entries;
     stivale_struct.memory_map_addr    = (uint64_t)(size_t)memmap;
 
-    stivale_spinup(bits, want_5lv, pagemap,
+    stivale_spinup(bits, want_5lv, &pagemap,
                    entry_point, &stivale_struct, stivale_hdr.stack);
 }
 
@@ -244,8 +245,17 @@ pagemap_t stivale_build_pagemap(bool level5pg) {
     return pagemap;
 }
 
+#if defined (uefi)
+extern symbol ImageBase;
+#endif
+
+__attribute__((noreturn)) void stivale_spinup_32(
+                 int bits, bool level5pg, uint32_t pagemap_top_lv,
+                 uint32_t entry_point_lo, uint32_t entry_point_hi,
+                 void *stivale_struct, uint32_t stack_lo, uint32_t stack_hi);
+
 __attribute__((noreturn)) void stivale_spinup(
-                 int bits, bool level5pg, pagemap_t pagemap,
+                 int bits, bool level5pg, pagemap_t *pagemap,
                  uint64_t entry_point, void *stivale_struct, uint64_t stack) {
     mtrr_restore();
 
@@ -261,120 +271,36 @@ __attribute__((noreturn)) void stivale_spinup(
     }
 #endif
 
+#if defined (uefi)
+    efi_exit_boot_services();
+#endif
+
     pic_mask_all();
     pic_flush();
 
-#if defined (bios)
-    if (bits == 64) {
-        if (level5pg) {
-            // Enable CR4.LA57
-            asm volatile (
-                "mov eax, cr4\n\t"
-                "bts eax, 12\n\t"
-                "mov cr4, eax\n\t" ::: "eax", "memory"
-            );
-        }
+#if defined (uefi)
+    gdt.ptr += (uintptr_t)ImageBase;
 
-        asm volatile (
-            "cli\n\t"
-            "cld\n\t"
-            "mov cr3, eax\n\t"
-            "mov eax, cr4\n\t"
-            "or eax, 1 << 5\n\t"
-            "mov cr4, eax\n\t"
-            "mov ecx, 0xc0000080\n\t"
-            "rdmsr\n\t"
-            "or eax, 1 << 8\n\t"
-            "wrmsr\n\t"
-            "mov eax, cr0\n\t"
-            "or eax, 1 << 31\n\t"
-            "mov cr0, eax\n\t"
-            "jmp 0x28:1f\n\t"
-            "1: .code64\n\t"
-            "mov ax, 0x30\n\t"
-            "mov ds, ax\n\t"
-            "mov es, ax\n\t"
-            "mov fs, ax\n\t"
-            "mov gs, ax\n\t"
-            "mov ss, ax\n\t"
+    asm volatile (
+        "lgdt %0\n\t"
+        :
+        : "m"(gdt)
+        : "memory"
+    );
 
-            // Since we don't really know what is now present in the upper
-            // 32 bits of the 64 bit registers, clear up the upper bits
-            // of the registers we use to store stack pointer and instruction
-            // pointer
-            "mov esi, esi\n\t"
-            "mov ebx, ebx\n\t"
-            "mov edi, edi\n\t"
-
-            // Let's pretend we push a return address
-            "mov rsi, qword ptr [rsi]\n\t"
-            "test rsi, rsi\n\t"
-            "jz 1f\n\t"
-
-            "sub rsi, 8\n\t"
-            "mov qword ptr [rsi], 0\n\t"
-
-            "1:\n\t"
-            "push 0x30\n\t"
-            "push rsi\n\t"
-            "pushfq\n\t"
-            "push 0x28\n\t"
-            "push [rbx]\n\t"
-
-            "xor rax, rax\n\t"
-            "xor rbx, rbx\n\t"
-            "xor rcx, rcx\n\t"
-            "xor rdx, rdx\n\t"
-            "xor rsi, rsi\n\t"
-            "xor rbp, rbp\n\t"
-            "xor r8,  r8\n\t"
-            "xor r9,  r9\n\t"
-            "xor r10, r10\n\t"
-            "xor r11, r11\n\t"
-            "xor r12, r12\n\t"
-            "xor r13, r13\n\t"
-            "xor r14, r14\n\t"
-            "xor r15, r15\n\t"
-
-            "iretq\n\t"
-            ".code32\n\t"
-            :
-            : "a" (pagemap.top_level), "b" (&entry_point),
-              "D" (stivale_struct), "S" (&stack)
-            : "memory"
-        );
-    } else if (bits == 32) {
-        asm volatile (
-            "cli\n\t"
-            "cld\n\t"
-
-            "mov esp, dword ptr [esi]\n\t"
-            "push edi\n\t"
-            "push 0\n\t"
-
-            "pushfd\n\t"
-            "push 0x18\n\t"
-            "push [ebx]\n\t"
-
-            "xor eax, eax\n\t"
-            "xor ebx, ebx\n\t"
-            "xor ecx, ecx\n\t"
-            "xor edx, edx\n\t"
-            "xor esi, esi\n\t"
-            "xor edi, edi\n\t"
-            "xor ebp, ebp\n\t"
-
-            "iret\n\t"
-            :
-            : "b"(&entry_point), "D"(stivale_struct), "S"(&stack)
-            : "memory"
-        );
-    }
-#elif defined (uefi)
-    (void)bits; (void)level5pg; (void)pagemap; (void)entry_point;
-    (void)stivale_struct; (void)stack;
-
+    do_32(stivale_spinup_32, 8,
+        bits, level5pg, (uint32_t)(uintptr_t)pagemap->top_level,
+        (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
+        stivale_struct,
+        (uint32_t)stack, (uint32_t)(stack >> 32));
 #endif
 
-    for (;;);
+#if defined (bios)
+    stivale_spinup_32(bits, level5pg, (uint32_t)(uintptr_t)pagemap->top_level,
+        (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
+        stivale_struct,
+        (uint32_t)stack, (uint32_t)(stack >> 32));
+#endif
+
+    __builtin_unreachable();
 }

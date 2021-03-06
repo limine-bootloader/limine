@@ -329,8 +329,6 @@ int main(int argc, char *argv[]) {
     // Default split of stage2 for MBR (consecutive in post MBR gap)
     uint64_t stage2_loc_a = 512;
     uint64_t stage2_loc_b = stage2_loc_a + stage2_size_a;
-    if (stage2_loc_b & (512 - 1))
-        stage2_loc_b = (stage2_loc_b + 512) & ~(512 - 1);
 
     if (gpt) {
         if (argc > 3) {
@@ -453,7 +451,7 @@ int main(int argc, char *argv[]) {
     // Write the rest of stage 2 to the device
     device_write(&bootloader_img[512], stage2_loc_a, stage2_size_a);
     device_write(&bootloader_img[512 + stage2_size_a],
-                 stage2_loc_b, stage2_size_b);
+                 stage2_loc_b, stage2_size - stage2_size_a);
 
     // Hardcode in the bootsector the location of stage 2 halves
     device_write(&stage2_size_a, 0x1a4 + 0,  sizeof(uint16_t));

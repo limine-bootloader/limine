@@ -61,5 +61,8 @@ static struct gdt_desc gdt_descs[] = {
 
 struct gdtr gdt = {
     sizeof(gdt_descs) - 1,
-    (uintptr_t)gdt_descs
+    (uintptr_t)gdt_descs,
+#if defined (bios)
+    0
+#endif
 };

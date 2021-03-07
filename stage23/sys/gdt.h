@@ -5,7 +5,13 @@
 
 struct gdtr {
     uint16_t limit;
+#if defined (uefi)
     uint64_t ptr;
+#endif
+#if defined (bios)
+    uint32_t ptr;
+    uint32_t pad;
+#endif
 } __attribute__((packed));
 
 struct gdt_desc {

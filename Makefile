@@ -3,13 +3,12 @@ OBJCOPY = objcopy
 CFLAGS = -O2 -pipe -Wall -Wextra
 PREFIX = /usr/local
 DESTDIR =
-TARGET = bios
 
 PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
-.PHONY: all clean install tinf-clean bootloader bootloader-clean distclean stage23 stage23-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat32-test iso9660-test
+.PHONY: all clean install distclean limine-bios limine-uefi limine-bios-clean limine-uefi-clean stage23-bios stage23-bios-clean stage23-uefi stage23-uefi-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat32-test iso9660-test
 
-all: bin/limine-install
+all: limine-uefi | limine-bios bin/limine-install
 
 bin/limine-install: limine-install.c limine-hdd.o
 	$(CC) $(CFLAGS) -std=c11 limine-hdd.o limine-install.c -o $@
@@ -17,51 +16,56 @@ bin/limine-install: limine-install.c limine-hdd.o
 limine-hdd.o: bin/limine-hdd.bin
 	$(OBJCOPY) -B i8086 -I binary -O default bin/limine-hdd.bin $@
 
-clean:
+clean: limine-bios-clean limine-uefi-clean
 	rm -f limine-hdd.o
 
 install: all
 	install -d $(DESTDIR)$(PREFIX)/bin
-	install -s limine-install $(DESTDIR)$(PREFIX)/bin/
+	install -s bin/limine-install $(DESTDIR)$(PREFIX)/bin/
 	install -d $(DESTDIR)$(PREFIX)/share
 	install -m 644 bin/limine.sys $(DESTDIR)$(PREFIX)/share/
 	install -m 644 bin/limine-cd.bin $(DESTDIR)$(PREFIX)/share/
 	install -m 644 bin/limine-pxe.bin $(DESTDIR)$(PREFIX)/share/
+	install -m 644 bin/BOOTX64.EFI $(DESTDIR)$(PREFIX)/share/
 
-ifeq ($(TARGET), bios)
-bootloader: | decompressor stage23
+limine-bios: stage23-bios decompressor
 	mkdir -p bin
 	cd stage1/hdd && nasm bootsect.asm -fbin -o ../../bin/limine-hdd.bin
 	cd stage1/cd  && nasm bootsect.asm -fbin -o ../../bin/limine-cd.bin
 	cd stage1/pxe && nasm bootsect.asm -fbin -o ../../bin/limine-pxe.bin
-	cp stage23/limine.sys ./bin/
-else ifeq ($(TARGET), uefi)
-bootloader: | gnu-efi stage23
+	cp build/stage23-bios/limine.sys ./bin/
+
+limine-uefi: | gnu-efi stage23-uefi
 	mkdir -p bin
-	cp stage23/BOOTX64.EFI ./bin/
-endif
+	cp build/stage23-uefi/BOOTX64.EFI ./bin/
 
-bootloader-clean: stage23-clean decompressor-clean
+limine-bios-clean: stage23-bios-clean decompressor-clean
 
-distclean: clean bootloader-clean test-clean
-	rm -rf bin stivale toolchain ovmf gnu-efi
+limine-uefi-clean: stage23-uefi-clean
+
+distclean: clean test-clean
+	rm -rf bin build stivale toolchain ovmf gnu-efi
 
 stivale:
 	git clone https://github.com/stivale/stivale.git
 
-stage23: stivale
-	cd tinf && rm -rf *.o *.d
-	$(MAKE) -C stage23 all TARGET=$(TARGET)
+stage23-uefi: stivale
+	$(MAKE) -C stage23 all TARGET=uefi BUILDDIR="`pwd`/build/stage23-uefi"
 
-stage23-clean:
-	$(MAKE) -C stage23 clean
+stage23-uefi-clean:
+	$(MAKE) -C stage23 clean TARGET=uefi BUILDDIR="`pwd`/build/stage23-uefi"
+
+stage23-bios: stivale
+	$(MAKE) -C stage23 all TARGET=bios BUILDDIR="`pwd`/build/stage23-bios"
+
+stage23-bios-clean:
+	$(MAKE) -C stage23 clean TARGET=bios BUILDDIR="`pwd`/build/stage23-bios"
 
 decompressor:
-	cd tinf && rm -rf *.o *.d
-	$(MAKE) -C decompressor all
+	$(MAKE) -C decompressor all BUILDDIR="`pwd`/build/decompressor"
 
 decompressor-clean:
-	$(MAKE) -C decompressor clean
+	$(MAKE) -C decompressor clean BUILDDIR="`pwd`/build/decompressor"
 
 test-clean:
 	$(MAKE) -C test clean

@@ -103,12 +103,12 @@ pmode:
 ; Align stage2 to 2K ON DISK
 ALIGN2K
 DEC_LBA_OFFSET equ ($-$$)/2048
-incbin '../../decompressor/decompressor.bin'
+incbin '../../build/decompressor/decompressor.bin'
 
 ALIGN2K
 STAGE2_START equ $-$$
 STAGE2_LBA_OFFSET equ STAGE2_START/2048
 DEC_LBA_COUNT equ STAGE2_LBA_OFFSET - DEC_LBA_OFFSET
-incbin '../../stage23/stage2.bin.gz'
+incbin '../../build/stage23-bios/stage2.bin.gz'
 STAGE2_SIZE equ ($-$$) - STAGE2_START
 STAGE2_LBA_COUNT equ (2047 + $-$$)/2048

@@ -55,10 +55,10 @@ err:
 ; ********************* Stage 2 *********************
 
 decompressor:
-incbin '../../decompressor/decompressor.bin'
+incbin '../../build/decompressor/decompressor.bin'
 
 align 16
 stage2:
-incbin '../../stage23/stage2.bin.gz'
+incbin '../../build/stage23-bios/stage2.bin.gz'
 .size: equ $ - stage2
 .fullsize: equ $ - decompressor

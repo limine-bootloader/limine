@@ -1,4 +1,5 @@
 TARGET = bios
+BUILDDIR = .
 
 ifeq ($(TARGET), bios)
 	TOOLCHAIN=i386-elf
@@ -72,7 +73,7 @@ ifeq ($(TARGET), bios)
 		-static-libgcc
 endif
 
-.PHONY: all clean
+.PHONY: all clean builddir
 
 C_FILES := $(shell find -L ./ -type f -name '*.c' | sort)
 ifeq ($(TARGET), bios)
@@ -81,84 +82,101 @@ endif
 ifeq ($(TARGET), uefi)
 ASM_FILES := lib/do_32.asm
 endif
-OBJ := $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o)
-HEADER_DEPS := $(C_FILES:.c=.d)
+OBJ := $(addprefix $(BUILDDIR)/, $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o))
+HEADER_DEPS := $(addprefix $(BUILDDIR)/, $(C_FILES:.c=.d))
 
 ifeq ($(TARGET), bios)
-all: limine_dbg.elf limine.sys stage2.bin stage2.bin.gz
+all: | builddir everything
+.PHONY: everything
+everything: $(BUILDDIR)/limine_dbg.elf $(BUILDDIR)/limine.sys $(BUILDDIR)/stage2.bin $(BUILDDIR)/stage2.bin.gz
 else ifeq ($(TARGET), uefi)
-all: BOOTX64.EFI
+all: | builddir $(BUILDDIR)/BOOTX64.EFI
 endif
 
-BOOTX64.EFI: limine_efi.elf
-	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym  -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 limine_efi.elf $@
+builddir:
+	for i in $(OBJ); do mkdir -p `dirname $$i`; done
 
-stage2.bin.gz: stage2.bin
-	gzip -n -9 < stage2.bin > stage2.bin.gz
+$(BUILDDIR)/sys/smp_trampoline.bin: sys/smp_trampoline.real
+	nasm $< -f bin -o $@
 
-stage2.bin: limine.sys
-	dd if=limine.sys bs=$$(( 0x$$($(READELF) -S limine.elf | grep .stage3.text | sed 's/^.*] //' | awk '{print $$3}' | sed 's/^0*//') - 0x8000 )) count=1 of=$@
+$(BUILDDIR)/sys/smp_trampoline.o: $(BUILDDIR)/sys/smp_trampoline.bin
+	cd "`dirname $<`" && \
+		$(OBJCOPY) -B i8086 -I binary -O default "`basename $<`" $@
 
-limine.map.o: limine_nomap.elf
-	./gensyms.sh $(OBJDUMP) limine_nomap.elf limine
+$(BUILDDIR)/font.o: font.bin
+	cd "`dirname $<`" && \
+		$(OBJCOPY) -B i8086 -I binary -O default "`basename $<`" $@
 
-limine.sys: limine.elf
+ifeq ($(TARGET), bios)
+
+$(BUILDDIR)/stage2.bin.gz: $(BUILDDIR)/stage2.bin
+	gzip -n -9 < $< > $@
+
+$(BUILDDIR)/stage2.bin: $(BUILDDIR)/limine.sys
+	dd if=$< bs=$$(( 0x$$($(READELF) -S $(BUILDDIR)/limine.elf | grep .stage3.text | sed 's/^.*] //' | awk '{print $$3}' | sed 's/^0*//') - 0x8000 )) count=1 of=$@
+
+$(BUILDDIR)/limine.map.o: $(BUILDDIR)/limine_nomap.elf
+	GENSYMS="`pwd`/gensyms.sh" && \
+	cd "`dirname $<`" && \
+	"$$GENSYMS" $(OBJDUMP) $< limine
+
+$(BUILDDIR)/limine.sys: $(BUILDDIR)/limine.elf
 	$(OBJCOPY) -O binary $< $@
 
-limine_nomap.elf: $(OBJ) font.o sys/smp_trampoline.o
-	$(CC) $(OBJ) font.o sys/smp_trampoline.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
-	$(CC) $(OBJ) font.o sys/smp_trampoline.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Wl,--gc-sections -Tlinker_stage2only.ld -o limine_stage2only.elf || \
+$(BUILDDIR)/limine_nomap.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
+	$(CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
+	$(CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Wl,--gc-sections -Tlinker_stage2only.ld -o limine_stage2only.elf || \
 		( echo "This error means that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
 		  false )
 
-limine_dbg.elf: $(OBJ) font.o sys/smp_trampoline.o
-	$(CC) $(OBJ) font.o sys/smp_trampoline.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o $@
+$(BUILDDIR)/limine.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/limine.map.o
+	$(CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o $@
 
-sys/smp_trampoline.o: sys/smp_trampoline.bin
-	$(OBJCOPY) -B i8086 -I binary -O default sys/smp_trampoline.bin $@
+$(BUILDDIR)/limine_dbg.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
+	$(CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o $@
 
-sys/smp_trampoline.bin: sys/smp_trampoline.real
-	nasm $< -f bin -o $@
+endif
 
-font.o: font.bin
-	$(OBJCOPY) -B i8086 -I binary -O default font.bin $@
+ifeq ($(TARGET), uefi)
 
-limine.elf: $(OBJ) font.o sys/smp_trampoline.o limine.map.o
-	$(CC) $(OBJ) font.o sys/smp_trampoline.o limine.map.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o $@
+$(BUILDDIR)/BOOTX64.EFI: $(BUILDDIR)/limine_efi.elf
+	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym  -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 $< $@
 
-limine_efi.elf: $(OBJ) font.o sys/smp_trampoline.o
+$(BUILDDIR)/limine_efi.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
 	$(LD) -shared -Bsymbolic \
 		-T../gnu-efi/gnuefi/elf_x86_64_efi.lds \
 		../gnu-efi/gnuefi/crt0-efi-x86_64.o \
 		../gnu-efi/gnuefi/libgnuefi.a \
 		../gnu-efi/lib/x86_64/efi_stub.o \
-		$(OBJ) font.o sys/smp_trampoline.o -o $@
+		$^ -o $@
+
+endif
 
 -include $(HEADER_DEPS)
 
-%.o: %.c
+$(addprefix $(BUILDDIR)/, %.o): %.c
 	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 
 ifeq ($(TARGET), bios)
-%.s2.o: %.s2.c
+$(addprefix $(BUILDDIR)/, %.s2.o): %.s2.c
 	$(CC) $(S2CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 endif
 
 ifeq ($(TARGET), uefi)
-%.32.o: %.32.c
+$(addprefix $(BUILDDIR)/, %.32.o): %.32.c
 	$(CC32) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@.32
 	$(OBJCOPY) -I elf32-i386 -O elf64-x86-64 $@.32 $@
 	rm $@.32
 endif
 
 ifeq ($(TARGET), bios)
-%.o: %.asm
+$(addprefix $(BUILDDIR)/, %.o): %.asm
 	nasm $< -F dwarf -g -f elf32 -o $@
 endif
 ifeq ($(TARGET), uefi)
-%.o: %.asm
+$(addprefix $(BUILDDIR)/, %.o): %.asm
 	nasm $< -F dwarf -g -f elf64 -o $@
 endif
 
 clean:
-	rm -f limine.elf limine_efi.elf limine_dbg.elf limine_nomap.elf limine_stage2only.elf font.o limine.map.o limine.sys stage2.bin stage2.bin.gz BOOTX64.EFI sys/smp_trampoline.bin sys/smp_trampoline.o $(OBJ) $(HEADER_DEPS)
+	rm -rf $(BUILDDIR)

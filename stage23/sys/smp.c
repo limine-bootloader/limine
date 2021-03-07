@@ -45,8 +45,8 @@ static void delay(uint32_t cycles) {
         inb(0x80);
 }
 
-extern symbol _binary_sys_smp_trampoline_bin_start;
-extern symbol _binary_sys_smp_trampoline_bin_end;
+extern symbol _binary_smp_trampoline_bin_start;
+extern symbol _binary_smp_trampoline_bin_end;
 
 struct trampoline_passed_info {
     uint8_t  smp_tpl_booted_flag;
@@ -62,15 +62,15 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
                          struct smp_information *info_struct,
                          bool longmode, bool lv5, uint32_t pagemap,
                          bool x2apic) {
-    size_t trampoline_size = (size_t)_binary_sys_smp_trampoline_bin_end
-                           - (size_t)_binary_sys_smp_trampoline_bin_start;
+    size_t trampoline_size = (size_t)_binary_smp_trampoline_bin_end
+                           - (size_t)_binary_smp_trampoline_bin_start;
 
     // Prepare the trampoline
     static void *trampoline = NULL;
     if (trampoline == NULL) {
         trampoline = conv_mem_alloc_aligned(trampoline_size, 4096);
 
-        memcpy(trampoline, _binary_sys_smp_trampoline_bin_start, trampoline_size);
+        memcpy(trampoline, _binary_smp_trampoline_bin_start, trampoline_size);
     }
 
     static struct trampoline_passed_info *passed_info = NULL;

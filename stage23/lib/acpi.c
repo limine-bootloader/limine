@@ -6,13 +6,15 @@
 #include <lib/libc.h>
 #include <lib/print.h>
 
-// Following function based on https://github.com/qword-os/lai/blob/master/helpers/pc-bios.c's function lai_bios_calc_checksum()
+// Following function based on https://github.com/managarm/lai/blob/master/helpers/pc-bios.c's function lai_bios_calc_checksum()
 uint8_t acpi_checksum(void *ptr, size_t size) {
     uint8_t sum = 0, *_ptr = ptr;
     for (size_t i = 0; i < size; i++)
         sum += _ptr[i];
     return sum;
 }
+
+#if defined (bios)
 
 void *acpi_get_rsdp(void) {
     size_t ebda = EBDA;
@@ -31,6 +33,33 @@ void *acpi_get_rsdp(void) {
 
     return NULL;
 }
+
+#endif
+
+#if defined (uefi)
+
+#include <efi.h>
+
+void *acpi_get_rsdp(void) {
+    for (size_t i = 0; i < gST->NumberOfTableEntries; i++) {
+        EFI_CONFIGURATION_TABLE *cur_table = &gST->ConfigurationTable[i];
+        EFI_GUID acpi_2_guid = ACPI_20_TABLE_GUID;
+
+        if (memcmp(&cur_table->VendorGuid, &acpi_2_guid, sizeof(EFI_GUID)) != 0)
+            continue;
+
+        if (acpi_checksum(cur_table->VendorTable, sizeof(struct rsdp)) != 0)
+            continue;
+
+        print("acpi: Found RSDP at %X\n", cur_table->VendorTable);
+
+        return (void *)cur_table->VendorTable;
+    }
+
+    return NULL;
+}
+
+#endif
 
 void *acpi_get_table(const char *signature, int index) {
     int cnt = 0;

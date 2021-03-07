@@ -14,6 +14,35 @@
 #define MEMMAP_BASE ((size_t)0x100000)
 #define MEMMAP_MAX_ENTRIES 256
 
+#if defined (bios)
+extern symbol bss_end;
+static size_t bump_allocator_base = (size_t)bss_end;
+static size_t bump_allocator_limit = 0x70000;
+#endif
+
+#if defined (uefi)
+static size_t bump_allocator_base = 0x100000;
+static size_t bump_allocator_limit = 0x100000;
+#endif
+
+void *conv_mem_alloc(size_t count) {
+    return conv_mem_alloc_aligned(count, 4);
+}
+
+void *conv_mem_alloc_aligned(size_t count, size_t alignment) {
+    size_t new_base = ALIGN_UP(bump_allocator_base, alignment);
+    void *ret = (void *)new_base;
+    new_base += count;
+    if (new_base >= bump_allocator_limit)
+        panic("Memory allocation failed");
+    bump_allocator_base = new_base;
+
+    // Zero out allocated space
+    memset(ret, 0, count);
+
+    return ret;
+}
+
 struct e820_entry_t memmap[MEMMAP_MAX_ENTRIES];
 size_t memmap_entries = 0;
 
@@ -258,6 +287,16 @@ void init_memmap(void) {
         memmap[memmap_entries].base = entry->PhysicalStart;
         memmap[memmap_entries].length = entry->NumberOfPages * 4096;
 
+        if (our_type == MEMMAP_USABLE
+         && entry->PhysicalStart < bump_allocator_base) {
+            bump_allocator_base = entry->PhysicalStart;
+            bump_allocator_limit =
+                entry->PhysicalStart + entry->NumberOfPages * 4096;
+
+            if (bump_allocator_limit > 0x100000)
+                bump_allocator_limit = 0x100000;
+        }
+
         memmap_entries++;
     }
 
@@ -281,6 +320,9 @@ void init_memmap(void) {
         if (status)
             panic("AllocatePages %x", status);
     }
+
+    print("pmm: Conventional mem allocator base:  %X\n", bump_allocator_base);
+    print("pmm: Conventional mem allocator limit: %X\n", bump_allocator_limit);
 }
 #endif
 
@@ -403,27 +445,3 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
 
     return false;
 }
-
-#if defined (bios)
-extern symbol bss_end;
-static size_t bump_allocator_base = (size_t)bss_end;
-static size_t bump_allocator_limit = 0x70000;
-
-void *conv_mem_alloc(size_t count) {
-    return conv_mem_alloc_aligned(count, 4);
-}
-
-void *conv_mem_alloc_aligned(size_t count, size_t alignment) {
-    size_t new_base = ALIGN_UP(bump_allocator_base, alignment);
-    void *ret = (void *)new_base;
-    new_base += count;
-    if (new_base >= bump_allocator_limit)
-        panic("Memory allocation failed");
-    bump_allocator_base = new_base;
-
-    // Zero out allocated space
-    memset(ret, 0, count);
-
-    return ret;
-}
-#endif

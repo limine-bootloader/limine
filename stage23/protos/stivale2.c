@@ -341,7 +341,6 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
     (void)pxe;
 #endif
 
-#if defined (bios)
     //////////////////////////////////////////////
     // Create memmap struct tag
     //////////////////////////////////////////////
@@ -361,7 +360,6 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
-#endif
 
     //////////////////////////////////////////////
     // List tags

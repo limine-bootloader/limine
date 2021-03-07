@@ -321,6 +321,10 @@ void init_memmap(void) {
             panic("AllocatePages %x", status);
     }
 
+    memmap_alloc_range(bump_allocator_base,
+                       bump_allocator_limit - bump_allocator_base,
+                       MEMMAP_RESERVED, true, true);
+
     print("pmm: Conventional mem allocator base:  %X\n", bump_allocator_base);
     print("pmm: Conventional mem allocator limit: %X\n", bump_allocator_limit);
 }
@@ -384,6 +388,7 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
 bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only, bool do_panic) {
     uint64_t top = base + length;
 
+#if defined (bios)
     if (base < 0x100000) {
         if (do_panic) {
             // We don't do allocations below 1 MiB
@@ -393,6 +398,7 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
             return false;
         }
     }
+#endif
 
     for (size_t i = 0; i < memmap_entries; i++) {
         if (free_only && memmap[i].type != 1)

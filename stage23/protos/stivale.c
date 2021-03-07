@@ -279,8 +279,6 @@ __attribute__((noreturn)) void stivale_spinup(
     pic_flush();
 
 #if defined (uefi)
-    gdt.ptr += (uintptr_t)ImageBase;
-
     asm volatile (
         "lgdt %0\n\t"
         :

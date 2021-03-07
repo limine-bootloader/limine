@@ -5,6 +5,7 @@ smp_trampoline:
     cli
     cld
 
+jmp $
     mov ebx, cs
     shl ebx, 4
 

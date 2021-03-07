@@ -94,13 +94,9 @@ static int fat32_init_context(struct fat32_context* context, struct volume *part
 }
 
 static int fat32_read_cluster_from_map(struct fat32_context* context, uint32_t cluster, uint32_t* out) {
-    const uint32_t sector = cluster / (FAT32_SECTOR_SIZE / 4);
-    const uint32_t offset = cluster % (FAT32_SECTOR_SIZE / 4);
+    volume_read(context->part, out, context->fat_start_lba * FAT32_SECTOR_SIZE + cluster * sizeof(uint32_t), sizeof(uint32_t));
 
-    uint32_t clusters[FAT32_SECTOR_SIZE / sizeof(uint32_t)];
-    volume_read(context->part, &clusters[0], (context->fat_start_lba + sector) * FAT32_SECTOR_SIZE, sizeof(clusters));
-
-    *out = clusters[offset] & 0x0FFFFFFF;
+    *out &= 0x0fffffff;
     return 0;
 }
 
@@ -138,7 +134,7 @@ static bool read_cluster_chain(struct fat32_context *context,
         if (chunk > block_size - offset)
             chunk = block_size - offset;
 
-        uint64_t base = (context->data_start_lba + (cluster_chain[block] - 2)) * block_size;
+        uint64_t base = (context->data_start_lba + (cluster_chain[block] - 2) * context->sectors_per_cluster) * FAT32_SECTOR_SIZE;
         volume_read(context->part, buf + progress, base + offset, chunk);
 
         progress += chunk;

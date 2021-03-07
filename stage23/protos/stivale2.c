@@ -299,6 +299,10 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
     if (bits == 64)
         pagemap = stivale_build_pagemap(level5pg && level5pg_requested);
 
+#if defined (uefi)
+    efi_exit_boot_services();
+#endif
+
     //////////////////////////////////////////////
     // Create SMP struct tag
     //////////////////////////////////////////////

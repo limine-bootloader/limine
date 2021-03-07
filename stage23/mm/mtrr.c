@@ -6,11 +6,6 @@
 #include <lib/print.h>
 #include <lib/blib.h>
 
-struct mtrr {
-    uint64_t base;
-    uint64_t mask;
-};
-
 static bool mtrr_supported(void) {
     uint32_t eax, ebx, ecx, edx;
 
@@ -107,7 +102,7 @@ bool mtrr_set_range(uint64_t base, uint64_t size, uint8_t memory_type) {
     return false;
 }
 
-static struct mtrr *saved_mtrr = NULL;
+struct mtrr *saved_mtrr = NULL;
 
 void mtrr_save(void) {
     if (!mtrr_supported())

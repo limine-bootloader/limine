@@ -52,8 +52,9 @@ struct trampoline_passed_info {
     uint8_t  smp_tpl_booted_flag;
     uint8_t  smp_tpl_target_mode;
     uint32_t smp_tpl_pagemap;
-    void *mtrr_restore_vector;
-    struct smp_information *smp_tpl_info_struct;
+    uint32_t mtrr_restore_vector;
+    uint32_t saved_mtrr_ptr;
+    uint32_t smp_tpl_info_struct;
     struct gdtr smp_tpl_gdt;
 } __attribute__((packed));
 
@@ -78,14 +79,19 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
                                - sizeof(struct trampoline_passed_info));
     }
 
-    passed_info->smp_tpl_info_struct = info_struct;
+    passed_info->smp_tpl_info_struct = (uint32_t)(uintptr_t)info_struct;
     passed_info->smp_tpl_booted_flag = 0;
     passed_info->smp_tpl_pagemap     = pagemap;
     passed_info->smp_tpl_target_mode = ((uint32_t)x2apic << 2)
                         | ((uint32_t)lv5 << 1)
                         | (uint32_t)longmode;
     passed_info->smp_tpl_gdt         = *gdtr;
-    passed_info->mtrr_restore_vector = mtrr_restore;
+#if defined (bios)
+    passed_info->mtrr_restore_vector = (uint32_t)(uintptr_t)mtrr_restore;
+#elif defined (uefi)
+    passed_info->mtrr_restore_vector = (uint32_t)(uintptr_t)mtrr_restore_32;
+#endif
+    passed_info->saved_mtrr_ptr      = (uint32_t)(uintptr_t)saved_mtrr;
     passed_info->smp_tpl_booted_flag = 0;
 
     asm volatile ("" ::: "memory");
@@ -135,8 +141,7 @@ struct smp_information *init_smp(size_t    header_hack_size,
     if (madt == NULL)
         return NULL;
 
-    struct gdtr gdtr;
-    asm volatile ("sgdt %0" :: "m"(gdtr) : "memory");
+    struct gdtr gdtr = gdt;
 
     uint32_t eax, ebx, ecx, edx;
 

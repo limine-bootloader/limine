@@ -200,6 +200,10 @@ void stivale_load(char *config, char *cmdline) {
     stivale_struct.memory_map_entries = (uint64_t)memmap_entries;
     stivale_struct.memory_map_addr    = (uint64_t)(size_t)memmap;
 
+#if defined (uefi)
+    efi_exit_boot_services();
+#endif
+
     stivale_spinup(bits, want_5lv, &pagemap,
                    entry_point, &stivale_struct, stivale_hdr.stack);
 }
@@ -269,10 +273,6 @@ __attribute__((noreturn)) void stivale_spinup(
         r.ebx = 0x02;   // Long mode only
         rm_int(0x15, &r, &r);
     }
-#endif
-
-#if defined (uefi)
-    efi_exit_boot_services();
 #endif
 
     pic_mask_all();

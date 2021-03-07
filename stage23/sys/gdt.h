@@ -4,8 +4,8 @@
 #include <stdint.h>
 
 struct gdtr {
-    uint16_t  limit;
-    uintptr_t ptr;
+    uint16_t limit;
+    uint64_t ptr;
 } __attribute__((packed));
 
 struct gdt_desc {

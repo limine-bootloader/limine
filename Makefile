@@ -89,7 +89,7 @@ test.hdd:
 	parted -s test.hdd mklabel gpt
 	parted -s test.hdd mkpart primary 2048s 100%
 
-echfs-test: | test-clean test.hdd bootloader all
+echfs-test: | test-clean test.hdd limine-bios
 	$(MAKE) -C test
 	echfs-utils -g -p0 test.hdd quick-format 512 > part_guid
 	sed "s/@GUID@/`cat part_guid`/g" < test/limine.cfg > limine.cfg.tmp
@@ -101,7 +101,7 @@ echfs-test: | test-clean test.hdd bootloader all
 	bin/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
-ext2-test: | test-clean test.hdd bootloader all
+ext2-test: | test-clean test.hdd limine-bios
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -118,7 +118,7 @@ ext2-test: | test-clean test.hdd bootloader all
 	bin/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
-fat32-test: | test-clean test.hdd bootloader all
+fat32-test: | test-clean test.hdd limine-bios
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -135,7 +135,7 @@ fat32-test: | test-clean test.hdd bootloader all
 	bin/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
-iso9660-test: | test-clean test.hdd bootloader
+iso9660-test: | test-clean test.hdd limine-bios
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir -p test_image/boot
@@ -143,7 +143,7 @@ iso9660-test: | test-clean test.hdd bootloader
 	genisoimage -no-emul-boot -b boot/limine-cd.bin -boot-load-size 4 -boot-info-table -o test.iso test_image/
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
 
-uefi-test: ovmf | test-clean test.hdd bootloader
+uefi-test: ovmf | test-clean test.hdd limine-uefi
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image

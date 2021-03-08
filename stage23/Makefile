@@ -1,5 +1,9 @@
-TARGET = bios
-BUILDDIR = .
+TARGET =
+BUILDDIR =
+
+ifeq ($(BUILDDIR), )
+	$(error BUILDDIR not specified)
+endif
 
 ifeq ($(TARGET), bios)
 	TOOLCHAIN=i386-elf
@@ -86,11 +90,13 @@ OBJ := $(addprefix $(BUILDDIR)/, $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o))
 HEADER_DEPS := $(addprefix $(BUILDDIR)/, $(C_FILES:.c=.d))
 
 ifeq ($(TARGET), bios)
-all: | builddir everything
-.PHONY: everything
-everything: $(BUILDDIR)/limine_dbg.elf $(BUILDDIR)/limine.sys $(BUILDDIR)/stage2.bin $(BUILDDIR)/stage2.bin.gz
+all:
+	$(MAKE) builddir
+	$(MAKE) $(BUILDDIR)/limine_dbg.elf $(BUILDDIR)/limine.sys $(BUILDDIR)/stage2.bin $(BUILDDIR)/stage2.bin.gz
 else ifeq ($(TARGET), uefi)
-all: | builddir $(BUILDDIR)/BOOTX64.EFI
+all:
+	$(MAKE) builddir
+	$(MAKE) $(BUILDDIR)/BOOTX64.EFI
 endif
 
 builddir:
@@ -154,27 +160,27 @@ endif
 
 -include $(HEADER_DEPS)
 
-$(addprefix $(BUILDDIR)/, %.o): %.c
+$(BUILDDIR)/%.o: %.c
 	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 
 ifeq ($(TARGET), bios)
-$(addprefix $(BUILDDIR)/, %.s2.o): %.s2.c
+$(BUILDDIR)/%.s2.o: %.s2.c
 	$(CC) $(S2CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 endif
 
 ifeq ($(TARGET), uefi)
-$(addprefix $(BUILDDIR)/, %.32.o): %.32.c
+$(BUILDDIR)/%.32.o: %.32.c
 	$(CC32) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@.32
 	$(OBJCOPY) -I elf32-i386 -O elf64-x86-64 $@.32 $@
 	rm $@.32
 endif
 
 ifeq ($(TARGET), bios)
-$(addprefix $(BUILDDIR)/, %.o): %.asm
+$(BUILDDIR)/%.o: %.asm
 	nasm $< -F dwarf -g -f elf32 -o $@
 endif
 ifeq ($(TARGET), uefi)
-$(addprefix $(BUILDDIR)/, %.o): %.asm
+$(BUILDDIR)/%.o: %.asm
 	nasm $< -F dwarf -g -f elf64 -o $@
 endif
 

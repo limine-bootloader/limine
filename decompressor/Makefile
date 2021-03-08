@@ -1,7 +1,11 @@
 CC = i386-elf-gcc
 LD = i386-elf-gcc
 OBJCOPY = i386-elf-objcopy
-BUILDDIR = .
+BUILDDIR =
+
+ifeq ($(BUILDDIR), )
+	$(error BUILDDIR not specified)
+endif
 
 CFLAGS = -flto -Os -pipe -Wall -Wextra -Werror
 
@@ -28,14 +32,16 @@ INTERNAL_LDFLAGS = \
 	-static \
 	-Tlinker.ld
 
-.PHONY: all clean
+.PHONY: all clean builddir
 
 C_FILES := $(shell find -L ./ -type f -name '*.c' | sort)
 ASM_FILES := $(shell find -L ./ -type f -name '*.asm' | sort)
 OBJ := $(addprefix $(BUILDDIR)/, $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o))
 HEADER_DEPS := $(addprefix $(BUILDDIR)/, $(C_FILES:.c=.d))
 
-all: | builddir $(BUILDDIR)/decompressor.bin
+all:
+	$(MAKE) builddir
+	$(MAKE) $(BUILDDIR)/decompressor.bin
 
 builddir:
 	for i in $(OBJ); do mkdir -p `dirname $$i`; done
@@ -46,10 +52,10 @@ $(BUILDDIR)/decompressor.bin: $(OBJ)
 
 -include $(HEADER_DEPS)
 
-$(addprefix $(BUILDDIR)/, %.o): %.c
+$(BUILDDIR)/%.o: %.c
 	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 
-$(addprefix $(BUILDDIR)/, %.o): %.asm
+$(BUILDDIR)/%.o: %.asm
 	nasm $< -f elf32 -o $@
 
 clean:

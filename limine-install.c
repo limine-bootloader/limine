@@ -261,13 +261,23 @@ static bool _device_write(const void *buffer, uint64_t loc, size_t count) {
             goto cleanup;                       \
     } while (0)
 
+#ifdef __MINGW32__
+extern uint8_t binary_bin_limine_hdd_bin_start[], binary_bin_limine_hdd_bin_end[];
+#else
 extern uint8_t _binary_bin_limine_hdd_bin_start[], _binary_bin_limine_hdd_bin_end[];
+#endif
 
 int main(int argc, char *argv[]) {
     int      ok = 1;
+#ifdef __MINGW32__
+    uint8_t *bootloader_img = binary_bin_limine_hdd_bin_start;
+    size_t   bootloader_file_size =
+        (size_t)binary_bin_limine_hdd_bin_end - (size_t)binary_bin_limine_hdd_bin_start;
+#else
     uint8_t *bootloader_img = _binary_bin_limine_hdd_bin_start;
     size_t   bootloader_file_size =
         (size_t)_binary_bin_limine_hdd_bin_end - (size_t)_binary_bin_limine_hdd_bin_start;
+#endif
     uint8_t  orig_mbr[70], timestamp[6];
 
     if (sizeof(off_t) != 8) {

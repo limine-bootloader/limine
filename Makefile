@@ -8,7 +8,10 @@ PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
 .PHONY: all clean install distclean limine-bios limine-uefi limine-bios-clean limine-uefi-clean stage23-bios stage23-bios-clean stage23-uefi stage23-uefi-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat32-test iso9660-test
 
-all: limine-uefi | limine-bios bin/limine-install
+all:
+	$(MAKE) limine-uefi
+	$(MAKE) limine-bios
+	$(MAKE) bin/limine-install
 
 bin/limine-install: limine-install.c limine-hdd.o
 	$(CC) $(CFLAGS) -std=c11 limine-hdd.o limine-install.c -o $@
@@ -35,7 +38,9 @@ limine-bios: stage23-bios decompressor
 	cd stage1/pxe && nasm bootsect.asm -fbin -o ../../bin/limine-pxe.bin
 	cp build/stage23-bios/limine.sys ./bin/
 
-limine-uefi: | gnu-efi stage23-uefi
+limine-uefi:
+	$(MAKE) gnu-efi
+	$(MAKE) stage23-uefi
 	mkdir -p bin
 	cp build/stage23-uefi/BOOTX64.EFI ./bin/
 
@@ -72,7 +77,14 @@ test-clean:
 	rm -rf test_image test.hdd test.iso
 
 toolchain:
-	scripts/make_toolchain.sh "`realpath ./toolchain`" -j`nproc`
+	$(MAKE) toolchain-bios
+	$(MAKE) toolchain-uefi
+
+toolchain-bios:
+	scripts/make_toolchain_bios.sh "`realpath ./toolchain`" -j`nproc`
+
+toolchain-uefi:
+	scripts/make_toolchain_uefi.sh "`realpath ./toolchain`" -j`nproc`
 
 gnu-efi:
 	git clone https://git.code.sf.net/p/gnu-efi/code --branch=3.0.12 --depth=1 $@
@@ -89,7 +101,11 @@ test.hdd:
 	parted -s test.hdd mklabel gpt
 	parted -s test.hdd mkpart primary 2048s 100%
 
-echfs-test: | test-clean test.hdd limine-bios
+echfs-test:
+	$(MAKE) test-clean
+	$(MAKE) test.hdd
+	$(MAKE) limine-bios
+	$(MAKE) bin/limine-install
 	$(MAKE) -C test
 	echfs-utils -g -p0 test.hdd quick-format 512 > part_guid
 	sed "s/@GUID@/`cat part_guid`/g" < test/limine.cfg > limine.cfg.tmp
@@ -101,7 +117,11 @@ echfs-test: | test-clean test.hdd limine-bios
 	bin/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
-ext2-test: | test-clean test.hdd limine-bios
+ext2-test:
+	$(MAKE) test-clean
+	$(MAKE) test.hdd
+	$(MAKE) limine-bios
+	$(MAKE) bin/limine-install
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -118,7 +138,11 @@ ext2-test: | test-clean test.hdd limine-bios
 	bin/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
-fat32-test: | test-clean test.hdd limine-bios
+fat32-test:
+	$(MAKE) test-clean
+	$(MAKE) test.hdd
+	$(MAKE) limine-bios
+	$(MAKE) bin/limine-install
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -135,7 +159,10 @@ fat32-test: | test-clean test.hdd limine-bios
 	bin/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
-iso9660-test: | test-clean test.hdd limine-bios
+iso9660-test:
+	$(MAKE) test-clean
+	$(MAKE) test.hdd
+	$(MAKE) limine-bios
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir -p test_image/boot
@@ -143,7 +170,11 @@ iso9660-test: | test-clean test.hdd limine-bios
 	genisoimage -no-emul-boot -b boot/limine-cd.bin -boot-load-size 4 -boot-info-table -o test.iso test_image/
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
 
-uefi-test: ovmf | test-clean test.hdd limine-uefi
+uefi-test:
+	$(MAKE) ovmf
+	$(MAKE) test-clean
+	$(MAKE) test.hdd
+	$(MAKE) limine-uefi
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image

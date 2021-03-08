@@ -2,7 +2,7 @@
 
 ### What is Limine?
 
-Limine is an advanced x86/x86_64 BIOS Bootloader which supports *modern* PC features
+Limine is an advanced x86/x86_64 BIOS/UEFI Bootloader which supports *modern* PC features
 such as Long Mode, 5-level paging, and SMP (multicore), to name a few.
 
 ### Limine's boot menu
@@ -68,18 +68,10 @@ make toolchain
 
 After that is done, the bootloader itself can be built with:
 ```bash
-make bootloader
+make
 ```
 
 The generated bootloader files are going to be in `bin`.
-
-### Compiling `limine-install`
-`limine-install` is a tool that installs Limine's stage 1 and 2 to either
-an MBR or a GPT hard disk device or image.
-
-To build the `limine-install` program, simply run `make` in the root of the repo.
-This will embed the `limine-hdd.bin` bootloader image from the `bin` directory into
-`limine-install`, ready to be deployed to a USB/hard drive (or disk image).
 
 ### Installing Limine binaries
 This step is optional as the bootloader binaries can be used from the `bin`
@@ -91,7 +83,17 @@ Use `make install` to install Limine binaries, optionally specifying a prefix wi
 
 ## How to use
 
-### MBR
+### UEFI
+The `BOOTX64.EFI` file is a vaild EFI application that can be simply copied to the
+`/EFI/BOOT` directory of a FAT32 formatted EFI system partition. This file can be
+installed there and coexist with a BIOS installation of Limine (see below) so that
+the disk will be bootable by both BIOS and UEFI.
+
+The boot device must to contain the `limine.cfg` file in
+either the root or the `boot` directory of one of the partitions, formatted
+with a supported file system (the ESP partition is recommended).
+
+### BIOS/MBR
 In order to install Limine on a MBR device (which can just be a raw image file),
 run `limine-install` as such:
 
@@ -103,7 +105,7 @@ The boot device must to contain the `limine.sys` and `limine.cfg` files in
 either the root or the `boot` directory of one of the partitions, formatted
 with a supported file system.
 
-### GPT
+### BIOS/GPT
 If using a GPT formatted device, there are 2 options one can follow for installation:
 * Specifying a dedicated stage 2 partition.
 * Letting `limine-install` attempt to embed stage 2 within GPT structures.
@@ -124,7 +126,7 @@ The boot device must to contain the `limine.sys` and `limine.cfg` files in
 either the root or the `boot` directory of one of the partitions, formatted
 with a supported file system.
 
-### CD-ROM ISO creation
+### BIOS CD-ROM ISO creation
 In order to create a bootable ISO with Limine, place the `limine-cd.bin`,
 `limine.sys`, and `limine.cfg` files into a directory which will serve as the root
 of the created ISO.
@@ -144,7 +146,7 @@ the root directory.
 For example, if it was copied in `<root directory>/boot/limine-cd.bin`, it would be
 `boot/limine-cd.bin`.
 
-### PXE boot
+### BIOS/PXE boot
 The `limine-pxe.bin` binary is a valid PXE boot image.
 In order to boot Limine from PXE it is necessary to setup a DHCP server with
 support for PXE booting. This can either be accomplished using a single DHCP server

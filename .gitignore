@@ -1,4 +1,5 @@
 /bin
+/build
 /toolchain
 /gnu-efi
 /ovmf

@@ -29,6 +29,11 @@ jobs:
         with:
           command: apt-get update && apt-get install nasm -y && make
 
+      - name: Remove limine-hdd.o
+        uses: mintsuki-org/debian-x86_64@v0.3
+        with:
+          command: rm limine-hdd.o
+
       - name: Build limine-install-linux-x86_64
         uses: mintsuki-org/debian-x86_64@v0.3
         with:
@@ -78,6 +83,11 @@ jobs:
         uses: mintsuki-org/debian-x86_64@v0.3
         with:
           command: mv bin/limine-install.exe bin/limine-install-win32.exe
+
+      - name: Remove bin/limine-hdd.bin
+        uses: mintsuki-org/debian-x86_64@v0.3
+        with:
+          command: rm bin/limine-hdd.bin
 
       - name: Rename bin directory
         uses: mintsuki-org/debian-x86_64@v0.3

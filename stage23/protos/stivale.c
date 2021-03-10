@@ -191,6 +191,10 @@ void stivale_load(char *config, char *cmdline) {
         stivale_struct.fb_blue_mask_shift  = fbinfo.blue_mask_shift;
     }
 
+#if defined (uefi)
+    efi_exit_boot_services();
+#endif
+
     bool want_5lv = level5pg && (stivale_hdr.flags & (1 << 1));
     pagemap_t pagemap = stivale_build_pagemap(want_5lv);
 
@@ -199,10 +203,6 @@ void stivale_load(char *config, char *cmdline) {
 
     stivale_struct.memory_map_entries = (uint64_t)memmap_entries;
     stivale_struct.memory_map_addr    = (uint64_t)(size_t)memmap;
-
-#if defined (uefi)
-    efi_exit_boot_services();
-#endif
 
     stivale_spinup(bits, want_5lv, &pagemap,
                    entry_point, &stivale_struct, stivale_hdr.stack);

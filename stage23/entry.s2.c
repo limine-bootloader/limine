@@ -23,11 +23,7 @@
 
 extern uint64_t stage3_build_id;
 
-int boot_drive;
-int boot_partition = -1;
-
-bool booted_from_pxe = false;
-bool booted_from_cd = false;
+struct volume *boot_volume;
 
 #if defined (bios)
 
@@ -63,13 +59,14 @@ static bool stage3_init(struct volume *part) {
     return true;
 }
 
+enum {
+	BOOTED_FROM_HDD,
+	BOOTED_FROM_PXE,
+	BOOTED_FROM_CD
+};
+
 __attribute__((noreturn))
-void entry(uint8_t _boot_drive, int boot_from) {
-    boot_drive = _boot_drive;
-
-    booted_from_pxe = (boot_from == BOOT_FROM_PXE);
-    booted_from_cd = (boot_from == BOOT_FROM_CD);
-
+void entry(uint8_t boot_drive, int boot_from) {
     term_textmode();
 
     print("Limine " LIMINE_VERSION "\n\n");
@@ -82,7 +79,9 @@ void entry(uint8_t _boot_drive, int boot_from) {
 
     disk_create_index();
 
-    struct volume *boot_volume = volume_get_by_coord(boot_drive, -1);
+    if (boot_from == BOOTED_FROM_HDD || boot_from == BOOTED_FROM_CD) {
+        boot_volume = volume_get_by_coord(boot_drive, -1);
+    }
 
     volume_iterate_parts(boot_volume,
         if (stage3_init(_PART)) {

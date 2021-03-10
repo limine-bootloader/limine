@@ -21,7 +21,7 @@
 #include <pxe/tftp.h>
 #include <drivers/disk.h>
 
-void stage3_common(struct volume *boot_volume);
+void stage3_common(void);
 
 #if defined (uefi)
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
@@ -55,12 +55,12 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     uefi_call_wrapper(gBS->HandleProtocol, 3, ImageHandle, &loaded_img_prot_guid,
                       &loaded_image);
 
-    struct volume *boot_volume = disk_volume_from_efi_handle(loaded_image->DeviceHandle);
+    boot_volume = disk_volume_from_efi_handle(loaded_image->DeviceHandle);
     if (boot_volume == NULL) {
         panic("Can't determine boot disk");
     }
 
-    stage3_common(boot_volume);
+    stage3_common();
 }
 #endif
 
@@ -68,25 +68,15 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 __attribute__((section(".stage3_build_id")))
 uint64_t stage3_build_id = BUILD_ID;
 
-__attribute__((noreturn))
 __attribute__((section(".stage3_entry")))
-void stage3_entry(int boot_from) {
-    (void)boot_from;
-
-    struct volume *boot_volume = volume_get_by_coord(boot_drive, -1);
-
-    stage3_common(boot_volume);
-}
 #endif
-
 __attribute__((noreturn))
-void stage3_common(struct volume *boot_volume) {
+void stage3_common(void) {
     bool got_config = false;
     volume_iterate_parts(boot_volume,
         if (!init_config_disk(_PART)) {
             print("Config file found and loaded.\n");
-            boot_partition = _PARTNO;
-            boot_drive = _PART->drive;
+            boot_volume = _PART;
             got_config = true;
             break;
         }
@@ -95,8 +85,8 @@ void stage3_common(struct volume *boot_volume) {
     if (!got_config)
         panic("Config file not found.");
 
-    print("Boot drive: %x\n", boot_drive);
-    print("Boot partition: %d\n", boot_partition);
+    print("Boot drive: %x\n", boot_volume->drive);
+    print("Boot partition: %d\n", boot_volume->partition);
 
     mtrr_save();
 
@@ -113,7 +103,7 @@ void stage3_common(struct volume *boot_volume) {
     } else if (!strcmp(proto, "stivale")) {
         stivale_load(config, cmdline);
     } else if (!strcmp(proto, "stivale2")) {
-        stivale2_load(config, cmdline, booted_from_pxe);
+        stivale2_load(config, cmdline, false /*booted_from_pxe*/);
 #if defined (bios)
     } else if (!strcmp(proto, "linux")) {
         linux_load(config, cmdline);

@@ -20,12 +20,11 @@ extern bool efi_boot_services_exited;
 bool efi_exit_boot_services(void);
 #endif
 
-extern int boot_drive;
-extern int boot_partition;
+extern struct volume *boot_volume;
 
-extern bool booted_from_pxe;
-extern bool booted_from_cd;
+#if defined (bios)
 extern bool stage3_loaded;
+#endif
 
 bool parse_resolution(int *width, int *height, int *bpp, const char *buf);
 
@@ -59,12 +58,6 @@ uint64_t strtoui(const char *s, const char **end, int base);
 #define SIZEOF_ARRAY(array) (sizeof(array) / sizeof(array[0]))
 
 typedef char symbol[];
-
-enum {
-	BOOT_FROM_HDD,
-	BOOT_FROM_PXE,
-	BOOT_FROM_CD
-};
 
 #if defined (uefi)
 __attribute__((noreturn)) void do_32(void *fnptr, int args, ...);

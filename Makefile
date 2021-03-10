@@ -170,6 +170,15 @@ iso9660-test:
 	genisoimage -no-emul-boot -b boot/limine-cd.bin -boot-load-size 4 -boot-info-table -o test.iso test_image/
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
 
+pxe-test:
+	$(MAKE) test-clean
+	$(MAKE) limine-bios
+	$(MAKE) -C test
+	rm -rf test_image/
+	mkdir -p test_image/boot
+	cp -rv bin/* test/* test_image/boot/
+	qemu-system-x86_64 -enable-kvm -smp 4 -cpu host -netdev user,id=n0,tftp=./test_image,bootfile=boot/limine-pxe.bin -device rtl8139,netdev=n0,mac=00:00:00:11:11:11 -debugcon stdio
+
 uefi-test:
 	$(MAKE) ovmf
 	$(MAKE) test-clean

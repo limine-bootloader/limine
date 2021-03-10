@@ -24,7 +24,7 @@ static uint16_t  gterm_bpp;
 
 extern symbol _binary_font_bin_start;
 
-static uint8_t *vga_font;
+static uint8_t *vga_font = NULL;
 
 static uint32_t ansi_colours[8];
 
@@ -32,8 +32,8 @@ static int frame_height, frame_width;
 
 static struct image *background;
 
-static struct gterm_char *grid;
-static struct gterm_char *front_grid;
+static struct gterm_char *grid = NULL;
+static struct gterm_char *front_grid = NULL;
 
 static bool double_buffer_enabled = false;
 
@@ -372,7 +372,10 @@ bool gterm_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _ma
     mtrr_set_range((uint64_t)(size_t)gterm_framebuffer,
                    (uint64_t)gterm_pitch * gterm_height, MTRR_MEMORY_TYPE_WC);
 
-    vga_font = (void *)_binary_font_bin_start;
+    if (vga_font == NULL)
+        vga_font = ext_mem_alloc(VGA_FONT_MAX);
+
+    memcpy(vga_font, (void *)_binary_font_bin_start, VGA_FONT_MAX);
 
     char *menu_font = config_get_value(NULL, 0, "MENU_FONT");
     if (menu_font != NULL) {
@@ -380,15 +383,16 @@ bool gterm_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _ma
         if (!uri_open(&f, menu_font)) {
             print("menu: Could not open font file.\n");
         } else {
-            vga_font = ext_mem_alloc(VGA_FONT_MAX);
             fread(&f, vga_font, 0, VGA_FONT_MAX);
         }
     }
 
     *_cols = cols = (gterm_width - _margin * 2) / VGA_FONT_WIDTH;
     *_rows = rows = (gterm_height - _margin * 2) / VGA_FONT_HEIGHT;
-    grid = ext_mem_alloc(rows * cols * sizeof(struct gterm_char));
-    front_grid = ext_mem_alloc(rows * cols * sizeof(struct gterm_char));
+    if (grid == NULL)
+        grid = ext_mem_alloc(rows * cols * sizeof(struct gterm_char));
+    if (front_grid == NULL)
+        front_grid = ext_mem_alloc(rows * cols * sizeof(struct gterm_char));
     background = _background;
 
     if (background)

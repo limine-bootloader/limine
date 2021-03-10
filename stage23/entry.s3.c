@@ -30,9 +30,22 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     gRT = SystemTable->RuntimeServices;
     efi_image_handle = ImageHandle;
 
-    print("Limine " LIMINE_VERSION "\n\n", print);
-
     init_memmap();
+
+    uint32_t colourscheme[] = {
+        0x00000000, // black
+        0x00aa0000, // red
+        0x0000aa00, // green
+        0x00aa5500, // brown
+        0x000000aa, // blue
+        0x00aa00aa, // magenta
+        0x0000aaaa, // cyan
+        0x00aaaaaa  // grey
+    };
+
+    term_vbe(colourscheme, 64, 0, NULL);
+
+    print("Limine " LIMINE_VERSION "\n\n", print);
 
     disk_create_index();
 

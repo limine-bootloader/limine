@@ -306,9 +306,6 @@ void init_memmap(void) {
             bump_allocator_base = entry->PhysicalStart;
             bump_allocator_limit = entry_pool_limit;
             bump_alloc_pool_size = entry_pool_size;
-
-            if (bump_allocator_limit > 0x100000)
-                bump_allocator_limit = 0x100000;
         }
     }
 

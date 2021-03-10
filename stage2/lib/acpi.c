@@ -49,7 +49,10 @@ void *acpi_get_table(const char *signature, int index) {
     else
         rsdt = (struct rsdt *)rsdp->rsdt_addr;
 
-    for (size_t i = 0; i < rsdt->length - sizeof(struct sdt); i++) {
+    size_t entry_count =
+        (rsdt->length - sizeof(struct sdt)) / (use_xsdt ? 8 : 4);
+
+    for (size_t i = 0; i < entry_count; i++) {
         struct sdt *ptr;
         if (use_xsdt)
             ptr = (struct sdt *)(size_t)((uint64_t *)rsdt->ptrs_start)[i];

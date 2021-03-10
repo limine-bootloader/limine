@@ -169,12 +169,13 @@ static void sanitise_entries(bool align_entries) {
         memmap[p] = min_e;
     }
 
-    // Merge contiguous bootloader-reclaimable entries
+    // Merge contiguous bootloader-reclaimable and usable entries
     for (size_t i = 0; i < memmap_entries - 1; i++) {
-        if (memmap[i].type != MEMMAP_BOOTLOADER_RECLAIMABLE)
+        if (memmap[i].type != MEMMAP_BOOTLOADER_RECLAIMABLE
+         && memmap[i].type != MEMMAP_USABLE)
             continue;
 
-        if (memmap[i+1].type == MEMMAP_BOOTLOADER_RECLAIMABLE
+        if (memmap[i+1].type == memmap[i].type
          && memmap[i+1].base == memmap[i].base + memmap[i].length) {
             memmap[i].length += memmap[i+1].length;
 
@@ -272,6 +273,7 @@ void init_memmap(void) {
                 our_type = MEMMAP_RESERVED; break;
             case EfiBootServicesCode:
             case EfiBootServicesData:
+                our_type = MEMMAP_EFI_RECLAIMABLE; break;
             case EfiLoaderCode:
             case EfiLoaderData:
                 our_type = MEMMAP_BOOTLOADER_RECLAIMABLE; break;
@@ -287,17 +289,27 @@ void init_memmap(void) {
         memmap[memmap_entries].base = entry->PhysicalStart;
         memmap[memmap_entries].length = entry->NumberOfPages * 4096;
 
-        if (our_type == MEMMAP_USABLE
-         && entry->PhysicalStart < bump_allocator_base) {
+        memmap_entries++;
+
+        if (our_type != MEMMAP_USABLE || entry->PhysicalStart >= 0x100000)
+            continue;
+
+        static size_t bump_alloc_pool_size = 0;
+
+        size_t entry_pool_limit = entry->PhysicalStart + entry->NumberOfPages * 4096;
+        if (entry_pool_limit > 0x100000)
+            entry_pool_limit = 0x100000;
+
+        size_t entry_pool_size = entry_pool_limit - entry->PhysicalStart;
+
+        if (entry_pool_size > bump_alloc_pool_size) {
             bump_allocator_base = entry->PhysicalStart;
-            bump_allocator_limit =
-                entry->PhysicalStart + entry->NumberOfPages * 4096;
+            bump_allocator_limit = entry_pool_limit;
+            bump_alloc_pool_size = entry_pool_size;
 
             if (bump_allocator_limit > 0x100000)
                 bump_allocator_limit = 0x100000;
         }
-
-        memmap_entries++;
     }
 
     sanitise_entries(false);
@@ -327,6 +339,17 @@ void init_memmap(void) {
 
     print("pmm: Conventional mem allocator base:  %X\n", bump_allocator_base);
     print("pmm: Conventional mem allocator limit: %X\n", bump_allocator_limit);
+}
+
+void pmm_reclaim_uefi_mem(void) {
+    for (size_t i = 0; i < memmap_entries; i++) {
+        if (memmap[i].type != MEMMAP_EFI_RECLAIMABLE)
+            continue;
+
+        memmap[i].type = MEMMAP_USABLE;
+    }
+
+    sanitise_entries(false);
 }
 #endif
 

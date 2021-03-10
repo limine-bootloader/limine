@@ -31,4 +31,8 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type);
 void *conv_mem_alloc(size_t count);
 void *conv_mem_alloc_aligned(size_t count, size_t alignment);
 
+#if defined (uefi)
+void pmm_reclaim_uefi_mem(void);
+#endif
+
 #endif

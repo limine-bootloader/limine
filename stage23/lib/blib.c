@@ -87,6 +87,8 @@ bool efi_exit_boot_services(void) {
 
     asm volatile ("cli" ::: "memory");
 
+    pmm_reclaim_uefi_mem();
+
     efi_boot_services_exited = true;
 
     print("efi: Exited boot services.\n");

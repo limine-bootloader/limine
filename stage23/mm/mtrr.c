@@ -20,10 +20,10 @@ static bool is_block_in_mtrr_range(struct mtrr *mtrr, uint64_t block_base, uint6
     if (!(mtrr->mask & (1 << 11)))
         return false;
 
-    uint64_t base = mtrr->base & ~(0xfff);
-    uint64_t mask = mtrr->mask & ~(0xfff);
+    uint64_t base = mtrr->base & ~((uint64_t)0xfff);
+    uint64_t mask = mtrr->mask & ~((uint64_t)0xfff);
 
-    for (uint64_t i = block_base; i < block_size; i += 4096) {
+    for (uint64_t i = block_base; i < block_base + block_size; i += 4096) {
         if ((i & mask) == (base & mask))
             return true;
     }

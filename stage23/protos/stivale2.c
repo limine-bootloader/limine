@@ -144,7 +144,9 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
     struct stivale2_struct_tag_firmware *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_firmware));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_FIRMWARE_ID;
 
+#if defined (bios)
     tag->flags = 1 << 0;   // bit 0 = BIOS boot
+#endif
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }

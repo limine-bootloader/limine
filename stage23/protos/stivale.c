@@ -28,8 +28,12 @@
 struct stivale_struct stivale_struct = {0};
 
 void stivale_load(char *config, char *cmdline) {
-    stivale_struct.flags |= (1 << 0);  // set bit 0 since we are BIOS and not UEFI
-    stivale_struct.flags |= (1 << 1);  // we give colour information
+    // BIOS or UEFI?
+#if defined (bios)
+    stivale_struct.flags |= (1 << 0);
+#endif
+
+    stivale_struct.flags |= (1 << 1);    // we give colour information
 
     struct file_handle *kernel = ext_mem_alloc(sizeof(struct file_handle));
 

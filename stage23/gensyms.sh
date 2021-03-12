@@ -11,7 +11,7 @@ $1 -t "$2" | sed '/\bd\b/d' | sort > "$TMP1"
 grep "\.text" < "$TMP1" | cut -d' ' -f1 > "$TMP2"
 grep "\.text" < "$TMP1" | awk 'NF{ print $NF }' > "$TMP3"
 
-echo "section .map" > "$TMP4"
+echo "section .$3_map" > "$TMP4"
 echo "global $3_map" >> "$TMP4"
 echo "$3_map:" >> "$TMP4"
 

@@ -23,6 +23,7 @@ SECTIONS
         *.s2.o(.rodata*)
         *libgcc.a:*(.data*)
         *libgcc.a:*(.rodata*)
+        *(.stage2_map)
     }
 
     .stage3.text : {
@@ -35,11 +36,8 @@ SECTIONS
     .stage3.data : {
         *(.data*)
         *(.rodata*)
-    }
-
-    .map : {
-        limine_map = .;
-        limine_sys_size = .;
+        *(.full_map*)
+        limine_sys_size = . - 0x8000;
     }
 
     .bss : {

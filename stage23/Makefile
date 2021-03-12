@@ -74,7 +74,8 @@ ifeq ($(TARGET), bios)
 		-static \
 		-fno-pie \
 		-lgcc \
-		-static-libgcc
+		-static-libgcc \
+		-Wl,--gc-sections
 endif
 
 .PHONY: all clean builddir
@@ -121,24 +122,31 @@ $(BUILDDIR)/stage2.bin.gz: $(BUILDDIR)/stage2.bin
 $(BUILDDIR)/stage2.bin: $(BUILDDIR)/limine.sys
 	dd if=$< bs=$$(( 0x$$($(READELF) -S $(BUILDDIR)/limine.elf | grep .stage3.text | sed 's/^.*] //' | awk '{print $$3}' | sed 's/^0*//') - 0x8000 )) count=1 of=$@
 
-$(BUILDDIR)/limine.map.o: $(BUILDDIR)/limine_nomap.elf
+$(BUILDDIR)/stage2.map.o: $(BUILDDIR)/limine_stage2only.elf
 	GENSYMS="`pwd`/gensyms.sh" && \
 	cd "`dirname $<`" && \
-	"$$GENSYMS" $(OBJDUMP) $< limine
+	"$$GENSYMS" $(OBJDUMP) $< stage2
+
+$(BUILDDIR)/full.map.o: $(BUILDDIR)/limine_nomap.elf
+	GENSYMS="`pwd`/gensyms.sh" && \
+	cd "`dirname $<`" && \
+	"$$GENSYMS" $(OBJDUMP) $< full
 
 $(BUILDDIR)/limine.sys: $(BUILDDIR)/limine.elf
 	$(OBJCOPY) -O binary $< $@
 
-$(BUILDDIR)/limine_nomap.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
-	$(CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
-	$(CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Wl,--gc-sections -Tlinker_stage2only.ld -o $(BUILDDIR)/limine_stage2only.elf || \
+$(BUILDDIR)/limine_stage2only.elf: $(OBJ)
+	$(CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_stage2only.ld -o $@ || \
 		( echo "This error means that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
 		  false )
 
-$(BUILDDIR)/limine.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/limine.map.o
+$(BUILDDIR)/limine_nomap.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o
+	$(CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
+
+$(BUILDDIR)/limine.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o
 	$(CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o $@
 
-$(BUILDDIR)/limine_dbg.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
+$(BUILDDIR)/limine_dbg.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o
 	$(CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o $@
 
 endif

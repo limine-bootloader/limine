@@ -8,12 +8,16 @@
 #include <fs/file.h>
 #include <mm/pmm.h>
 
-extern symbol limine_map;
+extern symbol stage2_map, full_map;
 
 char *trace_address(size_t *off, size_t addr) {
+    char *limine_map;
+
 #if defined (bios)
     if (!stage3_loaded)
-        return NULL;
+        limine_map = stage2_map;
+    else
+        limine_map = full_map;
 #endif
 
     uintptr_t prev_addr = 0;

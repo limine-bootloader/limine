@@ -23,9 +23,10 @@ SECTIONS
         *.s2.o(.rodata*)
         *libgcc.a:*(.data*)
         *libgcc.a:*(.rodata*)
+        stage2_map = .;
         stage3_addr = .;
         *(.stage3_build_id*)
-        limine_map = .;
+        full_map = .;
         limine_sys_size = .;
     }
 

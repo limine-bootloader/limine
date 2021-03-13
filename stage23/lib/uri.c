@@ -54,11 +54,8 @@ bool uri_resolve(char *uri, char **resource, char **root, char **path) {
     return true;
 }
 
-#if defined (bios)
-// BIOS partitions are specified in the <BIOS drive>:<partition> form.
-// The drive may be omitted, the partition cannot.
-static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) {
-    uint64_t val;
+static bool parse_bios_partition(char *loc, int *drive, int *partition) {
+    int64_t val;
 
     for (size_t i = 0; ; i++) {
         if (loc[i] == 0)
@@ -67,38 +64,43 @@ static bool parse_bios_partition(char *loc, uint8_t *drive, uint8_t *partition) 
         if (loc[i] == ':') {
             loc[i] = 0;
             if (*loc == 0) {
-                *drive = boot_volume->drive;
+                panic("Drive number cannot be omitted for hdd:// and odd://");
             } else {
                 val = strtoui(loc, NULL, 10);
                 if (val < 1 || val > 16) {
-                    panic("BIOS drive number outside range 1-16");
+                    panic("Drive number outside range 1-16");
                 }
-                *drive = (val - 1) + 0x80;
+                *drive = val;
             }
             loc += i + 1;
             break;
         }
     }
 
-    if (*loc == 0)
-        return false;
+    if (*loc == 0) {
+        *partition = -1;
+        return true;
+    }
 
     val = strtoui(loc, NULL, 10);
     if (val < 1 || val > 256) {
-        panic("BIOS partition number outside range 1-256");
+        panic("Partition number outside range 1-256");
     }
     *partition = val - 1;
 
     return true;
 }
 
-static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
-    uint8_t drive, partition;
+static bool uri_hdd_dispatch(struct file_handle *fd, char *loc, char *path) {
+    int drive, partition;
 
     if (!parse_bios_partition(loc, &drive, &partition))
         return false;
 
+    drive = (drive - 1) + 0x80;
+
     struct volume *volume = volume_get_by_coord(drive, partition);
+
     if (volume == NULL)
         return false;
 
@@ -107,7 +109,25 @@ static bool uri_bios_dispatch(struct file_handle *fd, char *loc, char *path) {
 
     return true;
 }
-#endif
+
+static bool uri_odd_dispatch(struct file_handle *fd, char *loc, char *path) {
+    int drive, partition;
+
+    if (!parse_bios_partition(loc, &drive, &partition))
+        return false;
+
+    drive = (drive - 1) + 0xe0;
+
+    struct volume *volume = volume_get_by_coord(drive, partition);
+
+    if (volume == NULL)
+        return false;
+
+    if (fopen(fd, volume, path))
+        return false;
+
+    return true;
+}
 
 static bool uri_guid_dispatch(struct file_handle *fd, char *guid_str, char *path) {
     struct guid guid;
@@ -199,11 +219,12 @@ bool uri_open(struct file_handle *fd, char *uri) {
         resource++;
     }
 
-    if (0) {
-#if defined (bios)
-    } else if (!strcmp(resource, "bios")) {
-        ret = uri_bios_dispatch(fd, root, path);
-#endif
+    if (!strcmp(resource, "bios")) {
+        panic("bios:// resource is no longer supported. Check CONFIG.md for hdd:// and odd://");
+    } else if (!strcmp(resource, "hdd")) {
+        ret = uri_hdd_dispatch(fd, root, path);
+    } else if (!strcmp(resource, "odd")) {
+        ret = uri_odd_dispatch(fd, root, path);
     } else if (!strcmp(resource, "boot")) {
         ret = uri_boot_dispatch(fd, root, path);
     } else if (!strcmp(resource, "guid")) {

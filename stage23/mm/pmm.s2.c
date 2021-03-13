@@ -300,10 +300,17 @@ void init_memmap(void) {
         if (entry_pool_limit > 0x100000)
             entry_pool_limit = 0x100000;
 
-        size_t entry_pool_size = entry_pool_limit - entry->PhysicalStart;
+        size_t entry_pool_start = entry->PhysicalStart;
+        if (entry_pool_start < 0x1000)
+            entry_pool_start = 0x1000;
+
+        if (entry_pool_start > entry_pool_limit)
+            continue;
+
+        size_t entry_pool_size = entry_pool_limit - entry_pool_start;
 
         if (entry_pool_size > bump_alloc_pool_size) {
-            bump_allocator_base = entry->PhysicalStart;
+            bump_allocator_base = entry_pool_start;
             bump_allocator_limit = entry_pool_limit;
             bump_alloc_pool_size = entry_pool_size;
         }

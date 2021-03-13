@@ -13,8 +13,6 @@ else
 	$(error Invalid target)
 endif
 
-CC32 = i386-elf-gcc
-
 CC = $(TOOLCHAIN)-gcc
 LD = $(TOOLCHAIN)-ld
 OBJCOPY = $(TOOLCHAIN)-objcopy
@@ -82,11 +80,12 @@ endif
 C_FILES := $(shell find -L ./ -type f -name '*.c' | sort)
 ifeq ($(TARGET), bios)
 ASM_FILES := $(shell find -L ./ -type f -name '*.asm' | sort)
+OBJ := $(addprefix $(BUILDDIR)/, $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o))
 endif
 ifeq ($(TARGET), uefi)
-ASM_FILES := lib/do_32.asm
+ASM_FILES := $(shell find -L ./ -type f -name '*.asm64' | sort)
+OBJ := $(addprefix $(BUILDDIR)/, $(ASM_FILES:.asm64=.o) $(C_FILES:.c=.o))
 endif
-OBJ := $(addprefix $(BUILDDIR)/, $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o))
 HEADER_DEPS := $(addprefix $(BUILDDIR)/, $(C_FILES:.c=.d))
 
 ifeq ($(TARGET), bios)
@@ -153,7 +152,7 @@ endif
 ifeq ($(TARGET), uefi)
 
 $(BUILDDIR)/BOOTX64.EFI: $(BUILDDIR)/limine_efi.elf
-	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym  -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 $< $@
+	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 $< $@
 
 $(BUILDDIR)/limine_efi.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
 	$(LD) -shared -Bsymbolic \
@@ -170,26 +169,27 @@ endif
 $(BUILDDIR)/%.o: %.c
 	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 
+-include $(HEADER_DEPS)
+
 ifeq ($(TARGET), bios)
 $(BUILDDIR)/%.s2.o: %.s2.c
 	$(CC) $(S2CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 endif
 
+-include $(HEADER_DEPS)
+
 ifeq ($(TARGET), uefi)
 $(BUILDDIR)/%.32.o: %.32.c
-	$(CC32) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@.32
+	$(CC) -m32 $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@.32
 	$(OBJCOPY) -I elf32-i386 -O elf64-x86-64 $@.32 $@
 	rm $@.32
 endif
 
-ifeq ($(TARGET), bios)
 $(BUILDDIR)/%.o: %.asm
 	nasm $< -F dwarf -g -f elf32 -o $@
-endif
-ifeq ($(TARGET), uefi)
-$(BUILDDIR)/%.o: %.asm
+
+$(BUILDDIR)/%.o: %.asm64
 	nasm $< -F dwarf -g -f elf64 -o $@
-endif
 
 clean:
 	rm -rf $(BUILDDIR)

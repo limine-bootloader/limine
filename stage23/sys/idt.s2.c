@@ -5,7 +5,6 @@
 
 #if defined (bios)
 
-__attribute__((section(".realmode")))
 static struct idt_entry idt_entries[32];
 
 __attribute__((section(".realmode")))

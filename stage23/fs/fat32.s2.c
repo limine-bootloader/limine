@@ -219,7 +219,9 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
     struct fat32_directory_entry *directory_entries;
 
     if (directory != NULL) {
-        uint32_t current_cluster_number = directory->cluster_num_high << 16 | directory->cluster_num_low;
+        uint32_t current_cluster_number = directory->cluster_num_low;
+        if (context->type == 32)
+            current_cluster_number |= (uint32_t)directory->cluster_num_high << 16;
 
         uint32_t *directory_cluster_chain = cache_cluster_chain(context, current_cluster_number, &dir_chain_len);
 
@@ -360,12 +362,13 @@ int fat32_open(struct fat32_file_handle* ret, struct volume *part, const char* p
             current_directory = &_current_directory;
         } else {
             ret->context = context;
-            ret->first_cluster = current_file.cluster_num_high << 16 | current_file.cluster_num_low;
+            ret->first_cluster = current_file.cluster_num_low;
+            if (context.type == 32)
+                ret->first_cluster |= (uint64_t)current_file.cluster_num_high << 16;
             ret->size_clusters = DIV_ROUNDUP(current_file.file_size_bytes, FAT32_SECTOR_SIZE);
             ret->size_bytes = current_file.file_size_bytes;
-            uint32_t file_cluster = current_file.cluster_num_high << 16 | current_file.cluster_num_low;
             size_t file_chain_len;
-            ret->cluster_chain = cache_cluster_chain(&context, file_cluster, &file_chain_len);
+            ret->cluster_chain = cache_cluster_chain(&context, ret->first_cluster, &file_chain_len);
             return 0;
         }
     }

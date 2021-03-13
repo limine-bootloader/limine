@@ -19,7 +19,7 @@ such as Long Mode, 5-level paging, and SMP (multicore), to name a few.
 ### Supported filesystems
 * ext2/3/4
 * echfs
-* FAT32
+* FAT16/32
 * ISO9660 (CDs/DVDs)
 
 ### Supported partitioning schemes

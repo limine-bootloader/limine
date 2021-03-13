@@ -98,17 +98,21 @@ void stage3_common(void) {
         panic("PROTOCOL not specified");
     }
 
-    if (0) {
-
-    } else if (!strcmp(proto, "stivale")) {
+    if (!strcmp(proto, "stivale")) {
         stivale_load(config, cmdline);
     } else if (!strcmp(proto, "stivale2")) {
-        stivale2_load(config, cmdline, false /*booted_from_pxe*/);
-#if defined (bios)
+        stivale2_load(config, cmdline, boot_volume->pxe);
     } else if (!strcmp(proto, "linux")) {
+#if defined (bios)
         linux_load(config, cmdline);
+#elif defined (uefi)
+        panic("UEFI Limine does not support the Linux boot protocol");
+#endif
     } else if (!strcmp(proto, "chainload")) {
+#if defined (bios)
         chainload(config);
+#elif defined (uefi)
+        panic("UEFI Limine does not support the chainload boot protocol");
 #endif
     }
 

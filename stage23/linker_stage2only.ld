@@ -28,6 +28,7 @@ SECTIONS
         *(.stage3_build_id*)
         full_map = .;
         limine_sys_size = .;
+        getchar_internal = .;
     }
 
     .bss : {

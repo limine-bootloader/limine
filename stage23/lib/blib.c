@@ -83,7 +83,7 @@ bool efi_exit_boot_services(void) {
     status = uefi_call_wrapper(gBS->ExitBootServices, 2, efi_image_handle, mmap_key);
 
     if (status)
-        panic("efi: Failed to exit boot services\n");
+        panic("efi: Failed to exit boot services");
 
     asm volatile ("cli" ::: "memory");
 

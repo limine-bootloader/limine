@@ -2,6 +2,9 @@ section .realmode
 
 global rm_hcf
 rm_hcf:
+    ; Load BIOS IVT
+    lidt [.rm_idt]
+
     ; Jump to real mode
     jmp 0x08:.bits16
   .bits16:
@@ -30,6 +33,9 @@ rm_hcf:
     jmp .hang
     bits 32
 
+  .rm_idt:   dw 0x3ff
+             dd 0
+
 global rm_int
 rm_int:
     ; Self-modifying code: int $int_no
@@ -46,6 +52,12 @@ rm_int:
 
     ; Save GDT in case BIOS overwrites it
     sgdt [.gdt]
+
+    ; Save IDT
+    sidt [.idt]
+
+    ; Load BIOS IVT
+    lidt [.rm_idt]
 
     ; Save non-scratch GPRs
     push ebx
@@ -116,7 +128,10 @@ rm_int:
     mov esp, dword [ss:.esp]
 
     ; Restore GDT
-    lgdt [ss:.gdt]
+    o32 lgdt [ss:.gdt]
+
+    ; Restore IDT
+    o32 lidt [ss:.idt]
 
     ; Jump back to pmode
     mov eax, cr0
@@ -146,3 +161,6 @@ align 16
   .out_regs: dd 0
   .in_regs:  dd 0
   .gdt:      dq 0
+  .idt:      dq 0
+  .rm_idt:   dw 0x3ff
+             dd 0

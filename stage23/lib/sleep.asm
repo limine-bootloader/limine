@@ -26,6 +26,15 @@ _pit_sleep_and_quit_on_keypress:
 
     mov dword [int_08_ticks_counter], 0
 
+    ; Save GDT in case BIOS overwrites it
+    sgdt [.gdt]
+
+    ; Save IDT
+    sidt [.idt]
+
+    ; Load BIOS IVT
+    lidt [.rm_idt]
+
     ; Save non-scratch GPRs
     push ebx
     push esi
@@ -81,6 +90,12 @@ _pit_sleep_and_quit_on_keypress:
   .done:
     cli
 
+    ; Restore GDT
+    o32 lgdt [ss:.gdt]
+
+    ; Restore IDT
+    o32 lidt [ss:.idt]
+
     ; Jump back to pmode
     mov ebx, cr0
     or bl, 1
@@ -115,3 +130,8 @@ _pit_sleep_and_quit_on_keypress:
     pop edx
 
     ret
+
+  .gdt:      dq 0
+  .idt:      dq 0
+  .rm_idt:   dw 0x3ff
+             dd 0

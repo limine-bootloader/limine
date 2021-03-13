@@ -20,6 +20,7 @@
 #include <pxe/pxe.h>
 #include <pxe/tftp.h>
 #include <drivers/disk.h>
+#include <sys/idt.h>
 
 extern uint64_t stage3_build_id;
 
@@ -74,6 +75,8 @@ void entry(uint8_t boot_drive, int boot_from) {
     if (!a20_enable())
         panic("Could not enable A20 line");
 
+    init_idt();
+
     init_e820();
     init_memmap();
 
@@ -90,7 +93,7 @@ void entry(uint8_t boot_drive, int boot_from) {
     );
 
     if (!stage3_loaded)
-        panic("Failed to load stage 3.\n");
+        panic("Failed to load stage 3.");
 
     __attribute__((noreturn))
     void (*stage3)(int boot_from) = (void *)stage3_addr;

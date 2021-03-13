@@ -74,8 +74,7 @@ ifeq ($(TARGET), bios)
 		-static \
 		-fno-pie \
 		-lgcc \
-		-static-libgcc \
-		-Wl,--gc-sections
+		-static-libgcc
 endif
 
 .PHONY: all clean builddir

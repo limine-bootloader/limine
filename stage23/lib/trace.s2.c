@@ -8,17 +8,17 @@
 #include <fs/file.h>
 #include <mm/pmm.h>
 
+#if defined (bios)
+
 extern symbol stage2_map, full_map;
 
-char *trace_address(size_t *off, size_t addr) {
+static char *trace_address(size_t *off, size_t addr) {
     char *limine_map;
 
-#if defined (bios)
     if (!stage3_loaded)
         limine_map = stage2_map;
     else
         limine_map = full_map;
-#endif
 
     uintptr_t prev_addr = 0;
     char     *prev_sym  = NULL;
@@ -38,11 +38,7 @@ char *trace_address(size_t *off, size_t addr) {
 void print_stacktrace(size_t *base_ptr) {
     if (base_ptr == NULL) {
         asm volatile (
-#if defined (bios)
             "mov %0, ebp"
-#elif defined (uefi)
-            "mov %0, rbp"
-#endif
             : "=g"(base_ptr)
             :: "memory"
         );
@@ -65,3 +61,14 @@ void print_stacktrace(size_t *base_ptr) {
     }
     print("End of trace.\n");
 }
+
+#endif
+
+#if defined (uefi)
+
+void print_stacktrace(size_t *base_ptr) {
+    (void)base_ptr;
+    print("Stacktrace unavailable when using UEFI.\n");
+}
+
+#endif

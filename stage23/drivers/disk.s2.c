@@ -189,6 +189,8 @@ void disk_create_index(void) {
 #if defined (uefi)
 
 struct volume *disk_volume_from_efi_handle(EFI_HANDLE *efi_handle) {
+    EFI_STATUS status;
+
     struct volume *ret = NULL;
 
     EFI_GUID disk_io_guid = DISK_IO_PROTOCOL;
@@ -206,8 +208,18 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE *efi_handle) {
 
     uefi_call_wrapper(disk_io->ReadDisk, 5, disk_io, block_io->Media->MediaId, 0,
                       sizeof(uint64_t), &orig);
-    uefi_call_wrapper(disk_io->WriteDisk, 5, disk_io, block_io->Media->MediaId, 0,
-                      sizeof(uint64_t), &signature);
+
+    status = uefi_call_wrapper(disk_io->WriteDisk, 5,
+        disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &signature);
+
+    if (status) {
+        // Really hacky support for CDs because they are read-only
+        for (size_t i = 0; i < volume_index_i; i++) {
+            if (volume_index[i]->drive == 0xe0)
+                return volume_index[i];
+        }
+        return NULL;
+    }
 
     for (size_t i = 0; i < volume_index_i; i++) {
         uint64_t compare;
@@ -314,6 +326,12 @@ void disk_create_index(void) {
     size_t drives_counter = 0x80;
 
     for (size_t i = 0; i < handles_size / sizeof(EFI_HANDLE); i++) {
+        EFI_GUID disk_io_guid = DISK_IO_PROTOCOL;
+        EFI_DISK_IO *disk_io = NULL;
+
+        uefi_call_wrapper(gBS->HandleProtocol, 3, handles[i], &disk_io_guid,
+                          &disk_io);
+
         EFI_BLOCK_IO *drive = NULL;
 
         status = uefi_call_wrapper(gBS->HandleProtocol, 3, handles[i],
@@ -325,9 +343,18 @@ void disk_create_index(void) {
         if (drive->Media->LogicalPartition)
             continue;
 
+        uint64_t orig;
+        uefi_call_wrapper(disk_io->ReadDisk, 5,
+            disk_io, drive->Media->MediaId, 0, sizeof(uint64_t), &orig);
+        status = uefi_call_wrapper(disk_io->WriteDisk, 5,
+            disk_io, drive->Media->MediaId, 0, sizeof(uint64_t), &orig);
+
         struct volume *block = ext_mem_alloc(sizeof(struct volume));
 
-        block->drive = drives_counter++;
+        if (status)
+            block->drive = 0xe0;
+        else
+            block->drive = drives_counter++;
         block->efi_handle = handles[i];
         block->partition = -1;
         block->sector_size = drive->Media->BlockSize;

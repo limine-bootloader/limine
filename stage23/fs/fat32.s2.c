@@ -12,6 +12,7 @@
 #define FAT32_VALID_SIGNATURE_1 0x28
 #define FAT32_VALID_SIGNATURE_2 0x29
 #define FAT32_VALID_SYSTEM_IDENTIFIER "FAT32   "
+#define FAT16_VALID_SYSTEM_IDENTIFIER "FAT16   "
 #define FAT32_SECTOR_SIZE 512
 #define FAT32_ATTRIBUTE_SUBDIRECTORY 0x10
 #define FAT32_LFN_ATTRIBUTE 0x0F
@@ -73,50 +74,81 @@ static int fat32_init_context(struct fat32_context* context, struct volume *part
     struct fat32_bpb bpb;
     volume_read(context->part, &bpb, 0, sizeof(struct fat32_bpb));
 
-    if (bpb.signature != FAT32_VALID_SIGNATURE_1 && bpb.signature != FAT32_VALID_SIGNATURE_2) {
-        return 1;
+    if (strncmp(bpb.system_identifier, FAT32_VALID_SYSTEM_IDENTIFIER, SIZEOF_ARRAY(bpb.system_identifier)) == 0) {
+        if (bpb.signature == FAT32_VALID_SIGNATURE_1 || bpb.signature == FAT32_VALID_SIGNATURE_2) {
+            context->type = 32;
+            goto valid;
+        }
     }
 
-    if (strncmp(bpb.system_identifier, FAT32_VALID_SYSTEM_IDENTIFIER, SIZEOF_ARRAY(bpb.system_identifier)) != 0) {
-        return 1;
+    if (strncmp((((void *)&bpb) + 0x36), FAT16_VALID_SYSTEM_IDENTIFIER, SIZEOF_ARRAY(bpb.system_identifier)) == 0) {
+        context->type = 16;
+        goto valid;
     }
 
+    return 1;
+
+valid:
     context->sectors_per_cluster = bpb.sectors_per_cluster;
     context->reserved_sectors = bpb.reserved_sectors;
     context->number_of_fats = bpb.fats_count;
     context->hidden_sectors = bpb.hidden_sectors_count;
-    context->sectors_per_fat = bpb.sectors_per_fat_32;
+    context->sectors_per_fat = context->type == 32 ? bpb.sectors_per_fat_32 : bpb.sectors_per_fat_16;
     context->root_directory_cluster = bpb.root_directory_cluster;
     context->fat_start_lba = bpb.reserved_sectors;
-    context->data_start_lba = context->fat_start_lba + bpb.fats_count * bpb.sectors_per_fat_32;
+    context->root_entries = bpb.directory_entries_count;
+    context->root_start = context->reserved_sectors + context->number_of_fats * context->sectors_per_fat;
+    context->root_size = DIV_ROUNDUP(context->root_entries * sizeof(struct fat32_directory_entry), FAT32_SECTOR_SIZE);
+    switch (context->type) {
+        case 16:
+            context->data_start_lba = context->root_start + context->root_size;
+            break;
+        case 32:
+            context->data_start_lba = context->root_start;
+            break;
+        default:
+            __builtin_unreachable();
+    }
 
     return 0;
 }
 
-static int fat32_read_cluster_from_map(struct fat32_context* context, uint32_t cluster, uint32_t* out) {
-    volume_read(context->part, out, context->fat_start_lba * FAT32_SECTOR_SIZE + cluster * sizeof(uint32_t), sizeof(uint32_t));
+static int read_cluster_from_map(struct fat32_context *context, uint32_t cluster, uint32_t *out) {
+    switch (context->type) {
+        case 16:
+            *out = 0;
+            volume_read(context->part, out, context->fat_start_lba * FAT32_SECTOR_SIZE + cluster * sizeof(uint16_t), sizeof(uint16_t));
+            break;
+        case 32:
+            volume_read(context->part, out, context->fat_start_lba * FAT32_SECTOR_SIZE + cluster * sizeof(uint32_t), sizeof(uint32_t));
+            *out &= 0x0fffffff;
+            break;
+        default:
+            __builtin_unreachable();
+    }
 
-    *out &= 0x0fffffff;
     return 0;
 }
 
 static uint32_t *cache_cluster_chain(struct fat32_context *context,
                                      uint32_t initial_cluster,
                                      size_t *_chain_length) {
-    if (initial_cluster < 0x2 || initial_cluster > 0xfffffef)
+    uint32_t cluster_limit = (context->type == 16 ? 0xffef    : 0)
+                           | (context->type == 32 ? 0xfffffef : 0);
+    if (initial_cluster < 0x2 || initial_cluster > cluster_limit)
         return NULL;
     uint32_t cluster = initial_cluster;
     size_t chain_length;
     for (chain_length = 1; ; chain_length++) {
-        fat32_read_cluster_from_map(context, cluster, &cluster);
-        if (cluster < 0x2 || cluster > 0xfffffef)
+        read_cluster_from_map(context, cluster, &cluster);
+        if (cluster < 0x2 || cluster > cluster_limit)
             break;
     }
     uint32_t *cluster_chain = ext_mem_alloc(chain_length * sizeof(uint32_t));
     cluster = initial_cluster;
     for (size_t i = 0; i < chain_length; i++) {
         cluster_chain[i] = cluster;
-        fat32_read_cluster_from_map(context, cluster, &cluster);
+        read_cluster_from_map(context, cluster, &cluster);
     }
     *_chain_length = chain_length;
     return cluster_chain;
@@ -134,7 +166,7 @@ static bool read_cluster_chain(struct fat32_context *context,
         if (chunk > block_size - offset)
             chunk = block_size - offset;
 
-        uint64_t base = (context->data_start_lba + (cluster_chain[block] - 2) * context->sectors_per_cluster) * FAT32_SECTOR_SIZE;
+        uint64_t base = ((uint64_t)context->data_start_lba + (cluster_chain[block] - 2) * context->sectors_per_cluster) * FAT32_SECTOR_SIZE;
         volume_read(context->part, buf + progress, base + offset, chunk);
 
         progress += chunk;
@@ -183,16 +215,28 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
     size_t block_size = context->sectors_per_cluster * FAT32_SECTOR_SIZE;
     char current_lfn[FAT32_LFN_MAX_FILENAME_LENGTH] = {0};
 
-    uint32_t current_cluster_number = directory->cluster_num_high << 16 | directory->cluster_num_low;
-    size_t   dir_chain_len;
-    uint32_t *directory_cluster_chain = cache_cluster_chain(context, current_cluster_number, &dir_chain_len);
+    size_t dir_chain_len;
+    struct fat32_directory_entry *directory_entries;
 
-    if (directory_cluster_chain == NULL)
-        return -1;
+    if (directory != NULL) {
+        uint32_t current_cluster_number = directory->cluster_num_high << 16 | directory->cluster_num_low;
 
-    struct fat32_directory_entry *directory_entries = ext_mem_alloc(dir_chain_len * block_size);
-    if (!read_cluster_chain(context, directory_cluster_chain, directory_entries, 0, dir_chain_len * block_size))
-        return -1;
+        uint32_t *directory_cluster_chain = cache_cluster_chain(context, current_cluster_number, &dir_chain_len);
+
+        if (directory_cluster_chain == NULL)
+            return -1;
+
+        directory_entries = ext_mem_alloc(dir_chain_len * block_size);
+
+        if (!read_cluster_chain(context, directory_cluster_chain, directory_entries, 0, dir_chain_len * block_size))
+            return -1;
+    } else {
+        dir_chain_len = DIV_ROUNDUP(context->root_entries * sizeof(struct fat32_directory_entry), block_size);
+
+        directory_entries = ext_mem_alloc(dir_chain_len * block_size);
+
+        volume_read(context->part, directory_entries, context->root_start * FAT32_SECTOR_SIZE, context->root_entries * sizeof(struct fat32_directory_entry));
+    }
 
     for (size_t i = 0; i < (dir_chain_len * block_size) / sizeof(struct fat32_directory_entry); i++) {
         if (directory_entries[i].file_name_and_ext[0] == 0x00) {
@@ -234,7 +278,10 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
             }
         } else {
             char fn[8+3];
-            if (fat32_filename_to_8_3(fn, name) && !strncmp(directory_entries[i].file_name_and_ext, fn, 8+3)) {
+            if (!fat32_filename_to_8_3(fn, name)) {
+                continue;
+            }
+            if (!strncmp(directory_entries[i].file_name_and_ext, fn, 8+3)) {
                 *file = directory_entries[i];
                 return 0;
             }
@@ -259,7 +306,8 @@ int fat32_open(struct fat32_file_handle* ret, struct volume *part, const char* p
         return r;
     }
 
-    struct fat32_directory_entry current_directory;
+    struct fat32_directory_entry _current_directory;
+    struct fat32_directory_entry *current_directory;
     struct fat32_directory_entry current_file;
     unsigned int current_index = 0;
     char current_part[FAT32_LFN_MAX_FILENAME_LENGTH];
@@ -270,8 +318,18 @@ int fat32_open(struct fat32_file_handle* ret, struct volume *part, const char* p
     }
 
     // walk down the directory tree
-    current_directory.cluster_num_low = context.root_directory_cluster & 0xFFFF;
-    current_directory.cluster_num_high = context.root_directory_cluster >> 16;
+    switch (context.type) {
+        case 16:
+            current_directory = NULL;
+            break;
+        case 32:
+            _current_directory.cluster_num_low = context.root_directory_cluster & 0xFFFF;
+            _current_directory.cluster_num_high = context.root_directory_cluster >> 16;
+            current_directory = &_current_directory;
+            break;
+        default:
+            __builtin_unreachable();
+    }
 
     for (;;) {
         bool expect_directory = false;
@@ -293,12 +351,13 @@ int fat32_open(struct fat32_file_handle* ret, struct volume *part, const char* p
             }
         }
 
-        if ((r = fat32_open_in(&context, &current_directory, &current_file, current_part)) != 0) {
+        if ((r = fat32_open_in(&context, current_directory, &current_file, current_part)) != 0) {
             return r;
         }
 
         if (expect_directory) {
-            current_directory = current_file;
+            _current_directory = current_file;
+            current_directory = &_current_directory;
         } else {
             ret->context = context;
             ret->first_cluster = current_file.cluster_num_high << 16 | current_file.cluster_num_low;

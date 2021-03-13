@@ -6,7 +6,7 @@ DESTDIR =
 
 PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
-.PHONY: all clean install distclean limine-bios limine-uefi limine-bios-clean limine-uefi-clean stage23-bios stage23-bios-clean stage23-uefi stage23-uefi-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat32-test iso9660-test
+.PHONY: all clean install distclean limine-bios limine-uefi limine-bios-clean limine-uefi-clean stage23-bios stage23-bios-clean stage23-uefi stage23-uefi-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat16-test fat32-test iso9660-test pxe-test uefi-test
 
 all:
 	$(MAKE) limine-uefi
@@ -128,6 +128,27 @@ ext2-test:
 	sudo losetup -Pf --show test.hdd > loopback_dev
 	sudo partprobe `cat loopback_dev`
 	sudo mkfs.ext2 `cat loopback_dev`p1
+	sudo mount `cat loopback_dev`p1 test_image
+	sudo mkdir test_image/boot
+	sudo cp -rv bin/* test/* test_image/boot/
+	sync
+	sudo umount test_image/
+	sudo losetup -d `cat loopback_dev`
+	rm -rf test_image loopback_dev
+	bin/limine-install test.hdd
+	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+
+fat16-test:
+	$(MAKE) test-clean
+	$(MAKE) test.hdd
+	$(MAKE) limine-bios
+	$(MAKE) bin/limine-install
+	$(MAKE) -C test
+	rm -rf test_image/
+	mkdir test_image
+	sudo losetup -Pf --show test.hdd > loopback_dev
+	sudo partprobe `cat loopback_dev`
+	sudo mkfs.fat -F 16 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
 	sudo cp -rv bin/* test/* test_image/boot/

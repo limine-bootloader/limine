@@ -6,14 +6,18 @@
 
 struct fat32_context {
     struct volume *part;
+    int type;
     uint8_t sectors_per_cluster;
     uint16_t reserved_sectors;
     uint8_t number_of_fats;
     uint32_t hidden_sectors;
     uint32_t sectors_per_fat;
-    uint32_t root_directory_cluster;
     uint32_t fat_start_lba;
     uint32_t data_start_lba;
+    uint32_t root_directory_cluster;
+    uint16_t root_entries;
+    uint32_t root_start;
+    uint32_t root_size;
 };
 
 struct fat32_file_handle {

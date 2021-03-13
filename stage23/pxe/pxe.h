@@ -2,7 +2,9 @@
 #define PXE_H
 
 #include <stdint.h>
+#include <lib/part.h>
 
+struct volume *pxe_bind_volume(void);
 void pxe_init(void);
 int pxe_call(uint16_t opcode, uint16_t buf_seg, uint16_t buf_off) __attribute__((regparm(3)));
 
@@ -56,18 +58,18 @@ struct pxenv {
     uint8_t checksum;
     uint32_t rm_entry;
     uint32_t pm_offset;
-    uint16_t pm_selector; 
-    uint16_t stack_seg; 
-    uint16_t stack_size; 
-    uint16_t bc_code_seg; 
-    uint16_t bc_code_size; 
-    uint16_t bc_data_seg; 
-    uint16_t bc_data_size; 
-    uint16_t undi_data_seg; 
-    uint16_t undi_data_size; 
-    uint16_t undi_code_seg; 
-    uint16_t undi_code_size; 
-    uint32_t pxe_ptr; 
+    uint16_t pm_selector;
+    uint16_t stack_seg;
+    uint16_t stack_size;
+    uint16_t bc_code_seg;
+    uint16_t bc_code_size;
+    uint16_t bc_data_seg;
+    uint16_t bc_data_size;
+    uint16_t undi_data_seg;
+    uint16_t undi_data_size;
+    uint16_t undi_code_seg;
+    uint16_t undi_code_size;
+    uint32_t pxe_ptr;
 } __attribute__((packed));
 
 #define PXE_BANGPXE_SIGNATURE "!PXE"

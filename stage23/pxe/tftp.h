@@ -47,6 +47,6 @@ struct pxenv_get_file_size {
 //server_ip and server_port can be 0 for default
 int tftp_open(struct tftp_file_handle* handle, uint32_t server_ip, uint16_t server_port, const char* name);
 int tftp_read(void *fd, void *buf, uint64_t loc, uint64_t count);
-uint32_t get_boot_server_info();
+uint32_t get_boot_server_info(void);
 
 #endif

@@ -10,6 +10,7 @@
 #include <mm/pmm.h>
 #include <lib/part.h>
 #include <lib/libc.h>
+#include <pxe/tftp.h>
 
 bool fs_get_guid(struct guid *guid, struct volume *part) {
     if (echfs_check_signature(part)) {
@@ -24,6 +25,20 @@ bool fs_get_guid(struct guid *guid, struct volume *part) {
 
 int fopen(struct file_handle *ret, struct volume *part, const char *filename) {
     ret->is_memfile = false;
+
+    if (part->pxe) {
+        struct tftp_file_handle *fd = ext_mem_alloc(sizeof(struct tftp_file_handle));
+
+        int r = tftp_open(fd, 0, 69, filename);
+        if (r)
+            return r;
+
+        ret->fd = (void *)fd;
+        ret->read = (void *)tftp_read;
+        ret->size = fd->file_size;
+
+        return 0;
+    }
 
     if (iso9660_check_signature(part)) {
         struct iso9660_file_handle *fd = ext_mem_alloc(sizeof(struct iso9660_file_handle));

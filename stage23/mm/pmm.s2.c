@@ -406,6 +406,9 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
 }
 
 bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only, bool do_panic) {
+    if (length == 0)
+        return true;
+
     uint64_t top = base + length;
 
 #if defined (bios)

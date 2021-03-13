@@ -18,6 +18,8 @@ struct volume {
     EFI_HANDLE efi_handle;
 #endif
 
+    bool pxe;
+
     int drive;
     int partition;
     int sector_size;
@@ -52,22 +54,29 @@ bool volume_read(struct volume *part, void *buffer, uint64_t loc, uint64_t count
 
 #define volume_iterate_parts(_VOLUME_, _BODY_) ({   \
     struct volume *_VOLUME = _VOLUME_;   \
-    while (_VOLUME->backing_dev != NULL) { \
-        _VOLUME = _VOLUME->backing_dev; \
-    } \
+    if (_VOLUME->pxe) { \
+        do { \
+            struct volume *_PART = _VOLUME; \
+            _BODY_ \
+        } while (0); \
+    } else { \
+        while (_VOLUME->backing_dev != NULL) { \
+            _VOLUME = _VOLUME->backing_dev; \
+        } \
  \
-    int _PART_CNT = -1; \
-    for (size_t _PARTNO = -1; ; _PARTNO++) { \
-        if (_PART_CNT > _VOLUME->max_partition) \
-            break; \
+        int _PART_CNT = -1; \
+        for (size_t _PARTNO = -1; ; _PARTNO++) { \
+            if (_PART_CNT > _VOLUME->max_partition) \
+                break; \
  \
-        struct volume *_PART = volume_get_by_coord(_VOLUME->drive, _PARTNO); \
-        if (_PART == NULL) \
-            continue; \
+            struct volume *_PART = volume_get_by_coord(_VOLUME->drive, _PARTNO); \
+            if (_PART == NULL) \
+                continue; \
  \
-        _PART_CNT++; \
+            _PART_CNT++; \
  \
-        _BODY_ \
+            _BODY_ \
+        } \
     } \
 })
 

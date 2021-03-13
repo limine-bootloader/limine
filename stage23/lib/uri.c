@@ -177,7 +177,7 @@ static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
 
 static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) {
 #if defined (bios)
-    if (false /*booted_from_pxe*/)
+    if (boot_volume->pxe)
         return uri_tftp_dispatch(fd, s_part, path);
 #endif
 

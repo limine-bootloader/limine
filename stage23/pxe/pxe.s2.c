@@ -5,8 +5,17 @@
 #include <pxe/pxe.h>
 #include <lib/libc.h>
 #include <lib/blib.h>
+#include <mm/pmm.h>
 
 void set_pxe_fp(uint32_t fp);
+
+struct volume *pxe_bind_volume(void) {
+    struct volume *volume = ext_mem_alloc(sizeof(struct volume));
+
+    volume->pxe = true;
+
+    return volume;
+}
 
 void pxe_init(void) {
     //pxe installation check

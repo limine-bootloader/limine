@@ -84,6 +84,9 @@ void entry(uint8_t boot_drive, int boot_from) {
 
     if (boot_from == BOOTED_FROM_HDD || boot_from == BOOTED_FROM_CD) {
         boot_volume = volume_get_by_coord(boot_drive, -1);
+    } else if (boot_from == BOOTED_FROM_PXE) {
+        pxe_init();
+        boot_volume = pxe_bind_volume();
     }
 
     volume_iterate_parts(boot_volume,

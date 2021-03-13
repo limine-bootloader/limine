@@ -8,7 +8,7 @@
 #include <mm/pmm.h>
 #include <lib/blib.h>
 
-uint32_t get_boot_server_info() {
+uint32_t get_boot_server_info(void) {
     struct pxenv_get_cached_info cachedinfo = { 0 };
     cachedinfo.packet_type = 2;
     pxe_call(PXENV_GET_CACHED_INFO, ((uint16_t)rm_seg(&cachedinfo)), (uint16_t)rm_off(&cachedinfo));

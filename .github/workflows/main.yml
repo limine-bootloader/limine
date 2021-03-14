@@ -8,88 +8,84 @@ on:
 jobs:
   build:
     name: Build and upload artifacts
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
+
+      - name: Get tag name
+        run: echo "TAG_NAME=$(git describe --exact-match --tags $(git log -n1 --pretty='%h'))" >> $GITHUB_ENV
+
+      - name: Get branch name
+        run: echo "BRANCH_NAME=$(echo "$TAG_NAME" | grep -o 'v[0-9]\+\.[0-9]\+')-branch" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install git build-essential nasm gcc-mingw-w64 gcc-multilib wget -y
 
       - name: Build the toolchain (BIOS)
-        uses: mintsuki-org/debian-x86_64@v0.3
-        with:
-          command: make toolchain-bios
+        run: make toolchain-bios
 
       - name: Build the toolchain (UEFI)
-        uses: mintsuki-org/debian-x86_64@v0.3
-        with:
-          command: make toolchain-uefi
+        run: make toolchain-uefi
 
       - name: Build the bootloader
-        uses: mintsuki-org/debian-x86_64@v0.3
-        with:
-          command: apt-get update && apt-get install nasm -y && make
+        run: make
 
       - name: Remove limine-hdd.o
-        uses: mintsuki-org/debian-x86_64@v0.3
-        with:
-          command: rm limine-hdd.o
+        run: rm limine-hdd.o
 
       - name: Build limine-install-linux-x86_64
-        uses: mintsuki-org/debian-x86_64@v0.3
-        with:
-          command: make CFLAGS="-O2 -pipe -static" bin/limine-install
+        run: make CFLAGS="-O2 -pipe -static" bin/limine-install
 
       - name: Strip limine-install-linux-x86_64
-        uses: mintsuki-org/debian-x86_64@v0.3
-        with:
-          command: strip bin/limine-install
+        run: strip bin/limine-install
 
       - name: Rename limine-install-linux-x86_64
-        uses: mintsuki-org/debian-x86_64@v0.3
-        with:
-          command: mv bin/limine-install bin/limine-install-linux-x86_64
+        run: mv bin/limine-install bin/limine-install-linux-x86_64
 
       - name: Remove limine-hdd.o
-        uses: mintsuki-org/debian-x86_64@v0.3
-        with:
-          command: rm limine-hdd.o
+        run: rm limine-hdd.o
 
       - name: Build limine-install-linux-x86_32
-        uses: mintsuki-org/debian-i386@v0.3
-        with:
-          command: make CFLAGS="-O2 -pipe -static" bin/limine-install
+        run: make OBJCOPY_ARCH="elf32-i386" CC="gcc -m32" CFLAGS="-O2 -pipe -static" bin/limine-install
 
       - name: Strip limine-install-linux-x86_32
-        uses: mintsuki-org/debian-i386@v0.3
-        with:
-          command: strip bin/limine-install
+        run: strip bin/limine-install
 
       - name: Rename limine-install-linux-x86_32
-        uses: mintsuki-org/debian-x86_64@v0.3
-        with:
-          command: mv bin/limine-install bin/limine-install-linux-x86_32
+        run: mv bin/limine-install bin/limine-install-linux-x86_32
 
       - name: Remove limine-hdd.o
-        uses: mintsuki-org/debian-x86_64@v0.3
-        with:
-          command: rm limine-hdd.o
+        run: rm limine-hdd.o
 
-      - name: Build and strip limine-install-win32
-        uses: mintsuki-org/debian-x86_64@v0.3
-        with:
-          command: apt-get update && apt-get install gcc-mingw-w64 -y && make CC="i686-w64-mingw32-gcc" OBJCOPY="i686-w64-mingw32-objcopy" CFLAGS="-O2 -pipe" bin/limine-install && i686-w64-mingw32-strip bin/limine-install.exe
+      - name: Build limine-install-win32
+        run: make CC="i686-w64-mingw32-gcc" OBJCOPY="i686-w64-mingw32-objcopy" CFLAGS="-O2 -pipe" bin/limine-install
+
+      - name: Strip limine-install-win32
+        run: i686-w64-mingw32-strip bin/limine-install.exe
 
       - name: Rename limine-install-win32
-        uses: mintsuki-org/debian-x86_64@v0.3
-        with:
-          command: mv bin/limine-install.exe bin/limine-install-win32.exe
+        run: mv bin/limine-install.exe bin/limine-install-win32.exe
 
       - name: Remove bin/limine-hdd.bin
-        uses: mintsuki-org/debian-x86_64@v0.3
-        with:
-          command: rm bin/limine-hdd.bin
+        run: rm bin/limine-hdd.bin
 
       - name: Push binaries to binary branch
-        uses: mintsuki-org/debian-x86_64@v0.3
-        with:
-          command: git checkout --orphan `git branch --show-current`-binary || git checkout `git branch --show-current`-binary && rm -rf `ls -a | grep -v '^\.git$' | grep -v '^\.\.$' | grep -v '^\.$' | grep -v '^bin$'` && mv bin/* ./ && rm -rf bin && git add . && git commit -m "Binary release ${GITHUB_REF##*/}" && git push origin `git branch --show-current`-binary
+        run: |
+          git config user.name 'mintsuki'
+          git config user.email 'mintsuki@users.noreply.github.com'
+          git checkout --orphan $BRANCH_NAME-binary || git checkout $BRANCH_NAME-binary
+          rm -rf $(ls -a | grep -v '^\.git$' | grep -v '^\.\.$' | grep -v '^\.$' | grep -v '^bin$')
+          mv bin/* ./
+          rm -rf bin
+          git add .
+          git commit -m "Binary release $TAG_NAME"
+          git push origin $BRANCH_NAME-binary
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

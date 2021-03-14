@@ -1,5 +1,6 @@
 CC = cc
 OBJCOPY = objcopy
+OBJCOPY_ARCH = default
 CFLAGS = -O2 -pipe -Wall -Wextra
 PREFIX = /usr/local
 DESTDIR =
@@ -17,7 +18,7 @@ bin/limine-install: limine-install.c limine-hdd.o
 	$(CC) $(CFLAGS) -std=c11 limine-hdd.o limine-install.c -o $@
 
 limine-hdd.o: bin/limine-hdd.bin
-	$(OBJCOPY) -B i8086 -I binary -O default bin/limine-hdd.bin $@
+	$(OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) bin/limine-hdd.bin $@
 
 clean: limine-bios-clean limine-uefi-clean
 	rm -f limine-hdd.o

@@ -81,7 +81,9 @@ bool init_gop(struct fb_info *ret,
 
     UINTN modes_count = gop->Mode->MaxMode;
 
-    // Find our mode
+    size_t current_fallback = 0;
+
+retry:
     for (size_t i = 0; i < modes_count; i++) {
         status = uefi_call_wrapper(gop->QueryMode, 4,
             gop, i, &mode_info_size, &mode_info);
@@ -126,7 +128,6 @@ bool init_gop(struct fb_info *ret,
                 break;
             default:
                 panic("gop: Invalid PixelFormat");
-
         }
 
         if (mode_info->HorizontalResolution != target_width
@@ -142,15 +143,25 @@ bool init_gop(struct fb_info *ret,
             print("gop: Failed to set video mode %x, moving on...\n", i);
             continue;
         }
+
+        ret->memory_model = 0x06;
+        ret->framebuffer_addr = gop->Mode->FrameBufferBase;
+        ret->framebuffer_pitch = gop->Mode->Info->PixelsPerScanLine * 4;
+        ret->framebuffer_width = gop->Mode->Info->HorizontalResolution;
+        ret->framebuffer_height = gop->Mode->Info->VerticalResolution;
+
+        return true;
     }
 
-    ret->memory_model = 0x06;
-    ret->framebuffer_addr = gop->Mode->FrameBufferBase;
-    ret->framebuffer_pitch = gop->Mode->Info->PixelsPerScanLine * 4;
-    ret->framebuffer_width = gop->Mode->Info->HorizontalResolution;
-    ret->framebuffer_height = gop->Mode->Info->VerticalResolution;
+    if (current_fallback < SIZEOF_ARRAY(fallback_resolutions)) {
+        target_width  = fallback_resolutions[current_fallback].width;
+        target_height = fallback_resolutions[current_fallback].height;
+        target_bpp    = fallback_resolutions[current_fallback].bpp;
+        current_fallback++;
+        goto retry;
+    }
 
-    return true;
+    return false;
 }
 
 #endif

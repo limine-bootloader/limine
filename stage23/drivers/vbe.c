@@ -115,18 +115,6 @@ static int set_vbe_mode(uint16_t mode) {
     return r.eax & 0xff;
 }
 
-struct resolution {
-    uint16_t width;
-    uint16_t height;
-    uint16_t bpp;
-};
-
-static struct resolution fallback_resolutions[] = {
-    { 1024, 768, 32 },
-    { 800,  600, 32 },
-    { 640,  480, 32 }
-};
-
 bool init_vbe(struct fb_info *ret,
               uint16_t target_width, uint16_t target_height, uint16_t target_bpp) {
     print("vbe: Initialising...\n");

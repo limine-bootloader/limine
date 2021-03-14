@@ -21,8 +21,7 @@ int init_config_disk(struct volume *part) {
 
     if (fopen(&f, part, "/limine.cfg")
      && fopen(&f, part, "/boot/limine.cfg")
-     && fopen(&f, part, "/tomatboot.cfg")
-     && fopen(&f, part, "/boot/tomatboot.cfg")) {
+     && fopen(&f, part, "/EFI/BOOT/limine.cfg")) {
         return -1;
     }
 

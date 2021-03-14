@@ -6,6 +6,31 @@
 #include <drivers/edid.h>
 #include <lib/print.h>
 
+static uint16_t linear_masks_to_bpp(uint32_t red_mask, uint32_t green_mask,
+                                    uint32_t blue_mask, uint32_t alpha_mask) {
+    uint32_t compound_mask = red_mask | green_mask | blue_mask | alpha_mask;
+    uint16_t ret = 32;
+    while ((compound_mask & (1 << 31)) == 0) {
+        ret--;
+        compound_mask <<= 1;
+    }
+    return ret;
+}
+
+static void linear_mask_to_mask_shift(
+                uint8_t *mask, uint8_t *shift, uint32_t linear_mask) {
+    *shift = 0;
+    while ((linear_mask & 1) == 0) {
+        (*shift)++;
+        linear_mask >>= 1;
+    }
+    *mask = 0;
+    while ((linear_mask & 1) == 1) {
+        (*mask)++;
+        linear_mask >>= 1;
+    }
+}
+
 // Most of this code taken from https://wiki.osdev.org/GOP
 
 bool init_gop(struct fb_info *ret,
@@ -64,8 +89,49 @@ bool init_gop(struct fb_info *ret,
         if (status)
             continue;
 
+        switch (mode_info->PixelFormat) {
+            case PixelBlueGreenRedReserved8BitPerColor:
+                ret->framebuffer_bpp = 32;
+                ret->red_mask_size = 8;
+                ret->red_mask_shift = 16;
+                ret->green_mask_size = 8;
+                ret->green_mask_shift = 8;
+                ret->blue_mask_size = 8;
+                ret->blue_mask_shift = 0;
+                break;
+            case PixelRedGreenBlueReserved8BitPerColor:
+                ret->framebuffer_bpp = 32;
+                ret->red_mask_size = 8;
+                ret->red_mask_shift = 0;
+                ret->green_mask_size = 8;
+                ret->green_mask_shift = 8;
+                ret->blue_mask_size = 8;
+                ret->blue_mask_shift = 16;
+                break;
+            case PixelBitMask:
+                ret->framebuffer_bpp = linear_masks_to_bpp(
+                                          mode_info->PixelInformation.RedMask,
+                                          mode_info->PixelInformation.GreenMask,
+                                          mode_info->PixelInformation.BlueMask,
+                                          mode_info->PixelInformation.ReservedMask);
+                linear_mask_to_mask_shift(&ret->red_mask_size,
+                                          &ret->red_mask_shift,
+                                          mode_info->PixelInformation.RedMask);
+                linear_mask_to_mask_shift(&ret->green_mask_size,
+                                          &ret->green_mask_shift,
+                                          mode_info->PixelInformation.GreenMask);
+                linear_mask_to_mask_shift(&ret->blue_mask_size,
+                                          &ret->blue_mask_shift,
+                                          mode_info->PixelInformation.BlueMask);
+                break;
+            default:
+                panic("gop: Invalid PixelFormat");
+
+        }
+
         if (mode_info->HorizontalResolution != target_width
-         || mode_info->VerticalResolution != target_height)
+         || mode_info->VerticalResolution != target_height
+         || ret->framebuffer_bpp != target_bpp)
             continue;
 
         print("gop: Found matching mode %x, attempting to set...\n", i);
@@ -80,16 +146,9 @@ bool init_gop(struct fb_info *ret,
 
     ret->memory_model = 0x06;
     ret->framebuffer_addr = gop->Mode->FrameBufferBase;
-    ret->framebuffer_pitch = (gop->Mode->Info->PixelsPerScanLine * 4);
+    ret->framebuffer_pitch = gop->Mode->Info->PixelsPerScanLine * 4;
     ret->framebuffer_width = gop->Mode->Info->HorizontalResolution;
     ret->framebuffer_height = gop->Mode->Info->VerticalResolution;
-    ret->framebuffer_bpp = 32;
-    ret->red_mask_size = 8;
-    ret->red_mask_shift = 16;
-    ret->green_mask_size = 8;
-    ret->green_mask_shift = 8;
-    ret->blue_mask_size = 8;
-    ret->blue_mask_shift = 0;
 
     return true;
 }

@@ -24,6 +24,7 @@
 #include <mm/mtrr.h>
 #include <stivale/stivale2.h>
 #include <pxe/tftp.h>
+#include <drivers/edid.h>
 
 #define KASLR_SLIDE_BITMASK 0x000FFF000u
 
@@ -51,7 +52,7 @@ static void append_tag(struct stivale2_struct *s, struct stivale2_tag *tag) {
     s->tags   = (uint64_t)(size_t)tag;
 }
 
-void stivale2_load(char *config, char *cmdline, bool pxe) {
+void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table) {
     struct file_handle *kernel = ext_mem_alloc(sizeof(struct file_handle));
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
@@ -291,6 +292,38 @@ void stivale2_load(char *config, char *cmdline, bool pxe) {
                 mtrr_save();
             }
         }
+    }
+    }
+
+    //////////////////////////////////////////////
+    // Create EDID struct tag
+    //////////////////////////////////////////////
+    {
+    struct edid_info_struct *edid_info = get_edid_info();
+
+    if (edid_info != NULL) {
+        struct stivale2_struct_tag_edid *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_edid) + sizeof(struct edid_info_struct));
+        tag->tag.identifier = STIVALE2_STRUCT_TAG_EDID_ID;
+
+        tag->edid_size = sizeof(struct edid_info_struct);
+
+        memcpy(tag->edid_information, edid_info, sizeof(struct edid_info_struct));
+
+        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    }
+    }
+
+    //////////////////////////////////////////////
+    // Create EFI system table struct tag
+    //////////////////////////////////////////////
+    {
+    if (efi_system_table != NULL) {
+        struct stivale2_struct_tag_efi_system_table *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_efi_system_table));
+        tag->tag.identifier = STIVALE2_STRUCT_TAG_EFI_SYSTEM_TABLE_ID;
+
+        tag->system_table = (uint64_t)(uintptr_t)efi_system_table;
+
+        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
     }
 

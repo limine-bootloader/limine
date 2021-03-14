@@ -25,12 +25,17 @@ struct edid_info_struct *get_edid_info(void) {
     if ((r.eax & 0xff00) != 0)
         goto fail;
 
-    print("edid: Success.\n");
-    return buf;
+    for (size_t i = 0; i < sizeof(struct edid_info_struct); i++)
+        if (((uint8_t *)buf)[i] != 0)
+            goto success;
 
 fail:
     print("edid: Could not fetch EDID data.\n");
     return NULL;
+
+success:
+    print("edid: Success.\n");
+    return buf;
 }
 
 #endif
@@ -76,12 +81,17 @@ struct edid_info_struct *get_edid_info(void) {
 
     memcpy(buf, edid->Edid, sizeof(struct edid_info_struct));
 
-    print("edid: Success.\n");
-    return buf;
+    for (size_t i = 0; i < sizeof(struct edid_info_struct); i++)
+        if (((uint8_t *)buf)[i] != 0)
+            goto success;
 
 fail:
     print("edid: Could not fetch EDID data.\n");
     return NULL;
+
+success:
+    print("edid: Success.\n");
+    return buf;
 }
 
 #endif

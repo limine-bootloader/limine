@@ -45,7 +45,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
     term_vbe(colourscheme, 64, 0, NULL);
 
-    print("Limine " LIMINE_VERSION "\n\n", print);
+    print("Limine " LIMINE_VERSION "\n\n");
 
     disk_create_index();
 
@@ -101,7 +101,13 @@ void stage3_common(void) {
     if (!strcmp(proto, "stivale")) {
         stivale_load(config, cmdline);
     } else if (!strcmp(proto, "stivale2")) {
-        stivale2_load(config, cmdline, boot_volume->pxe);
+#if defined (bios)
+        void *efi_system_table = NULL;
+#elif defined (uefi)
+        void *efi_system_table = gST;
+#endif
+
+        stivale2_load(config, cmdline, boot_volume->pxe, efi_system_table);
     } else if (!strcmp(proto, "linux")) {
 #if defined (bios)
         linux_load(config, cmdline);

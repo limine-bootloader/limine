@@ -38,9 +38,12 @@ struct stivale2_header header2 = {
     .tags        = (uint64_t)&framebuffer_request
 };
 
+static volatile int cpu_up = 0;
+
 static void ap_entry(struct stivale2_smp_info *s) {
-    e9_printf("AP %u started", s->lapic_id);
-    for (;;);
+    e9_printf("\t\t\tAP %d started", s->lapic_id);
+    cpu_up = 1;
+    for (;;) asm("hlt");
 }
 
 void stivale2_main(struct stivale2_struct *info) {
@@ -87,6 +90,12 @@ void stivale2_main(struct stivale2_struct *info) {
                 e9_printf("\tBlue mask size:  %d", f->blue_mask_shift);
                 break;
             }
+            case STIVALE2_STRUCT_TAG_EDID_ID: {
+                struct stivale2_struct_tag_edid *edid = (struct stivale2_struct_tag_edid *)tag;
+
+                e9_printf("EDID information at %x:", edid->edid_information);
+                e9_printf("\tSize: %d", edid->edid_size);
+            }
             case STIVALE2_STRUCT_TAG_FB_MTRR_ID: {
                 e9_puts("Framebuffer WC MTRR tag:");
                 e9_puts("\tFramebuffer WC MTRR enabled");
@@ -120,6 +129,11 @@ void stivale2_main(struct stivale2_struct *info) {
                 e9_printf("\tFlags: %x", f->flags);
                 break;
             }
+            case STIVALE2_STRUCT_TAG_EFI_SYSTEM_TABLE_ID: {
+                struct stivale2_struct_tag_efi_system_table *t = (struct stivale2_struct_tag_efi_system_table *)tag;
+                e9_printf("EFI system table at: %x", t->system_table);
+                break;
+            }
             case STIVALE2_STRUCT_TAG_SMP_ID: {
                 struct stivale2_struct_tag_smp *s = (struct stivale2_struct_tag_smp *)tag;
                 e9_puts("SMP tag:");
@@ -135,7 +149,9 @@ void stivale2_main(struct stivale2_struct *info) {
                     e9_printf("\t\tExtra Argument: %x", in->extra_argument);
                     if (in->lapic_id != s->bsp_lapic_id) {
                         in->target_stack = (uintptr_t)stacks[in->lapic_id] + sizeof(stack);
-                        in->goto_address = ap_entry;
+                        in->goto_address = (uintptr_t)ap_entry;
+                        while (cpu_up == 0);
+                        cpu_up = 0;
                     }
                 }
                 break;
@@ -148,5 +164,5 @@ void stivale2_main(struct stivale2_struct *info) {
     }
 
     // Enter our sublime pale slumber.
-    for (;;);
+    for (;;) asm("hlt");
 }

@@ -84,8 +84,15 @@ jobs:
           git add .
           git commit -m "Binary release $TAG_NAME"
           git push origin $BRANCH_NAME-binary
+          git tag $TAG_NAME-binary
+          git push origin $BRANCH_NAME-binary --tags
+
+      - name: Create release notes
+        run: echo "Binary release can be found at https://github.com/limine-bootloader/limine/tree/$TAG_NAME-binary" > rel_notes.txt
 
       - name: Release
         uses: softprops/action-gh-release@v1
+        with:
+          body_path: rel_notes.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

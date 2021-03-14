@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build, create release, and upload artifacts
+    name: Build and upload artifacts
     runs-on: ubuntu-latest
 
     steps:
@@ -79,7 +79,7 @@ jobs:
         with:
           command: apt-get update && apt-get install gcc-mingw-w64 -y && make CC="i686-w64-mingw32-gcc" OBJCOPY="i686-w64-mingw32-objcopy" CFLAGS="-O2 -pipe" bin/limine-install && i686-w64-mingw32-strip bin/limine-install.exe
 
-      - name: Rename limine-install-linux-win32
+      - name: Rename limine-install-win32
         uses: mintsuki-org/debian-x86_64@v0.3
         with:
           command: mv bin/limine-install.exe bin/limine-install-win32.exe
@@ -89,27 +89,7 @@ jobs:
         with:
           command: rm bin/limine-hdd.bin
 
-      - name: Rename bin directory
+      - name: Push binaries to binary branch
         uses: mintsuki-org/debian-x86_64@v0.3
         with:
-          command: mv bin limine-binary-${GITHUB_REF##*/}
-
-      - name: Package ZIP
-        uses: mintsuki-org/debian-x86_64@v0.3
-        with:
-          command: apt-get update && apt-get install zip -y && zip -r limine-binary-${GITHUB_REF##*/}.zip limine-binary-${GITHUB_REF##*/}
-
-      - name: Package tar.xz
-        uses: mintsuki-org/debian-x86_64@v0.3
-        with:
-          command: tar -Jcf limine-binary-${GITHUB_REF##*/}.tar.xz limine-binary-${GITHUB_REF##*/}
-
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          fail_on_unmatched_files: true
-          files: |
-            limine-binary-*.zip
-            limine-binary-*.tar.xz
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          command: git checkout --orphan `git branch --show-current`-binary || git checkout `git branch --show-current`-binary && rm -rf `ls -a | grep -v '^\.git$' | grep -v '^\.\.$' | grep -v '^\.$' | grep -v '^bin$'` && mv bin/* ./ && rm -rf bin && git add . && git commit -m "Binary release ${GITHUB_REF##*/}" && git push origin `git branch --show-current`-binary

@@ -23,7 +23,7 @@ COM_OUTPUT = false
 E9_OUTPUT = false
 
 BUILD_ID := $(shell dd if=/dev/urandom count=8 bs=1 | od -An -t x8 | sed 's/^ /0x/')
-LIMINE_VERSION := $(shell git describe --exact-match --tags `git log -n1 --pretty='%h'` || git log -n1 --pretty='%h' && echo -n "(trunk)")
+LIMINE_VERSION := $(shell git describe --exact-match --tags `git log -n1 --pretty='%h'` || ( git log -n1 --pretty='%h' && echo -n "(trunk)" ) )
 WERROR = -Werror
 CFLAGS = -O3 -g -pipe -Wall -Wextra $(WERROR)
 S2CFLAGS = -Os -g -pipe -Wall -Wextra $(WERROR)

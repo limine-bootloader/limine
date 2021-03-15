@@ -157,6 +157,7 @@ void disk_create_index(void) {
         block->sector_size = drive_params.bytes_per_sect;
         block->first_sect = 0;
         block->sect_count = drive_params.lba_count;
+        block->max_partition = -1;
 
         // The medium could not be present (e.g.: CD-ROMs)
         // Do a test run to see if we can actually read it
@@ -180,6 +181,8 @@ void disk_create_index(void) {
                 continue;
 
             volume_index[volume_index_i++] = p;
+
+            block->max_partition++;
         }
     }
 }
@@ -360,6 +363,7 @@ void disk_create_index(void) {
         block->sector_size = drive->Media->BlockSize;
         block->first_sect = 0;
         block->sect_count = drive->Media->LastBlock + 1;
+        block->max_partition = -1;
 
         volume_index[volume_index_i++] = block;
 
@@ -373,6 +377,8 @@ void disk_create_index(void) {
                 continue;
 
             volume_index[volume_index_i++] = p;
+
+            block->max_partition++;
         }
     }
 }

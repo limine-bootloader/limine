@@ -9,13 +9,6 @@ struct resolution {
     uint16_t bpp;
 };
 
-__attribute__((unused))
-static struct resolution fallback_resolutions[] = {
-    { 1024, 768, 32 },
-    { 800,  600, 32 },
-    { 640,  480, 32 }
-};
-
 struct fb_info {
     uint8_t  memory_model;
     uint32_t framebuffer_addr;

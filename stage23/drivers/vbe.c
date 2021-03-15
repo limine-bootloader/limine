@@ -130,10 +130,16 @@ bool init_vbe(struct fb_info *ret,
     print("vbe: Product name: %s\n", (char *)rm_desegment(vbe_info.prod_name_seg, vbe_info.prod_name_off));
     print("vbe: Product revision: %s\n", (char *)rm_desegment(vbe_info.prod_rev_seg, vbe_info.prod_rev_off));
 
+    uint16_t *vid_modes = (uint16_t *)rm_desegment(vbe_info.vid_modes_seg,
+                                                   vbe_info.vid_modes_off);
+
+    struct resolution fallback_resolutions[] = {
+        { 1024, 768, 32 },
+        { 800,  600, 32 },
+        { 640,  480, 32 }
+    };
+
     if (!target_width || !target_height || !target_bpp) {
-        target_width  = 1024;
-        target_height = 768;
-        target_bpp    = 32;
         struct edid_info_struct *edid_info = get_edid_info();
         if (edid_info != NULL) {
             int edid_width   = (int)edid_info->det_timing_desc1[2];
@@ -146,14 +152,13 @@ bool init_vbe(struct fb_info *ret,
                 print("vbe: EDID detected screen resolution of %ux%u\n",
                       target_width, target_height);
             }
+        } else {
+            goto fallback;
         }
     } else {
         print("vbe: Requested resolution of %ux%ux%u\n",
               target_width, target_height, target_bpp);
     }
-
-    uint16_t *vid_modes = (uint16_t *)rm_desegment(vbe_info.vid_modes_seg,
-                                                   vbe_info.vid_modes_off);
 
 retry:
     for (size_t i = 0; vid_modes[i] != 0xffff; i++) {
@@ -200,6 +205,7 @@ retry:
         }
     }
 
+fallback:
     if (current_fallback < SIZEOF_ARRAY(fallback_resolutions)) {
         target_width  = fallback_resolutions[current_fallback].width;
         target_height = fallback_resolutions[current_fallback].height;

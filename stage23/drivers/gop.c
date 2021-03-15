@@ -37,28 +37,6 @@ bool init_gop(struct fb_info *ret,
               uint16_t target_width, uint16_t target_height, uint16_t target_bpp) {
     EFI_STATUS status;
 
-    if (!target_width || !target_height || !target_bpp) {
-        target_width  = 1024;
-        target_height = 768;
-        target_bpp    = 32;
-        struct edid_info_struct *edid_info = get_edid_info();
-        if (edid_info != NULL) {
-            int edid_width   = (int)edid_info->det_timing_desc1[2];
-                edid_width  += ((int)edid_info->det_timing_desc1[4] & 0xf0) << 4;
-            int edid_height  = (int)edid_info->det_timing_desc1[5];
-                edid_height += ((int)edid_info->det_timing_desc1[7] & 0xf0) << 4;
-            if (edid_width && edid_height) {
-                target_width  = edid_width;
-                target_height = edid_height;
-                print("gop: EDID detected screen resolution of %ux%u\n",
-                      target_width, target_height);
-            }
-        }
-    } else {
-        print("gop: Requested resolution of %ux%ux%u\n",
-              target_width, target_height, target_bpp);
-    }
-
     EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
     EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
 
@@ -79,9 +57,49 @@ bool init_gop(struct fb_info *ret,
         panic("gop: Initialisation failed");
     }
 
+    struct resolution fallback_resolutions[] = {
+        { 0,    0,   0  },   // Overwritten by preset resolution
+        { 1024, 768, 32 },
+        { 800,  600, 32 },
+        { 640,  480, 32 }
+    };
+
+    uefi_call_wrapper(gop->QueryMode, 4,
+        gop, gop->Mode->Mode, &mode_info_size, &mode_info);
+
+    fallback_resolutions[0].width  = mode_info->HorizontalResolution;
+    fallback_resolutions[0].height = mode_info->VerticalResolution;
+    fallback_resolutions[0].bpp    = linear_masks_to_bpp(
+                        mode_info->PixelInformation.RedMask,
+                        mode_info->PixelInformation.GreenMask,
+                        mode_info->PixelInformation.BlueMask,
+                        mode_info->PixelInformation.ReservedMask);
+
     UINTN modes_count = gop->Mode->MaxMode;
 
     size_t current_fallback = 0;
+
+    if (!target_width || !target_height || !target_bpp) {
+        struct edid_info_struct *edid_info = get_edid_info();
+        if (edid_info != NULL) {
+            int edid_width   = (int)edid_info->det_timing_desc1[2];
+                edid_width  += ((int)edid_info->det_timing_desc1[4] & 0xf0) << 4;
+            int edid_height  = (int)edid_info->det_timing_desc1[5];
+                edid_height += ((int)edid_info->det_timing_desc1[7] & 0xf0) << 4;
+            if (edid_width && edid_height) {
+                target_width  = edid_width;
+                target_height = edid_height;
+                target_bpp    = 32;
+                print("gop: EDID detected screen resolution of %ux%u\n",
+                      target_width, target_height);
+            }
+        } else {
+            goto fallback;
+        }
+    } else {
+        print("gop: Requested resolution of %ux%ux%u\n",
+              target_width, target_height, target_bpp);
+    }
 
 retry:
     for (size_t i = 0; i < modes_count; i++) {
@@ -153,6 +171,7 @@ retry:
         return true;
     }
 
+fallback:
     if (current_fallback < SIZEOF_ARRAY(fallback_resolutions)) {
         target_width  = fallback_resolutions[current_fallback].width;
         target_height = fallback_resolutions[current_fallback].height;

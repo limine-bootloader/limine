@@ -46,4 +46,8 @@ SECTIONS
         *(.bss*)
         bss_end = .;
     }
+
+    /DISCARD/ : {
+        *(.eh_frame*)
+    }
 }

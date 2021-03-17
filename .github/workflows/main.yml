@@ -34,8 +34,8 @@ jobs:
       - name: Build the bootloader
         run: make
 
-      - name: Remove limine-hdd.o
-        run: rm limine-hdd.o
+      - name: Clean limine-install
+        run: make -C limine-install clean
 
       - name: Build limine-install-linux-x86_64
         run: make CFLAGS="-O2 -pipe -static" bin/limine-install
@@ -46,8 +46,8 @@ jobs:
       - name: Rename limine-install-linux-x86_64
         run: mv bin/limine-install bin/limine-install-linux-x86_64
 
-      - name: Remove limine-hdd.o
-        run: rm limine-hdd.o
+      - name: Clean limine-install
+        run: make -C limine-install clean
 
       - name: Build limine-install-linux-x86_32
         run: make OBJCOPY_ARCH="elf32-i386" CC="gcc -m32" CFLAGS="-O2 -pipe -static" bin/limine-install
@@ -58,8 +58,8 @@ jobs:
       - name: Rename limine-install-linux-x86_32
         run: mv bin/limine-install bin/limine-install-linux-x86_32
 
-      - name: Remove limine-hdd.o
-        run: rm limine-hdd.o
+      - name: Clean limine-install
+        run: make -C limine-install clean
 
       - name: Build limine-install-win32
         run: make CC="i686-w64-mingw32-gcc" OBJCOPY="i686-w64-mingw32-objcopy" CFLAGS="-O2 -pipe" bin/limine-install
@@ -70,8 +70,11 @@ jobs:
       - name: Rename limine-install-win32
         run: mv bin/limine-install.exe bin/limine-install-win32.exe
 
-      - name: Remove bin/limine-hdd.bin
-        run: rm bin/limine-hdd.bin
+      - name: Clean limine-install
+        run: make -C limine-install clean
+
+      - name: Copy limine-install to bin
+        run: cp limine-install/* bin/
 
       - name: Push binaries to binary branch
         run: |

@@ -1,27 +1,22 @@
 CC = cc
-OBJCOPY = objcopy
-OBJCOPY_ARCH = default
-CFLAGS = -O2 -pipe -Wall -Wextra
 PREFIX = /usr/local
 DESTDIR =
 
 PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
-.PHONY: all clean install distclean limine-bios limine-uefi limine-bios-clean limine-uefi-clean stage23-bios stage23-bios-clean stage23-uefi stage23-uefi-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat16-test fat32-test iso9660-test pxe-test uefi-test hybrid-iso9660-test
+.PHONY: all bin/limine-install clean install distclean limine-bios limine-uefi limine-bios-clean limine-uefi-clean stage23-bios stage23-bios-clean stage23-uefi stage23-uefi-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat16-test fat32-test iso9660-test pxe-test uefi-test hybrid-iso9660-test
 
 all:
 	$(MAKE) limine-uefi
 	$(MAKE) limine-bios
 	$(MAKE) bin/limine-install
 
-bin/limine-install: limine-install.c limine-hdd.o
-	$(CC) $(CFLAGS) -std=c11 limine-hdd.o limine-install.c -o $@
-
-limine-hdd.o: bin/limine-hdd.bin
-	$(OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) bin/limine-hdd.bin $@
+bin/limine-install:
+	$(MAKE) -C limine-install LIMINE_HDD_BIN=`realpath bin`/limine-hdd.bin
+	cp limine-install/limine-install bin/
 
 clean: limine-bios-clean limine-uefi-clean
-	rm -f limine-hdd.o
+	$(MAKE) -C limine-install clean
 
 install: all
 	install -d $(DESTDIR)$(PREFIX)/bin

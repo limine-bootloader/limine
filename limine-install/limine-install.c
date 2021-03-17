@@ -414,6 +414,11 @@ int main(int argc, char *argv[]) {
                     gpt_header.partition_entry_lba * lb_size + i * gpt_header.size_of_partition_entry,
                     gpt_header.size_of_partition_entry);
             }
+            for (size_t i = max_partition_entry_used + 1; i < new_partition_entry_count; i++) {
+                device_write(empty,
+                    secondary_gpt_header.partition_entry_lba * lb_size + i * secondary_gpt_header.size_of_partition_entry,
+                    secondary_gpt_header.size_of_partition_entry);
+            }
             free(empty);
 
             uint8_t *partition_array =

@@ -33,6 +33,87 @@ static void linear_mask_to_mask_shift(
 
 // Most of this code taken from https://wiki.osdev.org/GOP
 
+static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, int bpp) {
+    EFI_STATUS status;
+
+    EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+    EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
+
+    uefi_call_wrapper(gBS->LocateProtocol, 3, &gop_guid, NULL, (void **)&gop);
+
+    EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *mode_info;
+    UINTN mode_info_size;
+
+    status = uefi_call_wrapper(gop->QueryMode, 4,
+        gop, mode, &mode_info_size, &mode_info);
+
+    if (status)
+        return false;
+
+    switch (mode_info->PixelFormat) {
+        case PixelBlueGreenRedReserved8BitPerColor:
+            ret->framebuffer_bpp = 32;
+            ret->red_mask_size = 8;
+            ret->red_mask_shift = 16;
+            ret->green_mask_size = 8;
+            ret->green_mask_shift = 8;
+            ret->blue_mask_size = 8;
+            ret->blue_mask_shift = 0;
+            break;
+        case PixelRedGreenBlueReserved8BitPerColor:
+            ret->framebuffer_bpp = 32;
+            ret->red_mask_size = 8;
+            ret->red_mask_shift = 0;
+            ret->green_mask_size = 8;
+            ret->green_mask_shift = 8;
+            ret->blue_mask_size = 8;
+            ret->blue_mask_shift = 16;
+            break;
+        case PixelBitMask:
+            ret->framebuffer_bpp = linear_masks_to_bpp(
+                                      mode_info->PixelInformation.RedMask,
+                                      mode_info->PixelInformation.GreenMask,
+                                      mode_info->PixelInformation.BlueMask,
+                                      mode_info->PixelInformation.ReservedMask);
+            linear_mask_to_mask_shift(&ret->red_mask_size,
+                                      &ret->red_mask_shift,
+                                      mode_info->PixelInformation.RedMask);
+            linear_mask_to_mask_shift(&ret->green_mask_size,
+                                      &ret->green_mask_shift,
+                                      mode_info->PixelInformation.GreenMask);
+            linear_mask_to_mask_shift(&ret->blue_mask_size,
+                                      &ret->blue_mask_shift,
+                                      mode_info->PixelInformation.BlueMask);
+            break;
+        default:
+            panic("gop: Invalid PixelFormat");
+    }
+
+    if (width != 0 && height != 0 && bpp != 0) {
+        if ((int)mode_info->HorizontalResolution != width
+         || (int)mode_info->VerticalResolution != height
+         || (int)ret->framebuffer_bpp != bpp)
+            return false;
+    }
+
+    print("gop: Found matching mode %x, attempting to set...\n", mode);
+
+    status = uefi_call_wrapper(gop->SetMode, 2, gop, mode);
+
+    if (status) {
+        print("gop: Failed to set video mode %x, moving on...\n", mode);
+        return false;
+    }
+
+    ret->memory_model = 0x06;
+    ret->framebuffer_addr = gop->Mode->FrameBufferBase;
+    ret->framebuffer_pitch = gop->Mode->Info->PixelsPerScanLine * 4;
+    ret->framebuffer_width = gop->Mode->Info->HorizontalResolution;
+    ret->framebuffer_height = gop->Mode->Info->VerticalResolution;
+
+    return true;
+}
+
 bool init_gop(struct fb_info *ret,
               uint16_t target_width, uint16_t target_height, uint16_t target_bpp) {
     EFI_STATUS status;
@@ -57,23 +138,14 @@ bool init_gop(struct fb_info *ret,
         panic("gop: Initialisation failed");
     }
 
+    size_t preset_mode = gop->Mode->Mode;
+
     struct resolution fallback_resolutions[] = {
-        { 0,    0,   0  },   // Overwritten by preset resolution
+        { 0,    0,   0  },   // Overridden by preset mode
         { 1024, 768, 32 },
         { 800,  600, 32 },
         { 640,  480, 32 }
     };
-
-    uefi_call_wrapper(gop->QueryMode, 4,
-        gop, gop->Mode->Mode, &mode_info_size, &mode_info);
-
-    fallback_resolutions[0].width  = mode_info->HorizontalResolution;
-    fallback_resolutions[0].height = mode_info->VerticalResolution;
-    fallback_resolutions[0].bpp    = linear_masks_to_bpp(
-                        mode_info->PixelInformation.RedMask,
-                        mode_info->PixelInformation.GreenMask,
-                        mode_info->PixelInformation.BlueMask,
-                        mode_info->PixelInformation.ReservedMask);
 
     UINTN modes_count = gop->Mode->MaxMode;
 
@@ -103,75 +175,18 @@ bool init_gop(struct fb_info *ret,
 
 retry:
     for (size_t i = 0; i < modes_count; i++) {
-        status = uefi_call_wrapper(gop->QueryMode, 4,
-            gop, i, &mode_info_size, &mode_info);
-
-        if (status)
-            continue;
-
-        switch (mode_info->PixelFormat) {
-            case PixelBlueGreenRedReserved8BitPerColor:
-                ret->framebuffer_bpp = 32;
-                ret->red_mask_size = 8;
-                ret->red_mask_shift = 16;
-                ret->green_mask_size = 8;
-                ret->green_mask_shift = 8;
-                ret->blue_mask_size = 8;
-                ret->blue_mask_shift = 0;
-                break;
-            case PixelRedGreenBlueReserved8BitPerColor:
-                ret->framebuffer_bpp = 32;
-                ret->red_mask_size = 8;
-                ret->red_mask_shift = 0;
-                ret->green_mask_size = 8;
-                ret->green_mask_shift = 8;
-                ret->blue_mask_size = 8;
-                ret->blue_mask_shift = 16;
-                break;
-            case PixelBitMask:
-                ret->framebuffer_bpp = linear_masks_to_bpp(
-                                          mode_info->PixelInformation.RedMask,
-                                          mode_info->PixelInformation.GreenMask,
-                                          mode_info->PixelInformation.BlueMask,
-                                          mode_info->PixelInformation.ReservedMask);
-                linear_mask_to_mask_shift(&ret->red_mask_size,
-                                          &ret->red_mask_shift,
-                                          mode_info->PixelInformation.RedMask);
-                linear_mask_to_mask_shift(&ret->green_mask_size,
-                                          &ret->green_mask_shift,
-                                          mode_info->PixelInformation.GreenMask);
-                linear_mask_to_mask_shift(&ret->blue_mask_size,
-                                          &ret->blue_mask_shift,
-                                          mode_info->PixelInformation.BlueMask);
-                break;
-            default:
-                panic("gop: Invalid PixelFormat");
-        }
-
-        if (mode_info->HorizontalResolution != target_width
-         || mode_info->VerticalResolution != target_height
-         || ret->framebuffer_bpp != target_bpp)
-            continue;
-
-        print("gop: Found matching mode %x, attempting to set...\n", i);
-
-        status = uefi_call_wrapper(gop->SetMode, 2, gop, i);
-
-        if (status) {
-            print("gop: Failed to set video mode %x, moving on...\n", i);
-            continue;
-        }
-
-        ret->memory_model = 0x06;
-        ret->framebuffer_addr = gop->Mode->FrameBufferBase;
-        ret->framebuffer_pitch = gop->Mode->Info->PixelsPerScanLine * 4;
-        ret->framebuffer_width = gop->Mode->Info->HorizontalResolution;
-        ret->framebuffer_height = gop->Mode->Info->VerticalResolution;
-
-        return true;
+        if (try_mode(ret, i, target_width, target_height, target_bpp))
+            return true;
     }
 
 fallback:
+    if (current_fallback == 0) {
+        if (try_mode(ret, preset_mode, 0, 0, 0))
+            return true;
+
+        current_fallback++;
+    }
+
     if (current_fallback < SIZEOF_ARRAY(fallback_resolutions)) {
         target_width  = fallback_resolutions[current_fallback].width;
         target_height = fallback_resolutions[current_fallback].height;

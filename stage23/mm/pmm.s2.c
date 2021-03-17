@@ -14,15 +14,18 @@
 #define MEMMAP_BASE ((size_t)0x100000)
 #define MEMMAP_MAX_ENTRIES 256
 
+#define BUMP_ALLOC_LIMIT_HIGH 0x70000
+#define BUMP_ALLOC_LIMIT_LOW  0x1000
+
 #if defined (bios)
 extern symbol bss_end;
 static size_t bump_allocator_base = (size_t)bss_end;
-static size_t bump_allocator_limit = 0x70000;
+static size_t bump_allocator_limit = BUMP_ALLOC_LIMIT_HIGH;
 #endif
 
 #if defined (uefi)
-static size_t bump_allocator_base = 0x100000;
-static size_t bump_allocator_limit = 0x100000;
+static size_t bump_allocator_base = BUMP_ALLOC_LIMIT_HIGH;
+static size_t bump_allocator_limit = BUMP_ALLOC_LIMIT_HIGH;
 #endif
 
 void *conv_mem_alloc(size_t count) {
@@ -291,18 +294,18 @@ void init_memmap(void) {
 
         memmap_entries++;
 
-        if (our_type != MEMMAP_USABLE || entry->PhysicalStart >= 0x100000)
-            continue;
-
         static size_t bump_alloc_pool_size = 0;
 
+        if (our_type != MEMMAP_USABLE || entry->PhysicalStart >= BUMP_ALLOC_LIMIT_HIGH)
+            continue;
+
         size_t entry_pool_limit = entry->PhysicalStart + entry->NumberOfPages * 4096;
-        if (entry_pool_limit > 0x100000)
-            entry_pool_limit = 0x100000;
+        if (entry_pool_limit > BUMP_ALLOC_LIMIT_HIGH)
+            entry_pool_limit = BUMP_ALLOC_LIMIT_HIGH;
 
         size_t entry_pool_start = entry->PhysicalStart;
-        if (entry_pool_start < 0x1000)
-            entry_pool_start = 0x1000;
+        if (entry_pool_start < BUMP_ALLOC_LIMIT_LOW)
+            entry_pool_start = BUMP_ALLOC_LIMIT_LOW;
 
         if (entry_pool_start > entry_pool_limit)
             continue;

@@ -9,11 +9,18 @@
 #include <drivers/disk.h>
 #include <lib/term.h>
 #include <mm/mtrr.h>
+#include <sys/idt.h>
 
-__attribute__((section(".realmode"), used))
+__attribute__((noinline))
+__attribute__((section(".realmode")))
 static void spinup(uint8_t drive) {
+    struct idtr real_mode_idt = { 0x3ff, 0x0 };
+
     asm volatile (
+        "cli\n\t"
         "cld\n\t"
+
+        "lidt [eax]\n\t"
 
         "jmp 0x08:1f\n\t"
         "1: .code16\n\t"
@@ -46,7 +53,7 @@ static void spinup(uint8_t drive) {
 
         ".code32\n\t"
         :
-        : "d" (drive)
+        : "a" (&real_mode_idt), "d" (drive)
         : "memory"
     );
 }

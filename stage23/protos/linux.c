@@ -13,15 +13,22 @@
 #include <lib/uri.h>
 #include <mm/pmm.h>
 #include <mm/mtrr.h>
+#include <sys/idt.h>
 
 #define KERNEL_LOAD_ADDR ((size_t)0x100000)
 #define KERNEL_HEAP_SIZE ((size_t)0x6000)
 
-__attribute__((section(".realmode"), used))
+__attribute__((noinline))
+__attribute__((section(".realmode")))
 static void spinup(uint16_t real_mode_code_seg, uint16_t kernel_entry_seg,
                    uint16_t stack_pointer) {
+    struct idtr real_mode_idt = { 0x3ff, 0x0 };
+
     asm volatile (
+        "cli\n\t"
         "cld\n\t"
+
+        "lidt [eax]\n\t"
 
         "jmp 0x08:1f\n\t"
         "1: .code16\n\t"
@@ -53,7 +60,7 @@ static void spinup(uint16_t real_mode_code_seg, uint16_t kernel_entry_seg,
 
         ".code32\n\t"
         :
-        : "b" (real_mode_code_seg), "c" (kernel_entry_seg),
+        : "a" (&real_mode_idt), "b" (real_mode_code_seg), "c" (kernel_entry_seg),
           "d" (stack_pointer)
         : "memory"
     );

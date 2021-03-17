@@ -382,11 +382,10 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
         int64_t entry_top  = (int64_t)(memmap[i].base + memmap[i].length);
 
         // Let's make sure the entry is not > 4GiB
-        if (entry_base >= 0x100000000 || entry_top >= 0x100000000) {
-            // Theoretically there could be an entry which crosses the 4GiB
-            // boundary, but realistically this does not happen as far as I
-            // have seen. Let's just discard the entry.
-            continue;
+        if (entry_top >= 0x100000000) {
+            entry_top = 0x100000000;
+            if (entry_base >= entry_top)
+                continue;
         }
 
         int64_t alloc_base = ALIGN_DOWN(entry_top - (int64_t)count, alignment);
@@ -431,46 +430,41 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
 #endif
 
     for (size_t i = 0; i < memmap_entries; i++) {
-        if (free_only && memmap[i].type != 1)
+        if (free_only && memmap[i].type != MEMMAP_USABLE)
             continue;
 
         uint64_t entry_base = memmap[i].base;
         uint64_t entry_top  = memmap[i].base + memmap[i].length;
+
         if (base >= entry_base && base <  entry_top &&
             top  >= entry_base && top  <= entry_top) {
+            struct e820_entry_t *target;
 
-            memmap[i].length = base - entry_base;
+            memmap[i].length -= entry_top - base;
 
             if (memmap[i].length == 0) {
-                // Eradicate from memmap
-                for (size_t j = i; j < memmap_entries - 1; j++) {
-                    memmap[j] = memmap[j+1];
-                }
-                memmap_entries--;
+                target = &memmap[i];
+            } else {
+                if (memmap_entries >= MEMMAP_MAX_ENTRIES)
+                    panic("Memory map exhausted.");
+
+                target = &memmap[memmap_entries++];
             }
-
-            if (memmap_entries >= MEMMAP_MAX_ENTRIES) {
-                panic("Memory map exhausted.");
-            }
-            struct e820_entry_t *target = &memmap[memmap_entries];
-
-            target->length = entry_top - top;
-
-            if (target->length != 0) {
-                target->base = top;
-                target->type = 1;
-
-                memmap_entries++;
-            }
-
-            if (memmap_entries >= MEMMAP_MAX_ENTRIES) {
-                panic("Memory map exhausted.");
-            }
-            target = &memmap[memmap_entries++];
 
             target->type   = type;
             target->base   = base;
             target->length = length;
+
+            if (top < entry_top) {
+                if (memmap_entries >= MEMMAP_MAX_ENTRIES)
+                    panic("Memory map exhausted.");
+
+                target = &memmap[memmap_entries++];
+
+                target->type   = memmap[i].type;
+                target->base   = top;
+                target->length = entry_top - top;
+            }
 
             return true;
         }

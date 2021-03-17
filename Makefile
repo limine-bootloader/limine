@@ -7,7 +7,7 @@ DESTDIR =
 
 PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
-.PHONY: all clean install distclean limine-bios limine-uefi limine-bios-clean limine-uefi-clean stage23-bios stage23-bios-clean stage23-uefi stage23-uefi-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat16-test fat32-test iso9660-test pxe-test uefi-test uefi-iso9660-test
+.PHONY: all clean install distclean limine-bios limine-uefi limine-bios-clean limine-uefi-clean stage23-bios stage23-bios-clean stage23-uefi stage23-uefi-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat16-test fat32-test iso9660-test pxe-test uefi-test hybrid-iso9660-test
 
 all:
 	$(MAKE) limine-uefi
@@ -39,11 +39,19 @@ limine-bios: stage23-bios decompressor
 	cd stage1/pxe && nasm bootsect.asm -fbin -o ../../bin/limine-pxe.bin
 	cp build/stage23-bios/limine.sys ./bin/
 
+bin/limine-eltorito-efi.bin:
+	dd if=/dev/zero of=$@ bs=512 count=2880
+	mformat -i $@ -f 1440 ::
+	mmd -D s -i $@ ::/EFI
+	mmd -D s -i $@ ::/EFI/BOOT
+	mcopy -D o -i $@ bin/BOOTX64.EFI ::/EFI/BOOT
+
 limine-uefi:
 	$(MAKE) gnu-efi
 	$(MAKE) stage23-uefi
 	mkdir -p bin
 	cp build/stage23-uefi/BOOTX64.EFI ./bin/
+	$(MAKE) bin/limine-eltorito-efi.bin
 
 limine-bios-clean: stage23-bios-clean decompressor-clean
 
@@ -192,18 +200,19 @@ iso9660-test:
 	genisoimage -no-emul-boot -b boot/limine-cd.bin -boot-load-size 4 -boot-info-table -o test.iso test_image/
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
 
-uefi-iso9660-test:
+hybrid-iso9660-test:
 	$(MAKE) ovmf
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-uefi
+	$(MAKE) limine-bios
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir -p test_image/boot
 	cp -rv bin/* test/* test_image/boot/
 	mkdir -p test_image/EFI/BOOT
 	cp -v bin/BOOTX64.EFI test_image/EFI/BOOT/
-	genisoimage -no-emul-boot -b boot/limine-cd.bin -boot-load-size 4 -boot-info-table -o test.iso test_image/
+	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e boot/limine-eltorito-efi.bin -no-emul-boot -isohybrid-gpt-basdat test_image/ -o test.iso
 	qemu-system-x86_64 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
 
 pxe-test:

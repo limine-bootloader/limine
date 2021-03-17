@@ -424,6 +424,15 @@ int main(int argc, char *argv[]) {
 
             free(partition_array);
 
+            // Zero out unused partitions
+            void *empty = calloc(1, gpt_header.size_of_partition_entry);
+            for (size_t i = max_partition_entry_used + 1; i < new_partition_entry_count; i++) {
+                device_write(empty,
+                    gpt_header.partition_entry_lba * lb_size + i * gpt_header.size_of_partition_entry,
+                    gpt_header.size_of_partition_entry);
+            }
+            free(empty);
+
             gpt_header.partition_entry_array_crc32 = crc32_partition_array;
             gpt_header.number_of_partition_entries = new_partition_entry_count;
             gpt_header.crc32 = 0;

@@ -438,6 +438,7 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
 
         uint64_t entry_base = memmap[i].base;
         uint64_t entry_top  = memmap[i].base + memmap[i].length;
+        uint32_t entry_type = memmap[i].type;
 
         if (base >= entry_base && base <  entry_top &&
             top  >= entry_base && top  <= entry_top) {
@@ -464,7 +465,7 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
 
                 target = &memmap[memmap_entries++];
 
-                target->type   = memmap[i].type;
+                target->type   = entry_type;
                 target->base   = top;
                 target->length = entry_top - top;
             }

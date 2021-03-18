@@ -13,7 +13,8 @@ all:
 
 bin/limine-install:
 	$(MAKE) -C limine-install LIMINE_HDD_BIN=`realpath bin`/limine-hdd.bin
-	cp limine-install/limine-install bin/
+	[ -f limine-install/limine-install ] && cp limine-install/limine-install bin/ || true
+	[ -f limine-install/limine-install.exe ] && cp limine-install/limine-install.exe bin/ || true
 
 clean: limine-bios-clean limine-uefi-clean
 	$(MAKE) -C limine-install clean

@@ -270,9 +270,9 @@ extern uint8_t _binary_limine_hdd_bin_start[], _binary_limine_hdd_bin_end[];
 int main(int argc, char *argv[]) {
     int      ok = 1;
 #ifdef __MINGW32__
-    uint8_t *bootloader_img = binary_bin_limine_hdd_bin_start;
+    uint8_t *bootloader_img = binary_limine_hdd_bin_start;
     size_t   bootloader_file_size =
-        (size_t)binary_bin_limine_hdd_bin_end - (size_t)binary_bin_limine_hdd_bin_start;
+        (size_t)binary_limine_hdd_bin_end - (size_t)binary_limine_hdd_bin_start;
 #else
     uint8_t *bootloader_img = _binary_limine_hdd_bin_start;
     size_t   bootloader_file_size =

@@ -23,7 +23,7 @@ install: all
 	install -m 644 BOOTX64.EFI $(DESTDIR)$(PREFIX)/share/
 
 clean:
-	rm -f limine-hdd.o limine-install
+	rm -f limine-hdd.o limine-install limine-install.exe
 
 limine-install: limine-install.c limine-hdd.o
 	$(CC) $(CFLAGS) -std=c11 $^ -o $@

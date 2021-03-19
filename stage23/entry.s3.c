@@ -109,11 +109,7 @@ void stage3_common(void) {
 
         stivale2_load(config, cmdline, boot_volume->pxe, efi_system_table);
     } else if (!strcmp(proto, "linux")) {
-#if defined (bios)
         linux_load(config, cmdline);
-#elif defined (uefi)
-        panic("UEFI Limine does not support the Linux boot protocol");
-#endif
     } else if (!strcmp(proto, "chainload")) {
 #if defined (bios)
         chainload(config);

@@ -283,13 +283,6 @@ __attribute__((noreturn)) void stivale_spinup(
     pic_flush();
 
 #if defined (uefi)
-    asm volatile (
-        "lgdt %0\n\t"
-        :
-        : "m"(gdt)
-        : "memory"
-    );
-
     do_32(stivale_spinup_32, 8,
         bits, level5pg, (uint32_t)(uintptr_t)pagemap->top_level,
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),

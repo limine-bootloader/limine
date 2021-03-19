@@ -19,13 +19,13 @@
 
 #if defined (bios)
 extern symbol bss_end;
-static size_t bump_allocator_base = (size_t)bss_end;
-static size_t bump_allocator_limit = BUMP_ALLOC_LIMIT_HIGH;
+size_t bump_allocator_base = (size_t)bss_end;
+size_t bump_allocator_limit = BUMP_ALLOC_LIMIT_HIGH;
 #endif
 
 #if defined (uefi)
-static size_t bump_allocator_base = BUMP_ALLOC_LIMIT_HIGH;
-static size_t bump_allocator_limit = BUMP_ALLOC_LIMIT_HIGH;
+size_t bump_allocator_base = BUMP_ALLOC_LIMIT_HIGH;
+size_t bump_allocator_limit = BUMP_ALLOC_LIMIT_HIGH;
 #endif
 
 void *conv_mem_alloc(size_t count) {
@@ -342,7 +342,7 @@ void init_memmap(void) {
 
     memmap_alloc_range(bump_allocator_base,
                        bump_allocator_limit - bump_allocator_base,
-                       MEMMAP_RESERVED, true, true);
+                       MEMMAP_REMOVE_RANGE, true, true);
 
     print("pmm: Conventional mem allocator base:  %X\n", bump_allocator_base);
     print("pmm: Conventional mem allocator limit: %X\n", bump_allocator_limit);
@@ -440,30 +440,48 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
         uint64_t entry_top  = memmap[i].base + memmap[i].length;
         uint32_t entry_type = memmap[i].type;
 
+        if (type == MEMMAP_REMOVE_RANGE &&
+            base == entry_base && top == entry_top) {
+
+            // Eradicate from memmap
+            for (size_t j = i; j < memmap_entries - 1; j++) {
+                memmap[j] = memmap[j+1];
+            }
+            memmap_entries--;
+
+            return true;
+        }
+
         if (base >= entry_base && base <  entry_top &&
             top  >= entry_base && top  <= entry_top) {
             struct e820_entry_t *target;
 
             memmap[i].length -= entry_top - base;
 
-            if (memmap[i].length == 0) {
-                target = &memmap[i];
-            } else {
-                if (memmap_entries >= MEMMAP_MAX_ENTRIES)
-                    panic("Memory map exhausted.");
+            if (type != MEMMAP_REMOVE_RANGE) {
+                if (memmap[i].length == 0) {
+                    target = &memmap[i];
+                } else {
+                    if (memmap_entries >= MEMMAP_MAX_ENTRIES)
+                        panic("Memory map exhausted.");
 
-                target = &memmap[memmap_entries++];
+                    target = &memmap[memmap_entries++];
+                }
+
+                target->type   = type;
+                target->base   = base;
+                target->length = length;
             }
 
-            target->type   = type;
-            target->base   = base;
-            target->length = length;
-
             if (top < entry_top) {
-                if (memmap_entries >= MEMMAP_MAX_ENTRIES)
-                    panic("Memory map exhausted.");
+                if (memmap[i].length == 0) {
+                    target = &memmap[i];
+                } else {
+                    if (memmap_entries >= MEMMAP_MAX_ENTRIES)
+                        panic("Memory map exhausted.");
 
-                target = &memmap[memmap_entries++];
+                    target = &memmap[memmap_entries++];
+                }
 
                 target->type   = entry_type;
                 target->base   = top;

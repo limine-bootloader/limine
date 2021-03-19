@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <sys/e820.h>
 
+#define MEMMAP_REMOVE_RANGE           0
 #define MEMMAP_USABLE                 1
 #define MEMMAP_RESERVED               2
 #define MEMMAP_ACPI_RECLAIMABLE       3
@@ -14,6 +15,9 @@
 #define MEMMAP_BOOTLOADER_RECLAIMABLE 0x1000
 #define MEMMAP_KERNEL_AND_MODULES     0x1001
 #define MEMMAP_EFI_RECLAIMABLE        0x2000
+
+extern size_t bump_allocator_base;
+extern size_t bump_allocator_limit;
 
 extern struct e820_entry_t memmap[];
 extern size_t memmap_entries;

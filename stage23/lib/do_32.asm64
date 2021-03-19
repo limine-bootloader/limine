@@ -10,9 +10,13 @@ section .text
     mov dword [rsp], %1
 %endmacro
 
+extern gdt
+
 global do_32
 bits 64
 do_32:
+    lgdt [rel gdt]
+
     mov rbp, rsp
 
     lidt [rel invalid_idt]

@@ -149,6 +149,7 @@ bool init_vbe(struct fb_info *ret,
             if (edid_width && edid_height) {
                 target_width  = edid_width;
                 target_height = edid_height;
+                target_bpp    = 32;
                 print("vbe: EDID detected screen resolution of %ux%u\n",
                       target_width, target_height);
             }

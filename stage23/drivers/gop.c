@@ -164,10 +164,10 @@ bool init_gop(struct fb_info *ret,
                 target_bpp    = 32;
                 print("gop: EDID detected screen resolution of %ux%u\n",
                       target_width, target_height);
+                goto retry;
             }
-        } else {
-            goto fallback;
         }
+        goto fallback;
     } else {
         print("gop: Requested resolution of %ux%ux%u\n",
               target_width, target_height, target_bpp);

@@ -152,10 +152,10 @@ bool init_vbe(struct fb_info *ret,
                 target_bpp    = 32;
                 print("vbe: EDID detected screen resolution of %ux%u\n",
                       target_width, target_height);
+                goto retry;
             }
-        } else {
-            goto fallback;
         }
+        goto fallback;
     } else {
         print("vbe: Requested resolution of %ux%ux%u\n",
               target_width, target_height, target_bpp);

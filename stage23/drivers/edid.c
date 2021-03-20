@@ -17,7 +17,9 @@ struct edid_info_struct *get_edid_info(void) {
 
     r.eax = 0x4f15;
     r.ebx = 0x0001;
-    r.edi = (uint32_t)buf;
+    r.edi = (uint32_t)rm_off(buf);
+    r.ds  = (uint32_t)rm_seg(buf);
+    r.es  = r.ds;
     rm_int(0x10, &r, &r);
 
     if ((r.eax & 0x00ff) != 0x4f)

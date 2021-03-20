@@ -36,7 +36,7 @@ limine-bios: stage23-bios decompressor
 	cd stage1/pxe && nasm bootsect.asm -fbin -o ../../bin/limine-pxe.bin
 	cp build/stage23-bios/limine.sys ./bin/
 
-bin/limine-eltorito-efi.bin:
+bin/limine-eltorito-efi.bin: bin/BOOTX64.EFI
 	dd if=/dev/zero of=$@ bs=512 count=2880
 	mformat -i $@ -f 1440 ::
 	mmd -D s -i $@ ::/EFI

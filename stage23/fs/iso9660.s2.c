@@ -3,6 +3,8 @@
 #include <lib/libc.h>
 #include <mm/pmm.h>
 
+#include <lib/print.h>
+
 #define ISO9660_FIRST_VOLUME_DESCRIPTOR 0x10
 #define ISO9660_VOLUME_DESCRIPTOR_SIZE ISO9660_SECTOR_SIZE
 #define ROCK_RIDGE_MAX_FILENAME 255
@@ -23,6 +25,7 @@ struct iso9660_directory_entry {
     uint8_t interleaved_gap_size;
     struct BE16_t volume_seq;
     uint8_t filename_size;
+    char name[];
 } __attribute__((packed));
 
 // --- Volume descriptors ---
@@ -123,48 +126,71 @@ static struct iso9660_context *iso9660_get_context(struct volume *vol) {
     return &node->context;
 }
 
-static int iso9660_strcmp(const char *a, const char *b, size_t size) {
-    while (size--) {
-        char ca = *a++;
-        char cb = *b++;
-        if (!(ca == cb || (ca - ('a'-'A')) == cb))
-            return 1;
+static void load_name(char *buf, struct iso9660_directory_entry *entry) {
+    unsigned char* sysarea = ((unsigned char*)entry) + sizeof(struct iso9660_directory_entry) + entry->filename_size;
+    int sysarea_len = entry->length - sizeof(struct iso9660_directory_entry) - entry->filename_size;
+    if ((entry->filename_size & 0x1) == 0) {
+        sysarea++;
+        sysarea_len--;
     }
 
-    return 0;
+    int rrnamelen = 0;
+    while ((sysarea_len >= 4) && ((sysarea[3] == 1) || (sysarea[2] == 2))) {
+        if (sysarea[0] == 'N' && sysarea[1] == 'M') {
+            rrnamelen = sysarea[2] - 5;
+            break;
+        }
+        sysarea_len -= sysarea[2];
+        sysarea += sysarea[2];
+    }
+
+    size_t name_len = 0;
+    if (rrnamelen) {
+        /* rock ridge naming scheme */
+        name_len = rrnamelen;
+        memcpy(buf, sysarea + 5, name_len);
+        buf[name_len] = 0;
+    } else {
+        name_len = entry->filename_size;
+        size_t j;
+        for (j = 0; j < name_len; j++) {
+            if (entry->name[j] == ';')
+                break;
+            if (entry->name[j] == '.' && entry->name[j+1] == ';')
+                break;
+            buf[j] = tolower(entry->name[j]);
+        }
+        buf[j] = 0;
+    }
 }
 
-static struct iso9660_directory_entry *iso9660_find(void *buffer, uint32_t size, const char *filename) {
-    // The file can be either FILENAME or FILENAME;1
-    uint32_t len = strlen(filename);
-    char finalfile[len + 2];
-    strcpy(finalfile, filename);
-    finalfile[len + 0] = ';';
-    finalfile[len + 1] = '1';
-
-    // Now, in case the file doesn't have extension
-    char finalfile_noext[len+3];
-    strcpy(finalfile_noext, filename);
-    finalfile_noext[len + 0] = '.';
-    finalfile_noext[len + 1] = ';';
-    finalfile_noext[len + 2] = '1';
+static struct iso9660_directory_entry *iso9660_find(void *buffer, uint32_t size, const char *_filename) {
+    char filename[strlen(_filename) + 1];
+    size_t i = 0;
+    while (*_filename)
+        filename[i++] = tolower(*_filename++);
+    filename[i] = 0;
 
     while (size) {
         struct iso9660_directory_entry *entry = buffer;
-        char* entry_filename = (char*)entry + sizeof(struct iso9660_directory_entry);
+        char entry_filename[128];
+        load_name(entry_filename, entry);
 
-        if (!entry->length) {
-            return NULL;
-        } else if (entry->filename_size == len && !iso9660_strcmp(filename, entry_filename, len)) {
-            return buffer;
-        } else if (entry->filename_size == len+2 && !iso9660_strcmp(finalfile, entry_filename, len+2)) {
-            return buffer;
-        } else if (entry->filename_size == len+3 && !iso9660_strcmp(finalfile_noext, entry_filename, len+3)) {
-            return buffer;
-        } else {
-            size -= entry->length;
-            buffer += entry->length;
+        if (entry->length == 0) {
+            if (size <= ISO9660_SECTOR_SIZE)
+                return NULL;
+            size_t prev_size = size;
+            size = ALIGN_DOWN(size, ISO9660_SECTOR_SIZE);
+            buffer += prev_size - size;
+            continue;
         }
+
+        if (strcmp(filename, entry_filename) == 0) {
+            return buffer;
+        }
+
+        size -= entry->length;
+        buffer += entry->length;
     }
 
     return NULL;

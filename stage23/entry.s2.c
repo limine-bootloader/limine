@@ -38,6 +38,9 @@ static bool stage3_init(struct volume *part) {
 
     if (fopen(&stage3, part, "/limine.sys")
      && fopen(&stage3, part, "/boot/limine.sys")) {
+        print("Stage 3 file not found!\n"
+              "Have you copied limine.sys to the root or /boot directories of\n"
+              "one of the partitions on the boot device?\n");
         return false;
     }
 

@@ -399,8 +399,6 @@ void linux_load(char *config, char *cmdline) {
     }
     fread(kernel, (void *)kernel_load_addr, real_mode_code_size, kernel->size - real_mode_code_size);
 
-    print("linux: Kernel loaded at %x\n", kernel_load_addr);
-
     ///////////////////////////////////////
     // Modules
     ///////////////////////////////////////

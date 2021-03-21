@@ -67,8 +67,6 @@ bool echfs_get_guid(struct guid *guid, struct volume *part) {
 }
 
 int echfs_open(struct echfs_file_handle *ret, struct volume *part, const char *path) {
-    const char *fullpath = path;
-
     ret->part = part;
 
     struct echfs_identity_table id_table;
@@ -123,7 +121,6 @@ next:;
         }
     }
 
-    print("echfs: file %s not found\n", fullpath);
     return -1;
 
 found:;

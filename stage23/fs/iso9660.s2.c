@@ -3,8 +3,6 @@
 #include <lib/libc.h>
 #include <mm/pmm.h>
 
-#include <lib/print.h>
-
 #define ISO9660_FIRST_VOLUME_DESCRIPTOR 0x10
 #define ISO9660_VOLUME_DESCRIPTOR_SIZE ISO9660_SECTOR_SIZE
 #define ROCK_RIDGE_MAX_FILENAME 255

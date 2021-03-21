@@ -27,6 +27,23 @@ such as Long Mode, 5-level paging, and SMP (multicore), to name a few.
 * GPT
 * Unpartitioned media
 
+## Binary releases
+
+For convenience, for point releases, binaries are distributed. These binaries are
+shipped in the `-binary` branches and tags of this repository (see [branches](https://github.com/limine-bootloader/limine/branches/all) and [tags](https://github.com/limine-bootloader/limine/tags)).
+
+For example, to clone the latest binary release of the `v2.0` branch one can do
+```bash
+git clone https://github.com/limine-bootloader/limine.git --branch=v2.0-branch-binary --depth=1
+```
+or, to clone a specific binary point release (for example v2.0.1)
+```bash
+git clone https://github.com/limine-bootloader/limine.git --branch=v2.0.1-binary --depth=1
+```
+
+`limine-install` binaries are provided for Linux and Windows. In case one wants to
+rebuild `limine-install`, simply use `make` in the binary release.
+
 ## Warning about using `trunk`
 
 Please refrain from using the `trunk` branch of this repository directly, unless
@@ -34,29 +51,15 @@ you have a *very* good reason to.
 The `trunk` branch is unstable, and non-backwards compatible changes are made to it
 routinely.
 
-Use instead a [release](https://github.com/limine-bootloader/limine/releases), or a [release branch](https://github.com/limine-bootloader/limine/branches) (like v1.0-branch).
-
-Following a release offers a fixed point, immutable snapshot of Limine, while following a release branch tracks the latest changes made to that major release's branch which do not break compatibility (but could break in other, non-obvious ways).
-
-One can clone a release directly using
-```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v1.0
-```
-(replace `v1.0` with the chosen release)
-
-or a release branch with
-```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v1.0-branch
-```
-(replace `v1.0-branch` with the chosen release branch)
-
 Also note that the documentation contained in `trunk` does not reflect the
 documentation for the specific releases, and one should refer to the releases'
 respective documentation instead, contained in their files.
 
-## Building
+## Building the bootloader
 
-### Building the bootloader
+*These steps are not necessary if cloning a binary release. if so, skip to the*
+*next paragraph.*
+
 It is necessary to first build the set of tools that the bootloader needs
 in order to be built.
 
@@ -73,9 +76,10 @@ make
 
 The generated bootloader files are going to be in `bin`.
 
-### Installing Limine binaries
-This step is optional as the bootloader binaries can be used from the `bin`
-directory just fine. This step will only install them in a `share` and `bin`
+## Installing Limine binaries
+
+This step is optional as the bootloader binaries can be used from the `bin` or
+release directory just fine. This step will only install them in a `share` and `bin`
 directories in the specified `PREFIX` (default is `/usr/local`).
 
 Use `make install` to install Limine binaries, optionally specifying a prefix with a

@@ -76,6 +76,9 @@ jobs:
       - name: Copy limine-install to bin
         run: cp limine-install/* bin/
 
+      - name: Copy LICENSE to bin
+        run: cp LICENSE.md bin/
+
       - name: Push binaries to binary branch
         run: |
           git config user.name 'mintsuki'

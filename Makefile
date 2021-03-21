@@ -23,11 +23,12 @@ install: all
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install -s bin/limine-install $(DESTDIR)$(PREFIX)/bin/
 	install -d $(DESTDIR)$(PREFIX)/share
-	install -m 644 bin/limine.sys $(DESTDIR)$(PREFIX)/share/
-	install -m 644 bin/limine-cd.bin $(DESTDIR)$(PREFIX)/share/
-	install -m 644 bin/limine-eltorito-efi.bin $(DESTDIR)$(PREFIX)/share/
-	install -m 644 bin/limine-pxe.bin $(DESTDIR)$(PREFIX)/share/
-	install -m 644 bin/BOOTX64.EFI $(DESTDIR)$(PREFIX)/share/
+	install -d $(DESTDIR)$(PREFIX)/share/limine
+	install -m 644 bin/limine.sys $(DESTDIR)$(PREFIX)/share/limine/
+	install -m 644 bin/limine-cd.bin $(DESTDIR)$(PREFIX)/share/limine/
+	install -m 644 bin/limine-eltorito-efi.bin $(DESTDIR)$(PREFIX)/share/limine/
+	install -m 644 bin/limine-pxe.bin $(DESTDIR)$(PREFIX)/share/limine/
+	install -m 644 bin/BOOTX64.EFI $(DESTDIR)$(PREFIX)/share/limine/
 
 limine-bios: stage23-bios decompressor
 	mkdir -p bin

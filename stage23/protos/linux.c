@@ -107,6 +107,31 @@ struct screen_info {
     uint8_t  _reserved[2];    /* 0x3e */
 } __attribute__((packed));
 
+#define VIDEO_TYPE_MDA        0x10    /* Monochrome Text Display    */
+#define VIDEO_TYPE_CGA        0x11    /* CGA Display             */
+#define VIDEO_TYPE_EGAM        0x20    /* EGA/VGA in Monochrome Mode    */
+#define VIDEO_TYPE_EGAC        0x21    /* EGA in Color Mode        */
+#define VIDEO_TYPE_VGAC        0x22    /* VGA+ in Color Mode        */
+#define VIDEO_TYPE_VLFB        0x23    /* VESA VGA in graphic mode    */
+
+#define VIDEO_TYPE_PICA_S3    0x30    /* ACER PICA-61 local S3 video    */
+#define VIDEO_TYPE_MIPS_G364    0x31    /* MIPS Magnum 4000 G364 video  */
+#define VIDEO_TYPE_SGI          0x33    /* Various SGI graphics hardware */
+
+#define VIDEO_TYPE_TGAC        0x40    /* DEC TGA */
+
+#define VIDEO_TYPE_SUN          0x50    /* Sun frame buffer. */
+#define VIDEO_TYPE_SUNPCI       0x51    /* Sun PCI based frame buffer. */
+
+#define VIDEO_TYPE_PMAC        0x60    /* PowerMacintosh frame buffer. */
+
+#define VIDEO_TYPE_EFI        0x70    /* EFI graphic mode        */
+
+#define VIDEO_FLAGS_NOCURSOR    (1 << 0) /* The video mode has no cursor set */
+
+#define VIDEO_CAPABILITY_SKIP_QUIRKS    (1 << 0)
+#define VIDEO_CAPABILITY_64BIT_BASE    (1 << 1)    /* Frame buffer base is 64-bit */
+
 struct apm_bios_info {
     uint16_t    version;
     uint16_t    cseg;
@@ -473,7 +498,9 @@ void linux_load(char *config, char *cmdline) {
     if (!fb_init(&fbinfo, req_width, req_height, req_bpp))
         panic("linux: Unable to set video mode");
 
-    screen_info->lfb_base       = fbinfo.framebuffer_addr;
+    screen_info->capabilities   = VIDEO_CAPABILITY_64BIT_BASE;
+    screen_info->lfb_base       = (uint32_t)fbinfo.framebuffer_addr;
+    screen_info->ext_lfb_base   = (uint32_t)(fbinfo.framebuffer_addr >> 32);
     screen_info->lfb_size       = fbinfo.framebuffer_pitch * fbinfo.framebuffer_height;
     screen_info->lfb_width      = fbinfo.framebuffer_width;
     screen_info->lfb_height     = fbinfo.framebuffer_height;
@@ -486,7 +513,11 @@ void linux_load(char *config, char *cmdline) {
     screen_info->blue_size      = fbinfo.blue_mask_size;
     screen_info->blue_pos       = fbinfo.blue_mask_shift;
 
-    screen_info->orig_video_isVGA = 0x23;
+#if defined (bios)
+    screen_info->orig_video_isVGA = VIDEO_TYPE_VLFB;
+#elif defined (uefi)
+    screen_info->orig_video_isVGA = VIDEO_TYPE_EFI;
+#endif
 
     ///////////////////////////////////////
     // RSDP

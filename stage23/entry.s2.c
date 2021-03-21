@@ -29,6 +29,7 @@ struct volume *boot_volume;
 #if defined (bios)
 
 bool stage3_loaded = false;
+static bool stage3_found = false;
 
 extern symbol stage3_addr;
 extern symbol limine_sys_size;
@@ -38,11 +39,10 @@ static bool stage3_init(struct volume *part) {
 
     if (fopen(&stage3, part, "/limine.sys")
      && fopen(&stage3, part, "/boot/limine.sys")) {
-        print("Stage 3 file not found!\n"
-              "Have you copied limine.sys to the root or /boot directories of\n"
-              "one of the partitions on the boot device?\n");
         return false;
     }
+
+    stage3_found = true;
 
     if (stage3.size != (size_t)limine_sys_size) {
         print("limine.sys size incorrect.\n");
@@ -97,6 +97,12 @@ void entry(uint8_t boot_drive, int boot_from) {
             break;
         }
     );
+
+    if (!stage3_found)
+        print("\n"
+              "!! Stage 3 file not found!\n"
+              "!! Have you copied limine.sys to the root or /boot directories of\n"
+              "!! one of the partitions on the boot device?\n\n");
 
     if (!stage3_loaded)
         panic("Failed to load stage 3.");

@@ -68,35 +68,39 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
 
     int ret;
 
-    uint64_t slide = 0;
-
     bool level5pg = false;
+
+    uint64_t slide = 0;
+    uint64_t entry_point = 0;
+
     switch (bits) {
         case 64: {
             // Check if 64 bit CPU
             uint32_t eax, ebx, ecx, edx;
             if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
-                panic("stivale: This CPU does not support 64-bit mode.");
+                panic("stivale2: This CPU does not support 64-bit mode.");
             }
             // Check if 5-level paging is available
             if (cpuid(0x00000007, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 16))) {
-                print("stivale: CPU has 5-level paging support\n");
+                print("stivale2: CPU has 5-level paging support\n");
                 level5pg = true;
             }
 
-            char *s_kaslr = config_get_value(config, 0, "KASLR");
-            if (s_kaslr != NULL && !strcmp(s_kaslr, "yes")) {
-                // KASLR is enabled, set the slide
-                slide = rand64() & KASLR_SLIDE_BITMASK;
-            }
+            if (elf64_load(kernel, &entry_point, &slide, 10))
+                panic("stivale2: ELF64 load failure");
 
             ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr", sizeof(struct stivale2_header), slide);
 
             break;
         }
-        case 32:
+        case 32: {
+            if (elf32_load(kernel, (uint32_t *)&entry_point, 10))
+                panic("stivale2: ELF32 load failure");
+
             ret = elf32_load_section(kernel, &stivale2_hdr, ".stivale2hdr", sizeof(struct stivale2_header));
+
             break;
+        }
         default:
             panic("stivale2: Not 32 nor 64 bit x86 ELF file.");
     }
@@ -114,26 +118,13 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
             panic("stivale2: Section .stivale2hdr is smaller than size of the struct.");
     }
 
-    print("stivale2: Requested stack at %X\n", stivale2_hdr.stack);
-
-    uint64_t entry_point   = 0;
-    uint64_t top_used_addr = 0;
-
-    switch (bits) {
-        case 64:
-            elf64_load(kernel, &entry_point, &top_used_addr, slide, 0x1001);
-            break;
-        case 32:
-            elf32_load(kernel, (uint32_t *)&entry_point, (uint32_t *)&top_used_addr, 0x1001);
-            break;
-    }
-
     if (stivale2_hdr.entry_point != 0)
         entry_point = stivale2_hdr.entry_point;
 
     print("stivale2: Kernel slide: %X\n", slide);
 
-    print("stivale2: Top used address in ELF: %X\n", top_used_addr);
+    print("stivale2: Entry point at: %X\n", entry_point);
+    print("stivale2: Requested stack at: %X\n", stivale2_hdr.stack);
 
     strcpy(stivale2_struct.bootloader_brand, "Limine");
     strcpy(stivale2_struct.bootloader_version, LIMINE_VERSION);

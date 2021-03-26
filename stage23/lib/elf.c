@@ -4,8 +4,11 @@
 #include <lib/libc.h>
 #include <lib/elf.h>
 #include <lib/print.h>
+#include <lib/rand.h>
 #include <mm/pmm.h>
 #include <fs/file.h>
+
+#define KASLR_SLIDE_BITMASK ((uintptr_t)0x3ffff000)
 
 #define PT_LOAD     0x00000001
 #define PT_INTERP   0x00000003
@@ -131,6 +134,27 @@ int elf_bits(struct file_handle *fd) {
         default:
             return -1;
     }
+}
+
+static bool elf64_is_relocatable(struct file_handle *fd, struct elf64_hdr *hdr) {
+    // Find RELA sections
+    for (uint16_t i = 0; i < hdr->sh_num; i++) {
+        struct elf64_shdr section;
+        fread(fd, &section, hdr->shoff + i * sizeof(struct elf64_shdr),
+                    sizeof(struct elf64_shdr));
+
+        if (section.sh_type != SHT_RELA)
+            continue;
+
+        if (section.sh_entsize != sizeof(struct elf64_rela)) {
+            print("elf: Unknown sh_entsize for RELA section!\n");
+            continue;
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 static int elf64_apply_relocations(struct file_handle *fd, struct elf64_hdr *hdr, void *buffer, uint64_t vaddr, size_t size, uint64_t slide) {
@@ -268,7 +292,7 @@ int elf32_load_section(struct file_handle *fd, void *buffer, const char *name, s
     return 2;
 }
 
-int elf64_load(struct file_handle *fd, uint64_t *entry_point, uint64_t *top, uint64_t slide, uint32_t alloc_type) {
+int elf64_load(struct file_handle *fd, uint64_t *entry_point, uint64_t *_slide, uint32_t alloc_type) {
     struct elf64_hdr hdr;
     fread(fd, &hdr, 0, sizeof(struct elf64_hdr));
 
@@ -287,8 +311,20 @@ int elf64_load(struct file_handle *fd, uint64_t *entry_point, uint64_t *top, uin
         return -1;
     }
 
-    *top = 0;
+    uint64_t slide = 0;
+    bool simulation = true;
+    size_t try_count = 0;
+    size_t max_simulated_tries = 250;
 
+    if (!elf64_is_relocatable(fd, &hdr)) {
+        simulation = false;
+        goto final;
+    }
+
+again:
+    slide = rand64() & KASLR_SLIDE_BITMASK;
+
+final:
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf64_phdr phdr;
         fread(fd, &phdr, hdr.phoff + i * sizeof(struct elf64_phdr),
@@ -304,12 +340,11 @@ int elf64_load(struct file_handle *fd, uint64_t *entry_point, uint64_t *top, uin
 
         load_vaddr += slide;
 
-        uint64_t this_top = load_vaddr + phdr.p_memsz;
-
-        if (this_top > *top)
-            *top = this_top;
-
-        memmap_alloc_range((size_t)load_vaddr, (size_t)phdr.p_memsz, alloc_type, true, true);
+        if (!memmap_alloc_range((size_t)load_vaddr, (size_t)phdr.p_memsz, alloc_type, true, false, simulation)) {
+            if (++try_count == max_simulated_tries || simulation == false)
+                return -1;
+            goto again;
+        }
 
         fread(fd, (void *)(uintptr_t)load_vaddr, phdr.p_offset, phdr.p_filesz);
 
@@ -324,12 +359,18 @@ int elf64_load(struct file_handle *fd, uint64_t *entry_point, uint64_t *top, uin
             return -1;
     }
 
+    if (simulation) {
+        simulation = false;
+        goto final;
+    }
+
     *entry_point = hdr.entry + slide;
+    *_slide = slide;
 
     return 0;
 }
 
-int elf32_load(struct file_handle *fd, uint32_t *entry_point, uint32_t *top, uint32_t alloc_type) {
+int elf32_load(struct file_handle *fd, uint32_t *entry_point, uint32_t alloc_type) {
     struct elf32_hdr hdr;
     fread(fd, &hdr, 0, sizeof(struct elf32_hdr));
 
@@ -348,8 +389,6 @@ int elf32_load(struct file_handle *fd, uint32_t *entry_point, uint32_t *top, uin
         return -1;
     }
 
-    *top = 0;
-
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf32_phdr phdr;
         fread(fd, &phdr, hdr.phoff + i * sizeof(struct elf32_phdr),
@@ -358,11 +397,7 @@ int elf32_load(struct file_handle *fd, uint32_t *entry_point, uint32_t *top, uin
         if (phdr.p_type != PT_LOAD)
             continue;
 
-        uint32_t this_top = phdr.p_vaddr + phdr.p_memsz;
-        if (this_top > *top)
-            *top = this_top;
-
-        memmap_alloc_range((size_t)phdr.p_paddr, (size_t)phdr.p_memsz, alloc_type, true, true);
+        memmap_alloc_range((size_t)phdr.p_paddr, (size_t)phdr.p_memsz, alloc_type, true, true, false);
 
         fread(fd, (void *)(uintptr_t)phdr.p_paddr, phdr.p_offset, phdr.p_filesz);
 

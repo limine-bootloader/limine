@@ -25,7 +25,7 @@ extern size_t memmap_entries;
 void init_memmap(void);
 struct e820_entry_t *get_memmap(size_t *entries);
 void print_memmap(struct e820_entry_t *mm, size_t size);
-bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only, bool panic);
+bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only, bool panic, bool simulation);
 
 void *ext_mem_alloc(size_t count);
 void *ext_mem_alloc_type(size_t count, uint32_t type);

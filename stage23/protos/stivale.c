@@ -9,7 +9,6 @@
 #include <lib/config.h>
 #include <lib/time.h>
 #include <lib/print.h>
-#include <lib/rand.h>
 #include <lib/real.h>
 #include <lib/uri.h>
 #include <lib/fb.h>
@@ -22,8 +21,6 @@
 #include <mm/pmm.h>
 #include <mm/mtrr.h>
 #include <stivale/stivale.h>
-
-#define KASLR_SLIDE_BITMASK 0x000FFF000u
 
 struct stivale_struct stivale_struct = {0};
 
@@ -50,9 +47,11 @@ void stivale_load(char *config, char *cmdline) {
 
     int ret;
 
-    uint64_t slide = 0;
-
     bool level5pg = false;
+
+    uint64_t slide = 0;
+    uint64_t entry_point = 0;
+
     switch (bits) {
         case 64: {
             // Check if 64 bit CPU
@@ -66,19 +65,21 @@ void stivale_load(char *config, char *cmdline) {
                 level5pg = true;
             }
 
-            char *s_kaslr = config_get_value(config, 0, "KASLR");
-            if (s_kaslr != NULL && !strcmp(s_kaslr, "yes")) {
-                // KASLR is enabled, set the slide
-                slide = rand64() & KASLR_SLIDE_BITMASK;
-            }
+            if (elf64_load(kernel, &entry_point, &slide, 10))
+                panic("stivale: ELF64 load failure");
 
             ret = elf64_load_section(kernel, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header), slide);
 
             break;
         }
-        case 32:
+        case 32: {
+            if (elf32_load(kernel, (uint32_t *)&entry_point, 10))
+                panic("stivale: ELF32 load failure");
+
             ret = elf32_load_section(kernel, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header));
+
             break;
+        }
         default:
             panic("stivale: Not 32 nor 64 bit x86 ELF file.");
     }
@@ -96,26 +97,13 @@ void stivale_load(char *config, char *cmdline) {
             panic("stivale: Section .stivalehdr is smaller than size of the struct.");
     }
 
-    print("stivale: Requested stack at %X\n", stivale_hdr.stack);
-
-    uint64_t entry_point   = 0;
-    uint64_t top_used_addr = 0;
-
-    switch (bits) {
-        case 64:
-            elf64_load(kernel, &entry_point, &top_used_addr, slide, 10);
-            break;
-        case 32:
-            elf32_load(kernel, (uint32_t *)&entry_point, (uint32_t *)&top_used_addr, 10);
-            break;
-    }
-
     if (stivale_hdr.entry_point != 0)
         entry_point = stivale_hdr.entry_point;
 
     print("stivale: Kernel slide: %X\n", slide);
 
-    print("stivale: Top used address in ELF: %X\n", top_used_addr);
+    print("stivale: Entry point at: %X\n", entry_point);
+    print("stivale: Requested stack at: %X\n", stivale_hdr.stack);
 
     stivale_struct.module_count = 0;
     uint64_t *prev_mod_ptr = &stivale_struct.modules;

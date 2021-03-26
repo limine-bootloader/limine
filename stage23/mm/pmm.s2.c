@@ -342,7 +342,7 @@ void init_memmap(void) {
 
     memmap_alloc_range(bump_allocator_base,
                        bump_allocator_limit - bump_allocator_base,
-                       MEMMAP_REMOVE_RANGE, true, true);
+                       MEMMAP_REMOVE_RANGE, true, true, false);
 
     print("pmm: Conventional mem allocator base:  %X\n", bump_allocator_base);
     print("pmm: Conventional mem allocator limit: %X\n", bump_allocator_limit);
@@ -399,7 +399,7 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
 
         // We now reserve the range we need.
         int64_t aligned_length = entry_top - alloc_base;
-        memmap_alloc_range((uint64_t)alloc_base, (uint64_t)aligned_length, type, true, true);
+        memmap_alloc_range((uint64_t)alloc_base, (uint64_t)aligned_length, type, true, true, false);
 
         void *ret = (void *)(size_t)alloc_base;
 
@@ -414,7 +414,7 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
     panic("High memory allocator: Out of memory");
 }
 
-bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only, bool do_panic) {
+bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only, bool do_panic, bool simulation) {
     if (length == 0)
         return true;
 
@@ -443,6 +443,9 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
         if (type == MEMMAP_REMOVE_RANGE &&
             base == entry_base && top == entry_top) {
 
+            if (simulation)
+                return true;
+
             // Eradicate from memmap
             for (size_t j = i; j < memmap_entries - 1; j++) {
                 memmap[j] = memmap[j+1];
@@ -454,6 +457,10 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
 
         if (base >= entry_base && base <  entry_top &&
             top  >= entry_base && top  <= entry_top) {
+
+            if (simulation)
+                return true;
+
             struct e820_entry_t *target;
 
             memmap[i].length -= entry_top - base;

@@ -9,7 +9,6 @@
 #include <lib/config.h>
 #include <lib/time.h>
 #include <lib/print.h>
-#include <lib/rand.h>
 #include <lib/real.h>
 #include <lib/libc.h>
 #include <lib/uri.h>
@@ -25,8 +24,6 @@
 #include <stivale/stivale2.h>
 #include <pxe/tftp.h>
 #include <drivers/edid.h>
-
-#define KASLR_SLIDE_BITMASK 0x000FFF000u
 
 struct stivale2_struct stivale2_struct = {0};
 

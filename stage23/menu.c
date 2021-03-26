@@ -475,6 +475,7 @@ timeout_aborted:
                 if (++selected_entry == max_entries)
                     selected_entry = 0;
                 goto refresh;
+            case GETCHAR_CURSOR_RIGHT:
             case '\n':
             autoboot:
                 if (selected_menu_entry->sub != NULL) {

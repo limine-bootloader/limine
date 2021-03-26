@@ -73,6 +73,7 @@ Some keys take *URIs* as values; these are described in the next section.
 
   Note that one can define this last variable multiple times to specify multiple
   modules.
+  * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
 * stivale and stivale2 protocols:
   * `KERNEL_PATH` - The URI path of the kernel.
   * `MODULE_PATH` - The URI path to a module.
@@ -82,8 +83,7 @@ Some keys take *URIs* as values; these are described in the next section.
   modules.
   The entries will be matched in order. E.g.: the 1st module path entry will be matched
   to the 1st module string entry that appear, and so on.
-  * `KASLR` - If set to `yes`, it enables Kernel Address Layout Randomisation for 64-bit relocatable kernels.
-  * `RESOLUTION` - The resolution to be used should the kernel request a graphical framebuffer. This setting takes the form of `<width>x<height>x<bpp>` and *overrides* any resolution requested by the kernel, or automatic resolution requests. If the resolution is not available, Limine will pick another one automatically.
+  * `RESOLUTION` - The resolution to be used should the kernel request a graphical framebuffer. This setting takes the form of `<width>x<height>x<bpp>` and *overrides* any resolution requested by the kernel, or automatic resolution requests. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
 * Chainload protocol:
   * `DRIVE` - The 1-based BIOS drive to chainload.
   * `PARTITION` - The 1-based BIOS partition to chainload, if omitted, chainload drive.

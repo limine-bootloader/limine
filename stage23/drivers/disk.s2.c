@@ -99,6 +99,9 @@ void disk_create_index(void) {
         if (r.eflags & EFLAGS_CF)
             continue;
 
+        if (drive_params.lba_count == 0 || drive_params.bytes_per_sect == 0)
+            continue;
+
         print("Found BIOS drive %x\n", drive);
         print(" ... %X total %u-byte sectors\n",
               drive_params.lba_count, drive_params.bytes_per_sect);
@@ -148,6 +151,9 @@ void disk_create_index(void) {
         rm_int(0x13, &r, &r);
 
         if (r.eflags & EFLAGS_CF)
+            continue;
+
+        if (drive_params.lba_count == 0 || drive_params.bytes_per_sect == 0)
             continue;
 
         struct volume *block = ext_mem_alloc(sizeof(struct volume));

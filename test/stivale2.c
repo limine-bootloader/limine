@@ -139,6 +139,11 @@ void stivale2_main(struct stivale2_struct *info) {
                 e9_printf("Raw kernel file loaded at: %x", t->kernel_file);
                 break;
             }
+            case STIVALE2_STRUCT_TAG_KERNEL_SLIDE_ID: {
+                struct stivale2_struct_tag_kernel_slide *t = (struct stivale2_struct_tag_kernel_slide *)tag;
+                e9_printf("Kernel slide: %x", t->kernel_slide);
+                break;
+            }
             case STIVALE2_STRUCT_TAG_SMP_ID: {
                 struct stivale2_struct_tag_smp *s = (struct stivale2_struct_tag_smp *)tag;
                 e9_puts("SMP tag:");

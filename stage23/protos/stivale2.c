@@ -141,6 +141,18 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     }
 
     //////////////////////////////////////////////
+    // Create kernel slide struct tag
+    //////////////////////////////////////////////
+    {
+    struct stivale2_struct_tag_kernel_slide *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_kernel_slide));
+    tag->tag.identifier = STIVALE2_STRUCT_TAG_KERNEL_SLIDE_ID;
+
+    tag->kernel_slide = slide;
+
+    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    }
+
+    //////////////////////////////////////////////
     // Create firmware struct tag
     //////////////////////////////////////////////
     {

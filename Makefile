@@ -4,7 +4,7 @@ DESTDIR =
 
 PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
-.PHONY: all bin/limine-install clean install distclean limine-bios limine-uefi limine-bios-clean limine-uefi-clean stage23-bios stage23-bios-clean stage23-uefi stage23-uefi-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat16-test fat32-test iso9660-test pxe-test uefi-test hybrid-iso9660-test
+.PHONY: all bin/limine-install clean install distclean limine-bios limine-uefi limine-bios-clean limine-uefi-clean stage23-bios stage23-bios-clean stage23-uefi stage23-uefi-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat16-test fat32-test iso9660-test iso9660-uefi-test pxe-test uefi-test hybrid-iso9660-test
 
 all:
 	$(MAKE) limine-uefi
@@ -195,8 +195,20 @@ iso9660-test:
 	rm -rf test_image/
 	mkdir -p test_image/boot
 	cp -rv bin/* test/* test_image/boot/
-	genisoimage -no-emul-boot -b boot/limine-cd.bin -boot-load-size 4 -boot-info-table -o test.iso test_image/
+	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table test_image/ -o test.iso
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
+
+iso9660-uefi-test:
+	$(MAKE) ovmf
+	$(MAKE) test-clean
+	$(MAKE) test.hdd
+	$(MAKE) limine-uefi
+	$(MAKE) -C test
+	rm -rf test_image/
+	mkdir -p test_image/boot
+	cp -rv bin/* test/* test_image/boot/
+	xorriso -as mkisofs -eltorito-alt-boot -e boot/limine-eltorito-efi.bin -no-emul-boot test_image/ -o test.iso
+	qemu-system-x86_64 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
 
 hybrid-iso9660-test:
 	$(MAKE) ovmf
@@ -210,7 +222,7 @@ hybrid-iso9660-test:
 	cp -rv bin/* test/* test_image/boot/
 	mkdir -p test_image/EFI/BOOT
 	cp -v bin/BOOTX64.EFI test_image/EFI/BOOT/
-	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e boot/limine-eltorito-efi.bin -no-emul-boot -isohybrid-gpt-basdat test_image/ -o test.iso
+	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e boot/limine-eltorito-efi.bin -no-emul-boot test_image/ -o test.iso
 	qemu-system-x86_64 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
 
 pxe-test:

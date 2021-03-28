@@ -32,16 +32,18 @@ void stivale_load(char *config, char *cmdline) {
 
     stivale_struct.flags |= (1 << 1);    // we give colour information
 
-    struct file_handle *kernel = ext_mem_alloc(sizeof(struct file_handle));
+    struct file_handle *kernel_file = ext_mem_alloc(sizeof(struct file_handle));
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
         panic("KERNEL_PATH not specified");
 
-    if (!uri_open(kernel, kernel_path))
+    if (!uri_open(kernel_file, kernel_path))
         panic("Could not open kernel resource");
 
     struct stivale_header stivale_hdr;
+
+    uint8_t *kernel = freadall(kernel_file, STIVALE_MMAP_BOOTLOADER_RECLAIMABLE);
 
     int bits = elf_bits(kernel);
 

@@ -117,9 +117,9 @@ struct elf64_rela {
     uint64_t r_addend;
 };
 
-int elf_bits(struct file_handle *fd) {
+int elf_bits(uint8_t *elf) {
     struct elf64_hdr hdr;
-    fread(fd, &hdr, 0, 20);
+    memcpy(&hdr, elf + (0), 20);
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
         print("elf: Not a valid ELF file.\n");
@@ -136,11 +136,11 @@ int elf_bits(struct file_handle *fd) {
     }
 }
 
-static bool elf64_is_relocatable(struct file_handle *fd, struct elf64_hdr *hdr) {
+static bool elf64_is_relocatable(uint8_t *elf, struct elf64_hdr *hdr) {
     // Find RELA sections
     for (uint16_t i = 0; i < hdr->sh_num; i++) {
         struct elf64_shdr section;
-        fread(fd, &section, hdr->shoff + i * sizeof(struct elf64_shdr),
+        memcpy(&section, elf + (hdr->shoff + i * sizeof(struct elf64_shdr)),
                     sizeof(struct elf64_shdr));
 
         if (section.sh_type != SHT_RELA)
@@ -157,11 +157,11 @@ static bool elf64_is_relocatable(struct file_handle *fd, struct elf64_hdr *hdr) 
     return false;
 }
 
-static int elf64_apply_relocations(struct file_handle *fd, struct elf64_hdr *hdr, void *buffer, uint64_t vaddr, size_t size, uint64_t slide) {
+static int elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *buffer, uint64_t vaddr, size_t size, uint64_t slide) {
     // Find RELA sections
     for (uint16_t i = 0; i < hdr->sh_num; i++) {
         struct elf64_shdr section;
-        fread(fd, &section, hdr->shoff + i * sizeof(struct elf64_shdr),
+        memcpy(&section, elf + (hdr->shoff + i * sizeof(struct elf64_shdr)),
                     sizeof(struct elf64_shdr));
 
         if (section.sh_type != SHT_RELA)
@@ -175,10 +175,10 @@ static int elf64_apply_relocations(struct file_handle *fd, struct elf64_hdr *hdr
         // This is a RELA header, get and apply all relocations
         for (uint64_t offset = 0; offset < section.sh_size; offset += section.sh_entsize) {
             struct elf64_rela relocation;
-            fread(fd, &relocation, section.sh_offset + offset, sizeof(relocation));
+            memcpy(&relocation, elf + (section.sh_offset + offset), sizeof(relocation));
 
             switch (relocation.r_info) {
-                case R_X86_64_RELATIVE:
+                case R_X86_64_RELATIVE: {
                     // Relocation is before buffer
                     if (relocation.r_addr < vaddr)
                         continue;
@@ -193,9 +193,9 @@ static int elf64_apply_relocations(struct file_handle *fd, struct elf64_hdr *hdr
                     // Write the relocated value
                     *ptr = slide + relocation.r_addend;
                     break;
-
+                }
                 default:
-                    print("elf: Unknown RELA type: %X\n", relocation.r_info);
+                    print("elf: Unknown RELA type: %x\n", relocation.r_info);
                     return 1;
             }
         }
@@ -204,9 +204,9 @@ static int elf64_apply_relocations(struct file_handle *fd, struct elf64_hdr *hdr
     return 0;
 }
 
-int elf64_load_section(struct file_handle *fd, void *buffer, const char *name, size_t limit, uint64_t slide) {
+int elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t limit, uint64_t slide) {
     struct elf64_hdr hdr;
-    fread(fd, &hdr, 0, sizeof(struct elf64_hdr));
+    memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
         print("elf: Not a valid ELF file.\n");
@@ -224,15 +224,15 @@ int elf64_load_section(struct file_handle *fd, void *buffer, const char *name, s
     }
 
     struct elf64_shdr shstrtab;
-    fread(fd, &shstrtab, hdr.shoff + hdr.shstrndx * sizeof(struct elf64_shdr),
+    memcpy(&shstrtab, elf + (hdr.shoff + hdr.shstrndx * sizeof(struct elf64_shdr)),
             sizeof(struct elf64_shdr));
 
     char *names = ext_mem_alloc(shstrtab.sh_size);
-    fread(fd, names, shstrtab.sh_offset, shstrtab.sh_size);
+    memcpy(names, elf + (shstrtab.sh_offset), shstrtab.sh_size);
 
     for (uint16_t i = 0; i < hdr.sh_num; i++) {
         struct elf64_shdr section;
-        fread(fd, &section, hdr.shoff + i * sizeof(struct elf64_shdr),
+        memcpy(&section, elf + (hdr.shoff + i * sizeof(struct elf64_shdr)),
                    sizeof(struct elf64_shdr));
 
         if (!strcmp(&names[section.sh_name], name)) {
@@ -240,17 +240,17 @@ int elf64_load_section(struct file_handle *fd, void *buffer, const char *name, s
                 return 3;
             if (section.sh_size < limit)
                 return 4;
-            fread(fd, buffer, section.sh_offset, section.sh_size);
-            return elf64_apply_relocations(fd, &hdr, buffer, section.sh_addr, section.sh_size, slide);
+            memcpy(buffer, elf + (section.sh_offset), section.sh_size);
+            return elf64_apply_relocations(elf, &hdr, buffer, section.sh_addr, section.sh_size, slide);
         }
     }
 
     return 2;
 }
 
-int elf32_load_section(struct file_handle *fd, void *buffer, const char *name, size_t limit) {
+int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limit) {
     struct elf32_hdr hdr;
-    fread(fd, &hdr, 0, sizeof(struct elf32_hdr));
+    memcpy(&hdr, elf + (0), sizeof(struct elf32_hdr));
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
         print("elf: Not a valid ELF file.\n");
@@ -268,15 +268,15 @@ int elf32_load_section(struct file_handle *fd, void *buffer, const char *name, s
     }
 
     struct elf32_shdr shstrtab;
-    fread(fd, &shstrtab, hdr.shoff + hdr.shstrndx * sizeof(struct elf32_shdr),
+    memcpy(&shstrtab, elf + (hdr.shoff + hdr.shstrndx * sizeof(struct elf32_shdr)),
             sizeof(struct elf32_shdr));
 
     char *names = ext_mem_alloc(shstrtab.sh_size);
-    fread(fd, names, shstrtab.sh_offset, shstrtab.sh_size);
+    memcpy(names, elf + (shstrtab.sh_offset), shstrtab.sh_size);
 
     for (uint16_t i = 0; i < hdr.sh_num; i++) {
         struct elf32_shdr section;
-        fread(fd, &section, hdr.shoff + i * sizeof(struct elf32_shdr),
+        memcpy(&section, elf + (hdr.shoff + i * sizeof(struct elf32_shdr)),
                    sizeof(struct elf32_shdr));
 
         if (!strcmp(&names[section.sh_name], name)) {
@@ -284,7 +284,7 @@ int elf32_load_section(struct file_handle *fd, void *buffer, const char *name, s
                 return 3;
             if (section.sh_size < limit)
                 return 4;
-            fread(fd, buffer, section.sh_offset, section.sh_size);
+            memcpy(buffer, elf + (section.sh_offset), section.sh_size);
             return 0;
         }
     }
@@ -292,9 +292,9 @@ int elf32_load_section(struct file_handle *fd, void *buffer, const char *name, s
     return 2;
 }
 
-int elf64_load(struct file_handle *fd, uint64_t *entry_point, uint64_t *_slide, uint32_t alloc_type) {
+int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t alloc_type) {
     struct elf64_hdr hdr;
-    fread(fd, &hdr, 0, sizeof(struct elf64_hdr));
+    memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
         print("Not a valid ELF file.\n");
@@ -316,7 +316,7 @@ int elf64_load(struct file_handle *fd, uint64_t *entry_point, uint64_t *_slide, 
     size_t try_count = 0;
     size_t max_simulated_tries = 250;
 
-    if (!elf64_is_relocatable(fd, &hdr)) {
+    if (!elf64_is_relocatable(elf, &hdr)) {
         simulation = false;
         goto final;
     }
@@ -327,7 +327,7 @@ again:
 final:
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf64_phdr phdr;
-        fread(fd, &phdr, hdr.phoff + i * sizeof(struct elf64_phdr),
+        memcpy(&phdr, elf + (hdr.phoff + i * sizeof(struct elf64_phdr)),
                    sizeof(struct elf64_phdr));
 
         if (phdr.p_type != PT_LOAD)
@@ -346,7 +346,7 @@ final:
             goto again;
         }
 
-        fread(fd, (void *)(uintptr_t)load_vaddr, phdr.p_offset, phdr.p_filesz);
+        memcpy((void *)(uintptr_t)load_vaddr, elf + (phdr.p_offset), phdr.p_filesz);
 
         size_t to_zero = (size_t)(phdr.p_memsz - phdr.p_filesz);
 
@@ -355,7 +355,7 @@ final:
             memset(ptr, 0, to_zero);
         }
 
-        if (elf64_apply_relocations(fd, &hdr, (void *)(uintptr_t)load_vaddr, phdr.p_vaddr, phdr.p_memsz, slide))
+        if (elf64_apply_relocations(elf, &hdr, (void *)(uintptr_t)load_vaddr, phdr.p_vaddr, phdr.p_memsz, slide))
             return -1;
     }
 
@@ -370,9 +370,9 @@ final:
     return 0;
 }
 
-int elf32_load(struct file_handle *fd, uint32_t *entry_point, uint32_t alloc_type) {
+int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t alloc_type) {
     struct elf32_hdr hdr;
-    fread(fd, &hdr, 0, sizeof(struct elf32_hdr));
+    memcpy(&hdr, elf + (0), sizeof(struct elf32_hdr));
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
         print("Not a valid ELF file.\n");
@@ -391,7 +391,7 @@ int elf32_load(struct file_handle *fd, uint32_t *entry_point, uint32_t alloc_typ
 
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf32_phdr phdr;
-        fread(fd, &phdr, hdr.phoff + i * sizeof(struct elf32_phdr),
+        memcpy(&phdr, elf + (hdr.phoff + i * sizeof(struct elf32_phdr)),
                    sizeof(struct elf32_phdr));
 
         if (phdr.p_type != PT_LOAD)
@@ -399,7 +399,7 @@ int elf32_load(struct file_handle *fd, uint32_t *entry_point, uint32_t alloc_typ
 
         memmap_alloc_range((size_t)phdr.p_paddr, (size_t)phdr.p_memsz, alloc_type, true, true, false);
 
-        fread(fd, (void *)(uintptr_t)phdr.p_paddr, phdr.p_offset, phdr.p_filesz);
+        memcpy((void *)(uintptr_t)phdr.p_paddr, elf + (phdr.p_offset), phdr.p_filesz);
 
         size_t to_zero = (size_t)(phdr.p_memsz - phdr.p_filesz);
 

@@ -50,16 +50,18 @@ static void append_tag(struct stivale2_struct *s, struct stivale2_tag *tag) {
 }
 
 void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table) {
-    struct file_handle *kernel = ext_mem_alloc(sizeof(struct file_handle));
+    struct file_handle *kernel_file = ext_mem_alloc(sizeof(struct file_handle));
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
         panic("KERNEL_PATH not specified");
 
-    if (!uri_open(kernel, kernel_path))
+    if (!uri_open(kernel_file, kernel_path))
         panic("Could not open kernel resource");
 
     struct stivale2_header stivale2_hdr;
+
+    uint8_t *kernel = freadall(kernel_file, STIVALE2_MMAP_BOOTLOADER_RECLAIMABLE);
 
     int bits = elf_bits(kernel);
 
@@ -125,6 +127,18 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
 
     strcpy(stivale2_struct.bootloader_brand, "Limine");
     strcpy(stivale2_struct.bootloader_version, LIMINE_VERSION);
+
+    //////////////////////////////////////////////
+    // Create kernel file struct tag
+    //////////////////////////////////////////////
+    {
+    struct stivale2_struct_tag_kernel_file *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_kernel_file));
+    tag->tag.identifier = STIVALE2_STRUCT_TAG_KERNEL_FILE_ID;
+
+    tag->kernel_file = (uint64_t)(uintptr_t)kernel;
+
+    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    }
 
     //////////////////////////////////////////////
     // Create firmware struct tag

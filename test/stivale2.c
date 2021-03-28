@@ -134,6 +134,11 @@ void stivale2_main(struct stivale2_struct *info) {
                 e9_printf("EFI system table at: %x", t->system_table);
                 break;
             }
+            case STIVALE2_STRUCT_TAG_KERNEL_FILE_ID: {
+                struct stivale2_struct_tag_kernel_file *t = (struct stivale2_struct_tag_kernel_file *)tag;
+                e9_printf("Raw kernel file loaded at: %x", t->kernel_file);
+                break;
+            }
             case STIVALE2_STRUCT_TAG_SMP_ID: {
                 struct stivale2_struct_tag_smp *s = (struct stivale2_struct_tag_smp *)tag;
                 e9_puts("SMP tag:");

@@ -131,7 +131,7 @@ either the root or the `boot` directory of one of the partitions, formatted
 with a supported file system.
 
 ### BIOS CD-ROM ISO creation
-In order to create a bootable ISO with Limine, place the `limine-cd.bin`,
+In order to create a bootable BIOS ISO with Limine, place the `limine-cd.bin`,
 `limine.sys`, and `limine.cfg` files into a directory which will serve as the root
 of the created ISO.
 (`limine.sys` and `limine.cfg` must either be in the root or inside a `boot`
@@ -139,16 +139,46 @@ subdirectory; `limine-cd.bin` can reside anywhere).
 
 Place any other file you want to be on the final ISO in said directory, then run:
 ```
-genisoimage -no-emul-boot -b <relative path of limine-cd.bin> \
-            -boot-load-size 4 -boot-info-table -o myiso.iso <root directory>
+xorriso -as mkisofs -b <relative path of limine-cd.bin> \
+        -no-emul-boot -boot-load-size 4 -boot-info-table <root directory> -o image.iso
 ```
 
-*Note: `genisoimage` is usually part of the `cdrtools` package.*
+*Note: `xorriso` is required.*
 
 `<relative path of limine-cd.bin>` is the relative path of `limine-cd.bin` inside
 the root directory.
 For example, if it was copied in `<root directory>/boot/limine-cd.bin`, it would be
 `boot/limine-cd.bin`.
+
+### UEFI CD-ROM ISO creation
+In order to create a bootable UEFI ISO with Limine, place the `limine-eltorito-efi.bin`,
+`limine.sys`, and `limine.cfg` files into a directory which will serve as the root
+of the created ISO.
+(`limine.sys` and `limine.cfg` must either be in the root or inside a `boot`
+subdirectory; `limine-eltorito-efi.bin` can reside anywhere).
+
+Place any other file you want to be on the final ISO in said directory, then run:
+```
+xorriso -as mkisofs -eltorito-alt-boot -e <relative path of limine-eltorito-efi.bin> \
+        -no-emul-boot <root directory> -o image.iso
+```
+
+*Note: `xorriso` is required.*
+
+`<relative path of limine-eltorito-efi.bin>` is the relative path of
+`limine-eltorito-efi.bin` inside the root directory.
+For example, if it was copied in `<root directory>/boot/limine-eltorito-efi.bin`,
+it would be `boot/limine-eltorito-efi.bin`.
+
+### BIOS+UEFI CD-ROM ISO creation
+Additionally, it is possible to combine the 2 aformentioned commands into a single one
+in order to create a CD ISO which will boot on both BIOS and UEFI:
+```
+xorriso -as mkisofs -b <relative path of limine-cd.bin> \
+        -no-emul-boot -boot-load-size 4 -boot-info-table \
+        -eltorito-alt-boot -e <relative path of limine-eltorito-efi.bin> \
+        -no-emul-boot <root directory> -o image.iso
+```
 
 ### BIOS/PXE boot
 The `limine-pxe.bin` binary is a valid PXE boot image.

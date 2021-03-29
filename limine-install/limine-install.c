@@ -329,6 +329,55 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    int mbr = 0;
+    if (gpt == 0) {
+        // Do all sanity checks on MBR
+        mbr = 1;
+
+        uint16_t hint = 0;
+        device_read(&hint, 218, sizeof(uint16_t));
+        if (hint != 0)
+            mbr = 0;
+
+        device_read(&hint, 444, sizeof(uint16_t));
+        if (hint != 0 && hint != 0x5a5a)
+            mbr = 0;
+
+        device_read(&hint, 510, sizeof(uint16_t));
+        if (hint != 0xaa55)
+            mbr = 0;
+
+        device_read(&hint, 446, sizeof(uint8_t));
+        if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80)
+            mbr = 0;
+        device_read(&hint, 462, sizeof(uint8_t));
+        if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80)
+            mbr = 0;
+        device_read(&hint, 478, sizeof(uint8_t));
+        if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80)
+            mbr = 0;
+        device_read(&hint, 494, sizeof(uint8_t));
+        if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80)
+            mbr = 0;
+
+        char hintc[64];
+        device_read(hintc, 4, 8);
+        if (memcmp(hintc, "_ECH_FS_", 8) == 0)
+            mbr = 0;
+        device_read(hintc, 54, 3);
+        if (memcmp(hintc, "FAT", 3) == 0)
+            mbr = 0;
+        device_read(&hint, 1080, sizeof(uint16_t));
+        if (hint == 0xef53)
+            mbr = 0;
+    }
+
+    if (gpt == 0 && mbr == 0) {
+        fprintf(stderr, "ERROR: Could not determine if the device has a valid partition table.\n");
+        fprintf(stderr, "       Please ensure the device has a valid MBR or GPT.\n");
+        goto cleanup;
+    }
+
     size_t   stage2_size   = bootloader_file_size - 512;
 
     size_t   stage2_sects  = DIV_ROUNDUP(stage2_size, 512);

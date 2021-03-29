@@ -234,8 +234,40 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
 static int mbr_get_part(struct volume *ret, struct volume *volume, int partition) {
     // Check if actually valid mbr
     uint16_t hint = 0;
+    volume_read(volume, &hint, 218, sizeof(uint16_t));
+    if (hint != 0)
+        return INVALID_TABLE;
+
     volume_read(volume, &hint, 444, sizeof(uint16_t));
-    if (hint && hint != 0x5a5a)
+    if (hint != 0 && hint != 0x5a5a)
+        return INVALID_TABLE;
+
+    volume_read(volume, &hint, 510, sizeof(uint16_t));
+    if (hint != 0xaa55)
+        return INVALID_TABLE;
+
+    volume_read(volume, &hint, 446, sizeof(uint8_t));
+    if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80)
+        return INVALID_TABLE;
+    volume_read(volume, &hint, 462, sizeof(uint8_t));
+    if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80)
+        return INVALID_TABLE;
+    volume_read(volume, &hint, 478, sizeof(uint8_t));
+    if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80)
+        return INVALID_TABLE;
+    volume_read(volume, &hint, 494, sizeof(uint8_t));
+    if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80)
+        return INVALID_TABLE;
+
+    char hintc[64];
+    volume_read(volume, hintc, 4, 8);
+    if (memcmp(hintc, "_ECH_FS_", 8) == 0)
+        return INVALID_TABLE;
+    volume_read(volume, hintc, 54, 3);
+    if (memcmp(hintc, "FAT", 3) == 0)
+        return INVALID_TABLE;
+    volume_read(volume, &hint, 1080, sizeof(uint16_t));
+    if (hint == 0xef53)
         return INVALID_TABLE;
 
     struct mbr_entry entry;

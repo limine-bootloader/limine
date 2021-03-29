@@ -41,19 +41,14 @@ or, to clone a specific binary point release (for example v2.0.1)
 git clone https://github.com/limine-bootloader/limine.git --branch=v2.0.1-binary --depth=1
 ```
 
+Additionally, the absolute latest Limine binary release can be obtained by fetching
+the `latest-binary` branch:
+```bash
+git clone https://github.com/limine-bootloader/limine.git --branch=latest-binary --depth=1
+```
+
 `limine-install` binaries are provided for Linux and Windows. In case one wants to
 rebuild `limine-install`, simply use `make` in the binary release.
-
-## Warning about using `trunk`
-
-Please refrain from using the `trunk` branch of this repository directly, unless
-you have a *very* good reason to.
-The `trunk` branch is unstable, and non-backwards compatible changes are made to it
-routinely.
-
-Also note that the documentation contained in `trunk` does not reflect the
-documentation for the specific releases, and one should refer to the releases'
-respective documentation instead, contained in their files.
 
 ## Building the bootloader
 

@@ -93,6 +93,8 @@ jobs:
           git push origin $BRANCH_NAME-binary
           git tag $TAG_NAME-binary
           git push origin $BRANCH_NAME-binary --tags
+          git checkout latest-binary
+          git rebase $BRANCH_NAME-binary && git push origin latest-binary
 
       - name: Create release notes
         run: echo "Binary release can be found at https://github.com/limine-bootloader/limine/tree/$TAG_NAME-binary" > rel_notes.txt

@@ -156,9 +156,9 @@ void stivale_load(char *config, char *cmdline) {
     stivale_struct.epoch = time();
     print("stivale: Current epoch: %U\n", stivale_struct.epoch);
 
-    term_deinit();
-
     if (stivale_hdr.flags & (1 << 0)) {
+        term_deinit();
+
         int req_width  = stivale_hdr.framebuffer_width;
         int req_height = stivale_hdr.framebuffer_height;
         int req_bpp    = stivale_hdr.framebuffer_bpp;
@@ -183,6 +183,12 @@ void stivale_load(char *config, char *cmdline) {
         stivale_struct.fb_green_mask_shift = fbinfo.green_mask_shift;
         stivale_struct.fb_blue_mask_size   = fbinfo.blue_mask_size;
         stivale_struct.fb_blue_mask_shift  = fbinfo.blue_mask_shift;
+    } else {
+#if defined (uefi)
+        panic("stivale: Cannot use text mode with UEFI.");
+#endif
+
+        term_deinit();
     }
 
 #if defined (uefi)

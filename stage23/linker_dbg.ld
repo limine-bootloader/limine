@@ -15,14 +15,11 @@ SECTIONS
 
     .stage2.text : {
         *.s2.o(.text*)
-        *libgcc.a:*(.text*)
     }
 
     .stage2.data : {
         *.s2.o(.data*)
         *.s2.o(.rodata*)
-        *libgcc.a:*(.data*)
-        *libgcc.a:*(.rodata*)
         *(.stage2_map)
     }
 

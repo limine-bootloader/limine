@@ -4,6 +4,10 @@ DESTDIR =
 
 TOOLCHAIN = x86_64-elf
 
+TOOLCHAIN_CC = $(TOOLCHAIN)-gcc
+AR = $(TOOLCHAIN)-ar
+OBJCOPY = $(TOOLCHAIN)-objcopy
+
 PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
 .PHONY: all bin/limine-install clean install distclean limine-bios limine-uefi limine-bios-clean limine-uefi-clean stage23-bios stage23-bios-clean stage23-uefi stage23-uefi-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat16-test fat32-test iso9660-test iso9660-uefi-test pxe-test uefi-test hybrid-iso9660-test
@@ -90,8 +94,8 @@ toolchain:
 
 gnu-efi:
 	git clone https://git.code.sf.net/p/gnu-efi/code --branch=3.0.13 --depth=1 $@
-	$(MAKE) -C gnu-efi/gnuefi CC="$(TOOLCHAIN)-gcc -m64" AR=$(TOOLCHAIN)-ar
-	$(MAKE) -C gnu-efi/lib CC="$(TOOLCHAIN)-gcc -m64" ARCH=x86_64 x86_64/efi_stub.o
+	$(MAKE) -C gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m64"
+	$(MAKE) -C gnu-efi/lib CC="$(TOOLCHAIN_CC) -m64" ARCH=x86_64 x86_64/efi_stub.o
 
 ovmf:
 	mkdir -p ovmf

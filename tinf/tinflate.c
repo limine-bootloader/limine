@@ -25,12 +25,6 @@
 
 #include "tinf.h"
 
-#include <limits.h>
-
-#if defined(UINT_MAX) && (UINT_MAX) < 0xFFFFFFFFUL
-#  error "tinf requires unsigned int to be at least 32-bit"
-#endif
-
 /* -- Internal data structures -- */
 
 struct tinf_tree {

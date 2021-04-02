@@ -25,11 +25,8 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install git build-essential nasm gcc-mingw-w64 gcc-multilib wget mtools -y
 
-      - name: Build the toolchain (BIOS)
-        run: make toolchain-bios
-
-      - name: Build the toolchain (UEFI)
-        run: make toolchain-uefi
+      - name: Build the toolchain
+        run: make toolchain
 
       - name: Build the bootloader
         run: make

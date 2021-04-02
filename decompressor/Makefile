@@ -1,19 +1,23 @@
-CC = i386-elf-gcc
-LD = i386-elf-gcc
-OBJCOPY = i386-elf-objcopy
 BUILDDIR =
 
 ifeq ($(BUILDDIR), )
 	$(error BUILDDIR not specified)
 endif
 
+TOOLCHAIN = x86_64-elf
+
+CC = $(TOOLCHAIN)-gcc
+OBJCOPY = $(TOOLCHAIN)-objcopy
+
 CFLAGS = -flto -Os -pipe -Wall -Wextra -Werror
 
 INTERNAL_CFLAGS = \
+	-m32 \
 	-std=gnu11 \
 	-ffreestanding \
 	-fno-stack-protector \
 	-fno-pic \
+	-fno-pie \
 	-fomit-frame-pointer \
 	-Wno-address-of-packed-member \
 	-masm=intel \
@@ -24,10 +28,12 @@ INTERNAL_CFLAGS = \
 LDFLAGS = -flto -Os
 
 INTERNAL_LDFLAGS = \
-	-lgcc \
-	-static-libgcc \
+	-m32 \
+	-Wl,-melf_i386 \
 	-nostdlib \
 	-no-pie \
+	-fno-pic \
+	-fno-pie \
 	-z max-page-size=0x1000 \
 	-static \
 	-Tlinker.ld
@@ -47,7 +53,7 @@ builddir:
 	for i in $(OBJ); do mkdir -p `dirname $$i`; done
 
 $(BUILDDIR)/decompressor.bin: $(OBJ)
-	$(LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $(BUILDDIR)/decompressor.elf
+	$(CC) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $(BUILDDIR)/decompressor.elf
 	$(OBJCOPY) -O binary $(BUILDDIR)/decompressor.elf $@
 
 -include $(HEADER_DEPS)

@@ -6,12 +6,14 @@ ifeq ($(BUILDDIR), )
 endif
 
 ifeq ($(TARGET), bios)
-	TOOLCHAIN=i386-elf
+	OBJCOPY_ARCH = elf32-i386
 else ifeq ($(TARGET), uefi)
-	TOOLCHAIN=x86_64-elf
+	OBJCOPY_ARCH = elf64-x86-64
 else
 	$(error Invalid target)
 endif
+
+TOOLCHAIN = x86_64-elf
 
 CC = $(TOOLCHAIN)-gcc
 OBJCOPY = $(TOOLCHAIN)-objcopy
@@ -49,15 +51,25 @@ INTERNAL_CFLAGS := \
 
 ifeq ($(TARGET), bios)
 	INTERNAL_CFLAGS += \
+		-m32 \
+		-march=i386 \
 		-fno-pie
 endif
 
 ifeq ($(TARGET), uefi)
 	INTERNAL_CFLAGS += \
+		-m64 \
+		-march=x86-64 \
 		-I../gnu-efi/inc \
 		-I../gnu-efi/inc/x86_64 \
 		-fpie \
 		-mno-red-zone
+
+	INTERNAL_CFLAGS32 := \
+		$(INTERNAL_CFLAGS) \
+		-m32 \
+		-march=i386 \
+		-fpie
 endif
 
 LDFLAGS = -O3 -g
@@ -70,15 +82,17 @@ INTERNAL_LDFLAGS := \
 
 ifeq ($(TARGET), bios)
 	INTERNAL_LDFLAGS += \
+		-m32 \
+		-Wl,-melf_i386 \
 		-static \
 		-no-pie \
-		-fno-pie \
-		-lgcc \
-		-static-libgcc
+		-fno-pie
 endif
 
 ifeq ($(TARGET), uefi)
 	INTERNAL_LDFLAGS += \
+		-m64 \
+		-Wl,-melf_x86_64 \
 		-shared \
 		-Wl,-Bsymbolic \
 		-Wl,--noinhibit-exec \
@@ -117,11 +131,11 @@ $(BUILDDIR)/sys/smp_trampoline.bin: sys/smp_trampoline.real
 
 $(BUILDDIR)/sys/smp_trampoline.o: $(BUILDDIR)/sys/smp_trampoline.bin
 	cd "`dirname $<`" && \
-		$(OBJCOPY) -B i8086 -I binary -O default "`basename $<`" $@
+		$(OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) "`basename $<`" $@
 
 $(BUILDDIR)/font.o: font.bin
 	cd "`dirname $<`" && \
-		$(OBJCOPY) -B i8086 -I binary -O default "`basename $<`" $@
+		$(OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) "`basename $<`" $@
 
 ifeq ($(TARGET), bios)
 
@@ -191,7 +205,7 @@ endif
 
 ifeq ($(TARGET), uefi)
 $(BUILDDIR)/%.32.o: %.32.c
-	$(CC) -m32 $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@.32
+	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS32) -c $< -o $@.32
 	$(OBJCOPY) -I elf32-i386 -O elf64-x86-64 $@.32 $@
 	rm $@.32
 endif

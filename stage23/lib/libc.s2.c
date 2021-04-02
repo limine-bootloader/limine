@@ -1,7 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <lib/libc.h>
-#include <limits.h>
 #include <stdbool.h>
 #include <lib/blib.h>
 

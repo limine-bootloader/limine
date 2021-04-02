@@ -14,7 +14,6 @@ else
 endif
 
 CC = $(TOOLCHAIN)-gcc
-LD = $(TOOLCHAIN)-ld
 OBJCOPY = $(TOOLCHAIN)-objcopy
 OBJDUMP = $(TOOLCHAIN)-objdump
 READELF = $(TOOLCHAIN)-readelf
@@ -35,6 +34,7 @@ INTERNAL_CFLAGS := \
 	-fno-stack-protector \
 	-fno-omit-frame-pointer \
 	-fno-lto \
+	-fno-pic \
 	-Wno-address-of-packed-member \
 	-masm=intel \
 	-mgeneral-regs-only \
@@ -49,20 +49,21 @@ INTERNAL_CFLAGS := \
 
 ifeq ($(TARGET), bios)
 	INTERNAL_CFLAGS += \
-		-fno-pic
+		-fno-pie
 endif
 
 ifeq ($(TARGET), uefi)
 	INTERNAL_CFLAGS += \
 		-I../gnu-efi/inc \
 		-I../gnu-efi/inc/x86_64 \
-		-fpic \
+		-fpie \
 		-mno-red-zone
 endif
 
 LDFLAGS = -O3 -g
 
 INTERNAL_LDFLAGS := \
+	-fno-pic \
 	-fno-lto \
 	-nostdlib \
 	-z max-page-size=0x1000
@@ -70,9 +71,19 @@ INTERNAL_LDFLAGS := \
 ifeq ($(TARGET), bios)
 	INTERNAL_LDFLAGS += \
 		-static \
+		-no-pie \
 		-fno-pie \
 		-lgcc \
 		-static-libgcc
+endif
+
+ifeq ($(TARGET), uefi)
+	INTERNAL_LDFLAGS += \
+		-shared \
+		-Wl,-Bsymbolic \
+		-Wl,--noinhibit-exec \
+		-pie \
+		-fpie
 endif
 
 .PHONY: all clean builddir
@@ -155,12 +166,12 @@ $(BUILDDIR)/BOOTX64.EFI: $(BUILDDIR)/limine_efi.elf
 	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 $< $@
 
 $(BUILDDIR)/limine_efi.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
-	$(LD) -shared -Bsymbolic \
+	$(CC) \
 		-T../gnu-efi/gnuefi/elf_x86_64_efi.lds \
 		../gnu-efi/gnuefi/crt0-efi-x86_64.o \
 		../gnu-efi/gnuefi/libgnuefi.a \
 		../gnu-efi/lib/x86_64/efi_stub.o \
-		$^ -o $@
+		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
 endif
 

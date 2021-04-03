@@ -41,6 +41,7 @@ __udivmoddi4:
     div dword [esp+12]
     mov ecx, dword [esp+20]
     mov dword [ecx], edx
+    mov dword [ecx+4], 0
     xor edx, edx
     ret
 
@@ -51,5 +52,6 @@ __divmoddi4:
     idiv dword [esp+12]
     mov ecx, dword [esp+20]
     mov dword [ecx], edx
+    mov dword [ecx+4], 0
     xor edx, edx
     ret

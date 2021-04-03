@@ -373,18 +373,9 @@ int main(int argc, char *argv[]) {
     }
 
     if (gpt == 0 && mbr == 0) {
-        fprintf(stderr, "WARNING: Could not determine if the device has a valid partition table.\n");
-        fprintf(stderr, "         Please ensure the device has a valid MBR or GPT.\n\n");
-        fprintf(stderr, "Forcing installation as MBR on this device may result in LOSS OF DATA.\n\n");
-        fprintf(stderr, "To force installation as MBR on device '%s', type 'yes, proceed': ", argv[1]);
-        char buf[16];
-        fgets(buf, sizeof(buf), stdin);
-        size_t len = strlen(buf);
-        if (buf[len-1] == '\n')
-            buf[len-1] = 0;
-        if (strcmp(buf, "yes, proceed") != 0)
-            goto cleanup;
-        mbr = 1;
+        fprintf(stderr, "ERROR: Could not determine if the device has a valid partition table.\n");
+        fprintf(stderr, "       Please ensure the device has a valid MBR or GPT.\n");
+        goto cleanup;
     }
 
     size_t   stage2_size   = bootloader_file_size - 512;

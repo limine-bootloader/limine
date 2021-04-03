@@ -21,5 +21,5 @@ void entry(uint8_t *compressed_stage2, size_t stage2_size, uint8_t boot_drive, i
         : "memory"
     );
 
-    for (;;);
+    __builtin_unreachable();
 }

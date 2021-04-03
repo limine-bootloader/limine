@@ -10,6 +10,8 @@ OBJCOPY = $(TOOLCHAIN)-objcopy
 
 PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
+STAGE1_FILES := $(shell find -L ./stage1 -type f -name '*.asm' | sort)
+
 .PHONY: all bin/limine-install clean install distclean limine-bios limine-uefi limine-bios-clean limine-uefi-clean stage23-bios stage23-bios-clean stage23-uefi stage23-uefi-clean decompressor decompressor-clean toolchain test.hdd echfs-test ext2-test fat16-test fat32-test iso9660-test iso9660-uefi-test pxe-test uefi-test hybrid-iso9660-test
 
 all:
@@ -36,19 +38,23 @@ install: all
 	install -m 644 bin/limine-pxe.bin $(DESTDIR)$(PREFIX)/share/limine/
 	install -m 644 bin/BOOTX64.EFI $(DESTDIR)$(PREFIX)/share/limine/
 
-limine-bios: stage23-bios decompressor
+build/stage1: $(STAGE1_FILES) build/decompressor/decompressor.bin build/stage23-bios/stage2.bin.gz
 	mkdir -p bin
 	cd stage1/hdd && nasm bootsect.asm -fbin -o ../../bin/limine-hdd.bin
 	cd stage1/cd  && nasm bootsect.asm -fbin -o ../../bin/limine-cd.bin
 	cd stage1/pxe && nasm bootsect.asm -fbin -o ../../bin/limine-pxe.bin
 	cp build/stage23-bios/limine.sys ./bin/
+	touch build/stage1
 
-bin/limine-eltorito-efi.bin: bin/BOOTX64.EFI
+limine-bios: stage23-bios decompressor
+	$(MAKE) build/stage1
+
+bin/limine-eltorito-efi.bin: build/stage23-uefi/BOOTX64.EFI
 	dd if=/dev/zero of=$@ bs=512 count=2880
 	mformat -i $@ -f 1440 ::
 	mmd -D s -i $@ ::/EFI
 	mmd -D s -i $@ ::/EFI/BOOT
-	mcopy -D o -i $@ bin/BOOTX64.EFI ::/EFI/BOOT
+	mcopy -D o -i $@ build/stage23-uefi/BOOTX64.EFI ::/EFI/BOOT
 
 limine-uefi:
 	$(MAKE) gnu-efi
@@ -94,7 +100,7 @@ toolchain:
 
 gnu-efi:
 	git clone https://git.code.sf.net/p/gnu-efi/code --branch=3.0.13 --depth=1 $@
-	$(MAKE) -C gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m64"
+	$(MAKE) -C gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m64" AR="$(AR)"
 	$(MAKE) -C gnu-efi/lib CC="$(TOOLCHAIN_CC) -m64" ARCH=x86_64 x86_64/efi_stub.o
 
 ovmf:

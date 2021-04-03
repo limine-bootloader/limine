@@ -13,6 +13,7 @@ CFLAGS = -flto -Os -pipe -Wall -Wextra -Werror
 
 INTERNAL_CFLAGS = \
 	-m32 \
+	-march=i386 \
 	-std=gnu11 \
 	-ffreestanding \
 	-fno-stack-protector \
@@ -29,6 +30,7 @@ LDFLAGS = -flto -Os
 
 INTERNAL_LDFLAGS = \
 	-m32 \
+	-march=i386 \
 	-Wl,-melf_i386 \
 	-nostdlib \
 	-no-pie \

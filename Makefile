@@ -213,7 +213,7 @@ iso9660-uefi-test:
 	mkdir -p test_image/boot
 	cp -rv bin/* test/* test_image/boot/
 	xorriso -as mkisofs -eltorito-alt-boot -e boot/limine-eltorito-efi.bin -no-emul-boot test_image/ -o test.iso
-	qemu-system-x86_64 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
 
 hybrid-iso9660-test:
 	$(MAKE) ovmf
@@ -228,7 +228,7 @@ hybrid-iso9660-test:
 	mkdir -p test_image/EFI/BOOT
 	cp -v bin/BOOTX64.EFI test_image/EFI/BOOT/
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e boot/limine-eltorito-efi.bin -no-emul-boot test_image/ -o test.iso
-	qemu-system-x86_64 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
 
 pxe-test:
 	$(MAKE) test-clean
@@ -259,4 +259,4 @@ uefi-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-x86_64 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio

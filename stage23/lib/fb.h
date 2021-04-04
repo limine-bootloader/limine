@@ -27,4 +27,6 @@ struct fb_info {
 bool fb_init(struct fb_info *ret,
              uint16_t target_width, uint16_t target_height, uint16_t target_bpp);
 
+void fb_clear(struct fb_info *fb);
+
 #endif

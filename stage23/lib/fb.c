@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <lib/fb.h>
@@ -11,4 +12,35 @@ bool fb_init(struct fb_info *ret,
 #elif defined (uefi)
     return init_gop(ret, target_width, target_height, target_bpp);
 #endif
+}
+
+void fb_clear(struct fb_info *fb) {
+    for (size_t y = 0; y < fb->framebuffer_height; y++) {
+        switch (fb->framebuffer_bpp) {
+            case 32: {
+                uint32_t *fbp = (void *)(uintptr_t)fb->framebuffer_addr;
+                size_t row = (y * fb->framebuffer_pitch) / 4;
+                for (size_t x = 0; x < fb->framebuffer_width; x++) {
+                    fbp[row + x] = 0;
+                }
+                break;
+            }
+            case 16: {
+                uint16_t *fbp = (void *)(uintptr_t)fb->framebuffer_addr;
+                size_t row = (y * fb->framebuffer_pitch) / 2;
+                for (size_t x = 0; x < fb->framebuffer_width; x++) {
+                    fbp[row + x] = 0;
+                }
+                break;
+            }
+            default: {
+                uint8_t *fbp = (void *)(uintptr_t)fb->framebuffer_addr;
+                size_t row = y * fb->framebuffer_pitch;
+                for (size_t x = 0; x < fb->framebuffer_width * fb->framebuffer_bpp; x++) {
+                    fbp[row + x] = 0;
+                }
+                break;
+            }
+        }
+    }
 }

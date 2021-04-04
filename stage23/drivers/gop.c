@@ -119,13 +119,7 @@ static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, in
     ret->framebuffer_width = gop->Mode->Info->HorizontalResolution;
     ret->framebuffer_height = gop->Mode->Info->VerticalResolution;
 
-    // Clear framebuffer
-    for (size_t y = 0; y < ret->framebuffer_height; y++) {
-        for (size_t x = 0; x < ret->framebuffer_pitch; x++) {
-            uint8_t *fbp = (uint8_t *)(uintptr_t)ret->framebuffer_addr;
-            fbp[y * ret->framebuffer_pitch + x] = 0;
-        }
-    }
+    fb_clear(ret);
 
     return true;
 }

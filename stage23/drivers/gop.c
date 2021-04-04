@@ -2,6 +2,7 @@
 
 #include <efi.h>
 #include <lib/blib.h>
+#include <lib/term.h>
 #include <drivers/gop.h>
 #include <drivers/edid.h>
 #include <lib/print.h>
@@ -98,18 +99,33 @@ static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, in
 
     print("gop: Found matching mode %x, attempting to set...\n", mode);
 
+    if ((int)mode == current_video_mode) {
+        print("gop: Mode was already set, perfect!\n");
+    }
+
     status = uefi_call_wrapper(gop->SetMode, 2, gop, mode);
 
     if (status) {
+        current_video_mode = -2;
         print("gop: Failed to set video mode %x, moving on...\n", mode);
         return false;
     }
+
+    current_video_mode = mode;
 
     ret->memory_model = 0x06;
     ret->framebuffer_addr = gop->Mode->FrameBufferBase;
     ret->framebuffer_pitch = gop->Mode->Info->PixelsPerScanLine * 4;
     ret->framebuffer_width = gop->Mode->Info->HorizontalResolution;
     ret->framebuffer_height = gop->Mode->Info->VerticalResolution;
+
+    // Clear framebuffer
+    for (size_t y = 0; y < ret->framebuffer_height; y++) {
+        for (size_t x = 0; x < ret->framebuffer_pitch; x++) {
+            uint8_t *fbp = (uint8_t *)(uintptr_t)ret->framebuffer_addr;
+            fbp[y * ret->framebuffer_pitch + x] = 0;
+        }
+    }
 
     return true;
 }

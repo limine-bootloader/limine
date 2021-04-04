@@ -31,5 +31,6 @@ enum {
 };
 
 extern int term_backend;
+extern int current_video_mode;
 
 #endif

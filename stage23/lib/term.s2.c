@@ -7,6 +7,8 @@
 #include <lib/blib.h>
 #include <drivers/vga_textmode.h>
 
+int current_video_mode = -1;
+
 int term_backend = NOT_READY;
 
 void (*raw_putchar)(uint8_t c);
@@ -25,7 +27,6 @@ int term_rows, term_cols;
 
 #if defined (bios)
 void term_textmode(void) {
-    term_deinit();
     init_vga_textmode(&term_rows, &term_cols);
 
     raw_putchar    = text_putchar;
@@ -45,12 +46,6 @@ void term_textmode(void) {
 #endif
 
 void term_deinit(void) {
-#if defined (bios)
-    struct rm_regs r = {0};
-    r.eax = 0x0003;
-    rm_int(0x10, &r, &r);
-#endif
-
     term_backend = NOT_READY;
 }
 

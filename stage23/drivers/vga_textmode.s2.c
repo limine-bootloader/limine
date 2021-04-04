@@ -7,6 +7,7 @@
 #include <sys/cpu.h>
 #include <lib/real.h>
 #include <lib/libc.h>
+#include <lib/term.h>
 #include <mm/pmm.h>
 
 #define VIDEO_BOTTOM ((VD_ROWS * VD_COLS) - 1)
@@ -19,10 +20,10 @@ static uint8_t *video_mem = (uint8_t *)0xb8000;
 
 static uint8_t *current_buffer;
 
-static size_t cursor_offset = 0;
-static int cursor_status = 1;
-static uint8_t text_palette = 0x07;
-static uint8_t cursor_palette = 0x70;
+static size_t cursor_offset;
+static int cursor_status;
+static uint8_t text_palette;
+static uint8_t cursor_palette;
 
 static void clear_cursor(void) {
     current_buffer[cursor_offset + 1] = text_palette;
@@ -75,13 +76,28 @@ void text_disable_cursor(void) {
 // VGA cursor code taken from: https://wiki.osdev.org/Text_Mode_Cursor
 
 void init_vga_textmode(int *_rows, int *_cols) {
+    if (current_video_mode != -1) {
+        struct rm_regs r = {0};
+        r.eax = 0x0003;
+        rm_int(0x10, &r, &r);
+
+        current_video_mode = -1;
+    }
+
     outb(0x3d4, 0x0a);
     outb(0x3d5, 0x20);
 
-    *_rows = VD_ROWS;
-    *_cols = VD_COLS / 2;
+    cursor_offset = 0;
+    cursor_status = 1;
+    text_palette = 0x07;
+    cursor_palette = 0x70;
 
     text_double_buffer(false);
+
+    text_clear(false);
+
+    *_rows = VD_ROWS;
+    *_cols = VD_COLS / 2;
 }
 
 void text_double_buffer(bool state) {

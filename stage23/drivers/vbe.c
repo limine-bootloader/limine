@@ -12,6 +12,7 @@
 #include <lib/image.h>
 #include <lib/config.h>
 #include <lib/uri.h>
+#include <lib/term.h>
 #include <mm/pmm.h>
 
 struct vbe_info_struct {
@@ -175,10 +176,15 @@ retry:
             if (!(vbe_mode_info.mode_attributes & (1 << 7)))
                 continue;
             print("vbe: Found matching mode %x, attempting to set...\n", vid_modes[i]);
-            if (set_vbe_mode(vid_modes[i]) == 0x01) {
+            if (vid_modes[i] == current_video_mode) {
+                print("vbe: Mode was already set, perfect!\n");
+            } else if (set_vbe_mode(vid_modes[i]) == 0x01) {
+                current_video_mode = -2;
                 print("vbe: Failed to set video mode %x, moving on...\n", vid_modes[i]);
                 continue;
             }
+            current_video_mode = vid_modes[i];
+
             print("vbe: Framebuffer address: %x\n", vbe_mode_info.framebuffer_addr);
             ret->memory_model       = vbe_mode_info.memory_model;
             ret->framebuffer_addr   = vbe_mode_info.framebuffer_addr;
@@ -202,6 +208,15 @@ retry:
                 ret->blue_mask_size     = vbe_mode_info.lin_blue_mask_size;
                 ret->blue_mask_shift    = vbe_mode_info.lin_blue_mask_shift;
             }
+
+            // Clear framebuffer
+            for (size_t y = 0; y < ret->framebuffer_height; y++) {
+                for (size_t x = 0; x < ret->framebuffer_pitch; x++) {
+                    uint8_t *fbp = (uint8_t *)(uintptr_t)ret->framebuffer_addr;
+                    fbp[y * ret->framebuffer_pitch + x] = 0;
+                }
+            }
+
             return true;
         }
     }

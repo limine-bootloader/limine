@@ -10,6 +10,7 @@
 #include <lib/term.h>
 #include <mm/mtrr.h>
 #include <sys/idt.h>
+#include <drivers/vga_textmode.h>
 
 __attribute__((noinline))
 __attribute__((section(".realmode")))
@@ -85,7 +86,8 @@ void chainload(char *config) {
         drive = (val - 1) + 0x80;
     }
 
-    term_deinit();
+    int rows, cols;
+    init_vga_textmode(&rows, &cols, false);
 
     struct volume *p = volume_get_by_coord(drive, part);
 

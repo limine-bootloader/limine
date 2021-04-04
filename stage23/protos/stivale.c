@@ -21,6 +21,7 @@
 #include <mm/pmm.h>
 #include <mm/mtrr.h>
 #include <stivale/stivale.h>
+#include <drivers/vga_textmode.h>
 
 struct stivale_struct stivale_struct = {0};
 
@@ -157,8 +158,6 @@ void stivale_load(char *config, char *cmdline) {
     print("stivale: Current epoch: %U\n", stivale_struct.epoch);
 
     if (stivale_hdr.flags & (1 << 0)) {
-        term_deinit();
-
         int req_width  = stivale_hdr.framebuffer_width;
         int req_height = stivale_hdr.framebuffer_height;
         int req_bpp    = stivale_hdr.framebuffer_bpp;
@@ -186,9 +185,10 @@ void stivale_load(char *config, char *cmdline) {
     } else {
 #if defined (uefi)
         panic("stivale: Cannot use text mode with UEFI.");
+#elif defined (bios)
+        int rows, cols;
+        init_vga_textmode(&rows, &cols, false);
 #endif
-
-        term_deinit();
     }
 
 #if defined (uefi)

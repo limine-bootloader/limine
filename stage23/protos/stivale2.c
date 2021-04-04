@@ -24,6 +24,7 @@
 #include <stivale/stivale2.h>
 #include <pxe/tftp.h>
 #include <drivers/edid.h>
+#include <drivers/vga_textmode.h>
 
 struct stivale2_struct stivale2_struct = {0};
 
@@ -263,8 +264,6 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     struct stivale2_header_tag_framebuffer *hdrtag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_FRAMEBUFFER_ID);
 
     if (hdrtag != NULL) {
-        term_deinit();
-
         int req_width  = hdrtag->framebuffer_width;
         int req_height = hdrtag->framebuffer_height;
         int req_bpp    = hdrtag->framebuffer_bpp;
@@ -309,9 +308,10 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     } else {
 #if defined (uefi)
         panic("stivale2: Cannot use text mode with UEFI.");
+#elif defined (bios)
+        int rows, cols;
+        init_vga_textmode(&rows, &cols, false);
 #endif
-
-        term_deinit();
     }
     }
 

@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-void init_vga_textmode(int *rows, int *cols);
+void init_vga_textmode(int *rows, int *cols, bool managed);
 
 void text_putchar(uint8_t c);
 void text_clear(bool move);

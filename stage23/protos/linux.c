@@ -482,8 +482,6 @@ void linux_load(char *config, char *cmdline) {
     // Video
     ///////////////////////////////////////
 
-    term_deinit();
-
     mtrr_restore();
 
     struct screen_info *screen_info = &boot_params->screen_info;

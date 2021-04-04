@@ -73,9 +73,7 @@ void text_disable_cursor(void) {
     return;
 }
 
-// VGA cursor code taken from: https://wiki.osdev.org/Text_Mode_Cursor
-
-void init_vga_textmode(int *_rows, int *_cols) {
+void init_vga_textmode(int *_rows, int *_cols, bool managed) {
     if (current_video_mode != -1) {
         struct rm_regs r = {0};
         r.eax = 0x0003;
@@ -84,8 +82,6 @@ void init_vga_textmode(int *_rows, int *_cols) {
         current_video_mode = -1;
     }
 
-    outb(0x3d4, 0x0a);
-    outb(0x3d5, 0x20);
 
     cursor_offset = 0;
     cursor_status = 1;
@@ -98,6 +94,24 @@ void init_vga_textmode(int *_rows, int *_cols) {
 
     *_rows = VD_ROWS;
     *_cols = VD_COLS / 2;
+
+    struct rm_regs r;
+
+    if (!managed) {
+        text_disable_cursor();
+        r = (struct rm_regs){0};
+        r.eax = 0x0200;
+        rm_int(0x10, &r, &r);
+        r = (struct rm_regs){0};
+        r.eax = 0x0100;
+        r.ecx = 0x0607;
+        rm_int(0x10, &r, &r);
+    } else {
+        r = (struct rm_regs){0};
+        r.eax = 0x0100;
+        r.ecx = 0x2706;
+        rm_int(0x10, &r, &r);
+    }
 }
 
 void text_double_buffer(bool state) {

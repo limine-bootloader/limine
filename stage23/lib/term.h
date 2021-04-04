@@ -21,6 +21,8 @@ void term_vbe(uint32_t *colours, int margin, int margin_gradient, struct image *
 void term_textmode(void);
 void term_write(const char *buf, size_t count);
 
+void term_deinit(void);
+
 extern int term_rows, term_cols;
 
 enum {

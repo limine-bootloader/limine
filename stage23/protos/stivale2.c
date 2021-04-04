@@ -261,6 +261,8 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     // Create framebuffer struct tag
     //////////////////////////////////////////////
     {
+    term_deinit();
+
     struct stivale2_header_tag_framebuffer *hdrtag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_FRAMEBUFFER_ID);
 
     if (hdrtag != NULL) {

@@ -27,6 +27,8 @@ int term_rows, term_cols;
 
 #if defined (bios)
 void term_textmode(void) {
+    term_backend = NOT_READY;
+
     init_vga_textmode(&term_rows, &term_cols, true);
 
     raw_putchar    = text_putchar;
@@ -44,6 +46,10 @@ void term_textmode(void) {
     term_backend = TEXTMODE;
 }
 #endif
+
+void term_deinit(void) {
+    term_backend = NOT_READY;
+}
 
 static void term_putchar(uint8_t c);
 

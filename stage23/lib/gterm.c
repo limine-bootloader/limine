@@ -346,7 +346,7 @@ bool gterm_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _ma
     int req_width = 0, req_height = 0, req_bpp = 0;
 
     char *menu_resolution = config_get_value(NULL, 0, "MENU_RESOLUTION");
-    if (menu_resolution == NULL)
+    if (menu_resolution != NULL)
         parse_resolution(&req_width, &req_height, &req_bpp, menu_resolution);
 
     // We force bpp to 32

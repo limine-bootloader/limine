@@ -114,6 +114,7 @@ void stivale2_main(struct stivale2_struct *info) {
 
                 e9_printf("EDID information at %x:", edid->edid_information);
                 e9_printf("    Size: %d", edid->edid_size);
+                break;
             }
             case STIVALE2_STRUCT_TAG_FB_MTRR_ID: {
                 e9_puts("Framebuffer WC MTRR tag:");

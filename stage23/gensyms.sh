@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -e
+set -e -o pipefail
 
 TMP1=$(mktemp)
 TMP2=$(mktemp)
@@ -15,10 +15,14 @@ echo "section .$3_map" > "$TMP4"
 echo "global $3_map" >> "$TMP4"
 echo "$3_map:" >> "$TMP4"
 
-paste -d'$' "$TMP2" "$TMP3" | sed 's/^/dd 0x/g' | sed 's/$/", 0/g' | sed 's/\$/\ndb "/g' >> "$TMP4"
-
-echo "dd 0xffffffff" >> "$TMP4"
-
-nasm -f elf32 "$TMP4" -o $3.map.o
+if [ "$4" = "32" ]; then
+    paste -d'$' "$TMP2" "$TMP3" | sed 's/^/dd 0x/g' | sed 's/$/", 0/g' | sed 's/\$/\ndb "/g' >> "$TMP4"
+    echo "dd 0xffffffff" >> "$TMP4"
+    nasm -f elf32 "$TMP4" -o $3.map.o
+elif [ "$4" = "64" ]; then
+    paste -d'$' "$TMP2" "$TMP3" | sed 's/^/dq 0x/g' | sed 's/$/", 0/g' | sed 's/\$/\ndb "/g' >> "$TMP4"
+    echo "dq 0xffffffffffffffff" >> "$TMP4"
+    nasm -f elf64 "$TMP4" -o $3.map.o
+fi
 
 rm "$TMP1" "$TMP2" "$TMP3" "$TMP4"

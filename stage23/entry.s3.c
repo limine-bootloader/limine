@@ -60,7 +60,13 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
         panic("Can't determine boot disk");
     }
 
-    stage3_common();
+    // Invalid return address of 0 to end stacktraces here
+    asm volatile (
+        "push 0\n\t"
+        "jmp stage3_common\n\t"
+    );
+
+    __builtin_unreachable();
 }
 #endif
 

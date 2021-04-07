@@ -151,12 +151,12 @@ $(BUILDDIR)/stage2.bin: $(BUILDDIR)/limine.sys
 $(BUILDDIR)/stage2.map.o: $(BUILDDIR)/limine_stage2only.elf
 	GENSYMS="`pwd`/gensyms.sh" && \
 	cd "`dirname $<`" && \
-	"$$GENSYMS" $(OBJDUMP) $< stage2
+	"$$GENSYMS" $(OBJDUMP) $< stage2 32
 
 $(BUILDDIR)/full.map.o: $(BUILDDIR)/limine_nomap.elf
 	GENSYMS="`pwd`/gensyms.sh" && \
 	cd "`dirname $<`" && \
-	"$$GENSYMS" $(OBJDUMP) $< full
+	"$$GENSYMS" $(OBJDUMP) $< full 32
 
 $(BUILDDIR)/limine.sys: $(BUILDDIR)/limine.elf
 	$(OBJCOPY) -O binary $< $@
@@ -179,12 +179,25 @@ endif
 
 ifeq ($(TARGET), uefi)
 
+$(BUILDDIR)/full.map.o: $(BUILDDIR)/limine_efi_nomap.elf
+	GENSYMS="`pwd`/gensyms.sh" && \
+	cd "`dirname $<`" && \
+	"$$GENSYMS" $(OBJDUMP) $< full 64
+
 $(BUILDDIR)/BOOTX64.EFI: $(BUILDDIR)/limine_efi.elf
 	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 $< $@
 
-$(BUILDDIR)/limine_efi.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
+$(BUILDDIR)/limine_efi_nomap.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
 	$(CC) \
-		-T../gnu-efi/gnuefi/elf_x86_64_efi.lds \
+		-Tlinker_uefi_nomap.ld \
+		../gnu-efi/gnuefi/crt0-efi-x86_64.o \
+		../gnu-efi/gnuefi/libgnuefi.a \
+		../gnu-efi/lib/x86_64/efi_stub.o \
+		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
+
+$(BUILDDIR)/limine_efi.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
+	$(CC) \
+		-Tlinker_uefi.ld \
 		../gnu-efi/gnuefi/crt0-efi-x86_64.o \
 		../gnu-efi/gnuefi/libgnuefi.a \
 		../gnu-efi/lib/x86_64/efi_stub.o \

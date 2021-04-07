@@ -15,7 +15,7 @@
 #define VGA_FONT_GLYPHS 256
 #define VGA_FONT_MAX    (VGA_FONT_HEIGHT * VGA_FONT_GLYPHS)
 
-static struct fb_info fbinfo;
+struct fb_info fbinfo;
 static uint32_t *gterm_framebuffer;
 static uint16_t  gterm_pitch;
 static uint16_t  gterm_width;

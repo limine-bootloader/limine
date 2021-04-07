@@ -11,6 +11,7 @@
 #include <lib/print.h>
 #include <lib/real.h>
 #include <lib/libc.h>
+#include <lib/gterm.h>
 #include <lib/uri.h>
 #include <sys/smp.h>
 #include <sys/cpu.h>
@@ -49,6 +50,10 @@ static void append_tag(struct stivale2_struct *s, struct stivale2_tag *tag) {
     tag->next = s->tags;
     s->tags   = (uint64_t)(size_t)tag;
 }
+
+#if defined (bios)
+extern symbol stivale2_term_write_entry;
+#endif
 
 void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table) {
     struct file_handle *kernel_file = ext_mem_alloc(sizeof(struct file_handle));
@@ -261,11 +266,36 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     // Create framebuffer struct tag
     //////////////////////////////////////////////
     {
-    term_deinit();
+
+    struct fb_info *fb = NULL;
+    struct fb_info _fb;
+
+    struct stivale2_header_tag_terminal *terminal_hdr_tag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_TERMINAL_ID);
 
     struct stivale2_header_tag_framebuffer *hdrtag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_FRAMEBUFFER_ID);
 
+    if (bits == 64 && terminal_hdr_tag != NULL && current_video_mode >= 0 && hdrtag != NULL) {
+        fb = &fbinfo;
+
+        struct stivale2_struct_tag_terminal *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_terminal));
+        tag->tag.identifier = STIVALE2_STRUCT_TAG_TERMINAL_ID;
+
+#if defined (bios)
+        tag->term_write = (uintptr_t)(void *)stivale2_term_write_entry;
+#elif defined (uefi)
+        tag->term_write = (uintptr_t)term_write;
+#endif
+
+        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+
+        goto skip_modeset;
+    } else {
+        fb = &_fb;
+    }
+
     if (hdrtag != NULL) {
+        term_deinit();
+
         int req_width  = hdrtag->framebuffer_width;
         int req_height = hdrtag->framebuffer_height;
         int req_bpp    = hdrtag->framebuffer_bpp;
@@ -274,27 +304,27 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
         if (resolution != NULL)
             parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
-        struct fb_info fbinfo;
-        if (fb_init(&fbinfo, req_width, req_height, req_bpp)) {
+        if (fb_init(fb, req_width, req_height, req_bpp)) {
+skip_modeset:;
             struct stivale2_struct_tag_framebuffer *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_framebuffer));
             tag->tag.identifier = STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID;
 
             tag->memory_model       = STIVALE2_FBUF_MMODEL_RGB;
-            tag->framebuffer_addr   = fbinfo.framebuffer_addr;
-            tag->framebuffer_width  = fbinfo.framebuffer_width;
-            tag->framebuffer_height = fbinfo.framebuffer_height;
-            tag->framebuffer_bpp    = fbinfo.framebuffer_bpp;
-            tag->framebuffer_pitch  = fbinfo.framebuffer_pitch;
-            tag->red_mask_size      = fbinfo.red_mask_size;
-            tag->red_mask_shift     = fbinfo.red_mask_shift;
-            tag->green_mask_size    = fbinfo.green_mask_size;
-            tag->green_mask_shift   = fbinfo.green_mask_shift;
-            tag->blue_mask_size     = fbinfo.blue_mask_size;
-            tag->blue_mask_shift    = fbinfo.blue_mask_shift;
+            tag->framebuffer_addr   = fb->framebuffer_addr;
+            tag->framebuffer_width  = fb->framebuffer_width;
+            tag->framebuffer_height = fb->framebuffer_height;
+            tag->framebuffer_bpp    = fb->framebuffer_bpp;
+            tag->framebuffer_pitch  = fb->framebuffer_pitch;
+            tag->red_mask_size      = fb->red_mask_size;
+            tag->red_mask_shift     = fb->red_mask_shift;
+            tag->green_mask_size    = fb->green_mask_size;
+            tag->green_mask_shift   = fb->green_mask_shift;
+            tag->blue_mask_size     = fb->blue_mask_size;
+            tag->blue_mask_shift    = fb->blue_mask_shift;
 
             append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
 
-            if (get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_FB_MTRR_ID) != NULL) {
+            if (terminal_hdr_tag == NULL && get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_FB_MTRR_ID) != NULL) {
                 mtrr_restore();
                 bool ret = mtrr_set_range(tag->framebuffer_addr,
                     (uint64_t)tag->framebuffer_pitch * tag->framebuffer_height,

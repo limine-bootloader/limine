@@ -1,9 +1,13 @@
 #include <e9print.h>
 #include <stddef.h>
 
+void (*stivale2_print)(const char *buf, size_t size) = NULL;
+
 static const char CONVERSION_TABLE[] = "0123456789abcdef";
 
 void e9_putc(char c) {
+    if (stivale2_print != NULL)
+        stivale2_print(&c, 1);
     asm volatile ("out dx, al" :: "a" (c), "d" (0xE9) : "memory");
 }
 
@@ -70,7 +74,7 @@ void e9_printf(const char *format, ...) {
                 e9_printdec(va_arg(argp, size_t));
             } else if (*format == 's') {
                 e9_print(va_arg(argp, char*));
-            } 
+            }
         } else {
             e9_putc(*format);
         }

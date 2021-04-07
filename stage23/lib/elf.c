@@ -340,7 +340,7 @@ final:
 
         load_vaddr += slide;
 
-        if (!memmap_alloc_range((size_t)load_vaddr, (size_t)phdr.p_memsz, alloc_type, true, false, simulation)) {
+        if (!memmap_alloc_range((size_t)load_vaddr, (size_t)phdr.p_memsz, alloc_type, true, false, simulation, false)) {
             if (++try_count == max_simulated_tries || simulation == false)
                 return -1;
             goto again;
@@ -397,7 +397,7 @@ int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t alloc_type) {
         if (phdr.p_type != PT_LOAD)
             continue;
 
-        memmap_alloc_range((size_t)phdr.p_paddr, (size_t)phdr.p_memsz, alloc_type, true, true, false);
+        memmap_alloc_range((size_t)phdr.p_paddr, (size_t)phdr.p_memsz, alloc_type, true, true, false, false);
 
         memcpy((void *)(uintptr_t)phdr.p_paddr, elf + (phdr.p_offset), phdr.p_filesz);
 

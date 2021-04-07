@@ -342,7 +342,7 @@ void init_memmap(void) {
 
     memmap_alloc_range(bump_allocator_base,
                        bump_allocator_limit - bump_allocator_base,
-                       MEMMAP_REMOVE_RANGE, true, true, false);
+                       MEMMAP_REMOVE_RANGE, true, true, false, false);
 
     print("pmm: Conventional mem allocator base:  %X\n", bump_allocator_base);
     print("pmm: Conventional mem allocator limit: %X\n", bump_allocator_limit);
@@ -399,7 +399,7 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
 
         // We now reserve the range we need.
         int64_t aligned_length = entry_top - alloc_base;
-        memmap_alloc_range((uint64_t)alloc_base, (uint64_t)aligned_length, type, true, true, false);
+        memmap_alloc_range((uint64_t)alloc_base, (uint64_t)aligned_length, type, true, true, false, false);
 
         void *ret = (void *)(size_t)alloc_base;
 
@@ -414,7 +414,7 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
     panic("High memory allocator: Out of memory");
 }
 
-bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only, bool do_panic, bool simulation) {
+bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only, bool do_panic, bool simulation, bool new_entry) {
     if (length == 0)
         return true;
 
@@ -499,8 +499,19 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
         }
     }
 
-    if (do_panic)
+    if (!new_entry && do_panic)
         panic("Out of memory");
+
+    if (new_entry) {
+        if (memmap_entries >= MEMMAP_MAX_ENTRIES)
+            panic("Memory map exhausted.");
+
+        struct e820_entry_t *target = &memmap[memmap_entries++];
+
+        target->type = type;
+        target->base = base;
+        target->length = length;
+    }
 
     return false;
 }

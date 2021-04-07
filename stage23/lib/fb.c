@@ -4,14 +4,23 @@
 #include <lib/fb.h>
 #include <drivers/vbe.h>
 #include <drivers/gop.h>
+#include <mm/pmm.h>
 
 bool fb_init(struct fb_info *ret,
              uint16_t target_width, uint16_t target_height, uint16_t target_bpp) {
+    bool r;
+
 #if defined (bios)
-    return init_vbe(ret, target_width, target_height, target_bpp);
+    r = init_vbe(ret, target_width, target_height, target_bpp);
 #elif defined (uefi)
-    return init_gop(ret, target_width, target_height, target_bpp);
+    r = init_gop(ret, target_width, target_height, target_bpp);
 #endif
+
+    memmap_alloc_range(ret->framebuffer_addr,
+                       (uint64_t)ret->framebuffer_pitch * ret->framebuffer_height,
+                       MEMMAP_FRAMEBUFFER, false, false, false, true);
+
+    return r;
 }
 
 void fb_clear(struct fb_info *fb) {

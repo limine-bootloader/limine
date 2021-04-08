@@ -96,7 +96,7 @@ ifeq ($(TARGET), uefi)
 		-m64 \
 		-march=x86-64 \
 		-Wl,-melf_x86_64 \
-		-shared \
+		-static-pie \
 		-Wl,-Bsymbolic \
 		-Wl,--noinhibit-exec \
 		-pie \

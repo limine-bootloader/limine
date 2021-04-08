@@ -101,8 +101,8 @@ static void term_putchar(uint8_t c) {
 
 static void sgr(void) {
     if (esc_value0 == 0){
-        set_text_bg(0);
-        set_text_fg(7);
+        set_text_bg(8);
+        set_text_fg(9);
         return;
     }
 

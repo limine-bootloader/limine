@@ -379,7 +379,9 @@ char *menu(char **cmdline) {
             0x000000aa, // blue
             0x00aa00aa, // magenta
             0x0000aaaa, // cyan
-            0x00aaaaaa  // grey
+            0x00aaaaaa, // grey
+            0x00000000, // background (black)
+            0x00aaaaaa  // foreground (grey)
         };
 
         char *colours = config_get_value(NULL, 0, "THEME_COLOURS");
@@ -387,7 +389,7 @@ char *menu(char **cmdline) {
             colours = config_get_value(NULL, 0, "THEME_COLORS");
         if (colours != NULL) {
             const char *first = colours;
-            for (int i = 0; i < 8; i++) {
+            for (int i = 0; i < 10; i++) {
                 const char *last;
                 uint32_t col = strtoui(first, &last, 16);
                 if (first == last)

@@ -40,7 +40,9 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
         0x000000aa, // blue
         0x00aa00aa, // magenta
         0x0000aaaa, // cyan
-        0x00aaaaaa  // grey
+        0x00aaaaaa, // grey
+        0x00000000, // background (black)
+        0x00aaaaaa  // foreground (white)
     };
 
     term_vbe(colourscheme, 64, 0, NULL);

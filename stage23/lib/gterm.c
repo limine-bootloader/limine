@@ -26,7 +26,7 @@ extern symbol _binary_font_bin_start;
 
 static uint8_t *vga_font = NULL;
 
-static uint32_t ansi_colours[8];
+static uint32_t ansi_colours[10];
 
 static int frame_height, frame_width;
 
@@ -35,17 +35,14 @@ static struct image *background;
 static struct gterm_char *grid = NULL;
 static struct gterm_char *front_grid = NULL;
 
+static uint32_t *bg_canvas = NULL;
+
 static bool double_buffer_enabled = false;
 
 static bool cursor_status = true;
 
 static int cursor_x;
 static int cursor_y;
-
-static uint32_t cursor_fg = 0x00000000;
-static uint32_t cursor_bg = 0x00ffffff;
-static uint32_t text_fg;
-static uint32_t text_bg;
 
 static int rows;
 static int cols;
@@ -74,16 +71,10 @@ void gterm_plot_px(int x, int y, uint32_t hex) {
     gterm_framebuffer[fb_i] = hex;
 }
 
-static void _gterm_plot_bg_blent_px(int x, int y, uint32_t hex) {
-    gterm_plot_px(x, y, colour_blend(hex, background->get_pixel(background, x, y)));
-}
-
-void (*gterm_plot_bg_blent_px)(int x, int y, uint32_t hex) = gterm_plot_px;
-
 static uint32_t blend_gradient_from_box(int x, int y, uint32_t hex) {
     if (x >= frame_width  && x < frame_width  + VGA_FONT_WIDTH  * cols
      && y >= frame_height && y < frame_height + VGA_FONT_HEIGHT * rows) {
-        return hex;
+        return colour_blend(hex, background->get_pixel(background, x, y));
     }
 
     uint32_t bg_px = background->get_pixel(background, x, y);
@@ -121,53 +112,43 @@ static uint32_t blend_gradient_from_box(int x, int y, uint32_t hex) {
     return colour_blend((hex & 0xffffff) | (new_alpha << 24), bg_px);
 }
 
-void gterm_plot_background(int x, int y, int width, int height) {
+void gterm_generate_canvas(void) {
     if (background) {
-        for (int yy = 0; yy < height; yy++) {
-            for (int xx = 0; xx < width; xx++) {
-                gterm_plot_px(x + xx, y + yy, blend_gradient_from_box(xx, yy, text_bg));
+        for (int y = 0; y < gterm_height; y++) {
+            for (int x = 0; x < gterm_width; x++) {
+                bg_canvas[y * gterm_width + x] = blend_gradient_from_box(x, y, ansi_colours[8]);
+                gterm_plot_px(x, y, bg_canvas[y * gterm_width + x]);
             }
         }
     } else {
-        for (int yy = 0; yy < height; yy++) {
-            for (int xx = 0; xx < width; xx++) {
-                gterm_plot_px(x + xx, y + yy, text_bg);
+        for (int y = 0; y < gterm_height; y++) {
+            for (int x = 0; x < gterm_width; x++) {
+                bg_canvas[y * gterm_width + x] = ansi_colours[8];
+                gterm_plot_px(x, y, ansi_colours[8]);
             }
-        }
-    }
-}
-
-void gterm_plot_rect(int x, int y, int width, int height, uint32_t hex) {
-    for (int yy = 0; yy < height; yy++) {
-        for (int xx = 0; xx < width; xx++) {
-            gterm_plot_px(x + xx, y + yy, hex);
-        }
-    }
-}
-
-void gterm_plot_bg_blent_rect(int x, int y, int width, int height, uint32_t hex) {
-    for (int yy = 0; yy < height; yy++) {
-        for (int xx = 0; xx < width; xx++) {
-            gterm_plot_bg_blent_px(x + xx, y + yy, hex);
         }
     }
 }
 
 struct gterm_char {
     uint32_t c;
-    uint32_t fg;
-    uint32_t bg;
+    int fg;
+    int bg;
 };
 
 void gterm_plot_char(struct gterm_char *c, int x, int y) {
     uint8_t *glyph = &vga_font[(size_t)c->c * VGA_FONT_HEIGHT];
 
-    gterm_plot_bg_blent_rect(x, y, VGA_FONT_WIDTH, VGA_FONT_HEIGHT, c->bg);
-
     for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
         for (int j = 0; j < VGA_FONT_WIDTH; j++) {
-            if ((glyph[i] & (0x80 >> j)))
-                gterm_plot_bg_blent_px(x + j, y + i, c->fg);
+            if ((glyph[i] & (0x80 >> j))) {
+                gterm_plot_px(x + j, y + i, ansi_colours[c->fg]);
+            } else {
+                if (c->bg == 8)
+                    gterm_plot_px(x + j, y + i, bg_canvas[(y + i) * gterm_width + (x + j)]);
+                else
+                    gterm_plot_px(x + j, y + i, ansi_colours[c->bg]);
+            }
         }
     }
 }
@@ -182,16 +163,16 @@ static void plot_char_grid(struct gterm_char *c, int x, int y) {
 
 static void clear_cursor(void) {
     struct gterm_char c = grid[cursor_x + cursor_y * cols];
-    c.fg = text_fg;
-    c.bg = text_bg;
+    c.fg = 9;
+    c.bg = 8;
     plot_char_grid(&c, cursor_x, cursor_y);
 }
 
 static void draw_cursor(void) {
     if (cursor_status) {
         struct gterm_char c = grid[cursor_x + cursor_y * cols];
-        c.fg = cursor_fg;
-        c.bg = cursor_bg;
+        c.fg = 0;
+        c.bg = 7;
         plot_char_grid(&c, cursor_x, cursor_y);
     }
 }
@@ -206,8 +187,8 @@ static void scroll(void) {
     // Clear the last line of the screen.
     struct gterm_char empty;
     empty.c  = ' ';
-    empty.fg = text_fg;
-    empty.bg = text_bg;
+    empty.fg = 9;
+    empty.bg = 8;
     for (int i = rows * cols - cols; i < rows * cols; i++) {
         plot_char_grid(&empty, i % cols, i / cols);
     }
@@ -220,8 +201,8 @@ void gterm_clear(bool move) {
 
     struct gterm_char empty;
     empty.c  = ' ';
-    empty.fg = text_fg;
-    empty.bg = text_bg;
+    empty.fg = 9;
+    empty.bg = 8;
     for (int i = 0; i < rows * cols; i++) {
         plot_char_grid(&empty, i % cols, i / cols);
     }
@@ -256,12 +237,14 @@ void gterm_get_cursor_pos(int *x, int *y) {
     *y = cursor_y;
 }
 
+static int text_fg = 9, text_bg = 8;
+
 void gterm_set_text_fg(int fg) {
-    text_fg = ansi_colours[fg];
+    text_fg = fg;
 }
 
 void gterm_set_text_bg(int bg) {
-    text_bg = ansi_colours[bg];
+    text_bg = bg;
 }
 
 void gterm_double_buffer_flush(void) {
@@ -395,19 +378,17 @@ bool gterm_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _ma
         front_grid = ext_mem_alloc(rows * cols * sizeof(struct gterm_char));
     background = _background;
 
-    if (background)
-        gterm_plot_bg_blent_px = _gterm_plot_bg_blent_px;
-
     memcpy(ansi_colours, _colours, sizeof(ansi_colours));
-    text_bg = ansi_colours[0];
-    text_fg = ansi_colours[7];
 
     margin_gradient = _margin_gradient;
 
     frame_height = gterm_height / 2 - (VGA_FONT_HEIGHT * rows) / 2;
     frame_width  = gterm_width  / 2 - (VGA_FONT_WIDTH  * cols) / 2;
 
-    gterm_plot_background(0, 0, gterm_width, gterm_height);
+    if (bg_canvas == NULL)
+        bg_canvas = ext_mem_alloc(gterm_width * gterm_height * sizeof(uint32_t));
+
+    gterm_generate_canvas();
     gterm_clear(true);
 
     return true;

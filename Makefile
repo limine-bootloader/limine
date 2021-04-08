@@ -110,8 +110,8 @@ toolchain:
 
 gnu-efi:
 	git clone https://git.code.sf.net/p/gnu-efi/code --branch=3.0.13 --depth=1 $@
-	$(MAKE) -C gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m64" AR="$(TOOLCHAIN_AR)"
-	$(MAKE) -C gnu-efi/lib CC="$(TOOLCHAIN_CC) -m64" ARCH=x86_64 x86_64/efi_stub.o
+	$(MAKE) -C gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m64 -march=x86-64" AR="$(TOOLCHAIN_AR)"
+	$(MAKE) -C gnu-efi/lib CC="$(TOOLCHAIN_CC) -m64 -march=x86-64" ARCH=x86_64 x86_64/efi_stub.o
 
 ovmf:
 	mkdir -p ovmf

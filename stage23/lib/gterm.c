@@ -136,6 +136,23 @@ struct gterm_char {
     int bg;
 };
 
+static void plot_char_mem(uint32_t *buf, struct gterm_char *c, int x, int y) {
+    uint8_t *glyph = &vga_font[(size_t)c->c * VGA_FONT_HEIGHT];
+
+    for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
+        for (int j = 0; j < VGA_FONT_WIDTH; j++) {
+            if ((glyph[i] & (0x80 >> j))) {
+                buf[i * VGA_FONT_WIDTH + j] = ansi_colours[c->fg];
+            } else {
+                if (c->bg == 8)
+                    buf[i * VGA_FONT_WIDTH + j] = bg_canvas[(y + i) * gterm_width + (x + j)];
+                else
+                    buf[i * VGA_FONT_WIDTH + j] = ansi_colours[c->bg];
+            }
+        }
+    }
+}
+
 void gterm_plot_char(struct gterm_char *c, int x, int y) {
     uint8_t *glyph = &vga_font[(size_t)c->c * VGA_FONT_HEIGHT];
 
@@ -154,10 +171,25 @@ void gterm_plot_char(struct gterm_char *c, int x, int y) {
 }
 
 static void plot_char_grid(struct gterm_char *c, int x, int y) {
+    uint32_t old_char[VGA_FONT_WIDTH * VGA_FONT_HEIGHT];
+    uint32_t new_char[VGA_FONT_WIDTH * VGA_FONT_HEIGHT];
+
+    plot_char_mem(old_char, &grid[x + y * cols],
+                  x * VGA_FONT_WIDTH + frame_width, y * VGA_FONT_HEIGHT + frame_height);
+    plot_char_mem(new_char, c,
+                  x * VGA_FONT_WIDTH + frame_width, y * VGA_FONT_HEIGHT + frame_height);
+
     if (!double_buffer_enabled) {
-        gterm_plot_char(c, x * VGA_FONT_WIDTH + frame_width,
-                         y * VGA_FONT_HEIGHT + frame_height);
+        for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
+            for (int j = 0; j < VGA_FONT_WIDTH; j++) {
+                if (old_char[i * VGA_FONT_WIDTH + j] != new_char[i * VGA_FONT_WIDTH + j])
+                    gterm_plot_px(x * VGA_FONT_WIDTH + frame_width + j,
+                                  y * VGA_FONT_HEIGHT + frame_height + i,
+                                  new_char[i * VGA_FONT_WIDTH + j]);
+            }
+        }
     }
+
     grid[x + y * cols] = *c;
 }
 
@@ -177,11 +209,15 @@ static void draw_cursor(void) {
     }
 }
 
+static inline bool compare_char(struct gterm_char *a, struct gterm_char *b) {
+    return !(a->c != b->c || a->bg != b->bg || a->fg != b->fg);
+}
+
 static void scroll(void) {
     clear_cursor();
 
     for (int i = cols; i < rows * cols; i++) {
-        if (memcmp(&grid[i], &grid[i - cols], sizeof(struct gterm_char) != 0))
+        if (!compare_char(&grid[i], &grid[i - cols]))
             plot_char_grid(&grid[i], (i - cols) % cols, (i - cols) / cols);
     }
 
@@ -191,7 +227,7 @@ static void scroll(void) {
     empty.fg = 9;
     empty.bg = 8;
     for (int i = rows * cols - cols; i < rows * cols; i++) {
-        if (memcmp(&grid[i], &empty, sizeof(struct gterm_char) != 0))
+        if (!compare_char(&grid[i], &empty))
             plot_char_grid(&empty, i % cols, i / cols);
     }
 

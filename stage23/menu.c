@@ -389,7 +389,8 @@ char *menu(char **cmdline) {
             colours = config_get_value(NULL, 0, "THEME_COLORS");
         if (colours != NULL) {
             const char *first = colours;
-            for (int i = 0; i < 10; i++) {
+            int i;
+            for (i = 0; i < 10; i++) {
                 const char *last;
                 uint32_t col = strtoui(first, &last, 16);
                 if (first == last)
@@ -398,6 +399,10 @@ char *menu(char **cmdline) {
                 if (*last == 0)
                     break;
                 first = last + 1;
+            }
+            if (i < 8) {
+                colourscheme[8] = colourscheme[0];
+                colourscheme[9] = colourscheme[7];
             }
         }
 

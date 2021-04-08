@@ -15,10 +15,23 @@ endif
 
 TOOLCHAIN = x86_64-elf
 
-CC = $(TOOLCHAIN)-gcc
-OBJCOPY = $(TOOLCHAIN)-objcopy
-OBJDUMP = $(TOOLCHAIN)-objdump
-READELF = $(TOOLCHAIN)-readelf
+TOOLCHAIN_CC = $(TOOLCHAIN)-gcc
+TOOLCHAIN_OBJCOPY = $(TOOLCHAIN)-objcopy
+TOOLCHAIN_OBJDUMP = $(TOOLCHAIN)-objdump
+TOOLCHAIN_READELF = $(TOOLCHAIN)-readelf
+
+ifeq ($(shell which $(TOOLCHAIN_CC)), )
+TOOLCHAIN_CC := gcc
+endif
+ifeq ($(shell which $(TOOLCHAIN_OBJCOPY)), )
+TOOLCHAIN_OBJCOPY := objcopy
+endif
+ifeq ($(shell which $(TOOLCHAIN_OBJDUMP)), )
+TOOLCHAIN_OBJDUMP := objdump
+endif
+ifeq ($(shell which $(TOOLCHAIN_READELF)), )
+TOOLCHAIN_READELF := readelf
+endif
 
 COM_OUTPUT = false
 E9_OUTPUT = false
@@ -134,11 +147,11 @@ $(BUILDDIR)/sys/smp_trampoline.bin: sys/smp_trampoline.real
 
 $(BUILDDIR)/sys/smp_trampoline.o: $(BUILDDIR)/sys/smp_trampoline.bin
 	cd "`dirname $<`" && \
-		$(OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) "`basename $<`" $@
+		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) "`basename $<`" $@
 
 $(BUILDDIR)/font.o: font.bin
 	cd "`dirname $<`" && \
-		$(OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) "`basename $<`" $@
+		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) "`basename $<`" $@
 
 ifeq ($(TARGET), bios)
 
@@ -146,34 +159,34 @@ $(BUILDDIR)/stage2.bin.gz: $(BUILDDIR)/stage2.bin
 	gzip -n -9 < $< > $@
 
 $(BUILDDIR)/stage2.bin: $(BUILDDIR)/limine.sys
-	dd if=$< bs=$$(( 0x$$($(READELF) -S $(BUILDDIR)/limine.elf | grep .stage3.text | sed 's/^.*] //' | awk '{print $$3}' | sed 's/^0*//') - 0x8000 )) count=1 of=$@
+	dd if=$< bs=$$(( 0x$$($(TOOLCHAIN_READELF) -S $(BUILDDIR)/limine.elf | grep .stage3.text | sed 's/^.*] //' | awk '{print $$3}' | sed 's/^0*//') - 0x8000 )) count=1 of=$@
 
 $(BUILDDIR)/stage2.map.o: $(BUILDDIR)/limine_stage2only.elf
 	GENSYMS="`pwd`/gensyms.sh" && \
 	cd "`dirname $<`" && \
-	"$$GENSYMS" $(OBJDUMP) $< stage2 32
+	"$$GENSYMS" $(TOOLCHAIN_OBJDUMP) $< stage2 32
 
 $(BUILDDIR)/full.map.o: $(BUILDDIR)/limine_nomap.elf
 	GENSYMS="`pwd`/gensyms.sh" && \
 	cd "`dirname $<`" && \
-	"$$GENSYMS" $(OBJDUMP) $< full 32
+	"$$GENSYMS" $(TOOLCHAIN_OBJDUMP) $< full 32
 
 $(BUILDDIR)/limine.sys: $(BUILDDIR)/limine.elf
-	$(OBJCOPY) -O binary $< $@
+	$(TOOLCHAIN_OBJCOPY) -O binary $< $@
 
 $(BUILDDIR)/limine_stage2only.elf: $(OBJ)
-	$(CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_stage2only.ld -o $@ || \
+	$(TOOLCHAIN_CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_stage2only.ld -o $@ || \
 		( echo "This error means that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
 		  false )
 
 $(BUILDDIR)/limine_nomap.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o
-	$(CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
+	$(TOOLCHAIN_CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
 
 $(BUILDDIR)/limine.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o
-	$(CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o $@
+	$(TOOLCHAIN_CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o $@
 
 $(BUILDDIR)/limine_dbg.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o
-	$(CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o $@
+	$(TOOLCHAIN_CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o $@
 
 endif
 
@@ -182,13 +195,13 @@ ifeq ($(TARGET), uefi)
 $(BUILDDIR)/full.map.o: $(BUILDDIR)/limine_efi_nomap.elf
 	GENSYMS="`pwd`/gensyms.sh" && \
 	cd "`dirname $<`" && \
-	"$$GENSYMS" $(OBJDUMP) $< full 64
+	"$$GENSYMS" $(TOOLCHAIN_OBJDUMP) $< full 64
 
 $(BUILDDIR)/BOOTX64.EFI: $(BUILDDIR)/limine_efi.elf
-	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 $< $@
+	$(TOOLCHAIN_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 $< $@
 
 $(BUILDDIR)/limine_efi_nomap.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
-	$(CC) \
+	$(TOOLCHAIN_CC) \
 		-Tlinker_uefi_nomap.ld \
 		../gnu-efi/gnuefi/crt0-efi-x86_64.o \
 		../gnu-efi/gnuefi/libgnuefi.a \
@@ -196,7 +209,7 @@ $(BUILDDIR)/limine_efi_nomap.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_
 		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
 $(BUILDDIR)/limine_efi.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
-	$(CC) \
+	$(TOOLCHAIN_CC) \
 		-Tlinker_uefi.ld \
 		../gnu-efi/gnuefi/crt0-efi-x86_64.o \
 		../gnu-efi/gnuefi/libgnuefi.a \
@@ -208,21 +221,21 @@ endif
 -include $(HEADER_DEPS)
 
 $(BUILDDIR)/%.o: %.c
-	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
+	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 
 -include $(HEADER_DEPS)
 
 ifeq ($(TARGET), bios)
 $(BUILDDIR)/%.s2.o: %.s2.c
-	$(CC) $(S2CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
+	$(TOOLCHAIN_CC) $(S2CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 endif
 
 -include $(HEADER_DEPS)
 
 ifeq ($(TARGET), uefi)
 $(BUILDDIR)/%.32.o: %.32.c
-	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS32) -c $< -o $@.32
-	$(OBJCOPY) -I elf32-i386 -O elf64-x86-64 $@.32 $@
+	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS32) -c $< -o $@.32
+	$(TOOLCHAIN_OBJCOPY) -I elf32-i386 -O elf64-x86-64 $@.32 $@
 	rm $@.32
 endif
 

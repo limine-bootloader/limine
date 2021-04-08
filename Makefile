@@ -1,14 +1,24 @@
-CC = cc
 PREFIX = /usr/local
 DESTDIR =
+
+PATH := $(shell pwd)/toolchain/bin:$(PATH)
+SHELL := env PATH=$(PATH) /bin/bash
 
 TOOLCHAIN = x86_64-elf
 
 TOOLCHAIN_CC = $(TOOLCHAIN)-gcc
-AR = $(TOOLCHAIN)-ar
-OBJCOPY = $(TOOLCHAIN)-objcopy
+TOOLCHAIN_AR = $(TOOLCHAIN)-ar
 
-PATH := $(shell pwd)/toolchain/bin:$(PATH)
+ifeq ($(shell which $(TOOLCHAIN_CC)), )
+TOOLCHAIN_CC := gcc
+endif
+ifeq ($(shell which $(TOOLCHAIN_AR)), )
+TOOLCHAIN_AR := ar
+endif
+
+ifneq ($(shell $(TOOLCHAIN_CC) -dumpmachine | head -c 6), x86_64)
+$(error No suitable x86_64 GCC compiler found, please install an x86_64 GCC toolchain or run "make toolchain")
+endif
 
 STAGE1_FILES := $(shell find -L ./stage1 -type f -name '*.asm' | sort)
 
@@ -100,7 +110,7 @@ toolchain:
 
 gnu-efi:
 	git clone https://git.code.sf.net/p/gnu-efi/code --branch=3.0.13 --depth=1 $@
-	$(MAKE) -C gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m64" AR="$(AR)"
+	$(MAKE) -C gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m64" AR="$(TOOLCHAIN_AR)"
 	$(MAKE) -C gnu-efi/lib CC="$(TOOLCHAIN_CC) -m64" ARCH=x86_64 x86_64/efi_stub.o
 
 ovmf:

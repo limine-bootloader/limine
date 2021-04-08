@@ -1,7 +1,9 @@
+CC = cc
+OBJCOPY = objcopy
+
 PREFIX = /usr/local
 DESTDIR =
 
-OBJCOPY = objcopy
 OBJCOPY_ARCH = default
 LIMINE_HDD_BIN = limine-hdd.bin
 BUILD_DIR = $(shell realpath .)

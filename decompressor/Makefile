@@ -6,8 +6,15 @@ endif
 
 TOOLCHAIN = x86_64-elf
 
-CC = $(TOOLCHAIN)-gcc
-OBJCOPY = $(TOOLCHAIN)-objcopy
+TOOLCHAIN_CC = $(TOOLCHAIN)-gcc
+TOOLCHAIN_OBJCOPY = $(TOOLCHAIN)-objcopy
+
+ifeq ($(shell which $(TOOLCHAIN_CC)), )
+TOOLCHAIN_CC := gcc
+endif
+ifeq ($(shell which $(OBJCOPY)), )
+TOOLCHAIN_OBJCOPY := objcopy
+endif
 
 CFLAGS = -flto -Os -pipe -Wall -Wextra -Werror
 
@@ -55,13 +62,13 @@ builddir:
 	for i in $(OBJ); do mkdir -p `dirname $$i`; done
 
 $(BUILDDIR)/decompressor.bin: $(OBJ)
-	$(CC) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $(BUILDDIR)/decompressor.elf
-	$(OBJCOPY) -O binary $(BUILDDIR)/decompressor.elf $@
+	$(TOOLCHAIN_CC) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $(BUILDDIR)/decompressor.elf
+	$(TOOLCHAIN_OBJCOPY) -O binary $(BUILDDIR)/decompressor.elf $@
 
 -include $(HEADER_DEPS)
 
 $(BUILDDIR)/%.o: %.c
-	$(CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
+	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 
 $(BUILDDIR)/%.o: %.asm
 	nasm $< -f elf32 -o $@

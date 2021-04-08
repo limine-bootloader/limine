@@ -32,13 +32,13 @@ such as Long Mode, 5-level paging, and SMP (multicore), to name a few.
 For convenience, for point releases, binaries are distributed. These binaries are
 shipped in the `-binary` branches and tags of this repository (see [branches](https://github.com/limine-bootloader/limine/branches/all) and [tags](https://github.com/limine-bootloader/limine/tags)).
 
-For example, to clone the latest binary release of the `v2.0` branch one can do
+For example, to clone the latest binary release of the `v2.x` branch one can do
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v2.0-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example v2.0.1)
+or, to clone a specific binary point release (for example v2.1.6)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v2.0.1-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v2.1.6-binary --depth=1
 ```
 
 Additionally, the absolute latest Limine binary release can be obtained by fetching
@@ -52,22 +52,38 @@ rebuild `limine-install`, simply use `make` in the binary release.
 
 ## Building the bootloader
 
-*These steps are not necessary if cloning a binary release. if so, skip to the*
-*next paragraph.*
+*These steps are not necessary if cloning a binary release. if so, skip to*
+*"Installing Limine binaries".*
 
-It is necessary to first build the set of tools that the bootloader needs
-in order to be built.
+### Building the toolchain
 
-This can be accomplished by running:
+This step can take a long time, but it will ensure that the compiler will work with
+Limine. If on an x86_64 host, with GCC installed, you can also skip to the next
+paragraph.
+
+The toolchain building process depends on the following packages: `wget`, `gcc`,
+`g++`, `binutils`.
+
+Building the toolchain can be accomplished by running:
 ```bash
 make toolchain
 ```
 *The above step may take a while*
 
-After that is done, the bootloader itself can be built with:
+### Building Limine
+
+In order to build Limine, the following packages have to be installed: `git`,
+`nasm`, `mtools`. Furthermore, either the toolchain must have been built in the
+previous paragraph, or `gcc` and `binutils` must also be installed.
+
+The bootloader can then be built with:
 ```bash
 make
 ```
+
+It is possible to pass `make` additional flags, most relevantly, `TOOLCHAIN=` which
+allows one to specify an alternative toolchain for the build system to use
+(the default is `x86_64-elf`, falling back to no-triple, or host, toolchain).
 
 The generated bootloader files are going to be in `bin`.
 

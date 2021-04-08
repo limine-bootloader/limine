@@ -7,6 +7,7 @@
 #include <lib/libc.h>
 #include <lib/config.h>
 #include <lib/term.h>
+#include <lib/gterm.h>
 #include <lib/readline.h>
 #include <lib/uri.h>
 #include <mm/pmm.h>
@@ -431,6 +432,21 @@ char *menu(char **cmdline) {
             bg = NULL;
 
     nobg:
+        term_vbe(colourscheme, margin, margin_gradient, NULL);
+
+        if (bg != NULL) {
+            char *background_layout = config_get_value(NULL, 0, "BACKGROUND_STYLE");
+            if (background_layout != NULL && strcmp(background_layout, "centered") == 0) {
+                char *background_colour = config_get_value(NULL, 0, "BACKDROP_COLOUR");
+                if (background_colour == NULL)
+                    background_colour = config_get_value(NULL, 0, "BACKDROP_COLOR");
+                if (background_colour == NULL)
+                    background_colour = "0";
+                uint32_t bg_col = strtoui(background_colour, NULL, 16);
+                image_make_centered(bg, fbinfo.framebuffer_width, fbinfo.framebuffer_height, bg_col);
+            }
+        }
+
         term_vbe(colourscheme, margin, margin_gradient, bg);
     }
 

@@ -38,8 +38,20 @@ static uint32_t get_pixel(struct image *this, int x, int y) {
     struct bmp_local *local = this->local;
     struct bmp_header *header = &local->header;
 
-    x %= header->bi_width;
-    y %= header->bi_height;
+    switch (this->type) {
+        case IMAGE_TILED: {
+            x %= header->bi_width;
+            y %= header->bi_height;
+            break;
+        }
+        case IMAGE_CENTERED: {
+            x -= this->x_displacement;
+            y -= this->y_displacement;
+            if (x < 0 || y < 0 || x >= this->x_size || y >= this->y_size)
+                return this->back_colour;
+            break;
+        }
+    }
 
     size_t pixel_offset = local->pitch * (header->bi_height - y - 1) + x * (header->bi_bpp / 8);
 

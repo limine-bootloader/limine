@@ -181,7 +181,8 @@ static void scroll(void) {
     clear_cursor();
 
     for (int i = cols; i < rows * cols; i++) {
-        plot_char_grid(&grid[i], (i - cols) % cols, (i - cols) / cols);
+        if (memcmp(&grid[i], &grid[i - cols], sizeof(struct gterm_char) != 0))
+            plot_char_grid(&grid[i], (i - cols) % cols, (i - cols) / cols);
     }
 
     // Clear the last line of the screen.
@@ -190,7 +191,8 @@ static void scroll(void) {
     empty.fg = 9;
     empty.bg = 8;
     for (int i = rows * cols - cols; i < rows * cols; i++) {
-        plot_char_grid(&empty, i % cols, i / cols);
+        if (memcmp(&grid[i], &empty, sizeof(struct gterm_char) != 0))
+            plot_char_grid(&empty, i % cols, i / cols);
     }
 
     draw_cursor();

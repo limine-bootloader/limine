@@ -273,7 +273,28 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
 
     struct stivale2_header_tag_framebuffer *hdrtag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_FRAMEBUFFER_ID);
 
-    if (bits == 64 && terminal_hdr_tag != NULL && current_video_mode >= 0 && hdrtag != NULL) {
+    if (bits == 64 && terminal_hdr_tag != NULL && hdrtag != NULL) {
+        // If we're coming from some odd mode (text mode), reinitialise the graphical console
+        if (current_video_mode < 0) {
+            uint32_t colourscheme[] = {
+                0x00000000, // black
+                0x00aa0000, // red
+                0x0000aa00, // green
+                0x00aa5500, // brown
+                0x000000aa, // blue
+                0x00aa00aa, // magenta
+                0x0000aaaa, // cyan
+                0x00aaaaaa, // grey
+                0x00000000, // background (black)
+                0x00aaaaaa  // foreground (grey)
+            };
+            term_vbe(colourscheme, 64, 20, NULL);
+        }
+
+        if (current_video_mode < 0) {
+            panic("stivale2: Failed to initialise terminal");
+        }
+
         fb = &fbinfo;
 
         struct stivale2_struct_tag_terminal *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_terminal));

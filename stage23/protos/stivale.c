@@ -19,7 +19,6 @@
 #include <fs/file.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>
-#include <mm/mtrr.h>
 #include <stivale/stivale.h>
 #include <drivers/vga_textmode.h>
 
@@ -263,8 +262,6 @@ __attribute__((noreturn)) void stivale_spinup_32(
 __attribute__((noreturn)) void stivale_spinup(
                  int bits, bool level5pg, pagemap_t *pagemap,
                  uint64_t entry_point, void *stivale_struct, uint64_t stack) {
-    mtrr_restore();
-
 #if defined (bios)
     if (bits == 64) {
         // If we're going 64, we might as well call this BIOS interrupt

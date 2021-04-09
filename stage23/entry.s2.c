@@ -11,7 +11,6 @@
 #include <fs/file.h>
 #include <lib/elf.h>
 #include <mm/pmm.h>
-#include <mm/mtrr.h>
 #include <protos/stivale.h>
 #include <protos/stivale2.h>
 #include <protos/linux.h>

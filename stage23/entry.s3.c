@@ -11,7 +11,6 @@
 #include <fs/file.h>
 #include <lib/elf.h>
 #include <mm/pmm.h>
-#include <mm/mtrr.h>
 #include <protos/stivale.h>
 #include <protos/stivale2.h>
 #include <protos/linux.h>
@@ -95,8 +94,6 @@ void stage3_common(void) {
 
     print("Boot drive: %x\n", boot_volume->drive);
     print("Boot partition: %d\n", boot_volume->partition);
-
-    mtrr_save();
 
     char *cmdline;
     char *config = menu(&cmdline);

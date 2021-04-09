@@ -8,7 +8,6 @@
 #include <lib/blib.h>
 #include <drivers/disk.h>
 #include <lib/term.h>
-#include <mm/mtrr.h>
 #include <sys/idt.h>
 #include <drivers/vga_textmode.h>
 
@@ -92,8 +91,6 @@ void chainload(char *config) {
     struct volume *p = volume_get_by_coord(drive, part);
 
     volume_read(p, (void *)0x7c00, 0, 512);
-
-    mtrr_restore();
 
     spinup(drive);
 }

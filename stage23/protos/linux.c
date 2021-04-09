@@ -10,7 +10,6 @@
 #include <lib/print.h>
 #include <lib/uri.h>
 #include <mm/pmm.h>
-#include <mm/mtrr.h>
 #include <sys/idt.h>
 #include <lib/fb.h>
 #include <lib/acpi.h>
@@ -483,8 +482,6 @@ void linux_load(char *config, char *cmdline) {
     ///////////////////////////////////////
 
     term_deinit();
-
-    mtrr_restore();
 
     struct screen_info *screen_info = &boot_params->screen_info;
 

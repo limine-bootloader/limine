@@ -7,7 +7,6 @@
 #include <lib/print.h>
 #include <lib/uri.h>
 #include <lib/fb.h>
-#include <mm/mtrr.h>
 #include <mm/pmm.h>
 
 #define VGA_FONT_WIDTH  8
@@ -389,9 +388,6 @@ bool gterm_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _ma
     gterm_height      = fbinfo.framebuffer_height;
     gterm_bpp         = fbinfo.framebuffer_bpp;
     gterm_pitch       = fbinfo.framebuffer_pitch;
-
-    mtrr_set_range((uint64_t)(size_t)gterm_framebuffer,
-                   (uint64_t)gterm_pitch * gterm_height, MTRR_MEMORY_TYPE_WC);
 
     if (vga_font == NULL)
         vga_font = ext_mem_alloc(VGA_FONT_MAX);

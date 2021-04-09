@@ -12,7 +12,7 @@ TOOLCHAIN_OBJCOPY = $(TOOLCHAIN)-objcopy
 ifeq ($(shell which $(TOOLCHAIN_CC)), )
 TOOLCHAIN_CC := gcc
 endif
-ifeq ($(shell which $(OBJCOPY)), )
+ifeq ($(shell which $(TOOLCHAIN_OBJCOPY)), )
 TOOLCHAIN_OBJCOPY := objcopy
 endif
 

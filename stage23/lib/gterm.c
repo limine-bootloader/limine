@@ -31,9 +31,12 @@ static int frame_height, frame_width;
 
 static struct image *background;
 
+static size_t last_grid_size = 0;
 static struct gterm_char *grid = NULL;
+static size_t last_front_grid_size = 0;
 static struct gterm_char *front_grid = NULL;
 
+static size_t last_bg_canvas_size = 0;
 static uint32_t *bg_canvas = NULL;
 
 static bool double_buffer_enabled = false;
@@ -406,10 +409,19 @@ bool gterm_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _ma
 
     *_cols = cols = (gterm_width - _margin * 2) / VGA_FONT_WIDTH;
     *_rows = rows = (gterm_height - _margin * 2) / VGA_FONT_HEIGHT;
-    if (grid == NULL)
-        grid = ext_mem_alloc(rows * cols * sizeof(struct gterm_char));
-    if (front_grid == NULL)
-        front_grid = ext_mem_alloc(rows * cols * sizeof(struct gterm_char));
+
+    size_t new_grid_size = rows * cols * sizeof(struct gterm_char);
+    if (new_grid_size > last_grid_size) {
+        grid = ext_mem_alloc(new_grid_size);
+        last_grid_size = new_grid_size;
+    }
+
+    size_t new_front_grid_size = rows * cols * sizeof(struct gterm_char);
+    if (new_front_grid_size > last_front_grid_size) {
+        front_grid = ext_mem_alloc(new_front_grid_size);
+        last_front_grid_size = new_front_grid_size;
+    }
+
     background = _background;
 
     memcpy(ansi_colours, _colours, sizeof(ansi_colours));
@@ -419,8 +431,11 @@ bool gterm_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _ma
     frame_height = gterm_height / 2 - (VGA_FONT_HEIGHT * rows) / 2;
     frame_width  = gterm_width  / 2 - (VGA_FONT_WIDTH  * cols) / 2;
 
-    if (bg_canvas == NULL)
-        bg_canvas = ext_mem_alloc(gterm_width * gterm_height * sizeof(uint32_t));
+    size_t new_bg_canvas_size = gterm_width * gterm_height * sizeof(uint32_t);
+    if (new_bg_canvas_size > last_bg_canvas_size) {
+        bg_canvas = ext_mem_alloc(new_bg_canvas_size);
+        last_bg_canvas_size = new_bg_canvas_size;
+    }
 
     gterm_generate_canvas();
     gterm_clear(true);

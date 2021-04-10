@@ -101,14 +101,14 @@ static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, in
 
     if ((int)mode == current_video_mode) {
         print("gop: Mode was already set, perfect!\n");
-    }
+    } else {
+        status = uefi_call_wrapper(gop->SetMode, 2, gop, mode);
 
-    status = uefi_call_wrapper(gop->SetMode, 2, gop, mode);
-
-    if (status) {
-        current_video_mode = -2;
-        print("gop: Failed to set video mode %x, moving on...\n", mode);
-        return false;
+        if (status) {
+            current_video_mode = -2;
+            print("gop: Failed to set video mode %x, moving on...\n", mode);
+            return false;
+        }
     }
 
     current_video_mode = mode;

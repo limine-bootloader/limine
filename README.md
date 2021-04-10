@@ -13,7 +13,7 @@ such as Long Mode, 5-level paging, and SMP (multicore), to name a few.
 
 ### Supported boot protocols
 * Linux
-* stivale and stivale2 (Limine's native boot protocols, see ![their specifications](https://github.com/stivale/stivale) for details)
+* stivale and stivale2 (Limine's native boot protocols, see [their specifications](https://github.com/stivale/stivale) for details)
 * Chainloading
 
 ### Supported filesystems

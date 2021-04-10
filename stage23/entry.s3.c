@@ -24,6 +24,19 @@ void stage3_common(void);
 
 #if defined (uefi)
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
+    // Invalid return address of 0 to end stacktraces here
+    asm volatile (
+        "push 0\n\t"
+        "jmp efi_entry_point\n\t"
+        :: "D" (ImageHandle), "S" (SystemTable)
+        : "memory"
+    );
+
+    __builtin_unreachable();
+}
+
+__attribute__((noreturn))
+void efi_entry_point(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     gST = SystemTable;
     gBS = SystemTable->BootServices;
     gRT = SystemTable->RuntimeServices;
@@ -31,20 +44,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
     init_memmap();
 
-    uint32_t colourscheme[] = {
-        0x00000000, // black
-        0x00aa0000, // red
-        0x0000aa00, // green
-        0x00aa5500, // brown
-        0x000000aa, // blue
-        0x00aa00aa, // magenta
-        0x0000aaaa, // cyan
-        0x00aaaaaa, // grey
-        0x00000000, // background (black)
-        0x00aaaaaa  // foreground (white)
-    };
-
-    term_vbe(colourscheme, 64, 0, NULL);
+    term_vbe(0, 0);
+    early_term = true;
 
     print("Limine " LIMINE_VERSION "\n\n");
 
@@ -61,13 +62,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
         panic("Can't determine boot disk");
     }
 
-    // Invalid return address of 0 to end stacktraces here
-    asm volatile (
-        "push 0\n\t"
-        "jmp stage3_common\n\t"
-    );
-
-    __builtin_unreachable();
+    stage3_common();
 }
 #endif
 

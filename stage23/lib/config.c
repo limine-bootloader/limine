@@ -207,7 +207,7 @@ cont:
 }
 
 char *config_get_value(const char *config, size_t index, const char *key) {
-    if (!key)
+    if (!key || !config_ready)
         return NULL;
 
     if (config == NULL)

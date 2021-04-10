@@ -16,10 +16,6 @@ bool fb_init(struct fb_info *ret,
     r = init_gop(ret, target_width, target_height, target_bpp);
 #endif
 
-    memmap_alloc_range(ret->framebuffer_addr,
-                       (uint64_t)ret->framebuffer_pitch * ret->framebuffer_height,
-                       MEMMAP_FRAMEBUFFER, false, false, false, true);
-
     return r;
 }
 

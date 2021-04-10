@@ -329,6 +329,10 @@ skip_modeset:;
             struct stivale2_struct_tag_framebuffer *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_framebuffer));
             tag->tag.identifier = STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID;
 
+            memmap_alloc_range(fb->framebuffer_addr,
+                               (uint64_t)fb->framebuffer_pitch * fb->framebuffer_height,
+                               MEMMAP_FRAMEBUFFER, false, false, false, true);
+
             tag->memory_model       = STIVALE2_FBUF_MMODEL_RGB;
             tag->framebuffer_addr   = fb->framebuffer_addr;
             tag->framebuffer_width  = fb->framebuffer_width;

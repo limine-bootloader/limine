@@ -540,14 +540,21 @@ void linux_load(char *config, char *cmdline) {
 
     boot_params->e820_entries = memmap_entries + 1;
 
-    e820_table[0].addr = bump_allocator_base;
-    e820_table[0].size = bump_allocator_limit - bump_allocator_base;
-    e820_table[0].type = MEMMAP_USABLE;
+    size_t i = 0;
 
-    for (size_t i = 1; i < memmap_entries + 1; i++) {
-        e820_table[i].addr = memmap[i-1].base;
-        e820_table[i].size = memmap[i-1].length;
-        e820_table[i].type = memmap[i-1].type;
+    e820_table[i].addr = bump_allocator_base;
+    e820_table[i].size = bump_allocator_limit - bump_allocator_base;
+    e820_table[i].type = MEMMAP_USABLE;
+
+    i++;
+
+    for (size_t j = 0; j < memmap_entries; j++) {
+        if (memmap[j].type == MEMMAP_FRAMEBUFFER)
+            continue;
+
+        e820_table[i].addr = memmap[j].base;
+        e820_table[i].size = memmap[j].length;
+        e820_table[i].type = memmap[j].type;
 
         switch (e820_table[i].type) {
             case MEMMAP_BOOTLOADER_RECLAIMABLE:
@@ -555,6 +562,8 @@ void linux_load(char *config, char *cmdline) {
                 e820_table[i].type = MEMMAP_USABLE;
                 break;
         }
+
+        i++;
     }
 
     ///////////////////////////////////////

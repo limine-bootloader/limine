@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <lib/gterm.h>
-#include <lib/term.h>
 #include <lib/blib.h>
 #include <lib/libc.h>
 #include <lib/config.h>
@@ -32,12 +31,9 @@ static int frame_height, frame_width;
 
 static struct image *background;
 
-static size_t last_grid_size = 0;
 static struct gterm_char *grid = NULL;
-static size_t last_front_grid_size = 0;
 static struct gterm_char *front_grid = NULL;
 
-static size_t last_bg_canvas_size = 0;
 static uint32_t *bg_canvas = NULL;
 
 static bool double_buffer_enabled = false;
@@ -366,112 +362,17 @@ void gterm_putchar(uint8_t c) {
     }
 }
 
-bool gterm_init(int *_rows, int *_cols, int width, int height) {
-    if (current_video_mode >= 0
-     && fbinfo.default_res == true
-     && width == 0
-     && height == 0
-     && fbinfo.framebuffer_bpp == 32
-     && !early_term) {
-        gterm_clear(true);
-        return true;
-    }
+bool gterm_init(int *_rows, int *_cols, uint32_t *_colours, int _margin, int _margin_gradient, struct image *_background) {
+    int req_width = 0, req_height = 0, req_bpp = 0;
 
-    if (current_video_mode >= 0
-     && fbinfo.framebuffer_width == width
-     && fbinfo.framebuffer_height == height
-     && fbinfo.framebuffer_bpp == 32
-     && !early_term) {
-        gterm_clear(true);
-        return true;
-    }
-
-    early_term = false;
+    char *menu_resolution = config_get_value(NULL, 0, "MENU_RESOLUTION");
+    if (menu_resolution != NULL)
+        parse_resolution(&req_width, &req_height, &req_bpp, menu_resolution);
 
     // We force bpp to 32
-    if (!fb_init(&fbinfo, width, height, 32))
-        return false;
+    req_bpp = 32;
 
-    // default scheme
-    int margin = 64;
-    margin_gradient = 20;
-
-    ansi_colours[0] = 0x00000000; // black
-    ansi_colours[1] = 0x00aa0000; // red
-    ansi_colours[2] = 0x0000aa00; // green
-    ansi_colours[3] = 0x00aa5500; // brown
-    ansi_colours[4] = 0x000000aa; // blue
-    ansi_colours[5] = 0x00aa00aa; // magenta
-    ansi_colours[6] = 0x0000aaaa; // cyan
-    ansi_colours[7] = 0x00aaaaaa; // grey
-    ansi_colours[8] = 0x00000000; // background (black)
-    ansi_colours[9] = 0x00aaaaaa; // foreground (grey)
-
-    char *colours = config_get_value(NULL, 0, "THEME_COLOURS");
-    if (colours == NULL)
-        colours = config_get_value(NULL, 0, "THEME_COLORS");
-    if (colours != NULL) {
-        const char *first = colours;
-        int i;
-        for (i = 0; i < 10; i++) {
-            const char *last;
-            uint32_t col = strtoui(first, &last, 16);
-            if (first == last)
-                break;
-            ansi_colours[i] = col;
-            if (*last == 0)
-                break;
-            first = last + 1;
-        }
-        if (i < 8) {
-            ansi_colours[8] = ansi_colours[0];
-            ansi_colours[9] = ansi_colours[7];
-        }
-    }
-
-    char *theme_background = config_get_value(NULL, 0, "THEME_BACKGROUND");
-    if (theme_background != NULL) {
-        ansi_colours[8] = strtoui(theme_background, NULL, 16);
-    }
-
-    char *theme_foreground = config_get_value(NULL, 0, "THEME_FOREGROUND");
-    if (theme_foreground != NULL) {
-        ansi_colours[9] = strtoui(theme_foreground, NULL, 16);
-    }
-
-    char *theme_margin = config_get_value(NULL, 0, "THEME_MARGIN");
-    if (theme_margin != NULL) {
-        margin = strtoui(theme_margin, NULL, 10);
-    }
-
-    char *theme_margin_gradient = config_get_value(NULL, 0, "THEME_MARGIN_GRADIENT");
-    if (theme_margin_gradient != NULL) {
-        margin_gradient = strtoui(theme_margin_gradient, NULL, 10);
-    }
-
-    char *background_path = config_get_value(NULL, 0, "BACKGROUND_PATH");
-    if (background_path != NULL) {
-        struct file_handle *bg_file = ext_mem_alloc(sizeof(struct file_handle));
-        if (uri_open(bg_file, background_path)) {
-            background = ext_mem_alloc(sizeof(struct image));
-            if (open_image(background, bg_file)) {
-                background = NULL;
-            }
-        }
-    }
-
-    if (background != NULL) {
-        char *background_layout = config_get_value(NULL, 0, "BACKGROUND_STYLE");
-        if (background_layout != NULL && strcmp(background_layout, "centered") == 0) {
-            char *background_colour = config_get_value(NULL, 0, "BACKDROP_COLOUR");
-            if (background_colour == NULL)
-                background_colour = config_get_value(NULL, 0, "BACKDROP_COLOR");
-            if (background_colour == NULL)
-                background_colour = "0";
-            uint32_t bg_col = strtoui(background_colour, NULL, 16);
-            image_make_centered(background, fbinfo.framebuffer_width, fbinfo.framebuffer_height, bg_col);
-        }
-    }
+    fb_init(&fbinfo, req_width, req_height, req_bpp);
 
     // Ensure this is xRGB8888, we only support that for the menu
     if (fbinfo.red_mask_size    != 8
@@ -494,8 +395,6 @@ bool gterm_init(int *_rows, int *_cols, int width, int height) {
     memcpy(vga_font, (void *)_binary_font_bin_start, VGA_FONT_MAX);
 
     char *menu_font = config_get_value(NULL, 0, "MENU_FONT");
-    if (menu_font == NULL)
-        menu_font = config_get_value(NULL, 0, "TERMINAL_FONT");
     if (menu_font != NULL) {
         struct file_handle f;
         if (!uri_open(&f, menu_font)) {
@@ -505,29 +404,23 @@ bool gterm_init(int *_rows, int *_cols, int width, int height) {
         }
     }
 
-    *_cols = cols = (gterm_width - margin * 2) / VGA_FONT_WIDTH;
-    *_rows = rows = (gterm_height - margin * 2) / VGA_FONT_HEIGHT;
+    *_cols = cols = (gterm_width - _margin * 2) / VGA_FONT_WIDTH;
+    *_rows = rows = (gterm_height - _margin * 2) / VGA_FONT_HEIGHT;
+    if (grid == NULL)
+        grid = ext_mem_alloc(rows * cols * sizeof(struct gterm_char));
+    if (front_grid == NULL)
+        front_grid = ext_mem_alloc(rows * cols * sizeof(struct gterm_char));
+    background = _background;
 
-    size_t new_grid_size = rows * cols * sizeof(struct gterm_char);
-    if (new_grid_size > last_grid_size) {
-        grid = ext_mem_alloc(new_grid_size);
-        last_grid_size = new_grid_size;
-    }
+    memcpy(ansi_colours, _colours, sizeof(ansi_colours));
 
-    size_t new_front_grid_size = rows * cols * sizeof(struct gterm_char);
-    if (new_front_grid_size > last_front_grid_size) {
-        front_grid = ext_mem_alloc(new_front_grid_size);
-        last_front_grid_size = new_front_grid_size;
-    }
+    margin_gradient = _margin_gradient;
 
     frame_height = gterm_height / 2 - (VGA_FONT_HEIGHT * rows) / 2;
     frame_width  = gterm_width  / 2 - (VGA_FONT_WIDTH  * cols) / 2;
 
-    size_t new_bg_canvas_size = gterm_width * gterm_height * sizeof(uint32_t);
-    if (new_bg_canvas_size > last_bg_canvas_size) {
-        bg_canvas = ext_mem_alloc(new_bg_canvas_size);
-        last_bg_canvas_size = new_bg_canvas_size;
-    }
+    if (bg_canvas == NULL)
+        bg_canvas = ext_mem_alloc(gterm_width * gterm_height * sizeof(uint32_t));
 
     gterm_generate_canvas();
     gterm_clear(true);

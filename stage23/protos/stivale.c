@@ -171,10 +171,6 @@ void stivale_load(char *config, char *cmdline) {
         if (!fb_init(&fbinfo, req_width, req_height, req_bpp))
             panic("stivale: Unable to set video mode");
 
-        memmap_alloc_range(fbinfo.framebuffer_addr,
-                           (uint64_t)fbinfo.framebuffer_pitch * fbinfo.framebuffer_height,
-                           MEMMAP_FRAMEBUFFER, false, false, false, true);
-
         stivale_struct.framebuffer_addr    = (uint64_t)fbinfo.framebuffer_addr;
         stivale_struct.framebuffer_width   = fbinfo.framebuffer_width;
         stivale_struct.framebuffer_height  = fbinfo.framebuffer_height;

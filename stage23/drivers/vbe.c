@@ -120,8 +120,6 @@ bool init_vbe(struct fb_info *ret,
               uint16_t target_width, uint16_t target_height, uint16_t target_bpp) {
     print("vbe: Initialising...\n");
 
-    ret->default_res = false;
-
     size_t current_fallback = 0;
 
     struct vbe_info_struct vbe_info;
@@ -143,8 +141,6 @@ bool init_vbe(struct fb_info *ret,
     };
 
     if (!target_width || !target_height || !target_bpp) {
-        ret->default_res = true;
-
         struct edid_info_struct *edid_info = get_edid_info();
         if (edid_info != NULL) {
             int edid_width   = (int)edid_info->det_timing_desc1[2];
@@ -220,8 +216,6 @@ retry:
     }
 
 fallback:
-    ret->default_res = true;
-
     if (current_fallback < SIZEOF_ARRAY(fallback_resolutions)) {
         target_width  = fallback_resolutions[current_fallback].width;
         target_height = fallback_resolutions[current_fallback].height;

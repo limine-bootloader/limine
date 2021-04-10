@@ -8,7 +8,8 @@
 
 extern struct fb_info fbinfo;
 
-bool gterm_init(int *_rows, int *_cols, int width, int height);
+bool gterm_init(int *rows, int *cols, uint32_t *colours, int margin,
+                int margin_gradient, struct image *background);
 
 void gterm_putchar(uint8_t c);
 void gterm_clear(bool move);

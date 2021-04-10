@@ -101,21 +101,21 @@ static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, in
 
     if ((int)mode == current_video_mode) {
         print("gop: Mode was already set, perfect!\n");
-    } else {
-        status = uefi_call_wrapper(gop->SetMode, 2, gop, mode);
+    }
 
-        if (status) {
-            current_video_mode = -2;
-            print("gop: Failed to set video mode %x, moving on...\n", mode);
-            return false;
-        }
+    status = uefi_call_wrapper(gop->SetMode, 2, gop, mode);
+
+    if (status) {
+        current_video_mode = -2;
+        print("gop: Failed to set video mode %x, moving on...\n", mode);
+        return false;
     }
 
     current_video_mode = mode;
 
     ret->memory_model = 0x06;
     ret->framebuffer_addr = gop->Mode->FrameBufferBase;
-    ret->framebuffer_pitch = gop->Mode->Info->PixelsPerScanLine * (ret->framebuffer_bpp / 8);
+    ret->framebuffer_pitch = gop->Mode->Info->PixelsPerScanLine * 4;
     ret->framebuffer_width = gop->Mode->Info->HorizontalResolution;
     ret->framebuffer_height = gop->Mode->Info->VerticalResolution;
 
@@ -124,14 +124,8 @@ static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, in
     return true;
 }
 
-#define INVALID_PRESET_MODE 0xfffffffff
-
-static size_t preset_mode = INVALID_PRESET_MODE;
-
 bool init_gop(struct fb_info *ret,
               uint16_t target_width, uint16_t target_height, uint16_t target_bpp) {
-    ret->default_res = false;
-
     EFI_STATUS status;
 
     EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
@@ -154,8 +148,7 @@ bool init_gop(struct fb_info *ret,
         panic("gop: Initialisation failed");
     }
 
-    if (preset_mode == INVALID_PRESET_MODE)
-        preset_mode = gop->Mode->Mode;
+    size_t preset_mode = gop->Mode->Mode;
 
     struct resolution fallback_resolutions[] = {
         { 0,    0,   0  },   // Overridden by preset mode
@@ -169,8 +162,6 @@ bool init_gop(struct fb_info *ret,
     size_t current_fallback = 0;
 
     if (!target_width || !target_height || !target_bpp) {
-        ret->default_res = true;
-
         struct edid_info_struct *edid_info = get_edid_info();
         if (edid_info != NULL) {
             int edid_width   = (int)edid_info->det_timing_desc1[2];
@@ -199,8 +190,6 @@ retry:
     }
 
 fallback:
-    ret->default_res = true;
-
     if (current_fallback == 0) {
         if (try_mode(ret, preset_mode, 0, 0, 0))
             return true;

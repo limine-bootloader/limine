@@ -369,13 +369,85 @@ char *menu(char **cmdline) {
     char *graphics = "yes";
 #endif
     if (graphics != NULL && !strcmp(graphics, "yes")) {
-        int req_width = 0, req_height = 0, req_bpp = 0;
+        // default scheme
+        int margin = 64;
+        int margin_gradient = 20;
+        uint32_t colourscheme[] = {
+            0x00000000, // black
+            0x00aa0000, // red
+            0x0000aa00, // green
+            0x00aa5500, // brown
+            0x000000aa, // blue
+            0x00aa00aa, // magenta
+            0x0000aaaa, // cyan
+            0x00aaaaaa, // grey
+            0x00000000, // background (black)
+            0x00aaaaaa  // foreground (grey)
+        };
 
-        char *menu_resolution = config_get_value(NULL, 0, "MENU_RESOLUTION");
-        if (menu_resolution != NULL)
-            parse_resolution(&req_width, &req_height, &req_bpp, menu_resolution);
+        char *colours = config_get_value(NULL, 0, "THEME_COLOURS");
+        if (colours == NULL)
+            colours = config_get_value(NULL, 0, "THEME_COLORS");
+        if (colours != NULL) {
+            const char *first = colours;
+            int i;
+            for (i = 0; i < 10; i++) {
+                const char *last;
+                uint32_t col = strtoui(first, &last, 16);
+                if (first == last)
+                    break;
+                colourscheme[i] = col;
+                if (*last == 0)
+                    break;
+                first = last + 1;
+            }
+            if (i < 8) {
+                colourscheme[8] = colourscheme[0];
+                colourscheme[9] = colourscheme[7];
+            }
+        }
 
-        term_vbe(req_width, req_height);
+        char *theme_margin = config_get_value(NULL, 0, "THEME_MARGIN");
+        if (theme_margin != NULL) {
+            margin = strtoui(theme_margin, NULL, 10);
+        }
+
+        char *theme_margin_gradient = config_get_value(NULL, 0, "THEME_MARGIN_GRADIENT");
+        if (theme_margin_gradient != NULL) {
+            margin_gradient = strtoui(theme_margin_gradient, NULL, 10);
+        }
+
+        struct image *bg = NULL;
+
+        char *background_path = config_get_value(NULL, 0, "BACKGROUND_PATH");
+        if (background_path == NULL)
+            goto nobg;
+
+        struct file_handle *bg_file = ext_mem_alloc(sizeof(struct file_handle));
+        if (!uri_open(bg_file, background_path))
+            goto nobg;
+
+        bg = ext_mem_alloc(sizeof(struct image));
+        if (open_image(bg, bg_file))
+            bg = NULL;
+
+    nobg:
+        term_vbe(colourscheme, margin, margin_gradient, NULL);
+
+        if (bg != NULL) {
+            char *background_layout = config_get_value(NULL, 0, "BACKGROUND_STYLE");
+            if (background_layout != NULL && strcmp(background_layout, "centered") == 0) {
+                char *background_colour = config_get_value(NULL, 0, "BACKDROP_COLOUR");
+                if (background_colour == NULL)
+                    background_colour = config_get_value(NULL, 0, "BACKDROP_COLOR");
+                if (background_colour == NULL)
+                    background_colour = "0";
+                uint32_t bg_col = strtoui(background_colour, NULL, 16);
+                image_make_centered(bg, fbinfo.framebuffer_width, fbinfo.framebuffer_height, bg_col);
+            }
+        }
+
+        term_vbe(colourscheme, margin, margin_gradient, bg);
     }
 
     disable_cursor();

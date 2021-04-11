@@ -52,9 +52,9 @@ install: all
 
 build/stage1: $(STAGE1_FILES) build/decompressor/decompressor.bin build/stage23-bios/stage2.bin.gz
 	mkdir -p bin
-	cd stage1/hdd && nasm bootsect.asm -fbin -o ../../bin/limine-hdd.bin
-	cd stage1/cd  && nasm bootsect.asm -fbin -o ../../bin/limine-cd.bin
-	cd stage1/pxe && nasm bootsect.asm -fbin -o ../../bin/limine-pxe.bin
+	cd stage1/hdd && nasm bootsect.asm -Werror -fbin -o ../../bin/limine-hdd.bin
+	cd stage1/cd  && nasm bootsect.asm -Werror -fbin -o ../../bin/limine-cd.bin
+	cd stage1/pxe && nasm bootsect.asm -Werror -fbin -o ../../bin/limine-pxe.bin
 	cp build/stage23-bios/limine.sys ./bin/
 	touch build/stage1
 

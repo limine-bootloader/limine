@@ -239,10 +239,10 @@ $(BUILDDIR)/%.32.o: %.32.c
 endif
 
 $(BUILDDIR)/%.o: %.asm
-	nasm $< -F dwarf -g -f elf32 -o $@
+	nasm $< -F dwarf -g -Werror -f elf32 -o $@
 
 $(BUILDDIR)/%.o: %.asm64
-	nasm $< -F dwarf -g -f elf64 -o $@
+	nasm $< -F dwarf -g -Werror -f elf64 -o $@
 
 clean:
 	rm -rf $(BUILDDIR)

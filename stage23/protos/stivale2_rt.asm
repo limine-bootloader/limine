@@ -26,7 +26,7 @@ stivale2_term_write_entry:
     push rsi
     mov rcx, rsi
     mov rsi, rdi
-    mov rdi, term_buf
+    mov edi, term_buf
     rep movsb
     pop rsi
 

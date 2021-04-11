@@ -463,6 +463,9 @@ skip_modeset:;
             break;
     }
 
+    // Clear terminal for kernels that will use the stivale2 terminal
+    term_write("\e[2J\e[H", 7);
+
     stivale_spinup(bits, level5pg && level5pg_requested, &pagemap,
                    entry_point, &stivale2_struct, stivale2_hdr.stack);
 }

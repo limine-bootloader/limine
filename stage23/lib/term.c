@@ -6,10 +6,12 @@
 #include <lib/blib.h>
 #include <lib/gterm.h>
 
-void term_vbe(uint32_t *colours, int margin, int margin_gradient, struct image *background) {
+bool early_term = false;
+
+void term_vbe(int width, int height) {
     term_backend = NOT_READY;
 
-    if (!gterm_init(&term_rows, &term_cols, colours, margin, margin_gradient, background)) {
+    if (!gterm_init(&term_rows, &term_cols, width, height)) {
 #if defined (bios)
         // Failed to set VBE properly, default to text mode
         term_textmode();

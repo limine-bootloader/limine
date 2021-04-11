@@ -10,6 +10,7 @@ struct resolution {
 };
 
 struct fb_info {
+    bool default_res;
     uint8_t  memory_model;
     uint64_t framebuffer_addr;
     uint16_t framebuffer_pitch;

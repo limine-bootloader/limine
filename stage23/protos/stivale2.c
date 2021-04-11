@@ -269,27 +269,24 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     struct fb_info *fb = NULL;
     struct fb_info _fb;
 
-    struct stivale2_header_tag_terminal *terminal_hdr_tag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_TERMINAL_ID);
-
     struct stivale2_header_tag_framebuffer *hdrtag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_FRAMEBUFFER_ID);
 
+    int req_width, req_height, req_bpp;
+
+    if (hdrtag != NULL) {
+        req_width  = hdrtag->framebuffer_width;
+        req_height = hdrtag->framebuffer_height;
+        req_bpp    = hdrtag->framebuffer_bpp;
+
+        char *resolution = config_get_value(config, 0, "RESOLUTION");
+        if (resolution != NULL)
+            parse_resolution(&req_width, &req_height, &req_bpp, resolution);
+    }
+
+    struct stivale2_header_tag_terminal *terminal_hdr_tag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_TERMINAL_ID);
+
     if (bits == 64 && terminal_hdr_tag != NULL && hdrtag != NULL) {
-        // If we're coming from some odd mode (text mode), reinitialise the graphical console
-        if (current_video_mode < 0) {
-            uint32_t colourscheme[] = {
-                0x00000000, // black
-                0x00aa0000, // red
-                0x0000aa00, // green
-                0x00aa5500, // brown
-                0x000000aa, // blue
-                0x00aa00aa, // magenta
-                0x0000aaaa, // cyan
-                0x00aaaaaa, // grey
-                0x00000000, // background (black)
-                0x00aaaaaa  // foreground (grey)
-            };
-            term_vbe(colourscheme, 64, 20, NULL);
-        }
+        term_vbe(req_width, req_height);
 
         if (current_video_mode < 0) {
             panic("stivale2: Failed to initialise terminal");
@@ -315,14 +312,6 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
 
     if (hdrtag != NULL) {
         term_deinit();
-
-        int req_width  = hdrtag->framebuffer_width;
-        int req_height = hdrtag->framebuffer_height;
-        int req_bpp    = hdrtag->framebuffer_bpp;
-
-        char *resolution = config_get_value(config, 0, "RESOLUTION");
-        if (resolution != NULL)
-            parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
         if (fb_init(fb, req_width, req_height, req_bpp)) {
 skip_modeset:;

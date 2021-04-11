@@ -130,6 +130,8 @@ static size_t preset_mode = INVALID_PRESET_MODE;
 
 bool init_gop(struct fb_info *ret,
               uint16_t target_width, uint16_t target_height, uint16_t target_bpp) {
+    ret->default_res = false;
+
     EFI_STATUS status;
 
     EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
@@ -167,6 +169,8 @@ bool init_gop(struct fb_info *ret,
     size_t current_fallback = 0;
 
     if (!target_width || !target_height || !target_bpp) {
+        ret->default_res = true;
+
         struct edid_info_struct *edid_info = get_edid_info();
         if (edid_info != NULL) {
             int edid_width   = (int)edid_info->det_timing_desc1[2];
@@ -195,6 +199,8 @@ retry:
     }
 
 fallback:
+    ret->default_res = true;
+
     if (current_fallback == 0) {
         if (try_mode(ret, preset_mode, 0, 0, 0))
             return true;

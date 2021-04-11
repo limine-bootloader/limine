@@ -31,20 +31,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
     init_memmap();
 
-    uint32_t colourscheme[] = {
-        0x00000000, // black
-        0x00aa0000, // red
-        0x0000aa00, // green
-        0x00aa5500, // brown
-        0x000000aa, // blue
-        0x00aa00aa, // magenta
-        0x0000aaaa, // cyan
-        0x00aaaaaa, // grey
-        0x00000000, // background (black)
-        0x00aaaaaa  // foreground (white)
-    };
-
-    term_vbe(colourscheme, 64, 0, NULL);
+    term_vbe(0, 0);
+    early_term = true;
 
     print("Limine " LIMINE_VERSION "\n\n");
 

@@ -124,6 +124,10 @@ static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, in
     return true;
 }
 
+#define INVALID_PRESET_MODE 0xfffffffff
+
+static size_t preset_mode = INVALID_PRESET_MODE;
+
 bool init_gop(struct fb_info *ret,
               uint16_t target_width, uint16_t target_height, uint16_t target_bpp) {
     EFI_STATUS status;
@@ -148,7 +152,8 @@ bool init_gop(struct fb_info *ret,
         panic("gop: Initialisation failed");
     }
 
-    size_t preset_mode = gop->Mode->Mode;
+    if (preset_mode == INVALID_PRESET_MODE)
+        preset_mode = gop->Mode->Mode;
 
     struct resolution fallback_resolutions[] = {
         { 0,    0,   0  },   // Overridden by preset mode

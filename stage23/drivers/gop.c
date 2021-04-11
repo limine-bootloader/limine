@@ -115,7 +115,7 @@ static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, in
 
     ret->memory_model = 0x06;
     ret->framebuffer_addr = gop->Mode->FrameBufferBase;
-    ret->framebuffer_pitch = gop->Mode->Info->PixelsPerScanLine * 4;
+    ret->framebuffer_pitch = gop->Mode->Info->PixelsPerScanLine * (ret->framebuffer_bpp / 8);
     ret->framebuffer_width = gop->Mode->Info->HorizontalResolution;
     ret->framebuffer_height = gop->Mode->Info->VerticalResolution;
 

@@ -55,13 +55,16 @@ rebuild `limine-install`, simply use `make` in the binary release.
 *These steps are not necessary if cloning a binary release. If so, skip to*
 *"Installing Limine binaries".*
 
+**Note that the build system does not support building from a directory whose**
+**full path contains spaces.**
+
 ### Building the toolchain
 
 This step can take a long time, but it will ensure that the compiler will work with
 Limine. If on an x86_64 host, with GCC installed, you can also skip to the next
 paragraph.
 
-The toolchain building process depends on the following packages: `make`, `wget`,
+The toolchain building process depends on the following packages: `bash`, `make`, `wget`,
 `gcc`, `g++`, `binutils`.
 
 Building the toolchain can be accomplished by running:
@@ -72,7 +75,7 @@ make toolchain
 
 ### Building Limine
 
-In order to build Limine, the following packages have to be installed: `make`, `git`,
+In order to build Limine, the following packages have to be installed: `bash`, `make`, `git`,
 `which`, `nasm`, `mtools`. Furthermore, either the toolchain must have been built in
 the previous paragraph, or `gcc` and `binutils` must also be installed.
 

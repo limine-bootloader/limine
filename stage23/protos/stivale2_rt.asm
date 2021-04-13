@@ -3,6 +3,13 @@ section .bss
 user_stack:
     resq 1
 
+user_cs: resq 1
+user_ds: resq 1
+user_es: resq 1
+user_fs: resq 1
+user_gs: resq 1
+user_ss: resq 1
+
 term_buf:
     resb 1024
 
@@ -22,6 +29,13 @@ stivale2_term_write_entry:
 
     mov [user_stack], rsp
     mov rsp, 0x7c00
+
+    mov word [user_cs], cs
+    mov word [user_ds], ds
+    mov word [user_es], es
+    mov word [user_fs], fs
+    mov word [user_gs], gs
+    mov word [user_ss], ss
 
     push rsi
     mov rcx, rsi
@@ -45,17 +59,16 @@ bits 32
     push term_buf
     call term_write
     add esp, 8
-    push 0x28
+    push dword [user_cs]
     push .mode64
     retfd
 bits 64
   .mode64:
-    mov eax, 0x30
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
+    mov ds, word [user_ds]
+    mov es, word [user_es]
+    mov fs, word [user_fs]
+    mov gs, word [user_gs]
+    mov ss, word [user_ss]
     mov rsp, [user_stack]
 
     pop r15

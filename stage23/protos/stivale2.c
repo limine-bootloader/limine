@@ -303,6 +303,11 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
         tag->term_write = (uintptr_t)term_write;
 #endif
 
+        // We provide rows and cols
+        tag->flags |= (1 << 0);
+        tag->cols = term_cols;
+        tag->rows = term_rows;
+
         append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
 
         goto skip_modeset;

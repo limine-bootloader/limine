@@ -201,7 +201,7 @@ void stivale_load(char *config, char *cmdline) {
 #endif
 
     bool want_5lv = level5pg && (stivale_hdr.flags & (1 << 1));
-    pagemap_t pagemap = stivale_build_pagemap(want_5lv);
+    pagemap_t pagemap = stivale_build_pagemap(want_5lv, false);
 
     size_t memmap_entries;
     struct e820_entry_t *memmap = get_memmap(&memmap_entries);
@@ -213,7 +213,7 @@ void stivale_load(char *config, char *cmdline) {
                    entry_point, &stivale_struct, stivale_hdr.stack);
 }
 
-pagemap_t stivale_build_pagemap(bool level5pg) {
+pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null) {
     pagemap_t pagemap = new_pagemap(level5pg ? 5 : 4);
     uint64_t higher_half_base = level5pg ? 0xff00000000000000 : 0xffff800000000000;
 
@@ -224,7 +224,8 @@ pagemap_t stivale_build_pagemap(bool level5pg) {
 
     // Map 0 to 4GiB at higher half base and 0
     for (uint64_t i = 0; i < 0x100000000; i += PAGE_SIZE) {
-        map_page(pagemap, i, i, 0x03);
+        if (!(i == 0 && unmap_null))
+            map_page(pagemap, i, i, 0x03);
         map_page(pagemap, higher_half_base + i, i, 0x03);
     }
 
@@ -239,6 +240,12 @@ pagemap_t stivale_build_pagemap(bool level5pg) {
         uint64_t base   = _memmap[i].base;
         uint64_t length = _memmap[i].length;
         uint64_t top    = base + length;
+
+        if (base < 0x100000000)
+            base = 0x100000000;
+
+        if (base >= top)
+            continue;
 
         uint64_t aligned_base   = ALIGN_DOWN(base, PAGE_SIZE);
         uint64_t aligned_top    = ALIGN_UP(top, PAGE_SIZE);

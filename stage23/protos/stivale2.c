@@ -370,6 +370,20 @@ skip_modeset:;
     }
     }
 
+#if defined (bios)
+    //////////////////////////////////////////////
+    // Create PXE struct tag
+    //////////////////////////////////////////////
+    if (pxe) {
+        struct stivale2_struct_tag_pxe_server_info *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_pxe_server_info));
+        tag->tag.identifier = STIVALE2_STRUCT_TAG_PXE_SERVER_INFO;
+        tag->server_ip = get_boot_server_info();
+        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    }
+#else
+    (void)pxe;
+#endif
+
     //////////////////////////////////////////////
     // Create EFI system table struct tag
     //////////////////////////////////////////////
@@ -386,10 +400,11 @@ skip_modeset:;
 
     // Check if 5-level paging tag is requesting support
     bool level5pg_requested = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_5LV_PAGING_ID) ? true : false;
+    bool unmap_null = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_UNMAP_NULL_ID) ? true : false;
 
     pagemap_t pagemap = {0};
     if (bits == 64)
-        pagemap = stivale_build_pagemap(level5pg && level5pg_requested);
+        pagemap = stivale_build_pagemap(level5pg && level5pg_requested, unmap_null);
 
 #if defined (uefi)
     efi_exit_boot_services();
@@ -420,20 +435,6 @@ skip_modeset:;
         }
     }
     }
-
-#if defined (bios)
-    //////////////////////////////////////////////
-    // Create PXE struct tag
-    //////////////////////////////////////////////
-    if (pxe) {
-        struct stivale2_struct_tag_pxe_server_info *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_pxe_server_info));
-        tag->tag.identifier = STIVALE2_STRUCT_TAG_PXE_SERVER_INFO;
-        tag->server_ip = get_boot_server_info();
-        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
-    }
-#else
-    (void)pxe;
-#endif
 
     //////////////////////////////////////////////
     // Create memmap struct tag

@@ -31,14 +31,15 @@ pagemap_t new_pagemap(int lv) {
     return pagemap;
 }
 
-void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags) {
+void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags, bool hugepages) {
     // Calculate the indices in the various tables using the virtual address
     size_t pml5_entry = (virt_addr & ((uint64_t)0x1ff << 48)) >> 48;
     size_t pml4_entry = (virt_addr & ((uint64_t)0x1ff << 39)) >> 39;
     size_t pml3_entry = (virt_addr & ((uint64_t)0x1ff << 30)) >> 30;
     size_t pml2_entry = (virt_addr & ((uint64_t)0x1ff << 21)) >> 21;
+    size_t pml1_entry = (virt_addr & ((uint64_t)0x1ff << 12)) >> 12;
 
-    pt_entry_t *pml5, *pml4, *pml3, *pml2;
+    pt_entry_t *pml5, *pml4, *pml3, *pml2, *pml1;
 
     // Paging levels
     switch (pagemap.levels) {
@@ -58,8 +59,12 @@ level4:
     pml3 = get_next_level(pml4, pml4_entry);
     pml2 = get_next_level(pml3, pml3_entry);
 
-    // Set the entry as present and point it to the passed physical address
-    // Also set the specified flags
-    // We only use 2MiB pages else we would not have enough space
-    pml2[pml2_entry] = (pt_entry_t)(phys_addr | flags | (1 << 7));
+    if (hugepages) {
+        pml2[pml2_entry] = (pt_entry_t)(phys_addr | flags | (1 << 7));
+        return;
+    }
+
+    pml1 = get_next_level(pml2, pml2_entry);
+
+    pml1[pml1_entry] = (pt_entry_t)(phys_addr | flags | (1 << 7));
 }

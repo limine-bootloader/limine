@@ -218,15 +218,21 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null) {
     uint64_t higher_half_base = level5pg ? 0xff00000000000000 : 0xffff800000000000;
 
     // Map 0 to 2GiB at 0xffffffff80000000
-    for (uint64_t i = 0; i < 0x80000000; i += PAGE_SIZE) {
-        map_page(pagemap, 0xffffffff80000000 + i, i, 0x03);
+    for (uint64_t i = 0; i < 0x80000000; i += 0x200000) {
+        map_page(pagemap, 0xffffffff80000000 + i, i, 0x03, true);
     }
 
-    // Map 0 to 4GiB at higher half base and 0
-    for (uint64_t i = 0; i < 0x100000000; i += PAGE_SIZE) {
+    // Sub 2MiB mappings
+    for (uint64_t i = 0; i < 0x200000; i += 0x1000) {
         if (!(i == 0 && unmap_null))
-            map_page(pagemap, i, i, 0x03);
-        map_page(pagemap, higher_half_base + i, i, 0x03);
+            map_page(pagemap, i, i, 0x03, false);
+        map_page(pagemap, higher_half_base + i, i, 0x03, false);
+    }
+
+    // Map 2MiB to 4GiB at higher half base and 0
+    for (uint64_t i = 0x200000; i < 0x100000000; i += 0x200000) {
+        map_page(pagemap, i, i, 0x03, true);
+        map_page(pagemap, higher_half_base + i, i, 0x03, true);
     }
 
     size_t _memmap_entries = memmap_entries;
@@ -247,14 +253,14 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null) {
         if (base >= top)
             continue;
 
-        uint64_t aligned_base   = ALIGN_DOWN(base, PAGE_SIZE);
-        uint64_t aligned_top    = ALIGN_UP(top, PAGE_SIZE);
+        uint64_t aligned_base   = ALIGN_DOWN(base, 0x200000);
+        uint64_t aligned_top    = ALIGN_UP(top, 0x200000);
         uint64_t aligned_length = aligned_top - aligned_base;
 
-        for (uint64_t i = 0; i < aligned_length; i += PAGE_SIZE) {
+        for (uint64_t i = 0; i < aligned_length; i += 0x200000) {
             uint64_t page = aligned_base + i;
-            map_page(pagemap, page, page, 0x03);
-            map_page(pagemap, higher_half_base + page, page, 0x03);
+            map_page(pagemap, page, page, 0x03, true);
+            map_page(pagemap, higher_half_base + page, page, 0x03, true);
         }
     }
 

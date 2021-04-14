@@ -23,15 +23,15 @@ struct stivale2_header_tag_smp smp_request = {
     .flags = 0
 };
 
-struct stivale2_tag fb_mtrr_request = {
-    .identifier = STIVALE2_HEADER_TAG_FB_MTRR_ID,
+struct stivale2_tag unmap_null_request = {
+    .identifier = STIVALE2_HEADER_TAG_UNMAP_NULL_ID,
     .next       = (uint64_t)&smp_request
 };
 
 struct stivale2_header_tag_framebuffer framebuffer_request = {
     .tag = {
         .identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID,
-        .next       = (uint64_t)&fb_mtrr_request
+        .next       = (uint64_t)&unmap_null_request
     },
     .framebuffer_width  = 0,
     .framebuffer_height = 0,

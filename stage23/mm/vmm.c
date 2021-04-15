@@ -16,7 +16,7 @@ static pt_entry_t *get_next_level(pt_entry_t *current_level, size_t entry) {
         ret = (pt_entry_t *)(size_t)(current_level[entry] & ~((pt_entry_t)0xfff));
     } else {
         // Allocate a table for the next level
-        ret = ext_mem_alloc_aligned(PT_SIZE, PT_SIZE);
+        ret = ext_mem_alloc(PT_SIZE);
         // Present + writable + user (0b111)
         current_level[entry] = (pt_entry_t)(size_t)ret | 0b111;
     }
@@ -27,7 +27,7 @@ static pt_entry_t *get_next_level(pt_entry_t *current_level, size_t entry) {
 pagemap_t new_pagemap(int lv) {
     pagemap_t pagemap;
     pagemap.levels    = lv;
-    pagemap.top_level = ext_mem_alloc_aligned(PT_SIZE, PT_SIZE);
+    pagemap.top_level = ext_mem_alloc(PT_SIZE);
     return pagemap;
 }
 

@@ -65,7 +65,7 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
     // Prepare the trampoline
     static void *trampoline = NULL;
     if (trampoline == NULL) {
-        trampoline = conv_mem_alloc_aligned(trampoline_size, 4096);
+        trampoline = conv_mem_alloc(trampoline_size);
 
         memcpy(trampoline, _binary_smp_trampoline_bin_start, trampoline_size);
     }

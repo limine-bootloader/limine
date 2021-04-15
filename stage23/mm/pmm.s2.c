@@ -11,39 +11,40 @@
 #endif
 
 #define PAGE_SIZE   4096
-#define MEMMAP_BASE ((size_t)0x100000)
 #define MEMMAP_MAX_ENTRIES 256
-
-#define BUMP_ALLOC_LIMIT_HIGH 0x70000
-#define BUMP_ALLOC_LIMIT_LOW  0x1000
 
 #if defined (bios)
 extern symbol bss_end;
-size_t bump_allocator_base = (size_t)bss_end;
-size_t bump_allocator_limit = BUMP_ALLOC_LIMIT_HIGH;
 #endif
 
-#if defined (uefi)
-size_t bump_allocator_base = BUMP_ALLOC_LIMIT_HIGH;
-size_t bump_allocator_limit = BUMP_ALLOC_LIMIT_HIGH;
-#endif
+static bool allocations_disallowed = true;
+static void sanitise_entries(bool align_entries);
 
 void *conv_mem_alloc(size_t count) {
-    return conv_mem_alloc_aligned(count, 4);
-}
+    static uintptr_t base = 4096;
 
-void *conv_mem_alloc_aligned(size_t count, size_t alignment) {
-    size_t new_base = ALIGN_UP(bump_allocator_base, alignment);
-    void *ret = (void *)new_base;
-    new_base += count;
-    if (new_base >= bump_allocator_limit)
-        panic("Memory allocation failed");
-    bump_allocator_base = new_base;
+    if (allocations_disallowed)
+        panic("Memory allocations disallowed");
 
-    // Zero out allocated space
-    memset(ret, 0, count);
+    count = ALIGN_UP(count, 4096);
 
-    return ret;
+    for (;;) {
+        if (base + count > 0x100000)
+            panic("Conventional memory allocation failed");
+
+        if (memmap_alloc_range(base, count, MEMMAP_BOOTLOADER_RECLAIMABLE, true, false, false, false)) {
+            void *ret = (void *)base;
+            // Zero out allocated space
+            memset(ret, 0, count);
+            base += count;
+
+            sanitise_entries(false);
+
+            return ret;
+        }
+
+        base += 4096;
+    }
 }
 
 struct e820_entry_t memmap[MEMMAP_MAX_ENTRIES];
@@ -95,17 +96,6 @@ static bool align_entry(uint64_t *base, uint64_t *length) {
 
     if (!length)
         return false;
-
-    uint64_t top = *base + *length;
-
-    if (*base < MEMMAP_BASE) {
-        if (top > MEMMAP_BASE) {
-            *length -= MEMMAP_BASE - *base;
-            *base    = MEMMAP_BASE;
-        } else {
-            return false;
-        }
-    }
 
     return true;
 }
@@ -209,8 +199,6 @@ static void sanitise_entries(bool align_entries) {
     }
 }
 
-static bool allocations_disallowed = true;
-
 struct e820_entry_t *get_memmap(size_t *entries) {
     sanitise_entries(true);
 
@@ -231,9 +219,15 @@ void init_memmap(void) {
         memmap[memmap_entries++] = e820_map[i];
     }
 
+    // Allocate bootloader itself
+    memmap_alloc_range(4096,
+        ALIGN_UP((uintptr_t)bss_end, 4096) - 4096, MEMMAP_BOOTLOADER_RECLAIMABLE, true, true, false, false);
+
     sanitise_entries(false);
 
     allocations_disallowed = false;
+
+    print_memmap(memmap, memmap_entries);
 }
 #endif
 
@@ -293,30 +287,6 @@ void init_memmap(void) {
         memmap[memmap_entries].length = entry->NumberOfPages * 4096;
 
         memmap_entries++;
-
-        static size_t bump_alloc_pool_size = 0;
-
-        if (our_type != MEMMAP_USABLE || entry->PhysicalStart >= BUMP_ALLOC_LIMIT_HIGH)
-            continue;
-
-        size_t entry_pool_limit = entry->PhysicalStart + entry->NumberOfPages * 4096;
-        if (entry_pool_limit > BUMP_ALLOC_LIMIT_HIGH)
-            entry_pool_limit = BUMP_ALLOC_LIMIT_HIGH;
-
-        size_t entry_pool_start = entry->PhysicalStart;
-        if (entry_pool_start < BUMP_ALLOC_LIMIT_LOW)
-            entry_pool_start = BUMP_ALLOC_LIMIT_LOW;
-
-        if (entry_pool_start > entry_pool_limit)
-            continue;
-
-        size_t entry_pool_size = entry_pool_limit - entry_pool_start;
-
-        if (entry_pool_size > bump_alloc_pool_size) {
-            bump_allocator_base = entry_pool_start;
-            bump_allocator_limit = entry_pool_limit;
-            bump_alloc_pool_size = entry_pool_size;
-        }
     }
 
     sanitise_entries(false);
@@ -324,7 +294,7 @@ void init_memmap(void) {
     allocations_disallowed = false;
 
     // Let's leave 64MiB to the firmware
-    ext_mem_alloc_aligned_type(65536, 4096, MEMMAP_EFI_RECLAIMABLE);
+    ext_mem_alloc_type(65536, MEMMAP_EFI_RECLAIMABLE);
 
     // Now own all the usable entries
     for (size_t i = 0; i < memmap_entries; i++) {
@@ -339,13 +309,6 @@ void init_memmap(void) {
         if (status)
             panic("AllocatePages %x", status);
     }
-
-    memmap_alloc_range(bump_allocator_base,
-                       bump_allocator_limit - bump_allocator_base,
-                       MEMMAP_REMOVE_RANGE, true, true, false, false);
-
-    print("pmm: Conventional mem allocator base:  %X\n", bump_allocator_base);
-    print("pmm: Conventional mem allocator limit: %X\n", bump_allocator_limit);
 }
 
 void pmm_reclaim_uefi_mem(void) {
@@ -364,18 +327,12 @@ void *ext_mem_alloc(size_t count) {
     return ext_mem_alloc_type(count, MEMMAP_BOOTLOADER_RECLAIMABLE);
 }
 
-void *ext_mem_alloc_aligned(size_t count, size_t alignment) {
-    return ext_mem_alloc_aligned_type(count, alignment, MEMMAP_BOOTLOADER_RECLAIMABLE);
-}
-
-void *ext_mem_alloc_type(size_t count, uint32_t type) {
-    return ext_mem_alloc_aligned_type(count, 4, type);
-}
-
 // Allocate memory top down, hopefully without bumping into kernel or modules
-void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) {
+void *ext_mem_alloc_type(size_t count, uint32_t type) {
+    count = ALIGN_UP(count, 4096);
+
     if (allocations_disallowed)
-        panic("Extended memory allocations disallowed");
+        panic("Memory allocations disallowed");
 
     for (int i = memmap_entries - 1; i >= 0; i--) {
         if (memmap[i].type != 1)
@@ -391,7 +348,7 @@ void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type) 
                 continue;
         }
 
-        int64_t alloc_base = ALIGN_DOWN(entry_top - (int64_t)count, alignment);
+        int64_t alloc_base = ALIGN_DOWN(entry_top - (int64_t)count, 4096);
 
         // This entry is too small for us.
         if (alloc_base < entry_base)
@@ -419,18 +376,6 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
         return true;
 
     uint64_t top = base + length;
-
-#if defined (bios)
-    if (base < 0x100000) {
-        if (do_panic) {
-            // We don't do allocations below 1 MiB
-            panic("Attempt to allocate memory below 1 MiB (%X-%X)",
-                  base, base + length);
-        } else {
-            return false;
-        }
-    }
-#endif
 
     for (size_t i = 0; i < memmap_entries; i++) {
         if (free_only && memmap[i].type != MEMMAP_USABLE)

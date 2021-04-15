@@ -26,8 +26,7 @@ static bool cache_block(struct volume *volume, uint64_t block) {
 
     if (volume->cache == NULL)
         volume->cache =
-            ext_mem_alloc_aligned(BLOCK_SIZE_IN_SECTORS * volume->sector_size,
-                                  4096);
+            ext_mem_alloc(BLOCK_SIZE_IN_SECTORS * volume->sector_size);
 
     if (!disk_read_sectors(volume, volume->cache,
                            volume->first_sect + block * BLOCK_SIZE_IN_SECTORS,

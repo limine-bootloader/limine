@@ -538,23 +538,12 @@ void linux_load(char *config, char *cmdline) {
     size_t memmap_entries;
     struct e820_entry_t *memmap = get_memmap(&memmap_entries);
 
-    boot_params->e820_entries = memmap_entries + 1;
+    boot_params->e820_entries = memmap_entries;
 
-    size_t i = 0;
-
-    e820_table[i].addr = bump_allocator_base;
-    e820_table[i].size = bump_allocator_limit - bump_allocator_base;
-    e820_table[i].type = MEMMAP_USABLE;
-
-    i++;
-
-    for (size_t j = 0; j < memmap_entries; j++) {
-        if (memmap[j].type == MEMMAP_FRAMEBUFFER)
-            continue;
-
-        e820_table[i].addr = memmap[j].base;
-        e820_table[i].size = memmap[j].length;
-        e820_table[i].type = memmap[j].type;
+    for (size_t i = 0; i < memmap_entries; i++) {
+        e820_table[i].addr = memmap[i].base;
+        e820_table[i].size = memmap[i].length;
+        e820_table[i].type = memmap[i].type;
 
         switch (e820_table[i].type) {
             case MEMMAP_BOOTLOADER_RECLAIMABLE:
@@ -562,8 +551,6 @@ void linux_load(char *config, char *cmdline) {
                 e820_table[i].type = MEMMAP_USABLE;
                 break;
         }
-
-        i++;
     }
 
     ///////////////////////////////////////

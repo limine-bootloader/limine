@@ -70,6 +70,9 @@ enum {
 
 __attribute__((noreturn))
 void entry(uint8_t boot_drive, int boot_from) {
+    init_e820();
+    init_memmap();
+
     term_textmode();
 
     print("Limine " LIMINE_VERSION "\n\n");
@@ -78,9 +81,6 @@ void entry(uint8_t boot_drive, int boot_from) {
         panic("Could not enable A20 line");
 
     init_idt();
-
-    init_e820();
-    init_memmap();
 
     disk_create_index();
 

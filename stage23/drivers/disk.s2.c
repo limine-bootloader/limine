@@ -32,7 +32,7 @@ struct dap {
     uint64_t lba;
 };
 
-static struct dap *dap = NULL;
+static struct dap dap = {0};
 
 #define XFER_BUF_SIZE 16384
 static void *xfer_buf = NULL;
@@ -42,24 +42,19 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
         panic("XFER");
 
     if (xfer_buf == NULL)
-        xfer_buf = conv_mem_alloc_aligned(XFER_BUF_SIZE, 16);
+        xfer_buf = conv_mem_alloc(XFER_BUF_SIZE);
 
-    if (dap == NULL) {
-        dap = conv_mem_alloc(sizeof(struct dap));
-        dap->size = 16;
-    }
-
-    dap->count = count;
-
-    dap->segment = rm_seg(xfer_buf);
-    dap->offset  = rm_off(xfer_buf);
-    dap->lba     = block;
+    dap.size    = 16;
+    dap.count   = count;
+    dap.segment = rm_seg(xfer_buf);
+    dap.offset  = rm_off(xfer_buf);
+    dap.lba     = block;
 
     struct rm_regs r = {0};
     r.eax = 0x4200;
     r.edx = volume->drive;
-    r.esi = (uint32_t)rm_off(dap);
-    r.ds  = rm_seg(dap);
+    r.esi = (uint32_t)rm_off(&dap);
+    r.ds  = rm_seg(&dap);
 
     rm_int(0x13, &r, &r);
 
@@ -70,7 +65,7 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
                 return false;
             default:
                 panic("Disk error %x. Drive %x, LBA %x.",
-                      ah, volume->drive, dap->lba);
+                      ah, volume->drive, dap.lba);
         }
     }
 

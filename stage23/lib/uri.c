@@ -162,7 +162,7 @@ static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
         print("\nip: %x\n", ip);
     }
 
-    struct tftp_file_handle *cfg = conv_mem_alloc(sizeof(struct tftp_file_handle));
+    struct tftp_file_handle *cfg = ext_mem_alloc(sizeof(struct tftp_file_handle));
     if(tftp_open(cfg, ip, 69, path)) {
         return false;
     }
@@ -242,7 +242,7 @@ bool uri_open(struct file_handle *fd, char *uri) {
     if (compressed && ret) {
         struct file_handle compressed_fd = {0};
         fread(fd, &compressed_fd.size, fd->size - 4, sizeof(uint32_t));
-        compressed_fd.fd = ext_mem_alloc_aligned(compressed_fd.size, 4096);
+        compressed_fd.fd = ext_mem_alloc(compressed_fd.size);
         void *src = ext_mem_alloc(fd->size);
         fread(fd, src, 0, fd->size);
         if (tinf_gzip_uncompress(compressed_fd.fd, src, fd->size))

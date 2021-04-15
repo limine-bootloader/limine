@@ -11,7 +11,7 @@ struct e820_entry_t {
     uint32_t unused;
 } __attribute__((packed));
 
-extern struct e820_entry_t *e820_map;
+extern struct e820_entry_t e820_map[];
 extern size_t e820_entries;
 
 void init_e820(void);

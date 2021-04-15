@@ -17,9 +17,6 @@
 #define MEMMAP_FRAMEBUFFER            0x1002
 #define MEMMAP_EFI_RECLAIMABLE        0x2000
 
-extern size_t bump_allocator_base;
-extern size_t bump_allocator_limit;
-
 extern struct e820_entry_t memmap[];
 extern size_t memmap_entries;
 
@@ -30,11 +27,8 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
 
 void *ext_mem_alloc(size_t count);
 void *ext_mem_alloc_type(size_t count, uint32_t type);
-void *ext_mem_alloc_aligned(size_t count, size_t alignment);
-void *ext_mem_alloc_aligned_type(size_t count, size_t alignment, uint32_t type);
 
 void *conv_mem_alloc(size_t count);
-void *conv_mem_alloc_aligned(size_t count, size_t alignment);
 
 #if defined (uefi)
 void pmm_reclaim_uefi_mem(void);

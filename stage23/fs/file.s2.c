@@ -116,7 +116,7 @@ void *freadall(struct file_handle *fd, uint32_t type) {
         memmap_alloc_range((uint64_t)(size_t)fd->fd, fd->size, type, false, true, false, false);
         return fd->fd;
     } else {
-        void *ret = ext_mem_alloc_aligned_type(fd->size, 4096, type);
+        void *ret = ext_mem_alloc_type(fd->size, type);
         if (fd->read(fd->fd, ret, 0, fd->size)) {
             panic("freadall error");
         }

@@ -440,12 +440,12 @@ skip_modeset:;
     // Create memmap struct tag
     //////////////////////////////////////////////
     {
+    struct stivale2_struct_tag_memmap *tag =
+        ext_mem_alloc(sizeof(struct stivale2_struct_tag_memmap) +
+                       sizeof(struct e820_entry_t) * 256);
+
     size_t memmap_entries;
     struct e820_entry_t *memmap = get_memmap(&memmap_entries);
-
-    struct stivale2_struct_tag_memmap *tag =
-        conv_mem_alloc(sizeof(struct stivale2_struct_tag_memmap) +
-                       sizeof(struct e820_entry_t) * memmap_entries);
 
     tag->tag.identifier = STIVALE2_STRUCT_TAG_MEMMAP_ID;
     tag->entries = (uint64_t)memmap_entries;

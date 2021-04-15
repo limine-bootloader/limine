@@ -11,7 +11,10 @@
 #include <lib/real.h>
 
 struct edid_info_struct *get_edid_info(void) {
-    struct edid_info_struct *buf = conv_mem_alloc(sizeof(struct edid_info_struct));
+    static struct edid_info_struct *buf = NULL;
+
+    if (buf == NULL)
+        buf = conv_mem_alloc(sizeof(struct edid_info_struct));
 
     struct rm_regs r = {0};
 

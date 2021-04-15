@@ -216,7 +216,18 @@ void init_memmap(void) {
             panic("Memory map exhausted.");
         }
 
-        memmap[memmap_entries++] = e820_map[i];
+        memmap[memmap_entries] = e820_map[i];
+
+        if (memmap[memmap_entries].base < 0x1000) {
+            if (memmap[memmap_entries].base + memmap[memmap_entries].length <= 0x1000) {
+                continue;
+            }
+
+            memmap[memmap_entries].length -= 0x1000 - memmap[memmap_entries].base;
+            memmap[memmap_entries].base = 0x1000;
+        }
+
+        memmap_entries++;
     }
 
     // Allocate bootloader itself
@@ -226,8 +237,6 @@ void init_memmap(void) {
     sanitise_entries(false);
 
     allocations_disallowed = false;
-
-    print_memmap(memmap, memmap_entries);
 }
 #endif
 
@@ -285,6 +294,15 @@ void init_memmap(void) {
         memmap[memmap_entries].type = our_type;
         memmap[memmap_entries].base = entry->PhysicalStart;
         memmap[memmap_entries].length = entry->NumberOfPages * 4096;
+
+        if (memmap[memmap_entries].base < 0x1000) {
+            if (memmap[memmap_entries].base + memmap[memmap_entries].length <= 0x1000) {
+                continue;
+            }
+
+            memmap[memmap_entries].length -= 0x1000 - memmap[memmap_entries].base;
+            memmap[memmap_entries].base = 0x1000;
+        }
 
         memmap_entries++;
     }

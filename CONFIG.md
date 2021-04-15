@@ -3,7 +3,8 @@
 ## Location of the config file
 
 Limine scans for a config file on *the boot drive*. Every partition on the boot drive
-is scanned sequentially (first partition first, last partition last) for the presence of either a `/limine.cfg`, `/boot/limine.cfg`, or a `/EFI/BOOT/limine.cfg` file, in that order.
+is scanned sequentially (first partition first, last partition last) for the presence
+of either a `/limine.cfg`, `/boot/limine.cfg`, or a `/EFI/BOOT/limine.cfg` file, in that order.
 
 Once the file is located, Limine will use it as its config file. Other possible
 candidates in subsequent partitions or directories are ignored.
@@ -90,6 +91,7 @@ Some keys take *URIs* as values; these are described in the next section.
   The entries will be matched in order. E.g.: the 1st module path entry will be matched
   to the 1st module string entry that appear, and so on.
   * `RESOLUTION` - The resolution to be used should the kernel request a graphical framebuffer. This setting takes the form of `<width>x<height>x<bpp>` and *overrides* any resolution requested by the kernel, or automatic resolution requests. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
+  * `KASLR` - For relocatable kernels, if set to `no`, disable kernel address space layout randomisation. KASLR is enabled by default.
 * Chainload protocol:
   * `DRIVE` - The 1-based BIOS drive to chainload.
   * `PARTITION` - The 1-based BIOS partition to chainload, if omitted, chainload drive.

@@ -292,7 +292,7 @@ int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
     return 2;
 }
 
-int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t alloc_type) {
+int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t alloc_type, bool kaslr) {
     struct elf64_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
@@ -322,7 +322,8 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t a
     }
 
 again:
-    slide = rand64() & KASLR_SLIDE_BITMASK;
+    if (kaslr)
+        slide = rand64() & KASLR_SLIDE_BITMASK;
 
 final:
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
@@ -343,6 +344,8 @@ final:
         if (!memmap_alloc_range((size_t)load_vaddr, (size_t)phdr.p_memsz, alloc_type, true, false, simulation, false)) {
             if (++try_count == max_simulated_tries || simulation == false)
                 return -1;
+            if (!kaslr)
+                slide += 0x1000;
             goto again;
         }
 

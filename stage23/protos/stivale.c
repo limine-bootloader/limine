@@ -51,6 +51,11 @@ void stivale_load(char *config, char *cmdline) {
 
     bool level5pg = false;
 
+    char *kaslr_s = config_get_value(config, 0, "KASLR");
+    bool kaslr = true;
+    if (kaslr_s != NULL && strcmp(kaslr_s, "no") == 0)
+        kaslr = false;
+
     uint64_t slide = 0;
     uint64_t entry_point = 0;
 
@@ -67,7 +72,7 @@ void stivale_load(char *config, char *cmdline) {
                 level5pg = true;
             }
 
-            if (elf64_load(kernel, &entry_point, &slide, STIVALE_MMAP_KERNEL_AND_MODULES))
+            if (elf64_load(kernel, &entry_point, &slide, STIVALE_MMAP_KERNEL_AND_MODULES, kaslr))
                 panic("stivale: ELF64 load failure");
 
             ret = elf64_load_section(kernel, &stivale_hdr, ".stivalehdr", sizeof(struct stivale_header), slide);

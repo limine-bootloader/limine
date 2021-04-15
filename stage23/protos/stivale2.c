@@ -444,6 +444,9 @@ skip_modeset:;
         ext_mem_alloc(sizeof(struct stivale2_struct_tag_memmap) +
                        sizeof(struct e820_entry_t) * 256);
 
+    // Reserve 32K at 0x70000
+    memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, true, false, false);
+
     size_t memmap_entries;
     struct e820_entry_t *memmap = get_memmap(&memmap_entries);
 

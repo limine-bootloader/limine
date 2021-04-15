@@ -203,6 +203,9 @@ void stivale_load(char *config, char *cmdline) {
     bool want_5lv = level5pg && (stivale_hdr.flags & (1 << 1));
     pagemap_t pagemap = stivale_build_pagemap(want_5lv, false);
 
+    // Reserve 32K at 0x70000
+    memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, true, false, false);
+
     size_t memmap_entries;
     struct e820_entry_t *memmap = get_memmap(&memmap_entries);
 

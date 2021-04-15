@@ -83,9 +83,13 @@ limine-bios-clean: stage23-bios-clean decompressor-clean
 .PHONY: limine-uefi-clean
 limine-uefi-clean: stage23-uefi-clean
 
+.PHONY: distclean2
+distclean2: clean test-clean
+	rm -rf bin build toolchain ovmf gnu-efi
+
 .PHONY: distclean
-distclean: clean test-clean
-	rm -rf bin build stivale toolchain ovmf gnu-efi
+distclean: distclean2
+	rm -rf stivale
 
 stivale:
 	git clone https://github.com/stivale/stivale.git

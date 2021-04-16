@@ -4,7 +4,6 @@ OBJCOPY = objcopy
 PREFIX = /usr/local
 DESTDIR =
 
-OBJCOPY_ARCH = default
 LIMINE_HDD_BIN = limine-hdd.bin
 BUILD_DIR = $(shell realpath .)
 
@@ -26,11 +25,7 @@ install: all
 	install -m 644 BOOTX64.EFI "$(DESTDIR)$(PREFIX)/share/limine/"
 
 clean:
-	rm -f limine-hdd.o limine-install limine-install.exe
+	rm -f limine-install limine-install.exe
 
-limine-install: limine-install.c limine-hdd.o
-	$(CC) $(CFLAGS) -std=c11 $^ -o $@
-
-limine-hdd.o: $(shell echo "$(LIMINE_HDD_BIN)" | sed 's/ /\\ /g')
-	cd "`dirname $^`" && \
-	  $(OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) "`basename $^`" "$(BUILD_DIR)/$@"
+limine-install: limine-install.c inc.S $(LIMINE_HDD_BIN)
+	$(CC) $(CFLAGS) -std=c11 -DLIMINE_HDD_BIN='"$(LIMINE_HDD_BIN)"' limine-install.c inc.S -o $@

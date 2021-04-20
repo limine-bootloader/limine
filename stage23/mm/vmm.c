@@ -66,5 +66,5 @@ level4:
 
     pml1 = get_next_level(pml2, pml2_entry);
 
-    pml1[pml1_entry] = (pt_entry_t)(phys_addr | flags | (1 << 7));
+    pml1[pml1_entry] = (pt_entry_t)(phys_addr | flags);
 }

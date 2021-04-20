@@ -180,23 +180,6 @@ static void sanitise_entries(bool align_entries) {
             i--;
         }
     }
-
-    // Align bootloader-reclaimable entries
-    if (align_entries) {
-        for (size_t i = 0; i < memmap_entries; i++) {
-            if (memmap[i].type != MEMMAP_BOOTLOADER_RECLAIMABLE)
-                continue;
-
-            if (!align_entry(&memmap[i].base, &memmap[i].length)) {
-                // Eradicate from memmap
-                for (size_t j = i; j < memmap_entries - 1; j++) {
-                    memmap[j] = memmap[j+1];
-                }
-                memmap_entries--;
-                i--;
-            }
-        }
-    }
 }
 
 struct e820_entry_t *get_memmap(size_t *entries) {
@@ -403,24 +386,7 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
         uint64_t entry_top  = memmap[i].base + memmap[i].length;
         uint32_t entry_type = memmap[i].type;
 
-        if (type == MEMMAP_REMOVE_RANGE &&
-            base == entry_base && top == entry_top) {
-
-            if (simulation)
-                return true;
-
-            // Eradicate from memmap
-            for (size_t j = i; j < memmap_entries - 1; j++) {
-                memmap[j] = memmap[j+1];
-            }
-            memmap_entries--;
-
-            return true;
-        }
-
-        if (base >= entry_base && base <  entry_top &&
-            top  >= entry_base && top  <= entry_top) {
-
+        if (base >= entry_base && base < entry_top && top <= entry_top) {
             if (simulation)
                 return true;
 
@@ -428,42 +394,38 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
 
             memmap[i].length -= entry_top - base;
 
-            if (type != MEMMAP_REMOVE_RANGE) {
-                if (memmap[i].length == 0) {
-                    target = &memmap[i];
-                } else {
-                    if (memmap_entries >= MEMMAP_MAX_ENTRIES)
-                        panic("Memory map exhausted.");
+            if (memmap[i].length == 0) {
+                target = &memmap[i];
+            } else {
+                if (memmap_entries >= MEMMAP_MAX_ENTRIES)
+                    panic("Memory map exhausted.");
 
-                    target = &memmap[memmap_entries++];
-                }
-
-                target->type   = type;
-                target->base   = base;
-                target->length = length;
+                target = &memmap[memmap_entries++];
             }
 
-            if (top < entry_top) {
-                if (memmap[i].length == 0) {
-                    target = &memmap[i];
-                } else {
-                    if (memmap_entries >= MEMMAP_MAX_ENTRIES)
-                        panic("Memory map exhausted.");
+            target->type   = type;
+            target->base   = base;
+            target->length = length;
 
-                    target = &memmap[memmap_entries++];
-                }
+            if (top < entry_top) {
+                if (memmap_entries >= MEMMAP_MAX_ENTRIES)
+                    panic("Memory map exhausted.");
+
+                target = &memmap[memmap_entries++];
 
                 target->type   = entry_type;
                 target->base   = top;
                 target->length = entry_top - top;
             }
 
+            sanitise_entries(false);
+
             return true;
         }
     }
 
     if (!new_entry && do_panic)
-        panic("Out of memory");
+        panic("Memory allocation failure.");
 
     if (new_entry) {
         if (memmap_entries >= MEMMAP_MAX_ENTRIES)
@@ -474,6 +436,10 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
         target->type = type;
         target->base = base;
         target->length = length;
+
+        sanitise_entries(false);
+
+        return true;
     }
 
     return false;

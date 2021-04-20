@@ -6,7 +6,6 @@
 #include <stdbool.h>
 #include <sys/e820.h>
 
-#define MEMMAP_REMOVE_RANGE           0
 #define MEMMAP_USABLE                 1
 #define MEMMAP_RESERVED               2
 #define MEMMAP_ACPI_RECLAIMABLE       3

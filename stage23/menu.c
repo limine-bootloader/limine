@@ -397,6 +397,7 @@ refresh:
             new_body = config_entry_editor("");
         selected_menu_entry = ext_mem_alloc(sizeof(struct menu_entry));
         selected_menu_entry->body = new_body;
+        config_ready = true;
         goto autoboot;
     }
 

@@ -137,9 +137,9 @@ int init_config(size_t config_size) {
         }
     }
 
-    menu_tree = create_menu_tree(NULL, 1, 0);
-
     config_ready = true;
+
+    menu_tree = create_menu_tree(NULL, 1, 0);
 
     return 0;
 }

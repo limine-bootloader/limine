@@ -145,6 +145,9 @@ int init_config(size_t config_size) {
 }
 
 bool config_get_entry_name(char *ret, size_t index, size_t limit) {
+    if (!config_ready)
+        return false;
+
     char *p = config_addr;
 
     for (size_t i = 0; i <= index; i++) {
@@ -172,6 +175,9 @@ bool config_get_entry_name(char *ret, size_t index, size_t limit) {
 }
 
 char *config_get_entry(size_t *size, size_t index) {
+    if (!config_ready)
+        return NULL;
+
     char *ret;
     char *p = config_addr;
 

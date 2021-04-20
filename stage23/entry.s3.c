@@ -67,18 +67,13 @@ __attribute__((section(".stage3_entry")))
 #endif
 __attribute__((noreturn))
 void stage3_common(void) {
-    bool got_config = false;
     volume_iterate_parts(boot_volume,
         if (!init_config_disk(_PART)) {
             print("Config file found and loaded.\n");
             boot_volume = _PART;
-            got_config = true;
             break;
         }
     );
-
-    if (!got_config)
-        panic("Config file not found.");
 
     print("Boot drive: %x\n", boot_volume->drive);
     print("Boot partition: %d\n", boot_volume->partition);

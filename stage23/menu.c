@@ -85,7 +85,9 @@ static char *config_entry_editor(const char *orig_entry) {
     if (entry_size >= EDITOR_MAX_BUFFER_SIZE)
         panic("Entry is too big to be edited.");
 
-    char *buffer = ext_mem_alloc(EDITOR_MAX_BUFFER_SIZE);
+    static char *buffer = NULL;
+    if (buffer == NULL)
+        buffer = ext_mem_alloc(EDITOR_MAX_BUFFER_SIZE);
     memcpy(buffer, orig_entry, entry_size);
     buffer[entry_size] = 0;
 
@@ -327,9 +329,6 @@ char *menu(char **cmdline) {
     if (menu_branding == NULL)
         menu_branding = "Limine " LIMINE_VERSION;
 
-    if (menu_tree == NULL)
-        panic("Config contains no valid entries.");
-
     bool skip_timeout = false;
     struct menu_entry *selected_menu_entry = NULL;
 
@@ -385,6 +384,21 @@ char *menu(char **cmdline) {
 refresh:
     clear(true);
     print("\n\n  \e[36m %s \e[37m\n\n\n", menu_branding);
+
+    if (menu_tree == NULL) {
+        print("Config file %s.\n\n", config_ready ? "contains no valid entries" : "not found");
+        print("For information on the format of Limine config entries, consult CONFIG.md in\n");
+        print("the root of the Limine source repository.\n\n");
+        print("Press a key to enter an editor session and manually define a config entry...");
+        term_double_buffer_flush();
+        getchar();
+        char *new_body = NULL;
+        while (new_body == NULL)
+            new_body = config_entry_editor("");
+        selected_menu_entry = ext_mem_alloc(sizeof(struct menu_entry));
+        selected_menu_entry->body = new_body;
+        goto autoboot;
+    }
 
     print("Select an entry:\n\n");
 

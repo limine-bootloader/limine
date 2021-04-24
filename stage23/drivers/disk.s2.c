@@ -78,7 +78,12 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
 void disk_create_index(void) {
     size_t volume_count = 0;
 
-    for (uint8_t drive = 0x80; drive; drive++) {
+    for (uint8_t drive = 0x80; ; drive++) {
+        if (drive == 0x90)
+            drive = 0xe0;
+        else if (drive == 0xf0)
+            break;
+
         struct rm_regs r = {0};
         struct bios_drive_params drive_params;
 
@@ -132,7 +137,12 @@ void disk_create_index(void) {
 
     volume_index = ext_mem_alloc(sizeof(struct volume) * volume_count);
 
-    for (uint8_t drive = 0x80; drive; drive++) {
+    for (uint8_t drive = 0x80; ; drive++) {
+        if (drive == 0x90)
+            drive = 0xe0;
+        else if (drive == 0xf0)
+            break;
+
         struct rm_regs r = {0};
         struct bios_drive_params drive_params;
 

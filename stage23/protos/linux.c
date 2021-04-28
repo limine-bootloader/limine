@@ -13,6 +13,7 @@
 #include <sys/idt.h>
 #include <lib/fb.h>
 #include <lib/acpi.h>
+#include <drivers/edid.h>
 
 __attribute__((noreturn)) void linux_spinup(void *entry, void *boot_params);
 
@@ -515,6 +516,12 @@ void linux_load(char *config, char *cmdline) {
 #elif defined (uefi)
     screen_info->orig_video_isVGA = VIDEO_TYPE_EFI;
 #endif
+
+    struct edid_info_struct *edid_info = get_edid_info();
+
+    if (edid_info != NULL) {
+        memcpy(&boot_params->edid_info, edid_info, sizeof(struct edid_info_struct));
+    }
 
     ///////////////////////////////////////
     // RSDP

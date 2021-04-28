@@ -144,6 +144,14 @@ void stivale2_main(struct stivale2_struct *info) {
                 e9_printf("    RSDP: %x", r->rsdp);
                 break;
             }
+            case STIVALE2_STRUCT_TAG_SMBIOS_ID: {
+                struct stivale2_struct_tag_smbios *r = (struct stivale2_struct_tag_smbios *)tag;
+                e9_puts("SMBIOS tag:");
+                e9_printf("    Flags: %x", r->flags);
+                e9_printf("    SMBIOS 32-bit entry point: %x", r->smbios_entry_32);
+                e9_printf("    SMBIOS 64-bit entry point: %x", r->smbios_entry_64);
+                break;
+            }
             case STIVALE2_STRUCT_TAG_EPOCH_ID: {
                 struct stivale2_struct_tag_epoch *e = (struct stivale2_struct_tag_epoch *)tag;
                 e9_puts("Epoch tag:");

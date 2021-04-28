@@ -31,6 +31,7 @@ void stivale_load(char *config, char *cmdline) {
 #endif
 
     stivale_struct.flags |= (1 << 1);    // we give colour information
+    stivale_struct.flags |= (1 << 2);    // we give SMBIOS information
 
     struct file_handle *kernel_file = ext_mem_alloc(sizeof(struct file_handle));
 
@@ -155,6 +156,9 @@ void stivale_load(char *config, char *cmdline) {
     }
 
     stivale_struct.rsdp = (uint64_t)(size_t)acpi_get_rsdp();
+
+    acpi_get_smbios((void **)&stivale_struct.smbios_entry_32,
+                    (void **)&stivale_struct.smbios_entry_64);
 
     stivale_struct.cmdline = (uint64_t)(size_t)cmdline;
 

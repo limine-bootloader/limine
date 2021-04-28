@@ -242,6 +242,19 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     }
 
     //////////////////////////////////////////////
+    // Create SMBIOS struct tag
+    //////////////////////////////////////////////
+    {
+    struct stivale2_struct_tag_smbios *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_smbios));
+    tag->tag.identifier = STIVALE2_STRUCT_TAG_SMBIOS_ID;
+
+    acpi_get_smbios((void **)&tag->smbios_entry_32,
+                    (void **)&tag->smbios_entry_64);
+
+    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    }
+
+    //////////////////////////////////////////////
     // Create cmdline struct tag
     //////////////////////////////////////////////
     {

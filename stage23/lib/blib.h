@@ -15,6 +15,8 @@ extern EFI_SYSTEM_TABLE *gST;
 extern EFI_BOOT_SERVICES *gBS;
 extern EFI_RUNTIME_SERVICES *gRT;
 extern EFI_HANDLE efi_image_handle;
+extern EFI_MEMORY_DESCRIPTOR *efi_mmap;
+extern UINTN efi_mmap_size, efi_desc_size, efi_desc_ver;
 
 extern bool efi_boot_services_exited;
 bool efi_exit_boot_services(void);

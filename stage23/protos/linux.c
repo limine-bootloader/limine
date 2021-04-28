@@ -530,9 +530,18 @@ void linux_load(char *config, char *cmdline) {
     boot_params->acpi_rsdp_addr = (uintptr_t)acpi_get_rsdp();
 
     ///////////////////////////////////////
-    // Jettison UEFI
+    // UEFI
     ///////////////////////////////////////
 #if defined (uefi)
+    memcpy(&boot_params->efi_info.efi_loader_signature, "EL64", 4);
+    boot_params->efi_info.efi_systab          = (uint32_t)(uintptr_t)gST;
+    boot_params->efi_info.efi_systab_hi       = (uint32_t)((uintptr_t)gST >> 32);
+    boot_params->efi_info.efi_memmap          = (uint32_t)(uintptr_t)efi_mmap;
+    boot_params->efi_info.efi_memmap_hi       = (uint32_t)((uintptr_t)efi_mmap >> 32);
+    boot_params->efi_info.efi_memmap_size     = efi_mmap_size;
+    boot_params->efi_info.efi_memdesc_size    = efi_desc_size;
+    boot_params->efi_info.efi_memdesc_version = efi_desc_ver;
+
     efi_exit_boot_services();
 #endif
 

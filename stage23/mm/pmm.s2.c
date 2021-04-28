@@ -228,26 +228,24 @@ void init_memmap(void) {
     EFI_STATUS status;
 
     EFI_MEMORY_DESCRIPTOR tmp_mmap[1];
-    UINTN mmap_size = sizeof(tmp_mmap);
-    UINTN mmap_key = 0, desc_size = 0, desc_ver = 0;
+    efi_mmap_size = sizeof(tmp_mmap);
+    UINTN mmap_key = 0;
 
     status = uefi_call_wrapper(gBS->GetMemoryMap, 5,
-        &mmap_size, tmp_mmap, &mmap_key, &desc_size, &desc_ver);
+        &efi_mmap_size, tmp_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
 
-    EFI_MEMORY_DESCRIPTOR *efi_mmap;
-
-    mmap_size += 4096;
+    efi_mmap_size += 4096;
 
     status = uefi_call_wrapper(gBS->AllocatePool, 3,
-        EfiLoaderData, mmap_size, &efi_mmap);
+        EfiLoaderData, efi_mmap_size, &efi_mmap);
 
     status = uefi_call_wrapper(gBS->GetMemoryMap, 5,
-        &mmap_size, efi_mmap, &mmap_key, &desc_size, &desc_ver);
+        &efi_mmap_size, efi_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
 
-    size_t entry_count = mmap_size / desc_size;
+    size_t entry_count = efi_mmap_size / efi_desc_size;
 
     for (size_t i = 0; i < entry_count; i++) {
-        EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * desc_size;
+        EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
 
         uint32_t our_type;
         switch (entry->Type) {

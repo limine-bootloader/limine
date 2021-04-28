@@ -14,6 +14,8 @@ EFI_SYSTEM_TABLE *gST;
 EFI_BOOT_SERVICES *gBS;
 EFI_RUNTIME_SERVICES *gRT;
 EFI_HANDLE efi_image_handle;
+EFI_MEMORY_DESCRIPTOR *efi_mmap = NULL;
+UINTN efi_mmap_size = 0, efi_desc_size = 0, efi_desc_ver = 0;
 #endif
 
 bool parse_resolution(int *width, int *height, int *bpp, const char *buf) {

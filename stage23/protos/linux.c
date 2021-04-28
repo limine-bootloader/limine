@@ -416,7 +416,7 @@ void linux_load(char *config, char *cmdline) {
     print("linux: Loading kernel...\n");
     for (;;) {
         if (memmap_alloc_range(kernel_load_addr,
-                kernel->size - real_mode_code_size,
+                ALIGN_UP(kernel->size - real_mode_code_size, 4096),
                 MEMMAP_BOOTLOADER_RECLAIMABLE, true, false, false, false))
             break;
 
@@ -450,7 +450,7 @@ void linux_load(char *config, char *cmdline) {
     modules_mem_base = ALIGN_DOWN(modules_mem_base, 4096);
 
     for (;;) {
-        if (memmap_alloc_range(modules_mem_base, size_of_all_modules,
+        if (memmap_alloc_range(modules_mem_base, ALIGN_UP(size_of_all_modules, 4096),
                                MEMMAP_BOOTLOADER_RECLAIMABLE, true, false, false, false))
             break;
         modules_mem_base -= 4096;

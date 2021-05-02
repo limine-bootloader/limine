@@ -71,6 +71,12 @@ ifeq ($(TARGET), bios)
 endif
 
 ifeq ($(TARGET), uefi)
+	INTERNAL_CFLAGS32 := \
+		$(INTERNAL_CFLAGS) \
+		-m32 \
+		-march=i386 \
+		-fpie
+
 	INTERNAL_CFLAGS += \
 		-m64 \
 		-march=x86-64 \
@@ -78,12 +84,6 @@ ifeq ($(TARGET), uefi)
 		-I../gnu-efi/inc/x86_64 \
 		-fpie \
 		-mno-red-zone
-
-	INTERNAL_CFLAGS32 := \
-		$(INTERNAL_CFLAGS) \
-		-m32 \
-		-march=i386 \
-		-fpie
 endif
 
 LDFLAGS = -O3 -g
@@ -98,19 +98,23 @@ ifeq ($(TARGET), bios)
 	INTERNAL_LDFLAGS += \
 		-m32 \
 		-march=i386 \
+		-fno-pie \
 		-Wl,-melf_i386 \
 		-static \
-		-no-pie \
-		-fno-pie
+		-no-pie
 endif
 
 ifeq ($(TARGET), uefi)
 	INTERNAL_LDFLAGS += \
 		-m64 \
 		-march=x86-64 \
+		-fpie \
 		-Wl,-melf_x86_64 \
-		-static-pie \
-		-fpie
+		-Wl,-static \
+		-Wl,-pie \
+		-Wl,--no-dynamic-linker \
+		-z text \
+		-static-pie
 endif
 
 .PHONY: all clean builddir

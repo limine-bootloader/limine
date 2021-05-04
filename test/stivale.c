@@ -12,12 +12,13 @@ struct stivale_header header = {
     .framebuffer_bpp    = 0,
     .framebuffer_width  = 0,
     .framebuffer_height = 0,
-    .flags              = 1,
+    .flags              = 1 | (1 << 3),
     .entry_point        = (uint64_t)(uintptr_t)stivale_main
 };
 
 void stivale_main(struct stivale_struct *info) {
-    // Print some info.
+    e9_printf("Stivale struct at %x", info);
+
     e9_puts("Stivale information passed to the kernel:");
     e9_printf("Cmdline: %s", (char*)info->cmdline);
     e9_printf("Memory map at %x with contents:", info->memory_map_addr);
@@ -55,7 +56,7 @@ void stivale_main(struct stivale_struct *info) {
     struct stivale_module *modules = ((struct stivale_module *)(info->modules));
     for (size_t i = 0; i < info->module_count; i++) {
         struct stivale_module e = *modules;
-        e9_printf("\tModule %d: [%x+%x] %s", i, e.begin, e.end, e.string);
+        e9_printf("\tModule %d: [%x->%x] %s", i, e.begin, e.end, e.string);
         modules = (struct stivale_module *)e.next;
     }
 

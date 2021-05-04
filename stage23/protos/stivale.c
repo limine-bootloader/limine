@@ -22,6 +22,10 @@
 #include <stivale/stivale.h>
 #include <drivers/vga_textmode.h>
 
+#define REPORTED_ADDR(PTR) \
+    ((PTR) + ((stivale_hdr.flags & (1 << 3)) ? \
+    (want_5lv ? 0xff00000000000000 : 0xffff800000000000) : 0))
+
 struct stivale_struct stivale_struct = {0};
 
 void stivale_load(char *config, char *cmdline) {
@@ -105,6 +109,9 @@ void stivale_load(char *config, char *cmdline) {
             panic("stivale: Section .stivalehdr is smaller than size of the struct.");
     }
 
+    bool want_5lv = level5pg && (stivale_hdr.flags & (1 << 1));
+    pagemap_t pagemap = stivale_build_pagemap(want_5lv, false);
+
     if (stivale_hdr.entry_point != 0)
         entry_point = stivale_hdr.entry_point;
 
@@ -141,11 +148,11 @@ void stivale_load(char *config, char *cmdline) {
         if (!uri_open(&f, module_path))
             panic("Requested module with path \"%s\" not found!", module_path);
 
-        m->begin = (uint64_t)(size_t)freadall(&f, STIVALE_MMAP_KERNEL_AND_MODULES);
+        m->begin = REPORTED_ADDR((uint64_t)(size_t)freadall(&f, STIVALE_MMAP_KERNEL_AND_MODULES));
         m->end   = m->begin + f.size;
         m->next  = 0;
 
-        *prev_mod_ptr = (uint64_t)(size_t)m;
+        *prev_mod_ptr = REPORTED_ADDR((uint64_t)(size_t)m);
         prev_mod_ptr  = &m->next;
 
         print("stivale: Requested module %u:\n", i);
@@ -155,12 +162,20 @@ void stivale_load(char *config, char *cmdline) {
         print("         End:    %X\n", m->end);
     }
 
-    stivale_struct.rsdp = (uint64_t)(size_t)acpi_get_rsdp();
+    uint64_t rsdp = (uint64_t)(size_t)acpi_get_rsdp();
 
-    acpi_get_smbios((void **)&stivale_struct.smbios_entry_32,
-                    (void **)&stivale_struct.smbios_entry_64);
+    if (rsdp)
+        stivale_struct.rsdp = REPORTED_ADDR(rsdp);
 
-    stivale_struct.cmdline = (uint64_t)(size_t)cmdline;
+    uint64_t smbios_entry_32 = 0, smbios_entry_64 = 0;
+    acpi_get_smbios((void **)&smbios_entry_32, (void **)&smbios_entry_64);
+
+    if (smbios_entry_32)
+        stivale_struct.smbios_entry_32 = REPORTED_ADDR(smbios_entry_32);
+    if (smbios_entry_64)
+        stivale_struct.smbios_entry_64 = REPORTED_ADDR(smbios_entry_64);
+
+    stivale_struct.cmdline = REPORTED_ADDR((uint64_t)(size_t)cmdline);
 
     stivale_struct.epoch = time();
     print("stivale: Current epoch: %U\n", stivale_struct.epoch);
@@ -184,7 +199,7 @@ void stivale_load(char *config, char *cmdline) {
                            (uint64_t)fbinfo.framebuffer_pitch * fbinfo.framebuffer_height,
                            MEMMAP_FRAMEBUFFER, false, false, false, true);
 
-        stivale_struct.framebuffer_addr    = (uint64_t)fbinfo.framebuffer_addr;
+        stivale_struct.framebuffer_addr    = REPORTED_ADDR((uint64_t)fbinfo.framebuffer_addr);
         stivale_struct.framebuffer_width   = fbinfo.framebuffer_width;
         stivale_struct.framebuffer_height  = fbinfo.framebuffer_height;
         stivale_struct.framebuffer_bpp     = fbinfo.framebuffer_bpp;
@@ -209,9 +224,6 @@ void stivale_load(char *config, char *cmdline) {
     efi_exit_boot_services();
 #endif
 
-    bool want_5lv = level5pg && (stivale_hdr.flags & (1 << 1));
-    pagemap_t pagemap = stivale_build_pagemap(want_5lv, false);
-
     // Reserve 32K at 0x70000
     memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, true, false, false);
 
@@ -219,10 +231,11 @@ void stivale_load(char *config, char *cmdline) {
     struct e820_entry_t *memmap = get_memmap(&memmap_entries);
 
     stivale_struct.memory_map_entries = (uint64_t)memmap_entries;
-    stivale_struct.memory_map_addr    = (uint64_t)(size_t)memmap;
+    stivale_struct.memory_map_addr    = REPORTED_ADDR((uint64_t)(size_t)memmap);
 
     stivale_spinup(bits, want_5lv, &pagemap,
-                   entry_point, &stivale_struct, stivale_hdr.stack);
+                   entry_point, REPORTED_ADDR((uint64_t)(uintptr_t)&stivale_struct),
+                   stivale_hdr.stack);
 }
 
 pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null) {
@@ -286,11 +299,12 @@ extern symbol ImageBase;
 __attribute__((noreturn)) void stivale_spinup_32(
                  int bits, bool level5pg, uint32_t pagemap_top_lv,
                  uint32_t entry_point_lo, uint32_t entry_point_hi,
-                 void *stivale_struct, uint32_t stack_lo, uint32_t stack_hi);
+                 uint32_t stivale_struct_lo, uint32_t stivale_struct_hi,
+                 uint32_t stack_lo, uint32_t stack_hi);
 
 __attribute__((noreturn)) void stivale_spinup(
                  int bits, bool level5pg, pagemap_t *pagemap,
-                 uint64_t entry_point, void *stivale_struct, uint64_t stack) {
+                 uint64_t entry_point, uint64_t stivale_struct, uint64_t stack) {
 #if defined (bios)
     if (bits == 64) {
         // If we're going 64, we might as well call this BIOS interrupt
@@ -307,17 +321,17 @@ __attribute__((noreturn)) void stivale_spinup(
     pic_flush();
 
 #if defined (uefi)
-    do_32(stivale_spinup_32, 8,
+    do_32(stivale_spinup_32, 9,
         bits, level5pg, (uint32_t)(uintptr_t)pagemap->top_level,
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
-        stivale_struct,
+        (uint32_t)stivale_struct, (uint32_t)(stivale_struct >> 32),
         (uint32_t)stack, (uint32_t)(stack >> 32));
 #endif
 
 #if defined (bios)
     stivale_spinup_32(bits, level5pg, (uint32_t)(uintptr_t)pagemap->top_level,
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
-        stivale_struct,
+        (uint32_t)stivale_struct, (uint32_t)(stivale_struct >> 32),
         (uint32_t)stack, (uint32_t)(stack >> 32));
 #endif
 

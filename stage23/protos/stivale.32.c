@@ -6,11 +6,13 @@
 __attribute__((noreturn)) void stivale_spinup_32(
                  int bits, bool level5pg, uint32_t pagemap_top_lv,
                  uint32_t entry_point_lo, uint32_t entry_point_hi,
-                 void *stivale_struct, uint32_t stack_lo, uint32_t stack_hi) {
-    uint64_t entry_point =
-        (uint64_t)entry_point_lo | ((uint64_t)entry_point_hi << 32);
-    uint64_t stack =
-        (uint64_t)stack_lo | ((uint64_t)stack_hi << 32);
+                 uint32_t stivale_struct_lo, uint32_t stivale_struct_hi,
+                 uint32_t stack_lo, uint32_t stack_hi) {
+    uint64_t casted_to_64[] = {
+        (uint64_t)stivale_struct_lo | ((uint64_t)stivale_struct_hi << 32),
+        (uint64_t)entry_point_lo | ((uint64_t)entry_point_hi << 32),
+        (uint64_t)stack_lo | ((uint64_t)stack_hi << 32)
+    };
 
     if (bits == 64) {
         if (level5pg) {
@@ -52,14 +54,15 @@ __attribute__((noreturn)) void stivale_spinup_32(
 
             // Since we don't really know what is now present in the upper
             // 32 bits of the 64 bit registers, clear up the upper bits
-            // of the registers we use to store stack pointer and instruction
-            // pointer
+            // of the register that points to the 64-bit casted value array.
             "mov esi, esi\n\t"
-            "mov ebx, ebx\n\t"
-            "mov edi, edi\n\t"
+
+            // Move in 64-bit values
+            "mov rdi, qword ptr [rsi + 0]\n\t"
+            "mov rbx, qword ptr [rsi + 8]\n\t"
+            "mov rsi, qword ptr [rsi + 16]\n\t"
 
             // Let's pretend we push a return address
-            "mov rsi, qword ptr [rsi]\n\t"
             "test rsi, rsi\n\t"
             "jz 1f\n\t"
 
@@ -71,7 +74,7 @@ __attribute__((noreturn)) void stivale_spinup_32(
             "push rsi\n\t"
             "pushfq\n\t"
             "push 0x28\n\t"
-            "push [rbx]\n\t"
+            "push rbx\n\t"
 
             "xor rax, rax\n\t"
             "xor rbx, rbx\n\t"
@@ -91,8 +94,7 @@ __attribute__((noreturn)) void stivale_spinup_32(
             "iretq\n\t"
             ".code32\n\t"
             :
-            : "a" (pagemap_top_lv), "b" (&entry_point),
-              "D" (stivale_struct), "S" (&stack)
+            : "a" (pagemap_top_lv), "S" (casted_to_64)
             : "memory"
         );
     } else if (bits == 32) {
@@ -100,13 +102,13 @@ __attribute__((noreturn)) void stivale_spinup_32(
             "cli\n\t"
             "cld\n\t"
 
-            "mov esp, dword ptr [esi]\n\t"
+            "mov esp, esi\n\t"
             "push edi\n\t"
             "push 0\n\t"
 
             "pushfd\n\t"
             "push 0x18\n\t"
-            "push [ebx]\n\t"
+            "push ebx\n\t"
 
             "xor eax, eax\n\t"
             "xor ebx, ebx\n\t"
@@ -118,7 +120,9 @@ __attribute__((noreturn)) void stivale_spinup_32(
 
             "iret\n\t"
             :
-            : "b"(&entry_point), "D"(stivale_struct), "S"(&stack)
+            : "D" ((uint32_t)casted_to_64[0]),
+              "b" ((uint32_t)casted_to_64[1]),
+              "S" ((uint32_t)casted_to_64[2])
             : "memory"
         );
     }

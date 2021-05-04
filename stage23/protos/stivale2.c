@@ -494,5 +494,5 @@ skip_modeset:;
     term_write("\e[2J\e[H", 7);
 
     stivale_spinup(bits, level5pg && level5pg_requested, &pagemap,
-                   entry_point, &stivale2_struct, stivale2_hdr.stack);
+                   entry_point, (uint64_t)(uintptr_t)&stivale2_struct, stivale2_hdr.stack);
 }

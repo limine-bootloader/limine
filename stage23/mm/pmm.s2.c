@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <mm/pmm.h>
 #include <sys/e820.h>
+#include <lib/acpi.h>
 #include <lib/blib.h>
 #include <lib/libc.h>
 #include <lib/print.h>
@@ -201,13 +202,29 @@ void init_memmap(void) {
 
         memmap[memmap_entries] = e820_map[i];
 
-        if (memmap[memmap_entries].base < 0x1000) {
-            if (memmap[memmap_entries].base + memmap[memmap_entries].length <= 0x1000) {
-                continue;
+        uint64_t top = memmap[memmap_entries].base + memmap[memmap_entries].length;
+
+        if (memmap[memmap_entries].type == MEMMAP_USABLE) {
+            if (memmap[memmap_entries].base < 0x1000) {
+                if (top <= 0x1000) {
+                    continue;
+                }
+
+                memmap[memmap_entries].length -= 0x1000 - memmap[memmap_entries].base;
+                memmap[memmap_entries].base = 0x1000;
             }
 
-            memmap[memmap_entries].length -= 0x1000 - memmap[memmap_entries].base;
-            memmap[memmap_entries].base = 0x1000;
+            if (memmap[memmap_entries].base >= EBDA && memmap[memmap_entries].base < 0x100000) {
+                if (top <= 0x100000)
+                    continue;
+
+                memmap[memmap_entries].length -= 0x100000 - memmap[memmap_entries].base;
+                memmap[memmap_entries].base = 0x100000;
+            }
+
+            if (top > EBDA && top <= 0x100000) {
+                memmap[memmap_entries].length -= top - EBDA;
+            }
         }
 
         memmap_entries++;

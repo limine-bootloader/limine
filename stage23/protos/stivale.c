@@ -109,6 +109,10 @@ void stivale_load(char *config, char *cmdline) {
             panic("stivale: Section .stivalehdr is smaller than size of the struct.");
     }
 
+    if ((stivale_hdr.flags & (1 << 3)) && bits == 32) {
+        panic("stivale: Higher half addresses header flag not supported in 32-bit mode.");
+    }
+
     bool want_5lv = level5pg && (stivale_hdr.flags & (1 << 1));
 
     if (stivale_hdr.entry_point != 0)

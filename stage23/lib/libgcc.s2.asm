@@ -45,7 +45,7 @@ __udivmoddi4:
     xor edx, edx
     ret
 
-global __udivmoddi4
+global __divmoddi4
 __divmoddi4:
     mov eax, dword [esp+4]
     mov edx, dword [esp+8]

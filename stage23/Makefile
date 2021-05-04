@@ -110,10 +110,7 @@ ifeq ($(TARGET), uefi)
 		-march=x86-64 \
 		-fpie \
 		-Wl,-melf_x86_64 \
-		-Wl,-static \
-		-Wl,-pie \
-		-Wl,--no-dynamic-linker \
-		-z text \
+		-Wl,-static,-pie,--no-dynamic-linker,-ztext \
 		-static-pie
 endif
 
@@ -177,7 +174,7 @@ $(BUILDDIR)/limine.sys: $(BUILDDIR)/limine.elf
 
 $(BUILDDIR)/limine_stage2only.elf: $(OBJ)
 	$(TOOLCHAIN_CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_stage2only.ld -o $@ || \
-		( echo "This error means that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
+		( echo "This error may mean that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
 		  false )
 
 $(BUILDDIR)/limine_nomap.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o

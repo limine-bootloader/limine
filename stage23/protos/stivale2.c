@@ -26,6 +26,10 @@
 #include <drivers/edid.h>
 #include <drivers/vga_textmode.h>
 
+#define REPORTED_ADDR(PTR) \
+    ((PTR) + ((stivale2_hdr.flags & (1 << 1)) ? \
+    (want_5lv ? 0xff00000000000000 : 0xffff800000000000) : 0))
+
 struct stivale2_struct stivale2_struct = {0};
 
 inline static size_t get_phys_addr(uint64_t addr) {
@@ -127,6 +131,8 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
             panic("stivale2: Section .stivale2hdr is smaller than size of the struct.");
     }
 
+    bool want_5lv = (get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_5LV_PAGING_ID) ? true : false) && level5pg;
+
     if (stivale2_hdr.entry_point != 0)
         entry_point = stivale2_hdr.entry_point;
 
@@ -145,7 +151,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     struct stivale2_struct_tag_kernel_file *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_kernel_file));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_KERNEL_FILE_ID;
 
-    tag->kernel_file = (uint64_t)(uintptr_t)kernel;
+    tag->kernel_file = REPORTED_ADDR((uint64_t)(uintptr_t)kernel);
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
@@ -216,7 +222,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
         if (!uri_open(&f, module_path))
             panic("Requested module with path \"%s\" not found!", module_path);
 
-        m->begin = (uint64_t)(size_t)freadall(&f, STIVALE2_MMAP_KERNEL_AND_MODULES);
+        m->begin = REPORTED_ADDR((uint64_t)(size_t)freadall(&f, STIVALE2_MMAP_KERNEL_AND_MODULES));
         m->end   = m->begin + f.size;
 
         print("stivale2: Requested module %u:\n", i);
@@ -236,7 +242,9 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     struct stivale2_struct_tag_rsdp *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_rsdp));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_RSDP_ID;
 
-    tag->rsdp = (uint64_t)(size_t)acpi_get_rsdp();
+    uint64_t rsdp = (uint64_t)(size_t)acpi_get_rsdp();
+    if (rsdp)
+        tag->rsdp = REPORTED_ADDR(rsdp);
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
@@ -248,8 +256,13 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     struct stivale2_struct_tag_smbios *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_smbios));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_SMBIOS_ID;
 
-    acpi_get_smbios((void **)&tag->smbios_entry_32,
-                    (void **)&tag->smbios_entry_64);
+    uint64_t smbios_entry_32 = 0, smbios_entry_64 = 0;
+    acpi_get_smbios((void **)&smbios_entry_32, (void **)&smbios_entry_64);
+
+    if (smbios_entry_32)
+        tag->smbios_entry_32 = REPORTED_ADDR(smbios_entry_32);
+    if (smbios_entry_64)
+        tag->smbios_entry_64 = REPORTED_ADDR(smbios_entry_64);
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
@@ -261,7 +274,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     struct stivale2_struct_tag_cmdline *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_cmdline));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_CMDLINE_ID;
 
-    tag->cmdline = (uint64_t)(size_t)cmdline;
+    tag->cmdline = REPORTED_ADDR((uint64_t)(size_t)cmdline);
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
@@ -346,7 +359,7 @@ skip_modeset:;
                                MEMMAP_FRAMEBUFFER, false, false, false, true);
 
             tag->memory_model       = STIVALE2_FBUF_MMODEL_RGB;
-            tag->framebuffer_addr   = fb->framebuffer_addr;
+            tag->framebuffer_addr   = REPORTED_ADDR(fb->framebuffer_addr);
             tag->framebuffer_width  = fb->framebuffer_width;
             tag->framebuffer_height = fb->framebuffer_height;
             tag->framebuffer_bpp    = fb->framebuffer_bpp;
@@ -410,19 +423,17 @@ skip_modeset:;
         struct stivale2_struct_tag_efi_system_table *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_efi_system_table));
         tag->tag.identifier = STIVALE2_STRUCT_TAG_EFI_SYSTEM_TABLE_ID;
 
-        tag->system_table = (uint64_t)(uintptr_t)efi_system_table;
+        tag->system_table = REPORTED_ADDR((uint64_t)(uintptr_t)efi_system_table);
 
         append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
     }
 
-    // Check if 5-level paging tag is requesting support
-    bool level5pg_requested = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_5LV_PAGING_ID) ? true : false;
     bool unmap_null = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_UNMAP_NULL_ID) ? true : false;
 
     pagemap_t pagemap = {0};
     if (bits == 64)
-        pagemap = stivale_build_pagemap(level5pg && level5pg_requested, unmap_null);
+        pagemap = stivale_build_pagemap(want_5lv, unmap_null);
 
 #if defined (uefi)
     efi_exit_boot_services();
@@ -440,7 +451,7 @@ skip_modeset:;
         uint32_t bsp_lapic_id;
         smp_info = init_smp(sizeof(struct stivale2_struct_tag_smp), (void **)&tag,
                             &cpu_count, &bsp_lapic_id,
-                            bits == 64, level5pg && level5pg_requested,
+                            bits == 64, want_5lv,
                             pagemap, smp_hdr_tag->flags & 1);
 
         if (smp_info != NULL) {
@@ -480,10 +491,10 @@ skip_modeset:;
     //////////////////////////////////////////////
     // List tags
     //////////////////////////////////////////////
-    print("Generated tags:\n");
+    print("stivale2: Generated tags:\n");
     struct stivale2_tag *taglist = (void*)(size_t)stivale2_struct.tags;
     for (size_t i = 0; ; i++) {
-        print("Tag #%u  ID: %X\n", i, taglist->identifier);
+        print("          Tag #%u  ID: %X\n", i, taglist->identifier);
         if (taglist->next)
             taglist = (void*)(size_t)taglist->next;
         else
@@ -493,6 +504,6 @@ skip_modeset:;
     // Clear terminal for kernels that will use the stivale2 terminal
     term_write("\e[2J\e[H", 7);
 
-    stivale_spinup(bits, level5pg && level5pg_requested, &pagemap,
-                   entry_point, (uint64_t)(uintptr_t)&stivale2_struct, stivale2_hdr.stack);
+    stivale_spinup(bits, want_5lv, &pagemap, entry_point,
+                   (uint64_t)(uintptr_t)&stivale2_struct, stivale2_hdr.stack);
 }

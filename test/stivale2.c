@@ -42,7 +42,7 @@ __attribute__((section(".stivale2hdr"), used))
 struct stivale2_header header2 = {
     .entry_point = (uint64_t)stivale2_main,
     .stack       = (uintptr_t)stacks[0] + sizeof(stack),
-    .flags       = 0,
+    .flags       = 1 << 1,
     .tags        = (uint64_t)&framebuffer_request
 };
 

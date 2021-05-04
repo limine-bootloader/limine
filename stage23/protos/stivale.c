@@ -110,7 +110,6 @@ void stivale_load(char *config, char *cmdline) {
     }
 
     bool want_5lv = level5pg && (stivale_hdr.flags & (1 << 1));
-    pagemap_t pagemap = stivale_build_pagemap(want_5lv, false);
 
     if (stivale_hdr.entry_point != 0)
         entry_point = stivale_hdr.entry_point;
@@ -223,6 +222,10 @@ void stivale_load(char *config, char *cmdline) {
 #if defined (uefi)
     efi_exit_boot_services();
 #endif
+
+    pagemap_t pagemap = {0};
+    if (bits == 64)
+        pagemap = stivale_build_pagemap(want_5lv, false);
 
     // Reserve 32K at 0x70000
     memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, true, false, false);

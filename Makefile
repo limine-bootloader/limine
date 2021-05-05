@@ -267,6 +267,27 @@ hybrid-iso9660-test:
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e boot/limine-eltorito-efi.bin -no-emul-boot test_image/ -o test.iso
 	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
 
+.PHONY: full-hybrid-test
+full-hybrid-test:
+	$(MAKE) ovmf
+	$(MAKE) test-clean
+	$(MAKE) test.hdd
+	$(MAKE) limine-uefi
+	$(MAKE) limine-bios
+	$(MAKE) bin/limine-install
+	$(MAKE) -C test
+	rm -rf test_image/
+	mkdir -p test_image/boot
+	cp -rv bin/* test/* test_image/boot/
+	mkdir -p test_image/EFI/BOOT
+	cp -v bin/BOOTX64.EFI test_image/EFI/BOOT/
+	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table -part_like_isohybrid -eltorito-alt-boot -e boot/limine-eltorito-efi.bin -no-emul-boot test_image/ -isohybrid-gpt-basdat -o test.iso
+	bin/limine-install test.iso
+	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.iso -debugcon stdio
+	qemu-system-x86_64 -M q35 -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -M q35 -net none -smp 4 -enable-kvm -cpu host -hda test.iso -debugcon stdio
+
 .PHONY: pxe-test
 pxe-test:
 	$(MAKE) test-clean

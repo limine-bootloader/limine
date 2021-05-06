@@ -115,7 +115,7 @@ void chainload(char *config) {
     if (!uri_open(image, image_path))
         panic("chainload: Could not open image");
 
-    void *ptr = freadall(image, MEMMAP_RESERVED);
+    void *ptr = freadall(image, MEMMAP_EFI_LOADER);
 
     term_deinit();
 

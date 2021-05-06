@@ -27,6 +27,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     // Invalid return address of 0 to end stacktraces here
     asm volatile (
         "push 0\n\t"
+        "push 0\n\t"
         "xor eax, eax\n\t"
         "jmp uefi_entry\n\t"
         :
@@ -72,9 +73,6 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 
         if (boot_volume != NULL)
             stage3_common();
-
-        if (loaded_image->ParentHandle == 0)
-            panic("Can't determine boot disk");
 
         current_handle = loaded_image->ParentHandle;
     }

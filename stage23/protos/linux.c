@@ -542,6 +542,8 @@ void linux_load(char *config, char *cmdline) {
     boot_params->efi_info.efi_memdesc_size    = efi_desc_size;
     boot_params->efi_info.efi_memdesc_version = efi_desc_ver;
 
+    pmm_release_uefi_mem();
+
     efi_exit_boot_services();
 #endif
 
@@ -563,8 +565,6 @@ void linux_load(char *config, char *cmdline) {
 
         switch (e820_table[i].type) {
             case MEMMAP_BOOTLOADER_RECLAIMABLE:
-            case MEMMAP_EFI_RECLAIMABLE:
-            case MEMMAP_EFI_LOADER:
                 e820_table[i].type = MEMMAP_USABLE;
                 break;
         }

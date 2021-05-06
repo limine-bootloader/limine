@@ -197,6 +197,17 @@ xorriso -as mkisofs -b <relative path of limine-cd.bin> \
         -no-emul-boot <root directory> -o image.iso
 ```
 
+### BIOS+UEFI hybrid CD-ROM ISO creation
+A hybrid ISO that can also be booted when flashed on USB sticks or hard drives
+can be made with the following commands:
+```
+xorriso -as mkisofs -b <relative path of limine-cd.bin> \
+        -no-emul-boot -boot-load-size 4 -boot-info-table -part_like_isohybrid \
+        -eltorito-alt-boot -e <relative path of limine-eltorito-efi.bin> \
+        -no-emul-boot <root directory> -isohybrid-gpt-basdat -o image.iso
+limine-install image.iso
+```
+
 ### BIOS/PXE boot
 The `limine-pxe.bin` binary is a valid PXE boot image.
 In order to boot Limine from PXE it is necessary to setup a DHCP server with

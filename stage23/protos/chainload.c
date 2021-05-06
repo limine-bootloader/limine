@@ -1,5 +1,3 @@
-#if defined (bios)
-
 #include <stddef.h>
 #include <stdint.h>
 #include <protos/chainload.h>
@@ -8,8 +6,17 @@
 #include <lib/blib.h>
 #include <drivers/disk.h>
 #include <lib/term.h>
+#include <lib/fb.h>
+#include <lib/uri.h>
+#include <lib/print.h>
 #include <sys/idt.h>
 #include <drivers/vga_textmode.h>
+#include <mm/pmm.h>
+#if defined (uefi)
+#  include <efi.h>
+#endif
+
+#if defined (bios)
 
 __attribute__((noinline))
 __attribute__((section(".realmode")))
@@ -93,6 +100,67 @@ void chainload(char *config) {
     volume_read(p, (void *)0x7c00, 0, 512);
 
     spinup(drive);
+}
+
+#elif defined (uefi)
+
+void chainload(char *config) {
+    EFI_STATUS status;
+
+    char *image_path = config_get_value(config, 0, "IMAGE_PATH");
+    if (image_path == NULL)
+        panic("chainload: IMAGE_PATH not specified");
+
+    struct file_handle *image = ext_mem_alloc(sizeof(struct file_handle));
+    if (!uri_open(image, image_path))
+        panic("chainload: Could not open image");
+
+    void *ptr = freadall(image, MEMMAP_RESERVED);
+
+    term_deinit();
+
+    int req_width = 0, req_height = 0, req_bpp = 0;
+
+    char *resolution = config_get_value(config, 0, "RESOLUTION");
+    if (resolution != NULL)
+        parse_resolution(&req_width, &req_height, &req_bpp, resolution);
+
+    struct fb_info fbinfo;
+    if (!fb_init(&fbinfo, req_width, req_height, req_bpp))
+        panic("chainload: Unable to set video mode");
+
+    pmm_release_uefi_mem();
+
+    MEMMAP_DEVICE_PATH memdev_path[2];
+
+    memdev_path[0].Header.Type      = HARDWARE_DEVICE_PATH;
+    memdev_path[0].Header.SubType   = HW_MEMMAP_DP;
+    memdev_path[0].Header.Length[0] = sizeof(MEMMAP_DEVICE_PATH);
+    memdev_path[0].Header.Length[1] = sizeof(MEMMAP_DEVICE_PATH) >> 8;
+
+    memdev_path[0].MemoryType       = EfiLoaderData;
+    memdev_path[0].StartingAddress  = (uintptr_t)ptr;
+    memdev_path[0].EndingAddress    = (uintptr_t)ptr + image->size;
+
+    memdev_path[1].Header.Type      = END_DEVICE_PATH_TYPE;
+    memdev_path[1].Header.SubType   = END_ENTIRE_DEVICE_PATH_SUBTYPE;
+    memdev_path[1].Header.Length[0] = sizeof(MEMMAP_DEVICE_PATH);
+    memdev_path[1].Header.Length[1] = sizeof(MEMMAP_DEVICE_PATH) >> 8;
+
+    EFI_HANDLE new_handle = 0;
+
+    status = uefi_call_wrapper(gBS->LoadImage, 6, 0, efi_image_handle, memdev_path,
+                               ptr, image->size, &new_handle);
+    if (status) {
+        panic("chainload: LoadImage failure (%x)", status);
+    }
+
+    status = uefi_call_wrapper(gBS->StartImage, 3, new_handle, NULL, NULL);
+    if (status) {
+        panic("chainload: StartImage failure (%x)", status);
+    }
+
+    __builtin_unreachable();
 }
 
 #endif

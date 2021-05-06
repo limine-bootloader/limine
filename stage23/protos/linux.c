@@ -564,6 +564,7 @@ void linux_load(char *config, char *cmdline) {
         switch (e820_table[i].type) {
             case MEMMAP_BOOTLOADER_RECLAIMABLE:
             case MEMMAP_EFI_RECLAIMABLE:
+            case MEMMAP_EFI_LOADER:
                 e820_table[i].type = MEMMAP_USABLE;
                 break;
         }

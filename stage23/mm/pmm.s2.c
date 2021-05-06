@@ -69,6 +69,8 @@ static const char *memmap_type(uint32_t type) {
             return "Kernel/Modules";
         case MEMMAP_EFI_RECLAIMABLE:
             return "EFI reclaimable";
+        case MEMMAP_EFI_LOADER:
+            return "EFI loader";
         default:
             return "???";
     }
@@ -280,7 +282,7 @@ void init_memmap(void) {
                 our_type = MEMMAP_EFI_RECLAIMABLE; break;
             case EfiLoaderCode:
             case EfiLoaderData:
-                our_type = MEMMAP_BOOTLOADER_RECLAIMABLE; break;
+                our_type = MEMMAP_EFI_LOADER; break;
             case EfiACPIReclaimMemory:
                 our_type = MEMMAP_ACPI_RECLAIMABLE; break;
             case EfiACPIMemoryNVS:
@@ -323,19 +325,39 @@ void init_memmap(void) {
           AllocateAddress, EfiLoaderData, memmap[i].length / 4096, &base);
 
         if (status)
-            panic("AllocatePages %x", status);
+            panic("pmm: AllocatePages failure (%x)", status);
     }
 }
 
 void pmm_reclaim_uefi_mem(void) {
     for (size_t i = 0; i < memmap_entries; i++) {
-        if (memmap[i].type != MEMMAP_EFI_RECLAIMABLE)
+        if (memmap[i].type != MEMMAP_EFI_RECLAIMABLE
+         && memmap[i].type != MEMMAP_EFI_LOADER)
             continue;
 
         memmap[i].type = MEMMAP_USABLE;
     }
 
     sanitise_entries(false);
+}
+
+void pmm_release_uefi_mem(void) {
+    EFI_STATUS status;
+
+    for (size_t i = 0; i < memmap_entries; i++) {
+        if (memmap[i].type != MEMMAP_USABLE
+         && memmap[i].type != MEMMAP_BOOTLOADER_RECLAIMABLE) {
+            continue;
+        }
+
+        status = uefi_call_wrapper(gBS->FreePages, 2,
+                                   memmap[i].base, memmap[i].length / 4096);
+
+        if (status)
+            panic("pmm: FreePages failure (%x)", status);
+    }
+
+    allocations_disallowed = true;
 }
 #endif
 

@@ -24,10 +24,27 @@ void stage3_common(void);
 
 #if defined (uefi)
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
+    // Invalid return address of 0 to end stacktraces here
+    asm volatile (
+        "push 0\n\t"
+        "xor eax, eax\n\t"
+        "jmp uefi_entry\n\t"
+        :
+        : "D" (ImageHandle), "S" (SystemTable)
+        : "memory"
+    );
+
+    __builtin_unreachable();
+}
+
+__attribute__((noreturn))
+void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     gST = SystemTable;
     gBS = SystemTable->BootServices;
     gRT = SystemTable->RuntimeServices;
     efi_image_handle = ImageHandle;
+
+    EFI_STATUS status;
 
     init_memmap();
 
@@ -38,24 +55,29 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
     disk_create_index();
 
-    EFI_GUID loaded_img_prot_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
-    EFI_LOADED_IMAGE_PROTOCOL *loaded_image = NULL;
+    EFI_HANDLE current_handle = ImageHandle;
+    for (;;) {
+        EFI_GUID loaded_img_prot_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
+        EFI_LOADED_IMAGE_PROTOCOL *loaded_image = NULL;
 
-    uefi_call_wrapper(gBS->HandleProtocol, 3, ImageHandle, &loaded_img_prot_guid,
-                      &loaded_image);
+        status = uefi_call_wrapper(gBS->HandleProtocol, 3,
+                                   current_handle, &loaded_img_prot_guid,
+                                   &loaded_image);
 
-    boot_volume = disk_volume_from_efi_handle(loaded_image->DeviceHandle);
-    if (boot_volume == NULL) {
-        panic("Can't determine boot disk");
+        if (status) {
+            panic("HandleProtocol failure (%x)\n", status);
+        }
+
+        boot_volume = disk_volume_from_efi_handle(loaded_image->DeviceHandle);
+
+        if (boot_volume != NULL)
+            stage3_common();
+
+        if (loaded_image->ParentHandle == 0)
+            panic("Can't determine boot disk");
+
+        current_handle = loaded_image->ParentHandle;
     }
-
-    // Invalid return address of 0 to end stacktraces here
-    asm volatile (
-        "push 0\n\t"
-        "jmp stage3_common\n\t"
-    );
-
-    __builtin_unreachable();
 }
 #endif
 
@@ -99,11 +121,7 @@ void stage3_common(void) {
     } else if (!strcmp(proto, "linux")) {
         linux_load(config, cmdline);
     } else if (!strcmp(proto, "chainload")) {
-#if defined (bios)
         chainload(config);
-#elif defined (uefi)
-        panic("UEFI Limine does not support the chainload boot protocol");
-#endif
     }
 
     panic("Invalid protocol specified");

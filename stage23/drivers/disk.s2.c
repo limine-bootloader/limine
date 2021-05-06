@@ -213,10 +213,14 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE *efi_handle) {
     EFI_DISK_IO *disk_io = NULL;
     EFI_BLOCK_IO *block_io = NULL;
 
-    uefi_call_wrapper(gBS->HandleProtocol, 3, efi_handle, &disk_io_guid,
-                      &disk_io);
-    uefi_call_wrapper(gBS->HandleProtocol, 3, efi_handle, &block_io_guid,
-                      &block_io);
+    status = uefi_call_wrapper(gBS->HandleProtocol, 3, efi_handle, &disk_io_guid,
+                               &disk_io);
+    if (status)
+        return NULL;
+    status = uefi_call_wrapper(gBS->HandleProtocol, 3, efi_handle, &block_io_guid,
+                               &block_io);
+    if (status)
+        return NULL;
 
     uint64_t signature = BUILD_ID;
     uint64_t orig;
@@ -233,6 +237,7 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE *efi_handle) {
             if (volume_index[i]->drive == 0xe0)
                 return volume_index[i];
         }
+
         return NULL;
     }
 

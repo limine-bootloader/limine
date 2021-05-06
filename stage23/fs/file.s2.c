@@ -113,7 +113,7 @@ int fread(struct file_handle *fd, void *buf, uint64_t loc, uint64_t count) {
 
 void *freadall(struct file_handle *fd, uint32_t type) {
     if (fd->is_memfile) {
-        memmap_alloc_range((uint64_t)(size_t)fd->fd, fd->size, type, false, true, false, false);
+        memmap_alloc_range((uint64_t)(size_t)fd->fd, ALIGN_UP(fd->size, 4096), type, false, true, false, false);
         return fd->fd;
     } else {
         void *ret = ext_mem_alloc_type(fd->size, type);

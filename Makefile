@@ -255,7 +255,6 @@ iso9660-uefi-test:
 hybrid-iso9660-test:
 	$(MAKE) ovmf
 	$(MAKE) test-clean
-	$(MAKE) test.hdd
 	$(MAKE) limine-uefi
 	$(MAKE) limine-bios
 	$(MAKE) -C test
@@ -271,7 +270,6 @@ hybrid-iso9660-test:
 full-hybrid-test:
 	$(MAKE) ovmf
 	$(MAKE) test-clean
-	$(MAKE) test.hdd
 	$(MAKE) limine-uefi
 	$(MAKE) limine-bios
 	$(MAKE) bin/limine-install

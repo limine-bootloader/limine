@@ -73,7 +73,6 @@ void stivale_load(char *config, char *cmdline) {
             }
             // Check if 5-level paging is available
             if (cpuid(0x00000007, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 16))) {
-                print("stivale: CPU has 5-level paging support\n");
                 level5pg = true;
             }
 
@@ -96,8 +95,6 @@ void stivale_load(char *config, char *cmdline) {
             panic("stivale: Not 32 nor 64 bit x86 ELF file.");
     }
 
-    print("stivale: %u-bit ELF file detected\n", bits);
-
     switch (ret) {
         case 1:
             panic("stivale: File is not a valid ELF.");
@@ -117,11 +114,6 @@ void stivale_load(char *config, char *cmdline) {
 
     if (stivale_hdr.entry_point != 0)
         entry_point = stivale_hdr.entry_point;
-
-    print("stivale: Kernel slide: %X\n", slide);
-
-    print("stivale: Entry point at: %X\n", entry_point);
-    print("stivale: Requested stack at: %X\n", stivale_hdr.stack);
 
     stivale_struct.module_count = 0;
     uint64_t *prev_mod_ptr = &stivale_struct.modules;
@@ -157,12 +149,6 @@ void stivale_load(char *config, char *cmdline) {
 
         *prev_mod_ptr = REPORTED_ADDR((uint64_t)(size_t)m);
         prev_mod_ptr  = &m->next;
-
-        print("stivale: Requested module %u:\n", i);
-        print("         Path:   %s\n", module_path);
-        print("         String: %s\n", m->string);
-        print("         Begin:  %X\n", m->begin);
-        print("         End:    %X\n", m->end);
     }
 
     uint64_t rsdp = (uint64_t)(size_t)acpi_get_rsdp();
@@ -181,7 +167,6 @@ void stivale_load(char *config, char *cmdline) {
     stivale_struct.cmdline = REPORTED_ADDR((uint64_t)(size_t)cmdline);
 
     stivale_struct.epoch = time();
-    print("stivale: Current epoch: %U\n", stivale_struct.epoch);
 
     term_deinit();
 

@@ -385,9 +385,6 @@ void linux_load(char *config, char *cmdline) {
 
     fread(kernel, setup_header, 0x1f1, setup_header_end - 0x1f1);
 
-    print("linux: Boot protocol: %u.%u\n",
-          setup_header->version >> 8, setup_header->version & 0xff);
-
     if (setup_header->version < 0x203) {
         panic("Linux protocols < 2.03 are not supported");
     }
@@ -396,12 +393,6 @@ void linux_load(char *config, char *cmdline) {
 
     // vid_mode. 0xffff means "normal"
     setup_header->vid_mode = 0xffff;
-
-    char *kernel_version = ext_mem_alloc(128);
-    if (setup_header->kernel_version != 0) {
-        fread(kernel, kernel_version, setup_header->kernel_version + 0x200, 128);
-        print("linux: Kernel version: %s\n", kernel_version);
-    }
 
     setup_header->type_of_loader = 0xff;
 
@@ -413,7 +404,7 @@ void linux_load(char *config, char *cmdline) {
 
     // load kernel
     uintptr_t kernel_load_addr = 0x100000;
-    print("linux: Loading kernel...\n");
+    print("linux: Loading kernel `%s`...\n", kernel_path);
     for (;;) {
         if (memmap_alloc_range(kernel_load_addr,
                 ALIGN_UP(kernel->size - real_mode_code_size, 4096),

@@ -35,11 +35,11 @@ struct edid_info_struct *get_edid_info(void) {
             goto success;
 
 fail:
-    print("edid: Could not fetch EDID data.\n");
+    printv("edid: Could not fetch EDID data.\n");
     return NULL;
 
 success:
-    print("edid: Success.\n");
+    printv("edid: Success.\n");
     return buf;
 }
 
@@ -91,11 +91,11 @@ struct edid_info_struct *get_edid_info(void) {
             goto success;
 
 fail:
-    print("edid: Could not fetch EDID data.\n");
+    printv("edid: Could not fetch EDID data.\n");
     return NULL;
 
 success:
-    print("edid: Success.\n");
+    printv("edid: Success.\n");
     return buf;
 }
 

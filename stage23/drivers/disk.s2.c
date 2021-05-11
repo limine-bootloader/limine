@@ -78,7 +78,7 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
 void disk_create_index(void) {
     size_t volume_count = 0;
 
-    print("Detected volumes:\n");
+    printv("Detected volumes:\n");
 
     for (uint8_t drive = 0x80; ; drive++) {
         if (drive == 0x90)
@@ -177,7 +177,7 @@ void disk_create_index(void) {
             block->guid_valid = true;
         }
 
-        print("    %x\n", block->drive);
+        printv("    %x\n", block->drive);
 
         volume_index[volume_index_i++] = block;
 
@@ -190,7 +190,7 @@ void disk_create_index(void) {
             if (ret == NO_PARTITION)
                 continue;
 
-            print("    %x:%u\n", block->drive, part);
+            printv("    %x:%u\n", block->drive, part);
 
             volume_index[volume_index_i++] = p;
 
@@ -343,7 +343,7 @@ void disk_create_index(void) {
 
     volume_index = ext_mem_alloc(sizeof(struct volume) * volume_count);
 
-    print("Detected volumes:\n");
+    printv("Detected volumes:\n");
 
     size_t drives_counter = 0x80, optical_counter = 0xe0;
 
@@ -388,7 +388,7 @@ void disk_create_index(void) {
             block->guid_valid = true;
         }
 
-        print("    %x\n", block->drive);
+        printv("    %x\n", block->drive);
 
         volume_index[volume_index_i++] = block;
 
@@ -401,7 +401,7 @@ void disk_create_index(void) {
             if (ret == NO_PARTITION)
                 continue;
 
-            print("    %x:%u\n", block->drive, part);
+            printv("    %x:%u\n", block->drive, part);
 
             volume_index[volume_index_i++] = p;
 

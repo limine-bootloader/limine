@@ -159,7 +159,6 @@ static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
         if (inet_pton(root, &ip)) {
             panic("invalid ipv4 address: %s", root);
         }
-        print("\nip: %x\n", ip);
     }
 
     struct tftp_file_handle *cfg = ext_mem_alloc(sizeof(struct tftp_file_handle));

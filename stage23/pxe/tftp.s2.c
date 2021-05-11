@@ -60,7 +60,7 @@ int tftp_open(struct tftp_file_handle *handle, uint32_t server_ip, uint16_t serv
     strcpy((char*)open.name, name);
     ret = pxe_call(TFTP_OPEN, ((uint16_t)rm_seg(&open)), (uint16_t)rm_off(&open));
     if (ret) {
-        print("failed to open file %x or bad packet size", open.status);
+        print("tftp: Failed to open file %x or bad packet size", open.status);
         return -1;
     }
     mtu = open.packet_size;
@@ -86,7 +86,7 @@ int tftp_open(struct tftp_file_handle *handle, uint32_t server_ip, uint16_t serv
 
         if (read.bsize < mtu && !slow) {
             slow = true;
-            print("Server is sending the file in smaller packets (it sent %d bytes), download might take longer.\n", read.bsize);
+            print("tftp: Server is sending the file in smaller packets (it sent %d bytes), download might take longer.\n", read.bsize);
         }
         to_transfer -= read.bsize;
         progress += read.bsize;

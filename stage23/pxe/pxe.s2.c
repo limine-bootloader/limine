@@ -50,7 +50,7 @@ void pxe_init(void) {
         panic("!pxe signature corrupted");
     }
     set_pxe_fp(bangpxe->rm_entry);
-    print("Successfully initialized pxe");
+    printv("pxe: Successfully initialized");
 }
 
 #endif

@@ -26,7 +26,7 @@ void *acpi_get_rsdp(void) {
         }
         if (!memcmp((char *)i, "RSD PTR ", 8)
          && !acpi_checksum((void *)i, sizeof(struct rsdp))) {
-            print("acpi: Found RSDP at %x\n", i);
+            printv("acpi: Found RSDP at %x\n", i);
             return (void *)i;
         }
     }
@@ -41,7 +41,7 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
     for (size_t i = 0xf0000; i < 0x100000; i += 16) {
         if (!memcmp((char *)i, "_SM_", 4)
          && !acpi_checksum((void *)i, *((uint8_t *)(i + 5)))) {
-            print("acpi: Found SMBIOS 32-bit entry point at %x\n", i);
+            printv("acpi: Found SMBIOS 32-bit entry point at %x\n", i);
             *smbios32 = (void *)i;
             break;
         }
@@ -50,7 +50,7 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
     for (size_t i = 0xf0000; i < 0x100000; i += 16) {
         if (!memcmp((char *)i, "_SM3_", 5)
          && !acpi_checksum((void *)i, *((uint8_t *)(i + 6)))) {
-            print("acpi: Found SMBIOS 64-bit entry point at %x\n", i);
+            printv("acpi: Found SMBIOS 64-bit entry point at %x\n", i);
             *smbios64 = (void *)i;
             break;
         }
@@ -74,7 +74,7 @@ void *acpi_get_rsdp(void) {
         if (acpi_checksum(cur_table->VendorTable, sizeof(struct rsdp)) != 0)
             continue;
 
-        print("acpi: Found RSDP at %X\n", cur_table->VendorTable);
+        printv("acpi: Found RSDP at %X\n", cur_table->VendorTable);
 
         return (void *)cur_table->VendorTable;
     }
@@ -97,7 +97,7 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
                           *((uint8_t *)(cur_table->VendorTable + 5))) != 0)
             continue;
 
-        print("acpi: Found SMBIOS 32-bit entry point at %X\n", cur_table->VendorTable);
+        printv("acpi: Found SMBIOS 32-bit entry point at %X\n", cur_table->VendorTable);
 
         *smbios32 = cur_table->VendorTable;
 
@@ -115,7 +115,7 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
                           *((uint8_t *)(cur_table->VendorTable + 6))) != 0)
             continue;
 
-        print("acpi: Found SMBIOS 64-bit entry point at %X\n", cur_table->VendorTable);
+        printv("acpi: Found SMBIOS 64-bit entry point at %X\n", cur_table->VendorTable);
 
         *smbios64 = cur_table->VendorTable;
 
@@ -155,11 +155,11 @@ void *acpi_get_table(const char *signature, int index) {
         if (!memcmp(ptr->signature, signature, 4)
          && !acpi_checksum(ptr, ptr->length)
          && cnt++ == index) {
-            print("acpi: Found \"%s\" at %x\n", signature, ptr);
+            printv("acpi: Found \"%s\" at %x\n", signature, ptr);
             return ptr;
         }
     }
 
-    print("acpi: \"%s\" not found\n", signature);
+    printv("acpi: \"%s\" not found\n", signature);
     return NULL;
 }

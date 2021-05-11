@@ -18,6 +18,8 @@ EFI_MEMORY_DESCRIPTOR *efi_mmap = NULL;
 UINTN efi_mmap_size = 0, efi_desc_size = 0, efi_desc_ver = 0;
 #endif
 
+bool verbose = false;
+
 bool parse_resolution(int *width, int *height, int *bpp, const char *buf) {
     int res[3] = {0};
 
@@ -93,7 +95,7 @@ bool efi_exit_boot_services(void) {
 
     efi_boot_services_exited = true;
 
-    print("efi: Exited boot services.\n");
+    printv("efi: Exited boot services.\n");
 
     return true;
 }

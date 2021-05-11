@@ -97,16 +97,16 @@ static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, in
             return false;
     }
 
-    print("gop: Found matching mode %x, attempting to set...\n", mode);
+    printv("gop: Found matching mode %x, attempting to set...\n", mode);
 
     if ((int)mode == current_video_mode) {
-        print("gop: Mode was already set, perfect!\n");
+        printv("gop: Mode was already set, perfect!\n");
     } else {
         status = uefi_call_wrapper(gop->SetMode, 2, gop, mode);
 
         if (status) {
             current_video_mode = -2;
-            print("gop: Failed to set video mode %x, moving on...\n", mode);
+            printv("gop: Failed to set video mode %x, moving on...\n", mode);
             return false;
         }
     }
@@ -181,15 +181,15 @@ bool init_gop(struct fb_info *ret,
                 target_width  = edid_width;
                 target_height = edid_height;
                 target_bpp    = 32;
-                print("gop: EDID detected screen resolution of %ux%u\n",
-                      target_width, target_height);
+                printv("gop: EDID detected screen resolution of %ux%u\n",
+                       target_width, target_height);
                 goto retry;
             }
         }
         goto fallback;
     } else {
-        print("gop: Requested resolution of %ux%ux%u\n",
-              target_width, target_height, target_bpp);
+        printv("gop: Requested resolution of %ux%ux%u\n",
+               target_width, target_height, target_bpp);
     }
 
 retry:

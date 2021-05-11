@@ -78,11 +78,11 @@ static const char *memmap_type(uint32_t type) {
 
 void print_memmap(struct e820_entry_t *mm, size_t size) {
     for (size_t i = 0; i < size; i++) {
-        print("[%X -> %X] : %X  <%s>\n",
-              mm[i].base,
-              mm[i].base + mm[i].length,
-              mm[i].length,
-              memmap_type(mm[i].type));
+        printv("[%X -> %X] : %X  <%s>\n",
+               mm[i].base,
+               mm[i].base + mm[i].length,
+               mm[i].length,
+               memmap_type(mm[i].type));
     }
 }
 

@@ -65,6 +65,8 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     if (kernel_path == NULL)
         panic("KERNEL_PATH not specified");
 
+    print("stivale2: Loading kernel `%s`...\n", kernel_path);
+
     if (!uri_open(kernel_file, kernel_path))
         panic("Could not open kernel resource");
 
@@ -95,7 +97,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
             }
             // Check if 5-level paging is available
             if (cpuid(0x00000007, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 16))) {
-                print("stivale2: CPU has 5-level paging support\n");
+                printv("stivale2: CPU has 5-level paging support\n");
                 level5pg = true;
             }
 
@@ -118,7 +120,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
             panic("stivale2: Not 32 nor 64 bit x86 ELF file.");
     }
 
-    print("stivale2: %u-bit ELF file detected\n", bits);
+    printv("stivale2: %u-bit ELF file detected\n", bits);
 
     switch (ret) {
         case 1:
@@ -140,10 +142,12 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     if (stivale2_hdr.entry_point != 0)
         entry_point = stivale2_hdr.entry_point;
 
-    print("stivale2: Kernel slide: %X\n", slide);
+    if (verbose) {
+        print("stivale2: Kernel slide: %X\n", slide);
 
-    print("stivale2: Entry point at: %X\n", entry_point);
-    print("stivale2: Requested stack at: %X\n", stivale2_hdr.stack);
+        print("stivale2: Entry point at: %X\n", entry_point);
+        print("stivale2: Requested stack at: %X\n", stivale2_hdr.stack);
+    }
 
     strcpy(stivale2_struct.bootloader_brand, "Limine");
     strcpy(stivale2_struct.bootloader_version, LIMINE_VERSION);
@@ -229,11 +233,13 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
         m->begin = REPORTED_ADDR((uint64_t)(size_t)freadall(&f, STIVALE2_MMAP_KERNEL_AND_MODULES));
         m->end   = m->begin + f.size;
 
-        print("stivale2: Requested module %u:\n", i);
-        print("          Path:   %s\n", module_path);
-        print("          String: %s\n", m->string);
-        print("          Begin:  %X\n", m->begin);
-        print("          End:    %X\n", m->end);
+        if (verbose) {
+            print("stivale2: Requested module %u:\n", i);
+            print("          Path:   %s\n", module_path);
+            print("          String: %s\n", m->string);
+            print("          Begin:  %X\n", m->begin);
+            print("          End:    %X\n", m->end);
+        }
     }
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
@@ -291,7 +297,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     tag->tag.identifier = STIVALE2_STRUCT_TAG_EPOCH_ID;
 
     tag->epoch = time();
-    print("stivale2: Current epoch: %U\n", tag->epoch);
+    printv("stivale2: Current epoch: %U\n", tag->epoch);
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
@@ -495,14 +501,16 @@ skip_modeset:;
     //////////////////////////////////////////////
     // List tags
     //////////////////////////////////////////////
-    print("stivale2: Generated tags:\n");
-    struct stivale2_tag *taglist = (void*)(size_t)stivale2_struct.tags;
-    for (size_t i = 0; ; i++) {
-        print("          Tag #%u  ID: %X\n", i, taglist->identifier);
-        if (taglist->next)
-            taglist = (void*)(size_t)taglist->next;
-        else
-            break;
+    if (verbose) {
+        print("stivale2: Generated tags:\n");
+        struct stivale2_tag *taglist = (void*)(size_t)stivale2_struct.tags;
+        for (size_t i = 0; ; i++) {
+            print("          Tag #%u  ID: %X\n", i, taglist->identifier);
+            if (taglist->next)
+                taglist = (void*)(size_t)taglist->next;
+            else
+                break;
+        }
     }
 
     // Clear terminal for kernels that will use the stivale2 terminal

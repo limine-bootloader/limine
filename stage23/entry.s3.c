@@ -89,14 +89,18 @@ __attribute__((noreturn))
 void stage3_common(void) {
     volume_iterate_parts(boot_volume,
         if (!init_config_disk(_PART)) {
-            print("Config file found and loaded.\n");
             boot_volume = _PART;
             break;
         }
     );
 
-    print("Boot drive: %x\n", boot_volume->drive);
-    print("Boot partition: %d\n", boot_volume->partition);
+    char *verbose_str = config_get_value(NULL, 0, "VERBOSE");
+    verbose = verbose_str != NULL && strcmp(verbose_str, "yes") == 0;
+
+    if (verbose) {
+        print("Boot drive: %x\n", boot_volume->drive);
+        print("Boot partition: %d\n", boot_volume->partition);
+    }
 
     char *cmdline;
     char *config = menu(&cmdline);

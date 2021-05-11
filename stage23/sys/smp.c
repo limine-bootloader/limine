@@ -222,7 +222,7 @@ struct smp_information *init_smp(size_t    header_hack_size,
                     continue;
                 }
 
-                print("smp: [xAPIC] Found candidate AP for bring-up. LAPIC ID: %u\n", lapic->lapic_id);
+                printv("smp: [xAPIC] Found candidate AP for bring-up. LAPIC ID: %u\n", lapic->lapic_id);
 
                 // Try to start the AP
                 if (!smp_start_ap(lapic->lapic_id, &gdtr, info_struct,
@@ -232,7 +232,7 @@ struct smp_information *init_smp(size_t    header_hack_size,
                     continue;
                 }
 
-                print("smp: Successfully brought up AP\n");
+                printv("smp: Successfully brought up AP\n");
 
                 (*cpu_count)++;
                 continue;
@@ -259,7 +259,7 @@ struct smp_information *init_smp(size_t    header_hack_size,
                     continue;
                 }
 
-                print("smp: [x2APIC] Found candidate AP for bring-up. LAPIC ID: %u\n", x2apic->x2apic_id);
+                printv("smp: [x2APIC] Found candidate AP for bring-up. LAPIC ID: %u\n", x2apic->x2apic_id);
 
                 // Try to start the AP
                 if (!smp_start_ap(x2apic->x2apic_id, &gdtr, info_struct,
@@ -269,7 +269,7 @@ struct smp_information *init_smp(size_t    header_hack_size,
                     continue;
                 }
 
-                print("smp: Successfully brought up AP\n");
+                printv("smp: Successfully brought up AP\n");
 
                 (*cpu_count)++;
                 continue;

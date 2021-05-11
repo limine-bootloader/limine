@@ -22,7 +22,7 @@ Like Limine and want to support it? Donate Bitcoin to `bc1q00d59y75crpapw7qp8sea
 ### Supported filesystems
 * ext2/3/4
 * echfs
-* FAT16/32
+* FAT12/16/32
 * ISO9660 (CDs/DVDs)
 
 ### Supported partitioning schemes

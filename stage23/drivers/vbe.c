@@ -118,7 +118,7 @@ static int set_vbe_mode(uint16_t mode) {
 
 bool init_vbe(struct fb_info *ret,
               uint16_t target_width, uint16_t target_height, uint16_t target_bpp) {
-    print("vbe: Initialising...\n");
+    printv("vbe: Initialising...\n");
 
     ret->default_res = false;
 
@@ -127,11 +127,11 @@ bool init_vbe(struct fb_info *ret,
     struct vbe_info_struct vbe_info;
     get_vbe_info(&vbe_info);
 
-    print("vbe: Version: %u.%u\n", vbe_info.version_maj, vbe_info.version_min);
-    print("vbe: OEM: %s\n", (char *)rm_desegment(vbe_info.oem_seg, vbe_info.oem_off));
-    print("vbe: Graphics vendor: %s\n", (char *)rm_desegment(vbe_info.vendor_seg, vbe_info.vendor_off));
-    print("vbe: Product name: %s\n", (char *)rm_desegment(vbe_info.prod_name_seg, vbe_info.prod_name_off));
-    print("vbe: Product revision: %s\n", (char *)rm_desegment(vbe_info.prod_rev_seg, vbe_info.prod_rev_off));
+    printv("vbe: Version: %u.%u\n", vbe_info.version_maj, vbe_info.version_min);
+    printv("vbe: OEM: %s\n", (char *)rm_desegment(vbe_info.oem_seg, vbe_info.oem_off));
+    printv("vbe: Graphics vendor: %s\n", (char *)rm_desegment(vbe_info.vendor_seg, vbe_info.vendor_off));
+    printv("vbe: Product name: %s\n", (char *)rm_desegment(vbe_info.prod_name_seg, vbe_info.prod_name_off));
+    printv("vbe: Product revision: %s\n", (char *)rm_desegment(vbe_info.prod_rev_seg, vbe_info.prod_rev_off));
 
     uint16_t *vid_modes = (uint16_t *)rm_desegment(vbe_info.vid_modes_seg,
                                                    vbe_info.vid_modes_off);
@@ -155,15 +155,15 @@ bool init_vbe(struct fb_info *ret,
                 target_width  = edid_width;
                 target_height = edid_height;
                 target_bpp    = 32;
-                print("vbe: EDID detected screen resolution of %ux%u\n",
-                      target_width, target_height);
+                printv("vbe: EDID detected screen resolution of %ux%u\n",
+                       target_width, target_height);
                 goto retry;
             }
         }
         goto fallback;
     } else {
-        print("vbe: Requested resolution of %ux%ux%u\n",
-              target_width, target_height, target_bpp);
+        printv("vbe: Requested resolution of %ux%ux%u\n",
+               target_width, target_height, target_bpp);
     }
 
 retry:
@@ -179,17 +179,17 @@ retry:
             // We only support linear modes
             if (!(vbe_mode_info.mode_attributes & (1 << 7)))
                 continue;
-            print("vbe: Found matching mode %x, attempting to set...\n", vid_modes[i]);
+            printv("vbe: Found matching mode %x, attempting to set...\n", vid_modes[i]);
             if (vid_modes[i] == current_video_mode) {
-                print("vbe: Mode was already set, perfect!\n");
+                printv("vbe: Mode was already set, perfect!\n");
             } else if (set_vbe_mode(vid_modes[i]) == 0x01) {
                 current_video_mode = -2;
-                print("vbe: Failed to set video mode %x, moving on...\n", vid_modes[i]);
+                printv("vbe: Failed to set video mode %x, moving on...\n", vid_modes[i]);
                 continue;
             }
             current_video_mode = vid_modes[i];
 
-            print("vbe: Framebuffer address: %x\n", vbe_mode_info.framebuffer_addr);
+            printv("vbe: Framebuffer address: %x\n", vbe_mode_info.framebuffer_addr);
             ret->memory_model       = vbe_mode_info.memory_model;
             ret->framebuffer_addr   = vbe_mode_info.framebuffer_addr;
             ret->framebuffer_width  = vbe_mode_info.res_x;

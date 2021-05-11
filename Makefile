@@ -182,6 +182,28 @@ ext2-test:
 	bin/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
+.PHONY: fat12-test
+fat12-test:
+	$(MAKE) test-clean
+	$(MAKE) test.hdd
+	$(MAKE) limine-bios
+	$(MAKE) bin/limine-install
+	$(MAKE) -C test
+	rm -rf test_image/
+	mkdir test_image
+	sudo losetup -Pf --show test.hdd > loopback_dev
+	sudo partprobe `cat loopback_dev`
+	sudo mkfs.fat -F 12 `cat loopback_dev`p1
+	sudo mount `cat loopback_dev`p1 test_image
+	sudo mkdir test_image/boot
+	sudo cp -rv bin/* test/* test_image/boot/
+	sync
+	sudo umount test_image/
+	sudo losetup -d `cat loopback_dev`
+	rm -rf test_image loopback_dev
+	bin/limine-install test.hdd
+	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+
 .PHONY: fat16-test
 fat16-test:
 	$(MAKE) test-clean
@@ -277,8 +299,6 @@ full-hybrid-test:
 	rm -rf test_image/
 	mkdir -p test_image/boot
 	cp -rv bin/* test/* test_image/boot/
-	mkdir -p test_image/EFI/BOOT
-	cp -v bin/BOOTX64.EFI test_image/EFI/BOOT/
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table -part_like_isohybrid -eltorito-alt-boot -e boot/limine-eltorito-efi.bin -no-emul-boot test_image/ -isohybrid-gpt-basdat -o test.iso
 	bin/limine-install test.iso
 	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio

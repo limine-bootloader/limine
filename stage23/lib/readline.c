@@ -61,15 +61,24 @@ int getchar_internal(uint8_t scancode, uint8_t ascii) {
     switch (ascii) {
         case '\r':
             return '\n';
+        case '\b':
+            return '\b';
     }
+    // Guard against non-printable values
+    if (ascii < 0x20 || ascii > 0x7e)
+        return -1;
     return ascii;
 }
 
 #if defined (bios)
 int getchar(void) {
+again:;
     struct rm_regs r = {0};
     rm_int(0x16, &r, &r);
-    return getchar_internal((r.eax >> 8) & 0xff, r.eax);
+    int ret = getchar_internal((r.eax >> 8) & 0xff, r.eax);
+    if (ret == -1)
+        goto again;
+    return ret;
 }
 
 int _pit_sleep_and_quit_on_keypress(uint32_t ticks);
@@ -81,6 +90,7 @@ int pit_sleep_and_quit_on_keypress(int seconds) {
 
 #if defined (uefi)
 int getchar(void) {
+again:;
     EFI_INPUT_KEY key = {0};
 
     UINTN which;
@@ -90,7 +100,12 @@ int getchar(void) {
 
     uefi_call_wrapper(gST->ConIn->ReadKeyStroke, 2, gST->ConIn, &key);
 
-    return getchar_internal(key.ScanCode, key.UnicodeChar);
+    int ret = getchar_internal(key.ScanCode, key.UnicodeChar);
+
+    if (ret == -1)
+        goto again;
+
+    return ret;
 }
 
 int pit_sleep_and_quit_on_keypress(int seconds) {
@@ -108,6 +123,7 @@ int pit_sleep_and_quit_on_keypress(int seconds) {
     uefi_call_wrapper(
         gBS->SetTimer, 3, events[1], TimerRelative, 10000000 * seconds);
 
+again:
     uefi_call_wrapper(gBS->WaitForEvent, 3, 2, events, &which);
 
     if (which == 1) {
@@ -116,7 +132,12 @@ int pit_sleep_and_quit_on_keypress(int seconds) {
 
     uefi_call_wrapper(gST->ConIn->ReadKeyStroke, 2, gST->ConIn, &key);
 
-    return getchar_internal(key.ScanCode, key.UnicodeChar);
+    int ret = getchar_internal(key.ScanCode, key.UnicodeChar);
+
+    if (ret == -1)
+        goto again;
+
+    return ret;
 }
 #endif
 

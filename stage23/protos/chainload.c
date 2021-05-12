@@ -116,6 +116,7 @@ void chainload(char *config) {
         panic("chainload: Could not open image");
 
     void *ptr = freadall(image, MEMMAP_EFI_LOADER);
+    size_t image_size = image->size;
 
     term_deinit();
 
@@ -140,20 +141,42 @@ void chainload(char *config) {
 
     memdev_path[0].MemoryType       = EfiLoaderData;
     memdev_path[0].StartingAddress  = (uintptr_t)ptr;
-    memdev_path[0].EndingAddress    = (uintptr_t)ptr + image->size;
+    memdev_path[0].EndingAddress    = (uintptr_t)ptr + image_size;
 
     memdev_path[1].Header.Type      = END_DEVICE_PATH_TYPE;
     memdev_path[1].Header.SubType   = END_ENTIRE_DEVICE_PATH_SUBTYPE;
-    memdev_path[1].Header.Length[0] = sizeof(MEMMAP_DEVICE_PATH);
-    memdev_path[1].Header.Length[1] = sizeof(MEMMAP_DEVICE_PATH) >> 8;
+    memdev_path[1].Header.Length[0] = sizeof(EFI_DEVICE_PATH);
+    memdev_path[1].Header.Length[1] = sizeof(EFI_DEVICE_PATH) >> 8;
 
     EFI_HANDLE new_handle = 0;
 
     status = uefi_call_wrapper(gBS->LoadImage, 6, 0, efi_image_handle, memdev_path,
-                               ptr, image->size, &new_handle);
+                               ptr, image_size, &new_handle);
     if (status) {
         panic("chainload: LoadImage failure (%x)", status);
     }
+
+    // Apparently we need to make sure that the DeviceHandle field is the same
+    // as us (the loader) for some EFI images to properly work (Windows for instance)
+    EFI_GUID loaded_img_prot_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
+
+    EFI_LOADED_IMAGE_PROTOCOL *loader_loaded_image = NULL;
+    status = uefi_call_wrapper(gBS->HandleProtocol, 3,
+                               efi_image_handle, &loaded_img_prot_guid,
+                               &loader_loaded_image);
+    if (status) {
+        panic("HandleProtocol failure (%x)\n", status);
+    }
+
+    EFI_LOADED_IMAGE_PROTOCOL *new_handle_loaded_image = NULL;
+    status = uefi_call_wrapper(gBS->HandleProtocol, 3,
+                               new_handle, &loaded_img_prot_guid,
+                               &new_handle_loaded_image);
+    if (status) {
+        panic("HandleProtocol failure (%x)\n", status);
+    }
+
+    new_handle_loaded_image->DeviceHandle = loader_loaded_image->DeviceHandle;
 
     status = uefi_call_wrapper(gBS->StartImage, 3, new_handle, NULL, NULL);
     if (status) {

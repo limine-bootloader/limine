@@ -119,6 +119,9 @@ _pit_sleep_and_quit_on_keypress:
     mov edx, dword [int_08_callback]
     mov dword [0x08*4], edx
 
+    test eax, eax
+    jz .out
+
     xor edx, edx
     mov dl, ah
     xor ah, ah
@@ -128,6 +131,7 @@ _pit_sleep_and_quit_on_keypress:
     pop edx
     pop edx
 
+  .out:
     ret
 
   .gdt:      dq 0

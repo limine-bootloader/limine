@@ -8,6 +8,7 @@ smp_trampoline:
     mov ebx, cs
     shl ebx, 4
 
+    o32 lidt [cs:invalid_idt]
     o32 lgdt [cs:passed_info.gdtr]
 
     lea eax, [ebx + .mode32]
@@ -157,8 +158,11 @@ parking64:
 
 align 16
 temp_stack:
-    times 1024 db 0
+    times 128 db 0
   .top:
+
+invalid_idt:
+    times 2 dq 0
 
 align 16
 passed_info:

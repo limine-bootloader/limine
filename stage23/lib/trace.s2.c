@@ -73,5 +73,5 @@ void print_stacktrace(size_t *base_ptr) {
             break;
         base_ptr = (void*)old_bp;
     }
-    print("End of trace.\n");
+    print("End of trace. ");
 }

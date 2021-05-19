@@ -25,7 +25,7 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
     print("System halted.");
     rm_hcf();
 #elif defined (uefi)
-    print("Press any key to return to firmware.");
+    print("Press [ENTER] to return to firmware.");
     getchar();
     gterm_clear(true);
 

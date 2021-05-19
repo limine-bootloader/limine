@@ -29,6 +29,7 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
     rm_hcf();
 #elif defined (uefi)
     print("Press [ENTER] to return to firmware.");
+    while (getchar() != '\n');
     fb_clear(&fbinfo);
 
     // release all uefi memory and return to firmware

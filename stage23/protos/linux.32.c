@@ -33,6 +33,15 @@ __attribute__((noreturn)) void linux_spinup(void *entry, void *boot_params) {
 #endif
     };
 
+    // Load invalid IDT
+    uint64_t invalid_idt[2] = {0, 0};
+    asm volatile (
+        "lidt %0"
+        :
+        : "m" (invalid_idt)
+        : "memory"
+    );
+
     asm volatile (
         "lgdt %0\n\t"
 

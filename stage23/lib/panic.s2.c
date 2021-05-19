@@ -10,8 +10,6 @@
 #include <mm/pmm.h>
 
 __attribute__((noreturn)) void panic(const char *fmt, ...) {
-    asm volatile ("cli" ::: "memory");
-
     va_list args;
 
     va_start(args, fmt);

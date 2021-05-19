@@ -14,8 +14,7 @@ smp_trampoline:
     lea eax, [ebx + .mode32]
     mov [cs:.farjmp_off], eax
 
-    mov eax, cr0
-    bts eax, 0
+    mov eax, 0x00000011
     mov cr0, eax
     o32 jmp far [cs:.farjmp]
 
@@ -32,10 +31,8 @@ smp_trampoline:
     mov gs, ax
     mov ss, ax
 
-    mov eax, cr0
-    btr eax, 29
-    btr eax, 30
-    mov cr0, eax
+    xor eax, eax
+    mov cr4, eax
 
     test dword [ebx + passed_info.target_mode], (1 << 2)
     jz .nox2apic
@@ -68,8 +65,8 @@ smp_trampoline:
     mov cr3, eax
 
     mov ecx, 0xc0000080
-    rdmsr
-    bts eax, 8
+    mov eax, 0x100
+    xor edx, edx
     wrmsr
 
     mov eax, cr0

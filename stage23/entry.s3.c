@@ -23,19 +23,16 @@
 void stage3_common(void);
 
 #if defined (uefi)
-EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
+__attribute__((naked))
+EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     // Invalid return address of 0 to end stacktraces here
-    asm volatile (
+    asm (
         "push 0\n\t"
         "push 0\n\t"
         "xor eax, eax\n\t"
         "jmp uefi_entry\n\t"
-        :
-        : "D" (ImageHandle), "S" (SystemTable)
-        : "memory"
     );
-
-    __builtin_unreachable();
+    (void)ImageHandle; (void)SystemTable;
 }
 
 __attribute__((noreturn))
@@ -66,7 +63,7 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
                                    &loaded_image);
 
         if (status) {
-            panic("HandleProtocol failure (%x)\n", status);
+            panic("HandleProtocol failure (%x)", status);
         }
 
         boot_volume = disk_volume_from_efi_handle(loaded_image->DeviceHandle);

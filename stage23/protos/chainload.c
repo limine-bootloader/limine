@@ -165,7 +165,7 @@ void chainload(char *config) {
                                efi_image_handle, &loaded_img_prot_guid,
                                &loader_loaded_image);
     if (status) {
-        panic("HandleProtocol failure (%x)\n", status);
+        panic("chainload: HandleProtocol failure (%x)", status);
     }
 
     EFI_LOADED_IMAGE_PROTOCOL *new_handle_loaded_image = NULL;
@@ -173,7 +173,7 @@ void chainload(char *config) {
                                new_handle, &loaded_img_prot_guid,
                                &new_handle_loaded_image);
     if (status) {
-        panic("HandleProtocol failure (%x)\n", status);
+        panic("chainload: HandleProtocol failure (%x)", status);
     }
 
     new_handle_loaded_image->DeviceHandle = loader_loaded_image->DeviceHandle;

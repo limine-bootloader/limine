@@ -52,17 +52,15 @@ do_32:
 
 bits 32
 .go_32:
-    mov eax, cr0
-    btr eax, 31
+    mov eax, 0x00000011
     mov cr0, eax
 
     mov ecx, 0xc0000080
-    rdmsr
-    btr eax, 8
+    xor eax, eax
+    xor edx, edx
     wrmsr
 
-    mov eax, cr4
-    btr eax, 5
+    xor eax, eax
     mov cr4, eax
 
     call edi

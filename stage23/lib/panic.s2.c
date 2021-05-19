@@ -1,6 +1,9 @@
 #include <lib/print.h>
 #include <lib/real.h>
 #include <lib/trace.h>
+#if defined (uefi)
+#   include <efi.h>
+#endif
 #include <lib/blib.h>
 #include <lib/readline.h>
 #include <lib/gterm.h>

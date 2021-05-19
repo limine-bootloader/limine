@@ -33,6 +33,8 @@ int getchar_internal(uint8_t scancode, uint8_t ascii) {
             return GETCHAR_PGUP;
         case 0x51:
             return GETCHAR_PGDOWN;
+        case 0x01:
+            return GETCHAR_ESCAPE;
 #elif defined (uefi)
         case SCAN_F10:
             return GETCHAR_F10;
@@ -55,7 +57,7 @@ int getchar_internal(uint8_t scancode, uint8_t ascii) {
         case SCAN_PAGE_DOWN:
             return GETCHAR_PGDOWN;
         case SCAN_ESC:
-            return '\e';
+            return GETCHAR_ESCAPE;
 #endif
     }
     switch (ascii) {
@@ -65,8 +67,9 @@ int getchar_internal(uint8_t scancode, uint8_t ascii) {
             return '\b';
     }
     // Guard against non-printable values
-    if (ascii < 0x20 || ascii > 0x7e)
+    if (ascii < 0x20 || ascii > 0x7e) {
         return -1;
+    }
     return ascii;
 }
 

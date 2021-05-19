@@ -13,6 +13,7 @@
 #define GETCHAR_PGUP         (-17)
 #define GETCHAR_PGDOWN       (-18)
 #define GETCHAR_F10          (-19)
+#define GETCHAR_ESCAPE       (-20)
 
 int getchar(void);
 void readline(const char *orig_str, char *buf, size_t limit);

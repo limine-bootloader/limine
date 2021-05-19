@@ -258,7 +258,7 @@ refresh:
         case GETCHAR_F10:
             disable_cursor();
             return buffer;
-        case '\e':
+        case GETCHAR_ESCAPE:
             disable_cursor();
             return NULL;
         default:

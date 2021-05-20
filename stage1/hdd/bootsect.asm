@@ -16,29 +16,24 @@ start:
     cld
     jmp 0x0000:.initialise_cs
   .initialise_cs:
-    xor ax, ax
-    mov ds, ax
-    mov es, ax
-    mov ss, ax
+    xor bx, bx
+    mov ds, bx
+    mov es, bx
+    mov ss, bx
     mov sp, 0x7c00
     sti
 
-    ; Some BIOSes don't pass the correct boot drive number,
-    ; so we need to do the job
-  .check_drive:
     ; Limine isn't made for floppy disks, these are dead anyways.
     ; So if the value the BIOS passed is <0x80, just assume it has passed
-    ; an incorrect value
-    test dl, 0x80
-    jz .fix_drive
+    ; an incorrect value.
+    cmp dl, 0x80
+    jae .continue
 
-    ; Drive numbers from 0x80..0x8f should be valid
-    test dl, 0x70
-    jz .continue
-
-  .fix_drive:
-    ; Try to fix up the mess the BIOS have done
-    mov dl, 0x80
+    ; Error out (BX zeroed out above)
+    push 0xb800
+    pop es
+    mov dword [es:bx], 'F ! '
+    jmp err
 
   .continue:
     ; Make sure int 13h extensions are supported

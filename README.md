@@ -203,8 +203,10 @@ can be made with the following commands:
 ```
 xorriso -as mkisofs -b <relative path of limine-cd.bin> \
         -no-emul-boot -boot-load-size 4 -boot-info-table -part_like_isohybrid \
+        --mbr-force-bootable \
         -eltorito-alt-boot -e <relative path of limine-eltorito-efi.bin> \
         -no-emul-boot <root directory> -isohybrid-gpt-basdat -o image.iso
+
 limine-install image.iso
 ```
 

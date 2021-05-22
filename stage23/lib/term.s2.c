@@ -7,6 +7,8 @@
 #include <lib/blib.h>
 #include <drivers/vga_textmode.h>
 
+#define TERM_TABSIZE (8)
+
 int current_video_mode = -1;
 
 int term_backend = NOT_READY;
@@ -90,9 +92,14 @@ static void term_putchar(uint8_t c) {
     switch (c) {
         case 0x00:
             break;
-        case 0x1B:
+        case '\e':
             escape = 1;
             return;
+        case '\t':
+            if ((get_cursor_pos_x() / TERM_TABSIZE + 1) >= term_cols)
+                break;
+            set_cursor_pos((get_cursor_pos_x() / TERM_TABSIZE + 1) * TERM_TABSIZE, get_cursor_pos_y());
+            break;
         default:
             raw_putchar(c);
             break;

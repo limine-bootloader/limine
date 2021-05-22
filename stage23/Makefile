@@ -53,7 +53,11 @@ INTERNAL_CFLAGS := \
 	-fno-pic \
 	-Wno-address-of-packed-member \
 	-masm=intel \
-	-mgeneral-regs-only \
+	-mno-80387 \
+	-mno-mmx \
+	-mno-3dnow \
+	-mno-sse \
+	-mno-sse2 \
 	-MMD \
 	-DBUILD_ID=$(BUILD_ID) \
 	-DLIMINE_VERSION='"$(LIMINE_VERSION)"' \

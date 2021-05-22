@@ -16,8 +16,10 @@ ifeq ($(shell export "PATH=$(PATH)"; which $(TOOLCHAIN_AR)), )
 TOOLCHAIN_AR := ar
 endif
 
+ifneq ($(MAKECMDGOALS), toolchain)
 ifneq ($(shell export "PATH=$(PATH)"; $(TOOLCHAIN_CC) -dumpmachine | head -c 6), x86_64)
 $(error No suitable x86_64 GCC compiler found, please install an x86_64 GCC toolchain or run "make toolchain")
+endif
 endif
 
 STAGE1_FILES := $(shell find -L ./stage1 -type f -name '*.asm' | sort)

@@ -503,13 +503,15 @@ skip_modeset:;
     //////////////////////////////////////////////
     if (verbose) {
         print("stivale2: Generated tags:\n");
-        struct stivale2_tag *taglist = (void*)(size_t)stivale2_struct.tags;
+        struct stivale2_tag *taglist =
+                    (void*)(uintptr_t)(stivale2_struct.tags & (uint64_t)0xffffffff);
         for (size_t i = 0; ; i++) {
             print("          Tag #%u  ID: %X\n", i, taglist->identifier);
-            if (taglist->next)
-                taglist = (void*)(size_t)taglist->next;
-            else
+            if (taglist->next) {
+                taglist = (void*)(uintptr_t)(taglist->next & (uint64_t)0xffffffff);
+            } else {
                 break;
+            }
         }
     }
 

@@ -19,6 +19,10 @@ __binary_limine_hdd_bin_end:
 
 #elif defined (__linux__) || defined (__unix__)
 
+#if defined (__ELF__)
+.section .note.GNU-stack, "", %progbits
+#endif
+
 .section .data
 .global _binary_limine_hdd_bin_start
 _binary_limine_hdd_bin_start:

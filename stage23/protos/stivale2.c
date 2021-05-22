@@ -49,10 +49,10 @@ static void *get_tag(struct stivale2_header *s, uint64_t id) {
     }
 }
 
-static void append_tag(struct stivale2_struct *s, struct stivale2_tag *tag) {
-    tag->next = s->tags;
-    s->tags   = (uint64_t)(size_t)tag;
-}
+#define append_tag(S, TAG) ({                              \
+    (TAG)->next = (S)->tags;                               \
+    (S)->tags   = REPORTED_ADDR((uint64_t)(uintptr_t)TAG); \
+})
 
 #if defined (bios)
 extern symbol stivale2_term_write_entry;

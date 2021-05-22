@@ -7,7 +7,11 @@
 #include <lib/blib.h>
 #include <drivers/vga_textmode.h>
 
+// Tries to implement this standard for terminfo
+// https://man7.org/linux/man-pages/man4/console_codes.4.html
+
 #define TERM_TABSIZE (8)
+#define MAX_ESC_VALUES (256)
 
 int current_video_mode = -1;
 
@@ -74,23 +78,182 @@ static int get_cursor_pos_y(void) {
     return y;
 }
 
-static void escape_parse(uint8_t c);
+static bool control_sequence = false;
+static bool escape = false;
+static bool rrr = false;
+static int esc_values[MAX_ESC_VALUES];
+static int esc_values_i = 0;
+static int saved_cursor_x = 0, saved_cursor_y = 0;
 
-static int escape = 0;
-static int esc_value0 = 0;
-static int esc_value1 = 0;
-static int *esc_value = &esc_value0;
-static int esc_default0 = 1;
-static int esc_default1 = 1;
-static int *esc_default = &esc_default0;
+static void sgr(void) {
+    int i = 0;
+
+    if (!esc_values_i)
+        goto def;
+
+    for (; i < esc_values_i; i++) {
+        if (!esc_values[i]) {
+def:
+            set_text_bg(8);
+            set_text_fg(9);
+            continue;
+        }
+
+        if (esc_values[i] >= 30 && esc_values[i] <= 37) {
+            set_text_fg(esc_values[i] - 30);
+            continue;
+        }
+
+        if (esc_values[i] >= 40 && esc_values[i] <= 47) {
+            set_text_bg(esc_values[i] - 40);
+            continue;
+        }
+    }
+}
+
+static void control_sequence_parse(uint8_t c) {
+    if (c >= '0' && c <= '9') {
+        rrr = true;
+        esc_values[esc_values_i] *= 10;
+        esc_values[esc_values_i] += c - '0';
+        return;
+    } else {
+        if (rrr == true) {
+            esc_values_i++;
+            rrr = false;
+            if (c == ';')
+                return;
+        } else if (c == ';') {
+            esc_values[esc_values_i] = 1;
+            esc_values_i++;
+            return;
+        }
+    }
+
+    // default rest to 1
+    for (int i = esc_values_i; i < MAX_ESC_VALUES; i++)
+        esc_values[i] = 1;
+
+    switch (c) {
+        case 'A':
+            if (esc_values[0] > get_cursor_pos_y())
+                esc_values[0] = get_cursor_pos_y();
+            set_cursor_pos(get_cursor_pos_x(), get_cursor_pos_y() - esc_values[0]);
+            break;
+        case 'B':
+            if ((get_cursor_pos_y() + esc_values[0]) > (term_rows - 1))
+                esc_values[0] = (term_rows - 1) - get_cursor_pos_y();
+            set_cursor_pos(get_cursor_pos_x(), get_cursor_pos_y() + esc_values[0]);
+            break;
+        case 'C':
+            if ((get_cursor_pos_x() + esc_values[0]) > (term_cols - 1))
+                esc_values[0] = (term_cols - 1) - get_cursor_pos_x();
+            set_cursor_pos(get_cursor_pos_x() + esc_values[0], get_cursor_pos_y());
+            break;
+        case 'D':
+            if (esc_values[0] > get_cursor_pos_x())
+                esc_values[0] = get_cursor_pos_x();
+            set_cursor_pos(get_cursor_pos_x() - esc_values[0], get_cursor_pos_y());
+            break;
+        case 'E':
+            if (get_cursor_pos_y() + esc_values[0] >= term_rows)
+                set_cursor_pos(0, term_rows - 1);
+            else
+                set_cursor_pos(0, get_cursor_pos_y() + esc_values[0]);
+            break;
+        case 'F':
+            if (get_cursor_pos_y() - esc_values[0] < 0)
+                set_cursor_pos(0, 0);
+            else
+                set_cursor_pos(0, get_cursor_pos_y() - esc_values[0]);
+            break;
+        case 'd':
+            if (esc_values[0] >= term_rows)
+                break;
+            set_cursor_pos(get_cursor_pos_x(), esc_values[0]);
+            break;
+        case 'G':
+        case '`':
+            if (esc_values[0] >= term_cols)
+                break;
+            set_cursor_pos(esc_values[0], get_cursor_pos_y());
+            break;
+        case 'H':
+        case 'f':
+            esc_values[0] -= 1;
+            esc_values[1] -= 1;
+            if (esc_values[1] >= term_cols)
+                esc_values[1] = term_cols - 1;
+            if (esc_values[0] >= term_rows)
+                esc_values[0] = term_rows - 1;
+            set_cursor_pos(esc_values[1], esc_values[0]);
+            break;
+        case 'J':
+            switch (esc_values[0]) {
+                case 2:
+                    clear(false);
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case 'm':
+            sgr();
+            break;
+        case 's':
+            get_cursor_pos(&saved_cursor_x, &saved_cursor_y);
+            break;
+        case 'u':
+            set_cursor_pos(saved_cursor_x, saved_cursor_y);
+            break;
+        case 'K':
+            switch (esc_values[0]) {
+                case 2: {
+                    int x, y;
+                    get_cursor_pos(&x, &y);
+                    set_cursor_pos(0, y);
+                    for (int i = 0; i < term_cols; i++)
+                        raw_putchar(' ');
+                    set_cursor_pos(x, y);
+                    break;
+                }
+            }
+        default:
+            break;
+    }
+
+    control_sequence = false;
+    escape = false;
+}
+
+static void escape_parse(uint8_t c) {
+    if (control_sequence == true) {
+        control_sequence_parse(c);
+        return;
+    }
+
+    switch (c) {
+        case '[':
+            for (int i = 0; i < MAX_ESC_VALUES; i++)
+                esc_values[i] = 0;
+            esc_values_i = 0;
+            rrr = false;
+            control_sequence = true;
+            break;
+        default:
+            escape = false;
+            break;
+    }
+}
 
 static void term_putchar(uint8_t c) {
-    if (escape) {
+    if (escape == true) {
         escape_parse(c);
         return;
     }
+
     switch (c) {
-        case 0x00:
+        case '\0':
             break;
         case '\e':
             escape = 1;
@@ -104,126 +267,4 @@ static void term_putchar(uint8_t c) {
             raw_putchar(c);
             break;
     }
-}
-
-static void sgr(void) {
-    if (esc_value0 == 0){
-        set_text_bg(8);
-        set_text_fg(9);
-        return;
-    }
-
-    if (esc_value0 >= 30 && esc_value0 <= 37) {
-        set_text_fg(esc_value0 - 30);
-        return;
-    }
-
-    if (esc_value0 >= 40 && esc_value0 <= 47) {
-        set_text_bg(esc_value0 - 40);
-        return;
-    }
-}
-
-static void escape_parse(uint8_t c) {
-    if (c >= '0' && c <= '9') {
-        *esc_value *= 10;
-        *esc_value += c - '0';
-        *esc_default = 0;
-        return;
-    }
-
-    switch (c) {
-        case 0x1b:
-            escape = 0;
-            raw_putchar(0x1b);
-            return;
-        case '[':
-            return;
-        case ';':
-            esc_value = &esc_value1;
-            esc_default = &esc_default1;
-            return;
-        case 'A':
-            if (esc_default0)
-                esc_value0 = 1;
-            if (esc_value0 > get_cursor_pos_y())
-                esc_value0 = get_cursor_pos_y();
-            set_cursor_pos(get_cursor_pos_x(),
-                                get_cursor_pos_y() - esc_value0);
-            break;
-        case 'B':
-            if (esc_default0)
-                esc_value0 = 1;
-            if ((get_cursor_pos_y() + esc_value0) > (term_rows - 1))
-                esc_value0 = (term_rows - 1) - get_cursor_pos_y();
-            set_cursor_pos(get_cursor_pos_x(),
-                                get_cursor_pos_y() + esc_value0);
-            break;
-        case 'C':
-            if (esc_default0)
-                esc_value0 = 1;
-            if ((get_cursor_pos_x() + esc_value0) > (term_cols - 1))
-                esc_value0 = (term_cols - 1) - get_cursor_pos_x();
-            set_cursor_pos(get_cursor_pos_x() + esc_value0,
-                                get_cursor_pos_y());
-            break;
-        case 'D':
-            if (esc_default0)
-                esc_value0 = 1;
-            if (esc_value0 > get_cursor_pos_x())
-                esc_value0 = get_cursor_pos_x();
-            set_cursor_pos(get_cursor_pos_x() - esc_value0,
-                                get_cursor_pos_y());
-            break;
-        case 'H':
-            esc_value0--;
-            esc_value1--;
-            if (esc_default0)
-                esc_value0 = 0;
-            if (esc_default1)
-                esc_value1 = 0;
-            if (esc_value1 >= term_cols)
-                esc_value1 = term_cols - 1;
-            if (esc_value0 >= term_rows)
-                esc_value0 = term_rows - 1;
-            set_cursor_pos(esc_value1, esc_value0);
-            break;
-        case 'm':
-            sgr();
-            break;
-        case 'J':
-            switch (esc_value0) {
-                case 2:
-                    clear(false);
-                    break;
-                default:
-                    break;
-            }
-            break;
-        case 'K':
-            switch (esc_value0) {
-                case 2: {
-                    int x = get_cursor_pos_x();
-                    int y = get_cursor_pos_y();
-                    set_cursor_pos(0, y);
-                    for (int i = 0; i < term_cols; i++)
-                        raw_putchar(' ');
-                    set_cursor_pos(x, y);
-                    break;
-                }
-            }
-            break;
-        default:
-            escape = 0;
-            raw_putchar('?');
-            break;
-    }
-
-    esc_value = &esc_value0;
-    esc_value0 = 0;
-    esc_value1 = 0;
-    esc_default = &esc_default0;
-    esc_default0 = 1;
-    esc_default1 = 1;
-    escape = 0;
 }

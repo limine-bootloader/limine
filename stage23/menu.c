@@ -416,11 +416,12 @@ refresh:
     if (skip_timeout == false) {
         print("\n\n");
         for (int i = timeout; i; i--) {
-            print("\rBooting automatically in %u, press any key to stop the countdown...", i);
+            print("\e[2K\rBooting automatically in %u, press any key to stop the countdown...", i);
             term_double_buffer_flush();
             if ((c = pit_sleep_and_quit_on_keypress(1))) {
                 skip_timeout = true;
                 print("\e[2K\r\e[2A");
+                term_double_buffer_flush();
                 goto timeout_aborted;
             }
         }

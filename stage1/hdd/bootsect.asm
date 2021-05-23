@@ -27,13 +27,11 @@ start:
     ; So if the value the BIOS passed is <0x80, just assume it has passed
     ; an incorrect value.
     cmp dl, 0x80
-    jae .continue
-
-    ; Error out (BX zeroed out above)
-    push 0xb800
-    pop es
-    mov dword [es:bx], 'F ! '
-    jmp err
+    jb floppy_err
+    ; Values above 0x8f are dubious so we assume we weren't booted properly
+    ; for those either
+    cmp dl, 0x8f
+    ja hdd_err
 
   .continue:
     ; Make sure int 13h extensions are supported
@@ -75,10 +73,6 @@ start:
 
     jmp 0x08:vector
 
-err:
-    hlt
-    jmp err
-
 times 0xda-($-$$) db 0
 times 6 db 0
 
@@ -86,6 +80,21 @@ times 6 db 0
 
 %include 'disk.asm'
 %include '../gdt.asm'
+
+err:
+    push 0xb800
+    pop es
+    mov dword [es:0], eax
+    .h: hlt
+    jmp .h
+
+floppy_err:
+    mov eax, 'F ! '
+    jmp err
+
+hdd_err:
+    mov eax, 'H ! '
+    jmp err
 
 bits 32
 vector:

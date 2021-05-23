@@ -106,7 +106,7 @@ Use `make install` to install Limine binaries, optionally specifying a prefix wi
 
 ### UEFI
 The `BOOTX64.EFI` file is a vaild EFI application that can be simply copied to the
-`/EFI/BOOT` directory of a FAT32 formatted EFI system partition. This file can be
+`/EFI/BOOT` directory of a FAT formatted EFI system partition. This file can be
 installed there and coexist with a BIOS installation of Limine (see below) so that
 the disk will be bootable by both BIOS and UEFI.
 
@@ -147,68 +147,38 @@ The boot device must to contain the `limine.sys` and `limine.cfg` files in
 either the root or the `boot` directory of one of the partitions, formatted
 with a supported file system.
 
-### BIOS CD-ROM ISO creation
-In order to create a bootable BIOS ISO with Limine, place the `limine-cd.bin`,
-`limine.sys`, and `limine.cfg` files into a directory which will serve as the root
-of the created ISO.
+### BIOS/UEFI hybrid ISO creation
+In order to create a hybrid ISO with Limine, place the `limine-eltorito-efi.bin`,
+`limine-cd.bin`, `limine.sys`, and `limine.cfg` files into a directory which will
+serve as the root of the created ISO.
 (`limine.sys` and `limine.cfg` must either be in the root or inside a `boot`
-subdirectory; `limine-cd.bin` can reside anywhere).
+subdirectory; `limine-eltorito-efi.bin` and `limine-cd.bin` can reside anywhere).
 
 Place any other file you want to be on the final ISO in said directory, then run:
 ```
 xorriso -as mkisofs -b <relative path of limine-cd.bin> \
-        -no-emul-boot -boot-load-size 4 -boot-info-table <root directory> -o image.iso
+        -no-emul-boot -boot-load-size 4 -boot-info-table \
+        --efi-boot <relative path of limine-eltorito-efi.bin> \
+        -efi-boot-part --efi-boot-image --protective-msdos-label \
+        <root directory> -o image.iso
 ```
 
 *Note: `xorriso` is required.*
 
-`<relative path of limine-cd.bin>` is the relative path of `limine-cd.bin` inside
-the root directory.
-For example, if it was copied in `<root directory>/boot/limine-cd.bin`, it would be
-`boot/limine-cd.bin`.
-
-### UEFI CD-ROM ISO creation
-In order to create a bootable UEFI ISO with Limine, place the `limine-eltorito-efi.bin`,
-`limine.sys`, and `limine.cfg` files into a directory which will serve as the root
-of the created ISO.
-(`limine.sys` and `limine.cfg` must either be in the root or inside a `boot`
-subdirectory; `limine-eltorito-efi.bin` can reside anywhere).
-
-Place any other file you want to be on the final ISO in said directory, then run:
+And do not forget to also run `limine-install` on the generated image:
 ```
-xorriso -as mkisofs -eltorito-alt-boot -e <relative path of limine-eltorito-efi.bin> \
-        -no-emul-boot <root directory> -o image.iso
+limine-install image.iso
 ```
 
-*Note: `xorriso` is required.*
+`<relative path of limine-cd.bin>` is the relative path of
+`limine-cd.bin` inside the root directory.
+For example, if it was copied in `<root directory>/boot/limine-cd.bin`,
+it would be `boot/limine-cd.bin`.
 
 `<relative path of limine-eltorito-efi.bin>` is the relative path of
 `limine-eltorito-efi.bin` inside the root directory.
 For example, if it was copied in `<root directory>/boot/limine-eltorito-efi.bin`,
 it would be `boot/limine-eltorito-efi.bin`.
-
-### BIOS+UEFI CD-ROM ISO creation
-Additionally, it is possible to combine the 2 aformentioned commands into a single one
-in order to create a CD ISO which will boot on both BIOS and UEFI:
-```
-xorriso -as mkisofs -b <relative path of limine-cd.bin> \
-        -no-emul-boot -boot-load-size 4 -boot-info-table \
-        -eltorito-alt-boot -e <relative path of limine-eltorito-efi.bin> \
-        -no-emul-boot <root directory> -o image.iso
-```
-
-### BIOS+UEFI hybrid CD-ROM ISO creation
-A hybrid ISO that can also be booted when flashed on USB sticks or hard drives
-can be made with the following commands:
-```
-xorriso -as mkisofs -b <relative path of limine-cd.bin> \
-        -no-emul-boot -boot-load-size 4 -boot-info-table -part_like_isohybrid \
-        --mbr-force-bootable \
-        -eltorito-alt-boot -e <relative path of limine-eltorito-efi.bin> \
-        -no-emul-boot <root directory> -isohybrid-gpt-basdat -o image.iso
-
-limine-install image.iso
-```
 
 ### BIOS/PXE boot
 The `limine-pxe.bin` binary is a valid PXE boot image.
@@ -224,28 +194,6 @@ The `limine.cfg` file contains Limine's configuration.
 An example `limine.cfg` file can be found in `test/limine.cfg`.
 
 More info on the format of `limine.cfg` can be found in `CONFIG.md`.
-
-### Example
-For example, to create an empty image file of 64MiB in size, 1 echfs partition
-on the image spanning the whole device, format it, copy the relevant files over,
-and install Limine, one can do:
-
-```bash
-dd if=/dev/zero bs=1M count=0 seek=64 of=test.img
-parted -s test.img mklabel msdos
-parted -s test.img mkpart primary 1 100%
-parted -s test.img set 1 boot on # Workaround for buggy BIOSes
-
-echfs-utils -m -p0 test.img quick-format 32768
-echfs-utils -m -p0 test.img import path/to/limine.sys limine.sys
-echfs-utils -m -p0 test.img import path/to/limine.cfg limine.cfg
-echfs-utils -m -p0 test.img import path/to/kernel.elf kernel.elf
-echfs-utils -m -p0 test.img import <path to file> <path in image>
-...
-limine-install test.img
-```
-
-One can get `echfs-utils` by installing https://github.com/echfs/echfs.
 
 ## Acknowledgments
 Limine uses a stripped-down version of [tinf](https://github.com/jibsen/tinf).

@@ -262,34 +262,6 @@ iso9660-test:
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table test_image/ -o test.iso
 	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
 
-.PHONY: iso9660-uefi-test
-iso9660-uefi-test:
-	$(MAKE) ovmf
-	$(MAKE) test-clean
-	$(MAKE) test.hdd
-	$(MAKE) limine-uefi
-	$(MAKE) -C test
-	rm -rf test_image/
-	mkdir -p test_image/boot
-	cp -rv bin/* test/* test_image/boot/
-	xorriso -as mkisofs -eltorito-alt-boot -e boot/limine-eltorito-efi.bin -no-emul-boot test_image/ -o test.iso
-	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
-
-.PHONY: hybrid-iso9660-test
-hybrid-iso9660-test:
-	$(MAKE) ovmf
-	$(MAKE) test-clean
-	$(MAKE) limine-uefi
-	$(MAKE) limine-bios
-	$(MAKE) -C test
-	rm -rf test_image/
-	mkdir -p test_image/boot
-	cp -rv bin/* test/* test_image/boot/
-	mkdir -p test_image/EFI/BOOT
-	cp -v bin/BOOTX64.EFI test_image/EFI/BOOT/
-	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e boot/limine-eltorito-efi.bin -no-emul-boot test_image/ -o test.iso
-	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
-
 .PHONY: full-hybrid-test
 full-hybrid-test:
 	$(MAKE) ovmf
@@ -301,7 +273,7 @@ full-hybrid-test:
 	rm -rf test_image/
 	mkdir -p test_image/boot
 	cp -rv bin/* test/* test_image/boot/
-	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table -part_like_isohybrid --mbr-force-bootable -eltorito-alt-boot -e boot/limine-eltorito-efi.bin -no-emul-boot test_image/ -isohybrid-gpt-basdat -o test.iso
+	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine-eltorito-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label test_image/ -o test.iso
 	bin/limine-install test.iso
 	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
 	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.iso -debugcon stdio

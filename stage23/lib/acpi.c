@@ -128,7 +128,7 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
 void *acpi_get_table(const char *signature, int index) {
     int cnt = 0;
 
-    struct rsdp_rev2 *rsdp = acpi_get_rsdp();
+    struct rsdp *rsdp = acpi_get_rsdp();
     if (rsdp == NULL)
         return NULL;
 
@@ -143,7 +143,7 @@ void *acpi_get_table(const char *signature, int index) {
         rsdt = (struct rsdt *)(uintptr_t)rsdp->rsdt_addr;
 
     size_t entry_count =
-        (rsdt->length - sizeof(struct sdt)) / (use_xsdt ? 8 : 4);
+        (rsdt->header.length - sizeof(struct sdt)) / (use_xsdt ? 8 : 4);
 
     for (size_t i = 0; i < entry_count; i++) {
         struct sdt *ptr;

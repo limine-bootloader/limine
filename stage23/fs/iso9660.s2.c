@@ -43,7 +43,7 @@ struct iso9660_volume_descriptor {
 } __attribute__((packed));
 
 struct iso9660_primary_volume {
-    struct iso9660_volume_descriptor;
+    struct iso9660_volume_descriptor volume_descriptor;
 
     union {
         struct {

@@ -7,7 +7,7 @@
 #include <lib/acpi.h>
 
 struct dmar {
-    struct sdt;
+    struct sdt header;
     uint8_t host_address_width;
     uint8_t flags;
     uint8_t reserved[10];

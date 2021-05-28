@@ -13,7 +13,7 @@
 #include <mm/pmm.h>
 
 struct madt {
-    struct sdt;
+    struct sdt header;
     uint32_t local_controller_addr;
     uint32_t flags;
     char     madt_entries_begin[];
@@ -25,14 +25,14 @@ struct madt_header {
 } __attribute__((packed));
 
 struct madt_lapic {
-    struct madt_header;
+    struct madt_header header;
     uint8_t  acpi_processor_uid;
     uint8_t  lapic_id;
     uint32_t flags;
 } __attribute__((packed));
 
 struct madt_x2apic {
-    struct madt_header;
+    struct madt_header header;
     uint8_t  reserved[2];
     uint32_t x2apic_id;
     uint32_t flags;
@@ -164,7 +164,7 @@ struct smp_information *init_smp(size_t    header_hack_size,
     size_t max_cpus = 0;
 
     for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
-      (uintptr_t)madt_ptr < (uintptr_t)madt + madt->length;
+      (uintptr_t)madt_ptr < (uintptr_t)madt + madt->header.length;
       madt_ptr += *(madt_ptr + 1)) {
         switch (*madt_ptr) {
             case 0: {
@@ -200,7 +200,7 @@ struct smp_information *init_smp(size_t    header_hack_size,
 
     // Try to start all APs
     for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
-      (uintptr_t)madt_ptr < (uintptr_t)madt + madt->length;
+      (uintptr_t)madt_ptr < (uintptr_t)madt + madt->header.length;
       madt_ptr += *(madt_ptr + 1)) {
         switch (*madt_ptr) {
             case 0: {

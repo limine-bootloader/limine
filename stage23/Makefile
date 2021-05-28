@@ -45,7 +45,6 @@ S2CFLAGS = -Os -g -pipe -Wall -Wextra $(WERROR)
 
 INTERNAL_CFLAGS := \
 	-std=gnu11 \
-	-fplan9-extensions \
 	-ffreestanding \
 	-fno-stack-protector \
 	-fno-omit-frame-pointer \

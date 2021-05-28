@@ -24,10 +24,7 @@ struct rsdp {
     char     oem_id[6];
     uint8_t  rev;
     uint32_t rsdt_addr;
-} __attribute__((packed));
-
-struct rsdp_rev2 {
-    struct rsdp;
+    // Rev 2 only after this comment
     uint32_t length;
     uint64_t xsdt_addr;
     uint8_t  ext_checksum;
@@ -35,7 +32,7 @@ struct rsdp_rev2 {
 } __attribute__((packed));
 
 struct rsdt {
-    struct sdt;
+    struct sdt header;
     char ptrs_start[];
 } __attribute__((packed));
 

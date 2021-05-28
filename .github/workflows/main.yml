@@ -71,7 +71,7 @@ jobs:
         run: make -C limine-install clean
 
       - name: Copy limine-install to bin
-        run: cp limine-install/* bin/
+        run: cp limine-install/* limine-install/.gitignore bin/
 
       - name: Copy LICENSE to bin
         run: cp LICENSE.md bin/

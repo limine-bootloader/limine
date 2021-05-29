@@ -28,7 +28,6 @@ INTERNAL_CFLAGS = \
 	-fno-pie \
 	-fomit-frame-pointer \
 	-Wno-address-of-packed-member \
-	-masm=intel \
 	-mno-80387 \
 	-mno-mmx \
 	-mno-3dnow \

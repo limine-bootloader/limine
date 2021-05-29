@@ -21,42 +21,46 @@
 __attribute__((noinline))
 __attribute__((section(".realmode")))
 static void spinup(uint8_t drive) {
-    struct idtr real_mode_idt = { 0x3ff, 0x0 };
+    struct idtr real_mode_idt;
+    real_mode_idt.limit = 0x3ff;
+    real_mode_idt.ptr   = 0;
 
     asm volatile (
         "cli\n\t"
         "cld\n\t"
 
-        "lidt [eax]\n\t"
+        "lidt (%%eax)\n\t"
 
-        "jmp 0x08:1f\n\t"
+        "pushl $0x08\n\t"
+        "pushl $1f\n\t"
+        "lret\n\t"
         "1: .code16\n\t"
-        "mov ax, 0x10\n\t"
-        "mov ds, ax\n\t"
-        "mov es, ax\n\t"
-        "mov fs, ax\n\t"
-        "mov gs, ax\n\t"
-        "mov ss, ax\n\t"
-        "mov eax, cr0\n\t"
-        "and al, 0xfe\n\t"
-        "mov cr0, eax\n\t"
-        "mov eax, OFFSET 1f\n\t"
-        "push 0\n\t"
-        "push ax\n\t"
-        "retf\n\t"
+        "movw $0x10, %%ax\n\t"
+        "movw %%ax, %%ds\n\t"
+        "movw %%ax, %%es\n\t"
+        "movw %%ax, %%fs\n\t"
+        "movw %%ax, %%gs\n\t"
+        "movw %%ax, %%ss\n\t"
+        "movl %%cr0, %%eax\n\t"
+        "andb $0xfe, %%al\n\t"
+        "movl %%eax, %%cr0\n\t"
+        "movl $1f, %%eax\n\t"
+        "pushw $0\n\t"
+        "pushw %%ax\n\t"
+        "lret\n\t"
         "1:\n\t"
-        "mov ax, 0\n\t"
-        "mov ds, ax\n\t"
-        "mov es, ax\n\t"
-        "mov fs, ax\n\t"
-        "mov gs, ax\n\t"
-        "mov ss, ax\n\t"
+        "xorw %%ax, %%ax\n\t"
+        "movw %%ax, %%ds\n\t"
+        "movw %%ax, %%es\n\t"
+        "movw %%ax, %%fs\n\t"
+        "movw %%ax, %%gs\n\t"
+        "movw %%ax, %%ss\n\t"
 
         "sti\n\t"
 
-        "push 0\n\t"
-        "push 0x7c00\n\t"
-        "retf\n\t"
+        "pushw $0\n\t"
+        "pushw $0x7c00\n\t"
+        "lret\n\t"
 
         ".code32\n\t"
         :

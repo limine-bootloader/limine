@@ -49,9 +49,9 @@ void print_stacktrace(size_t *base_ptr) {
     if (base_ptr == NULL) {
         asm volatile (
 #if defined (bios)
-            "mov %0, ebp"
+            "movl %%ebp, %0"
 #elif defined (uefi)
-            "mov %0, rbp"
+            "movq %%rbp, %0"
 #endif
             : "=g"(base_ptr)
             :: "memory"

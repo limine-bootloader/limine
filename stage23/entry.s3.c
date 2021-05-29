@@ -24,15 +24,16 @@ void stage3_common(void);
 
 #if defined (uefi)
 __attribute__((naked))
-EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
+EFI_STATUS efi_main(
+    __attribute__((unused)) EFI_HANDLE ImageHandle,
+    __attribute__((unused)) EFI_SYSTEM_TABLE *SystemTable) {
     // Invalid return address of 0 to end stacktraces here
     asm (
-        "push 0\n\t"
-        "push 0\n\t"
-        "xor eax, eax\n\t"
+        "pushq $0\n\t"
+        "pushq $0\n\t"
+        "xorl %eax, %eax\n\t"
         "jmp uefi_entry\n\t"
     );
-    (void)ImageHandle; (void)SystemTable;
 }
 
 __attribute__((noreturn))

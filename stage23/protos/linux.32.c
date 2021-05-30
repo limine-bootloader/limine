@@ -56,7 +56,7 @@ __attribute__((noreturn)) void linux_spinup(void *entry, void *boot_params) {
         "xorl %%edi, %%edi\n\t"
         "xorl %%ebx, %%ebx\n\t"
 
-        "jmp *(%%ecx)\n\t"
+        "jmp *%%ecx\n\t"
         :
         : "m"(linux_gdt), "c"(entry), "S"(boot_params)
         : "memory"

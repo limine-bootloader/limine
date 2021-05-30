@@ -35,6 +35,18 @@ SECTIONS
         bss_end = .;
     }
 
+    .symtab : {
+        *(.symtab)
+    }
+
+    .strtab : {
+        *(.strtab)
+    }
+
+    .shstrtab : {
+        *(.shstrtab)
+    }
+
     /DISCARD/ : {
         *(*)
     }

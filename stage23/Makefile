@@ -16,12 +16,16 @@ endif
 TOOLCHAIN = x86_64-elf
 
 TOOLCHAIN_CC = $(TOOLCHAIN)-gcc
+TOOLCHAIN_LD = $(TOOLCHAIN)-ld
 TOOLCHAIN_OBJCOPY = $(TOOLCHAIN)-objcopy
 TOOLCHAIN_OBJDUMP = $(TOOLCHAIN)-objdump
 TOOLCHAIN_READELF = $(TOOLCHAIN)-readelf
 
 ifeq ($(shell which $(TOOLCHAIN_CC)), )
 TOOLCHAIN_CC := gcc
+endif
+ifeq ($(shell which $(TOOLCHAIN_LD)), )
+TOOLCHAIN_LD := ld
 endif
 ifeq ($(shell which $(TOOLCHAIN_OBJCOPY)), )
 TOOLCHAIN_OBJCOPY := objcopy
@@ -88,32 +92,25 @@ ifeq ($(TARGET), uefi)
 		-mno-red-zone
 endif
 
-LDFLAGS = -O3 -g
+LDFLAGS =
 
 INTERNAL_LDFLAGS := \
-	-fno-pic \
-	-fno-lto \
 	-nostdlib \
 	-z max-page-size=0x1000
 
 ifeq ($(TARGET), bios)
 	INTERNAL_LDFLAGS += \
-		-m32 \
-		-march=i386 \
-		-fno-pie \
-		-Wl,-melf_i386 \
-		-static \
-		-no-pie
+		-melf_i386 \
+		-static
 endif
 
 ifeq ($(TARGET), uefi)
 	INTERNAL_LDFLAGS += \
-		-m64 \
-		-march=x86-64 \
-		-fpie \
-		-Wl,-melf_x86_64 \
-		-Wl,-static,-pie,--no-dynamic-linker,-ztext \
-		-static-pie
+		-melf_x86_64 \
+		-static \
+		-pie \
+		--no-dynamic-linker \
+		-ztext
 endif
 
 .PHONY: all clean builddir
@@ -175,18 +172,18 @@ $(BUILDDIR)/limine.sys: $(BUILDDIR)/limine.elf
 	$(TOOLCHAIN_OBJCOPY) -O binary $< $@
 
 $(BUILDDIR)/limine_stage2only.elf: $(OBJ)
-	$(TOOLCHAIN_CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_stage2only.ld -o $@ || \
+	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_stage2only.ld -o $@ || \
 		( echo "This error may mean that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
 		  false )
 
 $(BUILDDIR)/limine_nomap.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o
-	$(TOOLCHAIN_CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
+	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
 
 $(BUILDDIR)/limine.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o
-	$(TOOLCHAIN_CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o $@
+	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o $@
 
 $(BUILDDIR)/limine_dbg.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o
-	$(TOOLCHAIN_CC) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o $@
+	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o $@
 
 endif
 
@@ -201,7 +198,7 @@ $(BUILDDIR)/BOOTX64.EFI: $(BUILDDIR)/limine_efi.elf
 	$(TOOLCHAIN_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 $< $@
 
 $(BUILDDIR)/limine_efi_nomap.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
-	$(TOOLCHAIN_CC) \
+	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi_nomap.ld \
 		../gnu-efi/gnuefi/crt0-efi-x86_64.o \
 		../gnu-efi/gnuefi/libgnuefi.a \
@@ -209,7 +206,7 @@ $(BUILDDIR)/limine_efi_nomap.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_
 		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
 $(BUILDDIR)/limine_efi.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
-	$(TOOLCHAIN_CC) \
+	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi.ld \
 		../gnu-efi/gnuefi/crt0-efi-x86_64.o \
 		../gnu-efi/gnuefi/libgnuefi.a \

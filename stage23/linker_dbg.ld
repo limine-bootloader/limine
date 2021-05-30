@@ -44,63 +44,63 @@ SECTIONS
         bss_end = .;
     }
 
-    .symtab : {
+    .symtab 0 : {
         *(.symtab)
     }
 
-    .strtab : {
+    .strtab 0 : {
         *(.strtab)
     }
 
-    .shstrtab : {
+    .shstrtab 0 : {
         *(.shstrtab)
     }
 
-    .debug_aranges : {
+    .debug_aranges 0 : {
         *(.debug_aranges)
     }
 
-    .debug_pubnames : {
+    .debug_pubnames 0 : {
         *(.debug_pubnames)
     }
 
-    .debug_info : {
+    .debug_info 0 : {
         *(.debug_info)
     }
 
-    .debug_abbrev : {
+    .debug_abbrev 0 : {
         *(.debug_abbrev)
     }
 
-    .debug_line : {
+    .debug_line 0 : {
         *(.debug_line)
     }
 
-    .debug_loclists : {
+    .debug_loclists 0 : {
         *(.debug_loclists)
     }
 
-    .debug_rnglists : {
+    .debug_rnglists 0 : {
         *(.debug_rnglists)
     }
 
-    .debug_frame : {
+    .debug_frame 0 : {
         *(.debug_frame)
     }
 
-    .debug_loc : {
+    .debug_loc 0 : {
         *(.debug_loc)
     }
 
-    .debug_ranges : {
+    .debug_ranges 0 : {
         *(.debug_ranges)
     }
 
-    .debug_str : {
+    .debug_str 0 : {
         *(.debug_str)
     }
 
-    .debug_line_str : {
+    .debug_line_str 0 : {
         *(.debug_line_str)
     }
 

@@ -44,15 +44,15 @@ SECTIONS
         bss_end = .;
     }
 
-    .symtab : {
+    .symtab 0 : {
         *(.symtab)
     }
 
-    .strtab : {
+    .strtab 0 : {
         *(.strtab)
     }
 
-    .shstrtab : {
+    .shstrtab 0 : {
         *(.shstrtab)
     }
 

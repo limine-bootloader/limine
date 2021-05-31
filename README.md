@@ -79,7 +79,7 @@ make toolchain
 ### Building Limine
 
 In order to build Limine, the following packages have to be installed: `bash`, `make`, `git`,
-`which`, `nasm`, `mtools`. Furthermore, either the toolchain must have been built in
+`which`, `nasm`, `mtools` (optional, necessary to build `limine-eltorito-efi.bin`). Furthermore, either the toolchain must have been built in
 the previous paragraph, or `gcc` and `binutils` must also be installed.
 
 The bootloader can then be built with:

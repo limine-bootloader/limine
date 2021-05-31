@@ -66,10 +66,11 @@ limine-bios: stage23-bios decompressor
 
 bin/limine-eltorito-efi.bin: build/stage23-uefi/BOOTX64.EFI
 	dd if=/dev/zero of=$@ bs=512 count=2880
-	mformat -i $@ -f 1440 ::
-	mmd -D s -i $@ ::/EFI
-	mmd -D s -i $@ ::/EFI/BOOT
-	mcopy -D o -i $@ build/stage23-uefi/BOOTX64.EFI ::/EFI/BOOT
+	( mformat -i $@ -f 1440 :: && \
+	  mmd -D s -i $@ ::/EFI && \
+	  mmd -D s -i $@ ::/EFI/BOOT && \
+	  mcopy -D o -i $@ build/stage23-uefi/BOOTX64.EFI ::/EFI/BOOT ) \
+	|| rm -f $@
 
 .PHONY: limine-uefi
 limine-uefi:

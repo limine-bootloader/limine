@@ -99,7 +99,7 @@ The generated bootloader files are going to be in `bin`.
 
 In order to build the BIOS port fully using clang/LLVM, run `make` as such:
 ```bash
-make limine-bios TOOLCHAIN="llvm" TOOLCHAIN_CC="clang" TOOLCHAIN_LD="ld.lld"
+make limine-bios bin/limine-install CC="clang" TOOLCHAIN="llvm" TOOLCHAIN_CC="clang" TOOLCHAIN_LD="ld.lld"
 ```
 And in order to build the UEFI port using clang/LLVM + `GNU binutils`, run `make` as such:
 ```bash

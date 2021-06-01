@@ -64,11 +64,10 @@ rebuild `limine-install`, simply use `make` in the binary release.
 ### Building the toolchain
 
 This step can take a long time, but it will ensure that the compiler will work with
-Limine. If on an x86_64 host, with GCC installed, you can also skip to the next
-paragraph.
+Limine. If on an x86_64 host, with GCC or Clang installed, you can also skip to the next paragraph.
 
-The toolchain building process depends on the following packages: `bash`, `make`, `wget`,
-`gcc`, `g++`, `binutils`.
+The toolchain building process depends on the following packages: `bash`, `make`,
+`wget`, `gcc`, `g++`, `GNU binutils`.
 
 Building the toolchain can be accomplished by running:
 ```bash
@@ -78,11 +77,14 @@ make toolchain
 
 ### Building Limine
 
-In order to build Limine, the following packages have to be installed: `bash`, `make`, `git`,
-`which`, `nasm`, `mtools` (optional, necessary to build `limine-eltorito-efi.bin`). Furthermore, either the toolchain must have been built in
-the previous paragraph, or `gcc` and `binutils` must also be installed.
+In order to build Limine, the following packages have to be installed: `bash`, `make`,
+`git`, `which`, `nasm`, `mtools` (optional, necessary to build `limine-eltorito-efi.bin`).
+Furthermore, either the toolchain must have been built in the previous paragraph,
+or `gcc` or `llvm/clang` must also be installed.
+`GNU binutils` is necessary in order to build the UEFI port of Limine. A full
+LLVM toolchain without `GNU binutils` can be used to build the BIOS port instead.
 
-The bootloader can then be built with:
+Both the UEFI and BIOS ports of the bootloader can built, using `GCC/GNU binutils`, with:
 ```bash
 make
 ```
@@ -92,6 +94,17 @@ allows one to specify an alternative toolchain for the build system to use
 (the default is `x86_64-elf`, falling back to no-triple, or host, toolchain).
 
 The generated bootloader files are going to be in `bin`.
+
+#### Using clang/LLVM
+
+In order to build the BIOS port fully using clang/LLVM, run `make` as such:
+```bash
+make limine-bios TOOLCHAIN="llvm" TOOLCHAIN_CC="clang" TOOLCHAIN_LD="ld.lld"
+```
+And in order to build the UEFI port using clang/LLVM + `GNU binutils`, run `make` as such:
+```bash
+make limine-uefi TOOLCHAIN="llvm" TOOLCHAIN_CC="clang" TOOLCHAIN_LD="ld" TOOLCHAIN_OBJCOPY="objcopy"
+```
 
 ## Installing Limine binaries
 

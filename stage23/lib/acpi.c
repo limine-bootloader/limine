@@ -25,7 +25,7 @@ void *acpi_get_rsdp(void) {
             i = 0xe0000;
         }
         if (!memcmp((char *)i, "RSD PTR ", 8)
-         && !acpi_checksum((void *)i, sizeof(struct rsdp))) {
+         && !acpi_checksum((void *)i, 20)) {
             printv("acpi: Found RSDP at %x\n", i);
             return (void *)i;
         }

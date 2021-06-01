@@ -84,7 +84,7 @@ or `gcc` or `llvm/clang` must also be installed.
 `GNU binutils` is necessary in order to build the UEFI port of Limine. A full
 LLVM toolchain without `GNU binutils` can be used to build the BIOS port instead.
 
-Both the UEFI and BIOS ports of the bootloader can built, using `GCC/GNU binutils`, with:
+Both the UEFI and BIOS ports of the bootloader can be built, using `GCC/GNU binutils`, with:
 ```bash
 make
 ```

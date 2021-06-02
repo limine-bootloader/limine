@@ -112,7 +112,7 @@ __attribute__((noreturn)) void stivale_spinup_32(
             "cli\n\t"
             "cld\n\t"
 
-            "movl %%esp, %%esi\n\t"
+            "movl %%esi, %%esp\n\t"
             "pushl %%edi\n\t"
             "pushl $0\n\t"
 
@@ -128,7 +128,7 @@ __attribute__((noreturn)) void stivale_spinup_32(
             "xorl %%edi, %%edi\n\t"
             "xorl %%ebp, %%ebp\n\t"
 
-            "iret\n\t"
+            "iretl\n\t"
             :
             : "D" ((uint32_t)casted_to_64[0]),
               "b" ((uint32_t)casted_to_64[1]),

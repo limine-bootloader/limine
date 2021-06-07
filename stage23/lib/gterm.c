@@ -173,6 +173,20 @@ void gterm_plot_char(struct gterm_char *c, int x, int y) {
     }
 }
 
+static void plot_char_grid_force(struct gterm_char *c, int x, int y) {
+    uint32_t new_char[VGA_FONT_WIDTH * VGA_FONT_HEIGHT];
+    plot_char_mem(new_char, c,
+                  x * VGA_FONT_WIDTH + frame_width, y * VGA_FONT_HEIGHT + frame_height);
+
+    for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
+        for (int j = 0; j < VGA_FONT_WIDTH; j++) {
+            gterm_plot_px(x * VGA_FONT_WIDTH + frame_width + j,
+                          y * VGA_FONT_HEIGHT + frame_height + i,
+                          new_char[i * VGA_FONT_WIDTH + j]);
+        }
+    }
+}
+
 static void plot_char_grid(struct gterm_char *c, int x, int y) {
     uint32_t old_char[VGA_FONT_WIDTH * VGA_FONT_HEIGHT];
     uint32_t new_char[VGA_FONT_WIDTH * VGA_FONT_HEIGHT];
@@ -197,10 +211,10 @@ static void plot_char_grid(struct gterm_char *c, int x, int y) {
 }
 
 static void clear_cursor(void) {
-    struct gterm_char c = grid[cursor_x + cursor_y * cols];
-    c.fg = 9;
-    c.bg = 8;
-    plot_char_grid(&c, cursor_x, cursor_y);
+    if (cursor_status) {
+        struct gterm_char c = grid[cursor_x + cursor_y * cols];
+        plot_char_grid_force(&c, cursor_x, cursor_y);
+    }
 }
 
 static void draw_cursor(void) {
@@ -208,7 +222,7 @@ static void draw_cursor(void) {
         struct gterm_char c = grid[cursor_x + cursor_y * cols];
         c.fg = 0;
         c.bg = 7;
-        plot_char_grid(&c, cursor_x, cursor_y);
+        plot_char_grid_force(&c, cursor_x, cursor_y);
     }
 }
 
@@ -261,9 +275,11 @@ void gterm_enable_cursor(void) {
     draw_cursor();
 }
 
-void gterm_disable_cursor(void) {
+bool gterm_disable_cursor(void) {
+    bool ret = cursor_status;
     clear_cursor();
     cursor_status = false;
+    return ret;
 }
 
 void gterm_set_cursor_pos(int x, int y) {
@@ -301,6 +317,8 @@ void gterm_double_buffer_flush(void) {
         gterm_plot_char(&grid[i], x * VGA_FONT_WIDTH + frame_width,
                                 y * VGA_FONT_HEIGHT + frame_height);
     }
+
+    draw_cursor();
 }
 
 void gterm_double_buffer(bool state) {
@@ -310,12 +328,8 @@ void gterm_double_buffer(bool state) {
         gterm_clear(true);
         gterm_double_buffer_flush();
     } else {
-        bool pcs = cursor_status;
-        cursor_status = false;
         gterm_clear(true);
         gterm_double_buffer_flush();
-        cursor_status = pcs;
-        draw_cursor();
         double_buffer_enabled = false;
     }
 }

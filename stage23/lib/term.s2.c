@@ -20,7 +20,7 @@ int term_backend = NOT_READY;
 void (*raw_putchar)(uint8_t c);
 void (*clear)(bool move);
 void (*enable_cursor)(void);
-void (*disable_cursor)(void);
+bool (*disable_cursor)(void);
 void (*set_cursor_pos)(int x, int y);
 void (*get_cursor_pos)(int *x, int *y);
 void (*set_text_fg)(int fg);
@@ -62,8 +62,11 @@ static void term_putchar(uint8_t c);
 void term_write(const char *buf, size_t count) {
     if (term_backend == NOT_READY)
         return;
+    bool old_cur_stat = disable_cursor();
     for (size_t i = 0; i < count; i++)
         term_putchar(buf[i]);
+    if (old_cur_stat)
+        enable_cursor();
 }
 
 static int get_cursor_pos_x(void) {

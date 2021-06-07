@@ -8,7 +8,7 @@
 extern void (*raw_putchar)(uint8_t c);
 extern void (*clear)(bool move);
 extern void (*enable_cursor)(void);
-extern void (*disable_cursor)(void);
+extern bool (*disable_cursor)(void);
 extern void (*set_cursor_pos)(int x, int y);
 extern void (*get_cursor_pos)(int *x, int *y);
 extern void (*set_text_fg)(int fg);

@@ -13,7 +13,7 @@ bool gterm_init(int *_rows, int *_cols, int width, int height);
 void gterm_putchar(uint8_t c);
 void gterm_clear(bool move);
 void gterm_enable_cursor(void);
-void gterm_disable_cursor(void);
+bool gterm_disable_cursor(void);
 void gterm_set_cursor_pos(int x, int y);
 void gterm_get_cursor_pos(int *x, int *y);
 void gterm_set_text_fg(int fg);

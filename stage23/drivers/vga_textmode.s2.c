@@ -67,10 +67,11 @@ void text_enable_cursor(void) {
     return;
 }
 
-void text_disable_cursor(void) {
+bool text_disable_cursor(void) {
+    bool ret = cursor_status != 0;
     cursor_status = 0;
     clear_cursor();
-    return;
+    return ret;
 }
 
 void init_vga_textmode(int *_rows, int *_cols, bool managed) {

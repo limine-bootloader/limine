@@ -8,7 +8,6 @@
 #  include <efi.h>
 #endif
 #include <lib/blib.h>
-#include <lib/print.h>
 #include <mm/pmm.h>
 
 #if defined(bios)
@@ -78,14 +77,7 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
 void disk_create_index(void) {
     size_t volume_count = 0;
 
-    printv("Detected volumes:\n");
-
-    for (uint8_t drive = 0x80; ; drive++) {
-        if (drive == 0x90)
-            drive = 0xe0;
-        else if (drive == 0xf0)
-            break;
-
+    for (uint8_t drive = 0x80; drive < 0xf0; drive++) {
         struct rm_regs r = {0};
         struct bios_drive_params drive_params;
 
@@ -111,10 +103,12 @@ void disk_create_index(void) {
         block.first_sect = 0;
         block.sect_count = drive_params.lba_count;
 
-        // The medium could not be present (e.g.: CD-ROMs)
-        // Do a test run to see if we can actually read it
-        if (!disk_read_sectors(&block, NULL, 0, 1)) {
-            continue;
+        if (drive_params.info_flags & (1 << 2)) {
+            // The medium could not be present (e.g.: CD-ROMs)
+            // Do a test run to see if we can actually read it
+            if (!disk_read_sectors(&block, NULL, 0, 1)) {
+                continue;
+            }
         }
 
         volume_count++;
@@ -134,12 +128,9 @@ void disk_create_index(void) {
 
     volume_index = ext_mem_alloc(sizeof(struct volume) * volume_count);
 
-    for (uint8_t drive = 0x80; ; drive++) {
-        if (drive == 0x90)
-            drive = 0xe0;
-        else if (drive == 0xf0)
-            break;
+    int optical_indices = 1, hdd_indices = 1;
 
+    for (uint8_t drive = 0x80; drive < 0xf0; drive++) {
         struct rm_regs r = {0};
         struct bios_drive_params drive_params;
 
@@ -161,23 +152,27 @@ void disk_create_index(void) {
         struct volume *block = ext_mem_alloc(sizeof(struct volume));
 
         block->drive = drive;
-        block->partition = -1;
+        block->partition = 0;
         block->sector_size = drive_params.bytes_per_sect;
         block->first_sect = 0;
         block->sect_count = drive_params.lba_count;
         block->max_partition = -1;
 
-        // The medium could not be present (e.g.: CD-ROMs)
-        // Do a test run to see if we can actually read it
-        if (!disk_read_sectors(block, NULL, 0, 1)) {
-            continue;
+        if (drive_params.info_flags & (1 << 2)) {
+            // The medium could not be present (e.g.: CD-ROMs)
+            // Do a test run to see if we can actually read it
+            if (!disk_read_sectors(block, NULL, 0, 1)) {
+                continue;
+            }
+            block->index = optical_indices++;
+            block->is_optical = true;
+        } else {
+            block->index = hdd_indices++;
         }
 
         if (gpt_get_guid(&block->guid, block)) {
             block->guid_valid = true;
         }
-
-        printv("    %x\n", block->drive);
 
         volume_index[volume_index_i++] = block;
 
@@ -189,8 +184,6 @@ void disk_create_index(void) {
                 break;
             if (ret == NO_PARTITION)
                 continue;
-
-            printv("    %x:%u\n", block->drive, part);
 
             volume_index[volume_index_i++] = p;
 
@@ -234,7 +227,7 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE *efi_handle) {
     if (status) {
         // Really hacky support for CDs because they are read-only
         for (size_t i = 0; i < volume_index_i; i++) {
-            if (volume_index[i]->drive == 0xe0)
+            if (volume_index[i]->is_optical)
                 return volume_index[i];
         }
 
@@ -343,9 +336,7 @@ void disk_create_index(void) {
 
     volume_index = ext_mem_alloc(sizeof(struct volume) * volume_count);
 
-    printv("Detected volumes:\n");
-
-    size_t drives_counter = 0x80, optical_counter = 0xe0;
+    int optical_indices = 1, hdd_indices = 1;
 
     for (size_t i = 0; i < handles_size / sizeof(EFI_HANDLE); i++) {
         EFI_GUID disk_io_guid = DISK_IO_PROTOCOL;
@@ -373,12 +364,15 @@ void disk_create_index(void) {
 
         struct volume *block = ext_mem_alloc(sizeof(struct volume));
 
-        if (status)
-            block->drive = optical_counter++;
-        else
-            block->drive = drives_counter++;
+        if (status) {
+            block->index = optical_indices++;
+            block->is_optical = true;
+        } else {
+            block->index = hdd_indices++;
+        }
+
         block->efi_handle = handles[i];
-        block->partition = -1;
+        block->partition = 0;
         block->sector_size = drive->Media->BlockSize;
         block->first_sect = 0;
         block->sect_count = drive->Media->LastBlock + 1;
@@ -387,8 +381,6 @@ void disk_create_index(void) {
         if (gpt_get_guid(&block->guid, block)) {
             block->guid_valid = true;
         }
-
-        printv("    %x\n", block->drive);
 
         volume_index[volume_index_i++] = block;
 
@@ -400,8 +392,6 @@ void disk_create_index(void) {
                 break;
             if (ret == NO_PARTITION)
                 continue;
-
-            printv("    %x:%u\n", block->drive, part);
 
             volume_index[volume_index_i++] = p;
 

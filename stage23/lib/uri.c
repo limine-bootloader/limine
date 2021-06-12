@@ -55,7 +55,7 @@ bool uri_resolve(char *uri, char **resource, char **root, char **path) {
 }
 
 static bool parse_bios_partition(char *loc, int *drive, int *partition) {
-    int64_t val;
+    uint64_t val;
 
     for (size_t i = 0; ; i++) {
         if (loc[i] == 0)
@@ -67,8 +67,8 @@ static bool parse_bios_partition(char *loc, int *drive, int *partition) {
                 panic("Drive number cannot be omitted for hdd:// and odd://");
             } else {
                 val = strtoui(loc, NULL, 10);
-                if (val < 1 || val > 16) {
-                    panic("Drive number outside range 1-16");
+                if (val < 1 || val > 256) {
+                    panic("Drive number outside range 1-256");
                 }
                 *drive = val;
             }
@@ -77,16 +77,11 @@ static bool parse_bios_partition(char *loc, int *drive, int *partition) {
         }
     }
 
-    if (*loc == 0) {
-        *partition = -1;
-        return true;
-    }
-
     val = strtoui(loc, NULL, 10);
-    if (val < 1 || val > 256) {
-        panic("Partition number outside range 1-256");
+    if (val > 256) {
+        panic("Partition number outside range 0-256");
     }
-    *partition = val - 1;
+    *partition = val;
 
     return true;
 }
@@ -97,9 +92,7 @@ static bool uri_hdd_dispatch(struct file_handle *fd, char *loc, char *path) {
     if (!parse_bios_partition(loc, &drive, &partition))
         return false;
 
-    drive = (drive - 1) + 0x80;
-
-    struct volume *volume = volume_get_by_coord(drive, partition);
+    struct volume *volume = volume_get_by_coord(false, drive, partition);
 
     if (volume == NULL)
         return false;
@@ -116,9 +109,7 @@ static bool uri_odd_dispatch(struct file_handle *fd, char *loc, char *path) {
     if (!parse_bios_partition(loc, &drive, &partition))
         return false;
 
-    drive = (drive - 1) + 0xe0;
-
-    struct volume *volume = volume_get_by_coord(drive, partition);
+    struct volume *volume = volume_get_by_coord(true, drive, partition);
 
     if (volume == NULL)
         return false;
@@ -184,15 +175,16 @@ static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) 
 
     if (s_part[0] != '\0') {
         uint64_t val = strtoui(s_part, NULL, 10);
-        if (val < 1 || val > 256) {
-            panic("Partition number outside range 1-256");
+        if (val > 256) {
+            panic("Partition number outside range 0-256");
         }
-        partition = val - 1;
+        partition = val;
     } else {
         partition = boot_volume->partition;
     }
 
-    struct volume *volume = volume_get_by_coord(boot_volume->drive, partition);
+    struct volume *volume = volume_get_by_coord(boot_volume->is_optical,
+                                                boot_volume->index, partition);
     if (volume == NULL)
         return false;
 

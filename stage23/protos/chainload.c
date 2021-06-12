@@ -75,13 +75,13 @@ void chainload(char *config) {
     int part; {
         char *part_config = config_get_value(config, 0, "PARTITION");
         if (part_config == NULL) {
-            part = -1;
+            part = 0;
         } else {
             val = strtoui(part_config, NULL, 10);
-            if (val < 1 || val > 256) {
-                panic("BIOS partition number outside range 1-256");
+            if (val > 256) {
+                panic("BIOS partition number outside range 0-256");
             }
-            part = val - 1;
+            part = val;
         }
     }
     int drive; {
@@ -90,16 +90,16 @@ void chainload(char *config) {
             panic("DRIVE not specified");
         }
         val = strtoui(drive_config, NULL, 10);
-        if (val < 1 || val > 16) {
-            panic("BIOS drive number outside range 1-16");
+        if (val < 1 || val > 256) {
+            panic("BIOS drive number outside range 1-256");
         }
-        drive = (val - 1) + 0x80;
+        drive = val;
     }
 
     int rows, cols;
     init_vga_textmode(&rows, &cols, false);
 
-    struct volume *p = volume_get_by_coord(drive, part);
+    struct volume *p = volume_get_by_coord(false, drive, part);
 
     volume_read(p, (void *)0x7c00, 0, 512);
 

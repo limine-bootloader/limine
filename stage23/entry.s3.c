@@ -96,7 +96,7 @@ void stage3_common(void) {
     verbose = verbose_str != NULL && strcmp(verbose_str, "yes") == 0;
 
     if (verbose) {
-        print("Boot drive: %x\n", boot_volume->drive);
+        print("Boot drive: %x\n", boot_volume->index);
         print("Boot partition: %d\n", boot_volume->partition);
     }
 

@@ -16,11 +16,15 @@
 struct volume {
 #if defined (uefi)
     EFI_HANDLE efi_handle;
+#elif defined (bios)
+    int drive;
 #endif
 
+    int index;
+
+    bool is_optical;
     bool pxe;
 
-    int drive;
     int partition;
     int sector_size;
     struct volume *backing_dev;
@@ -48,7 +52,10 @@ bool gpt_get_guid(struct guid *guid, struct volume *volume);
 int part_get(struct volume *part, struct volume *volume, int partition);
 
 struct volume *volume_get_by_guid(struct guid *guid);
-struct volume *volume_get_by_coord(int drive, int partition);
+struct volume *volume_get_by_coord(bool optical, int drive, int partition);
+#if defined (bios)
+struct volume *volume_get_by_bios_drive(int drive);
+#endif
 
 bool volume_read(struct volume *part, void *buffer, uint64_t loc, uint64_t count);
 
@@ -65,11 +72,12 @@ bool volume_read(struct volume *part, void *buffer, uint64_t loc, uint64_t count
         } \
  \
         int _PART_CNT = -1; \
-        for (size_t _PARTNO = -1; ; _PARTNO++) { \
+        for (size_t _PARTNO = 0; ; _PARTNO++) { \
             if (_PART_CNT > _VOLUME->max_partition) \
                 break; \
  \
-            struct volume *_PART = volume_get_by_coord(_VOLUME->drive, _PARTNO); \
+            struct volume *_PART = volume_get_by_coord(_VOLUME->is_optical, \
+                                                       _VOLUME->index, _PARTNO); \
             if (_PART == NULL) \
                 continue; \
  \

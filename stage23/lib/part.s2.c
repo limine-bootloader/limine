@@ -152,9 +152,12 @@ static int gpt_get_part(struct volume *ret, struct volume *volume, int partition
 
 #if defined (uefi)
     ret->efi_handle  = volume->efi_handle;
-#endif
+#elif defined (bios)
     ret->drive       = volume->drive;
-    ret->partition   = partition;
+#endif
+    ret->index       = volume->index;
+    ret->is_optical  = volume->is_optical;
+    ret->partition   = partition + 1;
     ret->sector_size = sector_size;
     ret->first_sect  = entry.starting_lba;
     ret->sect_count  = (entry.ending_lba - entry.starting_lba) + 1;
@@ -209,9 +212,12 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
 
 #if defined (uefi)
     ret->efi_handle  = extended_part->efi_handle;
-#endif
+#elif defined (bios)
     ret->drive       = extended_part->drive;
-    ret->partition   = partition + 4;
+#endif
+    ret->index       = extended_part->index;
+    ret->is_optical  = extended_part->is_optical;
+    ret->partition   = partition + 4 + 1;
     ret->sector_size = extended_part->sector_size;
     ret->first_sect  = extended_part->first_sect + ebr_sector + entry.first_sect;
     ret->sect_count  = entry.sect_count;
@@ -284,9 +290,12 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
 
 #if defined (uefi)
             extended_part.efi_handle  = volume->efi_handle;
-#endif
+#elif defined (bios)
             extended_part.drive       = volume->drive;
-            extended_part.partition   = i;
+#endif
+            extended_part.index       = volume->index;
+            extended_part.is_optical  = volume->is_optical;
+            extended_part.partition   = i + 1;
             extended_part.sector_size = volume->sector_size;
             extended_part.first_sect  = entry.first_sect;
             extended_part.sect_count  = entry.sect_count;
@@ -307,9 +316,12 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
 
 #if defined (uefi)
     ret->efi_handle  = volume->efi_handle;
-#endif
+#elif defined (bios)
     ret->drive       = volume->drive;
-    ret->partition   = partition;
+#endif
+    ret->index       = volume->index;
+    ret->is_optical  = volume->is_optical;
+    ret->partition   = partition + 1;
     ret->sector_size = volume->sector_size;
     ret->first_sect  = entry.first_sect;
     ret->sect_count  = entry.sect_count;
@@ -360,9 +372,10 @@ struct volume *volume_get_by_guid(struct guid *guid) {
     return NULL;
 }
 
-struct volume *volume_get_by_coord(int drive, int partition) {
+struct volume *volume_get_by_coord(bool optical, int drive, int partition) {
     for (size_t i = 0; i < volume_index_i; i++) {
-        if (volume_index[i]->drive == drive
+        if (volume_index[i]->index == drive
+         && volume_index[i]->is_optical == optical
          && volume_index[i]->partition == partition) {
             return volume_index[i];
         }
@@ -370,3 +383,15 @@ struct volume *volume_get_by_coord(int drive, int partition) {
 
     return NULL;
 }
+
+#if defined (bios)
+struct volume *volume_get_by_bios_drive(int drive) {
+    for (size_t i = 0; i < volume_index_i; i++) {
+        if (volume_index[i]->drive == drive) {
+            return volume_index[i];
+        }
+    }
+
+    return NULL;
+}
+#endif

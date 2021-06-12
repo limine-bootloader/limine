@@ -124,7 +124,7 @@ static struct iso9660_context *iso9660_get_context(struct volume *vol) {
     return &node->context;
 }
 
-static void load_name(char *buf, struct iso9660_directory_entry *entry) {
+static bool load_name(char *buf, struct iso9660_directory_entry *entry) {
     unsigned char* sysarea = ((unsigned char*)entry) + sizeof(struct iso9660_directory_entry) + entry->filename_size;
     int sysarea_len = entry->length - sizeof(struct iso9660_directory_entry) - entry->filename_size;
     if ((entry->filename_size & 0x1) == 0) {
@@ -148,6 +148,7 @@ static void load_name(char *buf, struct iso9660_directory_entry *entry) {
         name_len = rrnamelen;
         memcpy(buf, sysarea + 5, name_len);
         buf[name_len] = 0;
+        return true;
     } else {
         name_len = entry->filename_size;
         size_t j;
@@ -156,23 +157,15 @@ static void load_name(char *buf, struct iso9660_directory_entry *entry) {
                 break;
             if (entry->name[j] == '.' && entry->name[j+1] == ';')
                 break;
-            buf[j] = tolower(entry->name[j]);
         }
         buf[j] = 0;
+        return false;
     }
 }
 
-static struct iso9660_directory_entry *iso9660_find(void *buffer, uint32_t size, const char *_filename) {
-    char filename[strlen(_filename) + 1];
-    size_t i = 0;
-    while (*_filename)
-        filename[i++] = tolower(*_filename++);
-    filename[i] = 0;
-
+static struct iso9660_directory_entry *iso9660_find(void *buffer, uint32_t size, const char *filename) {
     while (size) {
         struct iso9660_directory_entry *entry = buffer;
-        char entry_filename[128];
-        load_name(entry_filename, entry);
 
         if (entry->length == 0) {
             if (size <= ISO9660_SECTOR_SIZE)
@@ -183,8 +176,17 @@ static struct iso9660_directory_entry *iso9660_find(void *buffer, uint32_t size,
             continue;
         }
 
-        if (strcmp(filename, entry_filename) == 0) {
-            return buffer;
+        char entry_filename[128];
+        bool rr = load_name(entry_filename, entry);
+
+        if (rr) {
+            if (strcmp(filename, entry_filename) == 0) {
+                return buffer;
+            }
+        } else {
+            if (strcasecmp(filename, entry_filename) == 0) {
+                return buffer;
+            }
         }
 
         size -= entry->length;

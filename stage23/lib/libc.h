@@ -15,6 +15,7 @@ char *strcpy(char *, const char *);
 char *strncpy(char *, const char *, size_t);
 size_t strlen(const char *);
 int strcmp(const char *, const char *);
+int strcasecmp(const char *, const char *);
 int strncmp(const char *, const char *, size_t);
 int inet_pton(const char *src, void *dst);
 

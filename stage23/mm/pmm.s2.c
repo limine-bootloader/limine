@@ -69,8 +69,6 @@ static const char *memmap_type(uint32_t type) {
             return "Kernel/Modules";
         case MEMMAP_EFI_RECLAIMABLE:
             return "EFI reclaimable";
-        case MEMMAP_EFI_LOADER:
-            return "EFI loader";
         default:
             return "???";
     }
@@ -275,14 +273,13 @@ void init_memmap(void) {
             case EfiMemoryMappedIO:
             case EfiMemoryMappedIOPortSpace:
             case EfiPalCode:
+            case EfiLoaderCode:
+            case EfiLoaderData:
             default:
                 our_type = MEMMAP_RESERVED; break;
             case EfiBootServicesCode:
             case EfiBootServicesData:
                 our_type = MEMMAP_EFI_RECLAIMABLE; break;
-            case EfiLoaderCode:
-            case EfiLoaderData:
-                our_type = MEMMAP_EFI_LOADER; break;
             case EfiACPIReclaimMemory:
                 our_type = MEMMAP_ACPI_RECLAIMABLE; break;
             case EfiACPIMemoryNVS:
@@ -331,8 +328,7 @@ void init_memmap(void) {
 
 void pmm_reclaim_uefi_mem(void) {
     for (size_t i = 0; i < memmap_entries; i++) {
-        if (memmap[i].type != MEMMAP_EFI_RECLAIMABLE
-         && memmap[i].type != MEMMAP_EFI_LOADER)
+        if (memmap[i].type != MEMMAP_EFI_RECLAIMABLE)
             continue;
 
         memmap[i].type = MEMMAP_USABLE;

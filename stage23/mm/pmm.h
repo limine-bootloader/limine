@@ -15,7 +15,6 @@
 #define MEMMAP_KERNEL_AND_MODULES     0x1001
 #define MEMMAP_FRAMEBUFFER            0x1002
 #define MEMMAP_EFI_RECLAIMABLE        0x2000
-#define MEMMAP_EFI_LOADER             0x2001
 
 extern struct e820_entry_t memmap[];
 extern size_t memmap_entries;

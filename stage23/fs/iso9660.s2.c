@@ -157,6 +157,7 @@ static bool load_name(char *buf, struct iso9660_directory_entry *entry) {
                 break;
             if (entry->name[j] == '.' && entry->name[j+1] == ';')
                 break;
+            buf[j] = entry->name[j];
         }
         buf[j] = 0;
         return false;

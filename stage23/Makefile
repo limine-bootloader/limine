@@ -195,7 +195,7 @@ $(BUILDDIR)/full.map.o: $(BUILDDIR)/limine_efi_nomap.elf
 	"$$GENSYMS" $(TOOLCHAIN_OBJDUMP) $< full 64
 
 $(BUILDDIR)/BOOTX64.EFI: $(BUILDDIR)/limine_efi.elf
-	$(TOOLCHAIN_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 $< $@
+	$(TOOLCHAIN_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc -j .sbat --target efi-app-x86_64 --subsystem=10 $< $@
 
 $(BUILDDIR)/limine_efi_nomap.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
 	$(TOOLCHAIN_LD) \

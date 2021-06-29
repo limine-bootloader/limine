@@ -392,6 +392,9 @@ int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t alloc_type) {
         return -1;
     }
 
+    uint32_t entry = hdr.entry;
+    bool entry_adjusted = false;
+
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf32_phdr phdr;
         memcpy(&phdr, elf + (hdr.phoff + i * sizeof(struct elf32_phdr)),
@@ -410,9 +413,15 @@ int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t alloc_type) {
             void *ptr = (void *)(uintptr_t)(phdr.p_paddr + phdr.p_filesz);
             memset(ptr, 0, to_zero);
         }
+
+        if (!entry_adjusted && entry >= phdr.p_vaddr && entry <= (phdr.p_vaddr + phdr.p_memsz)) {
+            entry -= phdr.p_vaddr;
+            entry += phdr.p_paddr;
+            entry_adjusted = true;
+        }
     }
 
-    *entry_point = hdr.entry;
+    *entry_point = entry;
 
     return 0;
 }

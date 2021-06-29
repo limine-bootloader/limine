@@ -53,13 +53,26 @@ void multiboot1_load(char *config, char *cmdline) {
     if (header.flags & (1 << 16))
         panic("multiboot1: Aout kludge not supported");
 
-    if (elf_bits(kernel) != 32)
-        panic("multiboot1: Kernel binary must be 32-bit");
+    int bits = elf_bits(kernel);
 
     uint32_t entry_point = 0;
 
-    if (elf32_load(kernel, (uint32_t *)&entry_point, MEMMAP_USABLE))
-        panic("multiboot1: ELF32 load failure");
+    switch (bits) {
+        case 32:
+            if (elf32_load(kernel, &entry_point, MEMMAP_USABLE))
+                panic("multiboot1: ELF32 load failure");
+            break;
+        case 64: {
+            uint64_t e;
+            if (elf64_load(kernel, &e, NULL, MEMMAP_USABLE, false, true))
+                panic("multiboot1: ELF64 load failure");
+            entry_point = e;
+
+            break;
+        }
+        default:
+            panic("multiboot1: Invalid ELF file bitness");
+    }
 
     uint32_t n_modules;
 

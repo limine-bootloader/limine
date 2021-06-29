@@ -123,7 +123,7 @@ void stage3_common(void) {
         linux_load(config, cmdline);
     } else if (!strcmp(proto, "chainload")) {
         chainload(config);
-    } else if (!strcmp(proto, "multiboot1")) {
+    } else if (!strcmp(proto, "multiboot1") || !strcmp(proto, "multiboot")) {
         multiboot1_load(config, cmdline);
     }
 

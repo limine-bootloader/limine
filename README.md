@@ -18,6 +18,7 @@ Like Limine and want to support it? Donate Bitcoin to `bc1q00d59y75crpapw7qp8sea
 * Linux
 * stivale and stivale2 (Limine's native boot protocols, see [their specifications](https://github.com/stivale/stivale) for details)
 * Chainloading
+* Multiboot 1
 
 ### Supported filesystems
 * ext2/3/4

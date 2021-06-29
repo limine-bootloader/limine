@@ -15,6 +15,7 @@
 #include <protos/stivale2.h>
 #include <protos/linux.h>
 #include <protos/chainload.h>
+#include <protos/multiboot1.h>
 #include <menu.h>
 #include <pxe/pxe.h>
 #include <pxe/tftp.h>
@@ -122,6 +123,8 @@ void stage3_common(void) {
         linux_load(config, cmdline);
     } else if (!strcmp(proto, "chainload")) {
         chainload(config);
+    } else if (!strcmp(proto, "multiboot1") || !strcmp(proto, "multiboot")) {
+        multiboot1_load(config, cmdline);
     }
 
     panic("Invalid protocol specified");

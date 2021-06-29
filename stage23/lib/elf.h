@@ -9,7 +9,7 @@
 
 int elf_bits(uint8_t *elf);
 
-int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *slide, uint32_t alloc_type, bool kaslr);
+int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *slide, uint32_t alloc_type, bool kaslr, bool use_paddr);
 int elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t limit, uint64_t slide);
 
 int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t alloc_type);

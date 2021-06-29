@@ -292,7 +292,7 @@ int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
     return 2;
 }
 
-int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t alloc_type, bool kaslr) {
+int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t alloc_type, bool kaslr, bool use_paddr) {
     struct elf64_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
@@ -316,6 +316,9 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t a
     size_t try_count = 0;
     size_t max_simulated_tries = 250;
 
+    uint64_t entry = hdr.entry;
+    bool entry_adjusted = false;
+
     if (!elf64_is_relocatable(elf, &hdr)) {
         simulation = false;
         goto final;
@@ -334,14 +337,20 @@ final:
         if (phdr.p_type != PT_LOAD)
             continue;
 
-        uint64_t load_vaddr = phdr.p_vaddr;
+        uint64_t load_addr = 0;
 
-        if (load_vaddr & ((uint64_t)1 << 63))
-            load_vaddr -= FIXED_HIGHER_HALF_OFFSET_64;
+        if (use_paddr) {
+            load_addr = phdr.p_paddr;
+        } else {
+            load_addr = phdr.p_vaddr;
 
-        load_vaddr += slide;
+            if (load_addr & ((uint64_t)1 << 63))
+                load_addr -= FIXED_HIGHER_HALF_OFFSET_64;
+        }
 
-        if (!memmap_alloc_range((size_t)load_vaddr, (size_t)phdr.p_memsz, alloc_type, true, false, simulation, false)) {
+        load_addr += slide;
+
+        if (!memmap_alloc_range((size_t)load_addr, (size_t)phdr.p_memsz, alloc_type, true, false, simulation, false)) {
             if (++try_count == max_simulated_tries || simulation == false)
                 return -1;
             if (!kaslr)
@@ -349,17 +358,25 @@ final:
             goto again;
         }
 
-        memcpy((void *)(uintptr_t)load_vaddr, elf + (phdr.p_offset), phdr.p_filesz);
+        memcpy((void *)(uintptr_t)load_addr, elf + (phdr.p_offset), phdr.p_filesz);
 
         size_t to_zero = (size_t)(phdr.p_memsz - phdr.p_filesz);
 
         if (to_zero) {
-            void *ptr = (void *)(uintptr_t)(load_vaddr + phdr.p_filesz);
+            void *ptr = (void *)(uintptr_t)(load_addr + phdr.p_filesz);
             memset(ptr, 0, to_zero);
         }
 
-        if (elf64_apply_relocations(elf, &hdr, (void *)(uintptr_t)load_vaddr, phdr.p_vaddr, phdr.p_memsz, slide))
+        if (elf64_apply_relocations(elf, &hdr, (void *)(uintptr_t)load_addr, phdr.p_vaddr, phdr.p_memsz, slide))
             return -1;
+
+        if (use_paddr) {
+            if (!entry_adjusted && entry >= phdr.p_vaddr && entry <= (phdr.p_vaddr + phdr.p_memsz)) {
+                entry -= phdr.p_vaddr;
+                entry += phdr.p_paddr;
+                entry_adjusted = true;
+            }
+        }
     }
 
     if (simulation) {
@@ -367,8 +384,9 @@ final:
         goto final;
     }
 
-    *entry_point = hdr.entry + slide;
-    *_slide = slide;
+    *entry_point = entry + slide;
+    if (_slide)
+        *_slide = slide;
 
     return 0;
 }

@@ -248,7 +248,6 @@ __attribute__((noreturn)) void multiboot1_spinup_32(
 
 __attribute__((noreturn)) void multiboot1_spinup(
                  uint32_t entry_point, uint32_t multiboot1_info) {
-    pic_mask_all();
     pic_flush();
 
 #if defined (uefi)

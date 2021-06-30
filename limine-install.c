@@ -265,6 +265,7 @@ extern uint8_t _binary_limine_hdd_bin_start[], _binary_limine_hdd_bin_end[];
 
 int main(int argc, char *argv[]) {
     int      ok = 1;
+    int      force_mbr = 0;
     uint8_t *bootloader_img = _binary_limine_hdd_bin_start;
     size_t   bootloader_file_size =
         (size_t)_binary_limine_hdd_bin_end - (size_t)_binary_limine_hdd_bin_start;
@@ -278,6 +279,12 @@ int main(int argc, char *argv[]) {
     if (argc < 2) {
         printf("Usage: %s <device> [GPT partition index]\n", argv[0]);
         goto cleanup;
+    }
+
+    if (argc >= 3) {
+        if (strcmp(argv[2], "--force-mbr") == 0) {
+            force_mbr = 1;
+        }
     }
 
     device = open(argv[1], O_RDWR);
@@ -297,10 +304,15 @@ int main(int argc, char *argv[]) {
     for (size_t i = 0; i < sizeof(lb_guesses) / sizeof(uint64_t); i++) {
         device_read(&gpt_header, lb_guesses[i], sizeof(struct gpt_table_header));
         if (!strncmp(gpt_header.signature, "EFI PART", 8)) {
-            gpt = 1;
             lb_size = lb_guesses[i];
-            fprintf(stderr, "Installing to GPT. Logical block size of %" PRIu64 " bytes.\n",
-                    lb_guesses[i]);
+            if (!force_mbr) {
+                gpt = 1;
+                fprintf(stderr, "Installing to GPT. Logical block size of %" PRIu64 " bytes.\n",
+                        lb_guesses[i]);
+            } else {
+                memset(&gpt_header, 0, sizeof(struct gpt_table_header));
+                device_write(&gpt_header, lb_guesses[i], sizeof(struct gpt_table_header));
+            }
             break;
         }
     }
@@ -326,45 +338,108 @@ int main(int argc, char *argv[]) {
 
         uint16_t hint = 0;
         device_read(&hint, 218, sizeof(uint16_t));
-        if (hint != 0)
-            mbr = 0;
+        if (hint != 0) {
+            if (!force_mbr) {
+                mbr = 0;
+            } else {
+                hint = 0;
+                device_write(&hint, 218, sizeof(uint16_t));
+            }
+        }
 
         device_read(&hint, 444, sizeof(uint16_t));
-        if (hint != 0 && hint != 0x5a5a)
-            mbr = 0;
+        if (hint != 0 && hint != 0x5a5a) {
+            if (!force_mbr) {
+                mbr = 0;
+            } else {
+                hint = 0;
+                device_write(&hint, 444, sizeof(uint16_t));
+            }
+        }
 
         device_read(&hint, 510, sizeof(uint16_t));
-        if (hint != 0xaa55)
-            mbr = 0;
+        if (hint != 0xaa55) {
+            if (!force_mbr) {
+                mbr = 0;
+            } else {
+                hint = 0xaa55;
+                device_write(&hint, 510, sizeof(uint16_t));
+            }
+        }
 
         device_read(&hint, 446, sizeof(uint8_t));
-        if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80)
-            mbr = 0;
+        if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80) {
+            if (!force_mbr) {
+                mbr = 0;
+            } else {
+                hint = (uint8_t)hint & 0x80 ? 0x80 : 0x00;
+                device_write(&hint, 446, sizeof(uint8_t));
+            }
+        }
         device_read(&hint, 462, sizeof(uint8_t));
-        if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80)
-            mbr = 0;
+        if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80) {
+            if (!force_mbr) {
+                mbr = 0;
+            } else {
+                hint = (uint8_t)hint & 0x80 ? 0x80 : 0x00;
+                device_write(&hint, 462, sizeof(uint8_t));
+            }
+        }
         device_read(&hint, 478, sizeof(uint8_t));
-        if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80)
-            mbr = 0;
+        if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80) {
+            if (!force_mbr) {
+                mbr = 0;
+            } else {
+                hint = (uint8_t)hint & 0x80 ? 0x80 : 0x00;
+                device_write(&hint, 478, sizeof(uint8_t));
+            }
+        }
         device_read(&hint, 494, sizeof(uint8_t));
-        if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80)
-            mbr = 0;
+        if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80) {
+            if (!force_mbr) {
+                mbr = 0;
+            } else {
+                hint = (uint8_t)hint & 0x80 ? 0x80 : 0x00;
+                device_write(&hint, 494, sizeof(uint8_t));
+            }
+        }
 
         char hintc[64];
         device_read(hintc, 4, 8);
-        if (memcmp(hintc, "_ECH_FS_", 8) == 0)
-            mbr = 0;
+        if (memcmp(hintc, "_ECH_FS_", 8) == 0) {
+            if (!force_mbr) {
+                mbr = 0;
+            } else {
+                memset(hintc, 0, 8);
+                device_write(hintc, 4, 8);
+            }
+        }
         device_read(hintc, 54, 3);
-        if (memcmp(hintc, "FAT", 3) == 0)
-            mbr = 0;
+        if (memcmp(hintc, "FAT", 3) == 0) {
+            if (!force_mbr) {
+                mbr = 0;
+            } else {
+                memset(hintc, 0, 5);
+                device_write(hintc, 54, 5);
+            }
+        }
         device_read(&hint, 1080, sizeof(uint16_t));
-        if (hint == 0xef53)
-            mbr = 0;
+        if (hint == 0xef53) {
+            if (!force_mbr) {
+                mbr = 0;
+            } else {
+                hint = 0;
+                device_write(&hint, 1080, sizeof(uint16_t));
+            }
+        }
     }
 
     if (gpt == 0 && mbr == 0) {
         fprintf(stderr, "ERROR: Could not determine if the device has a valid partition table.\n");
         fprintf(stderr, "       Please ensure the device has a valid MBR or GPT.\n");
+        fprintf(stderr, "       Alternatively, pass `--force-mbr` at the end of the command to\n");
+        fprintf(stderr, "       override these checks. ONLY DO THIS AT YOUR OWN RISK, DATA LOSS\n");
+        fprintf(stderr, "       MAY OCCUR!\n");
         goto cleanup;
     }
 

@@ -225,10 +225,17 @@ void multiboot1_load(char *config, char *cmdline) {
             memmap[i].type = MEMMAP_USABLE;
 
         if (memmap[i].type == MEMMAP_USABLE) {
-            if (memmap[i].base < 0x100000)
-                memory_lower += memmap[i].length;
-            else
+            if (memmap[i].base < 0x100000) {
+                if (memmap[i].base + memmap[i].length > 0x100000) {
+                    size_t low_len = 0x100000 - memmap[i].base;
+                    memory_lower += low_len;
+                    memory_upper += memmap[i].length - low_len;
+                } else {
+                    memory_lower += memmap[i].length;
+                }
+            } else {
                 memory_upper += memmap[i].length;
+            }
         }
     }
 

@@ -21,19 +21,19 @@ TOOLCHAIN_OBJCOPY = $(TOOLCHAIN)-objcopy
 TOOLCHAIN_OBJDUMP = $(TOOLCHAIN)-objdump
 TOOLCHAIN_READELF = $(TOOLCHAIN)-readelf
 
-ifeq ($(shell which $(TOOLCHAIN_CC)), )
+ifeq ($(shell command -v $(TOOLCHAIN_CC) ; ), )
 TOOLCHAIN_CC := gcc
 endif
-ifeq ($(shell which $(TOOLCHAIN_LD)), )
+ifeq ($(shell command -v $(TOOLCHAIN_LD) ; ), )
 TOOLCHAIN_LD := ld
 endif
-ifeq ($(shell which $(TOOLCHAIN_OBJCOPY)), )
+ifeq ($(shell command -v $(TOOLCHAIN_OBJCOPY) ; ), )
 TOOLCHAIN_OBJCOPY := objcopy
 endif
-ifeq ($(shell which $(TOOLCHAIN_OBJDUMP)), )
+ifeq ($(shell command -v $(TOOLCHAIN_OBJDUMP) ; ), )
 TOOLCHAIN_OBJDUMP := objdump
 endif
-ifeq ($(shell which $(TOOLCHAIN_READELF)), )
+ifeq ($(shell command -v $(TOOLCHAIN_READELF) ; ), )
 TOOLCHAIN_READELF := readelf
 endif
 

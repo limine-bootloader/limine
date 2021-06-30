@@ -9,10 +9,10 @@ TOOLCHAIN = x86_64-elf
 TOOLCHAIN_CC = $(TOOLCHAIN)-gcc
 TOOLCHAIN_AR = $(TOOLCHAIN)-ar
 
-ifeq ($(shell export "PATH=$(PATH)"; which $(TOOLCHAIN_CC)), )
+ifeq ($(shell export "PATH=$(PATH)"; command -v $(TOOLCHAIN_CC) ; ), )
 TOOLCHAIN_CC := gcc
 endif
-ifeq ($(shell export "PATH=$(PATH)"; which $(TOOLCHAIN_AR)), )
+ifeq ($(shell export "PATH=$(PATH)"; command -v $(TOOLCHAIN_AR) ; ), )
 TOOLCHAIN_AR := ar
 endif
 

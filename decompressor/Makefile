@@ -10,13 +10,13 @@ TOOLCHAIN_CC = $(TOOLCHAIN)-gcc
 TOOLCHAIN_LD = $(TOOLCHAIN)-ld
 TOOLCHAIN_OBJCOPY = $(TOOLCHAIN)-objcopy
 
-ifeq ($(shell which $(TOOLCHAIN_CC)), )
+ifeq ($(shell command -v $(TOOLCHAIN_CC) ; ), )
 TOOLCHAIN_CC := gcc
 endif
-ifeq ($(shell which $(TOOLCHAIN_LD)), )
+ifeq ($(shell command -v $(TOOLCHAIN_LD) ; ), )
 TOOLCHAIN_LD := ld
 endif
-ifeq ($(shell which $(TOOLCHAIN_OBJCOPY)), )
+ifeq ($(shell command -v $(TOOLCHAIN_OBJCOPY) ; ), )
 TOOLCHAIN_OBJCOPY := objcopy
 endif
 

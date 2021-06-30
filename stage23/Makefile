@@ -17,6 +17,7 @@ TOOLCHAIN = x86_64-elf
 
 TOOLCHAIN_CC = $(TOOLCHAIN)-gcc
 TOOLCHAIN_LD = $(TOOLCHAIN)-ld
+TOOLCHAIN_AR = $(TOOLCHAIN)-ar
 TOOLCHAIN_OBJCOPY = $(TOOLCHAIN)-objcopy
 TOOLCHAIN_OBJDUMP = $(TOOLCHAIN)-objdump
 TOOLCHAIN_READELF = $(TOOLCHAIN)-readelf
@@ -26,6 +27,9 @@ TOOLCHAIN_CC := gcc
 endif
 ifeq ($(shell command -v $(TOOLCHAIN_LD) ; ), )
 TOOLCHAIN_LD := ld
+endif
+ifeq ($(shell command -v $(TOOLCHAIN_AR) ; ), )
+TOOLCHAIN_AR := ar
 endif
 ifeq ($(shell command -v $(TOOLCHAIN_OBJCOPY) ; ), )
 TOOLCHAIN_OBJCOPY := objcopy
@@ -197,20 +201,20 @@ $(BUILDDIR)/full.map.o: $(BUILDDIR)/limine_efi_nomap.elf
 $(BUILDDIR)/BOOTX64.EFI: $(BUILDDIR)/limine_efi.elf
 	$(TOOLCHAIN_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc -j .sbat --target efi-app-x86_64 --subsystem=10 $< $@
 
-$(BUILDDIR)/limine_efi_nomap.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
+../gnu-efi/gnuefi/crt0-efi-x86_64.o ../gnu-efi/gnuefi/libgnuefi.a:
+	$(MAKE) -C ../gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m64 -march=x86-64" AR="$(TOOLCHAIN_AR)" ARCH=x86_64
+
+../gnu-efi/lib/x86_64/efi_stub.o:
+	$(MAKE) -C ../gnu-efi/lib CC="$(TOOLCHAIN_CC) -m64 -march=x86-64" ARCH=x86_64 x86_64/efi_stub.o
+
+$(BUILDDIR)/limine_efi_nomap.elf: ../gnu-efi/gnuefi/crt0-efi-x86_64.o ../gnu-efi/gnuefi/libgnuefi.a ../gnu-efi/lib/x86_64/efi_stub.o $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi_nomap.ld \
-		../gnu-efi/gnuefi/crt0-efi-x86_64.o \
-		../gnu-efi/gnuefi/libgnuefi.a \
-		../gnu-efi/lib/x86_64/efi_stub.o \
 		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
-$(BUILDDIR)/limine_efi.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
+$(BUILDDIR)/limine_efi.elf: ../gnu-efi/gnuefi/crt0-efi-x86_64.o ../gnu-efi/gnuefi/libgnuefi.a ../gnu-efi/lib/x86_64/efi_stub.o  $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi.ld \
-		../gnu-efi/gnuefi/crt0-efi-x86_64.o \
-		../gnu-efi/gnuefi/libgnuefi.a \
-		../gnu-efi/lib/x86_64/efi_stub.o \
 		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
 endif

@@ -7,13 +7,9 @@ SHELL := /usr/bin/env bash
 TOOLCHAIN = x86_64-elf
 
 TOOLCHAIN_CC = $(TOOLCHAIN)-gcc
-TOOLCHAIN_AR = $(TOOLCHAIN)-ar
 
 ifeq ($(shell export "PATH=$(PATH)"; command -v $(TOOLCHAIN_CC) ; ), )
 TOOLCHAIN_CC := gcc
-endif
-ifeq ($(shell export "PATH=$(PATH)"; command -v $(TOOLCHAIN_AR) ; ), )
-TOOLCHAIN_AR := ar
 endif
 
 ifneq ($(MAKECMDGOALS), toolchain)
@@ -132,8 +128,6 @@ toolchain:
 
 gnu-efi:
 	git clone https://git.code.sf.net/p/gnu-efi/code --branch=3.0.13 --depth=1 $@
-	$(MAKE) -C gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m64 -march=x86-64" AR="$(TOOLCHAIN_AR)"
-	$(MAKE) -C gnu-efi/lib CC="$(TOOLCHAIN_CC) -m64 -march=x86-64" ARCH=x86_64 x86_64/efi_stub.o
 
 ovmf:
 	mkdir -p ovmf

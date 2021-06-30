@@ -33,13 +33,14 @@ void multiboot1_load(char *config, char *cmdline) {
     uint8_t *kernel = freadall(kernel_file, MEMMAP_USABLE);
 
     struct multiboot1_header header = {0};
+    size_t header_offset = 0;
 
-    for (size_t i = 0; i < 8192; i += 4) {
+    for (header_offset = 0; header_offset < 8192; header_offset += 4) {
         uint32_t v;
-        memcpy(&v, kernel + i, 4);
+        memcpy(&v, kernel + header_offset, 4);
 
         if (v == MULTIBOOT1_HEADER_MAGIC) {
-            memcpy(&header, kernel + i, sizeof(header));
+            memcpy(&header, kernel + header_offset, sizeof(header));
             break;
         }
     }
@@ -50,28 +51,54 @@ void multiboot1_load(char *config, char *cmdline) {
     if (header.magic + header.flags + header.checksum)
         panic("multiboot1: Header checksum is invalid");
 
-    if (header.flags & (1 << 16))
-        panic("multiboot1: Aout kludge not supported");
-
-    int bits = elf_bits(kernel);
-
     uint32_t entry_point = 0;
 
-    switch (bits) {
-        case 32:
-            if (elf32_load(kernel, &entry_point, MEMMAP_KERNEL_AND_MODULES))
-                panic("multiboot1: ELF32 load failure");
-            break;
-        case 64: {
-            uint64_t e;
-            if (elf64_load(kernel, &e, NULL, MEMMAP_KERNEL_AND_MODULES, false, true))
-                panic("multiboot1: ELF64 load failure");
-            entry_point = e;
+    if (header.flags & (1 << 16)) {
+        if (header.load_addr > header.header_addr)
+            panic("multiboot1: Illegal load address");
 
-            break;
+        size_t load_size = 0;
+
+        if (header.load_end_addr)
+            load_size = header.load_end_addr - header.load_addr;
+        else
+            load_size = kernel_file->size;
+
+        memmap_alloc_range(header.load_addr, load_size, MEMMAP_KERNEL_AND_MODULES, true, true, false, false);
+        memcpy((void *)(uintptr_t)header.load_addr, kernel + (header_offset
+                - (header.header_addr - header.load_addr)), load_size);
+
+        if (header.bss_end_addr) {
+            uintptr_t bss_addr = header.load_addr + load_size;
+            if (header.bss_end_addr < bss_addr)
+                panic("multiboot1: Illegal bss end address");
+
+            uint32_t bss_size = header.bss_end_addr - bss_addr;
+
+            memmap_alloc_range(bss_addr, bss_size, MEMMAP_KERNEL_AND_MODULES, true, true, false, false);
+            memset((void *)bss_addr, 0, bss_size);
         }
-        default:
-            panic("multiboot1: Invalid ELF file bitness");
+
+        entry_point = header.entry_addr;
+    } else {
+        int bits = elf_bits(kernel);
+
+        switch (bits) {
+            case 32:
+                if (elf32_load(kernel, &entry_point, MEMMAP_KERNEL_AND_MODULES))
+                    panic("multiboot1: ELF32 load failure");
+                break;
+            case 64: {
+                uint64_t e;
+                if (elf64_load(kernel, &e, NULL, MEMMAP_KERNEL_AND_MODULES, false, true))
+                    panic("multiboot1: ELF64 load failure");
+                entry_point = e;
+
+                break;
+            }
+            default:
+                panic("multiboot1: Invalid ELF file bitness");
+        }
     }
 
     uint32_t n_modules;

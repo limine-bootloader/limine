@@ -406,7 +406,7 @@ refresh:
     int max_entries = print_tree(0, 0, selected_entry, menu_tree,
                                  &selected_menu_entry);
 
-    print("\nArrows to choose, enter to boot, 'e' to edit selected entry.");
+    print("\nArrows to select, enter to boot, 'e' to edit selected entry.");
 
     if (selected_menu_entry->sub != NULL)
         skip_timeout = true;

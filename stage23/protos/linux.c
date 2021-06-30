@@ -353,7 +353,7 @@ void linux_load(char *config, char *cmdline) {
         panic("linux: KERNEL_PATH not specified");
 
     if (!uri_open(kernel, kernel_path))
-        panic("linux: Could not open kernel resource");
+        panic("linux: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
     uint32_t signature;
     fread(kernel, &signature, 0x202, sizeof(uint32_t));
@@ -443,7 +443,7 @@ void linux_load(char *config, char *cmdline) {
 
         struct file_handle module;
         if (!uri_open(&module, module_path))
-            panic("linux: Could not open `%s`", module_path);
+            panic("linux: Failed to open module with path `%s`. Is the path correct?", module_path);
 
         size_of_all_modules += module.size;
     }

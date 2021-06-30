@@ -46,7 +46,7 @@ void stivale_load(char *config, char *cmdline) {
     print("stivale: Loading kernel `%s`...\n", kernel_path);
 
     if (!uri_open(kernel_file, kernel_path))
-        panic("stivale: Could not open kernel resource");
+        panic("stivale: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
     struct stivale_header stivale_hdr;
 
@@ -153,7 +153,7 @@ void stivale_load(char *config, char *cmdline) {
 
         struct file_handle f;
         if (!uri_open(&f, module_path))
-            panic("stivale: Requested module with path \"%s\" not found!", module_path);
+            panic("stivale: Failed to open module with path `%s`. Is the path correct?", module_path);
 
         m->begin = REPORTED_ADDR((uint64_t)(size_t)freadall(&f, STIVALE_MMAP_KERNEL_AND_MODULES));
         m->end   = m->begin + f.size;

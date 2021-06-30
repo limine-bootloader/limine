@@ -68,7 +68,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     print("stivale2: Loading kernel `%s`...\n", kernel_path);
 
     if (!uri_open(kernel_file, kernel_path))
-        panic("stivale2: Could not open kernel resource");
+        panic("stivale2: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
     struct stivale2_header stivale2_hdr;
 
@@ -228,7 +228,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
 
         struct file_handle f;
         if (!uri_open(&f, module_path))
-            panic("stivale2: Requested module with path \"%s\" not found!", module_path);
+            panic("stivale2: Failed to open module with path `%s`. Is the path correct?", module_path);
 
         m->begin = REPORTED_ADDR((uint64_t)(size_t)freadall(&f, STIVALE2_MMAP_KERNEL_AND_MODULES));
         m->end   = m->begin + f.size;

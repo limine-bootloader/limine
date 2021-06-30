@@ -117,7 +117,7 @@ void chainload(char *config) {
 
     struct file_handle *image = ext_mem_alloc(sizeof(struct file_handle));
     if (!uri_open(image, image_path))
-        panic("chainload: Could not open image");
+        panic("chainload: Failed to open image with path `%s`. Is the path correct?", image_path);
 
     void *ptr = freadall(image, MEMMAP_RESERVED);
     size_t image_size = image->size;

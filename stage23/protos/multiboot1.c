@@ -28,7 +28,7 @@ void multiboot1_load(char *config, char *cmdline) {
     print("multiboot1: Loading kernel `%s`...\n", kernel_path);
 
     if (!uri_open(kernel_file, kernel_path))
-        panic("multiboot1: Could not open kernel resource");
+        panic("multiboot1: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
     uint8_t *kernel = freadall(kernel_file, MEMMAP_USABLE);
 
@@ -98,7 +98,7 @@ void multiboot1_load(char *config, char *cmdline) {
 
             struct file_handle f;
             if (!uri_open(&f, module_path))
-                panic("multiboot1: Requested module with path \"%s\" not found!", module_path);
+                panic("multiboot1: Failed to open module with path `%s`. Is the path correct?", module_path);
 
             char *cmdline = config_get_value(config, i, "MODULE_STRING");
 

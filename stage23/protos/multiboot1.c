@@ -59,12 +59,12 @@ void multiboot1_load(char *config, char *cmdline) {
 
     switch (bits) {
         case 32:
-            if (elf32_load(kernel, &entry_point, MEMMAP_USABLE))
+            if (elf32_load(kernel, &entry_point, MEMMAP_KERNEL_AND_MODULES))
                 panic("multiboot1: ELF32 load failure");
             break;
         case 64: {
             uint64_t e;
-            if (elf64_load(kernel, &e, NULL, MEMMAP_USABLE, false, true))
+            if (elf64_load(kernel, &e, NULL, MEMMAP_KERNEL_AND_MODULES, false, true))
                 panic("multiboot1: ELF64 load failure");
             entry_point = e;
 
@@ -102,7 +102,7 @@ void multiboot1_load(char *config, char *cmdline) {
 
             char *cmdline = config_get_value(config, i, "MODULE_STRING");
 
-            m->begin   = (uint32_t)(size_t)freadall(&f, MEMMAP_USABLE);
+            m->begin   = (uint32_t)(size_t)freadall(&f, MEMMAP_KERNEL_AND_MODULES);
             m->end     = m->begin + f.size;
             m->cmdline = (uint32_t)(size_t)cmdline;
             m->pad     = 0;
@@ -193,7 +193,8 @@ void multiboot1_load(char *config, char *cmdline) {
     for (size_t i = 0; i < memmap_entries; i++ ){
         mmap[i].size = sizeof(*mmap) - 4;
 
-        if (memmap[i].type == MEMMAP_BOOTLOADER_RECLAIMABLE)
+        if (memmap[i].type == MEMMAP_BOOTLOADER_RECLAIMABLE
+                || memmap[i].type == MEMMAP_KERNEL_AND_MODULES)
             memmap[i].type = MEMMAP_USABLE;
 
         if (memmap[i].type == MEMMAP_USABLE) {

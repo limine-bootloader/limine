@@ -52,7 +52,7 @@ void multiboot1_load(char *config, char *cmdline) {
         panic("multiboot1: Header checksum is invalid");
 
     uint32_t entry_point = 0;
-    uint32_t elf_top = 0;
+    uint32_t kernel_top = 0;
 
     if (header.flags & (1 << 16)) {
         if (header.load_addr > header.header_addr)
@@ -69,6 +69,8 @@ void multiboot1_load(char *config, char *cmdline) {
         memcpy((void *)(uintptr_t)header.load_addr, kernel + (header_offset
                 - (header.header_addr - header.load_addr)), load_size);
 
+        kernel_top = header.load_addr + load_size;
+
         if (header.bss_end_addr) {
             uintptr_t bss_addr = header.load_addr + load_size;
             if (header.bss_end_addr < bss_addr)
@@ -78,6 +80,8 @@ void multiboot1_load(char *config, char *cmdline) {
 
             memmap_alloc_range(bss_addr, bss_size, MEMMAP_KERNEL_AND_MODULES, true, true, false, false);
             memset((void *)bss_addr, 0, bss_size);
+
+            kernel_top = bss_addr + bss_size;
         }
 
         entry_point = header.entry_addr;
@@ -86,7 +90,7 @@ void multiboot1_load(char *config, char *cmdline) {
 
         switch (bits) {
             case 32:
-                if (elf32_load(kernel, &entry_point, &elf_top, MEMMAP_KERNEL_AND_MODULES))
+                if (elf32_load(kernel, &entry_point, &kernel_top, MEMMAP_KERNEL_AND_MODULES))
                     panic("multiboot1: ELF32 load failure");
                 break;
             case 64: {
@@ -94,7 +98,7 @@ void multiboot1_load(char *config, char *cmdline) {
                 if (elf64_load(kernel, &e, &t, NULL, MEMMAP_KERNEL_AND_MODULES, false, true))
                     panic("multiboot1: ELF64 load failure");
                 entry_point = e;
-                elf_top = t;
+                kernel_top = t;
 
                 break;
             }
@@ -131,10 +135,10 @@ void multiboot1_load(char *config, char *cmdline) {
 
             char *cmdline = config_get_value(config, i, "MODULE_STRING");
 
-            void *module_addr = (void *)ALIGN_UP(elf_top, 4096);
+            void *module_addr = (void *)ALIGN_UP(kernel_top, 4096);
             memmap_alloc_range((uintptr_t)module_addr, f.size, MEMMAP_KERNEL_AND_MODULES,
                                true, true, false, false);
-            elf_top = (uintptr_t)module_addr + f.size;
+            kernel_top = (uintptr_t)module_addr + f.size;
             fread(&f, module_addr, 0, f.size);
 
             m->begin   = (uint32_t)(size_t)module_addr;

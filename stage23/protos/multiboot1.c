@@ -135,7 +135,7 @@ void multiboot1_load(char *config, char *cmdline) {
 
             char *cmdline = config_get_value(config, i, "MODULE_STRING");
 
-            void *module_addr = (void *)ALIGN_UP(kernel_top, 4096);
+            void *module_addr = (void *)(uintptr_t)ALIGN_UP(kernel_top, 4096);
             memmap_alloc_range((uintptr_t)module_addr, f.size, MEMMAP_KERNEL_AND_MODULES,
                                true, true, false, false);
             kernel_top = (uintptr_t)module_addr + f.size;

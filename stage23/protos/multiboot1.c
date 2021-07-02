@@ -52,6 +52,7 @@ void multiboot1_load(char *config, char *cmdline) {
         panic("multiboot1: Header checksum is invalid");
 
     uint32_t entry_point = 0;
+    uint32_t elf_top = 0;
 
     if (header.flags & (1 << 16)) {
         if (header.load_addr > header.header_addr)
@@ -85,14 +86,15 @@ void multiboot1_load(char *config, char *cmdline) {
 
         switch (bits) {
             case 32:
-                if (elf32_load(kernel, &entry_point, MEMMAP_KERNEL_AND_MODULES))
+                if (elf32_load(kernel, &entry_point, &elf_top, MEMMAP_KERNEL_AND_MODULES))
                     panic("multiboot1: ELF32 load failure");
                 break;
             case 64: {
-                uint64_t e;
-                if (elf64_load(kernel, &e, NULL, MEMMAP_KERNEL_AND_MODULES, false, true))
+                uint64_t e, t;
+                if (elf64_load(kernel, &e, &t, NULL, MEMMAP_KERNEL_AND_MODULES, false, true))
                     panic("multiboot1: ELF64 load failure");
                 entry_point = e;
+                elf_top = t;
 
                 break;
             }
@@ -129,7 +131,13 @@ void multiboot1_load(char *config, char *cmdline) {
 
             char *cmdline = config_get_value(config, i, "MODULE_STRING");
 
-            m->begin   = (uint32_t)(size_t)freadall(&f, MEMMAP_KERNEL_AND_MODULES);
+            void *module_addr = (void *)ALIGN_UP(elf_top, 4096);
+            memmap_alloc_range((uintptr_t)module_addr, f.size, MEMMAP_KERNEL_AND_MODULES,
+                               true, true, false, false);
+            elf_top = (uintptr_t)module_addr + f.size;
+            fread(&f, module_addr, 0, f.size);
+
+            m->begin   = (uint32_t)(size_t)module_addr;
             m->end     = m->begin + f.size;
             m->cmdline = (uint32_t)(size_t)cmdline;
             m->pad     = 0;

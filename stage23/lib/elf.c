@@ -292,7 +292,7 @@ int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
     return 2;
 }
 
-int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t alloc_type, bool kaslr, bool use_paddr) {
+int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_slide, uint32_t alloc_type, bool kaslr, bool use_paddr) {
     struct elf64_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
@@ -329,6 +329,9 @@ again:
         slide = rand64() & KASLR_SLIDE_BITMASK;
 
 final:
+    if (top)
+        *top = 0;
+
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf64_phdr phdr;
         memcpy(&phdr, elf + (hdr.phoff + i * sizeof(struct elf64_phdr)),
@@ -349,6 +352,13 @@ final:
         }
 
         load_addr += slide;
+
+        if (top) {
+            uint64_t this_top = load_addr + phdr.p_memsz;
+            if (this_top > *top) {
+                *top = this_top;
+            }
+        }
 
         if (!memmap_alloc_range((size_t)load_addr, (size_t)phdr.p_memsz, alloc_type, true, false, simulation, false)) {
             if (++try_count == max_simulated_tries || simulation == false)
@@ -391,7 +401,7 @@ final:
     return 0;
 }
 
-int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t alloc_type) {
+int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t alloc_type) {
     struct elf32_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf32_hdr));
 
@@ -413,6 +423,9 @@ int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t alloc_type) {
     uint32_t entry = hdr.entry;
     bool entry_adjusted = false;
 
+    if (top)
+        *top = 0;
+
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf32_phdr phdr;
         memcpy(&phdr, elf + (hdr.phoff + i * sizeof(struct elf32_phdr)),
@@ -420,6 +433,13 @@ int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t alloc_type) {
 
         if (phdr.p_type != PT_LOAD)
             continue;
+
+        if (top) {
+            uint32_t this_top = phdr.p_paddr + phdr.p_memsz;
+            if (this_top > *top) {
+                *top = this_top;
+            }
+        }
 
         memmap_alloc_range((size_t)phdr.p_paddr, (size_t)phdr.p_memsz, alloc_type, true, true, false, false);
 

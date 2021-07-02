@@ -101,7 +101,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
                 level5pg = true;
             }
 
-            if (elf64_load(kernel, &entry_point, &slide, STIVALE2_MMAP_KERNEL_AND_MODULES, kaslr, false))
+            if (elf64_load(kernel, &entry_point, NULL, &slide, STIVALE2_MMAP_KERNEL_AND_MODULES, kaslr, false))
                 panic("stivale2: ELF64 load failure");
 
             ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr", sizeof(struct stivale2_header), slide);
@@ -109,7 +109,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
             break;
         }
         case 32: {
-            if (elf32_load(kernel, (uint32_t *)&entry_point, 10))
+            if (elf32_load(kernel, (uint32_t *)&entry_point, NULL, 10))
                 panic("stivale2: ELF32 load failure");
 
             ret = elf32_load_section(kernel, &stivale2_hdr, ".stivale2hdr", sizeof(struct stivale2_header));

@@ -200,6 +200,13 @@ void multiboot1_load(char *config, char *cmdline) {
         }
 
         multiboot1_info.flags |= (1 << 12);
+    } else {
+#if defined (uefi)
+        panic("multiboot1: Cannot use text mode with UEFI.");
+#elif defined (bios)
+        int rows, cols;
+        init_vga_textmode(&rows, &cols, false);
+#endif
     }
 
 #if defined (uefi)

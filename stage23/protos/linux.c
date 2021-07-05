@@ -576,11 +576,5 @@ void linux_load(char *config, char *cmdline) {
     // Spin up
     ///////////////////////////////////////
 
-#if defined (uefi)
-    do_32(linux_spinup, 2, (void *)kernel_load_addr, boot_params);
-#endif
-
-#if defined (bios)
-    linux_spinup((void *)kernel_load_addr, boot_params);
-#endif
+    common_spinup(linux_spinup, 2, (void *)kernel_load_addr, boot_params);
 }

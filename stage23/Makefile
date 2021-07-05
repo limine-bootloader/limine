@@ -240,11 +240,15 @@ $(BUILDDIR)/%.32.o: %.32.c
 	rm $@.32
 endif
 
+ifeq ($(TARGET), bios)
 $(BUILDDIR)/%.o: %.asm
 	nasm $< -F dwarf -g -Werror -f elf32 -o $@
+endif
 
+ifeq ($(TARGET), uefi)
 $(BUILDDIR)/%.o: %.asm64
 	nasm $< -F dwarf -g -Werror -f elf64 -o $@
+endif
 
 clean:
 	rm -rf $(BUILDDIR)

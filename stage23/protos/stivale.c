@@ -379,20 +379,9 @@ __attribute__((noreturn)) void stivale_spinup(
     pic_mask_all();
     pic_flush();
 
-#if defined (uefi)
-    do_32(stivale_spinup_32, 9,
+    common_spinup(stivale_spinup_32, 9,
         bits, level5pg, (uint32_t)(uintptr_t)pagemap->top_level,
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
         (uint32_t)stivale_struct, (uint32_t)(stivale_struct >> 32),
         (uint32_t)stack, (uint32_t)(stack >> 32));
-#endif
-
-#if defined (bios)
-    stivale_spinup_32(bits, level5pg, (uint32_t)(uintptr_t)pagemap->top_level,
-        (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
-        (uint32_t)stivale_struct, (uint32_t)(stivale_struct >> 32),
-        (uint32_t)stack, (uint32_t)(stack >> 32));
-#endif
-
-    __builtin_unreachable();
 }

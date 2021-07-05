@@ -12,14 +12,15 @@ section .text
 
 extern gdt
 
-global do_32
+global common_spinup
 bits 64
-do_32:
+common_spinup:
+    cli
+
     lgdt [rel gdt]
+    lidt [rel invalid_idt]
 
     mov rbp, rsp
-
-    lidt [rel invalid_idt]
 
     cmp esi, 4
     jle .no_stack_args
@@ -37,13 +38,6 @@ do_32:
     push32 ecx
     push32 edx
 
-    mov eax, 0x20
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
-
     lea rbx, [rel .go_32]
 
     push 0x18
@@ -52,6 +46,13 @@ do_32:
 
 bits 32
 .go_32:
+    mov eax, 0x20
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+
     mov eax, 0x00000011
     mov cr0, eax
 

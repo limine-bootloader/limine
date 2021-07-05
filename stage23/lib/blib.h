@@ -63,8 +63,6 @@ uint64_t strtoui(const char *s, const char **end, int base);
 
 typedef char symbol[];
 
-#if defined (uefi)
-__attribute__((noreturn)) void do_32(void *fnptr, int args, ...);
-#endif
+__attribute__((noreturn)) void common_spinup(void *fnptr, int args, ...);
 
 #endif

@@ -16,6 +16,10 @@
 #include <mm/pmm.h>
 #include <drivers/vga_textmode.h>
 
+__attribute__((noreturn)) void multiboot1_spinup_32(
+                 uint32_t entry_point,
+                 uint32_t multiboot1_info);
+
 struct multiboot1_info multiboot1_info = {0};
 
 void multiboot1_load(char *config, char *cmdline) {
@@ -265,24 +269,8 @@ void multiboot1_load(char *config, char *cmdline) {
     multiboot1_info.mmap_addr = ((uint32_t)(size_t)mmap);
     multiboot1_info.flags |= (1 << 0) | (1 << 6);
 
-    multiboot1_spinup(entry_point, (uint32_t)(uintptr_t)&multiboot1_info);
-}
-
-__attribute__((noreturn)) void multiboot1_spinup_32(
-                 uint32_t entry_point,
-                 uint32_t multiboot1_info);
-
-__attribute__((noreturn)) void multiboot1_spinup(
-                 uint32_t entry_point, uint32_t multiboot1_info) {
     pic_flush();
 
-#if defined (uefi)
-    do_32(multiboot1_spinup_32, 2, entry_point, multiboot1_info);
-#endif
-
-#if defined (bios)
-    multiboot1_spinup_32(entry_point, multiboot1_info);
-#endif
-
-    __builtin_unreachable();
+    common_spinup(multiboot1_spinup_32, 2,
+                  entry_point, (uint32_t)(uintptr_t)&multiboot1_info);
 }

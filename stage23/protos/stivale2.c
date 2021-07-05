@@ -86,14 +86,14 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     bool loaded_by_anchor = false;
 
     if (bits == -1) {
-        struct stivale_anchor *anchor;
-        if (!stivale_load_by_anchor(&anchor, "STIVALE2  ANCHOR", kernel, kernel_file->size)) {
+        struct stivale2_anchor *anchor;
+        if (!stivale_load_by_anchor((void **)&anchor, "STIVALE2  ANCHOR", kernel, kernel_file->size)) {
             panic("stivale2: Not a valid ELF or anchored file.");
         }
 
         bits = anchor->bits;
 
-        memcpy(&stivale2_hdr, (void *)(uintptr_t)anchor->phys_stivalehdr,
+        memcpy(&stivale2_hdr, (void *)(uintptr_t)anchor->phys_stivale2hdr,
                sizeof(struct stivale2_header));
 
         loaded_by_anchor = true;

@@ -26,7 +26,7 @@
     ((PTR) + ((stivale_hdr.flags & (1 << 3)) ? \
     (want_5lv ? 0xff00000000000000 : 0xffff800000000000) : 0))
 
-bool stivale_load_by_anchor(struct stivale_anchor **_anchor, const char *magic,
+bool stivale_load_by_anchor(void **_anchor, const char *magic,
                             uint8_t *file, uint64_t filesize) {
     struct stivale_anchor *anchor = NULL;
     for (size_t i = 0; i < filesize; i += 16) {
@@ -91,7 +91,7 @@ void stivale_load(char *config, char *cmdline) {
 
     if (bits == -1) {
         struct stivale_anchor *anchor;
-        if (!stivale_load_by_anchor(&anchor, "STIVALE1  ANCHOR", kernel, kernel_file->size)) {
+        if (!stivale_load_by_anchor((void **)&anchor, "STIVALE1  ANCHOR", kernel, kernel_file->size)) {
             panic("stivale: Not a valid ELF or anchored file.");
         }
 

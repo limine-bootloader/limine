@@ -48,5 +48,3 @@ make all-target-libgcc
 make install-gcc
 make install-target-libgcc
 cd ..
-
-wget 'https://github.com/managarm/mlibc/raw/1f84a68500a2939f8dccd4083f8c111b2610cba6/options/elf/include/elf.h' -O "$PREFIX/lib/gcc/x86_64-elf/$GCCVERSION/include/elf.h"

@@ -124,10 +124,11 @@ test-clean:
 
 .PHONY: toolchain
 toolchain:
-	scripts/make_toolchain.sh "`realpath ./toolchain`" -j`nproc`
+	aux/make_toolchain.sh "`realpath ./toolchain`" -j`nproc`
 
 gnu-efi:
 	git clone https://git.code.sf.net/p/gnu-efi/code --branch=3.0.13 --depth=1 $@
+	cp aux/elf.h gnu-efi/inc/
 
 ovmf:
 	mkdir -p ovmf

@@ -132,7 +132,7 @@ gnu-efi:
 
 ovmf:
 	mkdir -p ovmf
-	cd ovmf && wget https://efi.akeo.ie/OVMF/OVMF-X64.zip && 7z x OVMF-X64.zip
+	cd ovmf && curl -o OVMF-X64.zip https://efi.akeo.ie/OVMF/OVMF-X64.zip && 7z x OVMF-X64.zip
 
 .PHONY: test.hdd
 test.hdd:

@@ -23,7 +23,7 @@ jobs:
         run: echo "BRANCH_NAME=$(echo "$TAG_NAME" | grep -o 'v[0-9]\+\.')0-branch" >> $GITHUB_ENV
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install git build-essential nasm gcc-mingw-w64 gcc-multilib wget mtools -y
+        run: sudo apt-get update && sudo apt-get install git build-essential nasm gcc-mingw-w64 gcc-multilib curl mtools -y
 
       - name: Build the toolchain
         run: make toolchain

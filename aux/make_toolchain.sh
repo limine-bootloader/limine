@@ -17,10 +17,10 @@ export MAKEFLAGS="$2"
 export PATH="$PREFIX/bin:$PATH"
 
 if [ ! -f binutils-$BINUTILSVERSION.tar.gz ]; then
-    wget https://ftp.gnu.org/gnu/binutils/binutils-$BINUTILSVERSION.tar.gz
+    curl -o binutils-$BINUTILSVERSION.tar.gz https://ftp.gnu.org/gnu/binutils/binutils-$BINUTILSVERSION.tar.gz
 fi
 if [ ! -f gcc-$GCCVERSION.tar.gz ]; then
-    wget https://ftp.gnu.org/gnu/gcc/gcc-$GCCVERSION/gcc-$GCCVERSION.tar.gz
+    curl -o gcc-$GCCVERSION.tar.gz https://ftp.gnu.org/gnu/gcc/gcc-$GCCVERSION/gcc-$GCCVERSION.tar.gz
 fi
 
 rm -rf build

@@ -68,7 +68,7 @@ This step can take a long time, but it will ensure that the compiler will work w
 Limine. If on an x86_64 host, with GCC or Clang installed, you can also skip to the next paragraph.
 
 The toolchain building process depends on the following packages: `bash`, `make`,
-`wget`, `gcc`, `g++`, `GNU binutils`.
+`curl`, `gcc`, `g++`, `GNU binutils`.
 
 Building the toolchain can be accomplished by running:
 ```bash

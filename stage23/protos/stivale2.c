@@ -70,24 +70,36 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     if (!uri_open(kernel_file, kernel_path))
         panic("stivale2: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
-    struct stivale2_header stivale2_hdr;
-
-    uint8_t *kernel = freadall(kernel_file, STIVALE2_MMAP_BOOTLOADER_RECLAIMABLE);
-
-    int bits = elf_bits(kernel);
-
-    int ret;
-
-    bool level5pg = false;
-
     char *kaslr_s = config_get_value(config, 0, "KASLR");
     bool kaslr = true;
     if (kaslr_s != NULL && strcmp(kaslr_s, "no") == 0)
         kaslr = false;
 
+    struct stivale2_header stivale2_hdr;
+
+    bool level5pg = false;
     uint64_t slide = 0;
     uint64_t entry_point = 0;
 
+    uint8_t *kernel = freadall(kernel_file, STIVALE2_MMAP_BOOTLOADER_RECLAIMABLE);
+    int bits = elf_bits(kernel);
+    bool loaded_by_anchor = false;
+
+    if (bits == -1) {
+        struct stivale_anchor *anchor;
+        if (!stivale_load_by_anchor(&anchor, "STIVALE2  ANCHOR", kernel, kernel_file->size)) {
+            panic("stivale2: Not a valid ELF or anchored file.");
+        }
+
+        bits = anchor->bits;
+
+        memcpy(&stivale2_hdr, (void *)(uintptr_t)anchor->phys_stivalehdr,
+               sizeof(struct stivale2_header));
+
+        loaded_by_anchor = true;
+    }
+
+    int ret = 0;
     switch (bits) {
         case 64: {
             // Check if 64 bit CPU
@@ -101,26 +113,33 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
                 level5pg = true;
             }
 
-            if (elf64_load(kernel, &entry_point, NULL, &slide, STIVALE2_MMAP_KERNEL_AND_MODULES, kaslr, false))
-                panic("stivale2: ELF64 load failure");
+            if (!loaded_by_anchor) {
+                if (elf64_load(kernel, &entry_point, NULL, &slide,
+                               STIVALE2_MMAP_KERNEL_AND_MODULES, kaslr, false))
+                    panic("stivale2: ELF64 load failure");
 
-            ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr", sizeof(struct stivale2_header), slide);
+                ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
+                                         sizeof(struct stivale2_header), slide);
+            }
 
             break;
         }
         case 32: {
-            if (elf32_load(kernel, (uint32_t *)&entry_point, NULL, 10))
-                panic("stivale2: ELF32 load failure");
+            if (!loaded_by_anchor) {
+                if (elf32_load(kernel, (uint32_t *)&entry_point, NULL, 10))
+                    panic("stivale2: ELF32 load failure");
 
-            ret = elf32_load_section(kernel, &stivale2_hdr, ".stivale2hdr", sizeof(struct stivale2_header));
+                ret = elf32_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
+                                         sizeof(struct stivale2_header));
+            }
 
             break;
         }
         default:
-            panic("stivale2: Not 32 nor 64 bit x86 ELF file.");
+            panic("stivale2: Not 32 nor 64-bit kernel. What is this?");
     }
 
-    printv("stivale2: %u-bit ELF file detected\n", bits);
+    printv("stivale2: %u-bit kernel detected\n", bits);
 
     switch (ret) {
         case 1:

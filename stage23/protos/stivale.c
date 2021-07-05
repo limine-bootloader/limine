@@ -29,8 +29,9 @@
 bool stivale_load_by_anchor(void **_anchor, const char *magic,
                             uint8_t *file, uint64_t filesize) {
     struct stivale_anchor *anchor = NULL;
+    size_t magiclen = strlen(magic);
     for (size_t i = 0; i < filesize; i += 16) {
-        if (memcmp(file + i, magic, 16) == 0) {
+        if (memcmp(file + i, magic, magiclen) == 0) {
             anchor = (void *)(file + i);
         }
     }
@@ -91,7 +92,7 @@ void stivale_load(char *config, char *cmdline) {
 
     if (bits == -1) {
         struct stivale_anchor *anchor;
-        if (!stivale_load_by_anchor((void **)&anchor, "STIVALE1  ANCHOR", kernel, kernel_file->size)) {
+        if (!stivale_load_by_anchor((void **)&anchor, "STIVALE1 ANCHOR", kernel, kernel_file->size)) {
             panic("stivale: Not a valid ELF or anchored file.");
         }
 

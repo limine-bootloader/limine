@@ -6,7 +6,6 @@
 __attribute__((noreturn)) void multiboot1_spinup_32(
                  uint32_t entry_point, uint32_t multiboot1_info) {
     asm volatile (
-        "cli\n\t"
         "cld\n\t"
 
         "pushfl\n\t"

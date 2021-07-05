@@ -14,15 +14,6 @@ __attribute__((noreturn)) void stivale_spinup_32(
         (uint64_t)stack_lo | ((uint64_t)stack_hi << 32)
     };
 
-    // Load invalid IDT
-    uint64_t invalid_idt[2] = {0, 0};
-    asm volatile (
-        "lidt %0"
-        :
-        : "m" (invalid_idt)
-        : "memory"
-    );
-
     if (bits == 64) {
         if (level5pg) {
             // Enable CR4.LA57
@@ -35,7 +26,6 @@ __attribute__((noreturn)) void stivale_spinup_32(
         }
 
         asm volatile (
-            "cli\n\t"
             "cld\n\t"
             "movl %%eax, %%cr3\n\t"
             "movl %%cr4, %%eax\n\t"
@@ -109,7 +99,6 @@ __attribute__((noreturn)) void stivale_spinup_32(
         );
     } else if (bits == 32) {
         asm volatile (
-            "cli\n\t"
             "cld\n\t"
 
             "movl %%esi, %%esp\n\t"

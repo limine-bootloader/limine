@@ -27,15 +27,6 @@ __attribute__((noreturn)) void linux_spinup(void *entry, void *boot_params) {
     linux_gdt.limit = sizeof(linux_gdt_descs) - 1;
     linux_gdt.ptr   = (uintptr_t)linux_gdt_descs;
 
-    // Load invalid IDT
-    uint64_t invalid_idt[2] = {0, 0};
-    asm volatile (
-        "lidt %0"
-        :
-        : "m" (invalid_idt)
-        : "memory"
-    );
-
     asm volatile (
         "lgdt %0\n\t"
 
@@ -55,6 +46,8 @@ __attribute__((noreturn)) void linux_spinup(void *entry, void *boot_params) {
         "xorl %%ebp, %%ebp\n\t"
         "xorl %%edi, %%edi\n\t"
         "xorl %%ebx, %%ebx\n\t"
+
+        "cld\n\t"
 
         "jmp *%%ecx\n\t"
         :

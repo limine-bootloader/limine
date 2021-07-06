@@ -86,6 +86,10 @@ bool efi_exit_boot_services(void) {
 
     efi_mmap_size += 4096;
 
+    status = uefi_call_wrapper(gBS->FreePool, 1, efi_mmap);
+    if (status)
+        goto fail;
+
     status = uefi_call_wrapper(gBS->AllocatePool, 3,
         EfiLoaderData, efi_mmap_size, &efi_mmap);
     if (status)

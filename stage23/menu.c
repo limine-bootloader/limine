@@ -286,8 +286,8 @@ refresh:
                print("%c", buffer[i]);
            }
                
-               // switch to token type 2 after equals sign
-               if (token_type == TOK_EQUALS) token_type = TOK_VALUE;
+           // switch to token type 2 after equals sign
+           if (token_type == TOK_EQUALS) token_type = TOK_VALUE;
         }
     }
     

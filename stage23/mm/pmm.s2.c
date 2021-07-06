@@ -357,6 +357,67 @@ void pmm_release_uefi_mem(void) {
 }
 #endif
 
+#if defined (bios)
+struct e820_entry_t *get_raw_memmap(size_t *entry_count) {
+    size_t mmap_count = e820_entries;
+    size_t mmap_len = mmap_count * sizeof(struct e820_entry_t);
+
+    struct e820_entry_t *mmap = conv_mem_alloc(mmap_len);
+
+    for (size_t i = 0; i < mmap_count; i++) {
+        mmap[i].base   = e820_map[i].base;
+        mmap[i].length = e820_map[i].length;
+        mmap[i].type   = e820_map[i].type;
+    }
+
+    *entry_count = mmap_count;
+    return mmap;
+}
+#endif
+
+#if defined (uefi)
+struct e820_entry_t *get_raw_memmap(size_t *entry_count) {
+    size_t mmap_count = efi_mmap_size / efi_desc_size;
+    size_t mmap_len = mmap_count * sizeof(struct e820_entry_t);
+
+    struct e820_entry_t *mmap = conv_mem_alloc(mmap_len);
+
+    for (size_t i = 0; i < mmap_count; i++) {
+        EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
+
+        uint32_t our_type;
+        switch (entry->Type) {
+            case EfiReservedMemoryType:
+            case EfiRuntimeServicesCode:
+            case EfiRuntimeServicesData:
+            case EfiUnusableMemory:
+            case EfiMemoryMappedIO:
+            case EfiMemoryMappedIOPortSpace:
+            case EfiPalCode:
+            case EfiLoaderCode:
+            case EfiLoaderData:
+            default:
+                our_type = MEMMAP_RESERVED; break;
+            case EfiACPIReclaimMemory:
+                our_type = MEMMAP_ACPI_RECLAIMABLE; break;
+            case EfiACPIMemoryNVS:
+                our_type = MEMMAP_ACPI_NVS; break;
+            case EfiBootServicesCode:
+            case EfiBootServicesData:
+            case EfiConventionalMemory:
+                our_type = MEMMAP_USABLE; break;
+        }
+
+        mmap[i].base   = entry->PhysicalStart;
+        mmap[i].length = entry->NumberOfPages * 4096;
+        mmap[i].type   = our_type;
+    }
+
+    *entry_count = mmap_count;
+    return mmap;
+}
+#endif
+
 void *ext_mem_alloc(size_t count) {
     return ext_mem_alloc_type(count, MEMMAP_BOOTLOADER_RECLAIMABLE);
 }

@@ -119,7 +119,7 @@ void multiboot1_load(char *config, char *cmdline) {
     }
 
     if (n_modules) {
-        struct multiboot1_module *mods = ext_mem_alloc(sizeof(*mods) * n_modules);
+        struct multiboot1_module *mods = conv_mem_alloc(sizeof(*mods) * n_modules);
 
         multiboot1_info.mods_count = n_modules;
         multiboot1_info.mods_addr = (uint32_t)(size_t)mods;
@@ -229,35 +229,32 @@ void multiboot1_load(char *config, char *cmdline) {
     efi_exit_boot_services();
 #endif
 
-    size_t memmap_entries;
-    struct e820_entry_t *memmap = get_memmap(&memmap_entries);
+    size_t mb_mmap_count;
+    struct e820_entry_t *raw_memmap = get_raw_memmap(&mb_mmap_count);
 
-    // The layouts of the e820_entry_t and multiboot1_mmap_entry structs match almost perfectly
-    // apart from the padding/size being in the wrong place (at the end and beginning respectively).
-    // To be able to use the memmap directly, we offset it back by 4 so the fields align properly.
-    // Since we're about to exit we don't really care about what we've clobbered by doing this.
-    struct multiboot1_mmap_entry *mmap = (void *)((size_t)memmap - 4);
+    size_t mb_mmap_len = mb_mmap_count * sizeof(struct multiboot1_mmap_entry);
+    struct multiboot1_mmap_entry *mmap = conv_mem_alloc(mb_mmap_len);
 
     size_t memory_lower = 0, memory_upper = 0;
 
-    for (size_t i = 0; i < memmap_entries; i++ ){
-        mmap[i].size = sizeof(*mmap) - 4;
+    // Multiboot is bad and passes raw memmap. We do the same to support it.
+    for (size_t i = 0; i < mb_mmap_count; i++) {
+        mmap[i].size = sizeof(struct multiboot1_mmap_entry) - 4;
+        mmap[i].addr = raw_memmap[i].base;
+        mmap[i].len  = raw_memmap[i].length;
+        mmap[i].type = raw_memmap[i].type;
 
-        if (memmap[i].type == MEMMAP_BOOTLOADER_RECLAIMABLE
-                || memmap[i].type == MEMMAP_KERNEL_AND_MODULES)
-            memmap[i].type = MEMMAP_USABLE;
-
-        if (memmap[i].type == MEMMAP_USABLE) {
-            if (memmap[i].base < 0x100000) {
-                if (memmap[i].base + memmap[i].length > 0x100000) {
-                    size_t low_len = 0x100000 - memmap[i].base;
+        if (mmap[i].type == MEMMAP_USABLE) {
+            if (mmap[i].addr < 0x100000) {
+                if (mmap[i].addr + mmap[i].len > 0x100000) {
+                    size_t low_len = 0x100000 - mmap[i].addr;
                     memory_lower += low_len;
-                    memory_upper += memmap[i].length - low_len;
+                    memory_upper += mmap[i].len - low_len;
                 } else {
-                    memory_lower += memmap[i].length;
+                    memory_lower += mmap[i].len;
                 }
             } else {
-                memory_upper += memmap[i].length;
+                memory_upper += mmap[i].len;
             }
         }
     }
@@ -265,7 +262,7 @@ void multiboot1_load(char *config, char *cmdline) {
     multiboot1_info.mem_lower = memory_lower / 1024;
     multiboot1_info.mem_upper = memory_upper / 1024;
 
-    multiboot1_info.mmap_length = sizeof(*mmap) * memmap_entries;
+    multiboot1_info.mmap_length = mb_mmap_len;
     multiboot1_info.mmap_addr = ((uint32_t)(size_t)mmap);
     multiboot1_info.flags |= (1 << 0) | (1 << 6);
 

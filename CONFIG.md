@@ -67,6 +67,9 @@ Some keys take *URIs* as values; these are described in the next section.
 * `BACKGROUND_STYLE` - The style which will be used to display the background image. Either `tiled` or `centered`. Default is `tiled`.
 * `BACKDROP_COLOUR` - When the background style is `centered`, this specifies the colour of the backdrop for parts of the screen not covered by the background image, in RRGGBB format.
 * `BACKDROP_COLOR` - Alias of `BACKDROP_COLOUR`.
+* `EDITOR_ENABLED` - If set to `no`, the editor will not be accessible. Defaults to `yes`.
+* `EDITOR_HIGHLIGHTING` - If set to `no`, syntax highlighting in the editor will be disabled. Defaults to `yes`.
+* `EDITOR_VALIDATION` - If set to `no`, the editor will not alert you about invalid keys / syntax errors. Defaults to `yes`.
 * `VERBOSE` - If set to `yes`, print additional information during boot. Defaults to not verbose.
 
 *Locally assignable (non protocol specific)* keys are:

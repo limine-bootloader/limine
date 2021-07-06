@@ -556,7 +556,7 @@ void linux_load(char *config, char *cmdline) {
     struct boot_e820_entry *e820_table = boot_params->e820_table;
 
     size_t memmap_entries;
-    struct e820_entry_t *memmap = get_memmap(&memmap_entries);
+    struct e820_entry_t *memmap = get_raw_memmap(&memmap_entries);
 
     boot_params->e820_entries = memmap_entries;
 
@@ -564,12 +564,6 @@ void linux_load(char *config, char *cmdline) {
         e820_table[i].addr = memmap[i].base;
         e820_table[i].size = memmap[i].length;
         e820_table[i].type = memmap[i].type;
-
-        switch (e820_table[i].type) {
-            case MEMMAP_BOOTLOADER_RECLAIMABLE:
-                e820_table[i].type = MEMMAP_USABLE;
-                break;
-        }
     }
 
     ///////////////////////////////////////

@@ -286,11 +286,11 @@ void stivale_load(char *config, char *cmdline) {
     // Reserve 32K at 0x70000
     memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, true, false, false);
 
-    size_t memmap_entries;
-    struct e820_entry_t *memmap = get_memmap(&memmap_entries);
+    size_t mmap_entries;
+    struct e820_entry_t *mmap = get_memmap(&mmap_entries);
 
-    stivale_struct.memory_map_entries = (uint64_t)memmap_entries;
-    stivale_struct.memory_map_addr    = REPORTED_ADDR((uint64_t)(size_t)memmap);
+    stivale_struct.memory_map_entries = (uint64_t)mmap_entries;
+    stivale_struct.memory_map_addr    = REPORTED_ADDR((uint64_t)(size_t)mmap);
 
     stivale_spinup(bits, want_5lv, &pagemap,
                    entry_point, REPORTED_ADDR((uint64_t)(uintptr_t)&stivale_struct),
@@ -341,8 +341,8 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null) {
         uint64_t aligned_top    = ALIGN_UP(top, 0x200000);
         uint64_t aligned_length = aligned_top - aligned_base;
 
-        for (uint64_t i = 0; i < aligned_length; i += 0x200000) {
-            uint64_t page = aligned_base + i;
+        for (uint64_t j = 0; j < aligned_length; j += 0x200000) {
+            uint64_t page = aligned_base + j;
             map_page(pagemap, page, page, 0x03, true);
             map_page(pagemap, higher_half_base + page, page, 0x03, true);
         }
@@ -363,7 +363,7 @@ __attribute__((noreturn)) void stivale_spinup_32(
 
 __attribute__((noreturn)) void stivale_spinup(
                  int bits, bool level5pg, pagemap_t *pagemap,
-                 uint64_t entry_point, uint64_t stivale_struct, uint64_t stack) {
+                 uint64_t entry_point, uint64_t _stivale_struct, uint64_t stack) {
 #if defined (bios)
     if (bits == 64) {
         // If we're going 64, we might as well call this BIOS interrupt
@@ -382,6 +382,6 @@ __attribute__((noreturn)) void stivale_spinup(
     common_spinup(stivale_spinup_32, 9,
         bits, level5pg, (uint32_t)(uintptr_t)pagemap->top_level,
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
-        (uint32_t)stivale_struct, (uint32_t)(stivale_struct >> 32),
+        (uint32_t)_stivale_struct, (uint32_t)(_stivale_struct >> 32),
         (uint32_t)stack, (uint32_t)(stack >> 32));
 }

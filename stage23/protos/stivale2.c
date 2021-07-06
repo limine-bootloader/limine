@@ -505,14 +505,14 @@ skip_modeset:;
     // Reserve 32K at 0x70000
     memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, true, false, false);
 
-    size_t memmap_entries;
-    struct e820_entry_t *memmap = get_memmap(&memmap_entries);
+    size_t mmap_entries;
+    struct e820_entry_t *mmap = get_memmap(&mmap_entries);
 
     tag->tag.identifier = STIVALE2_STRUCT_TAG_MEMMAP_ID;
-    tag->entries = (uint64_t)memmap_entries;
+    tag->entries = (uint64_t)mmap_entries;
 
     memcpy((void*)tag + sizeof(struct stivale2_struct_tag_memmap),
-           memmap, sizeof(struct e820_entry_t) * memmap_entries);
+           mmap, sizeof(struct e820_entry_t) * mmap_entries);
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }

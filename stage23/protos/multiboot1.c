@@ -137,7 +137,7 @@ void multiboot1_load(char *config, char *cmdline) {
             if (!uri_open(&f, module_path))
                 panic("multiboot1: Failed to open module with path `%s`. Is the path correct?", module_path);
 
-            char *cmdline = config_get_value(config, i, "MODULE_STRING");
+            char *module_cmdline = config_get_value(config, i, "MODULE_STRING");
 
             void *module_addr = (void *)(uintptr_t)ALIGN_UP(kernel_top, 4096);
             memmap_alloc_range((uintptr_t)module_addr, f.size, MEMMAP_KERNEL_AND_MODULES,
@@ -147,13 +147,13 @@ void multiboot1_load(char *config, char *cmdline) {
 
             m->begin   = (uint32_t)(size_t)module_addr;
             m->end     = m->begin + f.size;
-            m->cmdline = (uint32_t)(size_t)cmdline;
+            m->cmdline = (uint32_t)(size_t)module_cmdline;
             m->pad     = 0;
 
             if (verbose) {
                 print("multiboot1: Requested module %u:\n", i);
                 print("            Path:   %s\n", module_path);
-                print("            String: \"%s\"\n", cmdline ?: "");
+                print("            String: \"%s\"\n", module_cmdline ?: "");
                 print("            Begin:  %x\n", m->begin);
                 print("            End:    %x\n", m->end);
             }

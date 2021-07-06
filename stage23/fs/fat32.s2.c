@@ -206,8 +206,8 @@ static bool fat32_filename_to_8_3(char *dest, const char *src) {
     int i = 0, j = 0;
     bool ext = false;
 
-    for (size_t i = 0; i < 8+3; i++)
-        dest[i] = ' ';
+    for (size_t k = 0; k < 8+3; k++)
+        dest[k] = ' ';
 
     while (src[i]) {
         if (src[i] == '.') {

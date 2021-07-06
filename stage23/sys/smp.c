@@ -182,10 +182,10 @@ struct smp_information *init_smp(size_t    header_hack_size,
                 if (!x2apic)
                     continue;
 
-                struct madt_x2apic *x2apic = (void *)madt_ptr;
+                struct madt_x2apic *x2lapic = (void *)madt_ptr;
 
                 // Check if we can actually try to start the AP
-                if ((x2apic->flags & 1) ^ ((x2apic->flags >> 1) & 1))
+                if ((x2lapic->flags & 1) ^ ((x2lapic->flags >> 1) & 1))
                     max_cpus++;
 
                 continue;
@@ -242,27 +242,27 @@ struct smp_information *init_smp(size_t    header_hack_size,
                 if (!x2apic)
                     continue;
 
-                struct madt_x2apic *x2apic = (void *)madt_ptr;
+                struct madt_x2apic *x2lapic = (void *)madt_ptr;
 
                 // Check if we can actually try to start the AP
-                if (!((x2apic->flags & 1) ^ ((x2apic->flags >> 1) & 1)))
+                if (!((x2lapic->flags & 1) ^ ((x2lapic->flags >> 1) & 1)))
                     continue;
 
                 struct smp_information *info_struct = &ret[*cpu_count];
 
-                info_struct->acpi_processor_uid = x2apic->acpi_processor_uid;
-                info_struct->lapic_id           = x2apic->x2apic_id;
+                info_struct->acpi_processor_uid = x2lapic->acpi_processor_uid;
+                info_struct->lapic_id           = x2lapic->x2apic_id;
 
                 // Do not try to restart the BSP
-                if (x2apic->x2apic_id == bsp_x2apic_id) {
+                if (x2lapic->x2apic_id == bsp_x2apic_id) {
                     (*cpu_count)++;
                     continue;
                 }
 
-                printv("smp: [x2APIC] Found candidate AP for bring-up. LAPIC ID: %u\n", x2apic->x2apic_id);
+                printv("smp: [x2APIC] Found candidate AP for bring-up. LAPIC ID: %u\n", x2lapic->x2apic_id);
 
                 // Try to start the AP
-                if (!smp_start_ap(x2apic->x2apic_id, &gdtr, info_struct,
+                if (!smp_start_ap(x2lapic->x2apic_id, &gdtr, info_struct,
                                   longmode, lv5, (uintptr_t)pagemap.top_level,
                                   true)) {
                     print("smp: FAILED to bring-up AP\n");

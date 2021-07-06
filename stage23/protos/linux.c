@@ -555,15 +555,15 @@ void linux_load(char *config, char *cmdline) {
 
     struct boot_e820_entry *e820_table = boot_params->e820_table;
 
-    size_t memmap_entries;
-    struct e820_entry_t *memmap = get_raw_memmap(&memmap_entries);
+    size_t mmap_entries;
+    struct e820_entry_t *mmap = get_raw_memmap(&mmap_entries);
 
-    boot_params->e820_entries = memmap_entries;
+    boot_params->e820_entries = mmap_entries;
 
-    for (size_t i = 0; i < memmap_entries; i++) {
-        e820_table[i].addr = memmap[i].base;
-        e820_table[i].size = memmap[i].length;
-        e820_table[i].type = memmap[i].type;
+    for (size_t i = 0; i < mmap_entries; i++) {
+        e820_table[i].addr = mmap[i].base;
+        e820_table[i].size = mmap[i].length;
+        e820_table[i].type = mmap[i].type;
     }
 
     ///////////////////////////////////////

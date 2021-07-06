@@ -59,6 +59,7 @@ INTERNAL_CFLAGS := \
 	-fno-lto \
 	-fno-pic \
 	-Wno-address-of-packed-member \
+	-Wshadow \
 	-mno-80387 \
 	-mno-mmx \
 	-mno-3dnow \

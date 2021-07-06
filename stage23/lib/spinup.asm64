@@ -53,6 +53,9 @@ bits 32
     mov gs, ax
     mov ss, ax
 
+    xor eax, eax
+    lldt ax
+
     mov eax, 0x00000011
     mov cr0, eax
 

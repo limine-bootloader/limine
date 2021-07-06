@@ -32,6 +32,9 @@ smp_trampoline:
     mov ss, ax
 
     xor eax, eax
+    lldt ax
+
+    xor eax, eax
     mov cr4, eax
 
     test dword [ebx + passed_info.target_mode], (1 << 2)

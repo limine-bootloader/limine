@@ -12,6 +12,9 @@ common_spinup:
 
     lidt [invalid_idt]
 
+    xor eax, eax
+    lldt ax
+
     ; We don't need the return address
     add esp, 4
 

@@ -359,19 +359,8 @@ void pmm_release_uefi_mem(void) {
 
 #if defined (bios)
 struct e820_entry_t *get_raw_memmap(size_t *entry_count) {
-    size_t mmap_count = e820_entries;
-    size_t mmap_len = mmap_count * sizeof(struct e820_entry_t);
-
-    struct e820_entry_t *mmap = conv_mem_alloc(mmap_len);
-
-    for (size_t i = 0; i < mmap_count; i++) {
-        mmap[i].base   = e820_map[i].base;
-        mmap[i].length = e820_map[i].length;
-        mmap[i].type   = e820_map[i].type;
-    }
-
-    *entry_count = mmap_count;
-    return mmap;
+    *entry_count = e820_entries;
+    return e820_map;
 }
 #endif
 
@@ -380,7 +369,7 @@ struct e820_entry_t *get_raw_memmap(size_t *entry_count) {
     size_t mmap_count = efi_mmap_size / efi_desc_size;
     size_t mmap_len = mmap_count * sizeof(struct e820_entry_t);
 
-    struct e820_entry_t *mmap = conv_mem_alloc(mmap_len);
+    struct e820_entry_t *mmap = ext_mem_alloc(mmap_len);
 
     for (size_t i = 0; i < mmap_count; i++) {
         EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;

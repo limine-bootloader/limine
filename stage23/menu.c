@@ -269,22 +269,22 @@ refresh:
             // syntax highlighting
             if (syntax_highlighting_enabled) {
                 switch (token_type) {
-                case TOK_KEY:
-                    print("\e[36m%c\e[0m", buffer[i]);
-                    break;
-                case TOK_EQUALS:
-                    print("\e[32m%c\e[0m", buffer[i]);
-                    break;
+                    case TOK_KEY:
+                        print("\e[36m%c\e[0m", buffer[i]);
+                        break;
+                    case TOK_EQUALS:
+                        print("\e[32m%c\e[0m", buffer[i]);
+                        break;
                    case TOK_VALUE:
                        print("\e[39m%c\e[0m", buffer[i]);
                        break;
                    case TOK_BADKEY:
                        print("\e[31m%c\e[0m", buffer[i]);
                        break;
-                   }
-               } else {
-                   print("%c", buffer[i]);
                }
+           } else {
+               print("%c", buffer[i]);
+           }
                
                // switch to token type 2 after equals sign
                if (token_type == TOK_EQUALS) token_type = TOK_VALUE;

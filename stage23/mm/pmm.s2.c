@@ -406,6 +406,8 @@ struct e820_entry_t *get_raw_memmap(size_t *entry_count) {
         mmap[i].type   = our_type;
     }
 
+    sanitise_entries(mmap, &mmap_count, false);
+
     *entry_count = mmap_count;
     return mmap;
 }

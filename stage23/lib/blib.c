@@ -116,8 +116,19 @@ bool efi_exit_boot_services(void) {
     for (size_t i = 0; i < entry_count; i++) {
         EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
 
-        if (entry->Type == 0x80000000) {
-            entry->Type = EfiConventionalMemory;
+        uint64_t base = entry->PhysicalStart;
+        uint64_t length = entry->NumberOfPages * 4096;
+
+        // Find for a match in the untouched memory map
+        for (size_t j = 0; j < untouched_memmap_entries; j++) {
+            if (untouched_memmap[j].type != MEMMAP_USABLE)
+                continue;
+
+            if (untouched_memmap[j].base == base && untouched_memmap[j].length == length) {
+                // It's a match!
+                entry->Type = EfiConventionalMemory;
+                break;
+            }
         }
     }
 

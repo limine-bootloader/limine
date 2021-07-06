@@ -51,6 +51,11 @@ void *conv_mem_alloc(size_t count) {
 struct e820_entry_t memmap[MEMMAP_MAX_ENTRIES];
 size_t memmap_entries = 0;
 
+#if defined (uefi)
+struct e820_entry_t untouched_memmap[MEMMAP_MAX_ENTRIES];
+size_t untouched_memmap_entries = 0;
+#endif
+
 static const char *memmap_type(uint32_t type) {
     switch (type) {
         case MEMMAP_USABLE:
@@ -63,12 +68,16 @@ static const char *memmap_type(uint32_t type) {
             return "ACPI NVS";
         case MEMMAP_BAD_MEMORY:
             return "Bad memory";
+        case MEMMAP_FRAMEBUFFER:
+            return "Framebuffer";
         case MEMMAP_BOOTLOADER_RECLAIMABLE:
             return "Bootloader reclaimable";
         case MEMMAP_KERNEL_AND_MODULES:
             return "Kernel/Modules";
         case MEMMAP_EFI_RECLAIMABLE:
             return "EFI reclaimable";
+        case MEMMAP_EFI_BOOTSERVICES:
+            return "EFI boot services";
         default:
             return "???";
     }
@@ -76,11 +85,11 @@ static const char *memmap_type(uint32_t type) {
 
 void print_memmap(struct e820_entry_t *mm, size_t size) {
     for (size_t i = 0; i < size; i++) {
-        printv("[%X -> %X] : %X  <%s>\n",
+        printv("[%X -> %X] : %X  <%s (%x)>\n",
                mm[i].base,
                mm[i].base + mm[i].length,
                mm[i].length,
-               memmap_type(mm[i].type));
+               memmap_type(mm[i].type), mm[i].type);
     }
 }
 
@@ -283,7 +292,7 @@ void init_memmap(void) {
                 our_type = MEMMAP_RESERVED; break;
             case EfiBootServicesCode:
             case EfiBootServicesData:
-                our_type = MEMMAP_EFI_RECLAIMABLE; break;
+                our_type = MEMMAP_EFI_BOOTSERVICES; break;
             case EfiACPIReclaimMemory:
                 our_type = MEMMAP_ACPI_RECLAIMABLE; break;
             case EfiACPIMemoryNVS:
@@ -315,6 +324,9 @@ void init_memmap(void) {
     // Let's leave 64MiB to the firmware
     ext_mem_alloc_type(65536, MEMMAP_EFI_RECLAIMABLE);
 
+    memcpy(untouched_memmap, memmap, memmap_entries * sizeof(struct e820_entry_t));
+    untouched_memmap_entries = memmap_entries;
+
     // Now own all the usable entries
     for (size_t i = 0; i < memmap_entries; i++) {
         if (memmap[i].type != MEMMAP_USABLE)
@@ -323,7 +335,7 @@ void init_memmap(void) {
         EFI_PHYSICAL_ADDRESS base = memmap[i].base;
 
         status = uefi_call_wrapper(gBS->AllocatePages, 4,
-          AllocateAddress, 0x80000000, memmap[i].length / 4096, &base);
+          AllocateAddress, EfiLoaderData, memmap[i].length / 4096, &base);
 
         if (status)
             panic("pmm: AllocatePages failure (%x)", status);
@@ -331,11 +343,108 @@ void init_memmap(void) {
 }
 
 void pmm_reclaim_uefi_mem(void) {
+    // First, ensure the boot services are still boot services, or free, in
+    // the EFI memmap
     for (size_t i = 0; i < memmap_entries; i++) {
+        if (memmap[i].type != MEMMAP_EFI_BOOTSERVICES)
+            continue;
+
+        // Go through EFI memmap and ensure this entry fits within a boot services
+        // or conventional entry
+        size_t entry_count = efi_mmap_size / efi_desc_size;
+
+        for (size_t j = 0; j < entry_count; j++) {
+            EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + j * efi_desc_size;
+
+            uintptr_t base = memmap[i].base;
+            uintptr_t top = base + memmap[i].length;
+            uintptr_t efi_base = entry->PhysicalStart;
+            uintptr_t efi_size = entry->NumberOfPages * 4096;
+            uintptr_t efi_top = efi_base + efi_size;
+
+            if (!(base >= efi_base && base <  efi_top
+               && top  >  efi_base && top  <= efi_top))
+                continue;
+
+            switch (entry->Type) {
+                case EfiBootServicesCode:
+                case EfiBootServicesData:
+                case EfiConventionalMemory:
+                    memmap[i].type = MEMMAP_USABLE; break;
+            }
+        }
+    }
+
+    struct e820_entry_t recl;
+    size_t efi_mmap_recl_begin;
+    size_t efi_mmap_entry_count = efi_mmap_size / efi_desc_size;
+
+    for (size_t i = 0; ; i++) {
         if (memmap[i].type != MEMMAP_EFI_RECLAIMABLE)
             continue;
 
-        memmap[i].type = MEMMAP_USABLE;
+        recl = memmap[i];
+
+        // Go through EFI memmap and find an entry that starts at our base
+        for (efi_mmap_recl_begin = 0;
+             efi_mmap_recl_begin < efi_mmap_entry_count; efi_mmap_recl_begin++) {
+            EFI_MEMORY_DESCRIPTOR *entry =
+                (void *)efi_mmap + efi_mmap_recl_begin * efi_desc_size;
+
+            if (entry->PhysicalStart != memmap[i].base)
+                continue;
+
+            break;
+        }
+
+        break;
+    }
+
+    // Punch holes in our EFI reclaimable entry for every EFI area which is
+    // boot services or conventional that fits within
+    for (size_t i = efi_mmap_recl_begin; i < efi_mmap_entry_count; i++) {
+        EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
+
+        uintptr_t base = recl.base;
+        uintptr_t top = base + recl.length;
+        uintptr_t efi_base = entry->PhysicalStart;
+        uintptr_t efi_size = entry->NumberOfPages * 4096;
+
+        if (efi_base < base) {
+            if (efi_size <= base - efi_base)
+                continue;
+            efi_size -= base - efi_base;
+            efi_base = base;
+        }
+
+        uintptr_t efi_top = efi_base + efi_size;
+
+        if (efi_top > top) {
+            if (efi_size <= efi_top - top)
+                continue;
+            efi_size -= efi_top - top;
+            efi_top = top;
+        }
+
+        if (!(efi_base >= base && efi_base <  top
+           && efi_top  >  base && efi_top  <= top))
+            continue;
+
+        uint32_t our_type;
+        switch (entry->Type) {
+            default:
+                our_type = MEMMAP_RESERVED; break;
+            case EfiBootServicesCode:
+            case EfiBootServicesData:
+            case EfiConventionalMemory:
+                our_type = MEMMAP_USABLE; break;
+            case EfiACPIReclaimMemory:
+                our_type = MEMMAP_ACPI_RECLAIMABLE; break;
+            case EfiACPIMemoryNVS:
+                our_type = MEMMAP_ACPI_NVS; break;
+        }
+
+        memmap_alloc_range(efi_base, efi_size, our_type, false, true, false, true);
     }
 
     sanitise_entries(memmap, &memmap_entries, false);

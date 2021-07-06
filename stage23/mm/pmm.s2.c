@@ -51,6 +51,11 @@ void *conv_mem_alloc(size_t count) {
 struct e820_entry_t memmap[MEMMAP_MAX_ENTRIES];
 size_t memmap_entries = 0;
 
+#if defined (uefi)
+struct e820_entry_t untouched_memmap[MEMMAP_MAX_ENTRIES];
+size_t untouched_memmap_entries = 0;
+#endif
+
 static const char *memmap_type(uint32_t type) {
     switch (type) {
         case MEMMAP_USABLE:
@@ -309,6 +314,9 @@ void init_memmap(void) {
     }
 
     sanitise_entries(memmap, &memmap_entries, false);
+
+    memcpy(untouched_memmap, memmap, memmap_entries * sizeof(struct e820_entry_t));
+    untouched_memmap_entries = memmap_entries;
 
     allocations_disallowed = false;
 

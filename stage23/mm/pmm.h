@@ -19,6 +19,11 @@
 extern struct e820_entry_t memmap[];
 extern size_t memmap_entries;
 
+#if defined (uefi)
+extern struct e820_entry_t untouched_memmap[];
+extern size_t untouched_memmap_entries;
+#endif
+
 void init_memmap(void);
 struct e820_entry_t *get_memmap(size_t *entries);
 struct e820_entry_t *get_raw_memmap(size_t *entry_count);

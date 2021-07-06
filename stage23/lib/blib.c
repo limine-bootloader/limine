@@ -78,26 +78,64 @@ bool efi_exit_boot_services(void) {
     EFI_STATUS status;
 
     EFI_MEMORY_DESCRIPTOR tmp_mmap[1];
-    UINTN mmap_size = sizeof(tmp_mmap);
-    UINTN mmap_key = 0, desc_size = 0, desc_ver = 0;
+    efi_mmap_size = sizeof(tmp_mmap);
+    UINTN mmap_key = 0;
 
     uefi_call_wrapper(gBS->GetMemoryMap, 5,
-        &mmap_size, tmp_mmap, &mmap_key, &desc_size, &desc_ver);
+        &efi_mmap_size, tmp_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
 
-    status = uefi_call_wrapper(gBS->ExitBootServices, 2, efi_image_handle, mmap_key);
+    efi_mmap_size += 4096;
 
+    status = uefi_call_wrapper(gBS->AllocatePool, 3,
+        EfiLoaderData, efi_mmap_size, &efi_mmap);
     if (status)
-        panic("efi: Failed to exit boot services");
+        goto fail;
+
+    status = uefi_call_wrapper(gBS->GetMemoryMap, 5,
+        &efi_mmap_size, efi_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
+    if (status)
+        goto fail;
+
+    // Be gone, UEFI!
+    status = uefi_call_wrapper(gBS->ExitBootServices, 2, efi_image_handle, mmap_key);
 
     asm volatile ("cli" ::: "memory");
 
+    if (status)
+        goto fail;
+
     pmm_reclaim_uefi_mem();
+
+    // Go through new EFI memmap and free up bootloader entries
+    size_t entry_count = efi_mmap_size / efi_desc_size;
+
+    for (size_t i = 0; i < entry_count; i++) {
+        EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
+
+        uint64_t base = entry->PhysicalStart;
+        uint64_t length = entry->NumberOfPages * 4096;
+
+        // Find for a match in the untouched memory map
+        for (size_t j = 0; j < untouched_memmap_entries; j++) {
+            if (untouched_memmap[j].type != MEMMAP_USABLE)
+                continue;
+
+            if (untouched_memmap[j].base == base && untouched_memmap[j].length == length) {
+                // It's a match!
+                entry->Type = EfiConventionalMemory;
+                break;
+            }
+        }
+    }
 
     efi_boot_services_exited = true;
 
     printv("efi: Exited boot services.\n");
 
     return true;
+
+fail:
+    panic("efi: Failed to exit boot services");
 }
 
 #endif

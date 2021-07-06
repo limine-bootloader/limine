@@ -189,9 +189,15 @@ void chainload(char *config) {
 
     new_handle_loaded_image->DeviceHandle = loader_loaded_image->DeviceHandle;
 
-    status = uefi_call_wrapper(gBS->StartImage, 3, new_handle, NULL, NULL);
+    UINTN exit_data_size = 0;
+    CHAR16 *exit_data = NULL;
+    EFI_STATUS exit_status = uefi_call_wrapper(gBS->StartImage, 3,
+                                 new_handle, &exit_data_size, &exit_data);
+
+    status = uefi_call_wrapper(gBS->Exit, 4,
+                          efi_image_handle, exit_status, exit_data_size, exit_data);
     if (status) {
-        panic("chainload: StartImage failure (%x)", status);
+        panic("chainload: Exit failure (%x)", status);
     }
 
     __builtin_unreachable();

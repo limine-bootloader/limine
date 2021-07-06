@@ -26,13 +26,20 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
     print("System halted.");
     rm_hcf();
 #elif defined (uefi)
-    print("Press [ENTER] to return to firmware.");
-    while (getchar() != '\n');
-    fb_clear(&fbinfo);
+    if (efi_boot_services_exited == false) {
+        print("Press [ENTER] to return to firmware.");
+        while (getchar() != '\n');
+        fb_clear(&fbinfo);
 
-    // release all uefi memory and return to firmware
-    pmm_release_uefi_mem();
-    uefi_call_wrapper(gBS->Exit, 4, efi_image_handle, EFI_ABORTED, 0, NULL);
-    __builtin_unreachable();
+        // release all uefi memory and return to firmware
+        pmm_release_uefi_mem();
+        uefi_call_wrapper(gBS->Exit, 4, efi_image_handle, EFI_ABORTED, 0, NULL);
+        __builtin_unreachable();
+    } else {
+        print("System halted.");
+        for (;;) {
+            asm ("hlt");
+        }
+    }
 #endif
 }

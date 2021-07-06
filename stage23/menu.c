@@ -121,12 +121,11 @@ static int validate_line(const char *buffer) {
 fail:
     if (i < 64) keybuf[i] = 0;
     if (keybuf[0] == '\n' || (!keybuf[0] && buffer[0] != '=')) return TOK_KEY; // blank line is valid
-    invalid_syntax = 1;
+    invalid_syntax = true;
     return TOK_BADKEY;
 found_equals:
     if (i < 64) keybuf[i] = 0;
     for (i = 0; VALID_KEYS[i]; i++) {
-        //print("'%s'", keybuf);
         if (!strcmp(keybuf, VALID_KEYS[i])) {
             return TOK_KEY;
         }
@@ -168,7 +167,7 @@ static char *config_entry_editor(const char *title, const char *orig_entry) {
     buffer[entry_size] = 0;
 
 refresh:
-    invalid_syntax = 0;
+    invalid_syntax = false;
     
     clear(true);
     disable_cursor();
@@ -187,13 +186,15 @@ refresh:
                     break;
                 }
                 // FALLTHRU
-            default:
-                if (i > term_cols / 2 - (int)strlen(title) && i < term_cols / 2) {
-                    print(title);
-                    i += strlen(title) - 1;
+            default: {
+                int title_length = strlen(title);
+                if (i == (term_cols / 2) - (title_length / 2) - 1) {
+                    print("%s", title);
+                    i += title_length - 1;
                 } else {
                     print("\xc4");
                 }
+            }
         }
     }
     print("\xbf\xb3");

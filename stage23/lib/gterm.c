@@ -412,7 +412,7 @@ bool gterm_init(int *_rows, int *_cols, int width, int height) {
 
     // default scheme
     int margin = 64;
-    margin_gradient = 20;
+    margin_gradient = 4;
 
     ansi_colours[0] = 0x00000000; // black
     ansi_colours[1] = 0x00aa0000; // red

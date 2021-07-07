@@ -9,7 +9,6 @@
 #include <lib/fb.h>
 #include <lib/uri.h>
 #include <lib/print.h>
-#include <lib/libc.h>
 #include <sys/idt.h>
 #include <drivers/vga_textmode.h>
 #include <mm/pmm.h>
@@ -120,14 +119,8 @@ void chainload(char *config) {
     if (!uri_open(image, image_path))
         panic("chainload: Failed to open image with path `%s`. Is the path correct?", image_path);
 
-    void *_ptr = freadall(image, MEMMAP_RESERVED);
+    void *ptr = freadall(image, MEMMAP_RESERVED);
     size_t image_size = image->size;
-    void *ptr;
-    status = uefi_call_wrapper(gBS->AllocatePool, 3,
-        EfiLoaderData, image_size, &ptr);
-    if (status)
-        panic("chainload: Allocation failure");
-    memcpy(ptr, _ptr, image_size);
 
     term_deinit();
 

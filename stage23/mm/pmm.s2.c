@@ -453,50 +453,20 @@ void pmm_reclaim_uefi_mem(void) {
 void pmm_release_uefi_mem(void) {
     EFI_STATUS status;
 
-    EFI_MEMORY_DESCRIPTOR tmp_mmap[1];
-    efi_mmap_size = sizeof(tmp_mmap);
-    UINTN mmap_key = 0;
-
-    uefi_call_wrapper(gBS->GetMemoryMap, 5,
-        &efi_mmap_size, tmp_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
-
-    efi_mmap_size += 4096;
-
-    status = uefi_call_wrapper(gBS->FreePool, 1, efi_mmap);
-    if (status)
-        goto fail;
-
-    status = uefi_call_wrapper(gBS->AllocatePool, 3,
-        EfiLoaderData, efi_mmap_size, &efi_mmap);
-    if (status)
-        goto fail;
-
-    status = uefi_call_wrapper(gBS->GetMemoryMap, 5,
-        &efi_mmap_size, efi_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
-    if (status)
-        goto fail;
-
-    // Go through new EFI memmap and free up bootloader held entries
-    size_t entry_count = efi_mmap_size / efi_desc_size;
-
-    for (size_t i = 0; i < entry_count; i++) {
-        EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
-
-        if (entry->Type == 0x80000000) {
-            status = uefi_call_wrapper(gBS->FreePages, 2,
-                                       entry->PhysicalStart, entry->NumberOfPages);
-
-            if (status)
-                panic("pmm: FreePages failure (%x)", status);
+    for (size_t i = 0; i < memmap_entries; i++) {
+        if (memmap[i].type != MEMMAP_USABLE
+         && memmap[i].type != MEMMAP_BOOTLOADER_RECLAIMABLE) {
+            continue;
         }
+
+        status = uefi_call_wrapper(gBS->FreePages, 2,
+                                   memmap[i].base, memmap[i].length / 4096);
+
+        if (status)
+            panic("pmm: FreePages failure (%x)", status);
     }
 
     allocations_disallowed = true;
-
-    return;
-
-fail:
-    panic("pmm: Failed to release UEFI memory");
 }
 #endif
 

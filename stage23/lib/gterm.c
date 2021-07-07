@@ -488,6 +488,8 @@ bool gterm_init(int *_rows, int *_cols, int width, int height) {
                 background_colour = "0";
             uint32_t bg_col = strtoui(background_colour, NULL, 16);
             image_make_centered(background, fbinfo.framebuffer_width, fbinfo.framebuffer_height, bg_col);
+        } else if (background_layout != NULL && strcmp(background_layout, "stretched") == 0) {
+            image_make_stretched(background, fbinfo.framebuffer_width, fbinfo.framebuffer_height);
         }
     }
 

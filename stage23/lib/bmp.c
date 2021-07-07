@@ -51,6 +51,11 @@ static uint32_t get_pixel(struct image *this, int x, int y) {
                 return this->back_colour;
             break;
         }
+        case IMAGE_STRETCHED: {
+            x = (x * this->old_x_size) / this->x_size;
+            y = (y * this->old_y_size) / this->y_size;
+            break;
+        }
     }
 
     size_t pixel_offset = local->pitch * (header->bi_height - y - 1) + x * (header->bi_bpp / 8);

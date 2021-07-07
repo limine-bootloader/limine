@@ -12,7 +12,7 @@ Like Limine and want to support it? Donate Bitcoin to `bc1q00d59y75crpapw7qp8sea
 
 ![Reference screenshot](/screenshot.png?raw=true "Reference screenshot")
 
-[Photo by Nishant Aneja from Pexels](https://www.pexels.com/photo/close-up-photo-of-waterdrops-on-glass-2527248/)
+[Photo by Chris Kane from Pexels](https://www.pexels.com/photo/reflection-of-building-on-body-of-water-at-daytime-166360/)
 
 ### Supported boot protocols
 * Linux

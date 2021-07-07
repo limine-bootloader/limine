@@ -16,6 +16,10 @@
 static char *menu_branding = NULL;
 
 #define EDITOR_MAX_BUFFER_SIZE 4096
+#define TOK_KEY 0
+#define TOK_EQUALS 1
+#define TOK_VALUE 2
+#define TOK_BADKEY 3
 
 static size_t get_line_offset(size_t *displacement, size_t index, const char *buffer) {
     size_t offset = 0;
@@ -67,7 +71,69 @@ static size_t get_prev_line(size_t index, const char *buffer) {
     return offset;
 }
 
-static char *config_entry_editor(const char *orig_entry) {
+static const char *VALID_KEYS[] = {
+    "TIMEOUT",
+    "DEFAULT_ENTRY",
+    "GRAPHICS",
+    "MENU_RESOLUTION",
+    "MENU_BRANDING",
+    "MENU_FONT",
+    "TERMINAL_FONT",
+    "THEME_COLOURS",
+    "THEME_COLORS",
+    "THEME_BACKGROUND",
+    "THEME_FOREGROUND",
+    "THEME_MARGIN",
+    "THEME_MARGIN_GRADIENT",
+    "BACKGROUND_PATH",
+    "BACKGROUND_STYLE",
+    "BACKDROP_COLOUR",
+    "BACKDROP_COLOR",
+    "EDITOR_ENABLED",
+    "EDITOR_HIGHLIGHTING",
+    "EDITOR_VALIDATION",
+    "VERBOSE",
+    "PROTOCOL",
+    "CMDLINE",
+    "KERNEL_CMDLINE",
+    "KERNEL_PATH",
+    "MODULE_PATH",
+    "MODULE_STRING",
+    "RESOLUTION",
+    "KASLR",
+    "DRIVE",
+    "PARTITION",
+    "IMAGE_PATH",
+    NULL
+};
+
+static bool validation_enabled = true;
+static bool invalid_syntax = false;
+
+static int validate_line(const char *buffer) {
+    if (!validation_enabled) return TOK_KEY;
+    char keybuf[64];
+    int i;
+    for (i = 0; buffer[i] && i < 64; i++) {
+        if (buffer[i] == '=') goto found_equals;
+        keybuf[i] = buffer[i];
+    }
+fail:
+    if (i < 64) keybuf[i] = 0;
+    if (keybuf[0] == '\n' || (!keybuf[0] && buffer[0] != '=')) return TOK_KEY; // blank line is valid
+    invalid_syntax = true;
+    return TOK_BADKEY;
+found_equals:
+    if (i < 64) keybuf[i] = 0;
+    for (i = 0; VALID_KEYS[i]; i++) {
+        if (!strcmp(keybuf, VALID_KEYS[i])) {
+            return TOK_KEY;
+        }
+    }
+    goto fail;
+}
+
+static char *config_entry_editor(const char *title, const char *orig_entry) {
     size_t cursor_offset  = 0;
     size_t entry_size     = strlen(orig_entry);
     size_t _window_size   = term_rows - 11;
@@ -82,9 +148,18 @@ static char *config_entry_editor(const char *orig_entry) {
         entry_size--;
     }
 
-    if (entry_size >= EDITOR_MAX_BUFFER_SIZE)
+    if (entry_size >= EDITOR_MAX_BUFFER_SIZE) {
         panic("Entry is too big to be edited.");
+    }
 
+    bool syntax_highlighting_enabled = true;
+    char *syntax_highlighting_enabled_config = config_get_value(NULL, 0, "EDITOR_HIGHLIGHTING");
+    if (!strcmp(syntax_highlighting_enabled_config, "no")) syntax_highlighting_enabled = false;
+    
+    validation_enabled = true;
+    char *validation_enabled_config = config_get_value(NULL, 0, "EDITOR_VALIDATION");
+    if (!strcmp(validation_enabled_config, "no")) validation_enabled = false;
+    
     static char *buffer = NULL;
     if (buffer == NULL)
         buffer = ext_mem_alloc(EDITOR_MAX_BUFFER_SIZE);
@@ -92,12 +167,15 @@ static char *config_entry_editor(const char *orig_entry) {
     buffer[entry_size] = 0;
 
 refresh:
+    invalid_syntax = false;
+    
     clear(true);
     disable_cursor();
     print("\n\n  \e[36m %s \e[37m\n\n\n", menu_branding);
 
-    print("Editing entry.\n");
-    print("Press esc to return to main menu and discard changes, press F10 to boot.\n");
+    //print("Editing \"%s\"\n", title);
+    print("   \e[32mESC\e[0m Discard and Exit    \e[32mF10\e[0m Boot\n");
+
 
     print("\n\xda");
     for (int i = 0; i < term_cols - 2; i++) {
@@ -108,8 +186,15 @@ refresh:
                     break;
                 }
                 // FALLTHRU
-            default:
-                print("\xc4");
+            default: {
+                int title_length = strlen(title);
+                if (i == (term_cols / 2) - (title_length / 2) - 1) {
+                    print("%s", title);
+                    i += title_length - 1;
+                } else {
+                    print("\xc4");
+                }
+            }
         }
     }
     print("\xbf\xb3");
@@ -117,7 +202,9 @@ refresh:
     int cursor_x, cursor_y;
     size_t current_line = 0, line_offset = 0, window_size = _window_size;
     bool printed_cursor = false;
+    int token_type = validate_line(buffer);
     for (size_t i = 0; ; i++) {
+        // newline
         if (buffer[i] == '\n'
          && current_line <  window_offset + window_size
          && current_line >= window_offset) {
@@ -134,6 +221,7 @@ refresh:
             else
                 print("\xb3\xb3");
             line_offset = 0;
+            token_type = validate_line(buffer+i+1);
             current_line++;
             continue;
         }
@@ -175,8 +263,46 @@ refresh:
 
         if (current_line >= window_offset) {
             line_offset++;
-            print("%c", buffer[i]);
+            
+            // switch to token type 1 if equals sign
+            if (token_type == TOK_KEY && buffer[i] == '=') token_type = TOK_EQUALS;
+            
+            // syntax highlighting
+            if (syntax_highlighting_enabled) {
+                switch (token_type) {
+                    case TOK_KEY:
+                        print("\e[36m%c\e[0m", buffer[i]);
+                        break;
+                    case TOK_EQUALS:
+                        print("\e[32m%c\e[0m", buffer[i]);
+                        break;
+                   case TOK_VALUE:
+                       print("\e[39m%c\e[0m", buffer[i]);
+                       break;
+                   case TOK_BADKEY:
+                       print("\e[31m%c\e[0m", buffer[i]);
+                       break;
+               }
+           } else {
+               print("%c", buffer[i]);
+           }
+               
+           // switch to token type 2 after equals sign
+           if (token_type == TOK_EQUALS) token_type = TOK_VALUE;
         }
+    }
+    
+    // syntax error alert
+    if (validation_enabled) {
+        int x, y;
+        get_cursor_pos(&x, &y);
+        set_cursor_pos(0, term_rows-2);
+        if (invalid_syntax) {
+            print("\e[31mConfiguration is INVALID.\e[0m");
+        } else {
+            print("\e[32mConfiguration is valid.\e[0m");
+        }
+        set_cursor_pos(x, y);
     }
 
     if (current_line - window_offset < window_size) {
@@ -348,6 +474,10 @@ char *menu(char **cmdline) {
         else
             timeout = strtoui(timeout_config, NULL, 10);
     }
+    
+    bool editor_enabled = true;
+    char *editor_enabled_config = config_get_value(NULL, 0, "EDITOR_ENABLED");
+    if (!strcmp(editor_enabled_config, "no")) editor_enabled = false;
 
     if (!timeout) {
         // Use print tree to load up selected_menu_entry and determine if the
@@ -394,7 +524,7 @@ refresh:
         getchar();
         char *new_body = NULL;
         while (new_body == NULL)
-            new_body = config_entry_editor("");
+            new_body = config_entry_editor("New Entry", "");
         selected_menu_entry = ext_mem_alloc(sizeof(struct menu_entry));
         selected_menu_entry->body = new_body;
         config_ready = true;
@@ -406,7 +536,17 @@ refresh:
     int max_entries = print_tree(0, 0, selected_entry, menu_tree,
                                  &selected_menu_entry);
 
-    print("\nArrows to select, enter to boot, 'e' to edit selected entry.");
+    {
+        int x, y;
+        get_cursor_pos(&x, &y);
+        set_cursor_pos(0, 4);
+        if (editor_enabled && selected_menu_entry->sub == NULL) {
+            print("\n   \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m Boot    \e[32mE\e[0m Edit");
+        } else {
+            print("\n   \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m Boot");
+        }
+        set_cursor_pos(x, y);
+    }
 
     if (selected_menu_entry->sub != NULL)
         skip_timeout = true;
@@ -461,14 +601,16 @@ timeout_aborted:
                 term_double_buffer(false);
                 return selected_menu_entry->body;
             case 'e': {
-                if (selected_menu_entry->sub != NULL)
-                    goto refresh;
-                enable_cursor();
-                char *new_body = config_entry_editor(selected_menu_entry->body);
-                if (new_body == NULL)
-                    goto refresh;
-                selected_menu_entry->body = new_body;
-                goto autoboot;
+                if (editor_enabled) {
+                    if (selected_menu_entry->sub != NULL)
+                        goto refresh;
+                    enable_cursor();
+                    char *new_body = config_entry_editor(selected_menu_entry->name, selected_menu_entry->body);
+                    if (new_body == NULL)
+                        goto refresh;
+                    selected_menu_entry->body = new_body;
+                    goto autoboot;
+                }
             }
         }
     }

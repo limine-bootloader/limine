@@ -236,6 +236,10 @@ static void escape_parse(uint8_t c) {
     }
 
     switch (c) {
+        case '\e':
+            escape = false;
+            raw_putchar(c);
+            break;
         case '[':
             for (int i = 0; i < MAX_ESC_VALUES; i++)
                 esc_values[i] = 0;

@@ -86,10 +86,15 @@ void stivale2_main(struct stivale2_struct *info) {
                 struct stivale2_struct_tag_memmap *m = (struct stivale2_struct_tag_memmap *)tag;
                 e9_puts("Memmap tag:");
                 e9_printf("\tEntries: %d", m->entries);
+                size_t total_mem = 0;
                 for (size_t i = 0; i < m->entries; i++) {
                     struct stivale2_mmap_entry me = m->memmap[i];
                     e9_printf("\t\t[%x+%x] %x", me.base, me.length, me.type);
+                    if (m->memmap[i].type == 1) {
+                        total_mem += m->memmap[i].length;
+                    }
                 }
+                e9_printf("\tTotal usable memory: %d", total_mem);
                 break;
             }
             case STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID: {

@@ -321,8 +321,8 @@ void init_memmap(void) {
 
     allocations_disallowed = false;
 
-    // Let's leave 64MiB to the firmware
-    ext_mem_alloc_type(65536, MEMMAP_EFI_RECLAIMABLE);
+    // Let's leave 16MiB to the firmware
+    ext_mem_alloc_type(0x1000000, MEMMAP_EFI_RECLAIMABLE);
 
     memcpy(untouched_memmap, memmap, memmap_entries * sizeof(struct e820_entry_t));
     untouched_memmap_entries = memmap_entries;
@@ -452,6 +452,8 @@ void pmm_reclaim_uefi_mem(void) {
 
 void pmm_release_uefi_mem(void) {
     EFI_STATUS status;
+
+    sanitise_entries(memmap, &memmap_entries, true);
 
     for (size_t i = 0; i < memmap_entries; i++) {
         if (memmap[i].type != MEMMAP_USABLE

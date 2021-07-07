@@ -155,11 +155,11 @@ static char *config_entry_editor(const char *title, const char *orig_entry) {
     bool syntax_highlighting_enabled = true;
     char *syntax_highlighting_enabled_config = config_get_value(NULL, 0, "EDITOR_HIGHLIGHTING");
     if (!strcmp(syntax_highlighting_enabled_config, "no")) syntax_highlighting_enabled = false;
-    
+
     validation_enabled = true;
     char *validation_enabled_config = config_get_value(NULL, 0, "EDITOR_VALIDATION");
     if (!strcmp(validation_enabled_config, "no")) validation_enabled = false;
-    
+
     static char *buffer = NULL;
     if (buffer == NULL)
         buffer = ext_mem_alloc(EDITOR_MAX_BUFFER_SIZE);
@@ -168,7 +168,7 @@ static char *config_entry_editor(const char *title, const char *orig_entry) {
 
 refresh:
     invalid_syntax = false;
-    
+
     clear(true);
     disable_cursor();
     print("\n\n  \e[36m %s \e[37m\n\n\n", menu_branding);
@@ -188,7 +188,7 @@ refresh:
                 // FALLTHRU
             default: {
                 int title_length = strlen(title);
-                if (i == (term_cols / 2) - (title_length / 2) - 1) {
+                if (i == (term_cols / 2) - DIV_ROUNDUP(title_length, 2)) {
                     print("%s", title);
                     i += title_length - 1;
                 } else {
@@ -263,10 +263,10 @@ refresh:
 
         if (current_line >= window_offset) {
             line_offset++;
-            
+
             // switch to token type 1 if equals sign
             if (token_type == TOK_KEY && buffer[i] == '=') token_type = TOK_EQUALS;
-            
+
             // syntax highlighting
             if (syntax_highlighting_enabled) {
                 switch (token_type) {
@@ -286,12 +286,12 @@ refresh:
            } else {
                print("%c", buffer[i]);
            }
-               
+
            // switch to token type 2 after equals sign
            if (token_type == TOK_EQUALS) token_type = TOK_VALUE;
         }
     }
-    
+
     // syntax error alert
     if (validation_enabled) {
         int x, y;
@@ -474,7 +474,7 @@ char *menu(char **cmdline) {
         else
             timeout = strtoui(timeout_config, NULL, 10);
     }
-    
+
     bool editor_enabled = true;
     char *editor_enabled_config = config_get_value(NULL, 0, "EDITOR_ENABLED");
     if (!strcmp(editor_enabled_config, "no")) editor_enabled = false;

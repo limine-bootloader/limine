@@ -64,7 +64,7 @@ Some keys take *URIs* as values; these are described in the next section.
 * `THEME_MARGIN` - Set the amount of margin around the terminal. Ignored if `GRAPHICS` is not `yes`.
 * `THEME_MARGIN_GRADIENT` - Set the thickness in pixel for the gradient around the terminal. Ignored if `GRAPHICS` is not `yes`.
 * `BACKGROUND_PATH` - URI where to find the background .BMP file. Ignored if `GRAPHICS` is not `yes`.
-* `BACKGROUND_STYLE` - The style which will be used to display the background image. Either `tiled` or `centered`. Default is `tiled`.
+* `BACKGROUND_STYLE` - The style which will be used to display the background image: `tiled`, `centered`, or `stretched`. Default is `tiled`.
 * `BACKDROP_COLOUR` - When the background style is `centered`, this specifies the colour of the backdrop for parts of the screen not covered by the background image, in RRGGBB format.
 * `BACKDROP_COLOR` - Alias of `BACKDROP_COLOUR`.
 * `EDITOR_ENABLED` - If set to `no`, the editor will not be accessible. Defaults to `yes`.

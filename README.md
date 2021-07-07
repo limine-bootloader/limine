@@ -40,9 +40,9 @@ For example, to clone the latest binary release of the `v2.x` branch one can do
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v2.0-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example v2.4)
+or, to clone a specific binary point release (for example v2.29)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v2.4-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v2.29-binary --depth=1
 ```
 
 Additionally, the absolute latest Limine binary release can be obtained by fetching

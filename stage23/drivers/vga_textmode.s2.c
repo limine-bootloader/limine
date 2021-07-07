@@ -26,27 +26,33 @@ static uint8_t text_palette;
 static uint8_t cursor_palette;
 
 static void clear_cursor(void) {
-    current_buffer[cursor_offset + 1] = text_palette;
-    return;
+    if (cursor_status) {
+        video_mem[cursor_offset + 1] = current_buffer[cursor_offset + 1];
+    }
 }
 
 static void draw_cursor(void) {
     if (cursor_status) {
-        current_buffer[cursor_offset + 1] = cursor_palette;
+        video_mem[cursor_offset + 1] = cursor_palette;
     }
-    return;
 }
 
 static void scroll(void) {
     // move the text up by one row
-    for (size_t i = 0; i <= VIDEO_BOTTOM - VD_COLS; i++)
+    for (size_t i = 0; i <= VIDEO_BOTTOM - VD_COLS; i++) {
         current_buffer[i] = current_buffer[i + VD_COLS];
+        if (current_buffer == front_buffer)
+            video_mem[i] = current_buffer[i + VD_COLS];
+    }
     // clear the last line of the screen
     for (size_t i = VIDEO_BOTTOM; i > VIDEO_BOTTOM - VD_COLS; i -= 2) {
         current_buffer[i] = text_palette;
         current_buffer[i - 1] = ' ';
+        if (current_buffer == front_buffer) {
+            video_mem[i] = text_palette;
+            video_mem[i - 1] = ' ';
+        }
     }
-    return;
 }
 
 void text_clear(bool move) {
@@ -54,6 +60,10 @@ void text_clear(bool move) {
     for (size_t i = 0; i < VIDEO_BOTTOM; i += 2) {
         current_buffer[i] = ' ';
         current_buffer[i + 1] = text_palette;
+        if (current_buffer == front_buffer) {
+            video_mem[i] = ' ';
+            video_mem[i + 1] = text_palette;
+        }
     }
     if (move)
         cursor_offset = 0;
@@ -69,8 +79,8 @@ void text_enable_cursor(void) {
 
 bool text_disable_cursor(void) {
     bool ret = cursor_status != 0;
-    cursor_status = 0;
     clear_cursor();
+    cursor_status = 0;
     return ret;
 }
 
@@ -83,6 +93,8 @@ void init_vga_textmode(int *_rows, int *_cols, bool managed) {
         current_video_mode = -1;
     }
 
+    back_buffer = ext_mem_alloc(VD_ROWS * VD_COLS);
+    front_buffer = ext_mem_alloc(VD_ROWS * VD_COLS);
 
     cursor_offset = 0;
     cursor_status = 1;
@@ -117,10 +129,6 @@ void init_vga_textmode(int *_rows, int *_cols, bool managed) {
 
 void text_double_buffer(bool state) {
     if (state) {
-        if (back_buffer == NULL)
-            back_buffer = ext_mem_alloc(VD_ROWS * VD_COLS);
-        if (front_buffer == NULL)
-            front_buffer = ext_mem_alloc(VD_ROWS * VD_COLS);
         memset(video_mem, 0, VD_ROWS * VD_COLS);
         memset(back_buffer, 0, VD_ROWS * VD_COLS);
         memset(front_buffer, 0, VD_ROWS * VD_COLS);
@@ -128,7 +136,7 @@ void text_double_buffer(bool state) {
         text_clear(true);
         text_double_buffer_flush();
     } else {
-        current_buffer = video_mem;
+        current_buffer = front_buffer;
         text_clear(true);
     }
 }
@@ -141,6 +149,8 @@ void text_double_buffer_flush(void) {
         front_buffer[i] = back_buffer[i];
         video_mem[i]    = back_buffer[i];
     }
+
+    draw_cursor();
 }
 
 static int text_get_cursor_pos_y(void) {
@@ -192,11 +202,17 @@ void text_putchar(uint8_t c) {
         default:
             clear_cursor();
             current_buffer[cursor_offset] = c;
+            current_buffer[cursor_offset+1] = text_palette;
+            if (current_buffer == front_buffer) {
+                video_mem[cursor_offset] = c;
+                video_mem[cursor_offset+1] = text_palette;
+            }
             if (cursor_offset >= (VIDEO_BOTTOM - 1)) {
                 scroll();
                 cursor_offset = VIDEO_BOTTOM - (VD_COLS - 1);
-            } else
+            } else {
                 cursor_offset += 2;
+            }
             draw_cursor();
     }
 }

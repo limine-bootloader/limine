@@ -136,7 +136,7 @@ found_equals:
 static char *config_entry_editor(const char *title, const char *orig_entry) {
     size_t cursor_offset  = 0;
     size_t entry_size     = strlen(orig_entry);
-    size_t _window_size   = term_rows - 11;
+    size_t _window_size   = term_rows - 8;
     size_t window_offset  = 0;
     size_t line_size      = term_cols - 2;
 
@@ -171,11 +171,16 @@ refresh:
 
     clear(true);
     disable_cursor();
-    print("\n\n  \e[36m %s \e[37m\n\n\n", menu_branding);
+    {
+        int x, y;
+        print("\n");
+        get_cursor_pos(&x, &y);
+        set_cursor_pos(term_cols / 2 - DIV_ROUNDUP(strlen(menu_branding), 2), y);
+        print("\e[36m%s\e[37m", menu_branding);
+        print("\n\n");
+    }
 
-    //print("Editing \"%s\"\n", title);
-    print("   \e[32mESC\e[0m Discard and Exit    \e[32mF10\e[0m Boot\n");
-
+    print("    \e[32mESC\e[0m Discard and Exit    \e[32mF10\e[0m Boot\n");
 
     print("\n\xda");
     for (int i = 0; i < term_cols - 2; i++) {
@@ -296,7 +301,7 @@ refresh:
     if (validation_enabled) {
         int x, y;
         get_cursor_pos(&x, &y);
-        set_cursor_pos(0, term_rows-2);
+        set_cursor_pos(0, term_rows-1);
         if (invalid_syntax) {
             print("\e[31mConfiguration is INVALID.\e[0m");
         } else {
@@ -332,7 +337,7 @@ refresh:
     print("\xd9");
 
     if (display_overflow_error) {
-        print(" ERR: Text buffer not big enough, delete something instead.");
+        print("\e[31mText buffer not big enough, delete something instead.");
         display_overflow_error = false;
     }
 
@@ -404,7 +409,7 @@ refresh:
     goto refresh;
 }
 
-static int print_tree(int level, int base_index, int selected_entry,
+static int print_tree(const char *shift, int level, int base_index, int selected_entry,
                       struct menu_entry *current_entry,
                       struct menu_entry **selected_menu_entry) {
     int max_entries = 0;
@@ -412,6 +417,7 @@ static int print_tree(int level, int base_index, int selected_entry,
     for (;;) {
         if (current_entry == NULL)
             break;
+        print("%s", shift);
         if (level) {
             for (int i = level - 1; i > 0; i--) {
                 struct menu_entry *actual_parent = current_entry;
@@ -439,7 +445,7 @@ static int print_tree(int level, int base_index, int selected_entry,
         }
         print(" %s \e[0m\n", current_entry->name);
         if (current_entry->sub && current_entry->expanded) {
-            max_entries += print_tree(level + 1, base_index + max_entries + 1,
+            max_entries += print_tree(shift, level + 1, base_index + max_entries + 1,
                                       selected_entry,
                                       current_entry->sub,
                                       selected_menu_entry);
@@ -482,7 +488,7 @@ char *menu(char **cmdline) {
     if (!timeout) {
         // Use print tree to load up selected_menu_entry and determine if the
         // default entry is valid.
-        print_tree(0, 0, selected_entry, menu_tree, &selected_menu_entry);
+        print_tree("    ", 0, 0, selected_entry, menu_tree, &selected_menu_entry);
         if (selected_menu_entry == NULL || selected_menu_entry->sub != NULL) {
             print("Default entry is not valid or directory, booting to menu.\n");
             skip_timeout = true;
@@ -513,7 +519,14 @@ char *menu(char **cmdline) {
 
 refresh:
     clear(true);
-    print("\n\n  \e[36m %s \e[37m\n\n\n", menu_branding);
+    {
+        int x, y;
+        print("\n");
+        get_cursor_pos(&x, &y);
+        set_cursor_pos(term_cols / 2 - DIV_ROUNDUP(strlen(menu_branding), 2), y);
+        print("\e[36m%s\e[37m", menu_branding);
+        print("\n\n\n\n");
+    }
 
     if (menu_tree == NULL) {
         print("Config file %s.\n\n", config_ready ? "contains no valid entries" : "not found");
@@ -531,19 +544,17 @@ refresh:
         goto autoboot;
     }
 
-    print("Select an entry:\n\n");
-
-    int max_entries = print_tree(0, 0, selected_entry, menu_tree,
+    int max_entries = print_tree("    ", 0, 0, selected_entry, menu_tree,
                                  &selected_menu_entry);
 
     {
         int x, y;
         get_cursor_pos(&x, &y);
-        set_cursor_pos(0, 4);
+        set_cursor_pos(0, 3);
         if (editor_enabled && selected_menu_entry->sub == NULL) {
-            print("\n   \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m Boot    \e[32mE\e[0m Edit");
+            print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m Boot    \e[32mE\e[0m Edit");
         } else {
-            print("\n   \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m Boot");
+            print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m Boot");
         }
         set_cursor_pos(x, y);
     }

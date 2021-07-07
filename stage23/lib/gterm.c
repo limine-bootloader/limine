@@ -74,17 +74,7 @@ void gterm_plot_px(int x, int y, uint32_t hex) {
     gterm_framebuffer[fb_i] = hex;
 }
 
-static uint32_t blend_gradient_from_box(int x, int y, uint32_t hex) {
-    if (x >= frame_width  && x < frame_width  + VGA_FONT_WIDTH  * cols
-     && y >= frame_height && y < frame_height + VGA_FONT_HEIGHT * rows) {
-        return colour_blend(hex, background->get_pixel(background, x, y));
-    }
-
-    uint32_t bg_px = background->get_pixel(background, x, y);
-
-    if (margin_gradient == 0)
-        return bg_px;
-
+static uint32_t blend_gradient_from_box(int x, int y, uint32_t bg_px, uint32_t hex) {    
     int distance, x_distance, y_distance;
 
     if (x < frame_width)
@@ -115,14 +105,78 @@ static uint32_t blend_gradient_from_box(int x, int y, uint32_t hex) {
     return colour_blend((hex & 0xffffff) | (new_alpha << 24), bg_px);
 }
 
+// Draw rect at coordinates, copying from the image to the fb and canvas, applying fn on every pixel
+#define genloop(xstart, xend, ystart, yend, fn) \
+    switch (background->type) { \
+    case IMAGE_TILED: \
+        for (int y = (ystart); y < (yend); y++) { \
+            int yb = y % img_height, xb = (xstart) % img_width; \
+            const size_t off = img_pitch * (img_height - 1 - yb), coff = gterm_width * y, goff = gterm_pitch / 4 * y; \
+            for (int x = (xstart); x < (xend); x++) { \
+                uint32_t i = *(uint32_t*)(img + xb * colsize + off); i = fn; /* xb = (x % img_width) */ \
+                bg_canvas[coff + x] = i; gterm_framebuffer[goff + x] = i; \
+                if (xb++ == img_width) xb = 0; \
+            } \
+        } \
+        break; \
+    case IMAGE_CENTERED: \
+        for (int y = (ystart); y < (yend); y++) { \
+            int yb = y - background->y_displacement; \
+            const size_t off = img_pitch * (img_height - 1 - yb), coff = gterm_width * y, goff = gterm_pitch / 4 * y; \
+            if ((yb < 0) || (yb > background->y_size)) { /* external part */ \
+                for (int x = (xstart); x < (xend); x++) { \
+                    uint32_t i = background->back_colour; i = fn; \
+                    bg_canvas[coff + x] = i; gterm_framebuffer[goff + x] = i; \
+                } \
+            } \
+            else { /* internal part */  \
+                for (int x = (xstart); x < (xend); x++) { \
+                    int xb = (x - background->x_displacement); \
+                    uint32_t i = ((xb < 0) || (xb > background->x_size)) ? background->back_colour : *(uint32_t*)(img + xb * colsize + off); i = fn; \
+                    bg_canvas[coff + x] = i; gterm_framebuffer[goff + x] = i; \
+                } \
+            } \
+        } \
+    break; \
+    case IMAGE_STRETCHED: \
+        for (int y = (ystart); y < (yend); y++) { \
+            int counter = x16_x_delta * (xstart); \
+            const size_t imgy = (y * img_height) / gterm_height, off = img_pitch * (img_height - 1 - imgy), coff = gterm_width * y, goff = gterm_pitch / 4 * y; \
+            for (int x = (xstart); x < (xend); x++) { \
+                uint32_t i = *(uint32_t*)(img + (counter / 16) * colsize + off); i = fn; /* counter/16 = (x * img_width) / gterm_width */ \
+                bg_canvas[coff + x] = i; gterm_framebuffer[goff + x] = i; \
+                counter += x16_x_delta; \
+            } \
+        } \
+        break; \
+    }
+
 void gterm_generate_canvas(void) {
     if (background) {
-        for (int y = 0; y < gterm_height; y++) {
-            for (int x = 0; x < gterm_width; x++) {
-                bg_canvas[y * gterm_width + x] = blend_gradient_from_box(x, y, ansi_colours[8]);
-                gterm_plot_px(x, y, bg_canvas[y * gterm_width + x]);
-            }
+        // Instead of executing blend_gradient_from_box for every pixel in the fb, just run it for the margin 
+        uint8_t *img = background->img;
+        const int img_width = background->img_width, x16_x_delta = (img_width * 16) / gterm_width,
+            img_height = background->img_height, img_pitch = background->pitch, colsize = background->bpp / 8;
+        const int frame_height_end = frame_height + VGA_FONT_HEIGHT * rows, frame_width_end = frame_width + VGA_FONT_WIDTH * cols;
+        const int fheight = frame_height - margin_gradient, fheight_end = frame_height_end + margin_gradient,
+            fwidth = frame_width - margin_gradient, fwidth_end = frame_width_end + margin_gradient; 
+
+        // Draw the part of the image outside the margin
+        genloop(0, gterm_width, 0, fheight, i);
+        genloop(0, gterm_width, fheight_end, gterm_height, i);
+        genloop(0, fwidth, fheight, fheight_end, i);
+        genloop(fwidth_end, gterm_width, fheight, fheight_end, i);
+
+        // Draw margin
+        if (margin_gradient) {
+            genloop(fwidth, fwidth_end, fheight, frame_height, blend_gradient_from_box(x, y, i, ansi_colours[8]));
+            genloop(fwidth, fwidth_end, frame_height_end, fheight_end, blend_gradient_from_box(x, y, i, ansi_colours[8]));
+            genloop(fwidth, frame_width, frame_height, frame_height_end, blend_gradient_from_box(x, y, i, ansi_colours[8]));
+            genloop(frame_width_end, fwidth_end, frame_height, frame_height_end, blend_gradient_from_box(x, y, i, ansi_colours[8]));
         }
+
+        // Draw inner frame
+        genloop(frame_width, frame_width_end, frame_height, frame_height_end, colour_blend(ansi_colours[8], i));
     } else {
         for (int y = 0; y < gterm_height; y++) {
             for (int x = 0; x < gterm_width; x++) {
@@ -132,6 +186,7 @@ void gterm_generate_canvas(void) {
         }
     }
 }
+#undef genloop
 
 struct gterm_char {
     uint32_t c;
@@ -199,10 +254,9 @@ static void plot_char_grid(struct gterm_char *c, int x, int y) {
     if (!double_buffer_enabled) {
         for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
             for (int j = 0; j < VGA_FONT_WIDTH; j++) {
-                if (old_char[i * VGA_FONT_WIDTH + j] != new_char[i * VGA_FONT_WIDTH + j])
-                    gterm_plot_px(x * VGA_FONT_WIDTH + frame_width + j,
-                                  y * VGA_FONT_HEIGHT + frame_height + i,
-                                  new_char[i * VGA_FONT_WIDTH + j]);
+                gterm_plot_px(x * VGA_FONT_WIDTH + frame_width + j,
+                              y * VGA_FONT_HEIGHT + frame_height + i,
+                              new_char[i * VGA_FONT_WIDTH + j]);
             }
         }
     }
@@ -254,14 +308,15 @@ static void scroll(void) {
 void gterm_clear(bool move) {
     clear_cursor();
 
+    if (!double_buffer_enabled)
+        for (int y = frame_height; y < frame_height + VGA_FONT_HEIGHT * rows; y++)
+            memcpy(gterm_framebuffer + y * (gterm_pitch / 4) + frame_width, bg_canvas + y * gterm_width + frame_width, VGA_FONT_WIDTH * cols * 4);
     struct gterm_char empty;
     empty.c  = ' ';
     empty.fg = 9;
     empty.bg = 8;
-    for (int i = 0; i < rows * cols; i++) {
-        plot_char_grid(&empty, i % cols, i / cols);
-    }
-
+    for (int i = 0; i < rows * cols; i++) grid[i] = empty;
+    
     if (move) {
         cursor_x = 0;
         cursor_y = 0;

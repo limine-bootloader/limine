@@ -138,6 +138,8 @@ void multiboot1_load(char *config, char *cmdline) {
                 panic("multiboot1: Failed to open module with path `%s`. Is the path correct?", module_path);
 
             char *module_cmdline = config_get_value(config, i, "MODULE_STRING");
+            char *lowmem_modstr = conv_mem_alloc(strlen(module_cmdline) + 1);
+            strcpy(lowmem_modstr, module_cmdline);
 
             void *module_addr = (void *)(uintptr_t)ALIGN_UP(kernel_top, 4096);
             memmap_alloc_range((uintptr_t)module_addr, f.size, MEMMAP_KERNEL_AND_MODULES,
@@ -147,7 +149,7 @@ void multiboot1_load(char *config, char *cmdline) {
 
             m->begin   = (uint32_t)(size_t)module_addr;
             m->end     = m->begin + f.size;
-            m->cmdline = (uint32_t)(size_t)module_cmdline;
+            m->cmdline = (uint32_t)(size_t)lowmem_modstr;
             m->pad     = 0;
 
             if (verbose) {
@@ -162,11 +164,17 @@ void multiboot1_load(char *config, char *cmdline) {
         multiboot1_info.flags |= (1 << 3);
     }
 
-    multiboot1_info.cmdline = (uint32_t)(size_t)cmdline;
+    char *lowmem_cmdline = conv_mem_alloc(strlen(cmdline) + 1);
+    strcpy(lowmem_cmdline, cmdline);
+    multiboot1_info.cmdline = (uint32_t)(size_t)lowmem_cmdline;
     if (cmdline)
         multiboot1_info.flags |= (1 << 2);
 
-    multiboot1_info.bootloader_name = (uint32_t)(size_t)"Limine";
+    char *bootload_name = "Limine";
+    char *lowmem_bootname = conv_mem_alloc(strlen(bootload_name) + 1);
+    strcpy(lowmem_bootname, bootload_name);
+
+    multiboot1_info.bootloader_name = (uint32_t)(size_t)lowmem_bootname;
     multiboot1_info.flags |= (1 << 9);
 
     term_deinit();

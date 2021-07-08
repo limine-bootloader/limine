@@ -414,36 +414,44 @@ static int print_tree(const char *shift, int level, int base_index, int selected
                       struct menu_entry **selected_menu_entry) {
     int max_entries = 0;
 
+    bool no_print = false;
+    if (shift == NULL) {
+        no_print = true;
+    }
+
     for (;;) {
         if (current_entry == NULL)
             break;
-        print("%s", shift);
+        if (!no_print) print("%s", shift);
         if (level) {
             for (int i = level - 1; i > 0; i--) {
                 struct menu_entry *actual_parent = current_entry;
                 for (int j = 0; j < i; j++)
                     actual_parent = actual_parent->parent;
-                if (actual_parent->next != NULL)
-                    print(" \xb3");
-                else
-                    print("  ");
+                if (actual_parent->next != NULL) {
+                    if (!no_print) print(" \xb3");
+                } else {
+                    if (!no_print) print("  ");
+                }
             }
-            if (current_entry->next == NULL)
-                print(" \xc0");
-            else
-                print(" \xc3");
+            if (current_entry->next == NULL) {
+                if (!no_print) print(" \xc0");
+            } else {
+                if (!no_print) print(" \xc3");
+            }
         }
-        if (current_entry->sub)
-            print(current_entry->expanded ? "[-]" : "[+]");
-        else if (level)
-            print("\xc4> ");
-        else
-            print("   ");
+        if (current_entry->sub) {
+            if (!no_print) print(current_entry->expanded ? "[-]" : "[+]");
+        } else if (level) {
+            if (!no_print) print("\xc4> ");
+        } else {
+            if (!no_print) print("   ");
+        }
         if (base_index + max_entries == selected_entry) {
             *selected_menu_entry = current_entry;
-            print("\e[47m\e[30m");
+            if (!no_print) print("\e[47m\e[30m");
         }
-        print(" %s \e[0m\n", current_entry->name);
+        if (!no_print) print(" %s \e[0m\n", current_entry->name);
         if (current_entry->sub && current_entry->expanded) {
             max_entries += print_tree(shift, level + 1, base_index + max_entries + 1,
                                       selected_entry,
@@ -488,7 +496,7 @@ char *menu(char **cmdline) {
     if (!timeout) {
         // Use print tree to load up selected_menu_entry and determine if the
         // default entry is valid.
-        print_tree("    ", 0, 0, selected_entry, menu_tree, &selected_menu_entry);
+        print_tree(NULL, 0, 0, selected_entry, menu_tree, &selected_menu_entry);
         if (selected_menu_entry == NULL || selected_menu_entry->sub != NULL) {
             print("Default entry is not valid or directory, booting to menu.\n");
             skip_timeout = true;

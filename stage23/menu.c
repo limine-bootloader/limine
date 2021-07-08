@@ -594,7 +594,6 @@ refresh:
         set_cursor_pos(x, y);
     }
 
-
     if (selected_menu_entry->sub != NULL)
         skip_timeout = true;
 
@@ -618,7 +617,7 @@ refresh:
 
     set_cursor_pos(0, term_rows - 1);
     if (selected_menu_entry->comment != NULL)
-        print("\e[32m%s", selected_menu_entry->comment);
+        print("\e[32m%s\e[0m", selected_menu_entry->comment);
 
     term_double_buffer_flush();
 

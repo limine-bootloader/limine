@@ -74,7 +74,7 @@ void gterm_plot_px(int x, int y, uint32_t hex) {
     gterm_framebuffer[fb_i] = hex;
 }
 
-static uint32_t blend_gradient_from_box(int x, int y, uint32_t bg_px, uint32_t hex) {    
+static uint32_t blend_gradient_from_box(int x, int y, uint32_t bg_px, uint32_t hex) {
     int distance, x_distance, y_distance;
 
     if (x < frame_width)
@@ -153,13 +153,13 @@ static uint32_t blend_gradient_from_box(int x, int y, uint32_t bg_px, uint32_t h
 
 void gterm_generate_canvas(void) {
     if (background) {
-        // Instead of executing blend_gradient_from_box for every pixel in the fb, just run it for the margin 
+        // Instead of executing blend_gradient_from_box for every pixel in the fb, just run it for the margin
         uint8_t *img = background->img;
         const int img_width = background->img_width, x16_x_delta = (img_width * 16) / gterm_width,
             img_height = background->img_height, img_pitch = background->pitch, colsize = background->bpp / 8;
         const int frame_height_end = frame_height + VGA_FONT_HEIGHT * rows, frame_width_end = frame_width + VGA_FONT_WIDTH * cols;
         const int fheight = frame_height - margin_gradient, fheight_end = frame_height_end + margin_gradient,
-            fwidth = frame_width - margin_gradient, fwidth_end = frame_width_end + margin_gradient; 
+            fwidth = frame_width - margin_gradient, fwidth_end = frame_width_end + margin_gradient;
 
         // Draw the part of the image outside the margin
         genloop(0, gterm_width, 0, fheight, i);
@@ -284,7 +284,22 @@ static inline bool compare_char(struct gterm_char *a, struct gterm_char *b) {
     return !(a->c != b->c || a->bg != b->bg || a->fg != b->fg);
 }
 
+static bool scroll_enabled = true;
+
+bool gterm_scroll_disable(void) {
+    bool ret = scroll_enabled;
+    scroll_enabled = false;
+    return ret;
+}
+
+void gterm_scroll_enable(void) {
+    scroll_enabled = true;
+}
+
 static void scroll(void) {
+    if (scroll_enabled == false)
+        return;
+
     clear_cursor();
 
     for (int i = cols; i < rows * cols; i++) {
@@ -316,7 +331,7 @@ void gterm_clear(bool move) {
     empty.fg = 9;
     empty.bg = 8;
     for (int i = 0; i < rows * cols; i++) grid[i] = empty;
-    
+
     if (move) {
         cursor_x = 0;
         cursor_y = 0;

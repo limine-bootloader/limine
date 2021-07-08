@@ -37,7 +37,22 @@ static void draw_cursor(void) {
     }
 }
 
+static bool scroll_enabled = true;
+
+bool text_scroll_disable(void) {
+    bool ret = scroll_enabled;
+    scroll_enabled = false;
+    return ret;
+}
+
+void text_scroll_enable(void) {
+    scroll_enabled = true;
+}
+
 static void scroll(void) {
+    if (scroll_enabled == false)
+        return;
+
     // move the text up by one row
     for (size_t i = 0; i <= VIDEO_BOTTOM - VD_COLS; i++) {
         current_buffer[i] = current_buffer[i + VD_COLS];

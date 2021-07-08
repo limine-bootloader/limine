@@ -13,6 +13,8 @@ extern void (*set_cursor_pos)(int x, int y);
 extern void (*get_cursor_pos)(int *x, int *y);
 extern void (*set_text_fg)(int fg);
 extern void (*set_text_bg)(int bg);
+extern bool (*scroll_disable)(void);
+extern void (*scroll_enable)(void);
 
 extern void (*term_double_buffer)(bool status);
 extern void (*term_double_buffer_flush)(void);

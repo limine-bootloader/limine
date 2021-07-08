@@ -25,6 +25,8 @@ void (*set_cursor_pos)(int x, int y);
 void (*get_cursor_pos)(int *x, int *y);
 void (*set_text_fg)(int fg);
 void (*set_text_bg)(int bg);
+bool (*scroll_disable)(void);
+void (*scroll_enable)(void);
 
 void (*term_double_buffer)(bool status);
 void (*term_double_buffer_flush)(void);
@@ -45,6 +47,8 @@ void term_textmode(void) {
     get_cursor_pos = text_get_cursor_pos;
     set_text_fg    = text_set_text_fg;
     set_text_bg    = text_set_text_bg;
+    scroll_disable = text_scroll_disable;
+    scroll_enable  = text_scroll_enable;
 
     term_double_buffer       = text_double_buffer;
     term_double_buffer_flush = text_double_buffer_flush;
@@ -215,8 +219,11 @@ static void control_sequence_parse(uint8_t c) {
                     int x, y;
                     get_cursor_pos(&x, &y);
                     set_cursor_pos(0, y);
+                    bool r = scroll_disable();
                     for (int i = 0; i < term_cols; i++)
                         raw_putchar(' ');
+                    if (r)
+                        scroll_enable();
                     set_cursor_pos(x, y);
                     break;
                 }

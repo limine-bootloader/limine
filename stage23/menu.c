@@ -552,7 +552,33 @@ refresh:
         goto autoboot;
     }
 
-    int max_entries = print_tree("    ", 0, 0, selected_entry, menu_tree,
+    {   // Draw box around boot menu
+        int x, y;
+        get_cursor_pos(&x, &y);
+
+        print("\xda");
+        for (int i = 0; i < term_cols - 2; i++) {
+            print("\xc4");
+        }
+        print("\xbf");
+
+        for (int i = y + 1; i < term_rows - 2; i++) {
+            set_cursor_pos(0, i);
+            print("\xb3");
+            set_cursor_pos(term_cols - 1, i);
+            print("\xb3");
+        }
+
+        print("\xc0");
+        for (int i = 0; i < term_cols - 2; i++) {
+            print("\xc4");
+        }
+        print("\xd9");
+
+        set_cursor_pos(x, y + 2);
+    }
+
+    int max_entries = print_tree("\xb3   ", 0, 0, selected_entry, menu_tree,
                                  &selected_menu_entry);
 
     {
@@ -575,7 +601,8 @@ refresh:
     if (skip_timeout == false) {
         print("\n\n");
         for (int i = timeout; i; i--) {
-            print("\e[2K\rBooting automatically in %u, press any key to stop the countdown...", i);
+            set_cursor_pos(0, term_rows - 1);
+            print("\e[32mBooting automatically in %u, press any key to stop the countdown...\e[0m", i);
             term_double_buffer_flush();
             if ((c = pit_sleep_and_quit_on_keypress(1))) {
                 skip_timeout = true;

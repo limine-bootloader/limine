@@ -9,6 +9,7 @@ extern bool config_ready;
 
 struct menu_entry {
     char name[64];
+    char *comment;
     struct menu_entry *parent;
     struct menu_entry *sub;
     bool expanded;

@@ -104,6 +104,7 @@ static const char *VALID_KEYS[] = {
     "DRIVE",
     "PARTITION",
     "IMAGE_PATH",
+    "COMMENT",
     NULL
 };
 
@@ -593,6 +594,7 @@ refresh:
         set_cursor_pos(x, y);
     }
 
+
     if (selected_menu_entry->sub != NULL)
         skip_timeout = true;
 
@@ -606,13 +608,17 @@ refresh:
             term_double_buffer_flush();
             if ((c = pit_sleep_and_quit_on_keypress(1))) {
                 skip_timeout = true;
-                print("\e[2K\r");
+                print("\e[2K");
                 term_double_buffer_flush();
                 goto timeout_aborted;
             }
         }
         goto autoboot;
     }
+
+    set_cursor_pos(0, term_rows - 1);
+    if (selected_menu_entry->comment != NULL)
+        print("\e[32m%s", selected_menu_entry->comment);
 
     term_double_buffer_flush();
 

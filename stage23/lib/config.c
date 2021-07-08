@@ -105,15 +105,20 @@ static struct menu_entry *create_menu_tree(struct menu_entry *parent,
         strcpy(entry->name, name + current_depth + default_expanded);
         entry->parent = parent;
 
+        size_t entry_size;
+        char *config_entry = config_get_entry(&entry_size, i);
+        entry->body = ext_mem_alloc(entry_size + 1);
+        memcpy(entry->body, config_entry, entry_size);
+        entry->body[entry_size] = 0;
+
         if (is_directory(name, 64, current_depth, i)) {
             entry->sub = create_menu_tree(entry, current_depth + 1, i + 1);
             entry->expanded = default_expanded;
-        } else {
-            size_t entry_size;
-            char *config_entry = config_get_entry(&entry_size, i);
-            entry->body = ext_mem_alloc(entry_size + 1);
-            memcpy(entry->body, config_entry, entry_size);
-            entry->body[entry_size] = 0;
+        }
+
+        char *comment = config_get_value(entry->body, 0, "COMMENT");
+        if (comment != NULL) {
+            entry->comment = comment;
         }
 
         if (prev != NULL)

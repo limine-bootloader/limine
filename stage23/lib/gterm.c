@@ -194,73 +194,30 @@ struct gterm_char {
     int bg;
 };
 
-static void plot_char_mem(uint32_t *buf, struct gterm_char *c, int x, int y) {
-    uint8_t *glyph = &vga_font[(size_t)c->c * VGA_FONT_HEIGHT];
-
-    for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
-        for (int j = 0; j < VGA_FONT_WIDTH; j++) {
-            if ((glyph[i] & (0x80 >> j))) {
-                buf[i * VGA_FONT_WIDTH + j] = ansi_colours[c->fg];
-            } else {
-                if (c->bg == 8)
-                    buf[i * VGA_FONT_WIDTH + j] = bg_canvas[(y + i) * gterm_width + (x + j)];
-                else
-                    buf[i * VGA_FONT_WIDTH + j] = ansi_colours[c->bg];
-            }
-        }
-    }
-}
-
 void gterm_plot_char(struct gterm_char *c, int x, int y) {
     uint8_t *glyph = &vga_font[(size_t)c->c * VGA_FONT_HEIGHT];
 
     for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
+        uint32_t *line = gterm_framebuffer + x + (y + i) * (gterm_pitch / 4), *canvas_line = bg_canvas + x + (y + i) * gterm_width; 
         for (int j = 0; j < VGA_FONT_WIDTH; j++) {
             if ((glyph[i] & (0x80 >> j))) {
-                gterm_plot_px(x + j, y + i, ansi_colours[c->fg]);
+                line[j] = ansi_colours[c->fg];
             } else {
                 if (c->bg == 8)
-                    gterm_plot_px(x + j, y + i, bg_canvas[(y + i) * gterm_width + (x + j)]);
+                    line[j] = canvas_line[j];
                 else
-                    gterm_plot_px(x + j, y + i, ansi_colours[c->bg]);
+                    line[j] = ansi_colours[c->bg];
             }
         }
     }
 }
 
 static void plot_char_grid_force(struct gterm_char *c, int x, int y) {
-    uint32_t new_char[VGA_FONT_WIDTH * VGA_FONT_HEIGHT];
-    plot_char_mem(new_char, c,
-                  x * VGA_FONT_WIDTH + frame_width, y * VGA_FONT_HEIGHT + frame_height);
-
-    for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
-        for (int j = 0; j < VGA_FONT_WIDTH; j++) {
-            gterm_plot_px(x * VGA_FONT_WIDTH + frame_width + j,
-                          y * VGA_FONT_HEIGHT + frame_height + i,
-                          new_char[i * VGA_FONT_WIDTH + j]);
-        }
-    }
+    gterm_plot_char(c, frame_width + x * VGA_FONT_WIDTH, frame_height + y * VGA_FONT_HEIGHT);
 }
 
 static void plot_char_grid(struct gterm_char *c, int x, int y) {
-    uint32_t old_char[VGA_FONT_WIDTH * VGA_FONT_HEIGHT];
-    uint32_t new_char[VGA_FONT_WIDTH * VGA_FONT_HEIGHT];
-
-    plot_char_mem(old_char, &grid[x + y * cols],
-                  x * VGA_FONT_WIDTH + frame_width, y * VGA_FONT_HEIGHT + frame_height);
-    plot_char_mem(new_char, c,
-                  x * VGA_FONT_WIDTH + frame_width, y * VGA_FONT_HEIGHT + frame_height);
-
-    if (!double_buffer_enabled) {
-        for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
-            for (int j = 0; j < VGA_FONT_WIDTH; j++) {
-                gterm_plot_px(x * VGA_FONT_WIDTH + frame_width + j,
-                              y * VGA_FONT_HEIGHT + frame_height + i,
-                              new_char[i * VGA_FONT_WIDTH + j]);
-            }
-        }
-    }
-
+    if (!double_buffer_enabled) gterm_plot_char(c, frame_width + x * VGA_FONT_WIDTH, frame_height + y * VGA_FONT_HEIGHT);
     grid[x + y * cols] = *c;
 }
 

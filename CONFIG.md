@@ -15,6 +15,7 @@ not be shadowed by another potentially candidate config file.
 ## Structure of the config file
 
 The Limine configuration file is comprised of *assignments* and *entries*.
+Comments begin in '#'.
 
 ### Entries and sub-entries
 

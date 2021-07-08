@@ -20,6 +20,7 @@ static char *menu_branding = NULL;
 #define TOK_EQUALS 1
 #define TOK_VALUE 2
 #define TOK_BADKEY 3
+#define TOK_COMMENT 4
 
 static size_t get_line_offset(size_t *displacement, size_t index, const char *buffer) {
     size_t offset = 0;
@@ -113,6 +114,8 @@ static bool invalid_syntax = false;
 
 static int validate_line(const char *buffer) {
     if (!validation_enabled) return TOK_KEY;
+    if (buffer[0] == '#')
+        return TOK_COMMENT;
     char keybuf[64];
     int i;
     for (i = 0; buffer[i] && i < 64; i++) {
@@ -282,12 +285,14 @@ refresh:
                     case TOK_EQUALS:
                         print("\e[32m%c\e[0m", buffer[i]);
                         break;
-                   case TOK_VALUE:
-                       print("\e[39m%c\e[0m", buffer[i]);
-                       break;
-                   case TOK_BADKEY:
-                       print("\e[31m%c\e[0m", buffer[i]);
-                       break;
+                    case TOK_VALUE:
+                        print("\e[39m%c\e[0m", buffer[i]);
+                        break;
+                    case TOK_BADKEY:
+                        print("\e[31m%c\e[0m", buffer[i]);
+                        break;
+                    case TOK_COMMENT:
+                        print("\e[33m%c\e[0m", buffer[i]);
                }
            } else {
                print("%c", buffer[i]);

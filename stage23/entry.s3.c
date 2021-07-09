@@ -96,6 +96,13 @@ void stage3_common(void) {
     char *verbose_str = config_get_value(NULL, 0, "VERBOSE");
     verbose = verbose_str != NULL && strcmp(verbose_str, "yes") == 0;
 
+    char *randomise_mem_str = config_get_value(NULL, 0, "RANDOMISE_MEMORY");
+    if (randomise_mem_str == NULL)
+        randomise_mem_str = config_get_value(NULL, 0, "RANDOMIZE_MEMORY");
+    bool randomise_mem = randomise_mem_str != NULL && strcmp(randomise_mem_str, "yes") == 0;
+    if (randomise_mem)
+        pmm_randomise_memory();
+
     if (verbose) {
         print("Boot drive: %x\n", boot_volume->index);
         print("Boot partition: %d\n", boot_volume->partition);

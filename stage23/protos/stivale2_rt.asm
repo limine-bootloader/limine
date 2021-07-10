@@ -8,8 +8,10 @@ user_ds: resq 1
 user_es: resq 1
 user_ss: resq 1
 
+%define MAX_TERM_BUF 1024
+
 term_buf:
-    resb 1024
+    resb MAX_TERM_BUF
 
 section .text
 
@@ -35,6 +37,9 @@ stivale2_term_write_entry:
 
     push rsi
     mov rcx, rsi
+    mov rax, MAX_TERM_BUF
+    cmp rcx, rax
+    cmovg rcx, rax
     mov rsi, rdi
     mov edi, term_buf
     rep movsb

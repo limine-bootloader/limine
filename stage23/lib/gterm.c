@@ -220,7 +220,7 @@ void gterm_plot_char(struct gterm_char *c, int x, int y) {
     uint8_t *glyph = &vga_font[(size_t)c->c * VGA_FONT_HEIGHT];
 
     for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
-        uint32_t *line = gterm_framebuffer + x + (y + i) * (gterm_pitch / 4), *canvas_line = bg_canvas + x + (y + i) * gterm_width; 
+        uint32_t *line = gterm_framebuffer + x + (y + i) * (gterm_pitch / 4), *canvas_line = bg_canvas + x + (y + i) * gterm_width;
         for (int j = 0; j < VGA_FONT_WIDTH; j++) {
             if ((glyph[i] & (0x80 >> j))) {
                 line[j] = ansi_colours[c->fg];
@@ -276,9 +276,6 @@ void gterm_scroll_enable(void) {
 }
 
 static void scroll(void) {
-    if (scroll_enabled == false)
-        return;
-
     clear_cursor();
 
     for (int i = cols; i < rows * cols; i++) {
@@ -402,8 +399,10 @@ void gterm_putchar(uint8_t c) {
             break;
         case '\n':
             if (cursor_y == (rows - 1)) {
-                gterm_set_cursor_pos(0, rows - 1);
-                scroll();
+                if (scroll_enabled) {
+                    gterm_set_cursor_pos(0, rows - 1);
+                    scroll();
+                }
             } else {
                 gterm_set_cursor_pos(0, cursor_y + 1);
             }
@@ -415,7 +414,7 @@ void gterm_putchar(uint8_t c) {
             ch.fg = text_fg;
             ch.bg = text_bg;
             plot_char_grid(&ch, cursor_x++, cursor_y);
-            if (cursor_x == cols) {
+            if (cursor_x == cols && (cursor_y < rows - 1 || scroll_enabled)) {
                 cursor_x = 0;
                 cursor_y++;
             }

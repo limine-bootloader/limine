@@ -50,9 +50,6 @@ void text_scroll_enable(void) {
 }
 
 static void scroll(void) {
-    if (scroll_enabled == false)
-        return;
-
     // move the text up by one row
     for (size_t i = 0; i <= VIDEO_BOTTOM - VD_COLS; i++) {
         current_buffer[i] = current_buffer[i + VD_COLS];
@@ -207,9 +204,11 @@ void text_putchar(uint8_t c) {
             break;
         case '\n':
             if (text_get_cursor_pos_y() == (VD_ROWS - 1)) {
-                clear_cursor();
-                scroll();
-                text_set_cursor_pos(0, (VD_ROWS - 1));
+                if (scroll_enabled) {
+                    clear_cursor();
+                    scroll();
+                    text_set_cursor_pos(0, (VD_ROWS - 1));
+                }
             } else {
                 text_set_cursor_pos(0, (text_get_cursor_pos_y() + 1));
             }
@@ -223,8 +222,10 @@ void text_putchar(uint8_t c) {
                 video_mem[cursor_offset+1] = text_palette;
             }
             if (cursor_offset >= (VIDEO_BOTTOM - 1)) {
-                scroll();
-                cursor_offset = VIDEO_BOTTOM - (VD_COLS - 1);
+                if (scroll_enabled) {
+                    scroll();
+                    cursor_offset = VIDEO_BOTTOM - (VD_COLS - 1);
+                }
             } else {
                 cursor_offset += 2;
             }

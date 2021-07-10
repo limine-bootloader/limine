@@ -40,7 +40,10 @@ int bmp_open_image(struct image *image, struct file_handle *file) {
     if (memcmp(&header.bf_signature, "BM", 2) != 0)
         return -1;
 
-    if ((header.bi_bpp < 8) | ((header.bi_bpp % 8) != 0))
+    if ((header.bi_bpp != 32) && (header.bi_bpp != 24))
+        return -1;
+
+    if (header.bi_compression)
         return -1;
 
     struct bmp_local *local = ext_mem_alloc(sizeof(struct bmp_local));

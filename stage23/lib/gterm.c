@@ -156,7 +156,7 @@ __attribute__((always_inline)) static inline void genloop(int xstart, int xend, 
     // so you can set x = xstart * ratio, and increment by ratio at each iteration
     case IMAGE_STRETCHED:
         for (int y = ystart; y < yend; y++) {
-            int img_y = y * img_width / gterm_width; // calculate Y with full precision
+            int img_y = (y * img_height) / gterm_height; // calculate Y with full precision
             int off = img_pitch * (img_height - 1 - img_y);
             int canvas_off = gterm_width * y, fb_off = gterm_pitch / 4 * y;
 

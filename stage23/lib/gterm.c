@@ -74,17 +74,7 @@ void gterm_plot_px(int x, int y, uint32_t hex) {
     gterm_framebuffer[fb_i] = hex;
 }
 
-static uint32_t blend_gradient_from_box(int x, int y, uint32_t hex) {
-    if (x >= frame_width  && x < frame_width  + VGA_FONT_WIDTH  * cols
-     && y >= frame_height && y < frame_height + VGA_FONT_HEIGHT * rows) {
-        return colour_blend(hex, background->get_pixel(background, x, y));
-    }
-
-    uint32_t bg_px = background->get_pixel(background, x, y);
-
-    if (margin_gradient == 0)
-        return bg_px;
-
+static uint32_t blend_gradient_from_box(int x, int y, uint32_t bg_px, uint32_t hex) {
     int distance, x_distance, y_distance;
 
     if (x < frame_width)
@@ -115,14 +105,100 @@ static uint32_t blend_gradient_from_box(int x, int y, uint32_t hex) {
     return colour_blend((hex & 0xffffff) | (new_alpha << 24), bg_px);
 }
 
-void gterm_generate_canvas(void) {
-    if (background) {
-        for (int y = 0; y < gterm_height; y++) {
-            for (int x = 0; x < gterm_width; x++) {
-                bg_canvas[y * gterm_width + x] = blend_gradient_from_box(x, y, ansi_colours[8]);
-                gterm_plot_px(x, y, bg_canvas[y * gterm_width + x]);
+typedef int fixedp6; // the last 6 bits are the fixed point part
+static int fixedp6_to_int(fixedp6 value) { return value / 64; }
+static fixedp6 int_to_fixedp6(int value) { return value * 64; }
+
+// Draw rect at coordinates, copying from the image to the fb and canvas, applying fn on every pixel
+__attribute__((always_inline)) static inline void genloop(int xstart, int xend, int ystart, int yend, uint32_t (*blend)(int x, int y, uint32_t orig)) {
+    uint8_t *img = background->img;
+    const int img_width = background->img_width, img_height = background->img_height, img_pitch = background->pitch, colsize = background->bpp / 8;
+
+    switch (background->type) {
+    case IMAGE_TILED:
+        for (int y = ystart; y < yend; y++) {
+            int image_y = y % img_height, image_x = xstart % img_width;
+            const size_t off = img_pitch * (img_height - 1 - image_y);
+            int canvas_off = gterm_width * y, fb_off = gterm_pitch / 4 * y;
+            for (int x = xstart; x < xend; x++) {
+                uint32_t img_pixel = *(uint32_t*)(img + image_x * colsize + off);
+                uint32_t i = blend(x, y, img_pixel);
+                bg_canvas[canvas_off + x] = i; gterm_framebuffer[fb_off + x] = i;
+                if (image_x++ == img_width) image_x = 0; // image_x = x % img_width, but modulo is too expensive
             }
         }
+        break;
+
+    case IMAGE_CENTERED:
+        for (int y = ystart; y < yend; y++) {
+            int image_y = y - background->y_displacement;
+            const size_t off = img_pitch * (img_height - 1 - image_y);
+            int canvas_off = gterm_width * y, fb_off = gterm_pitch / 4 * y;
+            if ((image_y < 0) || (image_y >= background->y_size)) { /* external part */
+                for (int x = xstart; x < xend; x++) {
+                    uint32_t i = blend(x, y, background->back_colour);
+                    bg_canvas[canvas_off + x] = i; gterm_framebuffer[fb_off + x] = i;
+                }
+            }
+            else { /* internal part */
+                for (int x = xstart; x < xend; x++) {
+                    int image_x = (x - background->x_displacement);
+                    bool x_external = (image_x < 0) || (image_x >= background->x_size);
+                    uint32_t img_pixel = *(uint32_t*)(img + image_x * colsize + off);
+                    uint32_t i = blend(x, y, x_external ? background->back_colour : img_pixel);
+                    bg_canvas[canvas_off + x] = i; gterm_framebuffer[fb_off + x] = i;
+                }
+            }
+        }
+        break;
+    // For every pixel, ratio = img_width / gterm_width, img_x = x * ratio, x = (xstart + i)
+    // hence x = xstart * ratio + i * ratio
+    // so you can set x = xstart * ratio, and increment by ratio at each iteration
+    case IMAGE_STRETCHED:
+        for (int y = ystart; y < yend; y++) {
+            int img_y = (y * img_height) / gterm_height; // calculate Y with full precision
+            int off = img_pitch * (img_height - 1 - img_y);
+            int canvas_off = gterm_width * y, fb_off = gterm_pitch / 4 * y;
+
+            size_t ratio = int_to_fixedp6(img_width) / gterm_width;
+            fixedp6 img_x = ratio * xstart;
+            for (int x = xstart; x < xend; x++) {
+                uint32_t img_pixel = *(uint32_t*)(img + fixedp6_to_int(img_x) * colsize + off);
+                uint32_t i = blend(x, y, img_pixel);
+                bg_canvas[canvas_off + x] = i; gterm_framebuffer[fb_off + x] = i;
+                img_x += ratio;
+            }
+        }
+        break;
+    }
+}
+static uint32_t blend_external(int x, int y, uint32_t orig) { (void)x; (void)y; return orig; }
+static uint32_t blend_internal(int x, int y, uint32_t orig) { (void)x; (void)y; return colour_blend(ansi_colours[8], orig); }
+static uint32_t blend_margin(int x, int y, uint32_t orig) { return blend_gradient_from_box(x, y, orig, ansi_colours[8]); }
+
+static void loop_external(int xstart, int xend, int ystart, int yend) { genloop(xstart, xend, ystart, yend, blend_external); }
+static void loop_margin(int xstart, int xend, int ystart, int yend) { genloop(xstart, xend, ystart, yend, blend_margin); }
+static void loop_internal(int xstart, int xend, int ystart, int yend) { genloop(xstart, xend, ystart, yend, blend_internal); }
+
+void gterm_generate_canvas(void) {
+    if (background) {
+        const int frame_height_end = frame_height + VGA_FONT_HEIGHT * rows, frame_width_end = frame_width + VGA_FONT_WIDTH * cols;
+        const int fheight = frame_height - margin_gradient, fheight_end = frame_height_end + margin_gradient,
+            fwidth = frame_width - margin_gradient, fwidth_end = frame_width_end + margin_gradient;
+
+        loop_external(0, gterm_width, 0, fheight);
+        loop_external(0, gterm_width, fheight_end, gterm_height);
+        loop_external(0, fwidth, fheight, fheight_end);
+        loop_external(fwidth_end, gterm_width, fheight, fheight_end);
+
+        if (margin_gradient) {
+            loop_margin(fwidth, fwidth_end, fheight, frame_height);
+            loop_margin(fwidth, fwidth_end, frame_height_end, fheight_end);
+            loop_margin(fwidth, frame_width, frame_height, frame_height_end);
+            loop_margin(frame_width_end, fwidth_end, frame_height, frame_height_end);
+        }
+
+        loop_internal(frame_width, frame_width_end, frame_height, frame_height_end);
     } else {
         for (int y = 0; y < gterm_height; y++) {
             for (int x = 0; x < gterm_width; x++) {

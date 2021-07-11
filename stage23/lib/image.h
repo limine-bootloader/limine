@@ -9,19 +9,14 @@ struct image {
     int x_size;
     int y_size;
     int type;
-    union {
-        struct {
-            int x_displacement;
-            int y_displacement;
-        };
-        struct {
-            int old_x_size;
-            int old_y_size;
-        };
-    };
+    uint8_t *img;
+    int bpp;
+    int pitch;
+    int img_width; // x_size = scaled size, img_width = bitmap size
+    int img_height;
+    int x_displacement;
+    int y_displacement;
     uint32_t back_colour;
-    uint32_t (*get_pixel)(struct image *this, int x, int y);
-    void *local;
 };
 
 enum {

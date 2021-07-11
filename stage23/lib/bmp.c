@@ -29,9 +29,44 @@ struct bmp_header {
 } __attribute__((packed));
 
 struct bmp_local {
+    uint8_t  *image;
+    uint32_t  pitch;
     struct bmp_header header;
 };
 
+static uint32_t get_pixel(struct image *this, int x, int y) {
+    struct bmp_local *local = this->local;
+    struct bmp_header *header = &local->header;
+
+    switch (this->type) {
+        case IMAGE_TILED: {
+            x %= header->bi_width;
+            y %= header->bi_height;
+            break;
+        }
+        case IMAGE_CENTERED: {
+            x -= this->x_displacement;
+            y -= this->y_displacement;
+            if (x < 0 || y < 0 || x >= this->x_size || y >= this->y_size)
+                return this->back_colour;
+            break;
+        }
+        case IMAGE_STRETCHED: {
+            x = (x * this->old_x_size) / this->x_size;
+            y = (y * this->old_y_size) / this->y_size;
+            break;
+        }
+    }
+
+    size_t pixel_offset = local->pitch * (header->bi_height - y - 1) + x * (header->bi_bpp / 8);
+
+    // TODO: Perhaps use masks here, they're there for a reason
+    uint32_t composite = 0;
+    for (int i = 0; i < header->bi_bpp / 8; i++)
+        composite |= (uint32_t)local->image[pixel_offset + i] << (i * 8);
+
+    return composite;
+}
 
 int bmp_open_image(struct image *image, struct file_handle *file) {
     struct bmp_header header;
@@ -40,22 +75,22 @@ int bmp_open_image(struct image *image, struct file_handle *file) {
     if (memcmp(&header.bf_signature, "BM", 2) != 0)
         return -1;
 
-    if ((header.bi_bpp < 8) | ((header.bi_bpp % 8) != 0))
+    // We don't support bpp lower than 8
+    if (header.bi_bpp < 8)
         return -1;
 
     struct bmp_local *local = ext_mem_alloc(sizeof(struct bmp_local));
 
-    image->img = ext_mem_alloc(header.bf_size);
-    fread(file, image->img, header.bf_offset, header.bf_size);
+    local->image = ext_mem_alloc(header.bf_size);
+    fread(file, local->image, header.bf_offset, header.bf_size);
 
+    local->pitch  = ALIGN_UP(header.bi_width * header.bi_bpp, 32) / 8;
     local->header = header;
 
-    image->x_size     = header.bi_width;
-    image->y_size     = header.bi_height;
-    image->pitch      = ALIGN_UP(header.bi_width * header.bi_bpp, 32) / 8;
-    image->local      = local;
-    image->bpp        = header.bi_bpp;
-    image->img_width  = header.bi_width;
-    image->img_height = header.bi_height;
+    image->x_size    = header.bi_width;
+    image->y_size    = header.bi_height;
+    image->get_pixel = get_pixel;
+    image->local     = local;
+
     return 0;
 }

@@ -9,13 +9,6 @@ struct image {
     int x_size;
     int y_size;
     int type;
-
-
-    uint8_t *img;
-    int bpp;
-    int pitch;
-    int img_width; // x_size = scaled size, img_width = bitmap size 
-    int img_height;
     union {
         struct {
             int x_displacement;
@@ -27,6 +20,7 @@ struct image {
         };
     };
     uint32_t back_colour;
+    uint32_t (*get_pixel)(struct image *this, int x, int y);
     void *local;
 };
 

@@ -17,6 +17,9 @@ void image_make_centered(struct image *image, int frame_x_size, int frame_y_size
 void image_make_stretched(struct image *image, int new_x_size, int new_y_size) {
     image->type = IMAGE_STRETCHED;
 
+    image->old_x_size = image->x_size;
+    image->old_y_size = image->y_size;
+
     image->x_size = new_x_size;
     image->y_size = new_y_size;
 }

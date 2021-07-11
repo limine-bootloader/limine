@@ -37,11 +37,11 @@ int getchar_internal(uint8_t scancode, uint8_t ascii) {
             return GETCHAR_ESCAPE;
 
         // special case checks for C-[pnfb]
-#define CTRL_CHECK(ch, key)                            \
-            if ((ascii | 0x60) == ch && ascii != ch) { \
-                return key;                            \
-            } else {                                   \
-                break;                                 \
+#define CTRL_CHECK(ch, key)             \
+            if ((ascii | 0x60) == ch) { \
+                return key;             \
+            } else {                    \
+                break;                  \
             }
         case 0x19:
             CTRL_CHECK('p', GETCHAR_CURSOR_UP);
@@ -76,9 +76,10 @@ int getchar_internal(uint8_t scancode, uint8_t ascii) {
             return GETCHAR_ESCAPE;
 
         // special case checks for C-[pnfb]
-#define CTRL_CHECK(ch, key)                            \
-            if ((ascii | 0x60) == ch && ascii != ch) { \
-                return key;                            \
+        // EFI for some reason reports scancode zero if Ctrl is held
+#define CTRL_CHECK(ch, key)             \
+            if ((ascii | 0x60) == ch) { \
+                return key;             \
             }
         case 0:
             CTRL_CHECK('p', GETCHAR_CURSOR_UP);

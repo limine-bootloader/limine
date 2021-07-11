@@ -329,9 +329,11 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     struct fb_info *fb = NULL;
     struct fb_info _fb;
 
+    struct stivale2_header_tag_any_video *avtag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_ANY_VIDEO_ID);
+
     struct stivale2_header_tag_framebuffer *hdrtag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_FRAMEBUFFER_ID);
 
-    int req_width, req_height, req_bpp;
+    int req_width = 0, req_height = 0, req_bpp = 0;
 
     if (hdrtag != NULL) {
         req_width  = hdrtag->framebuffer_width;
@@ -380,7 +382,13 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
         fb = &_fb;
     }
 
-    if (hdrtag != NULL) {
+    if (hdrtag != NULL || (avtag != NULL &&
+#if defined (uefi)
+        true
+#else
+        false
+#endif
+    ) || (avtag != NULL && avtag->preference == 0)) {
         term_deinit();
 
         if (fb_init(fb, req_width, req_height, req_bpp)) {

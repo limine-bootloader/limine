@@ -35,22 +35,6 @@ int getchar_internal(uint8_t scancode, uint8_t ascii) {
             return GETCHAR_PGDOWN;
         case 0x01:
             return GETCHAR_ESCAPE;
-
-        // special case checks for C-[pnfb]
-#define CTRL_CHECK(ch, key)             \
-            if ((ascii | 0x60) == ch) { \
-                return key;             \
-            } else {                    \
-                break;                  \
-            }
-        case 0x19:
-            CTRL_CHECK('p', GETCHAR_CURSOR_UP);
-        case 0x31:
-            CTRL_CHECK('n', GETCHAR_CURSOR_DOWN);
-        case 0x21:
-            CTRL_CHECK('f', GETCHAR_CURSOR_RIGHT);
-        case 0x30:
-            CTRL_CHECK('b', GETCHAR_CURSOR_LEFT);
 #elif defined (uefi)
         case SCAN_F10:
             return GETCHAR_F10;
@@ -74,22 +58,8 @@ int getchar_internal(uint8_t scancode, uint8_t ascii) {
             return GETCHAR_PGDOWN;
         case SCAN_ESC:
             return GETCHAR_ESCAPE;
-
-        // special case checks for C-[pnfb]
-        // EFI for some reason reports scancode zero if Ctrl is held
-#define CTRL_CHECK(ch, key)             \
-            if ((ascii | 0x60) == ch) { \
-                return key;             \
-            }
-        case 0:
-            CTRL_CHECK('p', GETCHAR_CURSOR_UP);
-            CTRL_CHECK('n', GETCHAR_CURSOR_DOWN);
-            CTRL_CHECK('f', GETCHAR_CURSOR_RIGHT);
-            CTRL_CHECK('b', GETCHAR_CURSOR_LEFT);
-            break;
 #endif
     }
-#undef CTRL_CHECK
     switch (ascii) {
         case '\r':
             return '\n';

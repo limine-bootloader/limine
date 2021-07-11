@@ -308,11 +308,13 @@ refresh:
         int x, y;
         get_cursor_pos(&x, &y);
         set_cursor_pos(0, term_rows-1);
+        scroll_disable();
         if (invalid_syntax) {
             print("\e[31mConfiguration is INVALID.\e[0m");
         } else {
             print("\e[32mConfiguration is valid.\e[0m");
         }
+        scroll_enable();
         set_cursor_pos(x, y);
     }
 
@@ -343,7 +345,9 @@ refresh:
     print("\xd9");
 
     if (display_overflow_error) {
+        scroll_disable();
         print("\e[31mText buffer not big enough, delete something instead.");
+        scroll_enable();
         display_overflow_error = false;
     }
 
@@ -609,7 +613,9 @@ refresh:
         print("\n\n");
         for (int i = timeout; i; i--) {
             set_cursor_pos(0, term_rows - 1);
+            scroll_disable();
             print("\e[32mBooting automatically in %u, press any key to stop the countdown...\e[0m", i);
+            scroll_enable();
             term_double_buffer_flush();
             if ((c = pit_sleep_and_quit_on_keypress(1))) {
                 skip_timeout = true;
@@ -622,8 +628,11 @@ refresh:
     }
 
     set_cursor_pos(0, term_rows - 1);
-    if (selected_menu_entry->comment != NULL)
+    if (selected_menu_entry->comment != NULL) {
+        scroll_disable();
         print("\e[36m%s\e[0m", selected_menu_entry->comment);
+        scroll_enable();
+    }
 
     term_double_buffer_flush();
 

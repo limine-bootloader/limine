@@ -421,6 +421,15 @@ skip_modeset:;
 #elif defined (bios)
         int rows, cols;
         init_vga_textmode(&rows, &cols, false);
+
+        struct stivale2_struct_tag_textmode *tmtag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_textmode));
+
+        tmtag->address = 0xb8000;
+        tmtag->rows = 25;
+        tmtag->cols = 80;
+        tmtag->bytes_per_char = 2;
+
+        append_tag(&stivale2_struct, (struct stivale2_tag *)tmtag);
 #endif
     }
     }

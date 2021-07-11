@@ -8,7 +8,7 @@ user_ds: resq 1
 user_es: resq 1
 user_ss: resq 1
 
-%define MAX_TERM_BUF 1024
+%define MAX_TERM_BUF 4096
 
 term_buf:
     resb MAX_TERM_BUF

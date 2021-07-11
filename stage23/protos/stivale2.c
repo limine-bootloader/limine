@@ -357,10 +357,15 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
         struct stivale2_struct_tag_terminal *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_terminal));
         tag->tag.identifier = STIVALE2_STRUCT_TAG_TERMINAL_ID;
 
+        // We provide max allowed string length
+        tag->flags |= (1 << 1);
+
 #if defined (bios)
         tag->term_write = (uintptr_t)(void *)stivale2_term_write_entry;
+        tag->max_length = 4096;
 #elif defined (uefi)
         tag->term_write = (uintptr_t)term_write;
+        tag->max_length = 0;
 #endif
 
         // We provide rows and cols

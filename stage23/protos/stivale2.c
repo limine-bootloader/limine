@@ -115,7 +115,8 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
 
             if (!loaded_by_anchor) {
                 if (elf64_load(kernel, &entry_point, NULL, &slide,
-                               STIVALE2_MMAP_KERNEL_AND_MODULES, kaslr, false))
+                               STIVALE2_MMAP_KERNEL_AND_MODULES, kaslr, false,
+                               NULL, NULL))
                     panic("stivale2: ELF64 load failure");
 
                 ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr",

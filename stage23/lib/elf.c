@@ -292,7 +292,99 @@ int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
     return 2;
 }
 
-int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_slide, uint32_t alloc_type, bool kaslr, bool use_paddr) {
+static uint64_t elf64_min_align(uint8_t *elf, bool use_paddr) {
+    uint64_t ret = 0;
+
+    struct elf64_hdr hdr;
+    memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
+
+    for (uint16_t i = 0; i < hdr.ph_num; i++) {
+        struct elf64_phdr phdr;
+        memcpy(&phdr, elf + (hdr.phoff + i * sizeof(struct elf64_phdr)),
+                   sizeof(struct elf64_phdr));
+
+        if (phdr.p_type != PT_LOAD)
+            continue;
+
+        uint64_t load_addr = 0;
+
+        if (use_paddr) {
+            load_addr = phdr.p_paddr;
+        } else {
+            load_addr = phdr.p_vaddr;
+        }
+
+        if (load_addr % 0x200000 == 0) {
+            ret = 0x200000;
+            continue;
+        }
+
+        if (load_addr % 0x1000 == 0) {
+            ret = 0x1000;
+            continue;
+        }
+
+        // We don't do kernels that don't align their load addresses to 4K at least.
+        panic("elf: The executable contains non-4KiB aligned load addresses");
+    }
+
+    if (ret == 0) {
+        panic("elf: Executable has no loadable segments");
+    }
+
+    return ret;
+}
+
+static void elf64_get_ranges(uint8_t *elf, uint64_t slide, uint64_t min_align, bool use_paddr, struct elf_range **_ranges, uint64_t *_ranges_count) {
+    struct elf64_hdr hdr;
+    memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
+
+    uint64_t ranges_count = 0;
+
+    for (uint16_t i = 0; i < hdr.ph_num; i++) {
+        struct elf64_phdr phdr;
+        memcpy(&phdr, elf + (hdr.phoff + i * sizeof(struct elf64_phdr)),
+                   sizeof(struct elf64_phdr));
+
+        if (phdr.p_type != PT_LOAD)
+            continue;
+
+        ranges_count++;
+    }
+
+    struct elf_range *ranges = ext_mem_alloc(ranges_count * sizeof(struct elf_range));
+
+    size_t r = 0;
+    for (uint16_t i = 0; i < hdr.ph_num; i++) {
+        struct elf64_phdr phdr;
+        memcpy(&phdr, elf + (hdr.phoff + i * sizeof(struct elf64_phdr)),
+                   sizeof(struct elf64_phdr));
+
+        if (phdr.p_type != PT_LOAD)
+            continue;
+
+        uint64_t load_addr = 0;
+
+        if (use_paddr) {
+            load_addr = phdr.p_paddr;
+        } else {
+            load_addr = phdr.p_vaddr;
+        }
+
+        load_addr += slide;
+
+        ranges[r].base = load_addr;
+        ranges[r].length = ALIGN_UP(phdr.p_memsz, min_align);
+        ranges[r].permissions = phdr.p_flags & 0b111;
+
+        r++;
+    }
+
+    *_ranges_count = ranges_count;
+    *_ranges = ranges;
+}
+
+int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_slide, uint32_t alloc_type, bool kaslr, bool use_paddr, struct elf_range **ranges, uint64_t *ranges_count) {
     struct elf64_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
@@ -318,6 +410,8 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
 
     uint64_t entry = hdr.entry;
     bool entry_adjusted = false;
+
+    uint64_t min_align = elf64_min_align(elf, use_paddr);
 
     if (!elf64_is_relocatable(elf, &hdr)) {
         simulation = false;
@@ -353,14 +447,16 @@ final:
 
         load_addr += slide;
 
+        uint64_t load_size = ALIGN_UP(phdr.p_memsz, min_align);
+
         if (top) {
-            uint64_t this_top = load_addr + phdr.p_memsz;
+            uint64_t this_top = load_addr + load_size;
             if (this_top > *top) {
                 *top = this_top;
             }
         }
 
-        if (!memmap_alloc_range((size_t)load_addr, (size_t)phdr.p_memsz, alloc_type, true, false, simulation, false)) {
+        if (!memmap_alloc_range((size_t)load_addr, (size_t)load_size, alloc_type, true, false, simulation, false)) {
             if (++try_count == max_simulated_tries || simulation == false)
                 return -1;
             if (!kaslr)
@@ -370,7 +466,7 @@ final:
 
         memcpy((void *)(uintptr_t)load_addr, elf + (phdr.p_offset), phdr.p_filesz);
 
-        size_t to_zero = (size_t)(phdr.p_memsz - phdr.p_filesz);
+        size_t to_zero = (size_t)(load_size - phdr.p_filesz);
 
         if (to_zero) {
             void *ptr = (void *)(uintptr_t)(load_addr + phdr.p_filesz);
@@ -397,6 +493,10 @@ final:
     *entry_point = entry + slide;
     if (_slide)
         *_slide = slide;
+
+    if (ranges_count != NULL && ranges != NULL) {
+        elf64_get_ranges(elf, slide, min_align, use_paddr, ranges, ranges_count);
+    }
 
     return 0;
 }

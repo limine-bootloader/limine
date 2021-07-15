@@ -3,10 +3,18 @@
 #include <mm/vmm.h>
 #include <mm/pmm.h>
 #include <lib/blib.h>
+#include <sys/cpu.h>
 
 #define PT_SIZE ((uint64_t)0x1000)
 
 typedef uint64_t pt_entry_t;
+
+void vmm_assert_nx(void) {
+    uint32_t a, b, c, d;
+    if (!cpuid(0x80000001, 0, &a, &b, &c, &d) || !(d & (1 << 20))) {
+        panic("vmm: NX functionality not available on this CPU.");
+    }
+}
 
 static pt_entry_t *get_next_level(pt_entry_t *current_level, size_t entry) {
     pt_entry_t *ret;

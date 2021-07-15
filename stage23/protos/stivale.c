@@ -282,7 +282,7 @@ void stivale_load(char *config, char *cmdline) {
 
     pagemap_t pagemap = {0};
     if (bits == 64)
-        pagemap = stivale_build_pagemap(want_5lv, false);
+        pagemap = stivale_build_pagemap(want_5lv, false, NULL, 0);
 
     // Reserve 32K at 0x70000
     memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, true, false, false);
@@ -298,20 +298,38 @@ void stivale_load(char *config, char *cmdline) {
                    stivale_hdr.stack);
 }
 
-pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null) {
+pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range *ranges, size_t ranges_count) {
     pagemap_t pagemap = new_pagemap(level5pg ? 5 : 4);
     uint64_t higher_half_base = level5pg ? 0xff00000000000000 : 0xffff800000000000;
 
-    // Map 0 to 2GiB at 0xffffffff80000000
-    for (uint64_t i = 0; i < 0x80000000; i += 0x200000) {
-        map_page(pagemap, 0xffffffff80000000 + i, i, 0x03, true);
-    }
+    if (ranges_count == 0) {
+        // Map 0 to 2GiB at 0xffffffff80000000
+        for (uint64_t i = 0; i < 0x80000000; i += 0x200000) {
+            map_page(pagemap, 0xffffffff80000000 + i, i, 0x03, true);
+        }
 
-    // Sub 2MiB mappings
-    for (uint64_t i = 0; i < 0x200000; i += 0x1000) {
-        if (!(i == 0 && unmap_null))
-            map_page(pagemap, i, i, 0x03, false);
-        map_page(pagemap, higher_half_base + i, i, 0x03, false);
+        // Sub 2MiB mappings
+        for (uint64_t i = 0; i < 0x200000; i += 0x1000) {
+            if (!(i == 0 && unmap_null))
+                map_page(pagemap, i, i, 0x03, false);
+            map_page(pagemap, higher_half_base + i, i, 0x03, false);
+        }
+    } else {
+        for (size_t i = 0; i < ranges_count; i++) {
+            uint64_t virt = ranges[i].base;
+            uint64_t phys = virt;
+
+            if (phys & ((uint64_t)1 << 63))
+                phys -= FIXED_HIGHER_HALF_OFFSET_64;
+
+            uint64_t pf = VMM_FLAG_PRESENT |
+                (ranges[i].permissions & ELF_PF_X ? 0 : VMM_FLAG_NOEXEC) |
+                (ranges[i].permissions & ELF_PF_W ? VMM_FLAG_WRITE : 0);
+
+            for (uint64_t j = 0; j < ranges[i].length; j += 0x1000) {
+                map_page(pagemap, virt + j, phys + j, pf, false);
+            }
+        }
     }
 
     // Map 2MiB to 4GiB at higher half base and 0

@@ -480,7 +480,7 @@ skip_modeset:;
 
     pagemap_t pagemap = {0};
     if (bits == 64)
-        pagemap = stivale_build_pagemap(want_5lv, unmap_null);
+        pagemap = stivale_build_pagemap(want_5lv, unmap_null, NULL, 0);
 
 #if uefi == 1
     efi_exit_boot_services();

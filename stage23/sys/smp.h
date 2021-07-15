@@ -21,6 +21,7 @@ struct smp_information *init_smp(size_t    header_hack_size,
                                  bool      longmode,
                                  bool      lv5,
                                  pagemap_t pagemap,
-                                 bool      x2apic);
+                                 bool      x2apic,
+                                 bool      nx);
 
 #endif

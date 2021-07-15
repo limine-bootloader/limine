@@ -8,7 +8,7 @@
 #include <mm/pmm.h>
 #include <fs/file.h>
 
-#define KASLR_SLIDE_BITMASK ((uintptr_t)0x3ffff000)
+#define KASLR_SLIDE_BITMASK ((uintptr_t)0x8ffff000)
 
 #define PT_LOAD     0x00000001
 #define PT_INTERP   0x00000003
@@ -420,7 +420,7 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
 
 again:
     if (kaslr)
-        slide = rand64() & KASLR_SLIDE_BITMASK;
+        slide = (rand64() & KASLR_SLIDE_BITMASK) & (min_align - 1);
 
 final:
     if (top)

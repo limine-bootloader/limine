@@ -42,7 +42,7 @@ __attribute__((section(".stivale2hdr"), used))
 struct stivale2_header header2 = {
     .entry_point = (uint64_t)stivale2_main,
     .stack       = (uintptr_t)stacks[0] + sizeof(stack),
-    .flags       = 1 << 1,
+    .flags       = (1 << 1) | (1 << 2),
     .tags        = (uint64_t)&framebuffer_request
 };
 
@@ -183,6 +183,15 @@ void stivale2_main(struct stivale2_struct *info) {
                 struct stivale2_struct_tag_kernel_slide *t = (struct stivale2_struct_tag_kernel_slide *)tag;
                 e9_printf("Kernel slide: %x", t->kernel_slide);
                 break;
+            }
+            case STIVALE2_STRUCT_TAG_PMRS_ID: {
+                struct stivale2_struct_tag_pmrs *t = (struct stivale2_struct_tag_pmrs *)tag;
+                e9_puts("PMRs tag:");
+                e9_printf("\t%d ranges:", t->entries);
+                for (size_t i = 0; i < t->entries; i++) {
+                    e9_printf("\t\tBase: %x  Length: %x  Perms: %x",
+                          t->pmrs[i].base, t->pmrs[i].length, t->pmrs[i].permissions);
+                }
             }
             case STIVALE2_STRUCT_TAG_SMP_ID: {
                 struct stivale2_struct_tag_smp *s = (struct stivale2_struct_tag_smp *)tag;

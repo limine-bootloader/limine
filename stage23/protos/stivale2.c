@@ -81,6 +81,9 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     uint64_t slide = 0;
     uint64_t entry_point = 0;
 
+    struct elf_range *ranges;
+    uint64_t ranges_count;
+
     uint8_t *kernel = freadall(kernel_file, STIVALE2_MMAP_BOOTLOADER_RECLAIMABLE);
     int bits = elf_bits(kernel);
     bool loaded_by_anchor = false;
@@ -99,6 +102,8 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
         loaded_by_anchor = true;
     }
 
+    bool want_pmrs = false;
+
     int ret = 0;
     switch (bits) {
         case 64: {
@@ -114,9 +119,25 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
             }
 
             if (!loaded_by_anchor) {
+                ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
+                                         sizeof(struct stivale2_header), 0);
+                if (ret) {
+                    goto failed_to_load_header_section;
+                }
+
+                if ((stivale2_hdr.flags & (1 << 2))) {
+                    if (bits == 32) {
+                        panic("stivale2: PMRs are not supported for 32-bit kernels");
+                    } else if (loaded_by_anchor) {
+                        panic("stivale2: PMRs are not supported for anchored kernels");
+                    }
+                    want_pmrs = true;
+                }
+
                 if (elf64_load(kernel, &entry_point, NULL, &slide,
                                STIVALE2_MMAP_KERNEL_AND_MODULES, kaslr, false,
-                               NULL, NULL))
+                               want_pmrs ? &ranges : NULL,
+                               want_pmrs ? &ranges_count : NULL))
                     panic("stivale2: ELF64 load failure");
 
                 ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
@@ -142,6 +163,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
 
     printv("stivale2: %u-bit kernel detected\n", bits);
 
+failed_to_load_header_section:
     switch (ret) {
         case 1:
             panic("stivale2: File is not a valid ELF.");
@@ -463,6 +485,25 @@ skip_modeset:;
 #endif
 
     //////////////////////////////////////////////
+    // Create PMRs struct tag
+    //////////////////////////////////////////////
+    {
+    if (want_pmrs) {
+        struct stivale2_struct_tag_pmrs *tag =
+            ext_mem_alloc(sizeof(struct stivale2_struct_tag_pmrs)
+                          + ranges_count * sizeof(struct stivale2_pmr));
+
+        tag->tag.identifier = STIVALE2_STRUCT_TAG_PMRS_ID;
+
+        tag->entries = ranges_count;
+
+        memcpy(tag->pmrs, ranges, ranges_count * sizeof(struct stivale2_pmr));
+
+        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    }
+    }
+
+    //////////////////////////////////////////////
     // Create EFI system table struct tag
     //////////////////////////////////////////////
     {
@@ -480,7 +521,9 @@ skip_modeset:;
 
     pagemap_t pagemap = {0};
     if (bits == 64)
-        pagemap = stivale_build_pagemap(want_5lv, unmap_null, NULL, 0);
+        pagemap = stivale_build_pagemap(want_5lv, unmap_null,
+                                        want_pmrs ? ranges : NULL,
+                                        want_pmrs ? ranges_count : 0);
 
 #if uefi == 1
     efi_exit_boot_services();
@@ -499,7 +542,7 @@ skip_modeset:;
         smp_info = init_smp(sizeof(struct stivale2_struct_tag_smp), (void **)&tag,
                             &cpu_count, &bsp_lapic_id,
                             bits == 64, want_5lv,
-                            pagemap, smp_hdr_tag->flags & 1);
+                            pagemap, smp_hdr_tag->flags & 1, want_pmrs);
 
         if (smp_info != NULL) {
             tag->tag.identifier = STIVALE2_STRUCT_TAG_SMP_ID;
@@ -557,5 +600,5 @@ skip_modeset:;
 
     stivale_spinup(bits, want_5lv, &pagemap, entry_point,
                    REPORTED_ADDR((uint64_t)(uintptr_t)&stivale2_struct),
-                   stivale2_hdr.stack);
+                   stivale2_hdr.stack, want_pmrs);
 }

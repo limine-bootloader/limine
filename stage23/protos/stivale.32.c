@@ -4,7 +4,7 @@
 #include <mm/vmm.h>
 
 __attribute__((noreturn)) void stivale_spinup_32(
-                 int bits, bool level5pg, uint32_t pagemap_top_lv,
+                 int bits, bool level5pg, bool enable_nx, uint32_t pagemap_top_lv,
                  uint32_t entry_point_lo, uint32_t entry_point_hi,
                  uint32_t stivale_struct_lo, uint32_t stivale_struct_hi,
                  uint32_t stack_lo, uint32_t stack_hi) {
@@ -15,6 +15,16 @@ __attribute__((noreturn)) void stivale_spinup_32(
     };
 
     if (bits == 64) {
+        if (enable_nx) {
+            asm volatile (
+                "movl $0xc0000080, %%ecx\n\t"
+                "rdmsr\n\t"
+                "btsl $11, %%eax\n\t"
+                "wrmsr\n\t"
+                ::: "eax", "ecx", "edx", "memory"
+            );
+        }
+
         if (level5pg) {
             // Enable CR4.LA57
             asm volatile (

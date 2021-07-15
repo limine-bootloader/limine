@@ -13,6 +13,7 @@ bool stivale_load_by_anchor(void **_anchor, const char *magic,
 pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range *ranges, size_t ranges_count);
 __attribute__((noreturn)) void stivale_spinup(
                  int bits, bool level5pg, pagemap_t *pagemap,
-                 uint64_t entry_point, uint64_t stivale_struct, uint64_t stack);
+                 uint64_t entry_point, uint64_t stivale_struct, uint64_t stack,
+                 bool enable_nx);
 
 #endif

@@ -295,7 +295,7 @@ void stivale_load(char *config, char *cmdline) {
 
     stivale_spinup(bits, want_5lv, &pagemap,
                    entry_point, REPORTED_ADDR((uint64_t)(uintptr_t)&stivale_struct),
-                   stivale_hdr.stack);
+                   stivale_hdr.stack, false);
 }
 
 pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range *ranges, size_t ranges_count) {
@@ -307,20 +307,16 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
         for (uint64_t i = 0; i < 0x80000000; i += 0x200000) {
             map_page(pagemap, 0xffffffff80000000 + i, i, 0x03, true);
         }
-
-        // Sub 2MiB mappings
-        for (uint64_t i = 0; i < 0x200000; i += 0x1000) {
-            if (!(i == 0 && unmap_null))
-                map_page(pagemap, i, i, 0x03, false);
-            map_page(pagemap, higher_half_base + i, i, 0x03, false);
-        }
     } else {
         for (size_t i = 0; i < ranges_count; i++) {
             uint64_t virt = ranges[i].base;
             uint64_t phys = virt;
 
-            if (phys & ((uint64_t)1 << 63))
+            if (phys & ((uint64_t)1 << 63)) {
                 phys -= FIXED_HIGHER_HALF_OFFSET_64;
+            } else {
+                panic("stivale2: Protected memory ranges are only supported for higher half kernels");
+            }
 
             uint64_t pf = VMM_FLAG_PRESENT |
                 (ranges[i].permissions & ELF_PF_X ? 0 : VMM_FLAG_NOEXEC) |
@@ -330,6 +326,13 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
                 map_page(pagemap, virt + j, phys + j, pf, false);
             }
         }
+    }
+
+    // Sub 2MiB mappings
+    for (uint64_t i = 0; i < 0x200000; i += 0x1000) {
+        if (!(i == 0 && unmap_null))
+            map_page(pagemap, i, i, 0x03, false);
+        map_page(pagemap, higher_half_base + i, i, 0x03, false);
     }
 
     // Map 2MiB to 4GiB at higher half base and 0
@@ -382,7 +385,8 @@ __attribute__((noreturn)) void stivale_spinup_32(
 
 __attribute__((noreturn)) void stivale_spinup(
                  int bits, bool level5pg, pagemap_t *pagemap,
-                 uint64_t entry_point, uint64_t _stivale_struct, uint64_t stack) {
+                 uint64_t entry_point, uint64_t _stivale_struct, uint64_t stack,
+                 bool enable_nx) {
 #if bios == 1
     if (bits == 64) {
         // If we're going 64, we might as well call this BIOS interrupt
@@ -395,11 +399,15 @@ __attribute__((noreturn)) void stivale_spinup(
     }
 #endif
 
+    if (enable_nx) {
+        vmm_assert_nx();
+    }
+
     pic_mask_all();
     pic_flush();
 
     common_spinup(stivale_spinup_32, 9,
-        bits, level5pg, (uint32_t)(uintptr_t)pagemap->top_level,
+        bits, level5pg, enable_nx, (uint32_t)(uintptr_t)pagemap->top_level,
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
         (uint32_t)_stivale_struct, (uint32_t)(_stivale_struct >> 32),
         (uint32_t)stack, (uint32_t)(stack >> 32));

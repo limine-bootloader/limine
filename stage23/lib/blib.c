@@ -9,7 +9,7 @@
 #include <fs/file.h>
 #include <mm/pmm.h>
 
-#if defined (uefi)
+#if uefi == 1
 EFI_SYSTEM_TABLE *gST;
 EFI_BOOT_SERVICES *gBS;
 EFI_RUNTIME_SERVICES *gRT;
@@ -70,7 +70,7 @@ uint64_t sqrt(uint64_t a_nInput) {
     return res;
 }
 
-#if defined (uefi)
+#if uefi == 1
 
 bool efi_boot_services_exited = false;
 

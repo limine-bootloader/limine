@@ -513,9 +513,9 @@ void linux_load(char *config, char *cmdline) {
     screen_info->blue_size      = fbinfo.blue_mask_size;
     screen_info->blue_pos       = fbinfo.blue_mask_shift;
 
-#if defined (bios)
+#if bios == 1
     screen_info->orig_video_isVGA = VIDEO_TYPE_VLFB;
-#elif defined (uefi)
+#elif uefi == 1
     screen_info->orig_video_isVGA = VIDEO_TYPE_EFI;
 #endif
 
@@ -534,7 +534,7 @@ void linux_load(char *config, char *cmdline) {
     ///////////////////////////////////////
     // UEFI
     ///////////////////////////////////////
-#if defined (uefi)
+#if uefi == 1
     efi_exit_boot_services();
 
     memcpy(&boot_params->efi_info.efi_loader_signature, "EL64", 4);

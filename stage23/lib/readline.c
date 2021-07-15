@@ -4,15 +4,15 @@
 #include <lib/libc.h>
 #include <lib/blib.h>
 #include <lib/term.h>
-#if defined (bios)
+#if bios == 1
 #  include <lib/real.h>
-#elif defined (uefi)
+#elif uefi == 1
 #  include <efi.h>
 #endif
 
 int getchar_internal(uint8_t scancode, uint8_t ascii) {
     switch (scancode) {
-#if defined (bios)
+#if bios == 1
         case 0x44:
             return GETCHAR_F10;
         case 0x4b:
@@ -35,7 +35,7 @@ int getchar_internal(uint8_t scancode, uint8_t ascii) {
             return GETCHAR_PGDOWN;
         case 0x01:
             return GETCHAR_ESCAPE;
-#elif defined (uefi)
+#elif uefi == 1
         case SCAN_F10:
             return GETCHAR_F10;
         case SCAN_LEFT:
@@ -73,7 +73,7 @@ int getchar_internal(uint8_t scancode, uint8_t ascii) {
     return ascii;
 }
 
-#if defined (bios)
+#if bios == 1
 int getchar(void) {
 again:;
     struct rm_regs r = {0};
@@ -91,7 +91,7 @@ int pit_sleep_and_quit_on_keypress(int seconds) {
 }
 #endif
 
-#if defined (uefi)
+#if uefi == 1
 int getchar(void) {
 again:;
     EFI_INPUT_KEY key = {0};

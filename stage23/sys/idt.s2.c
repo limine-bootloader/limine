@@ -3,7 +3,7 @@
 #include <sys/idt.h>
 #include <lib/blib.h>
 
-#if defined (bios)
+#if bios == 1
 
 static struct idt_entry idt_entries[32];
 

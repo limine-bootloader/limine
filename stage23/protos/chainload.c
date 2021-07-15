@@ -13,11 +13,11 @@
 #include <sys/idt.h>
 #include <drivers/vga_textmode.h>
 #include <mm/pmm.h>
-#if defined (uefi)
+#if uefi == 1
 #  include <efi.h>
 #endif
 
-#if defined (bios)
+#if bios == 1
 
 __attribute__((noinline))
 __attribute__((section(".realmode")))
@@ -107,7 +107,7 @@ void chainload(char *config) {
     spinup(drive);
 }
 
-#elif defined (uefi)
+#elif uefi == 1
 
 void chainload(char *config) {
     EFI_STATUS status;

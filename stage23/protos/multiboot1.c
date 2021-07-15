@@ -206,9 +206,9 @@ void multiboot1_load(char *config, char *cmdline) {
             multiboot1_info.fb_blue_mask_size   = fbinfo.blue_mask_size;
             multiboot1_info.fb_blue_mask_shift  = fbinfo.blue_mask_shift;
         } else if (header.fb_mode == 1) {
-#if defined (uefi)
+#if uefi == 1
             panic("multiboot1: Cannot use text mode with UEFI.");
-#elif defined (bios)
+#elif bios == 1
             int rows, cols;
             init_vga_textmode(&rows, &cols, false);
 
@@ -225,15 +225,15 @@ void multiboot1_load(char *config, char *cmdline) {
 
         multiboot1_info.flags |= (1 << 12);
     } else {
-#if defined (uefi)
+#if uefi == 1
         panic("multiboot1: Cannot use text mode with UEFI.");
-#elif defined (bios)
+#elif bios == 1
         int rows, cols;
         init_vga_textmode(&rows, &cols, false);
 #endif
     }
 
-#if defined (uefi)
+#if uefi == 1
     efi_exit_boot_services();
 #endif
 

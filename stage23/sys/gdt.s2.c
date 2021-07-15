@@ -59,13 +59,13 @@ static struct gdt_desc gdt_descs[] = {
     }
 };
 
-#if defined (bios)
+#if bios == 1
 __attribute__((section(".realmode")))
 #endif
 struct gdtr gdt = {
     sizeof(gdt_descs) - 1,
     (uintptr_t)gdt_descs,
-#if defined (bios)
+#if bios == 1
     0
 #endif
 };

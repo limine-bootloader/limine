@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#if defined (bios)
+#if bios == 1
 
 struct idtr {
     uint16_t limit;

@@ -141,7 +141,7 @@ static bool uri_guid_dispatch(struct file_handle *fd, char *guid_str, char *path
     return true;
 }
 
-#if defined (bios)
+#if bios == 1
 static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
     uint32_t ip;
     if (!strcmp(root, "")) {
@@ -166,7 +166,7 @@ static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
 #endif
 
 static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) {
-#if defined (bios)
+#if bios == 1
     if (boot_volume->pxe)
         return uri_tftp_dispatch(fd, s_part, path);
 #endif
@@ -222,7 +222,7 @@ bool uri_open(struct file_handle *fd, char *uri) {
         ret = uri_guid_dispatch(fd, root, path);
     } else if (!strcmp(resource, "uuid")) {
         ret = uri_guid_dispatch(fd, root, path);
-#if defined (bios)
+#if bios == 1
     } else if (!strcmp(resource, "tftp")) {
         ret = uri_tftp_dispatch(fd, root, path);
 #endif

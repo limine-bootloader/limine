@@ -7,14 +7,14 @@
 #include <lib/blib.h>
 #include <lib/libc.h>
 #include <lib/print.h>
-#if defined (uefi)
+#if uefi == 1
 #  include <efi.h>
 #endif
 
 #define PAGE_SIZE   4096
 #define MEMMAP_MAX_ENTRIES 256
 
-#if defined (bios)
+#if bios == 1
 extern symbol bss_end;
 #endif
 
@@ -51,7 +51,7 @@ void *conv_mem_alloc(size_t count) {
 struct e820_entry_t memmap[MEMMAP_MAX_ENTRIES];
 size_t memmap_entries = 0;
 
-#if defined (uefi)
+#if uefi == 1
 struct e820_entry_t untouched_memmap[MEMMAP_MAX_ENTRIES];
 size_t untouched_memmap_entries = 0;
 #endif
@@ -206,7 +206,7 @@ struct e820_entry_t *get_memmap(size_t *entries) {
     return memmap;
 }
 
-#if defined (bios)
+#if bios == 1
 void init_memmap(void) {
     for (size_t i = 0; i < e820_entries; i++) {
         if (memmap_entries == MEMMAP_MAX_ENTRIES) {
@@ -253,7 +253,7 @@ void init_memmap(void) {
 }
 #endif
 
-#if defined (uefi)
+#if uefi == 1
 void init_memmap(void) {
     EFI_STATUS status;
 
@@ -472,14 +472,14 @@ void pmm_release_uefi_mem(void) {
 }
 #endif
 
-#if defined (bios)
+#if bios == 1
 struct e820_entry_t *get_raw_memmap(size_t *entry_count) {
     *entry_count = e820_entries;
     return e820_map;
 }
 #endif
 
-#if defined (uefi)
+#if uefi == 1
 struct e820_entry_t *get_raw_memmap(size_t *entry_count) {
     size_t mmap_count = efi_mmap_size / efi_desc_size;
     size_t mmap_len = mmap_count * sizeof(struct e820_entry_t);

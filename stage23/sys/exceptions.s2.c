@@ -3,7 +3,7 @@
 #include <lib/trace.h>
 #include <lib/print.h>
 
-#if defined (bios)
+#if bios == 1
 
 static const char *exception_names[] = {
     "Division by 0",

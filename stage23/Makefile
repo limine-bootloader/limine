@@ -70,12 +70,13 @@ INTERNAL_CFLAGS := \
 	-DLIMINE_VERSION='"$(LIMINE_VERSION)"' \
 	-DCOM_OUTPUT=$(COM_OUTPUT) \
 	-DE9_OUTPUT=$(E9_OUTPUT) \
-	-D$(TARGET)=1 \
 	-I. \
 	-I..
 
 ifeq ($(TARGET), bios)
 	INTERNAL_CFLAGS += \
+		-Dbios=1 \
+		-Duefi=0 \
 		-m32 \
 		-march=i386 \
 		-fno-pie
@@ -84,11 +85,15 @@ endif
 ifeq ($(TARGET), uefi)
 	INTERNAL_CFLAGS32 := \
 		$(INTERNAL_CFLAGS) \
+		-Dbios=0 \
+		-Duefi=1 \
 		-m32 \
 		-march=i386 \
 		-fpie
 
 	INTERNAL_CFLAGS += \
+		-Dbios=0 \
+		-Duefi=1 \
 		-m64 \
 		-march=x86-64 \
 		-I../gnu-efi/inc \

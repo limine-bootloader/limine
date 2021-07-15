@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <lib/part.h>
 
-#if defined (uefi)
+#if uefi == 1
 
 #include <efi.h>
 

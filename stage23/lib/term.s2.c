@@ -33,7 +33,7 @@ void (*term_double_buffer_flush)(void);
 
 int term_rows, term_cols;
 
-#if defined (bios)
+#if bios == 1
 void term_textmode(void) {
     term_backend = NOT_READY;
 

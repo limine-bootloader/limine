@@ -8,9 +8,9 @@
 #include <fs/file.h>
 #include <mm/pmm.h>
 
-#if defined (bios)
+#if bios == 1
 extern symbol stage2_map;
-#elif defined (uefi)
+#elif uefi == 1
 extern symbol ImageBase;
 #endif
 
@@ -19,12 +19,12 @@ extern symbol full_map;
 static char *trace_address(size_t *off, size_t addr) {
     char *limine_map;
 
-#if defined (bios)
+#if bios == 1
     if (!stage3_loaded)
         limine_map = stage2_map;
     else
         limine_map = full_map;
-#elif defined (uefi)
+#elif uefi == 1
     limine_map = full_map;
 
     addr -= (size_t)ImageBase;
@@ -48,9 +48,9 @@ static char *trace_address(size_t *off, size_t addr) {
 void print_stacktrace(size_t *base_ptr) {
     if (base_ptr == NULL) {
         asm volatile (
-#if defined (bios)
+#if bios == 1
             "movl %%ebp, %0"
-#elif defined (uefi)
+#elif uefi == 1
             "movq %%rbp, %0"
 #endif
             : "=g"(base_ptr)

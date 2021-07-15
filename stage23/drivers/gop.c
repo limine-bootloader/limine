@@ -1,4 +1,4 @@
-#if defined (uefi)
+#if uefi == 1
 
 #include <efi.h>
 #include <lib/blib.h>

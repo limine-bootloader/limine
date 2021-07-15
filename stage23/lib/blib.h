@@ -6,11 +6,11 @@
 #include <stdbool.h>
 #include <fs/file.h>
 #include <lib/part.h>
-#if defined (uefi)
+#if uefi == 1
 #  include <efi.h>
 #endif
 
-#if defined (uefi)
+#if uefi == 1
 extern EFI_SYSTEM_TABLE *gST;
 extern EFI_BOOT_SERVICES *gBS;
 extern EFI_RUNTIME_SERVICES *gRT;
@@ -24,7 +24,7 @@ bool efi_exit_boot_services(void);
 
 extern struct volume *boot_volume;
 
-#if defined (bios)
+#if bios == 1
 extern bool stage3_loaded;
 #endif
 

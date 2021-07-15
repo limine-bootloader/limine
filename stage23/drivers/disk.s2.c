@@ -2,15 +2,15 @@
 #include <stddef.h>
 #include <drivers/disk.h>
 #include <lib/libc.h>
-#if defined (bios)
+#if bios == 1
 #  include <lib/real.h>
-#elif defined (uefi)
+#elif uefi == 1
 #  include <efi.h>
 #endif
 #include <lib/blib.h>
 #include <mm/pmm.h>
 
-#if defined(bios)
+#if bios == 1
 
 struct bios_drive_params {
     uint16_t buf_size;
@@ -194,7 +194,7 @@ void disk_create_index(void) {
 
 #endif
 
-#if defined (uefi)
+#if uefi == 1
 
 struct volume *disk_volume_from_efi_handle(EFI_HANDLE *efi_handle) {
     EFI_STATUS status;

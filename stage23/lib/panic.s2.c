@@ -1,7 +1,7 @@
 #include <lib/print.h>
 #include <lib/real.h>
 #include <lib/trace.h>
-#if defined (uefi)
+#if uefi == 1
 #   include <efi.h>
 #endif
 #include <lib/blib.h>
@@ -22,10 +22,10 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
     print("\n");
     print_stacktrace(NULL);
 
-#if defined (bios)
+#if bios == 1
     print("System halted.");
     rm_hcf();
-#elif defined (uefi)
+#elif uefi == 1
     if (efi_boot_services_exited == false) {
         print("Press [ENTER] to return to firmware.");
         while (getchar() != '\n');

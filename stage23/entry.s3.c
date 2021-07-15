@@ -23,7 +23,7 @@
 
 void stage3_common(void);
 
-#if defined (uefi)
+#if uefi == 1
 __attribute__((naked))
 EFI_STATUS efi_main(
     __attribute__((unused)) EFI_HANDLE ImageHandle,
@@ -78,7 +78,7 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 }
 #endif
 
-#if defined (bios)
+#if bios == 1
 __attribute__((section(".stage3_build_id")))
 uint64_t stage3_build_id = BUILD_ID;
 
@@ -119,9 +119,9 @@ void stage3_common(void) {
     if (!strcmp(proto, "stivale")) {
         stivale_load(config, cmdline);
     } else if (!strcmp(proto, "stivale2")) {
-#if defined (bios)
+#if bios == 1
         void *efi_system_table = NULL;
-#elif defined (uefi)
+#elif uefi == 1
         void *efi_system_table = gST;
 #endif
 

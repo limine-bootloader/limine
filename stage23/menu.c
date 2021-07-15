@@ -516,9 +516,9 @@ char *menu(char **cmdline) {
     }
 
     // If there is GRAPHICS config key and the value is "yes", enable graphics
-#if defined (bios)
+#if bios == 1
     char *graphics = config_get_value(NULL, 0, "GRAPHICS");
-#elif defined (uefi)
+#elif uefi == 1
     char *graphics = "yes";
 #endif
     if (graphics != NULL && !strcmp(graphics, "yes")) {

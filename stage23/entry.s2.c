@@ -25,7 +25,7 @@ extern uint64_t stage3_build_id;
 
 struct volume *boot_volume;
 
-#if defined (bios)
+#if bios == 1
 
 bool stage3_loaded = false;
 static bool stage3_found = false;

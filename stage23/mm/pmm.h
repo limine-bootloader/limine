@@ -20,7 +20,7 @@
 extern struct e820_entry_t memmap[];
 extern size_t memmap_entries;
 
-#if defined (uefi)
+#if uefi == 1
 extern struct e820_entry_t untouched_memmap[];
 extern size_t untouched_memmap_entries;
 #endif
@@ -37,7 +37,7 @@ void *ext_mem_alloc_type(size_t count, uint32_t type);
 
 void *conv_mem_alloc(size_t count);
 
-#if defined (uefi)
+#if uefi == 1
 void pmm_reclaim_uefi_mem(void);
 void pmm_release_uefi_mem(void);
 #endif

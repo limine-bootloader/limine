@@ -6,7 +6,7 @@
 #include <lib/libc.h>
 #include <lib/print.h>
 
-#if defined (bios)
+#if bios == 1
 
 #include <lib/real.h>
 
@@ -45,7 +45,7 @@ success:
 
 #endif
 
-#if defined (uefi)
+#if uefi == 1
 
 #include <efi.h>
 

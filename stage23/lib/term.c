@@ -12,7 +12,7 @@ void term_vbe(int width, int height) {
     term_backend = NOT_READY;
 
     if (!gterm_init(&term_rows, &term_cols, width, height)) {
-#if defined (bios)
+#if bios == 1
         // Failed to set VBE properly, default to text mode
         term_textmode();
 #endif

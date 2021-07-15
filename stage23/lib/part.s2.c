@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <lib/part.h>
 #include <drivers/disk.h>
-#if defined (bios)
+#if bios == 1
 #  include <lib/real.h>
 #endif
 #include <lib/libc.h>
@@ -150,9 +150,9 @@ static int gpt_get_part(struct volume *ret, struct volume *volume, int partition
     if (!memcmp(&entry.unique_partition_guid, &empty_guid, sizeof(struct guid)))
         return NO_PARTITION;
 
-#if defined (uefi)
+#if uefi == 1
     ret->efi_handle  = volume->efi_handle;
-#elif defined (bios)
+#elif bios == 1
     ret->drive       = volume->drive;
 #endif
     ret->index       = volume->index;
@@ -210,9 +210,9 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
     if (entry.type == 0)
         return NO_PARTITION;
 
-#if defined (uefi)
+#if uefi == 1
     ret->efi_handle  = extended_part->efi_handle;
-#elif defined (bios)
+#elif bios == 1
     ret->drive       = extended_part->drive;
 #endif
     ret->index       = extended_part->index;
@@ -288,9 +288,9 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
 
             struct volume extended_part = {0};
 
-#if defined (uefi)
+#if uefi == 1
             extended_part.efi_handle  = volume->efi_handle;
-#elif defined (bios)
+#elif bios == 1
             extended_part.drive       = volume->drive;
 #endif
             extended_part.index       = volume->index;
@@ -314,9 +314,9 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
     if (entry.type == 0)
         return NO_PARTITION;
 
-#if defined (uefi)
+#if uefi == 1
     ret->efi_handle  = volume->efi_handle;
-#elif defined (bios)
+#elif bios == 1
     ret->drive       = volume->drive;
 #endif
     ret->index       = volume->index;
@@ -384,7 +384,7 @@ struct volume *volume_get_by_coord(bool optical, int drive, int partition) {
     return NULL;
 }
 
-#if defined (bios)
+#if bios == 1
 struct volume *volume_get_by_bios_drive(int drive) {
     for (size_t i = 0; i < volume_index_i; i++) {
         if (volume_index[i]->drive == drive) {

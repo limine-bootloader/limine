@@ -1,4 +1,4 @@
-#if defined (bios)
+#if bios == 1
 
 #include <stddef.h>
 #include <stdint.h>

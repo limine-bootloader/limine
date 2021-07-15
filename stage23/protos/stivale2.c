@@ -54,7 +54,7 @@ static void *get_tag(struct stivale2_header *s, uint64_t id) {
     (S)->tags   = REPORTED_ADDR((uint64_t)(uintptr_t)TAG); \
 })
 
-#if defined (bios)
+#if bios == 1
 extern symbol stivale2_term_write_entry;
 #endif
 
@@ -202,7 +202,7 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     struct stivale2_struct_tag_firmware *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_firmware));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_FIRMWARE_ID;
 
-#if defined (bios)
+#if bios == 1
     tag->flags = 1 << 0;   // bit 0 = BIOS boot
 #endif
 
@@ -362,10 +362,10 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
         // We provide max allowed string length
         tag->flags |= (1 << 1);
 
-#if defined (bios)
+#if bios == 1
         tag->term_write = (uintptr_t)(void *)stivale2_term_write_entry;
         tag->max_length = 4096;
-#elif defined (uefi)
+#elif uefi == 1
         tag->term_write = (uintptr_t)term_write;
         tag->max_length = 0;
 #endif
@@ -382,13 +382,8 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
         fb = &_fb;
     }
 
-    if (hdrtag != NULL || (avtag != NULL &&
-#if defined (uefi)
-        true
-#else
-        false
-#endif
-    ) || (avtag != NULL && avtag->preference == 0)) {
+    if (hdrtag != NULL || (avtag != NULL && uefi)
+    || (avtag != NULL && avtag->preference == 0)) {
         term_deinit();
 
         if (fb_init(fb, req_width, req_height, req_bpp)) {
@@ -416,9 +411,9 @@ skip_modeset:;
             append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
         }
     } else {
-#if defined (uefi)
+#if uefi == 1
         panic("stivale2: Cannot use text mode with UEFI.");
-#elif defined (bios)
+#elif bios == 1
         int rows, cols;
         init_vga_textmode(&rows, &cols, false);
 
@@ -452,7 +447,7 @@ skip_modeset:;
     }
     }
 
-#if defined (bios)
+#if bios == 1
     //////////////////////////////////////////////
     // Create PXE struct tag
     //////////////////////////////////////////////
@@ -486,7 +481,7 @@ skip_modeset:;
     if (bits == 64)
         pagemap = stivale_build_pagemap(want_5lv, unmap_null);
 
-#if defined (uefi)
+#if uefi == 1
     efi_exit_boot_services();
 #endif
 

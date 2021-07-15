@@ -1,4 +1,4 @@
-#if defined (uefi)
+#if uefi == 1
 
 asm (
     ".section .sbat\n\t"

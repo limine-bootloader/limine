@@ -192,6 +192,7 @@ void stivale2_main(struct stivale2_struct *info) {
                     e9_printf("\t\tBase: %x  Length: %x  Perms: %x",
                           t->pmrs[i].base, t->pmrs[i].length, t->pmrs[i].permissions);
                 }
+                break;
             }
             case STIVALE2_STRUCT_TAG_SMP_ID: {
                 struct stivale2_struct_tag_smp *s = (struct stivale2_struct_tag_smp *)tag;

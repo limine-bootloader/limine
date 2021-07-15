@@ -197,7 +197,7 @@ refresh:
                 // FALLTHRU
             default: {
                 int title_length = strlen(title);
-                if (i == (term_cols / 2) - DIV_ROUNDUP(title_length, 2)) {
+                if (i == (term_cols / 2) - DIV_ROUNDUP(title_length, 2) - 1) {
                     print("%s", title);
                     i += title_length - 1;
                 } else {

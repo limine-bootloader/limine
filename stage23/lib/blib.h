@@ -33,6 +33,7 @@ extern bool verbose;
 bool parse_resolution(int *width, int *height, int *bpp, const char *buf);
 
 uint64_t sqrt(uint64_t a_nInput);
+size_t get_trailing_zeros(uint64_t val);
 
 int digit_to_int(char c);
 uint8_t bcd_to_int(uint8_t val);

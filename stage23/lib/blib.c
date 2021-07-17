@@ -70,6 +70,16 @@ uint64_t sqrt(uint64_t a_nInput) {
     return res;
 }
 
+size_t get_trailing_zeros(uint64_t val) {
+    for (size_t i = 0; i < 64; i++) {
+        if ((val & 1) != 0) {
+            return i;
+        }
+        val >>= 1;
+    }
+    return 64;
+}
+
 #if uefi == 1
 
 bool efi_boot_services_exited = false;

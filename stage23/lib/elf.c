@@ -292,8 +292,8 @@ int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
     return 2;
 }
 
-static uint64_t elf64_min_align(uint8_t *elf, bool use_paddr) {
-    uint64_t ret = 0xffffffffffffffff;
+static uint64_t elf64_max_align(uint8_t *elf, bool use_paddr) {
+    uint64_t ret = 0;
 
     struct elf64_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
@@ -314,32 +314,27 @@ static uint64_t elf64_min_align(uint8_t *elf, bool use_paddr) {
             load_addr = phdr.p_vaddr;
         }
 
-        if (load_addr % 0x200000 == 0) {
-            if (ret > 0x200000) {
-                ret = 0x200000;
-            }
-            continue;
+        size_t trailing_zeros = get_trailing_zeros(load_addr);
+        uint64_t align = (uint64_t)1 << trailing_zeros;
+
+        if (align < 0x1000) {
+            // We don't do kernels that don't align their load addresses to 4K at least.
+            panic("elf: The executable contains non-4KiB aligned segments");
         }
 
-        if (load_addr % 0x1000 == 0) {
-            if (ret > 0x1000) {
-                ret = 0x1000;
-            }
-            continue;
+        if (align > ret) {
+            ret = align;
         }
-
-        // We don't do kernels that don't align their load addresses to 4K at least.
-        panic("elf: The executable contains non-4KiB aligned segments");
     }
 
-    if (ret == 0xffffffffffffffff) {
+    if (ret == 0) {
         panic("elf: Executable has no loadable segments");
     }
 
     return ret;
 }
 
-static void elf64_get_ranges(uint8_t *elf, uint64_t slide, uint64_t min_align, bool use_paddr, struct elf_range **_ranges, uint64_t *_ranges_count) {
+static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struct elf_range **_ranges, uint64_t *_ranges_count) {
     struct elf64_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
@@ -378,7 +373,7 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, uint64_t min_align, b
         load_addr += slide;
 
         ranges[r].base = load_addr;
-        ranges[r].length = ALIGN_UP(phdr.p_memsz, min_align);
+        ranges[r].length = ALIGN_UP(phdr.p_memsz, 4096);
         ranges[r].permissions = phdr.p_flags & 0b111;
 
         r++;
@@ -415,9 +410,9 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
     uint64_t entry = hdr.entry;
     bool entry_adjusted = false;
 
-    uint64_t min_align = 1;
+    uint64_t max_align = 1;
     if (ranges != NULL) {
-        min_align = elf64_min_align(elf, use_paddr);
+        max_align = elf64_max_align(elf, use_paddr);
     }
 
     if (!elf64_is_relocatable(elf, &hdr)) {
@@ -427,7 +422,7 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
 
 again:
     if (kaslr)
-        slide = (rand64() & KASLR_SLIDE_BITMASK) & ~(min_align - 1);
+        slide = (rand64() & KASLR_SLIDE_BITMASK) & ~(max_align - 1);
 
 final:
     if (top)
@@ -454,7 +449,12 @@ final:
 
         load_addr += slide;
 
-        uint64_t load_size = ALIGN_UP(phdr.p_memsz, min_align);
+        uint64_t load_size;
+        if (ranges != NULL) {
+            load_size = ALIGN_UP(phdr.p_memsz, 4096);
+        } else {
+            load_size = phdr.p_memsz;
+        }
 
         if (top) {
             uint64_t this_top = load_addr + load_size;
@@ -502,7 +502,7 @@ final:
         *_slide = slide;
 
     if (ranges_count != NULL && ranges != NULL) {
-        elf64_get_ranges(elf, slide, min_align, use_paddr, ranges, ranges_count);
+        elf64_get_ranges(elf, slide, use_paddr, ranges, ranges_count);
     }
 
     return 0;

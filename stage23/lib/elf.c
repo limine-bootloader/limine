@@ -293,7 +293,7 @@ int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
 }
 
 static uint64_t elf64_min_align(uint8_t *elf, bool use_paddr) {
-    uint64_t ret = 0;
+    uint64_t ret = 0xffffffffffffffff;
 
     struct elf64_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
@@ -315,20 +315,24 @@ static uint64_t elf64_min_align(uint8_t *elf, bool use_paddr) {
         }
 
         if (load_addr % 0x200000 == 0) {
-            ret = 0x200000;
+            if (ret > 0x200000) {
+                ret = 0x200000;
+            }
             continue;
         }
 
         if (load_addr % 0x1000 == 0) {
-            ret = 0x1000;
+            if (ret > 0x1000) {
+                ret = 0x1000;
+            }
             continue;
         }
 
         // We don't do kernels that don't align their load addresses to 4K at least.
-        panic("elf: The executable contains non-4KiB aligned load addresses");
+        panic("elf: The executable contains non-4KiB aligned segments");
     }
 
-    if (ret == 0) {
+    if (ret == 0xffffffffffffffff) {
         panic("elf: Executable has no loadable segments");
     }
 
@@ -411,7 +415,10 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
     uint64_t entry = hdr.entry;
     bool entry_adjusted = false;
 
-    uint64_t min_align = elf64_min_align(elf, use_paddr);
+    uint64_t min_align = 1;
+    if (ranges != NULL) {
+        min_align = elf64_min_align(elf, use_paddr);
+    }
 
     if (!elf64_is_relocatable(elf, &hdr)) {
         simulation = false;
@@ -420,7 +427,7 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
 
 again:
     if (kaslr)
-        slide = (rand64() & KASLR_SLIDE_BITMASK) & (min_align - 1);
+        slide = (rand64() & KASLR_SLIDE_BITMASK) & ~(min_align - 1);
 
 final:
     if (top)

@@ -23,6 +23,7 @@ STAGE1_FILES := $(shell find -L ./stage1 -type f -name '*.asm' | sort)
 .PHONY: all
 all:
 	$(MAKE) limine-uefi
+	$(MAKE) limine-uefi32
 	$(MAKE) limine-bios
 	$(MAKE) bin/limine-install
 
@@ -33,7 +34,7 @@ bin/limine-install:
 	[ -f limine-install/limine-install.exe ] && cp limine-install/limine-install.exe bin/ || true
 
 .PHONY: clean
-clean: limine-bios-clean limine-uefi-clean
+clean: limine-bios-clean limine-uefi-clean limine-uefi32-clean
 	$(MAKE) -C limine-install clean
 
 .PHONY: install
@@ -42,11 +43,12 @@ install: all
 	install -s bin/limine-install "$(DESTDIR)$(PREFIX)/bin/"
 	install -d "$(DESTDIR)$(PREFIX)/share"
 	install -d "$(DESTDIR)$(PREFIX)/share/limine"
-	install -m 644 bin/limine.sys "$(DESTDIR)$(PREFIX)/share/limine/"
-	install -m 644 bin/limine-cd.bin "$(DESTDIR)$(PREFIX)/share/limine/"
+	install -m 644 bin/limine.sys "$(DESTDIR)$(PREFIX)/share/limine/" || true
+	install -m 644 bin/limine-cd.bin "$(DESTDIR)$(PREFIX)/share/limine/" || true
 	install -m 644 bin/limine-eltorito-efi.bin "$(DESTDIR)$(PREFIX)/share/limine/" || true
-	install -m 644 bin/limine-pxe.bin "$(DESTDIR)$(PREFIX)/share/limine/"
-	install -m 644 bin/BOOTX64.EFI "$(DESTDIR)$(PREFIX)/share/limine/"
+	install -m 644 bin/limine-pxe.bin "$(DESTDIR)$(PREFIX)/share/limine/" || true
+	install -m 644 bin/BOOTX64.EFI "$(DESTDIR)$(PREFIX)/share/limine/" || true
+	install -m 644 bin/BOOTIA32.EFI "$(DESTDIR)$(PREFIX)/share/limine/" || true
 
 build/stage1: $(STAGE1_FILES) build/decompressor/decompressor.bin build/stage23-bios/stage2.bin.gz
 	mkdir -p bin
@@ -60,13 +62,17 @@ build/stage1: $(STAGE1_FILES) build/decompressor/decompressor.bin build/stage23-
 limine-bios: stage23-bios decompressor
 	$(MAKE) build/stage1
 
-bin/limine-eltorito-efi.bin: build/stage23-uefi/BOOTX64.EFI
+.PHONY: bin/limine-eltorito-efi.bin
+bin/limine-eltorito-efi.bin:
 	dd if=/dev/zero of=$@ bs=512 count=2880
 	( mformat -i $@ -f 1440 :: && \
 	  mmd -D s -i $@ ::/EFI && \
 	  mmd -D s -i $@ ::/EFI/BOOT && \
-	  mcopy -D o -i $@ build/stage23-uefi/BOOTX64.EFI ::/EFI/BOOT ) \
-	|| rm -f $@
+	  ( ( [ -f build/stage23-uefi/BOOTX64.EFI ] && \
+	      mcopy -D o -i $@ build/stage23-uefi/BOOTX64.EFI ::/EFI/BOOT ) || true ) && \
+	  ( ( [ -f build/stage23-uefi32/BOOTIA32.EFI ] && \
+	      mcopy -D o -i $@ build/stage23-uefi32/BOOTIA32.EFI ::/EFI/BOOT ) || true ) \
+	) || rm -f $@
 
 .PHONY: limine-uefi
 limine-uefi:
@@ -82,6 +88,7 @@ limine-uefi32:
 	$(MAKE) stage23-uefi32
 	mkdir -p bin
 	cp build/stage23-uefi32/BOOTIA32.EFI ./bin/
+	$(MAKE) bin/limine-eltorito-efi.bin
 
 .PHONY: limine-bios-clean
 limine-bios-clean: stage23-bios-clean decompressor-clean
@@ -90,11 +97,11 @@ limine-bios-clean: stage23-bios-clean decompressor-clean
 limine-uefi-clean: stage23-uefi-clean
 
 .PHONY: limine-uefi32-clean
-limine-uefi-clean: stage23-uefi32-clean
+limine-uefi32-clean: stage23-uefi32-clean
 
 .PHONY: distclean2
 distclean2: clean test-clean
-	rm -rf bin build toolchain ovmf gnu-efi
+	rm -rf bin build toolchain ovmf* gnu-efi
 
 .PHONY: distclean
 distclean: distclean2
@@ -282,9 +289,11 @@ iso9660-test:
 
 .PHONY: full-hybrid-test
 full-hybrid-test:
-	$(MAKE) ovmf
+	$(MAKE) ovmf-x64
+	$(MAKE) ovmf-ia32
 	$(MAKE) test-clean
 	$(MAKE) limine-uefi
+	$(MAKE) limine-uefi32
 	$(MAKE) limine-bios
 	$(MAKE) bin/limine-install
 	$(MAKE) -C test
@@ -293,8 +302,10 @@ full-hybrid-test:
 	cp -rv bin/* test/* test_image/boot/
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine-eltorito-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label test_image/ -o test.iso
 	bin/limine-install test.iso
-	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
-	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.iso -debugcon stdio
+	qemu-system-x86_64 -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.iso -debugcon stdio
+	qemu-system-x86_64 -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.iso -debugcon stdio
 	qemu-system-x86_64 -M q35 -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
 	qemu-system-x86_64 -M q35 -net none -smp 4 -enable-kvm -cpu host -hda test.iso -debugcon stdio
 

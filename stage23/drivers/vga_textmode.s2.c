@@ -176,6 +176,16 @@ void text_get_cursor_pos(int *x, int *y) {
 
 void text_set_cursor_pos(int x, int y) {
     clear_cursor();
+    if (x < 0) {
+        x = 0;
+    } else if (x >= VD_COLS / 2) {
+        x = VD_COLS / 2 - 1;
+    }
+    if (y < 0) {
+        y = 0;
+    } else if (y >= VD_ROWS) {
+        y = VD_ROWS - 1;
+    }
     cursor_offset = y * VD_COLS + x * 2;
     draw_cursor();
 }

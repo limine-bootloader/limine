@@ -356,6 +356,16 @@ bool gterm_disable_cursor(void) {
 
 void gterm_set_cursor_pos(int x, int y) {
     clear_cursor();
+    if (x < 0) {
+        x = 0;
+    } else if (x >= cols) {
+        x = cols - 1;
+    }
+    if (y < 0) {
+        y = 0;
+    } else if (y >= rows) {
+        y = rows - 1;
+    }
     cursor_x = x;
     cursor_y = y;
     draw_cursor();

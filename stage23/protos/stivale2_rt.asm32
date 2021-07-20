@@ -1,0 +1,92 @@
+extern _GLOBAL_OFFSET_TABLE_
+
+section .bss
+
+user_stack:
+    resq 1
+
+user_cs: resq 1
+user_ds: resq 1
+user_es: resq 1
+user_ss: resq 1
+
+%define MAX_TERM_BUF 8192
+
+section .text
+
+extern term_write
+extern stivale2_term_buf
+extern stivale2_rt_stack
+
+bits 64
+global stivale2_term_write_entry
+stivale2_term_write_entry:
+    push rbx
+    push rbp
+    push r12
+    push r13
+    push r14
+    push r15
+
+    call .get_got
+  .get_got:
+    pop rbx
+    add ebx, _GLOBAL_OFFSET_TABLE_ + $$ - .get_got wrt ..gotpc
+
+    mov [rbx + user_stack wrt ..gotoff], rsp
+    mov rsp, [rbx + stivale2_rt_stack wrt ..gotoff]
+
+    mov word [rbx + user_cs wrt ..gotoff], cs
+    mov word [rbx + user_ds wrt ..gotoff], ds
+    mov word [rbx + user_es wrt ..gotoff], es
+    mov word [rbx + user_ss wrt ..gotoff], ss
+
+    push rsi
+    mov rcx, rsi
+    mov rax, MAX_TERM_BUF
+    cmp rcx, rax
+    cmovg rcx, rax
+    mov rsi, rdi
+    mov edi, [rbx + stivale2_term_buf wrt ..gotoff]
+    rep movsb
+    pop rsi
+
+    push 0x18
+    call .p1
+  .p1:
+    pop rax
+    add rax, 8
+    push rax
+    retfq
+bits 32
+  .mode32:
+    mov eax, 0x20
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    push esi
+    push dword [ebx + stivale2_term_buf wrt ..gotoff]
+    call term_write
+    add esp, 8
+    push dword [ebx + user_cs wrt ..gotoff]
+    call .p2
+  .p2:
+    pop eax
+    add eax, 6
+    push eax
+    retfd
+bits 64
+  .mode64:
+    mov ds, word [rbx + user_ds wrt ..gotoff]
+    mov es, word [rbx + user_es wrt ..gotoff]
+    mov ss, word [rbx + user_ss wrt ..gotoff]
+    mov rsp, [rbx + user_stack wrt ..gotoff]
+
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rbp
+    pop rbx
+
+    ret

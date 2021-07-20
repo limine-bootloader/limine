@@ -54,8 +54,10 @@ static void *get_tag(struct stivale2_header *s, uint64_t id) {
     (S)->tags   = REPORTED_ADDR((uint64_t)(uintptr_t)TAG); \
 })
 
-#if bios == 1
+#if defined (__i386__)
 extern symbol stivale2_term_write_entry;
+void *stivale2_rt_stack = NULL;
+void *stivale2_term_buf = NULL;
 #endif
 
 void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table) {
@@ -385,10 +387,16 @@ failed_to_load_header_section:
         // We provide max allowed string length
         tag->flags |= (1 << 1);
 
-#if bios == 1
+#if defined (__i386__)
+        if (stivale2_rt_stack == NULL) {
+            stivale2_rt_stack = ext_mem_alloc(8192);
+        }
+
+        stivale2_term_buf = ext_mem_alloc(8192);
+
         tag->term_write = (uintptr_t)(void *)stivale2_term_write_entry;
-        tag->max_length = 4096;
-#elif uefi == 1
+        tag->max_length = 8192;
+#elif defined (__x86_64__)
         tag->term_write = (uintptr_t)term_write;
         tag->max_length = 0;
 #endif

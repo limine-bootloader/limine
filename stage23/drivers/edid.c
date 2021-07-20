@@ -76,7 +76,7 @@ struct edid_info_struct *get_edid_info(void) {
     EFI_GUID edid_guid = EFI_EDID_ACTIVE_PROTOCOL_GUID;
 
     status = uefi_call_wrapper(gBS->HandleProtocol, 3,
-        handles[0], &edid_guid, &edid);
+        handles[0], &edid_guid, (void **)&edid);
 
     if (status)
         goto fail;

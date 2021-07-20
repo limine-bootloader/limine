@@ -1,0 +1,58 @@
+extern _GLOBAL_OFFSET_TABLE_
+
+extern gdt
+
+section .text
+
+global common_spinup
+bits 32
+common_spinup:
+    cli
+
+    push 0
+    push 0
+    lidt [esp]
+    add esp, 8
+
+    call .get_got
+  .get_got:
+    pop ebx
+    add ebx, _GLOBAL_OFFSET_TABLE_ + $$ - .get_got wrt ..gotpc
+
+    lgdt [ebx + gdt wrt ..gotoff]
+
+    push dword 0x18
+    call .p1
+  .p1:
+    pop eax
+    add eax, 6
+    push eax
+    retfd
+
+  .flush_cs:
+    mov eax, 0x20
+    mov ds, eax
+    mov es, eax
+    mov fs, eax
+    mov gs, eax
+    mov ss, eax
+
+    xor eax, eax
+    lldt ax
+
+    ; We don't need the return address
+    add esp, 4
+
+    ; Get function address
+    pop edi
+
+    ; We don't need the argument count
+    add esp, 4
+
+    mov eax, 0x00000011
+    mov cr0, eax
+
+    xor eax, eax
+    mov cr4, eax
+
+    call edi

@@ -124,7 +124,7 @@ static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, in
     return true;
 }
 
-#define INVALID_PRESET_MODE 0xfffffffff
+#define INVALID_PRESET_MODE 0xffffffff
 
 static size_t preset_mode = INVALID_PRESET_MODE;
 

@@ -9,6 +9,8 @@ ifeq ($(TARGET), bios)
 	OBJCOPY_ARCH = elf32-i386
 else ifeq ($(TARGET), uefi)
 	OBJCOPY_ARCH = elf64-x86-64
+else ifeq ($(TARGET), uefi32)
+	OBJCOPY_ARCH = elf32-i386
 else
 	$(error Invalid target)
 endif
@@ -102,6 +104,17 @@ ifeq ($(TARGET), uefi)
 		-mno-red-zone
 endif
 
+ifeq ($(TARGET), uefi32)
+	INTERNAL_CFLAGS += \
+		-Dbios=0 \
+		-Duefi=1 \
+		-m32 \
+		-march=i386 \
+		-I../gnu-efi/inc \
+		-I../gnu-efi/inc/ia32 \
+		-fpie
+endif
+
 LDFLAGS =
 
 INTERNAL_LDFLAGS := \
@@ -123,6 +136,15 @@ ifeq ($(TARGET), uefi)
 		-ztext
 endif
 
+ifeq ($(TARGET), uefi32)
+	INTERNAL_LDFLAGS += \
+		-melf_i386 \
+		-static \
+		-pie \
+		--no-dynamic-linker \
+		-ztext
+endif
+
 .PHONY: all clean builddir
 
 C_FILES := $(shell find -L ./ -type f -name '*.c' | sort)
@@ -134,6 +156,10 @@ ifeq ($(TARGET), uefi)
 ASM_FILES := $(shell find -L ./ -type f -name '*.asm64' | sort)
 OBJ := $(addprefix $(BUILDDIR)/, $(ASM_FILES:.asm64=.o) $(C_FILES:.c=.o))
 endif
+ifeq ($(TARGET), uefi32)
+ASM_FILES := $(shell find -L ./ -type f -name '*.asm32' | sort)
+OBJ := $(addprefix $(BUILDDIR)/, $(ASM_FILES:.asm32=.o) $(C_FILES:.c=.o))
+endif
 HEADER_DEPS := $(addprefix $(BUILDDIR)/, $(C_FILES:.c=.d))
 
 ifeq ($(TARGET), bios)
@@ -144,6 +170,10 @@ else ifeq ($(TARGET), uefi)
 all:
 	$(MAKE) builddir
 	$(MAKE) $(BUILDDIR)/BOOTX64.EFI
+else ifeq ($(TARGET), uefi32)
+all:
+	$(MAKE) builddir
+	$(MAKE) $(BUILDDIR)/BOOTIA32.EFI
 endif
 
 builddir:
@@ -197,6 +227,9 @@ $(BUILDDIR)/limine_dbg.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampo
 
 endif
 
+$(BUILDDIR)/gnu-efi:
+	cp -r ../gnu-efi $(BUILDDIR)/
+
 ifeq ($(TARGET), uefi)
 
 $(BUILDDIR)/full.map.o: $(BUILDDIR)/limine_efi_nomap.elf
@@ -207,20 +240,48 @@ $(BUILDDIR)/full.map.o: $(BUILDDIR)/limine_efi_nomap.elf
 $(BUILDDIR)/BOOTX64.EFI: $(BUILDDIR)/limine_efi.elf
 	$(TOOLCHAIN_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc -j .sbat --target efi-app-x86_64 --subsystem=10 $< $@
 
-../gnu-efi/gnuefi/crt0-efi-x86_64.o ../gnu-efi/gnuefi/libgnuefi.a:
-	$(MAKE) -C ../gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m64 -march=x86-64" AR="$(TOOLCHAIN_AR)" ARCH=x86_64
+$(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a: $(BUILDDIR)/gnu-efi
+	$(MAKE) -C $(BUILDDIR)/gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m64 -march=x86-64" AR="$(TOOLCHAIN_AR)" ARCH=x86_64
 
-../gnu-efi/lib/x86_64/efi_stub.o:
-	$(MAKE) -C ../gnu-efi/lib CC="$(TOOLCHAIN_CC) -m64 -march=x86-64" ARCH=x86_64 x86_64/efi_stub.o
+$(BUILDDIR)/gnu-efi/lib/x86_64/efi_stub.o: $(BUILDDIR)/gnu-efi
+	$(MAKE) -C $(BUILDDIR)/gnu-efi/lib CC="$(TOOLCHAIN_CC) -m64 -march=x86-64" ARCH=x86_64 x86_64/efi_stub.o
 
-$(BUILDDIR)/limine_efi_nomap.elf: ../gnu-efi/gnuefi/crt0-efi-x86_64.o ../gnu-efi/gnuefi/libgnuefi.a ../gnu-efi/lib/x86_64/efi_stub.o $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
+$(BUILDDIR)/limine_efi_nomap.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(BUILDDIR)/gnu-efi/lib/x86_64/efi_stub.o $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi_nomap.ld \
 		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
-$(BUILDDIR)/limine_efi.elf: ../gnu-efi/gnuefi/crt0-efi-x86_64.o ../gnu-efi/gnuefi/libgnuefi.a ../gnu-efi/lib/x86_64/efi_stub.o  $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
+$(BUILDDIR)/limine_efi.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(BUILDDIR)/gnu-efi/lib/x86_64/efi_stub.o  $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi.ld \
+		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
+
+endif
+
+ifeq ($(TARGET), uefi32)
+
+$(BUILDDIR)/full.map.o: $(BUILDDIR)/limine_efi_nomap.elf
+	GENSYMS="`pwd`/gensyms.sh" && \
+	cd "`dirname $<`" && \
+	"$$GENSYMS" $(TOOLCHAIN_OBJDUMP) $< full 32
+
+$(BUILDDIR)/BOOTIA32.EFI: $(BUILDDIR)/limine_efi.elf
+	$(TOOLCHAIN_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc -j .sbat --target efi-app-ia32 --subsystem=10 $< $@
+
+$(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a: $(BUILDDIR)/gnu-efi
+	$(MAKE) -C $(BUILDDIR)/gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m32 -march=i386" AR="$(TOOLCHAIN_AR)" ARCH=ia32
+
+$(BUILDDIR)/gnu-efi/lib/ia32/efi_stub.o: $(BUILDDIR)/gnu-efi
+	$(MAKE) -C $(BUILDDIR)/gnu-efi/lib CC="$(TOOLCHAIN_CC) -m32 -march=i386" ARCH=ia32 ia32/efi_stub.o
+
+$(BUILDDIR)/limine_efi_nomap.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(BUILDDIR)/gnu-efi/lib/ia32/efi_stub.o $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
+	$(TOOLCHAIN_LD) \
+		-Tlinker_uefi32_nomap.ld \
+		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
+
+$(BUILDDIR)/limine_efi.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(BUILDDIR)/gnu-efi/lib/ia32/efi_stub.o  $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
+	$(TOOLCHAIN_LD) \
+		-Tlinker_uefi32.ld \
 		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
 endif
@@ -254,6 +315,11 @@ endif
 ifeq ($(TARGET), uefi)
 $(BUILDDIR)/%.o: %.asm64
 	nasm $< -F dwarf -g -Werror -f elf64 -o $@
+endif
+
+ifeq ($(TARGET), uefi32)
+$(BUILDDIR)/%.o: %.asm32
+	nasm $< -F dwarf -g -Werror -f elf32 -o $@
 endif
 
 clean:

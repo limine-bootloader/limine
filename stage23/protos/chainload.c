@@ -161,7 +161,8 @@ void chainload(char *config) {
 
     EFI_HANDLE new_handle = 0;
 
-    status = uefi_call_wrapper(gBS->LoadImage, 6, 0, efi_image_handle, memdev_path,
+    status = uefi_call_wrapper(gBS->LoadImage, 6, 0, efi_image_handle,
+                               (EFI_DEVICE_PATH *)memdev_path,
                                ptr, image_size, &new_handle);
     if (status) {
         panic("chainload: LoadImage failure (%x)", status);
@@ -174,7 +175,7 @@ void chainload(char *config) {
     EFI_LOADED_IMAGE_PROTOCOL *loader_loaded_image = NULL;
     status = uefi_call_wrapper(gBS->HandleProtocol, 3,
                                efi_image_handle, &loaded_img_prot_guid,
-                               &loader_loaded_image);
+                               (void **)&loader_loaded_image);
     if (status) {
         panic("chainload: HandleProtocol failure (%x)", status);
     }
@@ -182,7 +183,7 @@ void chainload(char *config) {
     EFI_LOADED_IMAGE_PROTOCOL *new_handle_loaded_image = NULL;
     status = uefi_call_wrapper(gBS->HandleProtocol, 3,
                                new_handle, &loaded_img_prot_guid,
-                               &new_handle_loaded_image);
+                               (void **)&new_handle_loaded_image);
     if (status) {
         panic("chainload: HandleProtocol failure (%x)", status);
     }

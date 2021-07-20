@@ -207,11 +207,11 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE *efi_handle) {
     EFI_BLOCK_IO *block_io = NULL;
 
     status = uefi_call_wrapper(gBS->HandleProtocol, 3, efi_handle, &disk_io_guid,
-                               &disk_io);
+                               (void **)&disk_io);
     if (status)
         return NULL;
     status = uefi_call_wrapper(gBS->HandleProtocol, 3, efi_handle, &block_io_guid,
-                               &block_io);
+                               (void **)&block_io);
     if (status)
         return NULL;
 
@@ -241,9 +241,9 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE *efi_handle) {
         EFI_BLOCK_IO *cur_block_io = NULL;
 
         uefi_call_wrapper(gBS->HandleProtocol, 3, volume_index[i]->efi_handle,
-                          &disk_io_guid, &cur_disk_io);
+                          &disk_io_guid, (void **)&cur_disk_io);
         uefi_call_wrapper(gBS->HandleProtocol, 3, volume_index[i]->efi_handle,
-                          &block_io_guid, &cur_block_io);
+                          &block_io_guid, (void **)&cur_block_io);
 
         uefi_call_wrapper(cur_disk_io->ReadDisk, 5, cur_disk_io,
                           cur_block_io->Media->MediaId,
@@ -270,7 +270,7 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
     EFI_BLOCK_IO *block_io = NULL;
 
     status = uefi_call_wrapper(gBS->HandleProtocol, 3, volume->efi_handle,
-                               &block_io_guid, &block_io);
+                               &block_io_guid, (void **)&block_io);
 
     status = uefi_call_wrapper(block_io->ReadBlocks, 5, block_io,
                                block_io->Media->MediaId,
@@ -306,7 +306,7 @@ void disk_create_index(void) {
         EFI_BLOCK_IO *block_io = NULL;
 
         status = uefi_call_wrapper(gBS->HandleProtocol, 3, handles[i],
-                                   &block_io_guid, &block_io);
+                                   &block_io_guid, (void **)&block_io);
 
         if (status != 0 || block_io == NULL || block_io->Media->LastBlock == 0)
             continue;
@@ -343,12 +343,12 @@ void disk_create_index(void) {
         EFI_DISK_IO *disk_io = NULL;
 
         uefi_call_wrapper(gBS->HandleProtocol, 3, handles[i], &disk_io_guid,
-                          &disk_io);
+                          (void **)&disk_io);
 
         EFI_BLOCK_IO *drive = NULL;
 
         status = uefi_call_wrapper(gBS->HandleProtocol, 3, handles[i],
-                                   &block_io_guid, &drive);
+                                   &block_io_guid, (void **)&drive);
 
         if (status != 0 || drive == NULL || drive->Media->LastBlock == 0)
             continue;

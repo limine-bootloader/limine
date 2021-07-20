@@ -267,7 +267,7 @@ void init_memmap(void) {
     efi_mmap_size += 4096;
 
     status = uefi_call_wrapper(gBS->AllocatePool, 3,
-        EfiLoaderData, efi_mmap_size, &efi_mmap);
+        EfiLoaderData, efi_mmap_size, (void **)&efi_mmap);
 
     status = uefi_call_wrapper(gBS->GetMemoryMap, 5,
         &efi_mmap_size, efi_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);

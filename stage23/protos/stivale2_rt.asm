@@ -8,14 +8,13 @@ user_ds: resq 1
 user_es: resq 1
 user_ss: resq 1
 
-%define MAX_TERM_BUF 4096
-
-term_buf:
-    resb MAX_TERM_BUF
+%define MAX_TERM_BUF 8192
 
 section .text
 
 extern term_write
+extern stivale2_term_buf
+extern stivale2_rt_stack
 
 bits 64
 global stivale2_term_write_entry
@@ -28,7 +27,7 @@ stivale2_term_write_entry:
     push r15
 
     mov [user_stack], rsp
-    mov rsp, 0x7c00
+    mov rsp, [stivale2_rt_stack]
 
     mov word [user_cs], cs
     mov word [user_ds], ds
@@ -41,7 +40,7 @@ stivale2_term_write_entry:
     cmp rcx, rax
     cmovg rcx, rax
     mov rsi, rdi
-    mov edi, term_buf
+    mov edi, [stivale2_term_buf]
     rep movsb
     pop rsi
 
@@ -55,7 +54,7 @@ bits 32
     mov es, ax
     mov ss, ax
     push esi
-    push term_buf
+    push dword [stivale2_term_buf]
     call term_write
     add esp, 8
     push dword [user_cs]

@@ -76,11 +76,21 @@ limine-uefi:
 	cp build/stage23-uefi/BOOTX64.EFI ./bin/
 	$(MAKE) bin/limine-eltorito-efi.bin
 
+.PHONY: limine-uefi32
+limine-uefi32:
+	$(MAKE) gnu-efi
+	$(MAKE) stage23-uefi32
+	mkdir -p bin
+	cp build/stage23-uefi32/BOOTIA32.EFI ./bin/
+
 .PHONY: limine-bios-clean
 limine-bios-clean: stage23-bios-clean decompressor-clean
 
 .PHONY: limine-uefi-clean
 limine-uefi-clean: stage23-uefi-clean
+
+.PHONY: limine-uefi32-clean
+limine-uefi-clean: stage23-uefi32-clean
 
 .PHONY: distclean2
 distclean2: clean test-clean
@@ -100,6 +110,14 @@ stage23-uefi: stivale
 .PHONY: stage23-uefi-clean
 stage23-uefi-clean:
 	$(MAKE) -C stage23 clean TARGET=uefi BUILDDIR="`pwd`/build/stage23-uefi"
+
+.PHONY: stage23-uefi32
+stage23-uefi32: stivale
+	$(MAKE) -C stage23 all TARGET=uefi32 BUILDDIR="`pwd`/build/stage23-uefi32"
+
+.PHONY: stage23-uefi32-clean
+stage23-uefi32-clean:
+	$(MAKE) -C stage23 clean TARGET=uefi32 BUILDDIR="`pwd`/build/stage23-uefi32"
 
 .PHONY: stage23-bios
 stage23-bios: stivale
@@ -128,11 +146,15 @@ toolchain:
 
 gnu-efi:
 	git clone https://git.code.sf.net/p/gnu-efi/code --branch=3.0.13 --depth=1 $@
-	cp aux/elf.h gnu-efi/inc/
+	cp aux/elf/* gnu-efi/inc/
 
-ovmf:
-	mkdir -p ovmf
-	cd ovmf && curl -o OVMF-X64.zip https://efi.akeo.ie/OVMF/OVMF-X64.zip && 7z x OVMF-X64.zip
+ovmf-x64:
+	mkdir -p ovmf-x64
+	cd ovmf-x64 && curl -o OVMF-X64.zip https://efi.akeo.ie/OVMF/OVMF-X64.zip && 7z x OVMF-X64.zip
+
+ovmf-ia32:
+	mkdir -p ovmf-ia32
+	cd ovmf-ia32 && curl -o OVMF-IA32.zip https://efi.akeo.ie/OVMF/OVMF-IA32.zip && 7z x OVMF-IA32.zip
 
 .PHONY: test.hdd
 test.hdd:
@@ -288,7 +310,7 @@ pxe-test:
 
 .PHONY: uefi-test
 uefi-test:
-	$(MAKE) ovmf
+	$(MAKE) ovmf-x64
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-uefi
@@ -307,4 +329,27 @@ uefi-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf-x64/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+
+.PHONY: uefi32-test
+uefi32-test:
+	$(MAKE) ovmf-ia32
+	$(MAKE) test-clean
+	$(MAKE) test.hdd
+	$(MAKE) limine-uefi32
+	$(MAKE) -C test
+	rm -rf test_image/
+	mkdir test_image
+	sudo losetup -Pf --show test.hdd > loopback_dev
+	sudo partprobe `cat loopback_dev`
+	sudo mkfs.fat -F 32 `cat loopback_dev`p1
+	sudo mount `cat loopback_dev`p1 test_image
+	sudo mkdir test_image/boot
+	sudo cp -rv bin/* test/* test_image/boot/
+	sudo mkdir -p test_image/EFI/BOOT
+	sudo cp bin/BOOTIA32.EFI test_image/EFI/BOOT/
+	sync
+	sudo umount test_image/
+	sudo losetup -d `cat loopback_dev`
+	rm -rf test_image loopback_dev
+	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf-ia32/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio

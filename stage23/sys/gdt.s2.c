@@ -65,7 +65,7 @@ __attribute__((section(".realmode")))
 struct gdtr gdt = {
     sizeof(gdt_descs) - 1,
     (uintptr_t)gdt_descs,
-#if bios == 1
+#if defined (__i386__)
     0
 #endif
 };

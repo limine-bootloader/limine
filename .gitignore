@@ -2,7 +2,7 @@
 /build
 /toolchain
 /gnu-efi
-/ovmf
+/ovmf*
 /**/*.o
 /**/*.d
 /**/*.a

@@ -5,10 +5,9 @@
 
 struct gdtr {
     uint16_t limit;
-#if uefi == 1
+#if defined (__x86_64__)
     uint64_t ptr;
-#endif
-#if bios == 1
+#elif defined (__i386__)
     uint32_t ptr;
     uint32_t pad;
 #endif

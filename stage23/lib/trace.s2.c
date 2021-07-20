@@ -48,9 +48,9 @@ static char *trace_address(size_t *off, size_t addr) {
 void print_stacktrace(size_t *base_ptr) {
     if (base_ptr == NULL) {
         asm volatile (
-#if bios == 1
+#if defined (__i386__)
             "movl %%ebp, %0"
-#elif uefi == 1
+#elif defined (__x86_64__)
             "movq %%rbp, %0"
 #endif
             : "=g"(base_ptr)

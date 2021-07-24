@@ -292,7 +292,7 @@ int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
     return 2;
 }
 
-static uint64_t elf64_max_align(uint8_t *elf, bool use_paddr) {
+static uint64_t elf64_max_align(uint8_t *elf) {
     uint64_t ret = 0;
 
     struct elf64_hdr hdr;
@@ -306,24 +306,8 @@ static uint64_t elf64_max_align(uint8_t *elf, bool use_paddr) {
         if (phdr.p_type != PT_LOAD)
             continue;
 
-        uint64_t load_addr = 0;
-
-        if (use_paddr) {
-            load_addr = phdr.p_paddr;
-        } else {
-            load_addr = phdr.p_vaddr;
-        }
-
-        size_t trailing_zeros = get_trailing_zeros(load_addr);
-        uint64_t align = (uint64_t)1 << trailing_zeros;
-
-        if (align < 0x1000) {
-            // We don't do kernels that don't align their load addresses to 4K at least.
-            panic("elf: The executable contains non-4KiB aligned segments");
-        }
-
-        if (align > ret) {
-            ret = align;
+        if (phdr.p_align > ret) {
+            ret = phdr.p_align;
         }
     }
 
@@ -372,8 +356,10 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
 
         load_addr += slide;
 
-        ranges[r].base = load_addr;
-        ranges[r].length = ALIGN_UP(phdr.p_memsz, 4096);
+        uint64_t this_top = load_addr + phdr.p_memsz;
+
+        ranges[r].base = load_addr & ~(phdr.p_align - 1);
+        ranges[r].length = ALIGN_UP(this_top - ranges[r].base, 4096);
         ranges[r].permissions = phdr.p_flags & 0b111;
 
         r++;
@@ -388,18 +374,16 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
-        print("elf: Not a valid ELF file.\n");
+        printv("elf: Not a valid ELF file.\n");
         return -1;
     }
 
     if (hdr.ident[EI_DATA] != BITS_LE) {
-        print("elf: Not a Little-endian ELF file.\n");
-        return -1;
+        panic("elf: Not a Little-endian ELF file.\n");
     }
 
     if (hdr.machine != ARCH_X86_64) {
-        print("elf: Not an x86_64 ELF file.\n");
-        return -1;
+        panic("elf: Not an x86_64 ELF file.\n");
     }
 
     uint64_t slide = 0;
@@ -412,7 +396,7 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
 
     uint64_t max_align = 1;
     if (ranges != NULL) {
-        max_align = elf64_max_align(elf, use_paddr);
+        max_align = elf64_max_align(elf);
     }
 
     if (!elf64_is_relocatable(elf, &hdr)) {
@@ -449,23 +433,28 @@ final:
 
         load_addr += slide;
 
-        uint64_t load_size;
-        if (ranges != NULL) {
-            load_size = ALIGN_UP(phdr.p_memsz, 4096);
-        } else {
-            load_size = phdr.p_memsz;
-        }
+        uint64_t this_top = load_addr + phdr.p_memsz;
 
         if (top) {
-            uint64_t this_top = load_addr + load_size;
             if (this_top > *top) {
                 *top = this_top;
             }
         }
 
-        if (!memmap_alloc_range((size_t)load_addr, (size_t)load_size, alloc_type, true, false, simulation, false)) {
-            if (++try_count == max_simulated_tries || simulation == false)
-                return -1;
+        uint64_t mem_base, mem_size;
+
+        if (ranges) {
+            mem_base = load_addr & ~(phdr.p_align - 1);
+            mem_size = this_top - mem_base;
+        } else {
+            mem_base = load_addr;
+            mem_size = phdr.p_memsz;
+        }
+
+        if (!memmap_alloc_range((size_t)mem_base, (size_t)mem_size, alloc_type, true, false, simulation, false)) {
+            if (++try_count == max_simulated_tries || simulation == false) {
+                panic("elf: Failed to allocate necessary memory ranges");
+            }
             if (!kaslr)
                 slide += 0x1000;
             goto again;
@@ -473,15 +462,16 @@ final:
 
         memcpy((void *)(uintptr_t)load_addr, elf + (phdr.p_offset), phdr.p_filesz);
 
-        size_t to_zero = (size_t)(load_size - phdr.p_filesz);
+        size_t to_zero = (size_t)(phdr.p_memsz - phdr.p_filesz);
 
         if (to_zero) {
             void *ptr = (void *)(uintptr_t)(load_addr + phdr.p_filesz);
             memset(ptr, 0, to_zero);
         }
 
-        if (elf64_apply_relocations(elf, &hdr, (void *)(uintptr_t)load_addr, phdr.p_vaddr, phdr.p_memsz, slide))
-            return -1;
+        if (elf64_apply_relocations(elf, &hdr, (void *)(uintptr_t)load_addr, phdr.p_vaddr, phdr.p_memsz, slide)) {
+            panic("elf: Failed to apply relocations");
+        }
 
         if (use_paddr) {
             if (!entry_adjusted && entry >= phdr.p_vaddr && entry <= (phdr.p_vaddr + phdr.p_memsz)) {

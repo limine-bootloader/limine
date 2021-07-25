@@ -34,7 +34,7 @@ stivale2_term_write_entry:
     add ebx, _GLOBAL_OFFSET_TABLE_ + $$ - .get_got wrt ..gotpc
 
     mov [rbx + user_stack wrt ..gotoff], rsp
-    mov rsp, [rbx + stivale2_rt_stack wrt ..gotoff]
+    mov esp, [rbx + stivale2_rt_stack wrt ..gotoff]
 
     mov word [rbx + user_cs wrt ..gotoff], cs
     mov word [rbx + user_ds wrt ..gotoff], ds

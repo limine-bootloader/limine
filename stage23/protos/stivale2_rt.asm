@@ -27,7 +27,7 @@ stivale2_term_write_entry:
     push r15
 
     mov [user_stack], rsp
-    mov rsp, [stivale2_rt_stack]
+    mov esp, [stivale2_rt_stack]
 
     mov word [user_cs], cs
     mov word [user_ds], ds

@@ -229,6 +229,9 @@ endif
 
 $(BUILDDIR)/gnu-efi:
 	cp -r ../gnu-efi $(BUILDDIR)/
+	# gnu-efi's build system is broken and fails to actually detect clang.
+	# This is a workaround.
+	sed -i 's/-maccumulate-outgoing-args//g' $(BUILDDIR)/gnu-efi/Make.defaults
 
 ifeq ($(TARGET), uefi)
 

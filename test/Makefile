@@ -1,17 +1,37 @@
 CC              = cc
 CFLAGS          = -O2
-LD              = cc
+LDFLAGS         =
+LD              = ld
 QEMU            = qemu-system-x86_64
 QEMUFLAGS       = -m 1G -enable-kvm -cpu host
-LDINTERNALFLAGS := -Tlinker.ld -nostdlib -fno-pic -fpie -z max-page-size=0x1000 \
-	-Wl,-static,-pie,--no-dynamic-linker,-ztext -static-pie
-INTERNALCFLAGS  := -I../stivale -I. -ffreestanding -fno-stack-protector \
-	-fno-pic -fpie -mno-red-zone -mno-80387 -mno-mmx -mno-3dnow -mno-sse -mno-sse2
+
+INTERNALLDFLAGS :=         \
+	-Tlinker.ld            \
+	-nostdlib              \
+	-zmax-page-size=0x1000 \
+	-static                \
+	-pie                   \
+	--no-dynamic-linker    \
+	-ztext
+
+INTERNALCFLAGS  :=       \
+	-I../stivale         \
+	-I.                  \
+	-std=gnu11           \
+	-ffreestanding       \
+	-fno-stack-protector \
+	-fno-pic -fpie       \
+	-mno-80387           \
+	-mno-mmx             \
+	-mno-3dnow           \
+	-mno-sse             \
+	-mno-sse2            \
+	-mno-red-zone
 
 all: test.elf
 
 test.elf: stivale.o stivale2.o e9print.o memory.o
-	$(LD) $(LDINTERNALFLAGS) $^ -o test.elf
+	$(LD) $^ $(LDFLAGS) $(INTERNALLDFLAGS) -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -c $< -o $@

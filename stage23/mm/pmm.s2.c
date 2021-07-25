@@ -113,7 +113,7 @@ static bool align_entry(uint64_t *base, uint64_t *length) {
 static void sanitise_entries(struct e820_entry_t *m, size_t *_count, bool align_entries) {
     size_t count = *_count;
 
-    for (size_t i = 0; i < memmap_entries; i++) {
+    for (size_t i = 0; i < count; i++) {
         if (m[i].type != MEMMAP_USABLE)
             continue;
 
@@ -151,8 +151,8 @@ static void sanitise_entries(struct e820_entry_t *m, size_t *_count, bool align_
         if (!m[i].length
          || (align_entries && !align_entry(&m[i].base, &m[i].length))) {
             // Eradicate from memmap
-            for (size_t j = i; j < count - 1; j++) {
-                m[j] = m[j+1];
+            for (size_t j = i + 1; j < count; j++) {
+                m[j - 1] = m[j];
             }
             count--;
             i--;
@@ -185,8 +185,8 @@ static void sanitise_entries(struct e820_entry_t *m, size_t *_count, bool align_
             m[i].length += m[i+1].length;
 
             // Eradicate from memmap
-            for (size_t j = i+1; j < count - 1; j++) {
-                m[j] = m[j+1];
+            for (size_t j = i + 2; j < count; j++) {
+                m[j - 1] = m[j];
             }
             count--;
             i--;

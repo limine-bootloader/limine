@@ -25,7 +25,7 @@ TOOLCHAIN_OBJDUMP = $(TOOLCHAIN)-objdump
 TOOLCHAIN_READELF = $(TOOLCHAIN)-readelf
 
 ifeq ($(shell command -v $(TOOLCHAIN_CC) ; ), )
-TOOLCHAIN_CC := gcc
+TOOLCHAIN_CC := cc
 endif
 ifeq ($(shell command -v $(TOOLCHAIN_LD) ; ), )
 TOOLCHAIN_LD := ld
@@ -46,7 +46,7 @@ endif
 COM_OUTPUT = false
 E9_OUTPUT = false
 
-BUILD_ID := $(shell dd if=/dev/urandom count=8 bs=1 2>/dev/null | od -An -t x8 | sed 's/^ /0x/')
+BUILD_ID := $(shell dd if=/dev/urandom count=8 bs=1 2>/dev/null | od -An -t x4 | sed 's/^ /0x/g;s/ //g')
 LIMINE_VERSION := $(shell cat ../version 2>/dev/null || ( git describe --exact-match --tags `git log -n1 --pretty='%h'` 2>/dev/null || ( git log -n1 --pretty='%h' && echo -n "(`git branch --show-current`)" ) ) )
 
 WERROR = -Werror
@@ -231,7 +231,8 @@ $(BUILDDIR)/gnu-efi:
 	cp -r ../gnu-efi $(BUILDDIR)/
 	# gnu-efi's build system is broken and fails to actually detect clang.
 	# This is a workaround.
-	sed -i 's/-maccumulate-outgoing-args//g' $(BUILDDIR)/gnu-efi/Make.defaults
+	sed 's/-maccumulate-outgoing-args//g' < "$(BUILDDIR)/gnu-efi/Make.defaults" > sed.tmp
+	mv sed.tmp "$(BUILDDIR)/gnu-efi/Make.defaults"
 
 ifeq ($(TARGET), uefi)
 

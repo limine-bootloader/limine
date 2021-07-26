@@ -11,7 +11,7 @@ TOOLCHAIN_LD = $(TOOLCHAIN)-ld
 TOOLCHAIN_OBJCOPY = $(TOOLCHAIN)-objcopy
 
 ifeq ($(shell command -v $(TOOLCHAIN_CC) ; ), )
-TOOLCHAIN_CC := gcc
+TOOLCHAIN_CC := cc
 endif
 ifeq ($(shell command -v $(TOOLCHAIN_LD) ; ), )
 TOOLCHAIN_LD := ld

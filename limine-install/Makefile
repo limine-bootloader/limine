@@ -5,7 +5,6 @@ PREFIX = /usr/local
 DESTDIR =
 
 LIMINE_HDD_BIN = limine-hdd.bin
-BUILD_DIR = $(shell realpath .)
 
 CFLAGS = -O2 -pipe -Wall -Wextra
 

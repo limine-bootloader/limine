@@ -2,19 +2,24 @@ PREFIX = /usr/local
 DESTDIR =
 
 PATH := $(shell pwd)/toolchain/bin:$(PATH)
-SHELL := /usr/bin/env bash
+
+NCPUS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 
 TOOLCHAIN = x86_64-elf
 
 TOOLCHAIN_CC = $(TOOLCHAIN)-gcc
 
 ifeq ($(shell export "PATH=$(PATH)"; command -v $(TOOLCHAIN_CC) ; ), )
-TOOLCHAIN_CC := gcc
+TOOLCHAIN_CC := cc
 endif
 
 ifneq ($(MAKECMDGOALS), toolchain)
+ifneq ($(MAKECMDGOALS), distclean)
+ifneq ($(MAKECMDGOALS), distclean2)
 ifneq ($(shell export "PATH=$(PATH)"; $(TOOLCHAIN_CC) -dumpmachine | head -c 6), x86_64)
-$(error No suitable x86_64 GCC compiler found, please install an x86_64 GCC toolchain or run "make toolchain")
+$(error No suitable x86_64 C compiler found, please install an x86_64 C toolchain or run "make toolchain")
+endif
+endif
 endif
 endif
 
@@ -29,7 +34,7 @@ all:
 
 .PHONY: bin/limine-install
 bin/limine-install:
-	$(MAKE) -C limine-install LIMINE_HDD_BIN=`realpath bin`/limine-hdd.bin
+	$(MAKE) -C limine-install LIMINE_HDD_BIN="`pwd`/bin/limine-hdd.bin"
 	[ -f limine-install/limine-install ] && cp limine-install/limine-install bin/ || true
 	[ -f limine-install/limine-install.exe ] && cp limine-install/limine-install.exe bin/ || true
 
@@ -149,7 +154,7 @@ test-clean:
 
 .PHONY: toolchain
 toolchain:
-	aux/make_toolchain.sh "`realpath ./toolchain`" -j`nproc`
+	MAKE="$(MAKE)" aux/make_toolchain.sh "`pwd`/toolchain" -j$(NCPUS)
 
 gnu-efi:
 	git clone https://git.code.sf.net/p/gnu-efi/code --branch=3.0.13 --depth=1 $@

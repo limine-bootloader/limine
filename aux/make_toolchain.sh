@@ -1,10 +1,9 @@
 #!/bin/sh
 
-set -e
-set -x
+set -ex
 
 TARGET=x86_64-elf
-BINUTILSVERSION=2.36.1
+BINUTILSVERSION=2.37
 GCCVERSION=11.1.0
 
 CFLAGS="-O2 -pipe"
@@ -33,8 +32,8 @@ tar -xf ../gcc-$GCCVERSION.tar.gz
 mkdir build-binutils
 cd build-binutils
 ../binutils-$BINUTILSVERSION/configure CFLAGS="$CFLAGS" CXXFLAGS="$CFLAGS"  --target=$TARGET --prefix="$PREFIX" --with-sysroot --disable-nls --disable-werror --enable-targets=x86_64-elf,x86_64-pe
-make
-make install
+$MAKE
+$MAKE install
 cd ..
 
 cd gcc-$GCCVERSION
@@ -43,8 +42,8 @@ cd ..
 mkdir build-gcc
 cd build-gcc
 ../gcc-$GCCVERSION/configure CFLAGS="$CFLAGS" CXXFLAGS="$CFLAGS" --target=$TARGET --prefix="$PREFIX" --disable-nls --enable-languages=c --without-headers
-make all-gcc
-make all-target-libgcc
-make install-gcc
-make install-target-libgcc
+$MAKE all-gcc
+$MAKE all-target-libgcc
+$MAKE install-gcc
+$MAKE install-target-libgcc
 cd ..

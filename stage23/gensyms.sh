@@ -1,7 +1,8 @@
 #!/bin/sh
 
 set -e
-set -o pipefail || true
+
+./test_pipefail.sh && set -o pipefail
 
 TMP1=$(mktemp)
 TMP2=$(mktemp)

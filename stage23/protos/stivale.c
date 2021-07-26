@@ -174,6 +174,12 @@ void stivale_load(char *config, char *cmdline) {
         print("stivale: Requested stack at: %X\n", stivale_hdr.stack);
     }
 
+    // Check if the requested stack is correctly aligned at a word
+    // boundary (8 bytes on x64 and 4 bytes on x86).
+    if ((stivale_hdr.stack & (sizeof(size_t) - 1)) != 0) {
+        print("warn: Requested stack is not aligned at word boundary.");
+    }
+
     stivale_struct.module_count = 0;
     uint64_t *prev_mod_ptr = &stivale_struct.modules;
     for (int i = 0; ; i++) {

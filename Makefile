@@ -13,11 +13,15 @@ ifeq ($(shell export "PATH=$(PATH)"; command -v $(TOOLCHAIN_CC) ; ), )
 TOOLCHAIN_CC := cc
 endif
 
+CC_MACHINE := $(shell export "PATH=$(PATH)"; $(TOOLCHAIN_CC) -dumpmachine | dd bs=6 count=1 2>/dev/null)
+
 ifneq ($(MAKECMDGOALS), toolchain)
 ifneq ($(MAKECMDGOALS), distclean)
 ifneq ($(MAKECMDGOALS), distclean2)
-ifneq ($(shell export "PATH=$(PATH)"; $(TOOLCHAIN_CC) -dumpmachine | head -c 6), x86_64)
+ifneq ($(CC_MACHINE), x86_64)
+ifneq ($(CC_MACHINE), amd64-)
 $(error No suitable x86_64 C compiler found, please install an x86_64 C toolchain or run "make toolchain")
+endif
 endif
 endif
 endif

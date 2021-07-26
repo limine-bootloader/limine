@@ -75,7 +75,7 @@ with Limine. If on an x86_64 host, with GCC or Clang installed, you can skip to
 the next paragraph in order to use the system's toolchain instead.
 
 The toolchain's build process depends on the following packages: `GNU make`,
-`curl`, `gcc/clang`, `g++/clang++`.
+`curl`, `gzip`, `bzip2`, `gcc/clang`, `g++/clang++`.
 
 Building the toolchain can be accomplished by running:
 ```bash

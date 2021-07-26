@@ -8,6 +8,13 @@ GCCVERSION=11.1.0
 
 CFLAGS="-O2 -pipe"
 
+if [ "$(uname)" = "OpenBSD" ]; then
+    # OpenBSD has an awfully ancient GCC which fails to build our toolchain.
+    # Force clang/clang++.
+    export CC="clang"
+    export CXX="clang++"
+fi
+
 mkdir -p "$1" && cd "$1"
 PREFIX="$(pwd)"
 
@@ -26,8 +33,8 @@ rm -rf build
 mkdir build
 cd build
 
-tar -xf ../binutils-$BINUTILSVERSION.tar.gz
-tar -xf ../gcc-$GCCVERSION.tar.gz
+tar -zxf ../binutils-$BINUTILSVERSION.tar.gz
+tar -zxf ../gcc-$GCCVERSION.tar.gz
 
 mkdir build-binutils
 cd build-binutils

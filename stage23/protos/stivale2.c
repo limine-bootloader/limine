@@ -193,6 +193,16 @@ failed_to_load_header_section:
         print("stivale2: Requested stack at: %X\n", stivale2_hdr.stack);
     }
 
+    // The spec says the stack has to be 16-byte aligned
+    if ((stivale2_hdr.stack & (16 - 1)) != 0) {
+        panic("stivale2: Requested stack is not 16-byte aligned");
+    }
+
+    // It also says the stack cannot be NULL for 32-bit kernels
+    if (bits == 32 && stivale2_hdr.stack == 0) {
+        panic("stivale2: The stack cannot be 0 for 32-bit kernels");
+    }
+
     strcpy(stivale2_struct.bootloader_brand, "Limine");
     strcpy(stivale2_struct.bootloader_version, LIMINE_VERSION);
 

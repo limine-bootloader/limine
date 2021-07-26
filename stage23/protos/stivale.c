@@ -174,6 +174,16 @@ void stivale_load(char *config, char *cmdline) {
         print("stivale: Requested stack at: %X\n", stivale_hdr.stack);
     }
 
+    // The spec says the stack has to be 16-byte aligned
+    if ((stivale_hdr.stack & (16 - 1)) != 0) {
+        panic("stivale: Requested stack is not 16-byte aligned\n");
+    }
+
+    // It also says the stack cannot be NULL for 32-bit kernels
+    if (bits == 32 && stivale_hdr.stack == 0) {
+        panic("stivale: The stack cannot be 0 for 32-bit kernels");
+    }
+
     stivale_struct.module_count = 0;
     uint64_t *prev_mod_ptr = &stivale_struct.modules;
     for (int i = 0; ; i++) {

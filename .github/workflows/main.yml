@@ -83,7 +83,7 @@ jobs:
           git fetch --all
           git checkout $BRANCH_NAME-binary || git checkout --orphan $BRANCH_NAME-binary
           rm -rf $(ls -a | grep -v '^\.git$' | grep -v '^\.\.$' | grep -v '^\.$' | grep -v '^bin$')
-          mv bin/* ./
+          cp -r bin/. ./
           rm -rf bin
           git add .
           git commit -m "Binary release $TAG_NAME"

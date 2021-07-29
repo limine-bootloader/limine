@@ -1,5 +1,4 @@
 CC = cc
-OBJCOPY = objcopy
 
 PREFIX = /usr/local
 DESTDIR =
@@ -8,7 +7,7 @@ LIMINE_HDD_BIN = limine-hdd.bin
 
 CFLAGS = -O2 -pipe -Wall -Wextra
 
-.PHONY: all clean
+.PHONY: all install clean
 
 all: limine-install
 

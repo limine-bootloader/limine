@@ -8,8 +8,6 @@
 #include <mm/pmm.h>
 #include <fs/file.h>
 
-#define KASLR_SLIDE_BITMASK ((uintptr_t)0x8ffff000)
-
 #define PT_LOAD     0x00000001
 #define PT_INTERP   0x00000003
 #define PT_PHDR     0x00000006
@@ -394,10 +392,7 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
     uint64_t entry = hdr.entry;
     bool entry_adjusted = false;
 
-    uint64_t max_align = 1;
-    if (ranges != NULL) {
-        max_align = elf64_max_align(elf);
-    }
+    uint64_t max_align = elf64_max_align(elf);
 
     if (!elf64_is_relocatable(elf, &hdr)) {
         simulation = false;
@@ -406,11 +401,13 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
 
 again:
     if (kaslr)
-        slide = (rand64() & KASLR_SLIDE_BITMASK) & ~(max_align - 1);
+        slide = rand32() & ~(max_align - 1);
 
 final:
     if (top)
         *top = 0;
+
+    bool higher_half = false;
 
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf64_phdr phdr;
@@ -427,13 +424,24 @@ final:
         } else {
             load_addr = phdr.p_vaddr;
 
-            if (load_addr & ((uint64_t)1 << 63))
+            if (load_addr & ((uint64_t)1 << 63)) {
+                higher_half = true;
                 load_addr -= FIXED_HIGHER_HALF_OFFSET_64;
+            }
+        }
+
+        if (higher_half == true && load_addr + phdr.p_memsz > 0x80000000) {
+            panic("elf: Higher half executable trying to load too high");
         }
 
         load_addr += slide;
 
         uint64_t this_top = load_addr + phdr.p_memsz;
+
+        // Make sure we don't overshoot due to KASLR
+        if (higher_half == true && this_top > 0x80000000) {
+            goto again;
+        }
 
         if (top) {
             if (this_top > *top) {

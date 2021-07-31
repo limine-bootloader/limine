@@ -459,6 +459,7 @@ skip_modeset:;
         init_vga_textmode(&rows, &cols, false);
 
         struct stivale2_struct_tag_textmode *tmtag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_textmode));
+        tmtag->tag.identifier = STIVALE2_STRUCT_TAG_TEXTMODE_ID;
 
         tmtag->address = 0xb8000;
         tmtag->rows = 25;

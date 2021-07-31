@@ -29,6 +29,7 @@ void term_vbe(int width, int height) {
     set_text_bg    = gterm_set_text_bg;
     scroll_disable = gterm_scroll_disable;
     scroll_enable  = gterm_scroll_enable;
+    term_move_character = gterm_move_character;
 
     term_double_buffer       = gterm_double_buffer;
     term_double_buffer_flush = gterm_double_buffer_flush;

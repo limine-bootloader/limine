@@ -376,6 +376,15 @@ void gterm_get_cursor_pos(int *x, int *y) {
     *y = cursor_y;
 }
 
+void gterm_move_character(int new_x, int new_y, int old_x, int old_y) {
+    if (!double_buffer_enabled) {
+        gterm_plot_char(&grid[old_x + old_y * cols],
+                        frame_width + new_x * VGA_FONT_WIDTH,
+                        frame_height + new_y * VGA_FONT_HEIGHT);
+    }
+    grid[new_x + new_y * cols] = grid[old_x + old_y * cols];
+}
+
 static int text_fg = 9, text_bg = 8;
 
 void gterm_set_text_fg(int fg) {

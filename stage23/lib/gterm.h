@@ -20,6 +20,7 @@ void gterm_set_text_fg(int fg);
 void gterm_set_text_bg(int bg);
 bool gterm_scroll_disable(void);
 void gterm_scroll_enable(void);
+void gterm_move_character(int new_x, int new_y, int old_x, int old_y);
 
 void gterm_double_buffer_flush(void);
 void gterm_double_buffer(bool state);

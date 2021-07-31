@@ -27,6 +27,7 @@ void (*set_text_fg)(int fg);
 void (*set_text_bg)(int bg);
 bool (*scroll_disable)(void);
 void (*scroll_enable)(void);
+void (*term_move_character)(int new_x, int new_y, int old_x, int old_y);
 
 void (*term_double_buffer)(bool status);
 void (*term_double_buffer_flush)(void);
@@ -49,6 +50,7 @@ void term_textmode(void) {
     set_text_bg    = text_set_text_bg;
     scroll_disable = text_scroll_disable;
     scroll_enable  = text_scroll_enable;
+    term_move_character = text_move_character;
 
     term_double_buffer       = text_double_buffer;
     term_double_buffer_flush = text_double_buffer_flush;
@@ -88,12 +90,13 @@ static int get_cursor_pos_y(void) {
 static bool control_sequence = false;
 static bool escape = false;
 static bool rrr = false;
-static int esc_values[MAX_ESC_VALUES];
-static int esc_values_i = 0;
+static bool dec_private = false;
+static int32_t esc_values[MAX_ESC_VALUES];
+static size_t esc_values_i = 0;
 static int saved_cursor_x = 0, saved_cursor_y = 0;
 
 static void sgr(void) {
-    int i = 0;
+    size_t i = 0;
 
     if (!esc_values_i)
         goto def;
@@ -115,10 +118,30 @@ def:
             set_text_bg(esc_values[i] - 40);
             continue;
         }
+
+        if (esc_values[i] == 39) {
+            set_text_fg(9);
+            continue;
+        }
+
+        if (esc_values[i] == 49) {
+            set_text_bg(8);
+            continue;
+        }
     }
 }
 
+static void dec_private_parse(uint8_t c) {
+    (void)c;
+    dec_private = false;
+}
+
 static void control_sequence_parse(uint8_t c) {
+    if (c == '?') {
+        dec_private = true;
+        return;
+    }
+
     if (c >= '0' && c <= '9') {
         rrr = true;
         esc_values[esc_values_i] *= 10;
@@ -137,9 +160,20 @@ static void control_sequence_parse(uint8_t c) {
         }
     }
 
-    // default rest to 1
+    int esc_default;
+    switch (c) {
+        case 'J': esc_default = 0; break;
+        case 'K': esc_default = 0; break;
+        default:  esc_default = 1; break;
+    }
+
     for (int i = esc_values_i; i < MAX_ESC_VALUES; i++)
-        esc_values[i] = 1;
+        esc_values[i] = esc_default;
+
+    if (dec_private == true) {
+        dec_private_parse(c);
+        goto cleanup;
+    }
 
     switch (c) {
         case 'A':
@@ -197,6 +231,43 @@ static void control_sequence_parse(uint8_t c) {
             break;
         case 'J':
             switch (esc_values[0]) {
+                case 0: {
+                    int x, y;
+                    get_cursor_pos(&x, &y);
+                    int rows_remaining = term_rows - (y + 1);
+                    int cols_diff = term_cols - (x + 1);
+                    size_t to_clear = rows_remaining * term_cols + cols_diff;
+                    bool r = scroll_disable();
+                    for (size_t i = 0; i < to_clear; i++) {
+                        raw_putchar(' ');
+                    }
+                    set_cursor_pos(x, y);
+                    if (r)
+                        scroll_enable();
+                    break;
+                }
+                case 1: {
+                    int x, y;
+                    get_cursor_pos(&x, &y);
+                    bool r = scroll_disable();
+                    set_cursor_pos(0, 0);
+                    bool b = false;
+                    for (int yc = 0; yc < term_rows; yc++) {
+                        for (int xc = 0; xc < term_cols; xc++) {
+                            raw_putchar(' ');
+                            if (xc == x && yc == y) {
+                                raw_putchar('\b');
+                                b = true;
+                                break;
+                            }
+                        }
+                        if (b == true)
+                            break;
+                    }
+                    if (r)
+                        scroll_enable();
+                    break;
+                }
                 case 2:
                     clear(false);
                     break;
@@ -204,6 +275,20 @@ static void control_sequence_parse(uint8_t c) {
                     break;
             }
             break;
+        case 'P': {
+            bool r = scroll_disable();
+            int x, y;
+            get_cursor_pos(&x, &y);
+            for (int i = x + esc_values[0]; i < term_cols; i++)
+                term_move_character(i - esc_values[0], y, i, y);
+            set_cursor_pos(term_cols - esc_values[0], y);
+            for (int i = 0; i < esc_values[0]; i++)
+                raw_putchar(' ');
+            set_cursor_pos(x, y);
+            if (r)
+                scroll_enable();
+            break;
+        }
         case 'm':
             sgr();
             break;
@@ -213,25 +298,40 @@ static void control_sequence_parse(uint8_t c) {
         case 'u':
             set_cursor_pos(saved_cursor_x, saved_cursor_y);
             break;
-        case 'K':
+        case 'K': {
+            bool r = scroll_disable();
+            int x, y;
+            get_cursor_pos(&x, &y);
             switch (esc_values[0]) {
-                case 2: {
-                    int x, y;
-                    get_cursor_pos(&x, &y);
+                case 0: {
+                    for (int i = x; i < term_cols; i++)
+                        raw_putchar(' ');
+                    set_cursor_pos(x, y);
+                    break;
+                }
+                case 1: {
                     set_cursor_pos(0, y);
-                    bool r = scroll_disable();
+                    for (int i = 0; i < x; i++)
+                        raw_putchar(' ');
+                    break;
+                }
+                case 2: {
+                    set_cursor_pos(0, y);
                     for (int i = 0; i < term_cols; i++)
                         raw_putchar(' ');
-                    if (r)
-                        scroll_enable();
                     set_cursor_pos(x, y);
                     break;
                 }
             }
+            if (r)
+                scroll_enable();
+            break;
+        }
         default:
             break;
     }
 
+cleanup:
     control_sequence = false;
     escape = false;
 }
@@ -276,6 +376,8 @@ static void term_putchar(uint8_t c) {
             if ((get_cursor_pos_x() / TERM_TABSIZE + 1) >= term_cols)
                 break;
             set_cursor_pos((get_cursor_pos_x() / TERM_TABSIZE + 1) * TERM_TABSIZE, get_cursor_pos_y());
+            break;
+        case '\a':
             break;
         default:
             raw_putchar(c);

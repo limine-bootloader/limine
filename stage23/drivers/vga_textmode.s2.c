@@ -174,6 +174,13 @@ void text_get_cursor_pos(int *x, int *y) {
     *y = cursor_offset / VD_COLS;
 }
 
+void text_move_character(int new_x, int new_y, int old_x, int old_y) {
+    current_buffer[new_y * VD_COLS + new_x * 2] = current_buffer[old_y * VD_COLS + old_x * 2];
+    if (current_buffer == front_buffer) {
+        video_mem[new_y * VD_COLS + new_x * 2] = current_buffer[old_y * VD_COLS + old_x * 2];
+    }
+}
+
 void text_set_cursor_pos(int x, int y) {
     clear_cursor();
     if (x < 0) {

@@ -197,7 +197,7 @@ void text_set_cursor_pos(int x, int y) {
     draw_cursor();
 }
 
-static uint8_t ansi_colours[] = { 0, 4, 2, 0x0e, 1, 5, 3, 7, 0, 7 };
+static uint8_t ansi_colours[] = { 0, 4, 2, 0x0e, 1, 5, 3, 7 };
 
 void text_set_text_fg(int fg) {
     text_palette = (text_palette & 0xf0) | ansi_colours[fg];
@@ -205,6 +205,14 @@ void text_set_text_fg(int fg) {
 
 void text_set_text_bg(int bg) {
     text_palette = (text_palette & 0x0f) | (ansi_colours[bg] << 4);
+}
+
+void text_set_text_fg_default(void) {
+    text_palette = (text_palette & 0xf0) | 7;
+}
+
+void text_set_text_bg_default(void) {
+    text_palette &= 0x0f;
 }
 
 void text_putchar(uint8_t c) {

@@ -27,7 +27,9 @@ extern symbol _binary_font_bin_start;
 static uint8_t *vga_font_bits = NULL;
 static bool *vga_font_bool = NULL;
 
-static uint32_t ansi_colours[10];
+static uint32_t ansi_colours[8];
+static uint32_t ansi_bright_colours[8];
+static uint32_t default_fg, default_bg;
 
 static int frame_height, frame_width;
 
@@ -42,6 +44,8 @@ static size_t last_bg_canvas_size = 0;
 static uint32_t *bg_canvas = NULL;
 
 static bool double_buffer_enabled = false;
+
+static uint32_t text_fg, text_bg;
 
 static bool cursor_status = true;
 
@@ -174,8 +178,8 @@ __attribute__((always_inline)) static inline void genloop(int xstart, int xend, 
     }
 }
 static uint32_t blend_external(int x, int y, uint32_t orig) { (void)x; (void)y; return orig; }
-static uint32_t blend_internal(int x, int y, uint32_t orig) { (void)x; (void)y; return colour_blend(ansi_colours[8], orig); }
-static uint32_t blend_margin(int x, int y, uint32_t orig) { return blend_gradient_from_box(x, y, orig, ansi_colours[8]); }
+static uint32_t blend_internal(int x, int y, uint32_t orig) { (void)x; (void)y; return colour_blend(default_bg, orig); }
+static uint32_t blend_margin(int x, int y, uint32_t orig) { return blend_gradient_from_box(x, y, orig, default_bg); }
 
 static void loop_external(int xstart, int xend, int ystart, int yend) { genloop(xstart, xend, ystart, yend, blend_external); }
 static void loop_margin(int xstart, int xend, int ystart, int yend) { genloop(xstart, xend, ystart, yend, blend_margin); }
@@ -203,8 +207,8 @@ void gterm_generate_canvas(void) {
     } else {
         for (int y = 0; y < gterm_height; y++) {
             for (int x = 0; x < gterm_width; x++) {
-                bg_canvas[y * gterm_width + x] = ansi_colours[8];
-                gterm_plot_px(x, y, ansi_colours[8]);
+                bg_canvas[y * gterm_width + x] = default_bg;
+                gterm_plot_px(x, y, default_bg);
             }
         }
     }
@@ -212,8 +216,8 @@ void gterm_generate_canvas(void) {
 
 struct gterm_char {
     uint32_t c;
-    int fg;
-    int bg;
+    uint32_t fg;
+    uint32_t bg;
 };
 
 void gterm_plot_char(struct gterm_char *c, int x, int y) {
@@ -222,11 +226,9 @@ void gterm_plot_char(struct gterm_char *c, int x, int y) {
         uint32_t *fb_line = gterm_framebuffer + x + (y + i) * (gterm_pitch / 4);
         uint32_t *canvas_line = bg_canvas + x + (y + i) * gterm_width;
         for (int j = 0; j < VGA_FONT_WIDTH; j++) {
+            uint32_t bg = c->bg == 0xffffffff ? canvas_line[j] : c->bg;
             bool draw = glyph[i * VGA_FONT_WIDTH + j];
-            if (c->bg == 8)
-                fb_line[j] = draw ? ansi_colours[c->fg] : canvas_line[j];
-            else
-                fb_line[j] = draw ? ansi_colours[c->fg] : ansi_colours[c->bg];
+            fb_line[j] = draw ? c->fg : bg;
         }
     }
 }
@@ -238,14 +240,12 @@ void gterm_plot_char_fast(struct gterm_char *old, struct gterm_char *c, int x, i
         uint32_t *fb_line = gterm_framebuffer + x + (y + i) * (gterm_pitch / 4);
         uint32_t *canvas_line = bg_canvas + x + (y + i) * gterm_width;
         for (int j = 0; j < VGA_FONT_WIDTH; j++) {
+            uint32_t bg = c->bg == 0xffffffff ? canvas_line[j] : c->bg;
             bool old_draw = old_glyph[i * VGA_FONT_WIDTH + j];
             bool new_draw = new_glyph[i * VGA_FONT_WIDTH + j];
             if (old_draw == new_draw)
                 continue;
-            if (c->bg == 8)
-                fb_line[j] = new_draw ? ansi_colours[c->fg] : canvas_line[j];
-            else
-                fb_line[j] = new_draw ? ansi_colours[c->fg] : ansi_colours[c->bg];
+            fb_line[j] = new_draw ? c->fg : bg;
         }
     }
 }
@@ -281,7 +281,7 @@ static void draw_cursor(void) {
     if (cursor_status) {
         struct gterm_char c = grid[cursor_x + cursor_y * cols];
         c.fg = 0;
-        c.bg = 7;
+        c.bg = 0xaaaaaa;
         plot_char_grid_force(&c, cursor_x, cursor_y);
     }
 }
@@ -313,8 +313,8 @@ static void scroll(void) {
     // Clear the last line of the screen.
     struct gterm_char empty;
     empty.c  = ' ';
-    empty.fg = 9;
-    empty.bg = 8;
+    empty.fg = text_fg;
+    empty.bg = text_bg;
     for (int i = rows * cols - cols; i < rows * cols; i++) {
         if (!compare_char(&grid[i], &empty))
             plot_char_grid(&empty, i % cols, i / cols);
@@ -328,8 +328,8 @@ void gterm_clear(bool move) {
 
     struct gterm_char empty;
     empty.c  = ' ';
-    empty.fg = 9;
-    empty.bg = 8;
+    empty.fg = text_fg;
+    empty.bg = text_bg;
     for (int i = 0; i < rows * cols; i++) {
         plot_char_grid(&empty, i % cols, i / cols);
     }
@@ -385,14 +385,28 @@ void gterm_move_character(int new_x, int new_y, int old_x, int old_y) {
     grid[new_x + new_y * cols] = grid[old_x + old_y * cols];
 }
 
-static int text_fg = 9, text_bg = 8;
-
 void gterm_set_text_fg(int fg) {
-    text_fg = fg;
+    text_fg = ansi_colours[fg];
 }
 
 void gterm_set_text_bg(int bg) {
-    text_bg = bg;
+    text_bg = ansi_colours[bg];
+}
+
+void gterm_set_text_fg_bright(int fg) {
+    text_fg = ansi_bright_colours[fg];
+}
+
+void gterm_set_text_bg_bright(int bg) {
+    text_bg = ansi_bright_colours[bg];
+}
+
+void gterm_set_text_fg_default(void) {
+    text_fg = default_fg;
+}
+
+void gterm_set_text_bg_default(void) {
+    text_bg = 0xffffffff;
 }
 
 void gterm_double_buffer_flush(void) {
@@ -507,6 +521,9 @@ bool gterm_init(int *_rows, int *_cols, int width, int height) {
     int margin = 64;
     margin_gradient = 4;
 
+    default_bg = 0x00000000; // background (black)
+    default_fg = 0x00aaaaaa; // foreground (grey)
+
     ansi_colours[0] = 0x00000000; // black
     ansi_colours[1] = 0x00aa0000; // red
     ansi_colours[2] = 0x0000aa00; // green
@@ -515,8 +532,6 @@ bool gterm_init(int *_rows, int *_cols, int width, int height) {
     ansi_colours[5] = 0x00aa00aa; // magenta
     ansi_colours[6] = 0x0000aaaa; // cyan
     ansi_colours[7] = 0x00aaaaaa; // grey
-    ansi_colours[8] = 0x00000000; // background (black)
-    ansi_colours[9] = 0x00aaaaaa; // foreground (grey)
 
     char *colours = config_get_value(NULL, 0, "THEME_COLOURS");
     if (colours == NULL)
@@ -529,26 +544,58 @@ bool gterm_init(int *_rows, int *_cols, int width, int height) {
             uint32_t col = strtoui(first, &last, 16);
             if (first == last)
                 break;
-            ansi_colours[i] = col;
+            if (i < 8) {
+                ansi_colours[i] = col;
+            } else if (i == 8) {
+                default_bg = col;
+            } else if (i == 9) {
+                default_fg = col;
+            }
             if (*last == 0)
                 break;
             first = last + 1;
         }
-        if (i < 8) {
-            ansi_colours[8] = ansi_colours[0];
-            ansi_colours[9] = ansi_colours[7];
+    }
+
+    ansi_bright_colours[0] = 0x00555555; // black
+    ansi_bright_colours[1] = 0x00ff5555; // red
+    ansi_bright_colours[2] = 0x0055ff55; // green
+    ansi_bright_colours[3] = 0x00ffff55; // brown
+    ansi_bright_colours[4] = 0x005555ff; // blue
+    ansi_bright_colours[5] = 0x00ff55ff; // magenta
+    ansi_bright_colours[6] = 0x0055ffff; // cyan
+    ansi_bright_colours[7] = 0x00ffffff; // grey
+
+    char *bright_colours = config_get_value(NULL, 0, "THEME_BRIGHT_COLOURS");
+    if (bright_colours == NULL)
+        bright_colours = config_get_value(NULL, 0, "THEME_BRIGHT_COLORS");
+    if (bright_colours != NULL) {
+        const char *first = bright_colours;
+        int i;
+        for (i = 0; i < 8; i++) {
+            const char *last;
+            uint32_t col = strtoui(first, &last, 16);
+            if (first == last)
+                break;
+            ansi_bright_colours[i] = col;
+            if (*last == 0)
+                break;
+            first = last + 1;
         }
     }
 
     char *theme_background = config_get_value(NULL, 0, "THEME_BACKGROUND");
     if (theme_background != NULL) {
-        ansi_colours[8] = strtoui(theme_background, NULL, 16);
+        default_bg = strtoui(theme_background, NULL, 16);
     }
 
     char *theme_foreground = config_get_value(NULL, 0, "THEME_FOREGROUND");
     if (theme_foreground != NULL) {
-        ansi_colours[9] = strtoui(theme_foreground, NULL, 16);
+        default_fg = strtoui(theme_foreground, NULL, 16);
     }
+
+    text_fg = default_fg;
+    text_bg = 0xffffffff;
 
     char *theme_margin = config_get_value(NULL, 0, "THEME_MARGIN");
     if (theme_margin != NULL) {

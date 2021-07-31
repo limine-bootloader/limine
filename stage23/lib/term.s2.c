@@ -25,6 +25,10 @@ void (*set_cursor_pos)(int x, int y);
 void (*get_cursor_pos)(int *x, int *y);
 void (*set_text_fg)(int fg);
 void (*set_text_bg)(int bg);
+void (*set_text_fg_bright)(int fg);
+void (*set_text_bg_bright)(int bg);
+void (*set_text_fg_default)(void);
+void (*set_text_bg_default)(void);
 bool (*scroll_disable)(void);
 void (*scroll_enable)(void);
 void (*term_move_character)(int new_x, int new_y, int old_x, int old_y);
@@ -48,6 +52,10 @@ void term_textmode(void) {
     get_cursor_pos = text_get_cursor_pos;
     set_text_fg    = text_set_text_fg;
     set_text_bg    = text_set_text_bg;
+    set_text_fg_bright = text_set_text_fg;
+    set_text_bg_bright = text_set_text_bg;
+    set_text_fg_default = text_set_text_fg_default;
+    set_text_bg_default = text_set_text_bg_default;
     scroll_disable = text_scroll_disable;
     scroll_enable  = text_scroll_enable;
     term_move_character = text_move_character;
@@ -104,8 +112,8 @@ static void sgr(void) {
     for (; i < esc_values_i; i++) {
         if (!esc_values[i]) {
 def:
-            set_text_bg(8);
-            set_text_fg(9);
+            set_text_bg_default();
+            set_text_fg_default();
             continue;
         }
 
@@ -119,13 +127,23 @@ def:
             continue;
         }
 
+        if (esc_values[i] >= 90 && esc_values[i] <= 97) {
+            set_text_fg_bright(esc_values[i] - 90);
+            continue;
+        }
+
+        if (esc_values[i] >= 100 && esc_values[i] <= 107) {
+            set_text_bg_bright(esc_values[i] - 100);
+            continue;
+        }
+
         if (esc_values[i] == 39) {
-            set_text_fg(9);
+            set_text_fg_default();
             continue;
         }
 
         if (esc_values[i] == 49) {
-            set_text_bg(8);
+            set_text_bg_default();
             continue;
         }
     }

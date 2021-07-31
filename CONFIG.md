@@ -62,6 +62,8 @@ Some keys take *URIs* as values; these are described in the next section.
 * `THEME_COLORS` - Alias of `THEME_COLOURS`.
 * `THEME_BACKGROUND` - Alias of the background value in `THEME_COLOURS`.
 * `THEME_FOREGROUND` - Alias of the foreground value in `THEME_COLOURS`.
+* `THEME_BRIGHT_COLOURS` - Specifies the bright colour palette used by the terminal (XXRRGGBB). It is a `;` separated array of 8 bright colours: dark gray, bright red, bright green, yellow, bright blue, bright magenta, bright cyan, and white respectively. Alpha transparency values are ignored. Ignored if `GRAPHICS` is not `yes`.
+* `THEME_BRIGHT_COLORS` - Alias of `THEME_BRIGHT_COLOURS`.
 * `THEME_MARGIN` - Set the amount of margin around the terminal. Ignored if `GRAPHICS` is not `yes`.
 * `THEME_MARGIN_GRADIENT` - Set the thickness in pixel for the gradient around the terminal. Ignored if `GRAPHICS` is not `yes`.
 * `BACKGROUND_PATH` - URI where to find the background .BMP file. Ignored if `GRAPHICS` is not `yes`.

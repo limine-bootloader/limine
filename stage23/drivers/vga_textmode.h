@@ -13,6 +13,8 @@ void text_set_cursor_pos(int x, int y);
 void text_get_cursor_pos(int *x, int *y);
 void text_set_text_fg(int fg);
 void text_set_text_bg(int bg);
+void text_set_text_fg_default(void);
+void text_set_text_bg_default(void);
 bool text_scroll_disable(void);
 void text_scroll_enable(void);
 void text_move_character(int new_x, int new_y, int old_x, int old_y);

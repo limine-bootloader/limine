@@ -27,6 +27,10 @@ void term_vbe(int width, int height) {
     get_cursor_pos = gterm_get_cursor_pos;
     set_text_fg    = gterm_set_text_fg;
     set_text_bg    = gterm_set_text_bg;
+    set_text_fg_bright = gterm_set_text_fg_bright;
+    set_text_bg_bright = gterm_set_text_bg_bright;
+    set_text_fg_default = gterm_set_text_fg_default;
+    set_text_bg_default = gterm_set_text_bg_default;
     scroll_disable = gterm_scroll_disable;
     scroll_enable  = gterm_scroll_enable;
     term_move_character = gterm_move_character;

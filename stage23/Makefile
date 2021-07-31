@@ -51,7 +51,8 @@ LIMINE_VERSION := $(shell cat ../version 2>/dev/null || ( git describe --exact-m
 
 WERROR = -Werror
 CFLAGS = -O3 -g -pipe -Wall -Wextra $(WERROR)
-S2CFLAGS = -Os -g -pipe -Wall -Wextra $(WERROR)
+
+S2CFLAGS := $(CFLAGS) -Os
 
 INTERNAL_CFLAGS := \
 	-std=gnu11 \
@@ -81,6 +82,7 @@ ifeq ($(TARGET), bios)
 		-Duefi=0 \
 		-m32 \
 		-march=i386 \
+		-mabi=sysv \
 		-fno-pie
 endif
 
@@ -91,6 +93,7 @@ ifeq ($(TARGET), uefi)
 		-Duefi=1 \
 		-m32 \
 		-march=i386 \
+		-mabi=sysv \
 		-fpie
 
 	INTERNAL_CFLAGS += \
@@ -98,6 +101,7 @@ ifeq ($(TARGET), uefi)
 		-Duefi=1 \
 		-m64 \
 		-march=x86-64 \
+		-mabi=sysv \
 		-I../gnu-efi/inc \
 		-I../gnu-efi/inc/x86_64 \
 		-fpie \
@@ -110,6 +114,7 @@ ifeq ($(TARGET), uefi32)
 		-Duefi=1 \
 		-m32 \
 		-march=i386 \
+		-mabi=sysv \
 		-I../gnu-efi/inc \
 		-I../gnu-efi/inc/ia32 \
 		-fpie

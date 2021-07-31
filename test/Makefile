@@ -21,6 +21,7 @@ INTERNALCFLAGS  :=       \
 	-ffreestanding       \
 	-fno-stack-protector \
 	-fno-pic -fpie       \
+	-mabi=sysv           \
 	-mno-80387           \
 	-mno-mmx             \
 	-mno-3dnow           \

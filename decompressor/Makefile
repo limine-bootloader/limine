@@ -25,6 +25,7 @@ CFLAGS = -Os -pipe -Wall -Wextra -Werror
 INTERNAL_CFLAGS = \
 	-m32 \
 	-march=i386 \
+	-mabi=sysv \
 	-std=gnu11 \
 	-ffreestanding \
 	-fno-stack-protector \

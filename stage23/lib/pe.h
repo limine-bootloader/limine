@@ -107,7 +107,7 @@ struct pe64_optional_header {
 struct pe_section_header {
     char name[8];
     union {
-        uint32_t physical_addr;
+        uint32_t physical_addr; // Only valid for object files
         uint32_t virtual_size;
     };
     uint32_t virtual_addr;
@@ -120,10 +120,11 @@ struct pe_section_header {
     uint32_t characteristics;
 } __attribute__((packed));
 
-int pe_bits(uint8_t *pe);
+bool pe_detect(uint8_t *pe);
+int pe_bits(uint8_t *pe); // Assumes the PE is valid
 
-int pe64_load(uint8_t *pe, uint64_t *entry_point, uint64_t *top, uint64_t *_slide, uint32_t alloc_type, bool kaslr);
-int pe64_load_section(uint8_t *pe, void *buffer, const char *name, size_t limit, uint64_t slide);
+int pe64_load(uint8_t *pe, uint64_t *entry_point, uint64_t *top, uint32_t alloc_type);
+int pe64_load_section(uint8_t *pe, void *buffer, const char *name, size_t limit);
 
 int pe32_load(uint8_t *pe, uint32_t *entry_point, uint32_t *top, uint32_t alloc_type);
 int pe32_load_section(uint8_t *pe, void *buffer, const char *name, size_t limit);

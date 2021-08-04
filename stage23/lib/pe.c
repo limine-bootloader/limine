@@ -18,11 +18,11 @@
 
 #define PE_SEC_UNINIT_DATA (1 << 7)
 
-static bool pe_validate(uint8_t *pe, bool is_64, bool warn) {
+// Meant to be used by the functions
+static bool pe_validate(uint8_t *pe, bool is_64) {
     struct pe_dos_header *dos_hdr = (struct pe_dos_header *) pe;
     if (dos_hdr->magic != MZ_MAGIC) {
-        if (warn)
-            print("pe: Invalid MS-DOS MZ header magic\n");
+        print("pe: Invalid MS-DOS MZ header magic\n");
         return false;
     }
 
@@ -34,36 +34,30 @@ static bool pe_validate(uint8_t *pe, bool is_64, bool warn) {
 
     if (is_64) {
         if (pe_hdr->machine != PE_MACHINE_AMD64) {
-            if (warn)
-                print("pe: Invalid PE header machine (must be AMD64)\n");
+            print("pe: Invalid PE header machine (must be AMD64)\n");
             return false;
         }
         if (pe_hdr->optional_header_size == 0) {
-            if (warn)
-                print("pe: No optional header");
+            print("pe: No optional header");
             return false;
         }
         struct pe64_optional_header *pe64_opt_hdr = (struct pe64_optional_header *) (pe_hdr + 1);
         if (pe64_opt_hdr->magic != PE_OPT_MAGIC_PE64) {
-            if (warn)
-                print("pe: Invalid PE optional header magic (must be PE64)\n");
+            print("pe: Invalid PE optional header magic (must be PE64)\n");
             return false;
         }
     } else {
         if (pe_hdr->machine != PE_MACHINE_I386) {
-            if (warn)
-                print("pe: Invalid PE header machine (must be i386)\n");
+            print("pe: Invalid PE header machine (must be i386)\n");
             return false;
         }
         if (pe_hdr->optional_header_size == 0) {
-            if (warn)
-                print("pe: No optional header\n");
+            print("pe: No optional header\n");
             return false;
         }
         struct pe32_optional_header *pe32_opt_hdr = (struct pe32_optional_header *) (pe_hdr + 1);
         if (pe32_opt_hdr->magic != PE_OPT_MAGIC_PE32) {
-            if (warn)
-                print("pe: Invalid PE optional header magic (must be PE32)\n");
+            print("pe: Invalid PE optional header magic (must be PE32)\n");
             return false;
         }
     }
@@ -71,32 +65,34 @@ static bool pe_validate(uint8_t *pe, bool is_64, bool warn) {
     return true;
 }
 
-int pe_bits(uint8_t *pe) {
-    /*
-        Basically, first validate the file considering the file is
-        32 bit. If it returns positive, then the file is 32 bit.
-        Otherwise, validate it as if it was a 64 bit one. If that
-        doesn't work either, give up.
-    */
-    bool result = pe_validate(pe, false, false);
-    if (result == true) {
-        return 32;
-    }
-    result = pe_validate(pe, true, false);
-    if (result == true) {
-        return 64;
-    }
-    return -1;
+bool pe_detect(uint8_t *pe) {
+    struct pe_dos_header *dos_hdr = (struct pe_dos_header *) pe;
+    if (dos_hdr->magic != MZ_MAGIC)
+        return false;
+    
+    struct pe_header *pe_hdr = (struct pe_header *) (pe + dos_hdr->new_header_off);
+    if (pe_hdr->magic != PE_MAGIC)
+        return false;
+
+    return true;
 }
 
-int pe64_load(uint8_t *pe, uint64_t *entry_point, uint64_t *top, uint64_t *_slide, uint32_t alloc_type, bool kaslr) {
-    (void) _slide;
-    if (!pe_validate(pe, true, true)) {
+int pe_bits(uint8_t *pe) {
+    struct pe_dos_header *dos_hdr = (struct pe_dos_header *) pe;
+    struct pe_header *pe_hdr = (struct pe_header *) (pe + dos_hdr->new_header_off);
+
+    if (pe_hdr->machine == PE_MACHINE_I386)
+        return 32;
+    else if (pe_hdr->machine == PE_MACHINE_AMD64)
+        return 64;
+    else
+        return -1;
+}
+
+int pe64_load(uint8_t *pe, uint64_t *entry_point, uint64_t *top, uint32_t alloc_type) {
+    if (!pe_validate(pe, true)) {
         return 1;
     }
-
-    if (kaslr)
-        panic("pe: Relocations not supported yet");
 
     struct pe_dos_header *dos_hdr = (struct pe_dos_header *) pe;
     struct pe_header *pe_hdr = (struct pe_header *) (pe + dos_hdr->new_header_off);
@@ -138,12 +134,9 @@ int pe64_load(uint8_t *pe, uint64_t *entry_point, uint64_t *top, uint64_t *_slid
     return 0;
 }
 
-int pe64_load_section(uint8_t *pe, void *buffer, const char *name, size_t limit, uint64_t slide) {
-    if (!pe_validate(pe, true, true))
+int pe64_load_section(uint8_t *pe, void *buffer, const char *name, size_t limit) {
+    if (!pe_validate(pe, true))
         return 1;
-
-    if (slide)
-        panic("pe: Relocations not supported yet");
 
     struct pe_dos_header *dos_hdr = (struct pe_dos_header *) pe;
     struct pe_header *pe_hdr = (struct pe_header *) (pe + dos_hdr->new_header_off);
@@ -168,7 +161,7 @@ int pe64_load_section(uint8_t *pe, void *buffer, const char *name, size_t limit,
 }
 
 int pe32_load(uint8_t *pe, uint32_t *entry_point, uint32_t *top, uint32_t alloc_type) {
-    if (!pe_validate(pe, false, true))
+    if (!pe_validate(pe, false))
         return 1;
 
     struct pe_dos_header *dos_hdr = (struct pe_dos_header *) pe;
@@ -207,7 +200,7 @@ int pe32_load(uint8_t *pe, uint32_t *entry_point, uint32_t *top, uint32_t alloc_
 }
 
 int pe32_load_section(uint8_t *pe, void *buffer, const char *name, size_t limit) {
-    if (!pe_validate(pe, false, true))
+    if (!pe_validate(pe, false))
         return 1;
 
     struct pe_dos_header *dos_hdr = (struct pe_dos_header *) pe;

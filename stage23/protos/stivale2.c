@@ -17,6 +17,7 @@
 #include <sys/cpu.h>
 #include <lib/fb.h>
 #include <lib/term.h>
+#include <lib/pe.h>
 #include <sys/pic.h>
 #include <sys/lapic.h>
 #include <fs/file.h>
@@ -25,6 +26,9 @@
 #include <pxe/tftp.h>
 #include <drivers/edid.h>
 #include <drivers/vga_textmode.h>
+
+#define FILE_ELF 1
+#define FILE_PE  2
 
 #define REPORTED_ADDR(PTR) \
     ((PTR) + ((stivale2_hdr.flags & (1 << 1)) ? \
@@ -72,11 +76,6 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     if (!uri_open(kernel_file, kernel_path))
         panic("stivale2: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
-    char *kaslr_s = config_get_value(config, 0, "KASLR");
-    bool kaslr = true;
-    if (kaslr_s != NULL && strcmp(kaslr_s, "no") == 0)
-        kaslr = false;
-
     struct stivale2_header stivale2_hdr;
 
     bool level5pg = false;
@@ -87,13 +86,30 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     uint64_t ranges_count;
 
     uint8_t *kernel = freadall(kernel_file, STIVALE2_MMAP_BOOTLOADER_RECLAIMABLE);
-    int bits = elf_bits(kernel);
+    int format;
+    int bits;
+    if (elf_detect(kernel)) {
+        format = FILE_ELF;
+        bits = elf_bits(kernel);
+    } else if (pe_detect(kernel)) {
+        format = FILE_PE;
+        bits = pe_bits(kernel);
+    } else {
+        format = -1;
+        bits = -1;
+    }
+
+    char *kaslr_s = config_get_value(config, 0, "KASLR");
+    bool kaslr = true;
+    if ((kaslr_s != NULL && strcmp(kaslr_s, "no") == 0) || format == FILE_PE)
+        kaslr = false;
+
     bool loaded_by_anchor = false;
 
-    if (bits == -1) {
+    if (format == -1) {
         struct stivale2_anchor *anchor;
         if (!stivale_load_by_anchor((void **)&anchor, "STIVALE2 ANCHOR", kernel, kernel_file->size)) {
-            panic("stivale2: Not a valid ELF or anchored file.");
+            panic("stivale2: Not a valid ELF, PE, or anchored file.");
         }
 
         bits = anchor->bits;
@@ -121,40 +137,67 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
             }
 
             if (!loaded_by_anchor) {
-                ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
-                                         sizeof(struct stivale2_header), 0);
-                if (ret) {
-                    goto failed_to_load_header_section;
-                }
-
-                if ((stivale2_hdr.flags & (1 << 2))) {
-                    if (bits == 32) {
-                        panic("stivale2: PMRs are not supported for 32-bit kernels");
-                    } else if (loaded_by_anchor) {
-                        panic("stivale2: PMRs are not supported for anchored kernels");
+                if (format == FILE_ELF) {
+                    ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
+                                             sizeof(struct stivale2_header), 0);
+                    if (ret) {
+                        goto failed_to_load_header_section;
                     }
-                    want_pmrs = true;
+
+                    if ((stivale2_hdr.flags & (1 << 2))) {
+                        if (bits == 32) {
+                            panic("stivale2: PMRs are not supported for 32-bit kernels");
+                        } else if (loaded_by_anchor) {
+                            panic("stivale2: PMRs are not supported for anchored kernels");
+                        }
+                        want_pmrs = true;
+                    }
+
+                    if (elf64_load(kernel, &entry_point, NULL, &slide,
+                                STIVALE2_MMAP_KERNEL_AND_MODULES, kaslr, false,
+                                want_pmrs ? &ranges : NULL,
+                                want_pmrs ? &ranges_count : NULL))
+                        panic("stivale2: ELF64 load failure");
+
+                    ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
+                                             sizeof(struct stivale2_header), slide);
+                } else if (format == FILE_PE) {
+                    ret = pe64_load_section(kernel, &stivale2_hdr, ".stvl2",
+                                            sizeof(struct stivale2_header));
+
+                    if (ret) {
+                        goto failed_to_load_header_section;
+                    }
+
+                    if (stivale2_hdr.flags & (1 << 2))
+                        panic("stivale2: PMRs are not allowed for PE kernels");
+
+                    if (pe64_load(kernel, &entry_point, NULL,
+                                  STIVALE2_MMAP_KERNEL_AND_MODULES))
+                        panic("stivale2: PE64 load failure");
+                } else {
+                    panic("stivale2: Unknown kernel format");
                 }
-
-                if (elf64_load(kernel, &entry_point, NULL, &slide,
-                               STIVALE2_MMAP_KERNEL_AND_MODULES, kaslr, false,
-                               want_pmrs ? &ranges : NULL,
-                               want_pmrs ? &ranges_count : NULL))
-                    panic("stivale2: ELF64 load failure");
-
-                ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
-                                         sizeof(struct stivale2_header), slide);
             }
-
             break;
         }
         case 32: {
             if (!loaded_by_anchor) {
-                if (elf32_load(kernel, (uint32_t *)&entry_point, NULL, 10))
-                    panic("stivale2: ELF32 load failure");
+                if (format == FILE_ELF) {
+                    if (elf32_load(kernel, (uint32_t *)&entry_point, NULL, 10))
+                        panic("stivale2: ELF32 load failure");
 
-                ret = elf32_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
-                                         sizeof(struct stivale2_header));
+                    ret = elf32_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
+                                             sizeof(struct stivale2_header));
+                } else if (format == FILE_PE) {
+                    if (pe32_load(kernel, (uint32_t *)&entry_point, NULL, 10))
+                        panic("stivale2: PE32 load failure");
+
+                    ret = elf32_load_section(kernel, &stivale2_hdr, ".stvl2",
+                                             sizeof(struct stivale2_header));
+                } else {
+                    panic("stivale2: Unknown kernel format");
+                }
             }
 
             break;
@@ -166,15 +209,26 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     printv("stivale2: %u-bit kernel detected\n", bits);
 
 failed_to_load_header_section:
+    char *section_name;
+    char *format_name;
+    if (format == FILE_ELF) {
+        section_name = ".stivale2hdr";
+        format_name = "ELF";
+    } else if (format == FILE_PE) {
+        section_name = ".stvl2";
+        format_name = "ELF";
+    } else {
+        panic("stivale2: Unknown kernel format");
+    }
     switch (ret) {
         case 1:
-            panic("stivale2: File is not a valid ELF.");
+            panic("stivale2: File is not a valid %s.", format_name);
         case 2:
-            panic("stivale2: Section .stivale2hdr not found.");
+            panic("stivale2: Section %s not found.", section_name);
         case 3:
-            panic("stivale2: Section .stivale2hdr exceeds the size of the struct.");
+            panic("stivale2: Section %s exceeds the size of the struct.", section_name);
         case 4:
-            panic("stivale2: Section .stivale2hdr is smaller than size of the struct.");
+            panic("stivale2: Section %s is smaller than size of the struct.", section_name);
     }
 
     if ((stivale2_hdr.flags & (1 << 1)) && bits == 32) {

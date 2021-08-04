@@ -115,14 +115,47 @@ struct elf64_rela {
     uint64_t r_addend;
 };
 
-int elf_bits(uint8_t *elf) {
+static bool elf_validate(uint8_t *elf, bool is_64) {
     struct elf64_hdr hdr;
-    memcpy(&hdr, elf + (0), 20);
+    memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
         print("elf: Not a valid ELF file.\n");
-        return -1;
+        return false;
     }
+
+    if (hdr.ident[EI_DATA] != BITS_LE) {
+        print("elf: Not a Little-endian ELF file.\n");
+        return false;
+    }
+
+    if (is_64) {
+        if (hdr.machine != ARCH_X86_64) {
+            print("elf: Not an x86_64 ELF file.\n");
+            return false;
+        }
+    } else {
+        if (hdr.machine != ARCH_X86_32) {
+            print("elf: Not an x86_32 ELF file.\n");
+        }
+    }
+
+    return true;
+}
+
+bool elf_detect(uint8_t *elf) {
+    struct elf64_hdr hdr;
+    memcpy(&hdr, elf + (0), 20);
+
+    if (strncmp((char *)hdr.ident, "\177ELF", 4))
+        return false;
+
+    return true;
+}
+
+int elf_bits(uint8_t *elf) {
+    struct elf64_hdr hdr;
+    memcpy(&hdr, elf + (0), 20);
 
     switch (hdr.machine) {
         case ARCH_X86_64:
@@ -203,23 +236,11 @@ static int elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *bu
 }
 
 int elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t limit, uint64_t slide) {
+    if (!elf_validate(elf, true))
+        return 1;
+
     struct elf64_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
-
-    if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
-        print("elf: Not a valid ELF file.\n");
-        return 1;
-    }
-
-    if (hdr.ident[EI_DATA] != BITS_LE) {
-        print("elf: Not a Little-endian ELF file.\n");
-        return 1;
-    }
-
-    if (hdr.machine != ARCH_X86_64) {
-        print("elf: Not an x86_64 ELF file.\n");
-        return 1;
-    }
 
     struct elf64_shdr shstrtab;
     memcpy(&shstrtab, elf + (hdr.shoff + hdr.shstrndx * sizeof(struct elf64_shdr)),
@@ -247,23 +268,11 @@ int elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
 }
 
 int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limit) {
+    if (!elf_validate(elf, false))
+        return 1;
+
     struct elf32_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf32_hdr));
-
-    if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
-        print("elf: Not a valid ELF file.\n");
-        return 1;
-    }
-
-    if (hdr.ident[EI_DATA] != BITS_LE) {
-        print("elf: Not a Little-endian ELF file.\n");
-        return 1;
-    }
-
-    if (hdr.machine != ARCH_X86_32) {
-        print("elf: Not an x86_32 ELF file.\n");
-        return 1;
-    }
 
     struct elf32_shdr shstrtab;
     memcpy(&shstrtab, elf + (hdr.shoff + hdr.shstrndx * sizeof(struct elf32_shdr)),
@@ -368,21 +377,11 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
 }
 
 int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_slide, uint32_t alloc_type, bool kaslr, bool use_paddr, struct elf_range **ranges, uint64_t *ranges_count) {
+    if (!elf_validate(elf, true))
+        return 1;
+
     struct elf64_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
-
-    if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
-        printv("elf: Not a valid ELF file.\n");
-        return -1;
-    }
-
-    if (hdr.ident[EI_DATA] != BITS_LE) {
-        panic("elf: Not a Little-endian ELF file.\n");
-    }
-
-    if (hdr.machine != ARCH_X86_64) {
-        panic("elf: Not an x86_64 ELF file.\n");
-    }
 
     uint64_t slide = 0;
     bool simulation = true;
@@ -507,23 +506,11 @@ final:
 }
 
 int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t alloc_type) {
+    if (!elf_validate(elf, false))
+        return 1;
+
     struct elf32_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf32_hdr));
-
-    if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
-        print("elf: Not a valid ELF file.\n");
-        return -1;
-    }
-
-    if (hdr.ident[EI_DATA] != BITS_LE) {
-        print("elf: Not a Little-endian ELF file.\n");
-        return -1;
-    }
-
-    if (hdr.machine != ARCH_X86_32) {
-        print("elf: Not an x86_32 ELF file.\n");
-        return -1;
-    }
 
     uint32_t entry = hdr.entry;
     bool entry_adjusted = false;

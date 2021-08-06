@@ -101,8 +101,8 @@ make    # (or gmake where applicable)
 
 It is possible to pass `make` additional flags, most relevantly,
 `TOOLCHAIN=`, which allows one to specify an alternative toolchain for the build
-system to use (the default is `x86_64-elf`, falling back to no-triple, or host,
-toolchain).
+system to use (the default is `limine`, resulting in program names like `limine-gcc`,
+falling back to no-prefix, or host, toolchain).
 
 The generated bootloader files are going to be in `bin`.
 

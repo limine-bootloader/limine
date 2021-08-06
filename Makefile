@@ -5,7 +5,7 @@ PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
 NCPUS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 
-TOOLCHAIN = x86_64-elf
+TOOLCHAIN = limine
 
 TOOLCHAIN_CC = $(TOOLCHAIN)-gcc
 

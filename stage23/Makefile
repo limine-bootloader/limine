@@ -15,7 +15,7 @@ else
 	$(error Invalid target)
 endif
 
-TOOLCHAIN = x86_64-elf
+TOOLCHAIN = limine
 
 TOOLCHAIN_CC = $(TOOLCHAIN)-gcc
 TOOLCHAIN_LD = $(TOOLCHAIN)-ld

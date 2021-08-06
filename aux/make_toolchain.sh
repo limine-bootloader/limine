@@ -38,7 +38,7 @@ tar -zxf ../gcc-$GCCVERSION.tar.gz
 
 mkdir build-binutils
 cd build-binutils
-../binutils-$BINUTILSVERSION/configure CFLAGS="$CFLAGS" CXXFLAGS="$CFLAGS"  --target=$TARGET --prefix="$PREFIX" --with-sysroot --disable-nls --disable-werror --enable-targets=x86_64-elf,x86_64-pe
+../binutils-$BINUTILSVERSION/configure CFLAGS="$CFLAGS" CXXFLAGS="$CFLAGS"  --target=$TARGET --prefix="$PREFIX" --program-prefix=limine- --with-sysroot --disable-nls --disable-werror --enable-targets=x86_64-elf,x86_64-pe
 $MAKE
 $MAKE install
 cd ..
@@ -48,7 +48,7 @@ contrib/download_prerequisites
 cd ..
 mkdir build-gcc
 cd build-gcc
-../gcc-$GCCVERSION/configure CFLAGS="$CFLAGS" CXXFLAGS="$CFLAGS" --target=$TARGET --prefix="$PREFIX" --disable-nls --enable-languages=c --without-headers
+../gcc-$GCCVERSION/configure CFLAGS="$CFLAGS" CXXFLAGS="$CFLAGS" --target=$TARGET --prefix="$PREFIX" --program-prefix=limine- --disable-nls --enable-languages=c --without-headers
 $MAKE all-gcc
 $MAKE all-target-libgcc
 $MAKE install-gcc

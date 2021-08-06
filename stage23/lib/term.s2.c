@@ -73,10 +73,12 @@ void term_deinit(void) {
 
 static void term_putchar(uint8_t c);
 
+static bool old_cur_stat;
+
 void term_write(const char *buf, size_t count) {
     if (term_backend == NOT_READY)
         return;
-    bool old_cur_stat = disable_cursor();
+    old_cur_stat = disable_cursor();
     for (size_t i = 0; i < count; i++)
         term_putchar(buf[i]);
     if (old_cur_stat)
@@ -150,8 +152,18 @@ def:
 }
 
 static void dec_private_parse(uint8_t c) {
-    (void)c;
     dec_private = false;
+
+    if (esc_values_i > 0) {
+        switch (esc_values[0]) {
+            case 25: {
+                switch (c) {
+                    case 'h': old_cur_stat = true; return;
+                    case 'l': old_cur_stat = false; return;
+                }
+            }
+        }
+    }
 }
 
 static void control_sequence_parse(uint8_t c) {

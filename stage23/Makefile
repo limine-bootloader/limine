@@ -6,41 +6,41 @@ ifeq ($(BUILDDIR), )
 endif
 
 ifeq ($(TARGET), bios)
-	OBJCOPY_ARCH = elf32-i386
+	OBJCOPY_ARCH := elf32-i386
 else ifeq ($(TARGET), uefi)
-	OBJCOPY_ARCH = elf64-x86-64
+	OBJCOPY_ARCH := elf64-x86-64
 else ifeq ($(TARGET), uefi32)
-	OBJCOPY_ARCH = elf32-i386
+	OBJCOPY_ARCH := elf32-i386
 else
 	$(error Invalid target)
 endif
 
-TOOLCHAIN = limine
+TOOLCHAIN ?= limine
 
-TOOLCHAIN_CC = $(TOOLCHAIN)-gcc
-TOOLCHAIN_LD = $(TOOLCHAIN)-ld
-TOOLCHAIN_AR = $(TOOLCHAIN)-ar
-TOOLCHAIN_OBJCOPY = $(TOOLCHAIN)-objcopy
-TOOLCHAIN_OBJDUMP = $(TOOLCHAIN)-objdump
-TOOLCHAIN_READELF = $(TOOLCHAIN)-readelf
+TOOLCHAIN_CC ?= $(TOOLCHAIN)-gcc
+TOOLCHAIN_LD ?= $(TOOLCHAIN)-ld
+TOOLCHAIN_AR ?= $(TOOLCHAIN)-ar
+TOOLCHAIN_OBJCOPY ?= $(TOOLCHAIN)-objcopy
+TOOLCHAIN_OBJDUMP ?= $(TOOLCHAIN)-objdump
+TOOLCHAIN_READELF ?= $(TOOLCHAIN)-readelf
 
 ifeq ($(shell command -v $(TOOLCHAIN_CC) ; ), )
-TOOLCHAIN_CC := cc
+override TOOLCHAIN_CC := cc
 endif
 ifeq ($(shell command -v $(TOOLCHAIN_LD) ; ), )
-TOOLCHAIN_LD := ld
+override TOOLCHAIN_LD := ld
 endif
 ifeq ($(shell command -v $(TOOLCHAIN_AR) ; ), )
-TOOLCHAIN_AR := ar
+override TOOLCHAIN_AR := ar
 endif
 ifeq ($(shell command -v $(TOOLCHAIN_OBJCOPY) ; ), )
-TOOLCHAIN_OBJCOPY := objcopy
+override TOOLCHAIN_OBJCOPY := objcopy
 endif
 ifeq ($(shell command -v $(TOOLCHAIN_OBJDUMP) ; ), )
-TOOLCHAIN_OBJDUMP := objdump
+override TOOLCHAIN_OBJDUMP := objdump
 endif
 ifeq ($(shell command -v $(TOOLCHAIN_READELF) ; ), )
-TOOLCHAIN_READELF := readelf
+override TOOLCHAIN_READELF := readelf
 endif
 
 COM_OUTPUT = false
@@ -50,7 +50,7 @@ BUILD_ID := $(shell dd if=/dev/urandom count=8 bs=1 2>/dev/null | od -An -t x4 |
 LIMINE_VERSION := $(shell cat ../version 2>/dev/null || ( git describe --exact-match --tags `git log -n1 --pretty='%h'` 2>/dev/null || ( git log -n1 --pretty='%h' && echo -n "(`git branch --show-current`)" ) ) )
 
 WERROR = -Werror
-CFLAGS = -O3 -g -pipe -Wall -Wextra $(WERROR)
+CFLAGS ?= -O3 -g -pipe -Wall -Wextra $(WERROR)
 
 S2CFLAGS := $(CFLAGS) -Os
 
@@ -120,7 +120,7 @@ ifeq ($(TARGET), uefi32)
 		-fpie
 endif
 
-LDFLAGS =
+LDFLAGS ?=
 
 INTERNAL_LDFLAGS := \
 	-nostdlib \

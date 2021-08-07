@@ -1,19 +1,27 @@
-PREFIX = /usr/local
-DESTDIR =
+PREFIX ?= /usr/local
+DESTDIR ?=
 
-PATH := $(shell pwd)/toolchain/bin:$(PATH)
+export PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
 NCPUS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 
-TOOLCHAIN = limine
+TOOLCHAIN ?= limine
 
-TOOLCHAIN_CC = $(TOOLCHAIN)-gcc
+TOOLCHAIN_CC ?= $(TOOLCHAIN)-gcc
 
-ifeq ($(shell export "PATH=$(PATH)"; command -v $(TOOLCHAIN_CC) ; ), )
-TOOLCHAIN_CC := cc
+ifeq ($(shell PATH="$(PATH)" command -v $(TOOLCHAIN_CC) ; ), )
+override TOOLCHAIN_CC := cc
 endif
 
-CC_MACHINE := $(shell export "PATH=$(PATH)"; $(TOOLCHAIN_CC) -dumpmachine | dd bs=6 count=1 2>/dev/null)
+ifeq ($(TOOLCHAIN_CC), clang)
+TOOLCHAIN_CC += --target=x86_64-elf
+ifeq ($(TOOLCHAIN_CC), clang)
+override TOOLCHAIN_CC += --target=x86_64-elf
+MAKEOVERRIDES += TOOLCHAIN_CC+=--target=x86_64-elf
+endif
+endif
+
+CC_MACHINE := $(shell PATH="$(PATH)" $(TOOLCHAIN_CC) -dumpmachine | dd bs=6 count=1 2>/dev/null)
 
 ifneq ($(MAKECMDGOALS), toolchain)
 ifneq ($(MAKECMDGOALS), distclean)

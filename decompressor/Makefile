@@ -4,23 +4,24 @@ ifeq ($(BUILDDIR), )
 	$(error BUILDDIR not specified)
 endif
 
-TOOLCHAIN = limine
+TOOLCHAIN ?= limine
 
-TOOLCHAIN_CC = $(TOOLCHAIN)-gcc
-TOOLCHAIN_LD = $(TOOLCHAIN)-ld
-TOOLCHAIN_OBJCOPY = $(TOOLCHAIN)-objcopy
+TOOLCHAIN_CC ?= $(TOOLCHAIN)-gcc
+TOOLCHAIN_LD ?= $(TOOLCHAIN)-ld
+TOOLCHAIN_OBJCOPY ?= $(TOOLCHAIN)-objcopy
 
 ifeq ($(shell command -v $(TOOLCHAIN_CC) ; ), )
-TOOLCHAIN_CC := cc
+override TOOLCHAIN_CC := cc
 endif
 ifeq ($(shell command -v $(TOOLCHAIN_LD) ; ), )
-TOOLCHAIN_LD := ld
+override TOOLCHAIN_LD := ld
 endif
 ifeq ($(shell command -v $(TOOLCHAIN_OBJCOPY) ; ), )
-TOOLCHAIN_OBJCOPY := objcopy
+override TOOLCHAIN_OBJCOPY := objcopy
 endif
 
-CFLAGS = -Os -pipe -Wall -Wextra -Werror
+WERROR = -Werror
+CFLAGS ?= -Os -pipe -Wall -Wextra $(WERROR)
 
 INTERNAL_CFLAGS = \
 	-m32 \
@@ -41,7 +42,7 @@ INTERNAL_CFLAGS = \
 	-MMD \
 	-I.
 
-LDFLAGS =
+LDFLAGS ?=
 
 INTERNAL_LDFLAGS = \
 	-melf_i386 \
@@ -71,7 +72,7 @@ $(BUILDDIR)/decompressor.bin: $(OBJ)
 -include $(HEADER_DEPS)
 
 $(BUILDDIR)/%.o: %.c
-	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
+	$(TOOLCHAIN_CC) $(CFLAGS) -Os $(INTERNAL_CFLAGS) -c $< -o $@
 
 $(BUILDDIR)/%.o: %.asm
 	nasm $< -f elf32 -o $@

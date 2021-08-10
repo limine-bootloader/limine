@@ -219,6 +219,19 @@ failed_to_load_header_section:
     }
 
     //////////////////////////////////////////////
+    // Create kernel file v2 struct tag
+    //////////////////////////////////////////////
+    {
+    struct stivale2_struct_tag_kernel_file_v2 *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_kernel_file_v2));
+
+    tag->tag.identifier = STIVALE2_STRUCT_TAG_KERNEL_FILE_V2_ID;
+    tag->kernel_file = REPORTED_ADDR((uint64_t)(uintptr_t)kernel);
+    tag->kernel_size = kernel_file->size;
+
+    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    }
+
+    //////////////////////////////////////////////
     // Create kernel slide struct tag
     //////////////////////////////////////////////
     {

@@ -100,10 +100,12 @@ static int get_cursor_pos_y(void) {
 static bool control_sequence = false;
 static bool escape = false;
 static bool rrr = false;
+static bool bold = false;
 static bool dec_private = false;
 static int32_t esc_values[MAX_ESC_VALUES];
 static size_t esc_values_i = 0;
 static int saved_cursor_x = 0, saved_cursor_y = 0;
+static int current_fg = -1;
 
 static void sgr(void) {
     size_t i = 0;
@@ -112,15 +114,38 @@ static void sgr(void) {
         goto def;
 
     for (; i < esc_values_i; i++) {
-        if (!esc_values[i]) {
+        if (esc_values[i] == 0) {
 def:
+            bold = false;
+            current_fg = -1;
             set_text_bg_default();
             set_text_fg_default();
             continue;
         }
 
+        if (esc_values[i] == 1) {
+            bold = true;
+            if (current_fg != -1) {
+                set_text_fg_bright(current_fg);
+            }
+            continue;
+        }
+
+        if (esc_values[i] == 22) {
+            bold = false;
+            if (current_fg != -1) {
+                set_text_fg(current_fg);
+            }
+            continue;
+        }
+
         if (esc_values[i] >= 30 && esc_values[i] <= 37) {
-            set_text_fg(esc_values[i] - 30);
+            current_fg = esc_values[i] - 30;
+            if (bold) {
+                set_text_fg_bright(esc_values[i] - 30);
+            } else {
+                set_text_fg(esc_values[i] - 30);
+            }
             continue;
         }
 
@@ -130,6 +155,7 @@ def:
         }
 
         if (esc_values[i] >= 90 && esc_values[i] <= 97) {
+            current_fg = esc_values[i] - 90;
             set_text_fg_bright(esc_values[i] - 90);
             continue;
         }
@@ -140,6 +166,7 @@ def:
         }
 
         if (esc_values[i] == 39) {
+            current_fg = -1;
             set_text_fg_default();
             continue;
         }

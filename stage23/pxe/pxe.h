@@ -6,7 +6,7 @@
 
 struct volume *pxe_bind_volume(void);
 void pxe_init(void);
-int pxe_call(uint16_t opcode, uint16_t buf_seg, uint16_t buf_off) __attribute__((regparm(3)));
+int pxe_call(uint16_t opcode, uint16_t buf_seg, uint16_t buf_off);
 
 #define MAC_ADDR_LEN 16
 typedef uint8_t MAC_ADDR_t[MAC_ADDR_LEN];

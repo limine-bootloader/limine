@@ -28,15 +28,9 @@ int fopen(struct file_handle *ret, struct volume *part, const char *filename) {
 
 #if bios == 1
     if (part->pxe) {
-        struct tftp_file_handle *fd = ext_mem_alloc(sizeof(struct tftp_file_handle));
-
-        int r = tftp_open(fd, 0, 69, filename);
+        int r = tftp_open(ret, 0, 69, filename);
         if (r)
             return r;
-
-        ret->fd = (void *)fd;
-        ret->read = (void *)tftp_read;
-        ret->size = fd->file_size;
 
         return 0;
     }

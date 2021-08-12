@@ -35,14 +35,17 @@ int init_config_disk(struct volume *part) {
 
 #if bios == 1
 int init_config_pxe(void) {
-    struct tftp_file_handle cfg;
-    if (tftp_open(&cfg, 0, 69, "limine.cfg")) {
+    struct file_handle f;
+    if (tftp_open(&f, 0, 69, "limine.cfg")) {
         return -1;
     }
-    config_addr = ext_mem_alloc(cfg.file_size);
-    tftp_read(&cfg, config_addr, 0, cfg.file_size);
 
-    return init_config(cfg.file_size);
+    size_t config_size = f.size + 1;
+    config_addr = ext_mem_alloc(config_size);
+
+    fread(&f, config_addr, 0, f.size);
+
+    return init_config(config_size);
 }
 #endif
 

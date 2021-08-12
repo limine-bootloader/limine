@@ -148,19 +148,14 @@ static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
         ip = 0;
     } else {
         if (inet_pton(root, &ip)) {
-            panic("invalid ipv4 address: %s", root);
+            panic("tftp: Invalid ipv4 address: %s", root);
         }
     }
 
-    struct tftp_file_handle *cfg = ext_mem_alloc(sizeof(struct tftp_file_handle));
-    if(tftp_open(cfg, ip, 69, path)) {
+    if (tftp_open(fd, ip, 69, path)) {
         return false;
     }
 
-    fd->is_memfile = false;
-    fd->fd = cfg;
-    fd->read = tftp_read;
-    fd->size = cfg->file_size;
     return true;
 }
 #endif

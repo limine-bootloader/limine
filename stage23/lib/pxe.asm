@@ -9,8 +9,14 @@ set_pxe_fp:
     ret
 
 pxe_call:
-   ; Save GDT in case BIOS overwrites it
+    ; Save GDT in case BIOS overwrites it
     sgdt [.gdt]
+
+    ; Save IDT
+    sidt [.idt]
+
+    ; Load BIOS IVT
+    lidt [.rm_idt]
 
     ; Save non-scratch GPRs
     push ebx
@@ -18,8 +24,8 @@ pxe_call:
     push edi
     push ebp
 
-    mov ebx, eax
-    
+    lea ebp, [esp + 20]
+
     ; Jump to real mode
     jmp 0x08:.bits16
   .bits16:
@@ -44,32 +50,36 @@ pxe_call:
 
     sti
 
-    push dx
-    push cx
-    push bx
+    push word [bp + 4]
+    push word [bp + 8]
+    push word [bp + 0]
     call far [.pxe_fp]
     add sp, 6
-    mov bx, ax
 
     cli
-   ; Restore GDT
-    lgdt [ss:.gdt]
+
+    ; Restore GDT
+    o32 lgdt [cs:.gdt]
+
+    ; Restore IDT
+    o32 lidt [cs:.idt]
 
     ; Jump back to pmode
-    mov eax, cr0
-    or al, 1
-    mov cr0, eax
+    mov ebx, cr0
+    or bl, 1
+    mov cr0, ebx
     jmp 0x18:.bits32
   .bits32:
     bits 32
-    mov ax, 0x20
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
+    mov bx, 0x20
+    mov ds, bx
+    mov es, bx
+    mov fs, bx
+    mov gs, bx
+    mov ss, bx
 
-    mov eax, ebx
+    and eax, 0xffff
+
     ; Restore non-scratch GPRs
     pop ebp
     pop edi
@@ -81,5 +91,7 @@ pxe_call:
 
 align 16
   .pxe_fp:   dd 0
-  .esp:      dd 0
   .gdt:      dq 0
+  .idt:      dq 0
+  .rm_idt:   dw 0x3ff
+             dd 0

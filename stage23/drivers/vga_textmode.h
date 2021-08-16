@@ -16,6 +16,7 @@ void text_get_cursor_pos(size_t *x, size_t *y);
 void text_set_text_fg(size_t fg);
 void text_set_text_bg(size_t bg);
 void text_set_text_fg_bright(size_t fg);
+void text_set_text_bg_bright(size_t bg);
 void text_set_text_fg_default(void);
 void text_set_text_bg_default(void);
 bool text_scroll_disable(void);

@@ -186,6 +186,10 @@ void init_vga_textmode(size_t *_rows, size_t *_cols, bool managed) {
         outb(0x3d5, 0);
         outb(0x3d4, 0x0e);
         outb(0x3d5, 0);
+
+        struct rm_regs r = {0};
+        r.eax = 0x0200;
+        rm_int(0x10, &r, &r);
     } else {
         outb(0x3d4, 0x0a);
         outb(0x3d5, 0x20);
@@ -259,6 +263,10 @@ void text_set_text_bg(size_t bg) {
 
 void text_set_text_fg_bright(size_t fg) {
     text_palette = (text_palette & 0xf0) | (ansi_colours[fg] | (1 << 3));
+}
+
+void text_set_text_bg_bright(size_t bg) {
+    text_palette = (text_palette & 0x0f) | ((ansi_colours[bg] | (1 << 3)) << 4);
 }
 
 void text_set_text_fg_default(void) {

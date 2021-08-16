@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 typedef uint8_t stack[4096];
-static stack stacks[10] = {0};
+static stack stacks[64] = {0};
 void stivale2_main(struct stivale2_struct *info);
 
 struct stivale2_header_tag_terminal terminal_request = {
@@ -28,14 +28,12 @@ struct stivale2_tag unmap_null_request = {
     .next       = (uint64_t)&smp_request
 };
 
-struct stivale2_header_tag_framebuffer framebuffer_request = {
+struct stivale2_header_tag_any_video any_video_request = {
     .tag = {
-        .identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID,
+        .identifier = STIVALE2_HEADER_TAG_ANY_VIDEO_ID,
         .next       = (uint64_t)&unmap_null_request
     },
-    .framebuffer_width  = 0,
-    .framebuffer_height = 0,
-    .framebuffer_bpp    = 0,
+    .preference = 0
 };
 
 __attribute__((section(".stivale2hdr"), used))
@@ -43,7 +41,7 @@ struct stivale2_header header2 = {
     .entry_point = (uint64_t)stivale2_main,
     .stack       = (uintptr_t)stacks[0] + sizeof(stack),
     .flags       = (1 << 1) | (1 << 2),
-    .tags        = (uint64_t)&framebuffer_request
+    .tags        = (uint64_t)&any_video_request
 };
 
 static volatile int cpu_up = 0;

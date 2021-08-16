@@ -382,14 +382,17 @@ failed_to_load_header_section:
 
     size_t req_width = 0, req_height = 0, req_bpp = 0;
 
-    if (hdrtag != NULL) {
-        req_width  = hdrtag->framebuffer_width;
-        req_height = hdrtag->framebuffer_height;
-        req_bpp    = hdrtag->framebuffer_bpp;
+    char *resolution = config_get_value(config, 0, "RESOLUTION");
+    if (resolution != NULL)
+        parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
-        char *resolution = config_get_value(config, 0, "RESOLUTION");
-        if (resolution != NULL)
-            parse_resolution(&req_width, &req_height, &req_bpp, resolution);
+    if (hdrtag != NULL) {
+        if (hdrtag->framebuffer_width)
+            req_width  = hdrtag->framebuffer_width;
+        if (hdrtag->framebuffer_height)
+            req_height = hdrtag->framebuffer_height;
+        if (hdrtag->framebuffer_bpp)
+            req_bpp    = hdrtag->framebuffer_bpp;
     }
 
     struct stivale2_header_tag_any_video *avtag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_ANY_VIDEO_ID);
@@ -411,7 +414,8 @@ failed_to_load_header_section:
     struct stivale2_header_tag_terminal *terminal_hdr_tag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_TERMINAL_ID);
 
     if (bits == 64 && terminal_hdr_tag != NULL) {
-        if (bios && ((hdrtag == NULL) || (avtag != NULL && preference == 1))) {
+        if (bios &&
+          ((avtag == NULL && hdrtag == NULL) || (avtag != NULL && preference == 1))) {
             term_textmode();
             textmode = true;
         } else {

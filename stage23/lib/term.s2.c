@@ -112,7 +112,7 @@ void term_textmode(void) {
     set_text_fg    = text_set_text_fg;
     set_text_bg    = text_set_text_bg;
     set_text_fg_bright = text_set_text_fg_bright;
-    set_text_bg_bright = text_set_text_bg;
+    set_text_bg_bright = text_set_text_bg_bright;
     set_text_fg_default = text_set_text_fg_default;
     set_text_bg_default = text_set_text_bg_default;
     scroll_disable = text_scroll_disable;

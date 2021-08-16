@@ -81,10 +81,10 @@ extern void (*term_full_refresh)(void);
 #define TERM_CB_BELL 20
 #define TERM_CB_PRIVATE_ID 30
 #define TERM_CB_STATUS_REPORT 40
-#define TERM_CB_POS_REPORT 40
-#define TERM_CB_KBD_LEDS 50
-#define TERM_CB_MODE 60
-#define TERM_CB_LINUX 70
+#define TERM_CB_POS_REPORT 50
+#define TERM_CB_KBD_LEDS 60
+#define TERM_CB_MODE 70
+#define TERM_CB_LINUX 80
 
 #define TERM_CTX_SIZE ((uint64_t)(-1))
 #define TERM_CTX_SAVE ((uint64_t)(-2))

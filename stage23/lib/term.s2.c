@@ -396,7 +396,7 @@ static void dec_private_parse(uint8_t c) {
     }
 
     if (term_callback != NULL) {
-        term_callback(TERM_CB_DEC, c, esc_values_i, (uintptr_t)esc_values);
+        term_callback(TERM_CB_DEC, esc_values_i, (uintptr_t)esc_values, c);
     }
 }
 
@@ -432,7 +432,7 @@ static void mode_toggle(uint8_t c) {
     }
 
     if (term_callback != NULL) {
-        term_callback(TERM_CB_MODE, c, esc_values_i, (uintptr_t)esc_values);
+        term_callback(TERM_CB_MODE, esc_values_i, (uintptr_t)esc_values, c);
     }
 }
 

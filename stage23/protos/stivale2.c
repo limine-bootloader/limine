@@ -378,8 +378,6 @@ failed_to_load_header_section:
     struct fb_info *fb = NULL;
     struct fb_info _fb;
 
-    struct stivale2_header_tag_any_video *avtag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_ANY_VIDEO_ID);
-
     struct stivale2_header_tag_framebuffer *hdrtag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_FRAMEBUFFER_ID);
 
     size_t req_width = 0, req_height = 0, req_bpp = 0;
@@ -394,18 +392,28 @@ failed_to_load_header_section:
             parse_resolution(&req_width, &req_height, &req_bpp, resolution);
     }
 
+    struct stivale2_header_tag_any_video *avtag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_ANY_VIDEO_ID);
+
+#if uefi == 1
+    if (hdrtag == NULL && avtag == NULL) {
+        panic("stivale2: Cannot use text mode with UEFI.");
+    }
+#endif
+
     char *textmode_str = config_get_value(config, 0, "TEXTMODE");
     bool textmode = textmode_str != NULL && strcmp(textmode_str, "yes") == 0;
 
+    int preference;
+    if (avtag != NULL) {
+        preference = textmode ? 1 : avtag->preference;
+    }
+
     struct stivale2_header_tag_terminal *terminal_hdr_tag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_TERMINAL_ID);
 
-    if (bits == 64 && terminal_hdr_tag != NULL && (hdrtag != NULL || textmode)) {
-        if (textmode) {
-#if bios == 1
+    if (bits == 64 && terminal_hdr_tag != NULL) {
+        if (bios && ((hdrtag == NULL) || (avtag != NULL && preference == 1))) {
             term_textmode();
-#elif uefi == 1
-            panic("stivale2: Text mode not supported on UEFI");
-#endif
+            textmode = true;
         } else {
             term_vbe(req_width, req_height);
 
@@ -414,6 +422,8 @@ failed_to_load_header_section:
             }
 
             fb = &fbinfo;
+
+            textmode = false;
         }
 
         struct stivale2_struct_tag_terminal *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_terminal));
@@ -463,8 +473,7 @@ failed_to_load_header_section:
         fb = &_fb;
     }
 
-    if (hdrtag != NULL || (avtag != NULL && uefi)
-    || (avtag != NULL && avtag->preference == 0)) {
+    if (hdrtag != NULL || (avtag != NULL && uefi) || (avtag != NULL && preference == 0)) {
         term_deinit();
 
         if (fb_init(fb, req_width, req_height, req_bpp)) {
@@ -492,9 +501,7 @@ have_fb_tag:;
             append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
         }
     } else {
-#if uefi == 1
-        panic("stivale2: Cannot use text mode with UEFI.");
-#elif bios == 1
+#if bios == 1
         size_t rows, cols;
         init_vga_textmode(&rows, &cols, false);
 

@@ -173,22 +173,22 @@ void init_vga_textmode(size_t *_rows, size_t *_cols, bool managed) {
     *_rows = VD_ROWS;
     *_cols = VD_COLS / 2;
 
-    struct rm_regs r;
+    // VGA cursor code taken from: https://wiki.osdev.org/Text_Mode_Cursor
 
     if (!managed) {
         text_disable_cursor();
-        r = (struct rm_regs){0};
-        r.eax = 0x0200;
-        rm_int(0x10, &r, &r);
-        r = (struct rm_regs){0};
-        r.eax = 0x0100;
-        r.ecx = 0x0607;
-        rm_int(0x10, &r, &r);
+
+        outb(0x3d4, 0x0a);
+        outb(0x3d5, (inb(0x3d5) & 0xc0) | 14);
+        outb(0x3d4, 0x0b);
+        outb(0x3d5, (inb(0x3d5) & 0xe0) | 15);
+        outb(0x3d4, 0x0f);
+        outb(0x3d5, 0);
+        outb(0x3d4, 0x0e);
+        outb(0x3d5, 0);
     } else {
-        r = (struct rm_regs){0};
-        r.eax = 0x0100;
-        r.ecx = 0x2706;
-        rm_int(0x10, &r, &r);
+        outb(0x3d4, 0x0a);
+        outb(0x3d5, 0x20);
     }
 }
 

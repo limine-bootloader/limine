@@ -82,6 +82,8 @@ static const char *VALID_KEYS[] = {
     "TERMINAL_FONT",
     "THEME_COLOURS",
     "THEME_COLORS",
+    "THEME_BRIGHT_COLOURS",
+    "THEME_BRIGHT_COLORS",
     "THEME_BACKGROUND",
     "THEME_FOREGROUND",
     "THEME_MARGIN",
@@ -94,6 +96,9 @@ static const char *VALID_KEYS[] = {
     "EDITOR_HIGHLIGHTING",
     "EDITOR_VALIDATION",
     "VERBOSE",
+    "RANDOMISE_MEMORY",
+    "RANDOMIZE_MEMORY",
+    "COMMENT",
     "PROTOCOL",
     "CMDLINE",
     "KERNEL_CMDLINE",
@@ -101,11 +106,11 @@ static const char *VALID_KEYS[] = {
     "MODULE_PATH",
     "MODULE_STRING",
     "RESOLUTION",
+    "TEXTMODE",
     "KASLR",
     "DRIVE",
     "PARTITION",
     "IMAGE_PATH",
-    "COMMENT",
     NULL
 };
 

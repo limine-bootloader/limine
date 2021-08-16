@@ -102,6 +102,7 @@ Some keys take *URIs* as values; these are described in the next section.
   to the 1st module string entry that appear, and so on.
   * `RESOLUTION` - The resolution to be used should the kernel request a graphical framebuffer. This setting takes the form of `<width>x<height>x<bpp>` and *overrides* any resolution requested by the kernel, or automatic resolution requests. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
   * `KASLR` - For relocatable kernels, if set to `no`, disable kernel address space layout randomisation. KASLR is enabled by default.
+  * `TEXTMODE` - If set to `yes`, prefer text mode if the kernel has no video mode requirements. (Only for stivale2)
 * Chainload protocol on BIOS:
   * `DRIVE` - The 1-based BIOS drive to chainload.
   * `PARTITION` - The 1-based BIOS partition to chainload, if omitted, chainload drive.

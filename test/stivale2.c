@@ -112,6 +112,11 @@ void stivale2_main(struct stivale2_struct *info) {
                 e9_printf("\tBlue mask size:  %d", f->blue_mask_shift);
                 break;
             }
+            case STIVALE2_STRUCT_TAG_TEXTMODE_ID: {
+                struct stivale2_struct_tag_textmode *tm = (struct stivale2_struct_tag_textmode *)tag;
+                e9_puts("Textmode tag");
+                break;
+            }
             case STIVALE2_STRUCT_TAG_EDID_ID: {
                 struct stivale2_struct_tag_edid *edid = (struct stivale2_struct_tag_edid *)tag;
 

@@ -434,7 +434,7 @@ static size_t print_tree(const char *shift, size_t level, size_t base_index, siz
             break;
         if (!no_print) print("%s", shift);
         if (level) {
-            for (size_t i = level - 1; ; i--) {
+            for (size_t i = level - 1; i > 0; i--) {
                 struct menu_entry *actual_parent = current_entry;
                 for (size_t j = 0; j < i; j++)
                     actual_parent = actual_parent->parent;
@@ -442,9 +442,6 @@ static size_t print_tree(const char *shift, size_t level, size_t base_index, siz
                     if (!no_print) print(" \xb3");
                 } else {
                     if (!no_print) print("  ");
-                }
-                if (i == 0) {
-                    break;
                 }
             }
             if (current_entry->next == NULL) {

@@ -8,7 +8,7 @@
 
 bool early_term = false;
 
-void term_vbe(int width, int height) {
+void term_vbe(size_t width, size_t height) {
     term_backend = NOT_READY;
 
     if (!gterm_init(&term_rows, &term_cols, width, height)) {
@@ -18,6 +18,8 @@ void term_vbe(int width, int height) {
 #endif
         return;
     }
+
+    term_reinit();
 
     raw_putchar    = gterm_putchar;
     clear          = gterm_clear;
@@ -34,6 +36,8 @@ void term_vbe(int width, int height) {
     scroll_disable = gterm_scroll_disable;
     scroll_enable  = gterm_scroll_enable;
     term_move_character = gterm_move_character;
+    term_scroll = gterm_scroll;
+    term_swap_palette = gterm_swap_palette;
 
     term_double_buffer       = gterm_double_buffer;
     term_double_buffer_flush = gterm_double_buffer_flush;

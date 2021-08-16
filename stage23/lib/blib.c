@@ -20,13 +20,13 @@ UINTN efi_mmap_size = 0, efi_desc_size = 0, efi_desc_ver = 0;
 
 bool verbose = false;
 
-bool parse_resolution(int *width, int *height, int *bpp, const char *buf) {
-    int res[3] = {0};
+bool parse_resolution(size_t *width, size_t *height, size_t *bpp, const char *buf) {
+    size_t res[3] = {0};
 
     const char *first = buf;
-    for (int i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 3; i++) {
         const char *last;
-        int x = strtoui(first, &last, 10);
+        size_t x = strtoui(first, &last, 10);
         if (first == last)
             break;
         res[i] = x;

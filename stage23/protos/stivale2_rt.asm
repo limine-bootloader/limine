@@ -8,17 +8,64 @@ user_ds: resq 1
 user_es: resq 1
 user_ss: resq 1
 
-%define MAX_TERM_BUF 8192
-
 section .text
 
 extern term_write
-extern stivale2_term_buf
 extern stivale2_rt_stack
+extern stivale2_term_callback_ptr
 
+global stivale2_term_callback
+stivale2_term_callback:
+bits 32
+    push ebp
+    mov ebp, esp
+
+    push ebx
+    push esi
+    push edi
+
+    ; Go 64
+    push 0x28
+    push .mode64
+    retfd
 bits 64
+  .mode64:
+    mov eax, 0x30
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+
+    mov rdi, [rbp + 8]
+    mov rsi, [rbp + 16]
+    mov rdx, [rbp + 24]
+    mov rcx, [rbp + 32]
+
+    mov rbx, rsp
+    mov rsp, [user_stack]
+    call [stivale2_term_callback_ptr]
+    mov rsp, rbx
+
+    ; Go 32
+    push 0x18
+    push .mode32
+    retfq
+bits 32
+  .mode32:
+    mov eax, 0x20
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+
+    pop edi
+    pop esi
+    pop ebx
+    pop ebp
+
+    ret
+
 global stivale2_term_write_entry
 stivale2_term_write_entry:
+bits 64
     push rbx
     push rbp
     push r12
@@ -35,14 +82,7 @@ stivale2_term_write_entry:
     mov word [user_ss], ss
 
     push rsi
-    mov rcx, rsi
-    mov rax, MAX_TERM_BUF
-    cmp rcx, rax
-    cmovg rcx, rax
-    mov rsi, rdi
-    mov edi, [stivale2_term_buf]
-    rep movsb
-    pop rsi
+    push rdi
 
     push 0x18
     push .mode32
@@ -53,10 +93,10 @@ bits 32
     mov ds, ax
     mov es, ax
     mov ss, ax
-    push esi
-    push dword [stivale2_term_buf]
+
     call term_write
-    add esp, 8
+    add esp, 16
+
     push dword [user_cs]
     push .mode64
     retfd

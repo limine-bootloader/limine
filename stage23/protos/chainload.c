@@ -97,7 +97,7 @@ void chainload(char *config) {
         drive = val;
     }
 
-    int rows, cols;
+    size_t rows, cols;
     init_vga_textmode(&rows, &cols, false);
 
     struct volume *p = volume_get_by_coord(false, drive, part);
@@ -131,7 +131,7 @@ void chainload(char *config) {
 
     term_deinit();
 
-    int req_width = 0, req_height = 0, req_bpp = 0;
+    size_t req_width = 0, req_height = 0, req_bpp = 0;
 
     char *resolution = config_get_value(config, 0, "RESOLUTION");
     if (resolution != NULL)

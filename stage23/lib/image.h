@@ -6,16 +6,16 @@
 
 struct image {
     struct file_handle *file;
-    int x_size;
-    int y_size;
+    size_t x_size;
+    size_t y_size;
     int type;
     uint8_t *img;
     int bpp;
     int pitch;
-    int img_width; // x_size = scaled size, img_width = bitmap size
-    int img_height;
-    int x_displacement;
-    int y_displacement;
+    size_t img_width; // x_size = scaled size, img_width = bitmap size
+    size_t img_height;
+    size_t x_displacement;
+    size_t y_displacement;
     uint32_t back_colour;
 };
 

@@ -31,7 +31,7 @@ static uint32_t ansi_colours[8];
 static uint32_t ansi_bright_colours[8];
 static uint32_t default_fg, default_bg;
 
-static int frame_height, frame_width;
+static size_t frame_height, frame_width;
 
 static struct image *background;
 
@@ -49,12 +49,22 @@ static uint32_t text_fg, text_bg;
 
 static bool cursor_status = true;
 
-static int cursor_x;
-static int cursor_y;
+static size_t cursor_x;
+static size_t cursor_y;
 
-static int rows;
-static int cols;
-static int margin_gradient;
+static size_t rows;
+static size_t cols;
+static size_t margin_gradient;
+
+void gterm_swap_palette(void) {
+    uint32_t tmp = text_bg;
+    text_bg = text_fg;
+    if (tmp == 0xffffffff) {
+        text_fg = default_bg;
+    } else {
+        text_fg = tmp;
+    }
+}
 
 #define A(rgb) (uint8_t)(rgb >> 24)
 #define R(rgb) (uint8_t)(rgb >> 16)
@@ -73,14 +83,14 @@ static inline uint32_t colour_blend(uint32_t fg, uint32_t bg) {
     return ARGB(0, r, g, b);
 }
 
-void gterm_plot_px(int x, int y, uint32_t hex) {
+void gterm_plot_px(size_t x, size_t y, uint32_t hex) {
     size_t fb_i = x + (gterm_pitch / sizeof(uint32_t)) * y;
 
     gterm_framebuffer[fb_i] = hex;
 }
 
-static uint32_t blend_gradient_from_box(int x, int y, uint32_t bg_px, uint32_t hex) {
-    int distance, x_distance, y_distance;
+static uint32_t blend_gradient_from_box(size_t x, size_t y, uint32_t bg_px, uint32_t hex) {
+    size_t distance, x_distance, y_distance;
 
     if (x < frame_width)
         x_distance = frame_width - x;
@@ -110,22 +120,22 @@ static uint32_t blend_gradient_from_box(int x, int y, uint32_t bg_px, uint32_t h
     return colour_blend((hex & 0xffffff) | (new_alpha << 24), bg_px);
 }
 
-typedef int fixedp6; // the last 6 bits are the fixed point part
-static int fixedp6_to_int(fixedp6 value) { return value / 64; }
-static fixedp6 int_to_fixedp6(int value) { return value * 64; }
+typedef size_t fixedp6; // the last 6 bits are the fixed point part
+static size_t fixedp6_to_int(fixedp6 value) { return value / 64; }
+static fixedp6 int_to_fixedp6(size_t value) { return value * 64; }
 
 // Draw rect at coordinates, copying from the image to the fb and canvas, applying fn on every pixel
-__attribute__((always_inline)) static inline void genloop(int xstart, int xend, int ystart, int yend, uint32_t (*blend)(int x, int y, uint32_t orig)) {
+__attribute__((always_inline)) static inline void genloop(size_t xstart, size_t xend, size_t ystart, size_t yend, uint32_t (*blend)(size_t x, size_t y, uint32_t orig)) {
     uint8_t *img = background->img;
-    const int img_width = background->img_width, img_height = background->img_height, img_pitch = background->pitch, colsize = background->bpp / 8;
+    const size_t img_width = background->img_width, img_height = background->img_height, img_pitch = background->pitch, colsize = background->bpp / 8;
 
     switch (background->type) {
     case IMAGE_TILED:
-        for (int y = ystart; y < yend; y++) {
-            int image_y = y % img_height, image_x = xstart % img_width;
+        for (size_t y = ystart; y < yend; y++) {
+            size_t image_y = y % img_height, image_x = xstart % img_width;
             const size_t off = img_pitch * (img_height - 1 - image_y);
-            int canvas_off = gterm_width * y, fb_off = gterm_pitch / 4 * y;
-            for (int x = xstart; x < xend; x++) {
+            size_t canvas_off = gterm_width * y, fb_off = gterm_pitch / 4 * y;
+            for (size_t x = xstart; x < xend; x++) {
                 uint32_t img_pixel = *(uint32_t*)(img + image_x * colsize + off);
                 uint32_t i = blend(x, y, img_pixel);
                 bg_canvas[canvas_off + x] = i; gterm_framebuffer[fb_off + x] = i;
@@ -135,20 +145,20 @@ __attribute__((always_inline)) static inline void genloop(int xstart, int xend, 
         break;
 
     case IMAGE_CENTERED:
-        for (int y = ystart; y < yend; y++) {
-            int image_y = y - background->y_displacement;
+        for (size_t y = ystart; y < yend; y++) {
+            size_t image_y = y - background->y_displacement;
             const size_t off = img_pitch * (img_height - 1 - image_y);
-            int canvas_off = gterm_width * y, fb_off = gterm_pitch / 4 * y;
-            if ((image_y < 0) || (image_y >= background->y_size)) { /* external part */
-                for (int x = xstart; x < xend; x++) {
+            size_t canvas_off = gterm_width * y, fb_off = gterm_pitch / 4 * y;
+            if (image_y >= background->y_size) { /* external part */
+                for (size_t x = xstart; x < xend; x++) {
                     uint32_t i = blend(x, y, background->back_colour);
                     bg_canvas[canvas_off + x] = i; gterm_framebuffer[fb_off + x] = i;
                 }
             }
             else { /* internal part */
-                for (int x = xstart; x < xend; x++) {
-                    int image_x = (x - background->x_displacement);
-                    bool x_external = (image_x < 0) || (image_x >= background->x_size);
+                for (size_t x = xstart; x < xend; x++) {
+                    size_t image_x = (x - background->x_displacement);
+                    bool x_external = image_x >= background->x_size;
                     uint32_t img_pixel = *(uint32_t*)(img + image_x * colsize + off);
                     uint32_t i = blend(x, y, x_external ? background->back_colour : img_pixel);
                     bg_canvas[canvas_off + x] = i; gterm_framebuffer[fb_off + x] = i;
@@ -160,14 +170,14 @@ __attribute__((always_inline)) static inline void genloop(int xstart, int xend, 
     // hence x = xstart * ratio + i * ratio
     // so you can set x = xstart * ratio, and increment by ratio at each iteration
     case IMAGE_STRETCHED:
-        for (int y = ystart; y < yend; y++) {
-            int img_y = (y * img_height) / gterm_height; // calculate Y with full precision
-            int off = img_pitch * (img_height - 1 - img_y);
-            int canvas_off = gterm_width * y, fb_off = gterm_pitch / 4 * y;
+        for (size_t y = ystart; y < yend; y++) {
+            size_t img_y = (y * img_height) / gterm_height; // calculate Y with full precision
+            size_t off = img_pitch * (img_height - 1 - img_y);
+            size_t canvas_off = gterm_width * y, fb_off = gterm_pitch / 4 * y;
 
             size_t ratio = int_to_fixedp6(img_width) / gterm_width;
             fixedp6 img_x = ratio * xstart;
-            for (int x = xstart; x < xend; x++) {
+            for (size_t x = xstart; x < xend; x++) {
                 uint32_t img_pixel = *(uint32_t*)(img + fixedp6_to_int(img_x) * colsize + off);
                 uint32_t i = blend(x, y, img_pixel);
                 bg_canvas[canvas_off + x] = i; gterm_framebuffer[fb_off + x] = i;
@@ -177,18 +187,18 @@ __attribute__((always_inline)) static inline void genloop(int xstart, int xend, 
         break;
     }
 }
-static uint32_t blend_external(int x, int y, uint32_t orig) { (void)x; (void)y; return orig; }
-static uint32_t blend_internal(int x, int y, uint32_t orig) { (void)x; (void)y; return colour_blend(default_bg, orig); }
-static uint32_t blend_margin(int x, int y, uint32_t orig) { return blend_gradient_from_box(x, y, orig, default_bg); }
+static uint32_t blend_external(size_t x, size_t y, uint32_t orig) { (void)x; (void)y; return orig; }
+static uint32_t blend_internal(size_t x, size_t y, uint32_t orig) { (void)x; (void)y; return colour_blend(default_bg, orig); }
+static uint32_t blend_margin(size_t x, size_t y, uint32_t orig) { return blend_gradient_from_box(x, y, orig, default_bg); }
 
-static void loop_external(int xstart, int xend, int ystart, int yend) { genloop(xstart, xend, ystart, yend, blend_external); }
-static void loop_margin(int xstart, int xend, int ystart, int yend) { genloop(xstart, xend, ystart, yend, blend_margin); }
-static void loop_internal(int xstart, int xend, int ystart, int yend) { genloop(xstart, xend, ystart, yend, blend_internal); }
+static void loop_external(size_t xstart, size_t xend, size_t ystart, size_t yend) { genloop(xstart, xend, ystart, yend, blend_external); }
+static void loop_margin(size_t xstart, size_t xend, size_t ystart, size_t yend) { genloop(xstart, xend, ystart, yend, blend_margin); }
+static void loop_internal(size_t xstart, size_t xend, size_t ystart, size_t yend) { genloop(xstart, xend, ystart, yend, blend_internal); }
 
 void gterm_generate_canvas(void) {
     if (background) {
-        const int frame_height_end = frame_height + VGA_FONT_HEIGHT * rows, frame_width_end = frame_width + VGA_FONT_WIDTH * cols;
-        const int fheight = frame_height - margin_gradient, fheight_end = frame_height_end + margin_gradient,
+        const size_t frame_height_end = frame_height + VGA_FONT_HEIGHT * rows, frame_width_end = frame_width + VGA_FONT_WIDTH * cols;
+        const size_t fheight = frame_height - margin_gradient, fheight_end = frame_height_end + margin_gradient,
             fwidth = frame_width - margin_gradient, fwidth_end = frame_width_end + margin_gradient;
 
         loop_external(0, gterm_width, 0, fheight);
@@ -205,8 +215,8 @@ void gterm_generate_canvas(void) {
 
         loop_internal(frame_width, frame_width_end, frame_height, frame_height_end);
     } else {
-        for (int y = 0; y < gterm_height; y++) {
-            for (int x = 0; x < gterm_width; x++) {
+        for (size_t y = 0; y < gterm_height; y++) {
+            for (size_t x = 0; x < gterm_width; x++) {
                 bg_canvas[y * gterm_width + x] = default_bg;
                 gterm_plot_px(x, y, default_bg);
             }
@@ -220,12 +230,12 @@ struct gterm_char {
     uint32_t bg;
 };
 
-void gterm_plot_char(struct gterm_char *c, int x, int y) {
+void gterm_plot_char(struct gterm_char *c, size_t x, size_t y) {
     bool *glyph = &vga_font_bool[c->c * VGA_FONT_HEIGHT * VGA_FONT_WIDTH];
-    for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
+    for (size_t i = 0; i < VGA_FONT_HEIGHT; i++) {
         uint32_t *fb_line = gterm_framebuffer + x + (y + i) * (gterm_pitch / 4);
         uint32_t *canvas_line = bg_canvas + x + (y + i) * gterm_width;
-        for (int j = 0; j < VGA_FONT_WIDTH; j++) {
+        for (size_t j = 0; j < VGA_FONT_WIDTH; j++) {
             uint32_t bg = c->bg == 0xffffffff ? canvas_line[j] : c->bg;
             bool draw = glyph[i * VGA_FONT_WIDTH + j];
             fb_line[j] = draw ? c->fg : bg;
@@ -233,13 +243,13 @@ void gterm_plot_char(struct gterm_char *c, int x, int y) {
     }
 }
 
-void gterm_plot_char_fast(struct gterm_char *old, struct gterm_char *c, int x, int y) {
+void gterm_plot_char_fast(struct gterm_char *old, struct gterm_char *c, size_t x, size_t y) {
     bool *new_glyph = &vga_font_bool[c->c * VGA_FONT_HEIGHT * VGA_FONT_WIDTH];
     bool *old_glyph = &vga_font_bool[old->c * VGA_FONT_HEIGHT * VGA_FONT_WIDTH];
-    for (int i = 0; i < VGA_FONT_HEIGHT; i++) {
+    for (size_t i = 0; i < VGA_FONT_HEIGHT; i++) {
         uint32_t *fb_line = gterm_framebuffer + x + (y + i) * (gterm_pitch / 4);
         uint32_t *canvas_line = bg_canvas + x + (y + i) * gterm_width;
-        for (int j = 0; j < VGA_FONT_WIDTH; j++) {
+        for (size_t j = 0; j < VGA_FONT_WIDTH; j++) {
             uint32_t bg = c->bg == 0xffffffff ? canvas_line[j] : c->bg;
             bool old_draw = old_glyph[i * VGA_FONT_WIDTH + j];
             bool new_draw = new_glyph[i * VGA_FONT_WIDTH + j];
@@ -250,11 +260,11 @@ void gterm_plot_char_fast(struct gterm_char *old, struct gterm_char *c, int x, i
     }
 }
 
-static void plot_char_grid_force(struct gterm_char *c, int x, int y) {
+static void plot_char_grid_force(struct gterm_char *c, size_t x, size_t y) {
     gterm_plot_char(c, frame_width + x * VGA_FONT_WIDTH, frame_height + y * VGA_FONT_HEIGHT);
 }
 
-static void plot_char_grid(struct gterm_char *c, int x, int y) {
+static void plot_char_grid(struct gterm_char *c, size_t x, size_t y) {
     if (!double_buffer_enabled) {
         struct gterm_char *old = &grid[x + y * cols];
 
@@ -302,10 +312,11 @@ void gterm_scroll_enable(void) {
     scroll_enabled = true;
 }
 
-static void scroll(void) {
+void gterm_scroll(void) {
     clear_cursor();
 
-    for (int i = cols; i < rows * cols; i++) {
+    for (size_t i = (term_context.scroll_top_margin + 1) * cols;
+         i < term_context.scroll_bottom_margin * cols; i++) {
         if (!compare_char(&grid[i], &grid[i - cols]))
             plot_char_grid(&grid[i], (i - cols) % cols, (i - cols) / cols);
     }
@@ -315,7 +326,8 @@ static void scroll(void) {
     empty.c  = ' ';
     empty.fg = text_fg;
     empty.bg = text_bg;
-    for (int i = rows * cols - cols; i < rows * cols; i++) {
+    for (size_t i = (term_context.scroll_bottom_margin - 1) * cols;
+         i < term_context.scroll_bottom_margin * cols; i++) {
         if (!compare_char(&grid[i], &empty))
             plot_char_grid(&empty, i % cols, i / cols);
     }
@@ -330,7 +342,7 @@ void gterm_clear(bool move) {
     empty.c  = ' ';
     empty.fg = text_fg;
     empty.bg = text_bg;
-    for (int i = 0; i < rows * cols; i++) {
+    for (size_t i = 0; i < rows * cols; i++) {
         plot_char_grid(&empty, i % cols, i / cols);
     }
 
@@ -354,16 +366,12 @@ bool gterm_disable_cursor(void) {
     return ret;
 }
 
-void gterm_set_cursor_pos(int x, int y) {
+void gterm_set_cursor_pos(size_t x, size_t y) {
     clear_cursor();
-    if (x < 0) {
-        x = 0;
-    } else if (x >= cols) {
+    if (x >= cols) {
         x = cols - 1;
     }
-    if (y < 0) {
-        y = 0;
-    } else if (y >= rows) {
+    if (y >= rows) {
         y = rows - 1;
     }
     cursor_x = x;
@@ -371,12 +379,17 @@ void gterm_set_cursor_pos(int x, int y) {
     draw_cursor();
 }
 
-void gterm_get_cursor_pos(int *x, int *y) {
+void gterm_get_cursor_pos(size_t *x, size_t *y) {
     *x = cursor_x;
     *y = cursor_y;
 }
 
-void gterm_move_character(int new_x, int new_y, int old_x, int old_y) {
+void gterm_move_character(size_t new_x, size_t new_y, size_t old_x, size_t old_y) {
+    if (old_x >= cols || old_y >= rows
+     || new_x >= cols || new_y >= rows) {
+        return;
+    }
+
     if (!double_buffer_enabled) {
         gterm_plot_char(&grid[old_x + old_y * cols],
                         frame_width + new_x * VGA_FONT_WIDTH,
@@ -385,19 +398,19 @@ void gterm_move_character(int new_x, int new_y, int old_x, int old_y) {
     grid[new_x + new_y * cols] = grid[old_x + old_y * cols];
 }
 
-void gterm_set_text_fg(int fg) {
+void gterm_set_text_fg(size_t fg) {
     text_fg = ansi_colours[fg];
 }
 
-void gterm_set_text_bg(int bg) {
+void gterm_set_text_bg(size_t bg) {
     text_bg = ansi_colours[bg];
 }
 
-void gterm_set_text_fg_bright(int fg) {
+void gterm_set_text_fg_bright(size_t fg) {
     text_fg = ansi_bright_colours[fg];
 }
 
-void gterm_set_text_bg_bright(int bg) {
+void gterm_set_text_bg_bright(size_t bg) {
     text_bg = ansi_bright_colours[bg];
 }
 
@@ -416,8 +429,8 @@ void gterm_double_buffer_flush(void) {
 
         front_grid[i] = grid[i];
 
-        int x = i % cols;
-        int y = i / cols;
+        size_t x = i % cols;
+        size_t y = i / cols;
 
         gterm_plot_char(&grid[i], x * VGA_FONT_WIDTH + frame_width,
                                 y * VGA_FONT_HEIGHT + frame_height);
@@ -440,54 +453,24 @@ void gterm_double_buffer(bool state) {
 }
 
 void gterm_putchar(uint8_t c) {
-    switch (c) {
-        case '\b':
-            if (cursor_x || cursor_y) {
-                clear_cursor();
-                if (cursor_x) {
-                    cursor_x--;
-                } else {
-                    cursor_y--;
-                    cursor_x = cols - 1;
-                }
-                draw_cursor();
-            }
-            break;
-        case '\r':
-            gterm_set_cursor_pos(0, cursor_y);
-            break;
-        case '\n':
-            if (cursor_y == (rows - 1)) {
-                if (scroll_enabled) {
-                    gterm_set_cursor_pos(0, rows - 1);
-                    scroll();
-                }
-            } else {
-                gterm_set_cursor_pos(0, cursor_y + 1);
-            }
-            break;
-        default: {
-            clear_cursor();
-            struct gterm_char ch;
-            ch.c  = c;
-            ch.fg = text_fg;
-            ch.bg = text_bg;
-            plot_char_grid(&ch, cursor_x++, cursor_y);
-            if (cursor_x == cols && (cursor_y < rows - 1 || scroll_enabled)) {
-                cursor_x = 0;
-                cursor_y++;
-            }
-            if (cursor_y == rows) {
-                cursor_y--;
-                scroll();
-            }
-            draw_cursor();
-            break;
-        }
+    clear_cursor();
+    struct gterm_char ch;
+    ch.c  = c;
+    ch.fg = text_fg;
+    ch.bg = text_bg;
+    plot_char_grid(&ch, cursor_x++, cursor_y);
+    if (cursor_x == cols && ((size_t)cursor_y < term_context.scroll_bottom_margin - 1 || scroll_enabled)) {
+        cursor_x = 0;
+        cursor_y++;
     }
+    if ((size_t)cursor_y == term_context.scroll_bottom_margin) {
+        cursor_y--;
+        gterm_scroll();
+    }
+    draw_cursor();
 }
 
-bool gterm_init(int *_rows, int *_cols, int width, int height) {
+bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     if (current_video_mode >= 0
      && fbinfo.default_res == true
      && width == 0
@@ -518,7 +501,7 @@ bool gterm_init(int *_rows, int *_cols, int width, int height) {
         return false;
 
     // default scheme
-    int margin = 64;
+    size_t margin = 64;
     margin_gradient = 4;
 
     default_bg = 0x00000000; // background (black)
@@ -538,7 +521,7 @@ bool gterm_init(int *_rows, int *_cols, int width, int height) {
         colours = config_get_value(NULL, 0, "THEME_COLORS");
     if (colours != NULL) {
         const char *first = colours;
-        int i;
+        size_t i;
         for (i = 0; i < 10; i++) {
             const char *last;
             uint32_t col = strtoui(first, &last, 16);
@@ -571,7 +554,7 @@ bool gterm_init(int *_rows, int *_cols, int width, int height) {
         bright_colours = config_get_value(NULL, 0, "THEME_BRIGHT_COLORS");
     if (bright_colours != NULL) {
         const char *first = bright_colours;
-        int i;
+        size_t i;
         for (i = 0; i < 8; i++) {
             const char *last;
             uint32_t col = strtoui(first, &last, 16);
@@ -672,8 +655,8 @@ bool gterm_init(int *_rows, int *_cols, int width, int height) {
         for (size_t i = 0; i < VGA_FONT_GLYPHS; i++) {
             uint8_t *glyph = &vga_font_bits[i * VGA_FONT_HEIGHT];
 
-            for (int y = 0; y < VGA_FONT_HEIGHT; y++) {
-                for (int x = 0; x < VGA_FONT_WIDTH; x++) {
+            for (size_t y = 0; y < VGA_FONT_HEIGHT; y++) {
+                for (size_t x = 0; x < VGA_FONT_WIDTH; x++) {
                     size_t offset = i * VGA_FONT_HEIGHT * VGA_FONT_WIDTH + y * VGA_FONT_WIDTH + x;
                     if ((glyph[y] & (0x80 >> x))) {
                         vga_font_bool[offset] = true;

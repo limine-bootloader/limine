@@ -488,7 +488,7 @@ void linux_load(char *config, char *cmdline) {
 
     struct screen_info *screen_info = &boot_params->screen_info;
 
-    int req_width = 0, req_height = 0, req_bpp = 0;
+    size_t req_width = 0, req_height = 0, req_bpp = 0;
 
     char *resolution = config_get_value(config, 0, "RESOLUTION");
     if (resolution != NULL)

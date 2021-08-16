@@ -117,7 +117,7 @@ static int validate_line(const char *buffer) {
     if (buffer[0] == '#')
         return TOK_COMMENT;
     char keybuf[64];
-    int i;
+    size_t i;
     for (i = 0; buffer[i] && i < 64; i++) {
         if (buffer[i] == '=') goto found_equals;
         keybuf[i] = buffer[i];
@@ -176,7 +176,7 @@ refresh:
     clear(true);
     disable_cursor();
     {
-        int x, y;
+        size_t x, y;
         print("\n");
         get_cursor_pos(&x, &y);
         set_cursor_pos(term_cols / 2 - DIV_ROUNDUP(strlen(menu_branding), 2), y);
@@ -187,7 +187,7 @@ refresh:
     print("    \e[32mESC\e[0m Discard and Exit    \e[32mF10\e[0m Boot\n");
 
     print("\n\xda");
-    for (int i = 0; i < term_cols - 2; i++) {
+    for (size_t i = 0; i < term_cols - 2; i++) {
         switch (i) {
             case 1: case 2: case 3:
                 if (window_offset > 0) {
@@ -196,7 +196,7 @@ refresh:
                 }
                 // FALLTHRU
             default: {
-                int title_length = strlen(title);
+                size_t title_length = strlen(title);
                 if (i == (term_cols / 2) - DIV_ROUNDUP(title_length, 2) - 1) {
                     print("%s", title);
                     i += title_length - 1;
@@ -208,7 +208,7 @@ refresh:
     }
     print("\xbf\xb3");
 
-    int cursor_x, cursor_y;
+    size_t cursor_x, cursor_y;
     size_t current_line = 0, line_offset = 0, window_size = _window_size;
     bool printed_cursor = false;
     int token_type = validate_line(buffer);
@@ -217,7 +217,7 @@ refresh:
         if (buffer[i] == '\n'
          && current_line <  window_offset + window_size
          && current_line >= window_offset) {
-            int x, y;
+            size_t x, y;
             get_cursor_pos(&x, &y);
             if (i == cursor_offset) {
                 cursor_x = x;
@@ -305,7 +305,7 @@ refresh:
 
     // syntax error alert
     if (validation_enabled) {
-        int x, y;
+        size_t x, y;
         get_cursor_pos(&x, &y);
         set_cursor_pos(0, term_rows-1);
         scroll_disable();
@@ -319,7 +319,7 @@ refresh:
     }
 
     if (current_line - window_offset < window_size) {
-        int x, y;
+        size_t x, y;
         for (size_t i = 0; i < (window_size - (current_line - window_offset)) - 1; i++) {
             get_cursor_pos(&x, &y);
             set_cursor_pos(term_cols - 1, y);
@@ -330,7 +330,7 @@ refresh:
         print("\xb3\xc0");
     }
 
-    for (int i = 0; i < term_cols - 2; i++) {
+    for (size_t i = 0; i < term_cols - 2; i++) {
         switch (i) {
             case 1: case 2: case 3:
                 if (current_line - window_offset >= window_size) {
@@ -419,10 +419,10 @@ refresh:
     goto refresh;
 }
 
-static int print_tree(const char *shift, int level, int base_index, int selected_entry,
+static size_t print_tree(const char *shift, size_t level, size_t base_index, size_t selected_entry,
                       struct menu_entry *current_entry,
                       struct menu_entry **selected_menu_entry) {
-    int max_entries = 0;
+    size_t max_entries = 0;
 
     bool no_print = false;
     if (shift == NULL) {
@@ -434,14 +434,17 @@ static int print_tree(const char *shift, int level, int base_index, int selected
             break;
         if (!no_print) print("%s", shift);
         if (level) {
-            for (int i = level - 1; i > 0; i--) {
+            for (size_t i = level - 1; ; i--) {
                 struct menu_entry *actual_parent = current_entry;
-                for (int j = 0; j < i; j++)
+                for (size_t j = 0; j < i; j++)
                     actual_parent = actual_parent->parent;
                 if (actual_parent->next != NULL) {
                     if (!no_print) print(" \xb3");
                 } else {
                     if (!no_print) print("  ");
+                }
+                if (i == 0) {
+                    break;
                 }
             }
             if (current_entry->next == NULL) {
@@ -482,7 +485,7 @@ char *menu(char **cmdline) {
     bool skip_timeout = false;
     struct menu_entry *selected_menu_entry = NULL;
 
-    int selected_entry = 0;
+    size_t selected_entry = 0;
     char *default_entry = config_get_value(NULL, 0, "DEFAULT_ENTRY");
     if (default_entry != NULL) {
         selected_entry = strtoui(default_entry, NULL, 10);
@@ -490,7 +493,7 @@ char *menu(char **cmdline) {
             selected_entry--;
     }
 
-    int timeout = 5;
+    size_t timeout = 5;
     char *timeout_config = config_get_value(NULL, 0, "TIMEOUT");
     if (timeout_config != NULL) {
         if (!strcmp(timeout_config, "no"))
@@ -522,7 +525,7 @@ char *menu(char **cmdline) {
     char *graphics = "yes";
 #endif
     if (graphics != NULL && !strcmp(graphics, "yes")) {
-        int req_width = 0, req_height = 0, req_bpp = 0;
+        size_t req_width = 0, req_height = 0, req_bpp = 0;
 
         char *menu_resolution = config_get_value(NULL, 0, "MENU_RESOLUTION");
         if (menu_resolution != NULL)
@@ -538,7 +541,7 @@ char *menu(char **cmdline) {
 refresh:
     clear(true);
     {
-        int x, y;
+        size_t x, y;
         print("\n");
         get_cursor_pos(&x, &y);
         set_cursor_pos(term_cols / 2 - DIV_ROUNDUP(strlen(menu_branding), 2), y);
@@ -563,16 +566,16 @@ refresh:
     }
 
     {   // Draw box around boot menu
-        int x, y;
+        size_t x, y;
         get_cursor_pos(&x, &y);
 
         print("\xda");
-        for (int i = 0; i < term_cols - 2; i++) {
+        for (size_t i = 0; i < term_cols - 2; i++) {
             print("\xc4");
         }
         print("\xbf");
 
-        for (int i = y + 1; i < term_rows - 2; i++) {
+        for (size_t i = y + 1; i < term_rows - 2; i++) {
             set_cursor_pos(0, i);
             print("\xb3");
             set_cursor_pos(term_cols - 1, i);
@@ -580,7 +583,7 @@ refresh:
         }
 
         print("\xc0");
-        for (int i = 0; i < term_cols - 2; i++) {
+        for (size_t i = 0; i < term_cols - 2; i++) {
             print("\xc4");
         }
         print("\xd9");
@@ -588,11 +591,11 @@ refresh:
         set_cursor_pos(x, y + 2);
     }
 
-    int max_entries = print_tree("\xb3   ", 0, 0, selected_entry, menu_tree,
+    size_t max_entries = print_tree("\xb3   ", 0, 0, selected_entry, menu_tree,
                                  &selected_menu_entry);
 
     {
-        int x, y;
+        size_t x, y;
         get_cursor_pos(&x, &y);
         set_cursor_pos(0, 3);
         if (editor_enabled && selected_menu_entry->sub == NULL) {
@@ -611,7 +614,7 @@ refresh:
 
     if (skip_timeout == false) {
         print("\n\n");
-        for (int i = timeout; i; i--) {
+        for (size_t i = timeout; i; i--) {
             set_cursor_pos(0, term_rows - 1);
             scroll_disable();
             print("\e[32mBooting automatically in \e[92m%u\e[32m, press any key to stop the countdown...\e[0m", i);
@@ -641,8 +644,10 @@ refresh:
 timeout_aborted:
         switch (c) {
             case GETCHAR_CURSOR_UP:
-                if (--selected_entry == -1)
+                if (selected_entry == 0)
                     selected_entry = max_entries - 1;
+                else
+                    selected_entry--;
                 goto refresh;
             case GETCHAR_CURSOR_DOWN:
                 if (++selected_entry == max_entries)

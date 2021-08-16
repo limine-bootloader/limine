@@ -57,7 +57,8 @@ static void *get_tag(struct stivale2_header *s, uint64_t id) {
 #if defined (__i386__)
 extern symbol stivale2_term_write_entry;
 void *stivale2_rt_stack = NULL;
-void *stivale2_term_buf = NULL;
+uint64_t stivale2_term_callback_ptr = 0;
+void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t);
 #endif
 
 void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table) {
@@ -381,7 +382,7 @@ failed_to_load_header_section:
 
     struct stivale2_header_tag_framebuffer *hdrtag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_FRAMEBUFFER_ID);
 
-    int req_width = 0, req_height = 0, req_bpp = 0;
+    size_t req_width = 0, req_height = 0, req_bpp = 0;
 
     if (hdrtag != NULL) {
         req_width  = hdrtag->framebuffer_width;
@@ -393,19 +394,41 @@ failed_to_load_header_section:
             parse_resolution(&req_width, &req_height, &req_bpp, resolution);
     }
 
+    char *textmode_str = config_get_value(config, 0, "TEXTMODE");
+    bool textmode = textmode_str != NULL && strcmp(textmode_str, "yes") == 0;
+
     struct stivale2_header_tag_terminal *terminal_hdr_tag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_TERMINAL_ID);
 
-    if (bits == 64 && terminal_hdr_tag != NULL && hdrtag != NULL) {
-        term_vbe(req_width, req_height);
+    if (bits == 64 && terminal_hdr_tag != NULL && (hdrtag != NULL || textmode)) {
+        if (textmode) {
+#if bios == 1
+            term_textmode();
+#elif uefi == 1
+            panic("stivale2: Text mode not supported on UEFI");
+#endif
+        } else {
+            term_vbe(req_width, req_height);
 
-        if (current_video_mode < 0) {
-            panic("stivale2: Failed to initialise terminal");
+            if (current_video_mode < 0) {
+                panic("stivale2: Failed to initialise terminal");
+            }
+
+            fb = &fbinfo;
         }
-
-        fb = &fbinfo;
 
         struct stivale2_struct_tag_terminal *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_terminal));
         tag->tag.identifier = STIVALE2_STRUCT_TAG_TERMINAL_ID;
+
+        if (terminal_hdr_tag->flags & (1 << 0)) {
+            // We provide callback
+            tag->flags |= (1 << 2);
+#if defined (__i386__)
+            term_callback = stivale2_term_callback;
+            stivale2_term_callback_ptr = terminal_hdr_tag->callback;
+#elif defined (__x86_64__)
+            term_callback = (void *)terminal_hdr_tag->callback;
+#endif
+        }
 
         // We provide max allowed string length
         tag->flags |= (1 << 1);
@@ -415,14 +438,12 @@ failed_to_load_header_section:
             stivale2_rt_stack = ext_mem_alloc(8192);
         }
 
-        stivale2_term_buf = ext_mem_alloc(8192);
-
         tag->term_write = (uintptr_t)(void *)stivale2_term_write_entry;
-        tag->max_length = 8192;
 #elif defined (__x86_64__)
         tag->term_write = (uintptr_t)term_write;
-        tag->max_length = 0;
 #endif
+
+        tag->max_length = 0;
 
         // We provide rows and cols
         tag->flags |= (1 << 0);
@@ -431,7 +452,13 @@ failed_to_load_header_section:
 
         append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
 
-        goto skip_modeset;
+        if (textmode) {
+#if bios == 1
+            goto have_tm_tag;
+#endif
+        } else {
+            goto have_fb_tag;
+        }
     } else {
         fb = &_fb;
     }
@@ -441,7 +468,7 @@ failed_to_load_header_section:
         term_deinit();
 
         if (fb_init(fb, req_width, req_height, req_bpp)) {
-skip_modeset:;
+have_fb_tag:;
             struct stivale2_struct_tag_framebuffer *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_framebuffer));
             tag->tag.identifier = STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID;
 
@@ -468,9 +495,10 @@ skip_modeset:;
 #if uefi == 1
         panic("stivale2: Cannot use text mode with UEFI.");
 #elif bios == 1
-        int rows, cols;
+        size_t rows, cols;
         init_vga_textmode(&rows, &cols, false);
 
+have_tm_tag:;
         struct stivale2_struct_tag_textmode *tmtag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_textmode));
         tmtag->tag.identifier = STIVALE2_STRUCT_TAG_TEXTMODE_ID;
 
@@ -628,7 +656,9 @@ skip_modeset:;
     }
 
     // Clear terminal for kernels that will use the stivale2 terminal
-    term_write("\e[2J\e[H", 7);
+    term_write((uint64_t)(uintptr_t)("\e[2J\e[H"), 7);
+
+    term_runtime = true;
 
     stivale_spinup(bits, want_5lv, &pagemap, entry_point,
                    REPORTED_ADDR((uint64_t)(uintptr_t)&stivale2_struct),

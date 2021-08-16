@@ -6,43 +6,101 @@
 #include <lib/image.h>
 #include <lib/blib.h>
 #include <drivers/vga_textmode.h>
+#include <lib/print.h>
 
 // Tries to implement this standard for terminfo
 // https://man7.org/linux/man-pages/man4/console_codes.4.html
 
-#define TERM_TABSIZE (8)
-#define MAX_ESC_VALUES (256)
-
 int current_video_mode = -1;
-
 int term_backend = NOT_READY;
+size_t term_rows, term_cols;
+bool term_runtime = false;
+
+static bool old_cur_stat;
 
 void (*raw_putchar)(uint8_t c);
 void (*clear)(bool move);
 void (*enable_cursor)(void);
 bool (*disable_cursor)(void);
-void (*set_cursor_pos)(int x, int y);
-void (*get_cursor_pos)(int *x, int *y);
-void (*set_text_fg)(int fg);
-void (*set_text_bg)(int bg);
-void (*set_text_fg_bright)(int fg);
-void (*set_text_bg_bright)(int bg);
+void (*set_cursor_pos)(size_t x, size_t y);
+void (*get_cursor_pos)(size_t *x, size_t *y);
+void (*set_text_fg)(size_t fg);
+void (*set_text_bg)(size_t bg);
+void (*set_text_fg_bright)(size_t fg);
+void (*set_text_bg_bright)(size_t bg);
 void (*set_text_fg_default)(void);
 void (*set_text_bg_default)(void);
 bool (*scroll_disable)(void);
 void (*scroll_enable)(void);
-void (*term_move_character)(int new_x, int new_y, int old_x, int old_y);
+void (*term_move_character)(size_t new_x, size_t new_y, size_t old_x, size_t old_y);
+void (*term_scroll)(void);
+void (*term_swap_palette)(void);
 
 void (*term_double_buffer)(bool status);
 void (*term_double_buffer_flush)(void);
 
-int term_rows, term_cols;
+uint64_t (*term_context_size)(void);
+void (*term_context_save)(uint64_t ptr);
+void (*term_context_restore)(uint64_t ptr);
+
+void (*term_callback)(uint64_t type, uint64_t extra, uint64_t esc_val_count, uint64_t esc_values) = NULL;
+
+struct term_context term_context;
+
+#define escape_offset term_context.escape_offset
+#define control_sequence term_context.control_sequence
+#define csi term_context.csi
+#define escape term_context.escape
+#define rrr term_context.rrr
+#define discard_next term_context.discard_next
+#define bold term_context.bold
+#define reverse_video term_context.reverse_video
+#define dec_private term_context.dec_private
+#define esc_values term_context.esc_values
+#define esc_values_i term_context.esc_values_i
+#define saved_cursor_x term_context.saved_cursor_x
+#define saved_cursor_y term_context.saved_cursor_y
+#define current_primary term_context.current_primary
+#define insert_mode term_context.insert_mode
+#define scroll_top_margin term_context.scroll_top_margin
+#define scroll_bottom_margin term_context.scroll_bottom_margin
+#define current_charset term_context.current_charset
+#define charsets term_context.charsets
+#define g_select term_context.g_select
+
+#define CHARSET_DEFAULT 0
+#define CHARSET_DEC_SPECIAL 1
+
+void term_reinit(void) {
+    escape_offset = 0;
+    control_sequence = false;
+    csi = false;
+    escape = false;
+    rrr = false;
+    discard_next = false;
+    bold = false;
+    reverse_video = false;
+    dec_private = false;
+    esc_values_i = 0;
+    saved_cursor_x = 0;
+    saved_cursor_y = 0;
+    current_primary = (size_t)-1;
+    insert_mode = false;
+    scroll_top_margin = 0;
+    scroll_bottom_margin = term_rows;
+    current_charset = 0;
+    g_select = 0;
+    charsets[0] = CHARSET_DEFAULT;
+    charsets[1] = CHARSET_DEC_SPECIAL;
+}
 
 #if bios == 1
 void term_textmode(void) {
     term_backend = NOT_READY;
 
     init_vga_textmode(&term_rows, &term_cols, true);
+
+    term_reinit();
 
     raw_putchar    = text_putchar;
     clear          = text_clear;
@@ -52,16 +110,22 @@ void term_textmode(void) {
     get_cursor_pos = text_get_cursor_pos;
     set_text_fg    = text_set_text_fg;
     set_text_bg    = text_set_text_bg;
-    set_text_fg_bright = text_set_text_fg;
+    set_text_fg_bright = text_set_text_fg_bright;
     set_text_bg_bright = text_set_text_bg;
     set_text_fg_default = text_set_text_fg_default;
     set_text_bg_default = text_set_text_bg_default;
     scroll_disable = text_scroll_disable;
     scroll_enable  = text_scroll_enable;
     term_move_character = text_move_character;
+    term_scroll = text_scroll;
+    term_swap_palette = text_swap_palette;
 
     term_double_buffer       = text_double_buffer;
     term_double_buffer_flush = text_double_buffer_flush;
+
+    term_context_size = text_context_size;
+    term_context_save = text_context_save;
+    term_context_restore = text_context_restore;
 
     term_backend = TEXTMODE;
 }
@@ -71,41 +135,86 @@ void term_deinit(void) {
     term_backend = NOT_READY;
 }
 
-static void term_putchar(uint8_t c);
+static uint64_t context_size(void) {
+    uint64_t ret = 0;
 
-static bool old_cur_stat;
+    ret += sizeof(struct term_context);
+    ret += term_context_size();
 
-void term_write(const char *buf, size_t count) {
+    return ret;
+}
+
+static void context_save(uint64_t ptr) {
+    memcpy32to64(ptr, (uint64_t)(uintptr_t)&term_context, sizeof(struct term_context));
+    ptr += sizeof(struct term_context);
+
+    term_context_save(ptr);
+}
+
+static void context_restore(uint64_t ptr) {
+    memcpy32to64((uint64_t)(uintptr_t)&term_context, ptr, sizeof(struct term_context));
+    ptr += sizeof(struct term_context);
+
+    term_context_restore(ptr);
+}
+
+#if defined (__i386__)
+#define TERM_XFER_CHUNK 8192
+
+static char xfer_buf[TERM_XFER_CHUNK];
+#endif
+
+void term_write(uint64_t buf, uint64_t count) {
     if (term_backend == NOT_READY)
         return;
-    old_cur_stat = disable_cursor();
-    for (size_t i = 0; i < count; i++)
-        term_putchar(buf[i]);
-    if (old_cur_stat)
-        enable_cursor();
-}
 
-static int get_cursor_pos_x(void) {
-    int x, y;
-    get_cursor_pos(&x, &y);
-    return x;
-}
+    switch (count) {
+        case TERM_CTX_SIZE: {
+            uint64_t ret = context_size();
+            memcpy32to64(buf, (uint64_t)(uintptr_t)&ret, sizeof(uint64_t));
+            return;
+        }
+        case TERM_CTX_SAVE: {
+            context_save(buf);
+            return;
+        }
+        case TERM_CTX_RESTORE: {
+            context_restore(buf);
+            return;
+        }
+    }
 
-static int get_cursor_pos_y(void) {
-    int x, y;
-    get_cursor_pos(&x, &y);
-    return y;
-}
+    bool native = false;
+#if defined (__x86_64__)
+    native = true;
+#endif
 
-static bool control_sequence = false;
-static bool escape = false;
-static bool rrr = false;
-static bool bold = false;
-static bool dec_private = false;
-static int32_t esc_values[MAX_ESC_VALUES];
-static size_t esc_values_i = 0;
-static int saved_cursor_x = 0, saved_cursor_y = 0;
-static int current_fg = -1;
+    if (!term_runtime || native) {
+        const char *s = (const char *)(uintptr_t)buf;
+
+        old_cur_stat = disable_cursor();
+        for (size_t i = 0; i < count; i++)
+            term_putchar(s[i]);
+        if (old_cur_stat)
+            enable_cursor();
+    } else {
+#if defined (__i386__)
+        while (count != 0) {
+            uint64_t chunk = count % TERM_XFER_CHUNK;
+            memcpy32to64((uint64_t)(uintptr_t)xfer_buf, buf, chunk);
+
+            old_cur_stat = disable_cursor();
+            for (size_t i = 0; i < chunk; i++)
+                term_putchar(xfer_buf[i]);
+            if (old_cur_stat)
+                enable_cursor();
+
+            count -= chunk;
+            buf += chunk;
+        }
+#endif
+    }
+}
 
 static void sgr(void) {
     size_t i = 0;
@@ -114,65 +223,144 @@ static void sgr(void) {
         goto def;
 
     for (; i < esc_values_i; i++) {
+        size_t offset;
+
         if (esc_values[i] == 0) {
 def:
+            if (reverse_video) {
+                reverse_video = false;
+                term_swap_palette();
+            }
             bold = false;
-            current_fg = -1;
+            current_primary = (size_t)-1;
             set_text_bg_default();
             set_text_fg_default();
             continue;
         }
 
-        if (esc_values[i] == 1) {
+        else if (esc_values[i] == 1) {
             bold = true;
-            if (current_fg != -1) {
-                set_text_fg_bright(current_fg);
+            if (current_primary != (size_t)-1) {
+                if (!reverse_video) {
+                    set_text_fg_bright(current_primary);
+                } else {
+                    set_text_bg_bright(current_primary);
+                }
             }
             continue;
         }
 
-        if (esc_values[i] == 22) {
+        else if (esc_values[i] == 22) {
             bold = false;
-            if (current_fg != -1) {
-                set_text_fg(current_fg);
+            if (current_primary != (size_t)-1) {
+                if (!reverse_video) {
+                    set_text_fg(current_primary);
+                } else {
+                    set_text_bg(current_primary);
+                }
             }
             continue;
         }
 
-        if (esc_values[i] >= 30 && esc_values[i] <= 37) {
-            current_fg = esc_values[i] - 30;
-            if (bold) {
-                set_text_fg_bright(esc_values[i] - 30);
+        else if (esc_values[i] >= 30 && esc_values[i] <= 37) {
+            offset = 30;
+            current_primary = esc_values[i] - offset;
+
+            if (reverse_video) {
+                goto set_bg;
+            }
+
+set_fg:
+            if (bold && !reverse_video) {
+                set_text_fg_bright(esc_values[i] - offset);
             } else {
-                set_text_fg(esc_values[i] - 30);
+                set_text_fg(esc_values[i] - offset);
             }
             continue;
         }
 
-        if (esc_values[i] >= 40 && esc_values[i] <= 47) {
-            set_text_bg(esc_values[i] - 40);
+        else if (esc_values[i] >= 40 && esc_values[i] <= 47) {
+            offset = 40;
+            if (reverse_video) {
+                goto set_fg;
+            }
+
+set_bg:
+            if (bold && reverse_video) {
+                set_text_bg_bright(esc_values[i] - offset);
+            } else {
+                set_text_bg(esc_values[i] - offset);
+            }
             continue;
         }
 
-        if (esc_values[i] >= 90 && esc_values[i] <= 97) {
-            current_fg = esc_values[i] - 90;
-            set_text_fg_bright(esc_values[i] - 90);
+        else if (esc_values[i] >= 90 && esc_values[i] <= 97) {
+            offset = 90;
+            current_primary = esc_values[i] - offset;
+
+            if (reverse_video) {
+                goto set_bg_bright;
+            }
+
+set_fg_bright:
+            set_text_fg_bright(esc_values[i] - offset);
             continue;
         }
 
-        if (esc_values[i] >= 100 && esc_values[i] <= 107) {
-            set_text_bg_bright(esc_values[i] - 100);
+        else if (esc_values[i] >= 100 && esc_values[i] <= 107) {
+            offset = 100;
+            if (reverse_video) {
+                goto set_fg_bright;
+            }
+
+set_bg_bright:
+            set_text_bg_bright(esc_values[i] - offset);
             continue;
         }
 
-        if (esc_values[i] == 39) {
-            current_fg = -1;
+        else if (esc_values[i] == 39) {
+            current_primary = (size_t)-1;
+
+            if (reverse_video) {
+                term_swap_palette();
+            }
+
             set_text_fg_default();
+
+            if (reverse_video) {
+                term_swap_palette();
+            }
+
             continue;
         }
 
-        if (esc_values[i] == 49) {
+        else if (esc_values[i] == 49) {
+            if (reverse_video) {
+                term_swap_palette();
+            }
+
             set_text_bg_default();
+
+            if (reverse_video) {
+                term_swap_palette();
+            }
+
+            continue;
+        }
+
+        else if (esc_values[i] == 7) {
+            if (!reverse_video) {
+                reverse_video = true;
+                term_swap_palette();
+            }
+            continue;
+        }
+
+        else if (esc_values[i] == 27) {
+            if (reverse_video) {
+                reverse_video = false;
+                term_swap_palette();
+            }
             continue;
         }
     }
@@ -181,100 +369,169 @@ def:
 static void dec_private_parse(uint8_t c) {
     dec_private = false;
 
-    if (esc_values_i > 0) {
-        switch (esc_values[0]) {
-            case 25: {
-                switch (c) {
-                    case 'h': old_cur_stat = true; return;
-                    case 'l': old_cur_stat = false; return;
-                }
-            }
-        }
+    if (esc_values_i == 0) {
+        return;
+    }
+
+    bool set;
+
+    switch (c) {
+        case 'h':
+            set = true; break;
+        case 'l':
+            set = false; break;
+        default:
+            return;
+    }
+
+    switch (esc_values[0]) {
+        case 25:
+            old_cur_stat = set; return;
+    }
+
+    if (term_callback != NULL)
+        term_callback(TERM_CB_DEC, c, esc_values_i, (uintptr_t)esc_values);
+}
+
+static void mode_toggle(uint8_t c) {
+    if (esc_values_i == 0) {
+        return;
+    }
+
+    bool set;
+
+    switch (c) {
+        case 'h':
+            set = true; break;
+        case 'l':
+            set = false; break;
+        default:
+            return;
+    }
+
+    switch (esc_values[0]) {
+        case 4:
+            insert_mode = set; return;
     }
 }
 
 static void control_sequence_parse(uint8_t c) {
-    if (c == '?') {
-        dec_private = true;
-        return;
+    if (escape_offset == 2) {
+        switch (c) {
+            case '[':
+                discard_next = true;
+                goto cleanup;
+            case '?':
+                dec_private = true;
+                return;
+        }
     }
 
     if (c >= '0' && c <= '9') {
+        if (esc_values_i == MAX_ESC_VALUES) {
+            return;
+        }
         rrr = true;
         esc_values[esc_values_i] *= 10;
         esc_values[esc_values_i] += c - '0';
         return;
-    } else {
-        if (rrr == true) {
-            esc_values_i++;
-            rrr = false;
-            if (c == ';')
-                return;
-        } else if (c == ';') {
-            esc_values[esc_values_i] = 1;
-            esc_values_i++;
-            return;
-        }
     }
 
-    int esc_default;
+    if (rrr == true) {
+        esc_values_i++;
+        rrr = false;
+        if (c == ';')
+            return;
+    } else if (c == ';') {
+        if (esc_values_i == MAX_ESC_VALUES) {
+            return;
+        }
+        esc_values[esc_values_i] = 0;
+        esc_values_i++;
+        return;
+    }
+
+    size_t esc_default;
     switch (c) {
         case 'J': esc_default = 0; break;
         case 'K': esc_default = 0; break;
         default:  esc_default = 1; break;
     }
 
-    for (int i = esc_values_i; i < MAX_ESC_VALUES; i++)
+    for (size_t i = esc_values_i; i < MAX_ESC_VALUES; i++) {
         esc_values[i] = esc_default;
+    }
 
     if (dec_private == true) {
         dec_private_parse(c);
         goto cleanup;
     }
 
+    bool r = scroll_disable();
+    size_t x, y;
+    get_cursor_pos(&x, &y);
+
     switch (c) {
-        case 'A':
-            if (esc_values[0] > get_cursor_pos_y())
-                esc_values[0] = get_cursor_pos_y();
-            set_cursor_pos(get_cursor_pos_x(), get_cursor_pos_y() - esc_values[0]);
+        case 'F':
+            x = 0;
+            // FALLTHRU
+        case 'A': {
+            if (esc_values[0] > y)
+                esc_values[0] = y;
+            size_t orig_y = y;
+            size_t dest_y = y - esc_values[0];
+            bool will_be_in_scroll_region = false;
+            if ((scroll_top_margin >= dest_y && scroll_top_margin <= orig_y)
+             || (scroll_bottom_margin >= dest_y && scroll_bottom_margin <= orig_y)) {
+                will_be_in_scroll_region = true;
+            }
+            if (will_be_in_scroll_region && dest_y < scroll_top_margin) {
+                dest_y = scroll_top_margin;
+            }
+            set_cursor_pos(x, dest_y);
             break;
-        case 'B':
-            if ((get_cursor_pos_y() + esc_values[0]) > (term_rows - 1))
-                esc_values[0] = (term_rows - 1) - get_cursor_pos_y();
-            set_cursor_pos(get_cursor_pos_x(), get_cursor_pos_y() + esc_values[0]);
+        }
+        case 'E':
+            x = 0;
+            // FALLTHRU
+        case 'B': {
+            if (y + esc_values[0] > term_rows - 1)
+                esc_values[0] = (term_rows - 1) - y;
+            size_t orig_y = y;
+            size_t dest_y = y + esc_values[0];
+            bool will_be_in_scroll_region = false;
+            if ((scroll_top_margin >= orig_y && scroll_top_margin <= dest_y)
+             || (scroll_bottom_margin >= orig_y && scroll_bottom_margin <= dest_y)) {
+                will_be_in_scroll_region = true;
+            }
+            if (will_be_in_scroll_region && dest_y >= scroll_bottom_margin) {
+                dest_y = scroll_bottom_margin - 1;
+            }
+            set_cursor_pos(x, dest_y);
             break;
+        }
         case 'C':
-            if ((get_cursor_pos_x() + esc_values[0]) > (term_cols - 1))
-                esc_values[0] = (term_cols - 1) - get_cursor_pos_x();
-            set_cursor_pos(get_cursor_pos_x() + esc_values[0], get_cursor_pos_y());
+            if (x + esc_values[0] > term_cols - 1)
+                esc_values[0] = (term_cols - 1) - x;
+            set_cursor_pos(x + esc_values[0], y);
             break;
         case 'D':
-            if (esc_values[0] > get_cursor_pos_x())
-                esc_values[0] = get_cursor_pos_x();
-            set_cursor_pos(get_cursor_pos_x() - esc_values[0], get_cursor_pos_y());
-            break;
-        case 'E':
-            if (get_cursor_pos_y() + esc_values[0] >= term_rows)
-                set_cursor_pos(0, term_rows - 1);
-            else
-                set_cursor_pos(0, get_cursor_pos_y() + esc_values[0]);
-            break;
-        case 'F':
-            if (get_cursor_pos_y() - esc_values[0] < 0)
-                set_cursor_pos(0, 0);
-            else
-                set_cursor_pos(0, get_cursor_pos_y() - esc_values[0]);
+            if (esc_values[0] > x)
+                esc_values[0] = x;
+            set_cursor_pos(x - esc_values[0], y);
             break;
         case 'd':
+            esc_values[0] -= 1;
             if (esc_values[0] >= term_rows)
-                break;
-            set_cursor_pos(get_cursor_pos_x(), esc_values[0]);
+                esc_values[0] = term_rows - 1;
+            set_cursor_pos(x, esc_values[0]);
             break;
         case 'G':
         case '`':
+            esc_values[0] -= 1;
             if (esc_values[0] >= term_cols)
-                break;
-            set_cursor_pos(esc_values[0], get_cursor_pos_y());
+                esc_values[0] = term_cols - 1;
+            set_cursor_pos(esc_values[0], y);
             break;
         case 'H':
         case 'f':
@@ -289,31 +546,23 @@ static void control_sequence_parse(uint8_t c) {
         case 'J':
             switch (esc_values[0]) {
                 case 0: {
-                    int x, y;
-                    get_cursor_pos(&x, &y);
-                    int rows_remaining = term_rows - (y + 1);
-                    int cols_diff = term_cols - (x + 1);
+                    size_t rows_remaining = term_rows - (y + 1);
+                    size_t cols_diff = term_cols - (x + 1);
                     size_t to_clear = rows_remaining * term_cols + cols_diff;
-                    bool r = scroll_disable();
                     for (size_t i = 0; i < to_clear; i++) {
                         raw_putchar(' ');
                     }
                     set_cursor_pos(x, y);
-                    if (r)
-                        scroll_enable();
                     break;
                 }
                 case 1: {
-                    int x, y;
-                    get_cursor_pos(&x, &y);
-                    bool r = scroll_disable();
                     set_cursor_pos(0, 0);
                     bool b = false;
-                    for (int yc = 0; yc < term_rows; yc++) {
-                        for (int xc = 0; xc < term_cols; xc++) {
+                    for (size_t yc = 0; yc < term_rows; yc++) {
+                        for (size_t xc = 0; xc < term_cols; xc++) {
                             raw_putchar(' ');
                             if (xc == x && yc == y) {
-                                raw_putchar('\b');
+                                set_cursor_pos(x, y);
                                 b = true;
                                 break;
                             }
@@ -321,31 +570,33 @@ static void control_sequence_parse(uint8_t c) {
                         if (b == true)
                             break;
                     }
-                    if (r)
-                        scroll_enable();
                     break;
                 }
                 case 2:
+                case 3:
                     clear(false);
-                    break;
-                default:
                     break;
             }
             break;
-        case 'P': {
-            bool r = scroll_disable();
-            int x, y;
-            get_cursor_pos(&x, &y);
-            for (int i = x + esc_values[0]; i < term_cols; i++)
+        case '@':
+            for (size_t i = term_cols - 1; ; i--) {
+                term_move_character(i + esc_values[0], y, i, y);
+                set_cursor_pos(i, y);
+                raw_putchar(' ');
+                if (i == x) {
+                    break;
+                }
+            }
+            set_cursor_pos(x, y);
+            break;
+        case 'P':
+            for (size_t i = x + esc_values[0]; i < term_cols; i++)
                 term_move_character(i - esc_values[0], y, i, y);
             set_cursor_pos(term_cols - esc_values[0], y);
-            for (int i = 0; i < esc_values[0]; i++)
+            for (size_t i = 0; i < esc_values[0]; i++)
                 raw_putchar(' ');
             set_cursor_pos(x, y);
-            if (r)
-                scroll_enable();
             break;
-        }
         case 'm':
             sgr();
             break;
@@ -355,38 +606,52 @@ static void control_sequence_parse(uint8_t c) {
         case 'u':
             set_cursor_pos(saved_cursor_x, saved_cursor_y);
             break;
-        case 'K': {
-            bool r = scroll_disable();
-            int x, y;
-            get_cursor_pos(&x, &y);
+        case 'K':
             switch (esc_values[0]) {
                 case 0: {
-                    for (int i = x; i < term_cols; i++)
+                    for (size_t i = x; i < term_cols; i++)
                         raw_putchar(' ');
                     set_cursor_pos(x, y);
                     break;
                 }
                 case 1: {
                     set_cursor_pos(0, y);
-                    for (int i = 0; i < x; i++)
+                    for (size_t i = 0; i < x; i++)
                         raw_putchar(' ');
                     break;
                 }
                 case 2: {
                     set_cursor_pos(0, y);
-                    for (int i = 0; i < term_cols; i++)
+                    for (size_t i = 0; i < term_cols; i++)
                         raw_putchar(' ');
                     set_cursor_pos(x, y);
                     break;
                 }
             }
-            if (r)
-                scroll_enable();
             break;
-        }
-        default:
+        case 'r':
+            scroll_top_margin = 0;
+            scroll_bottom_margin = 0;
+            if (esc_values_i > 0) {
+                scroll_top_margin = esc_values[0] - 1;
+            }
+            if (esc_values_i > 1) {
+                scroll_bottom_margin = esc_values[1];
+            }
+            if (scroll_top_margin >= (scroll_bottom_margin - 1)) {
+                scroll_top_margin = 0;
+                scroll_bottom_margin = term_rows;
+            }
+            set_cursor_pos(0, 0);
+            break;
+        case 'l':
+        case 'h':
+            mode_toggle(c);
             break;
     }
+
+    if (r)
+        scroll_enable();
 
 cleanup:
     control_sequence = false;
@@ -394,50 +659,200 @@ cleanup:
 }
 
 static void escape_parse(uint8_t c) {
+    escape_offset++;
+
     if (control_sequence == true) {
         control_sequence_parse(c);
         return;
     }
 
+    if (csi == true) {
+        csi = false;
+        goto is_csi;
+    }
+
+    size_t x, y;
+    get_cursor_pos(&x, &y);
+
     switch (c) {
-        case '\e':
-            escape = false;
-            raw_putchar(c);
-            break;
         case '[':
-            for (int i = 0; i < MAX_ESC_VALUES; i++)
+is_csi:
+            for (size_t i = 0; i < MAX_ESC_VALUES; i++)
                 esc_values[i] = 0;
             esc_values_i = 0;
             rrr = false;
             control_sequence = true;
+            return;
+        case 'c':
+            term_reinit();
+            clear(true);
             break;
-        default:
-            escape = false;
+        case 'D':
+            if (y == scroll_bottom_margin - 1) {
+                term_scroll();
+                set_cursor_pos(x, y);
+            } else {
+                set_cursor_pos(x, y + 1);
+            }
+            break;
+        case 'E':
+            if (y == scroll_bottom_margin - 1) {
+                term_scroll();
+                set_cursor_pos(0, y);
+            } else {
+                set_cursor_pos(0, y + 1);
+            }
+            break;
+        case 'M':
+            // "Reverse linefeed"
+            set_cursor_pos(x, y - 1);
+            break;
+        case 'Z':
+            term_callback(TERM_CB_PRIVATE_ID, 0, 0, 0);
+            break;
+        case '(':
+        case ')':
+            g_select = c - '\'';
+            break;
+        case '\e':
+            if (term_runtime == false) {
+                raw_putchar(c);
+            }
             break;
     }
+
+    escape = false;
 }
 
-static void term_putchar(uint8_t c) {
+static uint8_t dec_special_to_cp437(uint8_t c) {
+    switch (c) {
+        case '`': return 0x04;
+        case '0': return 0xdb;
+        case '-': return 0x18;
+        case ',': return 0x1b;
+        case '.': return 0x19;
+        case 'a': return 0xb1;
+        case 'f': return 0xf8;
+        case 'g': return 0xf1;
+        case 'h': return 0xb0;
+        case 'j': return 0xd9;
+        case 'k': return 0xbf;
+        case 'l': return 0xda;
+        case 'm': return 0xc0;
+        case 'n': return 0xc5;
+        case 'q': return 0xc4;
+        case 's': return 0x5f;
+        case 't': return 0xc3;
+        case 'u': return 0xb4;
+        case 'v': return 0xc1;
+        case 'w': return 0xc2;
+        case 'x': return 0xb3;
+        case 'y': return 0xf3;
+        case 'z': return 0xf2;
+        case '~': return 0xfa;
+        case '_': return 0xff;
+        case '+': return 0x1a;
+        case '{': return 0xe3;
+        case '}': return 0x9c;
+    }
+
+    return c;
+}
+
+void term_putchar(uint8_t c) {
+    if (discard_next || c == 0x18 || c == 0x1a) {
+        discard_next = false;
+        escape = false;
+        csi = false;
+        control_sequence = false;
+        g_select = 0;
+        return;
+    }
+
     if (escape == true) {
         escape_parse(c);
         return;
     }
 
+    if (g_select) {
+        g_select--;
+        switch (c) {
+            case 'B':
+                charsets[g_select] = CHARSET_DEFAULT; break;
+            case '0':
+                charsets[g_select] = CHARSET_DEC_SPECIAL; break;
+        }
+        g_select = 0;
+        return;
+    }
+
+    size_t x, y;
+    get_cursor_pos(&x, &y);
+
     switch (c) {
-        case '\0':
-            break;
+        case 0x7f:
+            return;
+        case 0x9b:
+            csi = true;
+            // FALLTHRU
         case '\e':
-            escape = 1;
+            escape_offset = 0;
+            escape = true;
             return;
         case '\t':
-            if ((get_cursor_pos_x() / TERM_TABSIZE + 1) >= term_cols)
-                break;
-            set_cursor_pos((get_cursor_pos_x() / TERM_TABSIZE + 1) * TERM_TABSIZE, get_cursor_pos_y());
-            break;
+            if ((x / TERM_TABSIZE + 1) >= term_cols) {
+                set_cursor_pos(term_cols - 1, y);
+                return;
+            }
+            set_cursor_pos((x / TERM_TABSIZE + 1) * TERM_TABSIZE, y);
+            return;
+        case 0x0b:
+        case 0x0c:
+        case '\n':
+            if (y == scroll_bottom_margin - 1) {
+                term_scroll();
+                set_cursor_pos(0, y);
+            } else {
+                set_cursor_pos(0, y + 1);
+            }
+            return;
+        case '\b':
+            set_cursor_pos(x - 1, y);
+            return;
+        case '\r':
+            set_cursor_pos(0, y);
+            return;
         case '\a':
-            break;
-        default:
-            raw_putchar(c);
-            break;
+            // The bell is handled by the kernel
+            if (term_callback != NULL)
+                term_callback(TERM_CB_BELL, 0, 0, 0);
+            return;
+        case 14:
+            // Move to G1 set
+            current_charset = 1;
+            return;
+        case 15:
+            // Move to G0 set
+            current_charset = 0;
+            return;
     }
+
+    if (insert_mode == true) {
+        for (size_t i = term_cols - 1; ; i--) {
+            term_move_character(i + 1, y, i, y);
+            if (i == x) {
+                break;
+            }
+        }
+    }
+
+    // Translate character set
+    switch (charsets[current_charset]) {
+        case CHARSET_DEFAULT:
+            break;
+        case CHARSET_DEC_SPECIAL:
+            c = dec_special_to_cp437(c);
+    }
+
+    raw_putchar(c);
 }

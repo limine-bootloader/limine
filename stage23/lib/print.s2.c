@@ -184,7 +184,7 @@ void vprint(const char *fmt, va_list args) {
     }
 
 out:
-    term_write(print_buf, print_buf_i);
+    term_write((uint64_t)(uintptr_t)print_buf, print_buf_i);
 
     for (size_t i = 0; i < print_buf_i; i++) {
         if (E9_OUTPUT) {

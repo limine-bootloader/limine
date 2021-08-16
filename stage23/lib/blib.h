@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <fs/file.h>
 #include <lib/part.h>
+#include <lib/libc.h>
 #if uefi == 1
 #  include <efi.h>
 #endif
@@ -30,7 +31,7 @@ extern bool stage3_loaded;
 
 extern bool verbose;
 
-bool parse_resolution(int *width, int *height, int *bpp, const char *buf);
+bool parse_resolution(size_t *width, size_t *height, size_t *bpp, const char *buf);
 
 uint64_t sqrt(uint64_t a_nInput);
 size_t get_trailing_zeros(uint64_t val);
@@ -43,6 +44,12 @@ __attribute__((noreturn)) void panic(const char *fmt, ...);
 int pit_sleep_and_quit_on_keypress(int seconds);
 
 uint64_t strtoui(const char *s, const char **end, int base);
+
+#if defined (__i386__)
+void memcpy32to64(uint64_t, uint64_t, uint64_t);
+#elif defined (__x86_64__)
+#  define memcpy32to64(X, Y, Z) memcpy((void *)(uintptr_t)(X), (void *)(uintptr_t)(Y), Z)
+#endif
 
 #define DIV_ROUNDUP(a, b) (((a) + ((b) - 1)) / (b))
 

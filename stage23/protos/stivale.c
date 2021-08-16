@@ -249,9 +249,9 @@ void stivale_load(char *config, char *cmdline) {
     term_deinit();
 
     if (stivale_hdr.flags & (1 << 0)) {
-        int req_width  = stivale_hdr.framebuffer_width;
-        int req_height = stivale_hdr.framebuffer_height;
-        int req_bpp    = stivale_hdr.framebuffer_bpp;
+        size_t req_width  = stivale_hdr.framebuffer_width;
+        size_t req_height = stivale_hdr.framebuffer_height;
+        size_t req_bpp    = stivale_hdr.framebuffer_bpp;
 
         char *resolution = config_get_value(config, 0, "RESOLUTION");
         if (resolution != NULL)
@@ -281,7 +281,7 @@ void stivale_load(char *config, char *cmdline) {
 #if uefi == 1
         panic("stivale: Cannot use text mode with UEFI.");
 #elif bios == 1
-        int rows, cols;
+        size_t rows, cols;
         init_vga_textmode(&rows, &cols, false);
 #endif
     }

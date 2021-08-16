@@ -61,6 +61,7 @@ INTERNAL_CFLAGS := \
 	-fno-omit-frame-pointer \
 	-fno-lto \
 	-fno-pic \
+	-Wno-stringop-overflow \
 	-Wno-address-of-packed-member \
 	-Wshadow \
 	-mno-80387 \

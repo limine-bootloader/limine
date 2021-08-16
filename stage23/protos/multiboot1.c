@@ -180,9 +180,9 @@ void multiboot1_load(char *config, char *cmdline) {
     term_deinit();
 
     if (header.flags & (1 << 2)) {
-        int req_width  = header.fb_width;
-        int req_height = header.fb_height;
-        int req_bpp    = header.fb_bpp;
+        size_t req_width  = header.fb_width;
+        size_t req_height = header.fb_height;
+        size_t req_bpp    = header.fb_bpp;
 
         if (header.fb_mode == 0) {
             char *resolution = config_get_value(config, 0, "RESOLUTION");
@@ -209,7 +209,7 @@ void multiboot1_load(char *config, char *cmdline) {
 #if uefi == 1
             panic("multiboot1: Cannot use text mode with UEFI.");
 #elif bios == 1
-            int rows, cols;
+            size_t rows, cols;
             init_vga_textmode(&rows, &cols, false);
 
             multiboot1_info.fb_addr    = 0xB8000;
@@ -228,7 +228,7 @@ void multiboot1_load(char *config, char *cmdline) {
 #if uefi == 1
         panic("multiboot1: Cannot use text mode with UEFI.");
 #elif bios == 1
-        int rows, cols;
+        size_t rows, cols;
         init_vga_textmode(&rows, &cols, false);
 #endif
     }

@@ -31,4 +31,8 @@ void gterm_swap_palette(void);
 void gterm_double_buffer_flush(void);
 void gterm_double_buffer(bool state);
 
+uint64_t gterm_context_size(void);
+void gterm_context_save(uint64_t ptr);
+void gterm_context_restore(uint64_t ptr);
+
 #endif

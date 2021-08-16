@@ -35,26 +35,33 @@ static size_t frame_height, frame_width;
 
 static struct image *background;
 
-static size_t last_grid_size = 0;
-static struct gterm_char *grid = NULL;
-static size_t last_front_grid_size = 0;
-static struct gterm_char *front_grid = NULL;
-
 static size_t last_bg_canvas_size = 0;
 static uint32_t *bg_canvas = NULL;
-
-static bool double_buffer_enabled = false;
-
-static uint32_t text_fg, text_bg;
-
-static bool cursor_status = true;
-
-static size_t cursor_x;
-static size_t cursor_y;
 
 static size_t rows;
 static size_t cols;
 static size_t margin_gradient;
+
+static bool double_buffer_enabled = false;
+
+static size_t last_grid_size = 0;
+static size_t last_front_grid_size = 0;
+
+static struct gterm_char *grid = NULL;
+static struct gterm_char *front_grid = NULL;
+
+static struct context {
+    uint32_t text_fg;
+#define text_fg context.text_fg
+    uint32_t text_bg;
+#define text_bg context.text_bg
+    bool cursor_status;
+#define cursor_status context.cursor_status
+    size_t cursor_x;
+#define cursor_x context.cursor_x
+    size_t cursor_y;
+#define cursor_y context.cursor_y
+} context;
 
 void gterm_swap_palette(void) {
     uint32_t tmp = text_bg;
@@ -500,6 +507,8 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     if (!fb_init(&fbinfo, width, height, 32))
         return false;
 
+    cursor_status = true;
+
     // default scheme
     size_t margin = 64;
     margin_gradient = 4;
@@ -696,4 +705,44 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     gterm_clear(true);
 
     return true;
+}
+
+uint64_t gterm_context_size(void) {
+    uint64_t ret = 0;
+
+    ret += sizeof(struct context);
+    ret += last_grid_size;
+    ret += last_front_grid_size;
+
+    return ret;
+}
+
+void gterm_context_save(uint64_t ptr) {
+    memcpy32to64(ptr, (uint64_t)(uintptr_t)&context, sizeof(struct context));
+    ptr += sizeof(struct context);
+
+    memcpy32to64(ptr, (uint64_t)(uintptr_t)grid, last_grid_size);
+    ptr += last_grid_size;
+
+    memcpy32to64(ptr, (uint64_t)(uintptr_t)front_grid, last_front_grid_size);
+}
+
+void gterm_context_restore(uint64_t ptr) {
+    memcpy32to64((uint64_t)(uintptr_t)&context, ptr, sizeof(struct context));
+    ptr += sizeof(struct context);
+
+    memcpy32to64((uint64_t)(uintptr_t)grid, ptr, last_grid_size);
+    ptr += last_grid_size;
+
+    memcpy32to64((uint64_t)(uintptr_t)front_grid, ptr, last_front_grid_size);
+
+    for (size_t i = 0; i < (size_t)rows * cols; i++) {
+        size_t x = i % cols;
+        size_t y = i / cols;
+
+        gterm_plot_char(&grid[i], x * VGA_FONT_WIDTH + frame_width,
+                                y * VGA_FONT_HEIGHT + frame_height);
+    }
+
+    draw_cursor();
 }

@@ -43,7 +43,7 @@ uint64_t (*term_context_size)(void);
 void (*term_context_save)(uint64_t ptr);
 void (*term_context_restore)(uint64_t ptr);
 
-void (*term_callback)(uint64_t type, uint64_t extra, uint64_t esc_val_count, uint64_t esc_values) = NULL;
+void (*term_callback)(uint64_t, uint64_t, uint64_t, uint64_t) = NULL;
 
 struct term_context term_context;
 

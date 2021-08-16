@@ -89,6 +89,6 @@ extern void (*term_context_restore)(uint64_t ptr);
 #define TERM_CTX_SAVE ((uint64_t)(-2))
 #define TERM_CTX_RESTORE ((uint64_t)(-3))
 
-extern void (*term_callback)(uint64_t type, uint64_t extra, uint64_t esc_val_count, uint64_t esc_values);
+extern void (*term_callback)(uint64_t, uint64_t, uint64_t, uint64_t);
 
 #endif

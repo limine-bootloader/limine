@@ -42,5 +42,9 @@ void term_vbe(size_t width, size_t height) {
     term_double_buffer       = gterm_double_buffer;
     term_double_buffer_flush = gterm_double_buffer_flush;
 
+    term_context_size = gterm_context_size;
+    term_context_save = gterm_context_save;
+    term_context_restore = gterm_context_restore;
+
     term_backend = VBE;
 }

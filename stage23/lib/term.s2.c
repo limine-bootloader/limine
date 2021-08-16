@@ -389,8 +389,19 @@ static void dec_private_parse(uint8_t c) {
             old_cur_stat = set; return;
     }
 
-    if (term_callback != NULL)
+    if (term_callback != NULL) {
         term_callback(TERM_CB_DEC, c, esc_values_i, (uintptr_t)esc_values);
+    }
+}
+
+static void linux_private_parse(void) {
+    if (esc_values_i == 0) {
+        return;
+    }
+
+    if (term_callback != NULL) {
+        term_callback(TERM_CB_LINUX, esc_values_i, (uintptr_t)esc_values, 0);
+    }
 }
 
 static void mode_toggle(uint8_t c) {
@@ -412,6 +423,10 @@ static void mode_toggle(uint8_t c) {
     switch (esc_values[0]) {
         case 4:
             insert_mode = set; return;
+    }
+
+    if (term_callback != NULL) {
+        term_callback(TERM_CB_MODE, c, esc_values_i, (uintptr_t)esc_values);
     }
 }
 
@@ -453,9 +468,10 @@ static void control_sequence_parse(uint8_t c) {
 
     size_t esc_default;
     switch (c) {
-        case 'J': esc_default = 0; break;
-        case 'K': esc_default = 0; break;
-        default:  esc_default = 1; break;
+        case 'J': case 'K': case 'q':
+            esc_default = 0; break;
+        default:
+            esc_default = 1; break;
     }
 
     for (size_t i = esc_values_i; i < MAX_ESC_VALUES; i++) {
@@ -494,6 +510,7 @@ static void control_sequence_parse(uint8_t c) {
         case 'E':
             x = 0;
             // FALLTHRU
+        case 'e':
         case 'B': {
             if (y + esc_values[0] > term_rows - 1)
                 esc_values[0] = (term_rows - 1) - y;
@@ -510,6 +527,7 @@ static void control_sequence_parse(uint8_t c) {
             set_cursor_pos(x, dest_y);
             break;
         }
+        case 'a':
         case 'C':
             if (x + esc_values[0] > term_cols - 1)
                 esc_values[0] = (term_cols - 1) - x;
@@ -519,6 +537,11 @@ static void control_sequence_parse(uint8_t c) {
             if (esc_values[0] > x)
                 esc_values[0] = x;
             set_cursor_pos(x - esc_values[0], y);
+            break;
+        case 'c':
+            if (term_callback != NULL) {
+                term_callback(TERM_CB_PRIVATE_ID, 0, 0, 0);
+            }
             break;
         case 'd':
             esc_values[0] -= 1;
@@ -542,6 +565,25 @@ static void control_sequence_parse(uint8_t c) {
             if (esc_values[0] >= term_rows)
                 esc_values[0] = term_rows - 1;
             set_cursor_pos(esc_values[1], esc_values[0]);
+            break;
+        case 'n':
+            switch (esc_values[0]) {
+                case 5:
+                    if (term_callback != NULL) {
+                        term_callback(TERM_CB_STATUS_REPORT, 0, 0, 0);
+                    }
+                    break;
+                case 6:
+                    if (term_callback != NULL) {
+                        term_callback(TERM_CB_POS_REPORT, x + 1, y + 1, 0);
+                    }
+                    break;
+            }
+            break;
+        case 'q':
+            if (term_callback != NULL) {
+                term_callback(TERM_CB_KBD_LEDS, esc_values[0], 0, 0);
+            }
             break;
         case 'J':
             switch (esc_values[0]) {
@@ -593,6 +635,8 @@ static void control_sequence_parse(uint8_t c) {
             for (size_t i = x + esc_values[0]; i < term_cols; i++)
                 term_move_character(i - esc_values[0], y, i, y);
             set_cursor_pos(term_cols - esc_values[0], y);
+            // FALLTHRU
+        case 'X':
             for (size_t i = 0; i < esc_values[0]; i++)
                 raw_putchar(' ');
             set_cursor_pos(x, y);
@@ -647,6 +691,9 @@ static void control_sequence_parse(uint8_t c) {
         case 'l':
         case 'h':
             mode_toggle(c);
+            break;
+        case ']':
+            linux_private_parse();
             break;
     }
 
@@ -708,7 +755,9 @@ is_csi:
             set_cursor_pos(x, y - 1);
             break;
         case 'Z':
-            term_callback(TERM_CB_PRIVATE_ID, 0, 0, 0);
+            if (term_callback != NULL) {
+                term_callback(TERM_CB_PRIVATE_ID, 0, 0, 0);
+            }
             break;
         case '(':
         case ')':
@@ -824,8 +873,9 @@ void term_putchar(uint8_t c) {
             return;
         case '\a':
             // The bell is handled by the kernel
-            if (term_callback != NULL)
+            if (term_callback != NULL) {
                 term_callback(TERM_CB_BELL, 0, 0, 0);
+            }
             return;
         case 14:
             // Move to G1 set

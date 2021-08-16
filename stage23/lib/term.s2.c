@@ -42,6 +42,7 @@ void (*term_double_buffer_flush)(void);
 uint64_t (*term_context_size)(void);
 void (*term_context_save)(uint64_t ptr);
 void (*term_context_restore)(uint64_t ptr);
+void (*term_full_refresh)(void);
 
 void (*term_callback)(uint64_t, uint64_t, uint64_t, uint64_t) = NULL;
 
@@ -126,6 +127,7 @@ void term_textmode(void) {
     term_context_size = text_context_size;
     term_context_save = text_context_save;
     term_context_restore = text_context_restore;
+    term_full_refresh = text_full_refresh;
 
     term_backend = TEXTMODE;
 }
@@ -180,6 +182,10 @@ void term_write(uint64_t buf, uint64_t count) {
         }
         case TERM_CTX_RESTORE: {
             context_restore(buf);
+            return;
+        }
+        case TERM_FULL_REFRESH: {
+            term_full_refresh();
             return;
         }
     }

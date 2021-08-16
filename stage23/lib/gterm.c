@@ -712,7 +712,6 @@ uint64_t gterm_context_size(void) {
 
     ret += sizeof(struct context);
     ret += last_grid_size;
-    ret += last_front_grid_size;
 
     return ret;
 }
@@ -722,9 +721,6 @@ void gterm_context_save(uint64_t ptr) {
     ptr += sizeof(struct context);
 
     memcpy32to64(ptr, (uint64_t)(uintptr_t)grid, last_grid_size);
-    ptr += last_grid_size;
-
-    memcpy32to64(ptr, (uint64_t)(uintptr_t)front_grid, last_front_grid_size);
 }
 
 void gterm_context_restore(uint64_t ptr) {
@@ -732,9 +728,20 @@ void gterm_context_restore(uint64_t ptr) {
     ptr += sizeof(struct context);
 
     memcpy32to64((uint64_t)(uintptr_t)grid, ptr, last_grid_size);
-    ptr += last_grid_size;
 
-    memcpy32to64((uint64_t)(uintptr_t)front_grid, ptr, last_front_grid_size);
+    for (size_t i = 0; i < (size_t)rows * cols; i++) {
+        size_t x = i % cols;
+        size_t y = i / cols;
+
+        gterm_plot_char(&grid[i], x * VGA_FONT_WIDTH + frame_width,
+                                y * VGA_FONT_HEIGHT + frame_height);
+    }
+
+    draw_cursor();
+}
+
+void gterm_full_refresh(void) {
+    gterm_generate_canvas();
 
     for (size_t i = 0; i < (size_t)rows * cols; i++) {
         size_t x = i % cols;

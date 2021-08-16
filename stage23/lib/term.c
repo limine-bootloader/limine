@@ -45,6 +45,7 @@ void term_vbe(size_t width, size_t height) {
     term_context_size = gterm_context_size;
     term_context_save = gterm_context_save;
     term_context_restore = gterm_context_restore;
+    term_full_refresh = gterm_full_refresh;
 
     term_backend = VBE;
 }

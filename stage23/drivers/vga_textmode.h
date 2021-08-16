@@ -30,5 +30,6 @@ void text_double_buffer_flush(void);
 uint64_t text_context_size(void);
 void text_context_save(uint64_t ptr);
 void text_context_restore(uint64_t ptr);
+void text_full_refresh(void);
 
 #endif

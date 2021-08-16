@@ -442,6 +442,10 @@ failed_to_load_header_section:
 
         // We provide max allowed string length
         tag->flags |= (1 << 1);
+        tag->max_length = 0;
+
+        // We provide context control
+        tag->flags |= (1 << 3);
 
 #if defined (__i386__)
         if (stivale2_rt_stack == NULL) {
@@ -452,8 +456,6 @@ failed_to_load_header_section:
 #elif defined (__x86_64__)
         tag->term_write = (uintptr_t)term_write;
 #endif
-
-        tag->max_length = 0;
 
         // We provide rows and cols
         tag->flags |= (1 << 0);

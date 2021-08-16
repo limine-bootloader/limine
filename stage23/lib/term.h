@@ -75,6 +75,7 @@ extern void (*term_double_buffer_flush)(void);
 extern uint64_t (*term_context_size)(void);
 extern void (*term_context_save)(uint64_t ptr);
 extern void (*term_context_restore)(uint64_t ptr);
+extern void (*term_full_refresh)(void);
 
 #define TERM_CB_DEC 10
 #define TERM_CB_BELL 20
@@ -88,6 +89,7 @@ extern void (*term_context_restore)(uint64_t ptr);
 #define TERM_CTX_SIZE ((uint64_t)(-1))
 #define TERM_CTX_SAVE ((uint64_t)(-2))
 #define TERM_CTX_RESTORE ((uint64_t)(-3))
+#define TERM_FULL_REFRESH ((uint64_t)(-4))
 
 extern void (*term_callback)(uint64_t, uint64_t, uint64_t, uint64_t);
 

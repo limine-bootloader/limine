@@ -114,7 +114,6 @@ uint64_t text_context_size(void) {
     uint64_t ret = 0;
 
     ret += sizeof(struct context);
-    ret += VD_ROWS * VD_COLS; // back buffer
     ret += VD_ROWS * VD_COLS; // front buffer
 
     return ret;
@@ -124,9 +123,6 @@ void text_context_save(uint64_t ptr) {
     memcpy32to64(ptr, (uint64_t)(uintptr_t)&context, sizeof(struct context));
     ptr += sizeof(struct context);
 
-    memcpy32to64(ptr, (uint64_t)(uintptr_t)back_buffer, VD_ROWS * VD_COLS);
-    ptr += VD_ROWS * VD_COLS;
-
     memcpy32to64(ptr, (uint64_t)(uintptr_t)front_buffer, VD_ROWS * VD_COLS);
 }
 
@@ -134,13 +130,18 @@ void text_context_restore(uint64_t ptr) {
     memcpy32to64((uint64_t)(uintptr_t)&context, ptr, sizeof(struct context));
     ptr += sizeof(struct context);
 
-    memcpy32to64((uint64_t)(uintptr_t)back_buffer, ptr, VD_ROWS * VD_COLS);
-    ptr += VD_ROWS * VD_COLS;
-
     memcpy32to64((uint64_t)(uintptr_t)front_buffer, ptr, VD_ROWS * VD_COLS);
 
     for (size_t i = 0; i < VD_ROWS * VD_COLS; i++) {
-        video_mem[i] = current_buffer[i];
+        video_mem[i] = front_buffer[i];
+    }
+
+    draw_cursor();
+}
+
+void text_full_refresh(void) {
+    for (size_t i = 0; i < VD_ROWS * VD_COLS; i++) {
+        video_mem[i] = front_buffer[i];
     }
 
     draw_cursor();

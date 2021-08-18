@@ -41,7 +41,9 @@ bool parse_resolution(size_t *width, size_t *height, size_t *bpp, const char *bu
     if (res[2] == 0)
         res[2] = 32;
 
-    *width = res[0], *height = res[1], *bpp = res[2];
+    *width = res[0], *height = res[1];
+    if (bpp != NULL)
+        *bpp = res[2];
 
     return true;
 }

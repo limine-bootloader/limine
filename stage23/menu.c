@@ -79,6 +79,7 @@ static const char *VALID_KEYS[] = {
     "MENU_RESOLUTION",
     "MENU_BRANDING",
     "MENU_FONT",
+    "MENU_FONT_SIZE",
     "TERMINAL_FONT",
     "THEME_COLOURS",
     "THEME_COLORS",

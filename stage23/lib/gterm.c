@@ -658,13 +658,15 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     gterm_bpp         = fbinfo.framebuffer_bpp;
     gterm_pitch       = fbinfo.framebuffer_pitch;
 
-    size_t font_width = vga_font_width, font_height = vga_font_height;
-
     char *menu_font_size = config_get_value(NULL, 0, "MENU_FONT_SIZE");
-    if (menu_font_size != NULL)
-        parse_resolution(&font_width, &font_height, NULL, menu_font_size);
+    if (menu_font_size == NULL) {
+        menu_font_size = config_get_value(NULL, 0, "TERMINAL_FONT_SIZE");
+    }
+    if (menu_font_size != NULL) {
+        parse_resolution(&vga_font_width, &vga_font_height, NULL, menu_font_size);
+    }
 
-    size_t font_bytes = (font_width * font_height * VGA_FONT_GLYPHS) / 8;
+    size_t font_bytes = (vga_font_width * vga_font_height * VGA_FONT_GLYPHS) / 8;
 
     if (vga_font_bits == NULL) {
         vga_font_bits = ext_mem_alloc(VGA_FONT_MAX);
@@ -675,7 +677,7 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     char *menu_font = NULL;
 
     if (font_bytes > VGA_FONT_MAX) {
-        print("Font would be too large (%x bytes, %x bytes allowed). Not loading.\n");
+        print("Font would be too large (%x bytes, %x bytes allowed). Not loading.\n", font_bytes, VGA_FONT_MAX);
     } else {
         menu_font = config_get_value(NULL, 0, "MENU_FONT");
         if (menu_font == NULL)
@@ -687,10 +689,7 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
         if (!uri_open(&f, menu_font)) {
             print("menu: Could not open font file.\n");
         } else {
-            if (fread(&f, vga_font_bits, 0, font_bytes) == 0) {
-                vga_font_width = font_width;
-                vga_font_height = font_height;
-            }
+            fread(&f, vga_font_bits, 0, font_bytes);
         }
     }
 
@@ -730,6 +729,9 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     }
 
     char *menu_font_scale = config_get_value(NULL, 0, "MENU_FONT_SCALE");
+    if (menu_font_scale == NULL) {
+        menu_font_scale = config_get_value(NULL, 0, "TERMINAL_FONT_SCALE");
+    }
     if (menu_font_scale != NULL) {
         parse_resolution(&vga_font_scale_x, &vga_font_scale_y, NULL, menu_font_scale);
         if (vga_font_scale_x > 8 || vga_font_scale_y > 8) {

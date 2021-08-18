@@ -10,14 +10,19 @@
 #include <lib/fb.h>
 #include <mm/pmm.h>
 
-static size_t vga_font_width = 8;
-static size_t vga_font_height = 16;
-#define VGA_FONT_GLYPHS 256
-
 // Maximum allowed font size in bytes. 16kB should be enough as 9x32 is the
 // largest font I've seen, and that would take 9*32 * 256 * 1/8 byte =
 // 9216 bytes.
 #define VGA_FONT_MAX 16384
+#define VGA_FONT_GLYPHS 256
+
+static size_t vga_font_width = 8;
+static size_t vga_font_height = 16;
+static size_t glyph_width = 8;
+static size_t glyph_height = 16;
+
+static size_t vga_font_scale_x = 1;
+static size_t vga_font_scale_y = 1;
 
 struct fb_info fbinfo;
 static uint32_t *gterm_framebuffer;
@@ -106,16 +111,16 @@ static uint32_t blend_gradient_from_box(size_t x, size_t y, uint32_t bg_px, uint
     if (x < frame_width)
         x_distance = frame_width - x;
     else
-        x_distance = x - (frame_width + vga_font_width * cols);
+        x_distance = x - (frame_width + glyph_width * cols);
 
     if (y < frame_height)
         y_distance = frame_height - y;
     else
-        y_distance = y - (frame_height + vga_font_height * rows);
+        y_distance = y - (frame_height + glyph_height * rows);
 
-    if (x >= frame_width && x < frame_width + vga_font_width * cols) {
+    if (x >= frame_width && x < frame_width + glyph_width * cols) {
         distance = y_distance;
-    } else if (y >= frame_height && y < frame_height + vga_font_height * rows) {
+    } else if (y >= frame_height && y < frame_height + glyph_height * rows) {
         distance = x_distance;
     } else {
         distance = sqrt((uint64_t)x_distance * (uint64_t)x_distance
@@ -208,7 +213,7 @@ static void loop_internal(size_t xstart, size_t xend, size_t ystart, size_t yend
 
 void gterm_generate_canvas(void) {
     if (background) {
-        const size_t frame_height_end = frame_height + vga_font_height * rows, frame_width_end = frame_width + vga_font_width * cols;
+        const size_t frame_height_end = frame_height + glyph_height * rows, frame_width_end = frame_width + glyph_width * cols;
         const size_t fheight = frame_height - margin_gradient, fheight_end = frame_height_end + margin_gradient,
             fwidth = frame_width - margin_gradient, fwidth_end = frame_width_end + margin_gradient;
 
@@ -243,13 +248,18 @@ struct gterm_char {
 
 void gterm_plot_char(struct gterm_char *c, size_t x, size_t y) {
     bool *glyph = &vga_font_bool[c->c * vga_font_height * vga_font_width];
-    for (size_t i = 0; i < vga_font_height; i++) {
-        uint32_t *fb_line = gterm_framebuffer + x + (y + i) * (gterm_pitch / 4);
-        uint32_t *canvas_line = bg_canvas + x + (y + i) * gterm_width;
-        for (size_t j = 0; j < vga_font_width; j++) {
-            uint32_t bg = c->bg == 0xffffffff ? canvas_line[j] : c->bg;
-            bool draw = glyph[i * vga_font_width + j];
-            fb_line[j] = draw ? c->fg : bg;
+    // naming: fx,fy for font coordinates, gx,gy for glyph coordinates
+    for (size_t gy = 0; gy < glyph_height; gy++) {
+        uint8_t fy = gy / vga_font_scale_y;
+        uint32_t *fb_line = gterm_framebuffer + x + (y + gy) * (gterm_pitch / 4);
+        uint32_t *canvas_line = bg_canvas + x + (y + gy) * gterm_width;
+        for (size_t fx = 0; fx < vga_font_width; fx++) {
+            bool draw = glyph[fy * vga_font_width + fx];
+            for (size_t i = 0; i < vga_font_scale_x; i++) {
+                size_t gx = vga_font_scale_x * fx + i;
+                uint32_t bg = c->bg == 0xffffffff ? canvas_line[gx] : c->bg;
+                fb_line[gx] = draw ? c->fg : bg;
+            }
         }
     }
 }
@@ -257,22 +267,26 @@ void gterm_plot_char(struct gterm_char *c, size_t x, size_t y) {
 void gterm_plot_char_fast(struct gterm_char *old, struct gterm_char *c, size_t x, size_t y) {
     bool *new_glyph = &vga_font_bool[c->c * vga_font_height * vga_font_width];
     bool *old_glyph = &vga_font_bool[old->c * vga_font_height * vga_font_width];
-    for (size_t i = 0; i < vga_font_height; i++) {
-        uint32_t *fb_line = gterm_framebuffer + x + (y + i) * (gterm_pitch / 4);
-        uint32_t *canvas_line = bg_canvas + x + (y + i) * gterm_width;
-        for (size_t j = 0; j < vga_font_width; j++) {
-            uint32_t bg = c->bg == 0xffffffff ? canvas_line[j] : c->bg;
-            bool old_draw = old_glyph[i * vga_font_width + j];
-            bool new_draw = new_glyph[i * vga_font_width + j];
+    for (size_t gy = 0; gy < glyph_height; gy++) {
+        uint8_t fy = gy / vga_font_scale_y;
+        uint32_t *fb_line = gterm_framebuffer + x + (y + gy) * (gterm_pitch / 4);
+        uint32_t *canvas_line = bg_canvas + x + (y + gy) * gterm_width;
+        for (size_t fx = 0; fx < vga_font_width; fx++) {
+            bool old_draw = old_glyph[fy * vga_font_width + fx];
+            bool new_draw = new_glyph[fy * vga_font_width + fx];
             if (old_draw == new_draw)
                 continue;
-            fb_line[j] = new_draw ? c->fg : bg;
+            for (size_t i = 0; i < vga_font_scale_x; i++) {
+                size_t gx = vga_font_scale_x * fx + i;
+                uint32_t bg = c->bg == 0xffffffff ? canvas_line[gx] : c->bg;
+                fb_line[gx] = new_draw ? c->fg : bg;
+            }
         }
     }
 }
 
 static void plot_char_grid_force(struct gterm_char *c, size_t x, size_t y) {
-    gterm_plot_char(c, frame_width + x * vga_font_width, frame_height + y * vga_font_height);
+    gterm_plot_char(c, frame_width + x * glyph_width, frame_height + y * glyph_height);
 }
 
 static void plot_char_grid(struct gterm_char *c, size_t x, size_t y) {
@@ -281,9 +295,9 @@ static void plot_char_grid(struct gterm_char *c, size_t x, size_t y) {
 
         if (old->c != c->c || old->fg != c->fg || old->bg != c->bg) {
             if (old->fg == c->fg && old->bg == c->bg) {
-                gterm_plot_char_fast(old, c, frame_width + x * vga_font_width, frame_height + y * vga_font_height);
+                gterm_plot_char_fast(old, c, frame_width + x * glyph_width, frame_height + y * glyph_height);
             } else {
-                gterm_plot_char(c, frame_width + x * vga_font_width, frame_height + y * vga_font_height);
+                gterm_plot_char(c, frame_width + x * glyph_width, frame_height + y * glyph_height);
             }
         }
     }
@@ -403,8 +417,8 @@ void gterm_move_character(size_t new_x, size_t new_y, size_t old_x, size_t old_y
 
     if (!double_buffer_enabled) {
         gterm_plot_char(&grid[old_x + old_y * cols],
-                        frame_width + new_x * vga_font_width,
-                        frame_height + new_y * vga_font_height);
+                        frame_width + new_x * glyph_width,
+                        frame_height + new_y * glyph_height);
     }
     grid[new_x + new_y * cols] = grid[old_x + old_y * cols];
 }
@@ -443,8 +457,8 @@ void gterm_double_buffer_flush(void) {
         size_t x = i % cols;
         size_t y = i / cols;
 
-        gterm_plot_char(&grid[i], x * vga_font_width + frame_width,
-                                y * vga_font_height + frame_height);
+        gterm_plot_char(&grid[i], x * glyph_width + frame_width,
+                                y * glyph_height + frame_height);
     }
 
     draw_cursor();
@@ -705,8 +719,19 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
         }
     }
 
-    *_cols = cols = (gterm_width - margin * 2) / vga_font_width;
-    *_rows = rows = (gterm_height - margin * 2) / vga_font_height;
+    char *menu_font_scale = config_get_value(NULL, 0, "MENU_FONT_SCALE");
+    if (menu_font_scale != NULL) {
+        parse_resolution(&vga_font_scale_x, &vga_font_scale_y, NULL, menu_font_scale);
+        if (vga_font_scale_x > 8 || vga_font_scale_y > 8) {
+            vga_font_scale_x = 1;
+            vga_font_scale_y = 1;
+        }
+        glyph_width = vga_font_width * vga_font_scale_x;
+        glyph_height = vga_font_height * vga_font_scale_y;
+    }
+
+    *_cols = cols = (gterm_width - margin * 2) / glyph_width;
+    *_rows = rows = (gterm_height - margin * 2) / glyph_height;
 
     size_t new_grid_size = rows * cols * sizeof(struct gterm_char);
     if (new_grid_size > last_grid_size) {
@@ -720,8 +745,8 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
         last_front_grid_size = new_front_grid_size;
     }
 
-    frame_height = gterm_height / 2 - (vga_font_height * rows) / 2;
-    frame_width  = gterm_width  / 2 - (vga_font_width  * cols) / 2;
+    frame_height = gterm_height / 2 - (glyph_height * rows) / 2;
+    frame_width  = gterm_width  / 2 - (glyph_width  * cols) / 2;
 
     size_t new_bg_canvas_size = gterm_width * gterm_height * sizeof(uint32_t);
     if (new_bg_canvas_size > last_bg_canvas_size) {
@@ -761,8 +786,8 @@ void gterm_context_restore(uint64_t ptr) {
         size_t x = i % cols;
         size_t y = i / cols;
 
-        gterm_plot_char(&grid[i], x * VGA_FONT_WIDTH + frame_width,
-                                y * VGA_FONT_HEIGHT + frame_height);
+        gterm_plot_char(&grid[i], x * glyph_width + frame_width,
+                                y * glyph_height + frame_height);
     }
 
     draw_cursor();
@@ -775,8 +800,8 @@ void gterm_full_refresh(void) {
         size_t x = i % cols;
         size_t y = i / cols;
 
-        gterm_plot_char(&grid[i], x * vga_font_width + frame_width,
-                                y * vga_font_height + frame_height);
+        gterm_plot_char(&grid[i], x * glyph_width + frame_width,
+                                y * glyph_height + frame_height);
     }
 
     draw_cursor();

@@ -698,19 +698,29 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     if (vga_font_bool == NULL || menu_font != NULL) {
         vga_font_bool = ext_mem_alloc(VGA_FONT_GLYPHS * vga_font_height * vga_font_width * sizeof(bool));
 
+        size_t bitwidth = vga_font_width > 8 ? 8 : vga_font_width;
         for (size_t i = 0; i < VGA_FONT_GLYPHS; i++) {
             uint8_t *glyph = &vga_font_bits[i * vga_font_height];
 
             for (size_t y = 0; y < vga_font_height; y++) {
-                // NOTE: the characters in VGA fonts are always at most
-                // one byte wide. 9 dot wide fonts have 8 dots and one
-                // empty column, except characters 0xC0-0xDF replicate
-                // column 9 in Line Graphics Mode. (TODO: implement that)
-                for (size_t x = 0; x < vga_font_width; x++) {
+                // NOTE: the characters in VGA fonts are always one byte wide.
+                // 9 dot wide fonts have 8 dots and one empty column, except
+                // characters 0xC0-0xDF replicate column 9.
+                for (size_t x = 0; x < bitwidth; x++) {
                     size_t offset = i * vga_font_height * vga_font_width + y * vga_font_width + x;
 
                     if ((glyph[y] & (0x80 >> x))) {
                         vga_font_bool[offset] = true;
+                    } else {
+                        vga_font_bool[offset] = false;
+                    }
+                }
+                // fill columns above 8 like VGA Line Graphics Mode does
+                for (size_t x = 8; x < vga_font_width; x++) {
+                    size_t offset = i * vga_font_height * vga_font_width + y *  vga_font_width + x;
+
+                    if (i >= 0xC0 && i <= 0xDF) {
+                        vga_font_bool[offset] = (glyph[y] & 1);
                     } else {
                         vga_font_bool[offset] = false;
                     }

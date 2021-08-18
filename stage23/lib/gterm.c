@@ -10,10 +10,14 @@
 #include <lib/fb.h>
 #include <mm/pmm.h>
 
-#define VGA_FONT_WIDTH  8
-#define VGA_FONT_HEIGHT 16
+static size_t VGA_FONT_WIDTH = 8;
+static size_t VGA_FONT_HEIGHT = 16;
 #define VGA_FONT_GLYPHS 256
-#define VGA_FONT_MAX    (VGA_FONT_HEIGHT * VGA_FONT_GLYPHS)
+
+// Maximum allowed font size in bytes. 16kB should be enough as 9x32 is the
+// largest font I've seen, and that would take 9*32 * 256 * 1/8 byte =
+// 9216 bytes.
+#define VGA_FONT_MAX 16384
 
 struct fb_info fbinfo;
 static uint32_t *gterm_framebuffer;
@@ -640,21 +644,39 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     gterm_bpp         = fbinfo.framebuffer_bpp;
     gterm_pitch       = fbinfo.framebuffer_pitch;
 
+    size_t font_width = VGA_FONT_WIDTH, font_height = VGA_FONT_HEIGHT;
+
+    char *menu_font_size = config_get_value(NULL, 0, "MENU_FONT_SIZE");
+    if (menu_font_size != NULL)
+        parse_resolution(&font_width, &font_height, NULL, menu_font_size);
+
+    size_t font_bytes = (font_width * font_height * VGA_FONT_GLYPHS) / 8;
+
     if (vga_font_bits == NULL) {
         vga_font_bits = ext_mem_alloc(VGA_FONT_MAX);
 
         memcpy(vga_font_bits, (void *)_binary_font_bin_start, VGA_FONT_MAX);
     }
 
-    char *menu_font = config_get_value(NULL, 0, "MENU_FONT");
-    if (menu_font == NULL)
-        menu_font = config_get_value(NULL, 0, "TERMINAL_FONT");
+    char *menu_font = NULL;
+
+    if (font_bytes > VGA_FONT_MAX) {
+        print("Font would be too large (%x bytes, %x bytes allowed). Not loading.\n");
+    } else {
+        menu_font = config_get_value(NULL, 0, "MENU_FONT");
+        if (menu_font == NULL)
+            menu_font = config_get_value(NULL, 0, "TERMINAL_FONT");
+    }
+
     if (menu_font != NULL) {
         struct file_handle f;
         if (!uri_open(&f, menu_font)) {
             print("menu: Could not open font file.\n");
         } else {
-            fread(&f, vga_font_bits, 0, VGA_FONT_MAX);
+            if (fread(&f, vga_font_bits, 0, font_bytes) == 0) {
+                VGA_FONT_WIDTH = font_width;
+                VGA_FONT_HEIGHT = font_height;
+            }
         }
     }
 
@@ -666,8 +688,13 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
             uint8_t *glyph = &vga_font_bits[i * VGA_FONT_HEIGHT];
 
             for (size_t y = 0; y < VGA_FONT_HEIGHT; y++) {
+                // NOTE: the characters in VGA fonts are always at most
+                // one byte wide. 9 dot wide fonts have 8 dots and one
+                // empty column, except characters 0xC0-0xDF replicate
+                // column 9 in Line Graphics Mode. (TODO: implement that)
                 for (size_t x = 0; x < VGA_FONT_WIDTH; x++) {
                     size_t offset = i * VGA_FONT_HEIGHT * VGA_FONT_WIDTH + y * VGA_FONT_WIDTH + x;
+
                     if ((glyph[y] & (0x80 >> x))) {
                         vga_font_bool[offset] = true;
                     } else {

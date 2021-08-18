@@ -658,7 +658,8 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
         }
     }
 
-    if (vga_font_bool == NULL) {
+    // if not loaded (stage2) or custom font (stage3), load font
+    if (vga_font_bool == NULL || menu_font != NULL) {
         vga_font_bool = ext_mem_alloc(VGA_FONT_GLYPHS * VGA_FONT_HEIGHT * VGA_FONT_WIDTH * sizeof(bool));
 
         for (size_t i = 0; i < VGA_FONT_GLYPHS; i++) {

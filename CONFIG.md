@@ -58,10 +58,12 @@ Some keys take *URIs* as values; these are described in the next section.
 * `MENU_BRANDING` - A string that will be displayed on top of the Limine menu.
 * `MENU_FONT` - URI path to a font file to be used instead of the default one for the menu and terminal. The font file must be a code page 437 character set comprised of 256 consecutive glyph bitmaps. Each glyph's bitmap must be expressed left to right (1 byte per row), and top to bottom (16 bytes per whole glyph by default; see `MENU_FONT_SIZE`). See e.g. the [VGA text mode font collection](https://github.com/viler-int10h/vga-text-mode-fonts) for fonts.
 * `TERMINAL_FONT` - Alias of `MENU_FONT`.
-* `MENU_FONT_SIZE` - The size of the font in dots, which must correspond to the font file or the display will be garbled. Note that glyphs are always one byte wide, and columns over 8 are empty. Many fonts may be used in both 8- and 9-dot wide variants. Defaults to `8x16`.
+* `MENU_FONT_SIZE` - The size of the font in dots, which must correspond to the font file or the display will be garbled. Note that glyphs are always one byte wide, and columns over 8 are empty. Many fonts may be used in both 8- and 9-dot wide variants. Defaults to `8x16`. Ignored if `MENU_FONT` or `TERMINAL_FONT` not set or if the font fails to load.
 * `TERMINAL_FONT_SIZE` - Alias of `MENU_FONT_SIZE`.
 * `MENU_FONT_SCALE` - Scaling for the font in the x and y directions. `2x2` would display the font in double size, which is useful on high-DPI displays at native resolution. `2x1` only makes the font twice as wide, similar to the VGA 40 column mode. `4x2` might be good for a narrow font on a high resolution display. Values over 8 are disallowed. Default is no scaling, i.e. `1x1`.
 * `TERMINAL_FONT_SCALE` - Alias of `MENU_FONT_SCALE`.
+* `MENU_FONT_SPACING` - Horizontal spacing, in pixels, between glyphs on screen. It is equivalent to setting a font width of `<specified width>+<this value>`, except this value is preserved even in case font loading fails, and it also applies to the built-in Limine font. Defaults to 1. 0 is allowed.
+* `TERMINAL_FONT_SPACING` - Alias of `MENU_FONT_SPACING`.
 * `THEME_COLOURS` - Specifies the colour palette used by the terminal (AARRGGBB). It is a `;` separated array of 10 colours: black, red, green, brown, blue, magenta, cyan, gray, background, and foreground respectively. While an alpha transparency value can be specified for every colour, it is ignored for all but background. Ignored if `GRAPHICS` is not `yes`.
 * `THEME_COLORS` - Alias of `THEME_COLOURS`.
 * `THEME_BACKGROUND` - Alias of the background value in `THEME_COLOURS`.

@@ -498,7 +498,8 @@ void linux_load(char *config, char *cmdline) {
     if (!fb_init(&fbinfo, req_width, req_height, req_bpp))
         panic("linux: Unable to set video mode");
 
-    screen_info->capabilities   = VIDEO_CAPABILITY_64BIT_BASE;
+    screen_info->capabilities   = VIDEO_CAPABILITY_64BIT_BASE | VIDEO_CAPABILITY_SKIP_QUIRKS;
+    screen_info->flags          = VIDEO_FLAGS_NOCURSOR;
     screen_info->lfb_base       = (uint32_t)fbinfo.framebuffer_addr;
     screen_info->ext_lfb_base   = (uint32_t)(fbinfo.framebuffer_addr >> 32);
     screen_info->lfb_size       = fbinfo.framebuffer_pitch * fbinfo.framebuffer_height;
@@ -537,15 +538,11 @@ void linux_load(char *config, char *cmdline) {
 #if uefi == 1
     efi_exit_boot_services();
 
-    {
-        const char *efi_signature;
-        #if defined (__i386__)
-            efi_signature = "EL32";
-        #elif defined (__x86_64__)
-            efi_signature = "EL64";
-        #endif
-        memcpy(&boot_params->efi_info.efi_loader_signature, efi_signature, 4);
-    }
+    #if defined (__i386__)
+        memcpy(&boot_params->efi_info.efi_loader_signature, "EL32", 4);
+    #elif defined (__x86_64__)
+        memcpy(&boot_params->efi_info.efi_loader_signature, "EL64", 4);
+    #endif
 
     boot_params->efi_info.efi_systab    = (uint32_t)(uint64_t)(uintptr_t)gST;
     boot_params->efi_info.efi_systab_hi = (uint32_t)((uint64_t)(uintptr_t)gST >> 32);

@@ -33,8 +33,9 @@ __attribute__((noreturn)) void linux_spinup(void *entry, void *boot_params) {
         "pushl $0x10\n\t"
         "call 1f\n\t"
         "1:\n\t"
-        "addl $5, (%%esp)\n\t"
+        "addl $2f-1b, (%%esp)\n\t"
         "lret\n\t"
+        "2:\n\t"
 
         "movl $0x18, %%eax\n\t"
         "movl %%eax, %%ds\n\t"

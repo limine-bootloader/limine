@@ -121,11 +121,11 @@ void vprint(const char *fmt, va_list args) {
         // Init com1
         outb(0x3F8 + 1, 0x00);
         outb(0x3F8 + 3, 0x80);
-        outb(0x3F8 + 0, 0x01);
+        outb(0x3F8 + 0, 0x0c); // 9600 baud
         outb(0x3F8 + 1, 0x00);
         outb(0x3F8 + 3, 0x03);
-        outb(0x3F8 + 2, 0xC7);
-        outb(0x3F8 + 4, 0x0B);
+        outb(0x3F8 + 2, 0xc7);
+        outb(0x3F8 + 4, 0x0b);
 
         com_initialised = true;
     }
@@ -191,8 +191,11 @@ out:
             outb(0xe9, print_buf[i]);
         }
         if (COM_OUTPUT) {
-            if (print_buf[i] == '\n')
+            if (print_buf[i] == '\n') {
+                while ((inb(0x3f8 + 5) & 0x20) == 0);
                 outb(0x3f8, '\r');
+            }
+            while ((inb(0x3f8 + 5) & 0x20) == 0);
             outb(0x3f8, print_buf[i]);
         }
     }

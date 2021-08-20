@@ -376,33 +376,18 @@ void pmm_reclaim_uefi_mem(void) {
     }
 
     struct e820_entry_t recl;
-    size_t efi_mmap_recl_begin;
-    size_t efi_mmap_entry_count = efi_mmap_size / efi_desc_size;
 
     for (size_t i = 0; ; i++) {
-        if (memmap[i].type != MEMMAP_EFI_RECLAIMABLE)
-            continue;
-
-        recl = memmap[i];
-
-        // Go through EFI memmap and find an entry that starts at our base
-        for (efi_mmap_recl_begin = 0;
-             efi_mmap_recl_begin < efi_mmap_entry_count; efi_mmap_recl_begin++) {
-            EFI_MEMORY_DESCRIPTOR *entry =
-                (void *)efi_mmap + efi_mmap_recl_begin * efi_desc_size;
-
-            if (entry->PhysicalStart != memmap[i].base)
-                continue;
-
+        if (memmap[i].type == MEMMAP_EFI_RECLAIMABLE) {
+            recl = memmap[i];
             break;
         }
-
-        break;
     }
 
     // Punch holes in our EFI reclaimable entry for every EFI area which is
     // boot services or conventional that fits within
-    for (size_t i = efi_mmap_recl_begin; i < efi_mmap_entry_count; i++) {
+    size_t efi_mmap_entry_count = efi_mmap_size / efi_desc_size;
+    for (size_t i = 0; i < efi_mmap_entry_count; i++) {
         EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
 
         uintptr_t base = recl.base;
@@ -426,14 +411,13 @@ void pmm_reclaim_uefi_mem(void) {
             efi_top = top;
         }
 
+        // Sanity check
         if (!(efi_base >= base && efi_base <  top
            && efi_top  >  base && efi_top  <= top))
             continue;
 
         uint32_t our_type;
         switch (entry->Type) {
-            default:
-                our_type = MEMMAP_RESERVED; break;
             case EfiBootServicesCode:
             case EfiBootServicesData:
             case EfiConventionalMemory:
@@ -442,6 +426,8 @@ void pmm_reclaim_uefi_mem(void) {
                 our_type = MEMMAP_ACPI_RECLAIMABLE; break;
             case EfiACPIMemoryNVS:
                 our_type = MEMMAP_ACPI_NVS; break;
+            default:
+                our_type = MEMMAP_RESERVED; break;
         }
 
         memmap_alloc_range(efi_base, efi_size, our_type, false, true, false, true);

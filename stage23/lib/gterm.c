@@ -19,6 +19,7 @@
 #define DEFAULT_FONT_WIDTH 8
 #define DEFAULT_FONT_HEIGHT 16
 
+static size_t last_vga_font_bool = 0;
 static size_t vga_font_width;
 static size_t vga_font_height;
 static size_t glyph_width = 8;
@@ -662,92 +663,97 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     gterm_pitch       = fbinfo.framebuffer_pitch;
 
     vga_font_width = DEFAULT_FONT_WIDTH, vga_font_height = DEFAULT_FONT_HEIGHT;
-
-    size_t font_width = DEFAULT_FONT_WIDTH, font_height = DEFAULT_FONT_HEIGHT;
-
-    char *menu_font_size = config_get_value(NULL, 0, "MENU_FONT_SIZE");
-    if (menu_font_size == NULL) {
-        menu_font_size = config_get_value(NULL, 0, "TERMINAL_FONT_SIZE");
-    }
-    if (menu_font_size != NULL) {
-        parse_resolution(&font_width, &font_height, NULL, menu_font_size);
-    }
-
-    size_t font_bytes = (font_width * font_height * VGA_FONT_GLYPHS) / 8;
+    size_t font_bytes = (vga_font_width * vga_font_height * VGA_FONT_GLYPHS) / 8;
 
     if (vga_font_bits == NULL) {
         vga_font_bits = ext_mem_alloc(VGA_FONT_MAX);
-
-        memcpy(vga_font_bits, (void *)_binary_font_bin_start, VGA_FONT_MAX);
     }
 
-    char *menu_font = NULL;
+    memcpy(vga_font_bits, (void *)_binary_font_bin_start, VGA_FONT_MAX);
 
-    if (font_bytes > VGA_FONT_MAX) {
-        print("Font would be too large (%x bytes, %x bytes allowed). Not loading.\n", font_bytes, VGA_FONT_MAX);
-    } else {
-        menu_font = config_get_value(NULL, 0, "MENU_FONT");
-        if (menu_font == NULL)
-            menu_font = config_get_value(NULL, 0, "TERMINAL_FONT");
+    size_t tmp_font_width, tmp_font_height;
+
+    char *menu_font_size = config_get_value(NULL, 0, "MENU_FONT_SIZE");
+    if (menu_font_size == NULL)
+        menu_font_size = config_get_value(NULL, 0, "TERMINAL_FONT_SIZE");
+    if (menu_font_size != NULL) {
+        parse_resolution(&tmp_font_width, &tmp_font_height, NULL, menu_font_size);
+
+        size_t tmp_font_bytes = (tmp_font_width * tmp_font_height * VGA_FONT_GLYPHS) / 8;
+
+        if (tmp_font_bytes > VGA_FONT_MAX) {
+            print("Font would be too large (%u bytes, %u bytes allowed). Not loading.\n", tmp_font_bytes, VGA_FONT_MAX);
+            goto no_load_font;
+        }
+
+        font_bytes = tmp_font_bytes;
     }
 
+    char *menu_font = config_get_value(NULL, 0, "MENU_FONT");
+    if (menu_font == NULL)
+        menu_font = config_get_value(NULL, 0, "TERMINAL_FONT");
     if (menu_font != NULL) {
         struct file_handle f;
         if (!uri_open(&f, menu_font)) {
             print("menu: Could not open font file.\n");
         } else {
             if (fread(&f, vga_font_bits, 0, font_bytes) == 0) {
-                vga_font_width = font_width;
-                vga_font_height = font_height;
+                if (menu_font_size != NULL) {
+                    vga_font_width = tmp_font_width;
+                    vga_font_height = tmp_font_height;
+                }
             }
         }
     }
 
+no_load_font:;
     size_t font_spacing = 1;
     char *font_spacing_str = config_get_value(NULL, 0, "MENU_FONT_SPACING");
-    if (font_spacing_str == NULL) {
+    if (font_spacing_str == NULL)
         font_spacing_str = config_get_value(NULL, 0, "TERMINAL_FONT_SPACING");
-    }
     if (font_spacing_str != NULL) {
         font_spacing = strtoui(font_spacing_str, NULL, 10);
     }
 
     vga_font_width += font_spacing;
 
-    // if not loaded (stage2) or custom font (stage3), load font
-    if (vga_font_bool == NULL || menu_font != NULL) {
-        vga_font_bool = ext_mem_alloc(VGA_FONT_GLYPHS * vga_font_height * vga_font_width * sizeof(bool));
+    size_t this_vga_font_bool = VGA_FONT_GLYPHS * vga_font_height * vga_font_width * sizeof(bool);
+    if (last_vga_font_bool < this_vga_font_bool) {
+        vga_font_bool = ext_mem_alloc(this_vga_font_bool);
+        last_vga_font_bool = this_vga_font_bool;
+    }
 
-        size_t bitwidth = vga_font_width > 8 ? 8 : vga_font_width;
-        for (size_t i = 0; i < VGA_FONT_GLYPHS; i++) {
-            uint8_t *glyph = &vga_font_bits[i * vga_font_height];
+    for (size_t i = 0; i < VGA_FONT_GLYPHS; i++) {
+        uint8_t *glyph = &vga_font_bits[i * vga_font_height];
 
-            for (size_t y = 0; y < vga_font_height; y++) {
-                // NOTE: the characters in VGA fonts are always one byte wide.
-                // 9 dot wide fonts have 8 dots and one empty column, except
-                // characters 0xC0-0xDF replicate column 9.
-                for (size_t x = 0; x < bitwidth; x++) {
-                    size_t offset = i * vga_font_height * vga_font_width + y * vga_font_width + x;
+        for (size_t y = 0; y < vga_font_height; y++) {
+            // NOTE: the characters in VGA fonts are always one byte wide.
+            // 9 dot wide fonts have 8 dots and one empty column, except
+            // characters 0xC0-0xDF replicate column 9.
+            for (size_t x = 0; x < 8; x++) {
+                size_t offset = i * vga_font_height * vga_font_width + y * vga_font_width + x;
 
-                    if ((glyph[y] & (0x80 >> x))) {
-                        vga_font_bool[offset] = true;
-                    } else {
-                        vga_font_bool[offset] = false;
-                    }
+                if ((glyph[y] & (0x80 >> x))) {
+                    vga_font_bool[offset] = true;
+                } else {
+                    vga_font_bool[offset] = false;
                 }
-                // fill columns above 8 like VGA Line Graphics Mode does
-                for (size_t x = 8; x < vga_font_width; x++) {
-                    size_t offset = i * vga_font_height * vga_font_width + y *  vga_font_width + x;
+            }
+            // fill columns above 8 like VGA Line Graphics Mode does
+            for (size_t x = 8; x < vga_font_width; x++) {
+                size_t offset = i * vga_font_height * vga_font_width + y *  vga_font_width + x;
 
-                    if (i >= 0xC0 && i <= 0xDF) {
-                        vga_font_bool[offset] = (glyph[y] & 1);
-                    } else {
-                        vga_font_bool[offset] = false;
-                    }
+                if (i >= 0xC0 && i <= 0xDF) {
+                    vga_font_bool[offset] = (glyph[y] & 1);
+                } else {
+                    vga_font_bool[offset] = false;
                 }
             }
         }
     }
+
+    vga_font_scale_x = 1;
+    vga_font_scale_y = 1;
 
     char *menu_font_scale = config_get_value(NULL, 0, "MENU_FONT_SCALE");
     if (menu_font_scale == NULL) {
@@ -759,9 +765,10 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
             vga_font_scale_x = 1;
             vga_font_scale_y = 1;
         }
-        glyph_width = vga_font_width * vga_font_scale_x;
-        glyph_height = vga_font_height * vga_font_scale_y;
     }
+
+    glyph_width = vga_font_width * vga_font_scale_x;
+    glyph_height = vga_font_height * vga_font_scale_y;
 
     *_cols = cols = (gterm_width - margin * 2) / glyph_width;
     *_rows = rows = (gterm_height - margin * 2) / glyph_height;

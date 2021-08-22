@@ -321,8 +321,8 @@ void init_memmap(void) {
 
     allocations_disallowed = false;
 
-    // Let's leave 16MiB to the firmware
-    ext_mem_alloc_type(0x1000000, MEMMAP_EFI_RECLAIMABLE);
+    // Let's leave 64MiB to the firmware
+    ext_mem_alloc_type(0x4000000, MEMMAP_EFI_RECLAIMABLE);
 
     memcpy(untouched_memmap, memmap, memmap_entries * sizeof(struct e820_entry_t));
     untouched_memmap_entries = memmap_entries;

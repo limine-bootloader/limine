@@ -319,12 +319,12 @@ full-hybrid-test:
 	cp -rv bin/* test/* test_image/boot/
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine-eltorito-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label test_image/ -o test.iso
 	bin/limine-install test.iso
-	qemu-system-x86_64 -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
-	qemu-system-x86_64 -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.iso -debugcon stdio
-	qemu-system-x86_64 -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
-	qemu-system-x86_64 -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.iso -debugcon stdio
-	qemu-system-x86_64 -M q35 -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
-	qemu-system-x86_64 -M q35 -net none -smp 4 -enable-kvm -cpu host -hda test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -net none -smp 4 -enable-kvm -cpu host -hda test.iso -debugcon stdio
 
 .PHONY: pxe-test
 pxe-test:
@@ -357,7 +357,7 @@ uefi-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf-x64/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -L ovmf -bios ovmf-x64/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
 
 .PHONY: uefi32-test
 uefi32-test:
@@ -380,4 +380,4 @@ uefi32-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-x86_64 -M q35 -L ovmf -bios ovmf-ia32/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -L ovmf -bios ovmf-ia32/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio

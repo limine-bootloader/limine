@@ -23,6 +23,8 @@ extern bool efi_boot_services_exited;
 bool efi_exit_boot_services(void);
 #endif
 
+void copyright_notice(void);
+
 extern struct volume *boot_volume;
 
 #if bios == 1

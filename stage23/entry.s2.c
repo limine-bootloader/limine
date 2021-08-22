@@ -75,7 +75,7 @@ void entry(uint8_t boot_drive, int boot_from) {
 
     term_textmode();
 
-    print("Limine " LIMINE_VERSION "\n\n");
+    copyright_notice();
 
     if (!a20_enable())
         panic("Could not enable A20 line");

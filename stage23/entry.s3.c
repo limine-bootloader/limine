@@ -58,7 +58,7 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     term_vbe(0, 0);
     early_term = true;
 
-    print("Limine " LIMINE_VERSION "\n\n");
+    copyright_notice();
 
     disk_create_index();
 

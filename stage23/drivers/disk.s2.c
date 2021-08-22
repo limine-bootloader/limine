@@ -433,12 +433,12 @@ void disk_create_index(void) {
         block->sect_count = drive->Media->LastBlock + 1;
         block->max_partition = -1;
 
+        // TODO: get fastest xfer size also for UEFI?
+        block->fastest_xfer_size = 8;
+
         if (gpt_get_guid(&block->guid, block)) {
             block->guid_valid = true;
         }
-
-        // TODO: get fastest xfer size also for UEFI?
-        block->fastest_xfer_size = 8;
 
         volume_index[volume_index_i++] = block;
 

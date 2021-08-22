@@ -152,8 +152,8 @@ static int gpt_get_part(struct volume *ret, struct volume *volume, int partition
     ret->efi_handle  = volume->efi_handle;
 #elif bios == 1
     ret->drive       = volume->drive;
-    ret->fastest_xfer_size = volume->fastest_xfer_size;
 #endif
+    ret->fastest_xfer_size = volume->fastest_xfer_size;
     ret->index       = volume->index;
     ret->is_optical  = volume->is_optical;
     ret->partition   = partition + 1;
@@ -213,8 +213,8 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
     ret->efi_handle  = extended_part->efi_handle;
 #elif bios == 1
     ret->drive       = extended_part->drive;
-    ret->fastest_xfer_size = extended_part->fastest_xfer_size;
 #endif
+    ret->fastest_xfer_size = extended_part->fastest_xfer_size;
     ret->index       = extended_part->index;
     ret->is_optical  = extended_part->is_optical;
     ret->partition   = partition + 4 + 1;
@@ -292,8 +292,8 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
             extended_part.efi_handle  = volume->efi_handle;
 #elif bios == 1
             extended_part.drive       = volume->drive;
-            extended_part.fastest_xfer_size = volume->fastest_xfer_size;
 #endif
+            extended_part.fastest_xfer_size = volume->fastest_xfer_size;
             extended_part.index       = volume->index;
             extended_part.is_optical  = volume->is_optical;
             extended_part.partition   = i + 1;
@@ -319,8 +319,8 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
     ret->efi_handle  = volume->efi_handle;
 #elif bios == 1
     ret->drive       = volume->drive;
-    ret->fastest_xfer_size = volume->fastest_xfer_size;
 #endif
+    ret->fastest_xfer_size = volume->fastest_xfer_size;
     ret->index       = volume->index;
     ret->is_optical  = volume->is_optical;
     ret->partition   = partition + 1;

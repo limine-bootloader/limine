@@ -35,19 +35,18 @@ struct dap {
     uint64_t lba;
 };
 
-static struct dap dap = {0};
-
-#define XFER_BUF_SIZE 65536
+#define XFER_BUF_SIZE (xfer_sizes[SIZEOF_ARRAY(xfer_sizes) - 1] * 512)
+static const size_t xfer_sizes[] = { 1, 2, 4, 8, 16, 24, 32, 48, 64 };
 static void *xfer_buf = NULL;
 
 static size_t fastest_xfer_size(struct volume *volume) {
+    struct dap dap = {0};
+
     if (xfer_buf == NULL)
         xfer_buf = conv_mem_alloc(XFER_BUF_SIZE);
 
     size_t fastest_size = 1;
     uint64_t last_speed = (uint64_t)-1;
-
-    static const size_t xfer_sizes[] = { 1, 2, 4, 8, 16, 24, 32, 48, 64, 128 };
 
     for (size_t i = 0; i < SIZEOF_ARRAY(xfer_sizes); i++) {
         if (xfer_sizes[i] * volume->sector_size > XFER_BUF_SIZE) {
@@ -88,6 +87,8 @@ static size_t fastest_xfer_size(struct volume *volume) {
 }
 
 bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t count) {
+    struct dap dap = {0};
+
     if (count * volume->sector_size > XFER_BUF_SIZE)
         panic("XFER");
 
@@ -163,7 +164,7 @@ void disk_create_index(void) {
         block->sect_count = drive_params.lba_count;
         block->max_partition = -1;
 
-        if (drive_params.info_flags & (1 << 2)) {
+        if (drive_params.info_flags & (1 << 2) && drive > 0x8f) {
             // The medium could not be present (e.g.: CD-ROMs)
             // Do a test run to see if we can actually read it
             if (!disk_read_sectors(block, NULL, 0, 1)) {

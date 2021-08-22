@@ -12,6 +12,8 @@
 #include <mm/pmm.h>
 #include <sys/cpu.h>
 
+#define MAX_VOLUMES 64
+
 #if bios == 1
 
 struct bios_drive_params {
@@ -124,64 +126,16 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
 }
 
 void disk_create_index(void) {
-    size_t volume_count = 0;
-
-    for (uint8_t drive = 0x80; drive < 0xf0; drive++) {
-        struct rm_regs r = {0};
-        struct bios_drive_params drive_params;
-
-        r.eax = 0x4800;
-        r.edx = drive;
-        r.ds  = rm_seg(&drive_params);
-        r.esi = rm_off(&drive_params);
-
-        drive_params.buf_size = sizeof(struct bios_drive_params);
-
-        rm_int(0x13, &r, &r);
-
-        if (r.eflags & EFLAGS_CF)
-            continue;
-
-        if (drive_params.lba_count == 0 || drive_params.bytes_per_sect == 0)
-            continue;
-
-        struct volume block = {0};
-
-        block.drive = drive;
-        block.sector_size = drive_params.bytes_per_sect;
-        block.first_sect = 0;
-        block.sect_count = drive_params.lba_count;
-
-        if (drive_params.info_flags & (1 << 2)) {
-            // The medium could not be present (e.g.: CD-ROMs)
-            // Do a test run to see if we can actually read it
-            if (!disk_read_sectors(&block, NULL, 0, 1)) {
-                continue;
-            }
-        }
-
-        block.fastest_xfer_size = 8;
-
-        volume_count++;
-
-        for (int part = 0; ; part++) {
-            struct volume p = {0};
-            int ret = part_get(&p, &block, part);
-
-            if (ret == END_OF_TABLE || ret == INVALID_TABLE)
-                break;
-            if (ret == NO_PARTITION)
-                continue;
-
-            volume_count++;
-        }
-    }
-
-    volume_index = ext_mem_alloc(sizeof(struct volume) * volume_count);
+    volume_index = ext_mem_alloc(sizeof(struct volume) * MAX_VOLUMES);
 
     int optical_indices = 1, hdd_indices = 1;
 
     for (uint8_t drive = 0x80; drive < 0xf0; drive++) {
+        if (volume_index_i == MAX_VOLUMES) {
+            print("WARNING: TOO MANY VOLUMES!");
+            break;
+        }
+
         struct rm_regs r = {0};
         struct bios_drive_params drive_params;
 
@@ -339,8 +293,6 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
 void disk_create_index(void) {
     EFI_STATUS status;
 
-    size_t volume_count = 0;
-
     EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
     EFI_HANDLE *handles = NULL;
     UINTN handles_size = 0;
@@ -353,47 +305,16 @@ void disk_create_index(void) {
     uefi_call_wrapper(gBS->LocateHandle, 5, ByProtocol, &block_io_guid,
                       NULL, &handles_size, handles);
 
-    for (size_t i = 0; i < handles_size / sizeof(EFI_HANDLE); i++) {
-        struct volume block = {0};
-
-        EFI_BLOCK_IO *block_io = NULL;
-
-        status = uefi_call_wrapper(gBS->HandleProtocol, 3, handles[i],
-                                   &block_io_guid, (void **)&block_io);
-
-        if (status != 0 || block_io == NULL || block_io->Media->LastBlock == 0)
-            continue;
-
-        if (block_io->Media->LogicalPartition)
-            continue;
-
-        volume_count++;
-
-        block.efi_handle = handles[i];
-        block.sector_size = block_io->Media->BlockSize;
-        block.first_sect = 0;
-        block.sect_count = block_io->Media->LastBlock + 1;
-
-        block.fastest_xfer_size = 8;
-
-        for (int part = 0; ; part++) {
-            struct volume trash = {0};
-            int ret = part_get(&trash, &block, part);
-
-            if (ret == END_OF_TABLE || ret == INVALID_TABLE)
-                break;
-            if (ret == NO_PARTITION)
-                continue;
-
-            volume_count++;
-        }
-    }
-
-    volume_index = ext_mem_alloc(sizeof(struct volume) * volume_count);
+    volume_index = ext_mem_alloc(sizeof(struct volume) * MAX_VOLUMES);
 
     int optical_indices = 1, hdd_indices = 1;
 
     for (size_t i = 0; i < handles_size / sizeof(EFI_HANDLE); i++) {
+        if (volume_index_i == MAX_VOLUMES) {
+            print("WARNING: TOO MANY VOLUMES!");
+            break;
+        }
+
         EFI_GUID disk_io_guid = DISK_IO_PROTOCOL;
         EFI_DISK_IO *disk_io = NULL;
 

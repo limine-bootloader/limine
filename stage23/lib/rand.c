@@ -10,37 +10,6 @@
 // TODO: Find where this mersenne twister implementation is inspired from
 //       and properly credit the original author(s).
 
-#define rdrand(type) ({ \
-    type ret; \
-    asm volatile ( \
-        "1: " \
-        "rdrand %0;" \
-        "jnc 1b;" \
-        : "=r" (ret) \
-    ); \
-    ret; \
-})
-
-#define rdseed(type) ({ \
-    type ret; \
-    asm volatile ( \
-        "1: " \
-        "rdrand %0;" \
-        "jnc 1b;" \
-        : "=r" (ret) \
-    ); \
-    ret; \
-})
-
-#define rdtsc(type) ({ \
-    type ret; \
-    asm volatile ( \
-        "rdtsc;" \
-        : "=A" (ret) \
-    ); \
-    ret; \
-})
-
 static bool rand_initialised = false;
 
 #define n ((int)624)
@@ -53,9 +22,9 @@ static uint32_t *status;
 static int ctr;
 
 static void init_rand(void) {
-    uint32_t seed = ((uint32_t)0xc597060c * rdtsc(uint32_t))
+    uint32_t seed = ((uint32_t)0xc597060c * (uint32_t)rdtsc())
                   * ((uint32_t)0xce86d624)
-                  ^ ((uint32_t)0xee0da130 * rdtsc(uint32_t));
+                  ^ ((uint32_t)0xee0da130 * (uint32_t)rdtsc());
 
     uint32_t eax, ebx, ecx, edx;
 

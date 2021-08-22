@@ -11,7 +11,7 @@
 #define DWORD_PTR(PTR) (*((uint32_t *)(PTR)))
 #define QWORD_PTR(PTR) (*((uint64_t *)(PTR)))
 
-static inline bool cpuid(uint32_t leaf, uint32_t subleaf,
+inline bool cpuid(uint32_t leaf, uint32_t subleaf,
           uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
     uint32_t cpuid_max;
     asm volatile ("cpuid"
@@ -26,37 +26,37 @@ static inline bool cpuid(uint32_t leaf, uint32_t subleaf,
     return true;
 }
 
-static inline void outb(uint16_t port, uint8_t value) {
+inline void outb(uint16_t port, uint8_t value) {
     asm volatile ("outb %%al, %1"  : : "a" (value), "Nd" (port) : "memory");
 }
 
-static inline void outw(uint16_t port, uint16_t value) {
+inline void outw(uint16_t port, uint16_t value) {
     asm volatile ("outw %%ax, %1"  : : "a" (value), "Nd" (port) : "memory");
 }
 
-static inline void outd(uint16_t port, uint32_t value) {
+inline void outd(uint16_t port, uint32_t value) {
     asm volatile ("outl %%eax, %1" : : "a" (value), "Nd" (port) : "memory");
 }
 
-static inline uint8_t inb(uint16_t port) {
+inline uint8_t inb(uint16_t port) {
     uint8_t value;
     asm volatile ("inb %1, %%al"  : "=a" (value) : "Nd" (port) : "memory");
     return value;
 }
 
-static inline uint16_t inw(uint16_t port) {
+inline uint16_t inw(uint16_t port) {
     uint16_t value;
     asm volatile ("inw %1, %%ax"  : "=a" (value) : "Nd" (port) : "memory");
     return value;
 }
 
-static inline uint32_t ind(uint16_t port) {
+inline uint32_t ind(uint16_t port) {
     uint32_t value;
     asm volatile ("inl %1, %%eax" : "=a" (value) : "Nd" (port) : "memory");
     return value;
 }
 
-static inline void mmoutb(uintptr_t addr, uint8_t value) {
+inline void mmoutb(uintptr_t addr, uint8_t value) {
     asm volatile (
         "movb %1, %0"
         : "=m" (BYTE_PTR(addr))
@@ -65,7 +65,7 @@ static inline void mmoutb(uintptr_t addr, uint8_t value) {
     );
 }
 
-static inline void mmoutw(uintptr_t addr, uint16_t value) {
+inline void mmoutw(uintptr_t addr, uint16_t value) {
     asm volatile (
         "movw %1, %0"
         : "=m" (WORD_PTR(addr))
@@ -74,7 +74,7 @@ static inline void mmoutw(uintptr_t addr, uint16_t value) {
     );
 }
 
-static inline void mmoutd(uintptr_t addr, uint32_t value) {
+inline void mmoutd(uintptr_t addr, uint32_t value) {
     asm volatile (
         "movl %1, %0"
         : "=m" (DWORD_PTR(addr))
@@ -83,7 +83,7 @@ static inline void mmoutd(uintptr_t addr, uint32_t value) {
     );
 }
 
-static inline void mmoutq(uintptr_t addr, uint64_t value) {
+inline void mmoutq(uintptr_t addr, uint64_t value) {
     asm volatile (
         "movq %1, %0"
         : "=m" (QWORD_PTR(addr))
@@ -92,7 +92,7 @@ static inline void mmoutq(uintptr_t addr, uint64_t value) {
     );
 }
 
-static inline uint8_t mminb(uintptr_t addr) {
+inline uint8_t mminb(uintptr_t addr) {
     uint8_t ret;
     asm volatile (
         "movb %1, %0"
@@ -103,7 +103,7 @@ static inline uint8_t mminb(uintptr_t addr) {
     return ret;
 }
 
-static inline uint16_t mminw(uintptr_t addr) {
+inline uint16_t mminw(uintptr_t addr) {
     uint16_t ret;
     asm volatile (
         "movw %1, %0"
@@ -114,7 +114,7 @@ static inline uint16_t mminw(uintptr_t addr) {
     return ret;
 }
 
-static inline uint32_t mmind(uintptr_t addr) {
+inline uint32_t mmind(uintptr_t addr) {
     uint32_t ret;
     asm volatile (
         "movl %1, %0"
@@ -125,7 +125,7 @@ static inline uint32_t mmind(uintptr_t addr) {
     return ret;
 }
 
-static inline uint64_t mminq(uintptr_t addr) {
+inline uint64_t mminq(uintptr_t addr) {
     uint64_t ret;
     asm volatile (
         "movq %1, %0"
@@ -136,7 +136,7 @@ static inline uint64_t mminq(uintptr_t addr) {
     return ret;
 }
 
-static inline uint64_t rdmsr(uint32_t msr) {
+inline uint64_t rdmsr(uint32_t msr) {
     uint32_t edx, eax;
     asm volatile ("rdmsr"
                   : "=a" (eax), "=d" (edx)
@@ -145,7 +145,7 @@ static inline uint64_t rdmsr(uint32_t msr) {
     return ((uint64_t)edx << 32) | eax;
 }
 
-static inline void wrmsr(uint32_t msr, uint64_t value) {
+inline void wrmsr(uint32_t msr, uint64_t value) {
     uint32_t edx = value >> 32;
     uint32_t eax = (uint32_t)value;
     asm volatile ("wrmsr"
@@ -159,6 +159,28 @@ inline uint64_t rdtsc(void) {
     asm volatile ("rdtsc" : "=a" (eax), "=d" (edx));
     return ((uint64_t)edx << 32) | eax;
 }
+
+#define rdrand(type) ({ \
+    type ret; \
+    asm volatile ( \
+        "1: " \
+        "rdrand %0;" \
+        "jnc 1b;" \
+        : "=r" (ret) \
+    ); \
+    ret; \
+})
+
+#define rdseed(type) ({ \
+    type ret; \
+    asm volatile ( \
+        "1: " \
+        "rdrand %0;" \
+        "jnc 1b;" \
+        : "=r" (ret) \
+    ); \
+    ret; \
+})
 
 #define write_cr(reg, val) ({ \
     asm volatile ("mov %0, %%cr" reg :: "r" (val) : "memory"); \

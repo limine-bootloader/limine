@@ -20,6 +20,8 @@ struct volume {
     int drive;
 #endif
 
+    size_t fastest_xfer_size;
+
     int index;
 
     bool is_optical;

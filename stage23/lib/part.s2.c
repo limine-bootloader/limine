@@ -11,8 +11,6 @@
 #include <mm/pmm.h>
 #include <fs/file.h>
 
-#define BLOCK_SIZE_IN_SECTORS 8
-
 enum {
     CACHE_NOT_READY = 0,
     CACHE_READY
@@ -26,11 +24,11 @@ static bool cache_block(struct volume *volume, uint64_t block) {
 
     if (volume->cache == NULL)
         volume->cache =
-            ext_mem_alloc(BLOCK_SIZE_IN_SECTORS * volume->sector_size);
+            ext_mem_alloc(volume->fastest_xfer_size * volume->sector_size);
 
     if (!disk_read_sectors(volume, volume->cache,
-                           volume->first_sect + block * BLOCK_SIZE_IN_SECTORS,
-                           BLOCK_SIZE_IN_SECTORS))
+                           volume->first_sect + block * volume->fastest_xfer_size,
+                           volume->fastest_xfer_size))
         return false;
 
     volume->cache_status = CACHE_READY;
@@ -44,7 +42,7 @@ bool volume_read(struct volume *volume, void *buffer, uint64_t loc, uint64_t cou
         panic("Attempted volume_read() on pxe");
     }
 
-    uint64_t block_size = BLOCK_SIZE_IN_SECTORS * volume->sector_size;
+    uint64_t block_size = volume->fastest_xfer_size * volume->sector_size;
 
     uint64_t progress = 0;
     while (progress < count) {
@@ -154,6 +152,7 @@ static int gpt_get_part(struct volume *ret, struct volume *volume, int partition
     ret->efi_handle  = volume->efi_handle;
 #elif bios == 1
     ret->drive       = volume->drive;
+    ret->fastest_xfer_size = volume->fastest_xfer_size;
 #endif
     ret->index       = volume->index;
     ret->is_optical  = volume->is_optical;
@@ -214,6 +213,7 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
     ret->efi_handle  = extended_part->efi_handle;
 #elif bios == 1
     ret->drive       = extended_part->drive;
+    ret->fastest_xfer_size = extended_part->fastest_xfer_size;
 #endif
     ret->index       = extended_part->index;
     ret->is_optical  = extended_part->is_optical;
@@ -292,6 +292,7 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
             extended_part.efi_handle  = volume->efi_handle;
 #elif bios == 1
             extended_part.drive       = volume->drive;
+            extended_part.fastest_xfer_size = volume->fastest_xfer_size;
 #endif
             extended_part.index       = volume->index;
             extended_part.is_optical  = volume->is_optical;
@@ -318,6 +319,7 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
     ret->efi_handle  = volume->efi_handle;
 #elif bios == 1
     ret->drive       = volume->drive;
+    ret->fastest_xfer_size = volume->fastest_xfer_size;
 #endif
     ret->index       = volume->index;
     ret->is_optical  = volume->is_optical;

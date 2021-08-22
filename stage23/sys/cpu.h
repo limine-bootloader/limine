@@ -154,6 +154,12 @@ static inline void wrmsr(uint32_t msr, uint64_t value) {
                   : "memory");
 }
 
+inline uint64_t rdtsc(void) {
+    uint32_t edx, eax;
+    asm volatile ("rdtsc" : "=a" (eax), "=d" (edx));
+    return ((uint64_t)edx << 32) | eax;
+}
+
 #define write_cr(reg, val) ({ \
     asm volatile ("mov %0, %%cr" reg :: "r" (val) : "memory"); \
 })

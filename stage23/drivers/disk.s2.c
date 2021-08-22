@@ -8,7 +8,9 @@
 #  include <efi.h>
 #endif
 #include <lib/blib.h>
+#include <lib/print.h>
 #include <mm/pmm.h>
+#include <sys/cpu.h>
 
 #if bios == 1
 
@@ -33,8 +35,55 @@ struct dap {
 
 static struct dap dap = {0};
 
-#define XFER_BUF_SIZE 16384
+#define XFER_BUF_SIZE 65536
 static void *xfer_buf = NULL;
+
+static size_t fastest_xfer_size(struct volume *volume) {
+    if (xfer_buf == NULL)
+        xfer_buf = conv_mem_alloc(XFER_BUF_SIZE);
+
+    size_t fastest_size = 1;
+    uint64_t last_speed = (uint64_t)-1;
+
+    static const size_t xfer_sizes[] = { 1, 2, 4, 8, 16, 24, 32, 48, 64, 128 };
+
+    for (size_t i = 0; i < SIZEOF_ARRAY(xfer_sizes); i++) {
+        if (xfer_sizes[i] * volume->sector_size > XFER_BUF_SIZE) {
+            break;
+        }
+
+        dap.size    = 16;
+        dap.count   = xfer_sizes[i];
+        dap.segment = rm_seg(xfer_buf);
+        dap.offset  = rm_off(xfer_buf);
+        dap.lba     = 0;
+
+        struct rm_regs r = {0};
+        r.eax = 0x4200;
+        r.edx = volume->drive;
+        r.esi = (uint32_t)rm_off(&dap);
+        r.ds  = rm_seg(&dap);
+
+        uint64_t start_timestamp = rdtsc();
+        rm_int(0x13, &r, &r);
+        uint64_t end_timestamp = rdtsc();
+
+        if (r.eflags & EFLAGS_CF) {
+            int ah = (r.eax >> 8) & 0xff;
+            printv("Disk error %x. Drive %x", ah, volume->drive);
+            continue;
+        }
+
+        uint64_t speed = (end_timestamp - start_timestamp) / xfer_sizes[i];
+
+        if (speed < last_speed) {
+            last_speed = speed;
+            fastest_size = xfer_sizes[i];
+        }
+    }
+
+    return fastest_size;
+}
 
 bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t count) {
     if (count * volume->sector_size > XFER_BUF_SIZE)
@@ -111,6 +160,8 @@ void disk_create_index(void) {
             }
         }
 
+        block.fastest_xfer_size = 8;
+
         volume_count++;
 
         for (int part = 0; ; part++) {
@@ -169,6 +220,8 @@ void disk_create_index(void) {
         } else {
             block->index = hdd_indices++;
         }
+
+        block->fastest_xfer_size = fastest_xfer_size(block);
 
         if (gpt_get_guid(&block->guid, block)) {
             block->guid_valid = true;
@@ -321,6 +374,8 @@ void disk_create_index(void) {
         block.first_sect = 0;
         block.sect_count = block_io->Media->LastBlock + 1;
 
+        block.fastest_xfer_size = 8;
+
         for (int part = 0; ; part++) {
             struct volume trash = {0};
             int ret = part_get(&trash, &block, part);
@@ -381,6 +436,9 @@ void disk_create_index(void) {
         if (gpt_get_guid(&block->guid, block)) {
             block->guid_valid = true;
         }
+
+        // TODO: get fastest xfer size also for UEFI?
+        block->fastest_xfer_size = 8;
 
         volume_index[volume_index_i++] = block;
 

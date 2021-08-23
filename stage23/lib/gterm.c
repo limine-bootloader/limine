@@ -104,6 +104,10 @@ static inline uint32_t colour_blend(uint32_t fg, uint32_t bg) {
 }
 
 void gterm_plot_px(size_t x, size_t y, uint32_t hex) {
+    if (x >= gterm_width || y >= gterm_height) {
+        return;
+    }
+
     size_t fb_i = x + (gterm_pitch / sizeof(uint32_t)) * y;
 
     gterm_framebuffer[fb_i] = hex;
@@ -251,6 +255,9 @@ struct gterm_char {
 };
 
 void gterm_plot_char(struct gterm_char *c, size_t x, size_t y) {
+    if (x > gterm_width - vga_font_scale_x || y > gterm_width - vga_font_scale_y) {
+        return;
+    }
     bool *glyph = &vga_font_bool[c->c * vga_font_height * vga_font_width];
     // naming: fx,fy for font coordinates, gx,gy for glyph coordinates
     for (size_t gy = 0; gy < glyph_height; gy++) {
@@ -269,6 +276,9 @@ void gterm_plot_char(struct gterm_char *c, size_t x, size_t y) {
 }
 
 void gterm_plot_char_fast(struct gterm_char *old, struct gterm_char *c, size_t x, size_t y) {
+    if (x > gterm_width - vga_font_scale_x || y > gterm_width - vga_font_scale_y) {
+        return;
+    }
     bool *new_glyph = &vga_font_bool[c->c * vga_font_height * vga_font_width];
     bool *old_glyph = &vga_font_bool[old->c * vga_font_height * vga_font_width];
     for (size_t gy = 0; gy < glyph_height; gy++) {
@@ -290,10 +300,18 @@ void gterm_plot_char_fast(struct gterm_char *old, struct gterm_char *c, size_t x
 }
 
 static void plot_char_grid_force(struct gterm_char *c, size_t x, size_t y) {
+    if (x >= cols || y >= rows) {
+        return;
+    }
+
     gterm_plot_char(c, frame_width + x * glyph_width, frame_height + y * glyph_height);
 }
 
 static void plot_char_grid(struct gterm_char *c, size_t x, size_t y) {
+    if (x >= cols || y >= rows) {
+        return;
+    }
+
     if (!double_buffer_enabled) {
         struct gterm_char *old = &grid[x + y * cols];
 
@@ -320,7 +338,7 @@ static void draw_cursor(void) {
     if (cursor_status) {
         struct gterm_char c = grid[cursor_x + cursor_y * cols];
         c.fg = 0;
-        c.bg = 0xaaaaaa;
+        c.bg = 0xcccccc;
         plot_char_grid_force(&c, cursor_x, cursor_y);
     }
 }

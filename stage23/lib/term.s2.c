@@ -163,7 +163,7 @@ static void context_restore(uint64_t ptr) {
 #if defined (__i386__)
 #define TERM_XFER_CHUNK 8192
 
-static char xfer_buf[TERM_XFER_CHUNK];
+static uint8_t xfer_buf[TERM_XFER_CHUNK];
 #endif
 
 void term_write(uint64_t buf, uint64_t count) {
@@ -206,7 +206,13 @@ void term_write(uint64_t buf, uint64_t count) {
     } else {
 #if defined (__i386__)
         while (count != 0) {
-            uint64_t chunk = count % TERM_XFER_CHUNK;
+            uint64_t chunk;
+            if (count > TERM_XFER_CHUNK) {
+                chunk = TERM_XFER_CHUNK;
+            } else {
+                chunk = count;
+            }
+
             memcpy32to64((uint64_t)(uintptr_t)xfer_buf, buf, chunk);
 
             old_cur_stat = disable_cursor();
@@ -688,7 +694,9 @@ static void control_sequence_parse(uint8_t c) {
             if (esc_values_i > 1) {
                 scroll_bottom_margin = esc_values[1];
             }
-            if (scroll_top_margin >= (scroll_bottom_margin - 1)) {
+            if (scroll_top_margin >= term_rows
+             || scroll_bottom_margin >= term_rows
+             || scroll_top_margin >= (scroll_bottom_margin - 1)) {
                 scroll_top_margin = 0;
                 scroll_bottom_margin = term_rows;
             }

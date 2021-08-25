@@ -59,23 +59,24 @@ static size_t fastest_xfer_size(struct volume *volume) {
         dap.offset  = rm_off(xfer_buf);
         dap.lba     = 0;
 
-        struct rm_regs r = {0};
-        r.eax = 0x4200;
-        r.edx = volume->drive;
-        r.esi = (uint32_t)rm_off(&dap);
-        r.ds  = rm_seg(&dap);
-
         uint64_t start_timestamp = rdtsc();
-        rm_int(0x13, &r, &r);
+        for (size_t j = 0; j < XFER_BUF_SIZE / 512; j += xfer_sizes[i]) {
+            struct rm_regs r = {0};
+            r.eax = 0x4200;
+            r.edx = volume->drive;
+            r.esi = (uint32_t)rm_off(&dap);
+            r.ds  = rm_seg(&dap);
+            rm_int(0x13, &r, &r);
+            if (r.eflags & EFLAGS_CF) {
+                int ah = (r.eax >> 8) & 0xff;
+                printv("Disk error %x. Drive %x", ah, volume->drive);
+                return 8;
+            }
+            dap.lba += xfer_sizes[i];
+        }
         uint64_t end_timestamp = rdtsc();
 
-        if (r.eflags & EFLAGS_CF) {
-            int ah = (r.eax >> 8) & 0xff;
-            printv("Disk error %x. Drive %x", ah, volume->drive);
-            continue;
-        }
-
-        uint64_t speed = (end_timestamp - start_timestamp) / xfer_sizes[i];
+        uint64_t speed = end_timestamp - start_timestamp;
 
         if (speed < last_speed) {
             last_speed = speed;

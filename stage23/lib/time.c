@@ -52,7 +52,7 @@ uint64_t time(void) {
 #if uefi == 1
 uint64_t time(void) {
     EFI_TIME time;
-    uefi_call_wrapper(gRT->GetTime, 2, &time, NULL);
+    gRT->GetTime(&time, NULL);
 
     return get_unix_epoch(time.Second, time.Minute, time.Hour,
                           time.Day, time.Month, time.Year);

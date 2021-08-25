@@ -67,9 +67,8 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
         EFI_GUID loaded_img_prot_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
         EFI_LOADED_IMAGE_PROTOCOL *loaded_image = NULL;
 
-        status = uefi_call_wrapper(gBS->HandleProtocol, 3,
-                                   current_handle, &loaded_img_prot_guid,
-                                   (void **)&loaded_image);
+        status = gBS->HandleProtocol(current_handle, &loaded_img_prot_guid,
+                                     (void **)&loaded_image);
 
         if (status) {
             panic("HandleProtocol failure (%x)", status);

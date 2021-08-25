@@ -98,10 +98,9 @@ again:;
 
     UINTN which;
 
-    uefi_call_wrapper(
-        gBS->WaitForEvent, 3, 1, (EFI_EVENT[]){ gST->ConIn->WaitForKey }, &which);
+    gBS->WaitForEvent(1, (EFI_EVENT[]){ gST->ConIn->WaitForKey }, &which);
 
-    uefi_call_wrapper(gST->ConIn->ReadKeyStroke, 2, gST->ConIn, &key);
+    gST->ConIn->ReadKeyStroke(gST->ConIn, &key);
 
     int ret = getchar_internal(key.ScanCode, key.UnicodeChar);
 
@@ -120,20 +119,18 @@ int pit_sleep_and_quit_on_keypress(int seconds) {
 
     events[0] = gST->ConIn->WaitForKey;
 
-    uefi_call_wrapper(
-        gBS->CreateEvent, 5, EVT_TIMER, TPL_CALLBACK, NULL, NULL, &events[1]);
+    gBS->CreateEvent(EVT_TIMER, TPL_CALLBACK, NULL, NULL, &events[1]);
 
-    uefi_call_wrapper(
-        gBS->SetTimer, 3, events[1], TimerRelative, 10000000 * seconds);
+    gBS->SetTimer(events[1], TimerRelative, 10000000 * seconds);
 
 again:
-    uefi_call_wrapper(gBS->WaitForEvent, 3, 2, events, &which);
+    gBS->WaitForEvent(2, events, &which);
 
     if (which == 1) {
         return 0;
     }
 
-    uefi_call_wrapper(gST->ConIn->ReadKeyStroke, 2, gST->ConIn, &key);
+    gST->ConIn->ReadKeyStroke(gST->ConIn, &key);
 
     int ret = getchar_internal(key.ScanCode, key.UnicodeChar);
 

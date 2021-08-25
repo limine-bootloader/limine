@@ -40,13 +40,12 @@ static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, in
     EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
     EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
 
-    uefi_call_wrapper(gBS->LocateProtocol, 3, &gop_guid, NULL, (void **)&gop);
+    gBS->LocateProtocol(&gop_guid, NULL, (void **)&gop);
 
     EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *mode_info;
     UINTN mode_info_size;
 
-    status = uefi_call_wrapper(gop->QueryMode, 4,
-        gop, mode, &mode_info_size, &mode_info);
+    status = gop->QueryMode(gop, mode, &mode_info_size, &mode_info);
 
     if (status)
         return false;
@@ -102,7 +101,7 @@ static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, in
     if ((int)mode == current_video_mode) {
         printv("gop: Mode was already set, perfect!\n");
     } else {
-        status = uefi_call_wrapper(gop->SetMode, 2, gop, mode);
+        status = gop->SetMode(gop, mode);
 
         if (status) {
             current_video_mode = -2;
@@ -137,17 +136,16 @@ bool init_gop(struct fb_info *ret,
     EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
     EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
 
-    uefi_call_wrapper(gBS->LocateProtocol, 3, &gop_guid, NULL, (void **)&gop);
+    gBS->LocateProtocol(&gop_guid, NULL, (void **)&gop);
 
     EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *mode_info;
     UINTN mode_info_size;
 
-    status = uefi_call_wrapper(gop->QueryMode, 4, gop,
-                               gop->Mode == NULL ? 0 : gop->Mode->Mode,
-                               &mode_info_size, &mode_info);
+    status = gop->QueryMode(gop, gop->Mode == NULL ? 0 : gop->Mode->Mode,
+                            &mode_info_size, &mode_info);
 
     if (status == EFI_NOT_STARTED) {
-        status = uefi_call_wrapper(gop->SetMode, 2, gop, 0);
+        status = gop->SetMode(gop, 0);
     }
 
     if (status) {

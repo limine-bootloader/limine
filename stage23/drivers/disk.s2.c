@@ -214,23 +214,19 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE *efi_handle) {
     EFI_DISK_IO *disk_io = NULL;
     EFI_BLOCK_IO *block_io = NULL;
 
-    status = uefi_call_wrapper(gBS->HandleProtocol, 3, efi_handle, &disk_io_guid,
-                               (void **)&disk_io);
+    status = gBS->HandleProtocol(efi_handle, &disk_io_guid, (void **)&disk_io);
     if (status)
         return NULL;
-    status = uefi_call_wrapper(gBS->HandleProtocol, 3, efi_handle, &block_io_guid,
-                               (void **)&block_io);
+    status = gBS->HandleProtocol(efi_handle, &block_io_guid, (void **)&block_io);
     if (status)
         return NULL;
 
     uint64_t signature = BUILD_ID;
     uint64_t orig;
 
-    uefi_call_wrapper(disk_io->ReadDisk, 5, disk_io, block_io->Media->MediaId, 0,
-                      sizeof(uint64_t), &orig);
+    disk_io->ReadDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &orig);
 
-    status = uefi_call_wrapper(disk_io->WriteDisk, 5,
-        disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &signature);
+    status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &signature);
 
     if (status) {
         // Really hacky support for CDs because they are read-only
@@ -248,12 +244,12 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE *efi_handle) {
         EFI_DISK_IO *cur_disk_io = NULL;
         EFI_BLOCK_IO *cur_block_io = NULL;
 
-        uefi_call_wrapper(gBS->HandleProtocol, 3, volume_index[i]->efi_handle,
+        gBS->HandleProtocol(volume_index[i]->efi_handle,
                           &disk_io_guid, (void **)&cur_disk_io);
-        uefi_call_wrapper(gBS->HandleProtocol, 3, volume_index[i]->efi_handle,
+        gBS->HandleProtocol(volume_index[i]->efi_handle,
                           &block_io_guid, (void **)&cur_block_io);
 
-        uefi_call_wrapper(cur_disk_io->ReadDisk, 5, cur_disk_io,
+        cur_disk_io->ReadDisk(cur_disk_io,
                           cur_block_io->Media->MediaId,
                           0 +
                           volume_index[i]->first_sect * volume_index[i]->sector_size,
@@ -265,8 +261,7 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE *efi_handle) {
         }
     }
 
-    uefi_call_wrapper(disk_io->WriteDisk, 5, disk_io, block_io->Media->MediaId, 0,
-                      sizeof(uint64_t), &orig);
+    disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &orig);
 
     return ret;
 }
@@ -277,10 +272,10 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
     EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
     EFI_BLOCK_IO *block_io = NULL;
 
-    status = uefi_call_wrapper(gBS->HandleProtocol, 3, volume->efi_handle,
+    status = gBS->HandleProtocol(volume->efi_handle,
                                &block_io_guid, (void **)&block_io);
 
-    status = uefi_call_wrapper(block_io->ReadBlocks, 5, block_io,
+    status = block_io->ReadBlocks(block_io,
                                block_io->Media->MediaId,
                                block, count * volume->sector_size, buf);
 
@@ -298,13 +293,11 @@ void disk_create_index(void) {
     EFI_HANDLE *handles = NULL;
     UINTN handles_size = 0;
 
-    uefi_call_wrapper(gBS->LocateHandle, 5, ByProtocol, &block_io_guid,
-                      NULL, &handles_size, handles);
+    gBS->LocateHandle(ByProtocol, &block_io_guid, NULL, &handles_size, handles);
 
     handles = ext_mem_alloc(handles_size);
 
-    uefi_call_wrapper(gBS->LocateHandle, 5, ByProtocol, &block_io_guid,
-                      NULL, &handles_size, handles);
+    gBS->LocateHandle(ByProtocol, &block_io_guid, NULL, &handles_size, handles);
 
     volume_index = ext_mem_alloc(sizeof(struct volume) * MAX_VOLUMES);
 
@@ -319,13 +312,11 @@ void disk_create_index(void) {
         EFI_GUID disk_io_guid = DISK_IO_PROTOCOL;
         EFI_DISK_IO *disk_io = NULL;
 
-        uefi_call_wrapper(gBS->HandleProtocol, 3, handles[i], &disk_io_guid,
-                          (void **)&disk_io);
+        gBS->HandleProtocol(handles[i], &disk_io_guid, (void **)&disk_io);
 
         EFI_BLOCK_IO *drive = NULL;
 
-        status = uefi_call_wrapper(gBS->HandleProtocol, 3, handles[i],
-                                   &block_io_guid, (void **)&drive);
+        status = gBS->HandleProtocol(handles[i], &block_io_guid, (void **)&drive);
 
         if (status != 0 || drive == NULL || drive->Media->LastBlock == 0)
             continue;
@@ -334,10 +325,8 @@ void disk_create_index(void) {
             continue;
 
         uint64_t orig;
-        uefi_call_wrapper(disk_io->ReadDisk, 5,
-            disk_io, drive->Media->MediaId, 0, sizeof(uint64_t), &orig);
-        status = uefi_call_wrapper(disk_io->WriteDisk, 5,
-            disk_io, drive->Media->MediaId, 0, sizeof(uint64_t), &orig);
+        disk_io->ReadDisk(disk_io, drive->Media->MediaId, 0, sizeof(uint64_t), &orig);
+        status = disk_io->WriteDisk(disk_io, drive->Media->MediaId, 0, sizeof(uint64_t), &orig);
 
         struct volume *block = ext_mem_alloc(sizeof(struct volume));
 

@@ -33,7 +33,7 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
 
         // release all uefi memory and return to firmware
         pmm_release_uefi_mem();
-        uefi_call_wrapper(gBS->Exit, 4, efi_image_handle, EFI_ABORTED, 0, NULL);
+        gBS->Exit(efi_image_handle, EFI_ABORTED, 0, NULL);
         __builtin_unreachable();
     } else {
         print("System halted.");

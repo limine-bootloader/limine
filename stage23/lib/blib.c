@@ -15,7 +15,8 @@ EFI_BOOT_SERVICES *gBS;
 EFI_RUNTIME_SERVICES *gRT;
 EFI_HANDLE efi_image_handle;
 EFI_MEMORY_DESCRIPTOR *efi_mmap = NULL;
-UINTN efi_mmap_size = 0, efi_desc_size = 0, efi_desc_ver = 0;
+UINTN efi_mmap_size = 0, efi_desc_size = 0;
+UINT32 efi_desc_ver = 0;
 #endif
 
 bool verbose = false;
@@ -93,27 +94,24 @@ bool efi_exit_boot_services(void) {
     efi_mmap_size = sizeof(tmp_mmap);
     UINTN mmap_key = 0;
 
-    uefi_call_wrapper(gBS->GetMemoryMap, 5,
-        &efi_mmap_size, tmp_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
+    gBS->GetMemoryMap(&efi_mmap_size, tmp_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
 
     efi_mmap_size += 4096;
 
-    status = uefi_call_wrapper(gBS->FreePool, 1, efi_mmap);
+    status = gBS->FreePool(efi_mmap);
     if (status)
         goto fail;
 
-    status = uefi_call_wrapper(gBS->AllocatePool, 3,
-        EfiLoaderData, efi_mmap_size, (void **)&efi_mmap);
+    status = gBS->AllocatePool(EfiLoaderData, efi_mmap_size, (void **)&efi_mmap);
     if (status)
         goto fail;
 
-    status = uefi_call_wrapper(gBS->GetMemoryMap, 5,
-        &efi_mmap_size, efi_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
+    status = gBS->GetMemoryMap(&efi_mmap_size, efi_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
     if (status)
         goto fail;
 
     // Be gone, UEFI!
-    status = uefi_call_wrapper(gBS->ExitBootServices, 2, efi_image_handle, mmap_key);
+    status = gBS->ExitBootServices(efi_image_handle, mmap_key);
 
     asm volatile ("cli" ::: "memory");
 

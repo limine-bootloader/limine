@@ -123,8 +123,7 @@ void chainload(char *config) {
     void *_ptr = freadall(image, MEMMAP_RESERVED);
     size_t image_size = image->size;
     void *ptr;
-    status = uefi_call_wrapper(gBS->AllocatePool, 3,
-        EfiLoaderData, image_size, &ptr);
+    status = gBS->AllocatePool(EfiLoaderData, image_size, &ptr);
     if (status)
         panic("chainload: Allocation failure");
     memcpy(ptr, _ptr, image_size);
@@ -161,9 +160,9 @@ void chainload(char *config) {
 
     EFI_HANDLE new_handle = 0;
 
-    status = uefi_call_wrapper(gBS->LoadImage, 6, 0, efi_image_handle,
-                               (EFI_DEVICE_PATH *)memdev_path,
-                               ptr, image_size, &new_handle);
+    status = gBS->LoadImage(0, efi_image_handle,
+                            (EFI_DEVICE_PATH *)memdev_path,
+                            ptr, image_size, &new_handle);
     if (status) {
         panic("chainload: LoadImage failure (%x)", status);
     }
@@ -173,17 +172,15 @@ void chainload(char *config) {
     EFI_GUID loaded_img_prot_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
 
     EFI_LOADED_IMAGE_PROTOCOL *loader_loaded_image = NULL;
-    status = uefi_call_wrapper(gBS->HandleProtocol, 3,
-                               efi_image_handle, &loaded_img_prot_guid,
-                               (void **)&loader_loaded_image);
+    status = gBS->HandleProtocol(efi_image_handle, &loaded_img_prot_guid,
+                                 (void **)&loader_loaded_image);
     if (status) {
         panic("chainload: HandleProtocol failure (%x)", status);
     }
 
     EFI_LOADED_IMAGE_PROTOCOL *new_handle_loaded_image = NULL;
-    status = uefi_call_wrapper(gBS->HandleProtocol, 3,
-                               new_handle, &loaded_img_prot_guid,
-                               (void **)&new_handle_loaded_image);
+    status = gBS->HandleProtocol(new_handle, &loaded_img_prot_guid,
+                                 (void **)&new_handle_loaded_image);
     if (status) {
         panic("chainload: HandleProtocol failure (%x)", status);
     }
@@ -192,11 +189,9 @@ void chainload(char *config) {
 
     UINTN exit_data_size = 0;
     CHAR16 *exit_data = NULL;
-    EFI_STATUS exit_status = uefi_call_wrapper(gBS->StartImage, 3,
-                                 new_handle, &exit_data_size, &exit_data);
+    EFI_STATUS exit_status = gBS->StartImage(new_handle, &exit_data_size, &exit_data);
 
-    status = uefi_call_wrapper(gBS->Exit, 4,
-                          efi_image_handle, exit_status, exit_data_size, exit_data);
+    status = gBS->Exit(efi_image_handle, exit_status, exit_data_size, exit_data);
     if (status) {
         panic("chainload: Exit failure (%x)", status);
     }

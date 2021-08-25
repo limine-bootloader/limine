@@ -261,16 +261,13 @@ void init_memmap(void) {
     efi_mmap_size = sizeof(tmp_mmap);
     UINTN mmap_key = 0;
 
-    status = uefi_call_wrapper(gBS->GetMemoryMap, 5,
-        &efi_mmap_size, tmp_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
+    status = gBS->GetMemoryMap(&efi_mmap_size, tmp_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
 
     efi_mmap_size += 4096;
 
-    status = uefi_call_wrapper(gBS->AllocatePool, 3,
-        EfiLoaderData, efi_mmap_size, (void **)&efi_mmap);
+    status = gBS->AllocatePool(EfiLoaderData, efi_mmap_size, (void **)&efi_mmap);
 
-    status = uefi_call_wrapper(gBS->GetMemoryMap, 5,
-        &efi_mmap_size, efi_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
+    status = gBS->GetMemoryMap(&efi_mmap_size, efi_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
 
     size_t entry_count = efi_mmap_size / efi_desc_size;
 
@@ -334,8 +331,8 @@ void init_memmap(void) {
 
         EFI_PHYSICAL_ADDRESS base = memmap[i].base;
 
-        status = uefi_call_wrapper(gBS->AllocatePages, 4,
-          AllocateAddress, EfiLoaderData, memmap[i].length / 4096, &base);
+        status = gBS->AllocatePages(AllocateAddress, EfiLoaderData,
+                                    memmap[i].length / 4096, &base);
 
         if (status)
             panic("pmm: AllocatePages failure (%x)", status);
@@ -447,8 +444,7 @@ void pmm_release_uefi_mem(void) {
             continue;
         }
 
-        status = uefi_call_wrapper(gBS->FreePages, 2,
-                                   memmap[i].base, memmap[i].length / 4096);
+        status = gBS->FreePages(memmap[i].base, memmap[i].length / 4096);
 
         if (status)
             panic("pmm: FreePages failure (%x)", status);

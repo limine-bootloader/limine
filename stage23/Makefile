@@ -61,7 +61,6 @@ INTERNAL_CFLAGS := \
 	-fno-stack-protector \
 	-fno-omit-frame-pointer \
 	-fno-lto \
-	-fno-pic \
 	-Wno-address-of-packed-member \
 	-Wshadow \
 	-mno-80387 \
@@ -85,6 +84,7 @@ ifeq ($(TARGET), bios)
 		-m32 \
 		-march=i386 \
 		-mabi=sysv \
+		-fno-pic \
 		-fno-pie
 endif
 
@@ -96,6 +96,7 @@ ifeq ($(TARGET), uefi)
 		-m32 \
 		-march=i386 \
 		-mabi=sysv \
+		-DGNU_EFI_USE_MS_ABI \
 		-fpie
 
 	INTERNAL_CFLAGS += \
@@ -104,6 +105,7 @@ ifeq ($(TARGET), uefi)
 		-m64 \
 		-march=x86-64 \
 		-mabi=sysv \
+		-DGNU_EFI_USE_MS_ABI \
 		-I../gnu-efi/inc \
 		-I../gnu-efi/inc/x86_64 \
 		-fpie \
@@ -117,6 +119,7 @@ ifeq ($(TARGET), uefi32)
 		-m32 \
 		-march=i386 \
 		-mabi=sysv \
+		-DGNU_EFI_USE_MS_ABI \
 		-I../gnu-efi/inc \
 		-I../gnu-efi/inc/ia32 \
 		-fpie
@@ -254,15 +257,12 @@ $(BUILDDIR)/BOOTX64.EFI: $(BUILDDIR)/limine_efi.elf
 $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a: $(BUILDDIR)/gnu-efi
 	$(MAKE) -C $(BUILDDIR)/gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m64 -march=x86-64" AR="$(TOOLCHAIN_AR)" ARCH=x86_64
 
-$(BUILDDIR)/gnu-efi/lib/x86_64/efi_stub.o: $(BUILDDIR)/gnu-efi
-	$(MAKE) -C $(BUILDDIR)/gnu-efi/lib CC="$(TOOLCHAIN_CC) -m64 -march=x86-64" ARCH=x86_64 x86_64/efi_stub.o
-
-$(BUILDDIR)/limine_efi_nomap.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(BUILDDIR)/gnu-efi/lib/x86_64/efi_stub.o $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
+$(BUILDDIR)/limine_efi_nomap.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi_nomap.ld \
 		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
-$(BUILDDIR)/limine_efi.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(BUILDDIR)/gnu-efi/lib/x86_64/efi_stub.o  $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
+$(BUILDDIR)/limine_efi.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi.ld \
 		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
@@ -282,15 +282,12 @@ $(BUILDDIR)/BOOTIA32.EFI: $(BUILDDIR)/limine_efi.elf
 $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a: $(BUILDDIR)/gnu-efi
 	$(MAKE) -C $(BUILDDIR)/gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m32 -march=i386" AR="$(TOOLCHAIN_AR)" ARCH=ia32
 
-$(BUILDDIR)/gnu-efi/lib/ia32/efi_stub.o: $(BUILDDIR)/gnu-efi
-	$(MAKE) -C $(BUILDDIR)/gnu-efi/lib CC="$(TOOLCHAIN_CC) -m32 -march=i386" ARCH=ia32 ia32/efi_stub.o
-
-$(BUILDDIR)/limine_efi_nomap.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(BUILDDIR)/gnu-efi/lib/ia32/efi_stub.o $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
+$(BUILDDIR)/limine_efi_nomap.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi32_nomap.ld \
 		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
-$(BUILDDIR)/limine_efi.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(BUILDDIR)/gnu-efi/lib/ia32/efi_stub.o  $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
+$(BUILDDIR)/limine_efi.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi32.ld \
 		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@

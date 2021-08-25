@@ -86,16 +86,11 @@ void gterm_swap_palette(void) {
     }
 }
 
-#define A(rgb) ((uint8_t)((rgb) >> 24))
-#define R(rgb) ((uint8_t)((rgb) >> 16))
-#define G(rgb) ((uint8_t)((rgb) >> 8))
-#define B(rgb) ((uint8_t)((rgb) >> 0))
-#define ARGB(a, r, g, b) ( \
-    ((uint32_t)((a) & 0xFF) << 24) \
-  | ((uint32_t)((r) & 0xFF) << 16) \
-  | ((uint32_t)((g) & 0xFF) << 8) \
-  | ((uint32_t)((b) & 0xFF) << 0) \
-)
+#define A(rgb) (uint8_t)(rgb >> 24)
+#define R(rgb) (uint8_t)(rgb >> 16)
+#define G(rgb) (uint8_t)(rgb >> 8)
+#define B(rgb) (uint8_t)(rgb)
+#define ARGB(a, r, g, b) (a << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF)
 
 static inline uint32_t colour_blend(uint32_t fg, uint32_t bg) {
     unsigned alpha = 255 - A(fg);
@@ -342,16 +337,8 @@ static void clear_cursor(void) {
 static void draw_cursor(void) {
     if (cursor_status) {
         struct gterm_char c = grid[cursor_x + cursor_y * cols];
-        uint32_t tmp = c.fg;
-        if (c.bg == 0xffffffff) {
-            c.fg = ARGB(A(tmp),
-                        R(tmp) < 128 ? 255 : 0,
-                        G(tmp) < 128 ? 255 : 0,
-                        B(tmp) < 128 ? 255 : 0);
-        } else {
-            c.fg = c.bg;
-        }
-        c.bg = tmp;
+        c.fg = 0;
+        c.bg = 0xcccccc;
         plot_char_grid_force(&c, cursor_x, cursor_y);
     }
 }

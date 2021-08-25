@@ -15,6 +15,14 @@
 #define GETCHAR_F10          (-19)
 #define GETCHAR_ESCAPE       (-20)
 
+#if bios == 1
+#   define GETCHAR_RCTRL 0x4
+#   define GETCHAR_LCTRL GETCHAR_RCTRL
+#elif uefi == 1
+#   define GETCHAR_RCTRL EFI_RIGHT_CONTROL_PRESSED
+#   define GETCHAR_LCTRL EFI_LEFT_CONTROL_PRESSED
+#endif
+
 int getchar(void);
 void readline(const char *orig_str, char *buf, size_t limit);
 

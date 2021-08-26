@@ -120,54 +120,47 @@ int pit_sleep_and_quit_on_keypress(int seconds) {
 #endif
 
 #if uefi == 1
-static EFI_KEY_DATA _read_efi_key(EFI_HANDLE device) {
-    EFI_KEY_DATA out = {
-        /* default to no modifiers */
-        .KeyState = { 0 },
-    };
+int getchar(void) {
+    EFI_KEY_DATA kd;
+
+    UINTN which;
+
+    EFI_EVENT events[1];
 
     EFI_GUID exproto_guid = EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL_GUID;
     EFI_GUID sproto_guid = EFI_SIMPLE_TEXT_INPUT_PROTOCOL_GUID;
     EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *exproto = NULL;
     EFI_SIMPLE_TEXT_IN_PROTOCOL *sproto = NULL;
 
-    if (gBS->HandleProtocol(device, &exproto_guid, (void **)&exproto) != EFI_SUCCESS) {
-        if (gBS->HandleProtocol(device, &sproto_guid, (void **)&sproto)
-            != EFI_SUCCESS) {
+    if (gBS->HandleProtocol(gST->ConsoleInHandle, &exproto_guid, (void **)&exproto) != EFI_SUCCESS) {
+        if (gBS->HandleProtocol(gST->ConsoleInHandle, &sproto_guid, (void **)&sproto) != EFI_SUCCESS) {
             panic("Your input device doesn't have an input protocol!");
         }
-    }
 
-    EFI_STATUS status = EFI_UNSUPPORTED;
-    if (exproto) {
-        status = exproto->ReadKeyStrokeEx(exproto, &out);
+        events[0] = sproto->WaitForKey;
     } else {
-        status = sproto->ReadKeyStroke(sproto, &out.Key);
+        events[0] = exproto->WaitForKeyEx;
     }
 
-    /* there is definitely a key pending here, if there isn't, there's
-     * something very wrong, as the caller should be waiting on a key.
-     */
+again:
+    memset(&kd, 0, sizeof(EFI_KEY_DATA));
+
+    gBS->WaitForEvent(1, events, &which);
+
+    EFI_STATUS status;
+    if (events[0] == sproto->WaitForKey) {
+        status = sproto->ReadKeyStroke(sproto, &kd.Key);
+    } else {
+        status = exproto->ReadKeyStrokeEx(exproto, &kd);
+    }
+
     if (status != EFI_SUCCESS) {
-        panic("Failed to read from the keyboard");
+        goto again;
     }
 
-    if (!(out.KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID)) {
-        out.KeyState.KeyShiftState = 0;
+    if ((kd.KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID) == 0) {
+        kd.KeyState.KeyShiftState = 0;
     }
-
-    return out;
-}
-
-int getchar(void) {
-again:;
-    EFI_KEY_DATA kd;
-
-    UINTN which;
-
-    gBS->WaitForEvent(1, (EFI_EVENT[]){ gST->ConIn->WaitForKey }, &which);
-
-    kd = _read_efi_key(gST->ConsoleInHandle);
 
     int ret = getchar_internal(kd.Key.ScanCode, kd.Key.UnicodeChar,
                                kd.KeyState.KeyShiftState);
@@ -186,20 +179,48 @@ int pit_sleep_and_quit_on_keypress(int seconds) {
 
     EFI_EVENT events[2];
 
-    events[0] = gST->ConIn->WaitForKey;
+    EFI_GUID exproto_guid = EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL_GUID;
+    EFI_GUID sproto_guid = EFI_SIMPLE_TEXT_INPUT_PROTOCOL_GUID;
+    EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *exproto = NULL;
+    EFI_SIMPLE_TEXT_IN_PROTOCOL *sproto = NULL;
+
+    if (gBS->HandleProtocol(gST->ConsoleInHandle, &exproto_guid, (void **)&exproto) != EFI_SUCCESS) {
+        if (gBS->HandleProtocol(gST->ConsoleInHandle, &sproto_guid, (void **)&sproto) != EFI_SUCCESS) {
+            panic("Your input device doesn't have an input protocol!");
+        }
+
+        events[0] = sproto->WaitForKey;
+    } else {
+        events[0] = exproto->WaitForKeyEx;
+    }
 
     gBS->CreateEvent(EVT_TIMER, TPL_CALLBACK, NULL, NULL, &events[1]);
 
     gBS->SetTimer(events[1], TimerRelative, 10000000 * seconds);
 
 again:
+    memset(&kd, 0, sizeof(EFI_KEY_DATA));
+
     gBS->WaitForEvent(2, events, &which);
 
     if (which == 1) {
         return 0;
     }
 
-    kd = _read_efi_key(gST->ConsoleInHandle);
+    EFI_STATUS status;
+    if (events[0] == sproto->WaitForKey) {
+        status = sproto->ReadKeyStroke(sproto, &kd.Key);
+    } else {
+        status = exproto->ReadKeyStrokeEx(exproto, &kd);
+    }
+
+    if (status != EFI_SUCCESS) {
+        goto again;
+    }
+
+    if ((kd.KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID) == 0) {
+        kd.KeyState.KeyShiftState = 0;
+    }
 
     int ret = getchar_internal(kd.Key.ScanCode, kd.Key.UnicodeChar,
                                kd.KeyState.KeyShiftState);

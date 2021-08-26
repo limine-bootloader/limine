@@ -226,7 +226,7 @@ server or your existing DHCP server and a proxy DHCP server such as dnsmasq.
 ### Configuration
 The `limine.cfg` file contains Limine's configuration.
 
-An example `limine.cfg` file can be found in `test/limine.cfg`.
+An example `limine.cfg` file can be found in [`test/limine.cfg`](https://github.com/limine-bootloader/limine/blob/trunk/test/limine.cfg).
 
 More info on the format of `limine.cfg` can be found in [`CONFIG.md`](https://github.com/limine-bootloader/limine/blob/trunk/CONFIG.md).
 

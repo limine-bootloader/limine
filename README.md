@@ -228,7 +228,7 @@ The `limine.cfg` file contains Limine's configuration.
 
 An example `limine.cfg` file can be found in `test/limine.cfg`.
 
-More info on the format of `limine.cfg` can be found in `CONFIG.md`.
+More info on the format of `limine.cfg` can be found in [`CONFIG.md`](https://github.com/limine-bootloader/limine/blob/trunk/CONFIG.md).
 
 ## Acknowledgments
 Limine uses a stripped-down version of [tinf](https://github.com/jibsen/tinf).

@@ -150,6 +150,7 @@ static bool elf64_is_relocatable(uint8_t *elf, struct elf64_hdr *hdr) {
         }
 
         return true;
+
     }
 
     return false;
@@ -387,7 +388,7 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
     uint64_t slide = 0;
     bool simulation = true;
     size_t try_count = 0;
-    size_t max_simulated_tries = 250;
+    size_t max_simulated_tries = 0x100000;
 
     uint64_t entry = hdr.entry;
     bool entry_adjusted = false;
@@ -463,8 +464,9 @@ final:
             if (++try_count == max_simulated_tries || simulation == false) {
                 panic("elf: Failed to allocate necessary memory ranges");
             }
-            if (!kaslr)
-                slide += 0x1000;
+            if (!kaslr) {
+                slide += max_align;
+            }
             goto again;
         }
 

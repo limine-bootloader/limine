@@ -853,6 +853,7 @@ void term_putchar(uint8_t c) {
     get_cursor_pos(&x, &y);
 
     switch (c) {
+        case 0x00:
         case 0x7f:
             return;
         case 0x9b:

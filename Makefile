@@ -202,7 +202,7 @@ echfs-test:
 	echfs-utils -g -p0 test.hdd import test/bg.bmp boot/bg.bmp
 	echfs-utils -g -p0 test.hdd import bin/limine.sys boot/limine.sys
 	bin/limine-install test.hdd
-	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: ext2-test
 ext2-test:
@@ -224,7 +224,7 @@ ext2-test:
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
 	bin/limine-install test.hdd
-	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: fat12-test
 fat12-test:
@@ -246,7 +246,7 @@ fat12-test:
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
 	bin/limine-install test.hdd
-	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: fat16-test
 fat16-test:
@@ -268,7 +268,7 @@ fat16-test:
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
 	bin/limine-install test.hdd
-	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: fat32-test
 fat32-test:
@@ -290,7 +290,7 @@ fat32-test:
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
 	bin/limine-install test.hdd
-	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: iso9660-test
 iso9660-test:
@@ -302,7 +302,7 @@ iso9660-test:
 	mkdir -p test_image/boot
 	cp -rv bin/* test/* test_image/boot/
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table test_image/ -o test.iso
-	qemu-system-x86_64 -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -net none -smp 4   -cdrom test.iso -debugcon stdio
 
 .PHONY: full-hybrid-test
 full-hybrid-test:
@@ -319,12 +319,12 @@ full-hybrid-test:
 	cp -rv bin/* test/* test_image/boot/
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine-eltorito-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label test_image/ -o test.iso
 	bin/limine-install test.iso
-	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
-	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.iso -debugcon stdio
-	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
-	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.iso -debugcon stdio
-	qemu-system-x86_64 -m 512M -M q35 -net none -smp 4 -enable-kvm -cpu host -cdrom test.iso -debugcon stdio
-	qemu-system-x86_64 -m 512M -M q35 -net none -smp 4 -enable-kvm -cpu host -hda test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -hda test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4   -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4   -hda test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -net none -smp 4   -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -net none -smp 4   -hda test.iso -debugcon stdio
 
 .PHONY: pxe-test
 pxe-test:
@@ -334,7 +334,7 @@ pxe-test:
 	rm -rf test_image/
 	mkdir -p test_image/boot
 	cp -rv bin/* test/* test_image/boot/
-	qemu-system-x86_64 -enable-kvm -smp 4 -cpu host -netdev user,id=n0,tftp=./test_image,bootfile=boot/limine-pxe.bin -device rtl8139,netdev=n0,mac=00:00:00:11:11:11 -debugcon stdio
+	qemu-system-x86_64  -smp 4  -netdev user,id=n0,tftp=./test_image,bootfile=boot/limine-pxe.bin -device rtl8139,netdev=n0,mac=00:00:00:11:11:11 -debugcon stdio
 
 .PHONY: uefi-test
 uefi-test:
@@ -357,7 +357,7 @@ uefi-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-x86_64 -m 512M -M q35 -L ovmf -bios ovmf-x64/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -L ovmf -bios ovmf-x64/OVMF.fd -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: uefi32-test
 uefi32-test:
@@ -380,4 +380,4 @@ uefi32-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-x86_64 -m 512M -M q35 -L ovmf -bios ovmf-ia32/OVMF.fd -net none -smp 4 -enable-kvm -cpu host -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -L ovmf -bios ovmf-ia32/OVMF.fd -net none -smp 4   -hda test.hdd -debugcon stdio

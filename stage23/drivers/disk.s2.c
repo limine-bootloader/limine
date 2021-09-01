@@ -255,6 +255,57 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
         }
     }
 
+    // Fallback to read-back method
+
+    EFI_GUID disk_io_guid = DISK_IO_PROTOCOL;
+    EFI_DISK_IO *disk_io = NULL;
+
+    status = gBS->HandleProtocol(efi_handle, &disk_io_guid, (void **)&disk_io);
+    if (status)
+        return NULL;
+
+    uint64_t signature = BUILD_ID;
+    uint64_t orig;
+
+    status = disk_io->ReadDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &orig);
+    if (status) {
+        return NULL;
+    }
+
+    status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &signature);
+    if (status) {
+        return NULL;
+    }
+
+    struct volume *ret = NULL;
+    for (size_t i = 0; i < volume_index_i; i++) {
+        uint64_t compare;
+
+        EFI_DISK_IO *cur_disk_io = NULL;
+
+        gBS->HandleProtocol(volume_index[i]->efi_handle,
+                          &disk_io_guid, (void **)&cur_disk_io);
+
+        cur_disk_io->ReadDisk(cur_disk_io,
+                          volume_index[i]->block_io->Media->MediaId,
+                          0 + volume_index[i]->first_sect * 512,
+                          sizeof(uint64_t), &compare);
+
+        if (compare == signature) {
+            ret = volume_index[i];
+            break;
+        }
+    }
+
+    status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &orig);
+    if (status) {
+        return NULL;
+    }
+
+    if (ret != NULL) {
+        return ret;
+    }
+
     printv("Failed to match handle %X (2)\n", efi_handle);
 
     return NULL;

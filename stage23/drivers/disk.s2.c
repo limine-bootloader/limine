@@ -205,86 +205,116 @@ void disk_create_index(void) {
 
 #if uefi == 1
 
-struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
-    EFI_STATUS status;
-
-    struct volume *ret = NULL;
-
-    EFI_GUID disk_io_guid = DISK_IO_PROTOCOL;
-    EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
-    EFI_DISK_IO *disk_io = NULL;
-    EFI_BLOCK_IO *block_io = NULL;
-
-    status = gBS->HandleProtocol(efi_handle, &disk_io_guid, (void **)&disk_io);
-    if (status)
-        return NULL;
-    status = gBS->HandleProtocol(efi_handle, &block_io_guid, (void **)&block_io);
-    if (status)
-        return NULL;
-
-    uint64_t signature = BUILD_ID;
-    uint64_t orig;
-
-    disk_io->ReadDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &orig);
-
-    status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &signature);
-
-    if (status) {
-        // Really hacky support for CDs because they are read-only
-        for (size_t i = 0; i < volume_index_i; i++) {
-            if (volume_index[i]->is_optical)
-                return volume_index[i];
-        }
-
-        return NULL;
-    }
-
-    for (size_t i = 0; i < volume_index_i; i++) {
-        uint64_t compare;
-
-        EFI_DISK_IO *cur_disk_io = NULL;
-        EFI_BLOCK_IO *cur_block_io = NULL;
-
-        gBS->HandleProtocol(volume_index[i]->efi_handle,
-                          &disk_io_guid, (void **)&cur_disk_io);
-        gBS->HandleProtocol(volume_index[i]->efi_handle,
-                          &block_io_guid, (void **)&cur_block_io);
-
-        cur_disk_io->ReadDisk(cur_disk_io,
-                          cur_block_io->Media->MediaId,
-                          0 +
-                          volume_index[i]->first_sect * volume_index[i]->sector_size,
-                          sizeof(uint64_t), &compare);
-
-        if (compare == signature) {
-            ret = volume_index[i];
-            break;
-        }
-    }
-
-    disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &orig);
-
-    return ret;
-}
-
 bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t count) {
     EFI_STATUS status;
 
-    EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
-    EFI_BLOCK_IO *block_io = NULL;
-
-    status = gBS->HandleProtocol(volume->efi_handle,
-                               &block_io_guid, (void **)&block_io);
-
-    status = block_io->ReadBlocks(block_io,
-                               block_io->Media->MediaId,
+    status = volume->block_io->ReadBlocks(volume->block_io,
+                               volume->block_io->Media->MediaId,
                                block, count * volume->sector_size, buf);
-
     if (status != 0) {
         return false;
     }
 
     return true;
+}
+
+static uint8_t unique_sector_pool[8192] __attribute__((aligned(4096)));
+
+struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
+    EFI_STATUS status;
+
+    EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
+    EFI_BLOCK_IO *block_io = NULL;
+
+    status = gBS->HandleProtocol(efi_handle, &block_io_guid, (void **)&block_io);
+    if (status) {
+        printv("Failed to match handle %X (1)\n", efi_handle);
+        return NULL;
+    }
+
+    for (size_t i = 0; i < volume_index_i; i++) {
+        if (volume_index[i]->unique_sector_valid == false) {
+            continue;
+        }
+
+        size_t unique_sector = (volume_index[i]->unique_sector * volume_index[i]->sector_size) / block_io->Media->BlockSize;
+
+        status = block_io->ReadBlocks(block_io, block_io->Media->MediaId,
+                                      unique_sector,
+                                      volume_index[i]->sector_size,
+                                      unique_sector_pool);
+        if (status != 0) {
+            continue;
+        }
+
+        uint32_t crc32 = get_crc32(unique_sector_pool, volume_index[i]->sector_size);
+
+        if (crc32 == volume_index[i]->unique_sector_crc32) {
+            printv("Matched handle %X with volume %X\n", efi_handle, volume_index[i]);
+            return volume_index[i];
+        }
+    }
+
+    printv("Failed to match handle %X (2)\n", efi_handle);
+
+    return NULL;
+}
+
+static struct volume *volume_by_unique_sector(size_t sect, uint32_t crc32) {
+    for (size_t i = 0; i < volume_index_i; i++) {
+        if (volume_index[i]->unique_sector_valid == false) {
+            continue;
+        }
+
+        if (volume_index[i]->unique_sector == sect
+         && volume_index[i]->unique_sector_crc32 == crc32) {
+            return volume_index[i];
+        }
+    }
+
+    return NULL;
+}
+
+#define UNIQUE_SECT_MAX_SEARCH_RANGE 0x1000
+
+static void find_unique_sectors(void) {
+    EFI_STATUS status;
+
+    for (size_t i = 0; i < volume_index_i; i++) {
+        for (size_t j = 0; j < UNIQUE_SECT_MAX_SEARCH_RANGE; j++) {
+            if (volume_index[i]->first_sect % (volume_index[i]->sector_size / 512)) {
+                break;
+            }
+
+            size_t first_sect = volume_index[i]->first_sect / (volume_index[i]->sector_size / 512);
+
+            status = volume_index[i]->block_io->ReadBlocks(
+                                volume_index[i]->block_io,
+                                volume_index[i]->block_io->Media->MediaId,
+                                first_sect + j,
+                                volume_index[i]->sector_size,
+                                unique_sector_pool);
+            if (status != 0) {
+                break;
+            }
+
+            uint32_t crc32 = get_crc32(unique_sector_pool, volume_index[i]->sector_size);
+
+            if (volume_by_unique_sector(j, crc32) == NULL) {
+                volume_index[i]->unique_sector_valid = true;
+                volume_index[i]->unique_sector = j;
+                volume_index[i]->unique_sector_crc32 = crc32;
+                break;
+            }
+        }
+
+        if (volume_index[i]->unique_sector_valid == false) {
+            printv("Not able to match unique sector for volume %X\n", volume_index[i]);
+        } else {
+            printv("Matched volume %X with uniq: %U, crc32: %x\n",
+                    volume_index[i]->unique_sector, volume_index[i]->unique_sector_crc32);
+        }
+    }
 }
 
 void disk_create_index(void) {
@@ -339,6 +369,7 @@ void disk_create_index(void) {
         }
 
         block->efi_handle = handles[i];
+        block->block_io = drive;
         block->partition = 0;
         block->sector_size = drive->Media->BlockSize;
         block->first_sect = 0;
@@ -368,6 +399,8 @@ void disk_create_index(void) {
             block->max_partition++;
         }
     }
+
+    find_unique_sectors();
 }
 
 #endif

@@ -26,8 +26,14 @@ static bool cache_block(struct volume *volume, uint64_t block) {
         volume->cache =
             ext_mem_alloc(volume->fastest_xfer_size * volume->sector_size);
 
+    if (volume->first_sect % (volume->sector_size / 512)) {
+        return false;
+    }
+
+    size_t first_sect = volume->first_sect / (volume->sector_size / 512);
+
     if (!disk_read_sectors(volume, volume->cache,
-                           volume->first_sect + block * volume->fastest_xfer_size,
+                           first_sect + block * volume->fastest_xfer_size,
                            volume->fastest_xfer_size))
         return false;
 
@@ -103,7 +109,7 @@ struct gpt_entry {
 bool gpt_get_guid(struct guid *guid, struct volume *volume) {
     struct gpt_table_header header = {0};
 
-    int sector_size = volume->sector_size;
+    int sector_size = 512;
 
     // read header, located after the first block
     volume_read(volume, &header, sector_size * 1, sizeof(header));
@@ -123,7 +129,7 @@ bool gpt_get_guid(struct guid *guid, struct volume *volume) {
 static int gpt_get_part(struct volume *ret, struct volume *volume, int partition) {
     struct gpt_table_header header = {0};
 
-    int sector_size = volume->sector_size;
+    int sector_size = 512;
 
     // read header, located after the first block
     volume_read(volume, &header, sector_size * 1, sizeof(header));
@@ -150,6 +156,7 @@ static int gpt_get_part(struct volume *ret, struct volume *volume, int partition
 
 #if uefi == 1
     ret->efi_handle  = volume->efi_handle;
+    ret->block_io    = volume->block_io;
 #elif bios == 1
     ret->drive       = volume->drive;
 #endif
@@ -157,7 +164,7 @@ static int gpt_get_part(struct volume *ret, struct volume *volume, int partition
     ret->index       = volume->index;
     ret->is_optical  = volume->is_optical;
     ret->partition   = partition + 1;
-    ret->sector_size = sector_size;
+    ret->sector_size = volume->sector_size;
     ret->first_sect  = entry.starting_lba;
     ret->sect_count  = (entry.ending_lba - entry.starting_lba) + 1;
     ret->backing_dev = volume;
@@ -192,7 +199,7 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
     size_t ebr_sector = 0;
 
     for (int i = 0; i < partition; i++) {
-        size_t entry_offset = ebr_sector * extended_part->sector_size + 0x1ce;
+        size_t entry_offset = ebr_sector * 512 + 0x1ce;
 
         volume_read(extended_part, &entry, entry_offset, sizeof(struct mbr_entry));
 
@@ -202,7 +209,7 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
         ebr_sector = entry.first_sect;
     }
 
-    size_t entry_offset = ebr_sector * extended_part->sector_size + 0x1be;
+    size_t entry_offset = ebr_sector * 512 + 0x1be;
 
     volume_read(extended_part, &entry, entry_offset, sizeof(struct mbr_entry));
 
@@ -211,6 +218,7 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
 
 #if uefi == 1
     ret->efi_handle  = extended_part->efi_handle;
+    ret->block_io    = extended_part->block_io;
 #elif bios == 1
     ret->drive       = extended_part->drive;
 #endif
@@ -290,6 +298,7 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
 
 #if uefi == 1
             extended_part.efi_handle  = volume->efi_handle;
+            extended_part.block_io    = volume->block_io;
 #elif bios == 1
             extended_part.drive       = volume->drive;
 #endif
@@ -317,6 +326,7 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
 
 #if uefi == 1
     ret->efi_handle  = volume->efi_handle;
+    ret->block_io    = volume->block_io;
 #elif bios == 1
     ret->drive       = volume->drive;
 #endif

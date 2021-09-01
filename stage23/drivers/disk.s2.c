@@ -205,7 +205,7 @@ void disk_create_index(void) {
 
 #if uefi == 1
 
-struct volume *disk_volume_from_efi_handle(EFI_HANDLE *efi_handle) {
+struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
     EFI_STATUS status;
 
     struct volume *ret = NULL;

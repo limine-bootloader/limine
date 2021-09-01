@@ -265,6 +265,11 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
             break;
         }
 
+        if (directory_entries[i].attribute & (1 << 3)) {
+            // It is a volume label, skip
+            continue;
+        }
+
         if (directory_entries[i].attribute == FAT32_LFN_ATTRIBUTE) {
             struct fat32_lfn_entry* lfn = (struct fat32_lfn_entry*) &directory_entries[i];
 

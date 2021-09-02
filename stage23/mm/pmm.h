@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <sys/e820.h>
 
+#define MEMMAP_MAX_ENTRIES 1024
+
 #define MEMMAP_USABLE                 1
 #define MEMMAP_RESERVED               2
 #define MEMMAP_ACPI_RECLAIMABLE       3

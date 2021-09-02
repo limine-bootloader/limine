@@ -8,7 +8,7 @@
 #include <lib/print.h>
 #include <mm/pmm.h>
 
-#define MAX_E820_ENTRIES 256
+#define MAX_E820_ENTRIES 512
 
 struct e820_entry_t e820_map[MAX_E820_ENTRIES];
 size_t e820_entries = 0;

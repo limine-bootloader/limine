@@ -12,7 +12,6 @@
 #endif
 
 #define PAGE_SIZE   4096
-#define MEMMAP_MAX_ENTRIES 384
 
 #if bios == 1
 extern symbol bss_end;

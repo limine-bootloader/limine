@@ -265,11 +265,6 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
             break;
         }
 
-        if (directory_entries[i].attribute & (1 << 3)) {
-            // It is a volume label, skip
-            continue;
-        }
-
         if (directory_entries[i].attribute == FAT32_LFN_ATTRIBUTE) {
             struct fat32_lfn_entry* lfn = (struct fat32_lfn_entry*) &directory_entries[i];
 
@@ -302,15 +297,20 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
                 *file = directory_entries[i+1];
                 return 0;
             }
-        } else {
-            char fn[8+3];
-            if (!fat32_filename_to_8_3(fn, name)) {
-                continue;
-            }
-            if (!strncmp(directory_entries[i].file_name_and_ext, fn, 8+3)) {
-                *file = directory_entries[i];
-                return 0;
-            }
+        }
+
+        if (directory_entries[i].attribute & (1 << 3)) {
+            // It is a volume label, skip
+            continue;
+        }
+        // SFN
+        char fn[8+3];
+        if (!fat32_filename_to_8_3(fn, name)) {
+            continue;
+        }
+        if (!strncmp(directory_entries[i].file_name_and_ext, fn, 8+3)) {
+            *file = directory_entries[i];
+            return 0;
         }
     }
 

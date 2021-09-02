@@ -62,8 +62,38 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 
     disk_create_index();
 
+    boot_volume = NULL;
+
     EFI_HANDLE current_handle = ImageHandle;
     for (;;) {
+        if (current_handle == NULL) {
+            print("WARNING: Could not meaningfully match the boot device handle with a volume.\n");
+            print("         Using the first volume containing a Limine configuration!\n");
+
+            for (size_t i = 0; i < volume_index_i; i++) {
+                struct file_handle f;
+
+                if (fopen(&f, volume_index[i], "/limine.cfg")
+                 && fopen(&f, volume_index[i], "/boot/limine.cfg")
+                 && fopen(&f, volume_index[i], "/EFI/BOOT/limine.cfg")) {
+                    continue;
+                }
+
+                if (volume_index[i]->backing_dev != NULL) {
+                    boot_volume = volume_index[i]->backing_dev;
+                } else {
+                    boot_volume = volume_index[i];
+                }
+
+                break;
+            }
+
+            if (boot_volume != NULL)
+                stage3_common();
+
+            panic("No volume contained a Limine configuration file");
+        }
+
         EFI_GUID loaded_img_prot_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
         EFI_LOADED_IMAGE_PROTOCOL *loaded_image = NULL;
 

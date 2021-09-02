@@ -175,7 +175,7 @@ inline uint64_t rdtsc(void) {
     type ret; \
     asm volatile ( \
         "1: " \
-        "rdrand %0;" \
+        "rdseed %0;" \
         "jnc 1b;" \
         : "=r" (ret) \
     ); \

@@ -12,7 +12,7 @@
 #endif
 
 #define PAGE_SIZE   4096
-#define MEMMAP_MAX_ENTRIES 256
+#define MEMMAP_MAX_ENTRIES 384
 
 #if bios == 1
 extern symbol bss_end;
@@ -319,7 +319,9 @@ void init_memmap(void) {
     allocations_disallowed = false;
 
     // Let's leave 64MiB to the firmware
-    ext_mem_alloc_type(0x4000000, MEMMAP_EFI_RECLAIMABLE);
+    for (size_t i = 0; i < 64; i++) {
+        ext_mem_alloc_type(0x100000, MEMMAP_EFI_RECLAIMABLE);
+    }
 
     memcpy(untouched_memmap, memmap, memmap_entries * sizeof(struct e820_entry_t));
     untouched_memmap_entries = memmap_entries;
@@ -372,23 +374,34 @@ void pmm_reclaim_uefi_mem(void) {
         }
     }
 
-    struct e820_entry_t recl;
+    size_t recl_i = 0;
 
-    for (size_t i = 0; ; i++) {
+    for (size_t i = 0; i < memmap_entries; i++) {
         if (memmap[i].type == MEMMAP_EFI_RECLAIMABLE) {
-            recl = memmap[i];
-            break;
+            recl_i++;
         }
     }
 
+    struct e820_entry_t *recl = ext_mem_alloc(recl_i * sizeof(struct e820_entry_t));
+
+    {
+        size_t recl_j = 0;
+        for (size_t i = 0; i < memmap_entries; i++) {
+            if (memmap[i].type == MEMMAP_EFI_RECLAIMABLE) {
+                recl[recl_j++] = memmap[i];
+            }
+        }
+    }
+
+another_recl:;
     // Punch holes in our EFI reclaimable entry for every EFI area which is
     // boot services or conventional that fits within
     size_t efi_mmap_entry_count = efi_mmap_size / efi_desc_size;
     for (size_t i = 0; i < efi_mmap_entry_count; i++) {
         EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
 
-        uintptr_t base = recl.base;
-        uintptr_t top = base + recl.length;
+        uintptr_t base = recl->base;
+        uintptr_t top = base + recl->length;
         uintptr_t efi_base = entry->PhysicalStart;
         uintptr_t efi_size = entry->NumberOfPages * 4096;
 
@@ -428,6 +441,11 @@ void pmm_reclaim_uefi_mem(void) {
         }
 
         memmap_alloc_range(efi_base, efi_size, our_type, false, true, false, true);
+    }
+
+    if (--recl_i > 0) {
+        recl++;
+        goto another_recl;
     }
 
     sanitise_entries(memmap, &memmap_entries, false);

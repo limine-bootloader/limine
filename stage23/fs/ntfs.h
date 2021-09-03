@@ -7,8 +7,39 @@
 #include <lib/part.h>
 #include <lib/blib.h>
 
+struct ntfs_bpb {
+    uint8_t jump[3];
+    char oem[8];
+    uint16_t bytes_per_sector;
+    uint8_t sectors_per_cluster;
+    uint16_t reserved_sectors;
+    uint8_t fats_count;
+    uint16_t directory_entries_count;
+    uint16_t sector_totals;
+    uint8_t media_descriptor_type;
+    uint16_t sectors_per_fat_16;
+    uint16_t sectors_per_track;
+    uint16_t heads_count;
+    uint32_t hidden_sectors_count;
+    uint32_t large_sectors_count;
+    
+    // ntfs 
+    uint32_t sectors_per_fat_32;
+    uint64_t sectors_count_64;
+    uint64_t mft_cluster;
+} __attribute__((packed));
+
 struct ntfs_file_handle {
     struct volume *part;
+
+    struct ntfs_bpb bpb;
+    uint8_t mft_run_list[256];
+    uint8_t root_run_list[128];
+    uint8_t resident_index[256];
+    uint8_t attribute_list[256];
+
+    uint64_t mft_offset;
+
     uint32_t size_bytes;
 };
 

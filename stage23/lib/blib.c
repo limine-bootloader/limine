@@ -146,6 +146,8 @@ uint32_t get_crc32(void *_stream, size_t len) {
 
 bool efi_boot_services_exited = false;
 
+#define EFI_COPY_MAX_ENTRIES 512
+
 bool efi_exit_boot_services(void) {
     EFI_STATUS status;
 
@@ -182,7 +184,7 @@ bool efi_exit_boot_services(void) {
     // Go through new EFI memmap and free up bootloader entries
     size_t entry_count = efi_mmap_size / efi_desc_size;
 
-    EFI_MEMORY_DESCRIPTOR *efi_copy = ext_mem_alloc(MEMMAP_MAX_ENTRIES * efi_desc_size);
+    EFI_MEMORY_DESCRIPTOR *efi_copy = ext_mem_alloc(EFI_COPY_MAX_ENTRIES * efi_desc_size);
     size_t efi_copy_i = 0;
 
     for (size_t i = 0; i < entry_count; i++) {
@@ -205,7 +207,7 @@ bool efi_exit_boot_services(void) {
                     new_entry->NumberOfPages = (untouched_memmap[j].base - base) / 4096;
 
                     efi_copy_i++;
-                    if (efi_copy_i == MEMMAP_MAX_ENTRIES) {
+                    if (efi_copy_i == EFI_COPY_MAX_ENTRIES) {
                         panic("efi: New memory map exhausted");
                     }
                     new_entry = (void *)efi_copy + efi_copy_i * efi_desc_size;
@@ -234,7 +236,7 @@ bool efi_exit_boot_services(void) {
                 new_entry->NumberOfPages = untouched_memmap[j].length / 4096;
 
                 efi_copy_i++;
-                if (efi_copy_i == MEMMAP_MAX_ENTRIES) {
+                if (efi_copy_i == EFI_COPY_MAX_ENTRIES) {
                     panic("efi: New memory map exhausted");
                 }
                 new_entry = (void *)efi_copy + efi_copy_i * efi_desc_size;
@@ -249,7 +251,7 @@ bool efi_exit_boot_services(void) {
         }
 
         efi_copy_i++;
-        if (efi_copy_i == MEMMAP_MAX_ENTRIES) {
+        if (efi_copy_i == EFI_COPY_MAX_ENTRIES) {
             panic("efi: New memory map exhausted");
         }
     }

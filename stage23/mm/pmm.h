@@ -6,8 +6,6 @@
 #include <stdbool.h>
 #include <sys/e820.h>
 
-#define MEMMAP_MAX_ENTRIES 1024
-
 #define MEMMAP_USABLE                 1
 #define MEMMAP_RESERVED               2
 #define MEMMAP_ACPI_RECLAIMABLE       3
@@ -19,11 +17,16 @@
 #define MEMMAP_EFI_RECLAIMABLE        0x2000
 #define MEMMAP_EFI_BOOTSERVICES       0x2001
 
+#if bios == 1
 extern struct e820_entry_t memmap[];
 extern size_t memmap_entries;
+#endif
 
 #if uefi == 1
-extern struct e820_entry_t untouched_memmap[];
+extern struct e820_entry_t *memmap;
+extern size_t memmap_entries;
+
+extern struct e820_entry_t *untouched_memmap;
 extern size_t untouched_memmap_entries;
 #endif
 

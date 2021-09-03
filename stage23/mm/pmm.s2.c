@@ -47,11 +47,20 @@ void *conv_mem_alloc(size_t count) {
     }
 }
 
-struct e820_entry_t memmap[MEMMAP_MAX_ENTRIES];
+#if bios == 1
+#define memmap_max_entries ((size_t)512)
+
+struct e820_entry_t memmap[memmap_max_entries];
 size_t memmap_entries = 0;
+#endif
 
 #if uefi == 1
-struct e820_entry_t untouched_memmap[MEMMAP_MAX_ENTRIES];
+static size_t memmap_max_entries;
+
+struct e820_entry_t *memmap;
+size_t memmap_entries = 0;
+
+struct e820_entry_t *untouched_memmap;
 size_t untouched_memmap_entries = 0;
 #endif
 
@@ -208,7 +217,7 @@ struct e820_entry_t *get_memmap(size_t *entries) {
 #if bios == 1
 void init_memmap(void) {
     for (size_t i = 0; i < e820_entries; i++) {
-        if (memmap_entries == MEMMAP_MAX_ENTRIES) {
+        if (memmap_entries == memmap_max_entries) {
             panic("Memory map exhausted.");
         }
 
@@ -260,13 +269,31 @@ void init_memmap(void) {
     efi_mmap_size = sizeof(tmp_mmap);
     UINTN mmap_key = 0;
 
-    status = gBS->GetMemoryMap(&efi_mmap_size, tmp_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
+    gBS->GetMemoryMap(&efi_mmap_size, tmp_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
+
+    memmap_max_entries = (efi_mmap_size / efi_desc_size) + 512;
 
     efi_mmap_size += 4096;
 
     status = gBS->AllocatePool(EfiLoaderData, efi_mmap_size, (void **)&efi_mmap);
+    if (status) {
+        goto fail;
+    }
+
+    status = gBS->AllocatePool(EfiLoaderData, memmap_max_entries * sizeof(struct e820_entry_t), (void **)&memmap);
+    if (status) {
+        goto fail;
+    }
+
+    status = gBS->AllocatePool(EfiLoaderData, memmap_max_entries * sizeof(struct e820_entry_t), (void **)&untouched_memmap);
+    if (status) {
+        goto fail;
+    }
 
     status = gBS->GetMemoryMap(&efi_mmap_size, efi_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
+    if (status) {
+        goto fail;
+    }
 
     size_t entry_count = efi_mmap_size / efi_desc_size;
 
@@ -338,6 +365,10 @@ void init_memmap(void) {
         if (status)
             panic("pmm: AllocatePages failure (%x)", status);
     }
+
+    return;
+fail:
+    panic("pmm: Failure initialising memory map");
 }
 
 void pmm_reclaim_uefi_mem(void) {
@@ -596,7 +627,7 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
             if (memmap[i].length == 0) {
                 target = &memmap[i];
             } else {
-                if (memmap_entries >= MEMMAP_MAX_ENTRIES)
+                if (memmap_entries >= memmap_max_entries)
                     panic("Memory map exhausted.");
 
                 target = &memmap[memmap_entries++];
@@ -607,7 +638,7 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
             target->length = length;
 
             if (top < entry_top) {
-                if (memmap_entries >= MEMMAP_MAX_ENTRIES)
+                if (memmap_entries >= memmap_max_entries)
                     panic("Memory map exhausted.");
 
                 target = &memmap[memmap_entries++];
@@ -627,7 +658,7 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
         panic("Memory allocation failure.");
 
     if (new_entry) {
-        if (memmap_entries >= MEMMAP_MAX_ENTRIES)
+        if (memmap_entries >= memmap_max_entries)
             panic("Memory map exhausted.");
 
         struct e820_entry_t *target = &memmap[memmap_entries++];

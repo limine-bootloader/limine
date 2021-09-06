@@ -9,6 +9,7 @@
 #endif
 #include <lib/blib.h>
 #include <lib/print.h>
+#include <lib/rand.h>
 #include <mm/pmm.h>
 #include <sys/cpu.h>
 
@@ -69,7 +70,7 @@ static size_t fastest_xfer_size(struct volume *volume) {
             rm_int(0x13, &r, &r);
             if (r.eflags & EFLAGS_CF) {
                 int ah = (r.eax >> 8) & 0xff;
-                printv("Disk error %x. Drive %x", ah, volume->drive);
+                print("Disk error %x. Drive %x", ah, volume->drive);
                 return 8;
             }
             dap.lba += xfer_sizes[i];
@@ -228,7 +229,6 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
 
     status = gBS->HandleProtocol(efi_handle, &block_io_guid, (void **)&block_io);
     if (status) {
-        printv("Failed to match handle %X (1)\n", efi_handle);
         return NULL;
     }
 
@@ -250,7 +250,6 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
         uint32_t crc32 = get_crc32(unique_sector_pool, volume_index[i]->sector_size);
 
         if (crc32 == volume_index[i]->unique_sector_crc32) {
-            printv("Matched handle %X with volume %X\n", efi_handle, volume_index[i]);
             return volume_index[i];
         }
     }
@@ -264,7 +263,9 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
     if (status)
         return NULL;
 
-    uint64_t signature = BUILD_ID;
+    uint64_t signature = rand64();
+    uint64_t new_signature;
+    do { new_signature = rand64(); } while (new_signature == signature);
     uint64_t orig;
 
     status = disk_io->ReadDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &orig);
@@ -292,8 +293,20 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
                           sizeof(uint64_t), &compare);
 
         if (compare == signature) {
-            ret = volume_index[i];
-            break;
+            // Double check
+            status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &new_signature);
+
+            cur_disk_io->ReadDisk(cur_disk_io,
+                          volume_index[i]->block_io->Media->MediaId,
+                          0 + volume_index[i]->first_sect * 512,
+                          sizeof(uint64_t), &compare);
+
+            if (compare == new_signature) {
+                ret = volume_index[i];
+                break;
+            }
+
+            status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &signature);
         }
     }
 
@@ -305,8 +318,6 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
     if (ret != NULL) {
         return ret;
     }
-
-    printv("Failed to match handle %X (2)\n", efi_handle);
 
     return NULL;
 }
@@ -357,13 +368,6 @@ static void find_unique_sectors(void) {
                 volume_index[i]->unique_sector_crc32 = crc32;
                 break;
             }
-        }
-
-        if (volume_index[i]->unique_sector_valid == false) {
-            printv("Not able to match unique sector for volume %X\n", volume_index[i]);
-        } else {
-            printv("Matched volume %X with uniq: %U, crc32: %x\n",
-                    volume_index[i]->unique_sector, volume_index[i]->unique_sector_crc32);
         }
     }
 }

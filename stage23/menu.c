@@ -548,8 +548,6 @@ char *menu(char **cmdline) {
         if (menu_resolution != NULL)
             parse_resolution(&req_width, &req_height, &req_bpp, menu_resolution);
 
-        print("menu: Loading...");
-
         term_vbe(req_width, req_height);
     }
 

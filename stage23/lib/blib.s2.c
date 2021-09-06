@@ -3,6 +3,8 @@
 #include <lib/blib.h>
 #include <lib/print.h>
 
+bool verbose = true;
+
 void copyright_notice(void) {
     print("Limine " LIMINE_VERSION "\n");
     print(LIMINE_COPYRIGHT "\n");

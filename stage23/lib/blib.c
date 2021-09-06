@@ -19,8 +19,6 @@ UINTN efi_mmap_size = 0, efi_desc_size = 0;
 UINT32 efi_desc_ver = 0;
 #endif
 
-bool verbose = false;
-
 bool parse_resolution(size_t *width, size_t *height, size_t *bpp, const char *buf) {
     size_t res[3] = {0};
 

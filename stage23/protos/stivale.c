@@ -297,11 +297,19 @@ void stivale_load(char *config, char *cmdline) {
     // Reserve 32K at 0x70000
     memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, true, false, false);
 
+    struct e820_entry_t *mmap_copy = ext_mem_alloc(256 * sizeof(struct e820_entry_t));
+
     size_t mmap_entries;
     struct e820_entry_t *mmap = get_memmap(&mmap_entries);
 
+    if (mmap_entries > 256) {
+        panic("stivale: Too many memory map entries!");
+    }
+
+    memcpy(mmap_copy, mmap, mmap_entries * sizeof(struct e820_entry_t));
+
     stivale_struct.memory_map_entries = (uint64_t)mmap_entries;
-    stivale_struct.memory_map_addr    = REPORTED_ADDR((uint64_t)(size_t)mmap);
+    stivale_struct.memory_map_addr    = REPORTED_ADDR((uint64_t)(size_t)mmap_copy);
 
     stivale_spinup(bits, want_5lv, &pagemap,
                    entry_point, REPORTED_ADDR((uint64_t)(uintptr_t)&stivale_struct),

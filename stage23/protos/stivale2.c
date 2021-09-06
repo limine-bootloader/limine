@@ -639,6 +639,10 @@ have_tm_tag:;
     size_t mmap_entries;
     struct e820_entry_t *mmap = get_memmap(&mmap_entries);
 
+    if (mmap_entries > 256) {
+        panic("stivale2: Too many memory map entries!");
+    }
+
     tag->tag.identifier = STIVALE2_STRUCT_TAG_MEMMAP_ID;
     tag->entries = (uint64_t)mmap_entries;
 

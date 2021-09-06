@@ -14,6 +14,7 @@
 #include <drivers/vbe.h>
 
 static char *menu_branding = NULL;
+static char *menu_branding_colour = NULL;
 
 #define EDITOR_MAX_BUFFER_SIZE 4096
 #define TOK_KEY 0
@@ -78,6 +79,8 @@ static const char *VALID_KEYS[] = {
     "GRAPHICS",
     "MENU_RESOLUTION",
     "MENU_BRANDING",
+    "MENU_BRANDING_COLOUR",
+    "MENU_BRANDING_COLOR",
     "MENU_FONT",
     "MENU_FONT_SIZE",
     "MENU_FONT_SCALE",
@@ -191,7 +194,7 @@ refresh:
         print("\n");
         get_cursor_pos(&x, &y);
         set_cursor_pos(term_cols / 2 - DIV_ROUNDUP(strlen(menu_branding), 2), y);
-        print("\e[36m%s\e[37m", menu_branding);
+        print("\e[3%sm%s\e[37m", menu_branding_colour, menu_branding);
         print("\n\n");
     }
 
@@ -490,6 +493,12 @@ char *menu(char **cmdline) {
     if (menu_branding == NULL)
         menu_branding = "Limine " LIMINE_VERSION;
 
+    menu_branding_colour = config_get_value(NULL, 0, "MENU_BRANDING_COLOUR");
+    if (menu_branding_colour == NULL)
+        menu_branding_colour = config_get_value(NULL, 0, "MENU_BRANDING_COLOR");
+    if (menu_branding_colour == NULL)
+        menu_branding_colour = "6";
+
     bool skip_timeout = false;
     struct menu_entry *selected_menu_entry = NULL;
 
@@ -555,7 +564,7 @@ refresh:
         print("\n");
         get_cursor_pos(&x, &y);
         set_cursor_pos(term_cols / 2 - DIV_ROUNDUP(strlen(menu_branding), 2), y);
-        print("\e[36m%s\e[37m", menu_branding);
+        print("\e[3%sm%s\e[37m", menu_branding_colour, menu_branding);
         print("\n\n\n\n");
     }
 

@@ -56,6 +56,8 @@ Some keys take *URIs* as values; these are described in the next section.
 * `GRAPHICS` - If set to `yes`, use a graphical framebuffer for the boot menu, else use text mode. Ignored with Limine UEFI, forced to `yes`.
 * `MENU_RESOLUTION` - Specify screen resolution to be used by the Limine menu in the form `<width>x<height>`. This will *only* affect the menu, not any booted OS. If not specified, Limine will pick a resolution automatically. If the resolution is not available, Limine will pick another one automatically. Ignored if `GRAPHICS` is not `yes`.
 * `MENU_BRANDING` - A string that will be displayed on top of the Limine menu.
+* `MENU_BRANDING_COLOUR` - A value between 0 and 7 specifying the colour of the branding string. Default is cyan (6).
+* `MENU_BRANDING_COLOR` - Alias of `MENU_BRANDING_COLOUR`.
 * `MENU_FONT` - URI path to a font file to be used instead of the default one for the menu and terminal. The font file must be a code page 437 character set comprised of 256 consecutive glyph bitmaps. Each glyph's bitmap must be expressed left to right (1 byte per row), and top to bottom (16 bytes per whole glyph by default; see `MENU_FONT_SIZE`). See e.g. the [VGA text mode font collection](https://github.com/viler-int10h/vga-text-mode-fonts) for fonts.
 * `TERMINAL_FONT` - Alias of `MENU_FONT`.
 * `MENU_FONT_SIZE` - The size of the font in dots, which must correspond to the font file or the display will be garbled. Note that glyphs are always one byte wide, and columns over 8 are empty. Many fonts may be used in both 8- and 9-dot wide variants. Defaults to `8x16`. Ignored if `MENU_FONT` or `TERMINAL_FONT` not set or if the font fails to load.

@@ -178,16 +178,28 @@ static uint32_t *create_alloc_map(struct ext2_file_handle *fd,
                 // Double indirect block
                 block -= entries_per_block;
                 uint32_t index = block / entries_per_block;
-                if (index >= entries_per_block) {
-                    // Triple indirect block
-                    panic("ext2: triply indirect blocks unsupported");
-                }
                 uint32_t indirect_block;
-                volume_read(
-                    fd->part, &indirect_block,
-                    inode->i_blocks[13] * fd->block_size + index * sizeof(uint32_t),
-                    sizeof(uint32_t)
-                );
+                if (index >= entries_per_block) {
+                    uint32_t first_index = index / entries_per_block;
+                    uint32_t first_indirect_block;
+                    volume_read(
+                        fd->part, &first_indirect_block,
+                        inode->i_blocks[14] * fd->block_size + first_index * sizeof(uint32_t),
+                        sizeof(uint32_t)
+                    );
+                    uint32_t second_index = index % entries_per_block;
+                    volume_read(
+                        fd->part, &indirect_block,
+                        first_indirect_block * fd->block_size + second_index * sizeof(uint32_t),
+                        sizeof(uint32_t)
+                    );
+                } else {
+                    volume_read(
+                        fd->part, &indirect_block,
+                        inode->i_blocks[13] * fd->block_size + index * sizeof(uint32_t),
+                        sizeof(uint32_t)
+                    );
+                }
                 for (uint32_t j = 0; j < entries_per_block; j++) {
                     if (i + j >= inode->i_blocks_count)
                         return alloc_map;

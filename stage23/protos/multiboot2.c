@@ -14,6 +14,7 @@
 #include <fs/file.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>
+#include <drivers/vga_textmode.h>
 
 static uint8_t* multiboot2_info_buffer = NULL;
 static uint32_t multiboot2_info_size = 0;
@@ -124,12 +125,46 @@ void multiboot2_load(char *config, char* cmdline) {
 
     print("multiboot2: found kernel entry point at: %x\n", entry_point);
     
+    struct multiboot_header_tag_framebuffer *fbtag = NULL;
+
     // Iterate through the entries...
     for (struct multiboot_header_tag* tag = (struct multiboot_header_tag*)(header + 1);
          tag < (struct multiboot_header_tag*)((uintptr_t)header + header->header_length) && tag->type != MULTIBOOT_HEADER_TAG_END;
          tag = (struct multiboot_header_tag*)((uintptr_t)tag + ALIGN_UP(tag->size, MULTIBOOT_TAG_ALIGN))) {
   
         switch (tag->type) {
+            case MULTIBOOT_HEADER_TAG_INFORMATION_REQUEST: {
+                // Iterate the requests and check if they are supported by or not.
+                struct multiboot_header_tag_information_request* request = (void*)tag;
+                uint32_t size = (request->size - sizeof(struct multiboot_header_tag_information_request)) 
+                    / sizeof(uint32_t);
+                    
+                for (uint32_t i = 0; i < size; i++) {
+                    uint32_t r = request->requests[i];
+
+                    switch(r) {
+                        // We already support the following requests:
+                        case MULTIBOOT_TAG_TYPE_CMDLINE:
+                        case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
+                        case MULTIBOOT_TAG_TYPE_MODULE:
+                        case MULTIBOOT_TAG_TYPE_MMAP:
+                        case MULTIBOOT_TAG_TYPE_EFI_MMAP:
+                        case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
+                        case MULTIBOOT_TAG_TYPE_ELF_SECTIONS:
+                            break;
+
+                        default: {
+                            if (!(request->flags & MULTIBOOT_HEADER_TAG_OPTIONAL))
+                                panic("multiboot2: requested tag `%d` which is not supported", r);
+                        } break;
+                    }
+                }
+            } break;
+
+            case MULTIBOOT_HEADER_TAG_FRAMEBUFFER: {
+                fbtag = (struct multiboot_header_tag_framebuffer*)tag;
+            } break;
+
             default: panic("multiboot2: unknown tag type");
         }
     }
@@ -168,6 +203,52 @@ void multiboot2_load(char *config, char* cmdline) {
     // Create framebuffer tag
     //////////////////////////////////////////////
     {
+        if (fbtag) {
+            size_t req_width = fbtag->width;
+            size_t req_height = fbtag->height;
+            size_t req_bpp = 0x00;
+            
+            char *resolution = config_get_value(config, 0, "RESOLUTION");
+            if (resolution != NULL)
+                parse_resolution(&req_width, &req_height, &req_bpp, resolution);
+            
+            struct fb_info fbinfo;
+            if (!fb_init(&fbinfo, req_width, req_height, req_bpp))
+                panic("stivale: Unable to set video mode");
+
+            memmap_alloc_range(fbinfo.framebuffer_addr,
+                            (uint64_t)fbinfo.framebuffer_pitch * fbinfo.framebuffer_height,
+                            MEMMAP_FRAMEBUFFER, false, false, false, true);
+
+            struct multiboot_tag_framebuffer framebuffer = {
+                .common = {
+                    .type = MULTIBOOT_TAG_TYPE_FRAMEBUFFER,
+                    .size = sizeof(struct multiboot_tag_framebuffer),
+                    .framebuffer_addr = fbinfo.framebuffer_addr,
+                    .framebuffer_pitch = fbinfo.framebuffer_pitch,
+                    .framebuffer_width = fbinfo.framebuffer_width,
+                    .framebuffer_height = fbinfo.framebuffer_height,
+                    .framebuffer_bpp = fbinfo.framebuffer_bpp,
+                    .framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_RGB // We only support RGB for VBE
+                },
+
+                .framebuffer_red_field_position = fbinfo.red_mask_shift,
+                .framebuffer_red_mask_size = fbinfo.red_mask_size,
+                .framebuffer_green_field_position = fbinfo.green_mask_shift,
+                .framebuffer_green_mask_size = fbinfo.green_mask_size,
+                .framebuffer_blue_field_position = fbinfo.blue_mask_shift,
+                .framebuffer_blue_mask_size = fbinfo.blue_mask_size,
+            };
+
+            push_boot_param(&framebuffer, sizeof(struct multiboot_tag_elf_sections));
+        } else {
+#if uefi == 1
+            panic("multiboot2: Cannot use text mode with UEFI.");
+#elif bios == 1
+            size_t rows, cols;
+            init_vga_textmode(&rows, &cols, false);
+#endif
+        }
     }
 
     //////////////////////////////////////////////

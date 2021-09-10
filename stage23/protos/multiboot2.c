@@ -98,7 +98,7 @@ void multiboot2_load(char *config, char* cmdline) {
     uint32_t kernel_top;
 
     int bits = elf_bits(kernel);
-    struct elf_section_hdr_info section_hdr_info;
+    struct elf_section_hdr_info* section_hdr_info;
 
     switch (bits) {
         case 32:
@@ -122,7 +122,7 @@ void multiboot2_load(char *config, char* cmdline) {
             panic("multiboot1: invalid ELF file bitness");
     }
 
-    print("multiboot2: found kernel entry point at: %X\n", entry_point);
+    print("multiboot2: found kernel entry point at: %x\n", entry_point);
     
     // Iterate through the entries...
     for (struct multiboot_header_tag* tag = (struct multiboot_header_tag*)(header + 1);
@@ -174,7 +174,17 @@ void multiboot2_load(char *config, char* cmdline) {
     // Create ELF info tag
     //////////////////////////////////////////////
     {
-        // ADD ME
+        uint32_t size = sizeof(struct multiboot_tag_elf_sections) + section_hdr_info->section_hdr_size;
+        struct multiboot_tag_elf_sections* tag = (struct multiboot_tag_elf_sections*)push_boot_param(NULL, size);
+
+        tag->type = MULTIBOOT_TAG_TYPE_ELF_SECTIONS;
+        tag->size = size;
+
+        tag->num = section_hdr_info->num;
+        tag->entsize = section_hdr_info->section_entry_size;
+        tag->shndx = section_hdr_info->str_section_idx;
+
+        memcpy(tag->sections, section_hdr_info->section_hdrs, section_hdr_info->section_hdr_size);
     }
 
 #if uefi == 1

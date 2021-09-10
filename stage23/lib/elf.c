@@ -249,30 +249,40 @@ int elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
 
 /// SAFETY: The caller must ensure that the provided `elf` is a valid 64-bit
 /// ELF file.
-void elf64_section_hdr_info(uint8_t *elf, struct elf_section_hdr_info* info) {    
-    struct elf64_hdr hdr;
-    memcpy(&hdr, elf + (0), sizeof(struct elf32_hdr));
+void elf64_section_hdr_info(uint8_t *elf, struct elf_section_hdr_info** _info) {
+    struct elf_section_hdr_info* info = ext_mem_alloc(sizeof(struct elf_section_hdr_info));
 
-    info->section_hdr_size = hdr.sh_num * hdr.shdr_size;
+    struct elf64_hdr hdr;
+    memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
+
+    info->num = hdr.sh_num;
     info->section_entry_size = hdr.shdr_size;
+    info->section_hdr_size = info->num * info->section_entry_size;
     info->str_section_idx = hdr.shstrndx;
     info->section_hdrs = ext_mem_alloc(info->section_hdr_size);
 
     memcpy(info->section_hdrs, elf + (hdr.shoff), info->section_hdr_size);
+
+    *_info = info;
 }
 
 /// SAFETY: The caller must ensure that the provided `elf` is a valid 64-bit
 /// ELF file.
-void elf32_section_hdr_info(uint8_t *elf, struct elf_section_hdr_info* info) {
+void elf32_section_hdr_info(uint8_t *elf, struct elf_section_hdr_info** _info) {
+    struct elf_section_hdr_info* info = ext_mem_alloc(sizeof(struct elf_section_hdr_info));
+
     struct elf32_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf32_hdr));
 
-    info->section_hdr_size = hdr.sh_num * hdr.shdr_size;
+    info->num = hdr.sh_num;
     info->section_entry_size = hdr.shdr_size;
+    info->section_hdr_size = info->num * info->section_entry_size;
     info->str_section_idx = hdr.shstrndx;
     info->section_hdrs = ext_mem_alloc(info->section_hdr_size);
 
     memcpy(info->section_hdrs, elf + (hdr.shoff), info->section_hdr_size);
+
+    *_info = info;
 }
 
 int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limit) {

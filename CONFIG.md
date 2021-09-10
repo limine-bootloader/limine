@@ -87,7 +87,7 @@ Some keys take *URIs* as values; these are described in the next section.
 
 *Locally assignable (non protocol specific)* keys are:
 * `COMMENT` - An optional comment string that will be displayed by the bootloader on the menu when an entry is selected.
-* `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `stivale`, `stivale2`, `chainload`, `multiboot` or `multiboot1`.
+* `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `stivale`, `stivale2`, `chainload`, `multiboot` or `multiboot1` and `multiboot2`.
 * `CMDLINE` - The command line string to be passed to the kernel. Can be omitted.
 * `KERNEL_CMDLINE` - Alias of `CMDLINE`.
 

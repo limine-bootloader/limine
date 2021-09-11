@@ -242,10 +242,18 @@ void text_move_character(size_t new_x, size_t new_y, size_t old_x, size_t old_y)
 void text_set_cursor_pos(size_t x, size_t y) {
     clear_cursor();
     if (x >= VD_COLS / 2) {
-        x = VD_COLS / 2 - 1;
+        if ((int)x < 0) {
+            x = 0;
+        } else {
+            x = VD_COLS / 2 - 1;
+        }
     }
     if (y >= VD_ROWS) {
-        y = VD_ROWS - 1;
+        if ((int)y < 0) {
+            y = 0;
+        } else {
+            y = VD_ROWS - 1;
+        }
     }
     cursor_offset = y * VD_COLS + x * 2;
     draw_cursor();

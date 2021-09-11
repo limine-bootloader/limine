@@ -15,6 +15,7 @@
 #include <mm/vmm.h>
 #include <lib/acpi.h>
 #include <mm/pmm.h>
+#include <lib/blib.h>
 #include <drivers/vga_textmode.h>
 
 static uint8_t* multiboot2_info_buffer = NULL;
@@ -220,7 +221,7 @@ void multiboot2_load(char *config, char* cmdline) {
             
             struct fb_info fbinfo;
             if (!fb_init(&fbinfo, req_width, req_height, req_bpp))
-                panic("stivale: Unable to set video mode");
+                panic("mutltiboot2: Unable to set video mode");
 
             memmap_alloc_range(fbinfo.framebuffer_addr,
                             (uint64_t)fbinfo.framebuffer_pitch * fbinfo.framebuffer_height,
@@ -297,14 +298,14 @@ void multiboot2_load(char *config, char* cmdline) {
     efi_exit_boot_services();
 #endif
 
+    size_t mb_mmap_count;
+    struct e820_entry_t *raw_memmap = get_raw_memmap(&mb_mmap_count);
+
     //////////////////////////////////////////////
-    // Create bootloader memory map tag
+    // Create memory map tag
     //////////////////////////////////////////////
     {
-        size_t mb_mmap_count;
-        struct e820_entry_t *raw_memmap = get_raw_memmap(&mb_mmap_count);
-
-        // 1. Create the normal memory map tag.
+        // Create the normal memory map tag.
         uint32_t mmap_size = sizeof(struct multiboot_tag_mmap) + sizeof(struct multiboot_mmap_entry) * mb_mmap_count;
         struct multiboot_tag_mmap* mmap_tag = (struct multiboot_tag_mmap*)push_boot_param(NULL, mmap_size);
         
@@ -321,6 +322,24 @@ void multiboot2_load(char *config, char* cmdline) {
             entry->zero = 0;
         }
     }
+
+    //////////////////////////////////////////////
+    // Create EFI memory map tag
+    //////////////////////////////////////////////
+#if uefi == 1
+    {
+        // Create the EFI memory map tag.
+        uint32_t size = sizeof(struct multiboot_tag_efi_mmap) * efi_mmap_size;
+        struct multiboot_tag_efi_mmap* mmap_tag = (struct multiboot_tag_efi_mmap*)push_boot_param(NULL, size);
+
+        mmap_tag->type = MULTIBOOT_TAG_TYPE_EFI_MMAP;
+        mmap_tag->descr_vers = efi_desc_ver;
+        mmap_tag->descr_size = efi_desc_size;
+
+        // Copy over the EFI memory map.
+        memcpy(mmap_tag->efi_mmap, efi_mmap, efi_mmap_size);
+    }
+#endif
 
     //////////////////////////////////////////////
     // Create end tag

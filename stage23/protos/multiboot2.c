@@ -13,6 +13,7 @@
 #include <sys/cpu.h>
 #include <fs/file.h>
 #include <mm/vmm.h>
+#include <lib/acpi.h>
 #include <mm/pmm.h>
 #include <drivers/vga_textmode.h>
 
@@ -127,6 +128,8 @@ void multiboot2_load(char *config, char* cmdline) {
     
     struct multiboot_header_tag_framebuffer *fbtag = NULL;
 
+    bool is_new_acpi_required = false;
+
     // Iterate through the entries...
     for (struct multiboot_header_tag* tag = (struct multiboot_header_tag*)(header + 1);
          tag < (struct multiboot_header_tag*)((uintptr_t)header + header->header_length) && tag->type != MULTIBOOT_HEADER_TAG_END;
@@ -141,6 +144,7 @@ void multiboot2_load(char *config, char* cmdline) {
                     
                 for (uint32_t i = 0; i < size; i++) {
                     uint32_t r = request->requests[i];
+                    bool is_required = !(tag->flags & MULTIBOOT_HEADER_TAG_OPTIONAL);
 
                     switch(r) {
                         // We already support the following requests:
@@ -152,6 +156,8 @@ void multiboot2_load(char *config, char* cmdline) {
                         case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
                         case MULTIBOOT_TAG_TYPE_ELF_SECTIONS:
                             break;
+
+                        case MULTIBOOT_TAG_TYPE_ACPI_NEW: is_new_acpi_required = is_required; break;
 
                         default: {
                             if (!(request->flags & MULTIBOOT_HEADER_TAG_OPTIONAL))
@@ -243,11 +249,30 @@ void multiboot2_load(char *config, char* cmdline) {
             push_boot_param(&framebuffer, sizeof(struct multiboot_tag_elf_sections));
         } else {
 #if uefi == 1
-            panic("multiboot2: Cannot use text mode with UEFI.");
+            panic("multiboot2: cannot use text mode with UEFI");
 #elif bios == 1
             size_t rows, cols;
             init_vga_textmode(&rows, &cols, false);
 #endif
+        }
+    }
+
+    //////////////////////////////////////////////
+    // Create new ACPI info tag
+    //////////////////////////////////////////////
+    {
+        void* new_rsdp = acpi_get_rsdp();
+
+        if (new_rsdp != NULL) {
+            uint32_t size = sizeof(struct multiboot_tag_new_acpi) + 36; // XSDP is 36 bytes wide
+            struct multiboot_tag_new_acpi* tag = (struct multiboot_tag_new_acpi*)push_boot_param(NULL, size);
+
+            tag->type = MULTIBOOT_TAG_TYPE_ACPI_NEW;
+            tag->size = size;
+
+            memcpy(tag->rsdp, new_rsdp, 36);
+        } else if (is_new_acpi_required) {
+            panic("multiboot2: new ACPI table not present");
         }
     }
 

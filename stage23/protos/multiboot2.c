@@ -18,9 +18,6 @@
 #include <lib/blib.h>
 #include <drivers/vga_textmode.h>
 
-static uint8_t* multiboot2_info_buffer = NULL;
-static uint32_t multiboot2_info_size = 0;
-
 static struct multiboot_header* load_multiboot2_header(uint8_t* kernel) {
     struct multiboot_header* ptr = {0};
     struct multiboot_header header;
@@ -50,40 +47,28 @@ static struct multiboot_header* load_multiboot2_header(uint8_t* kernel) {
     return ptr;
 }
 
-static void* push_boot_param(void* data, uint32_t size) {
-    // Align up the allocation size to 8-bytes
-    uint32_t alloc_size = ALIGN_UP(size, MULTIBOOT_TAG_ALIGN); 
-
-    // Allocate the multiboot2 info buffer.
-    if (multiboot2_info_buffer == NULL) {
-        multiboot2_info_buffer = ext_mem_alloc(alloc_size);
-    } else {
-        uint8_t* old = multiboot2_info_buffer;
-        multiboot2_info_buffer = ext_mem_alloc(alloc_size + multiboot2_info_size);
-        memcpy(multiboot2_info_buffer, old, multiboot2_info_size);
-
-        // TODO: Free the old allocated buffer. Currently cannot do that since
-        // we do not have ext_mem_free and unmap_page yet.
-    }
-
-    // Copy the data to the buffer.
-    if (data != NULL) {
-        memcpy(multiboot2_info_buffer + multiboot2_info_size, data, size);
-    }
-
-    // Save the base we allocated from.
-    uint8_t* base = multiboot2_info_buffer + multiboot2_info_size;
-
-    // Update the size.
-    multiboot2_info_size += alloc_size;
-
-    // Return the base address of the multiboot2 tag we
-    // allocated.
-    return base;
+/// Returns the size required to store the multiboot2 info.
+static size_t get_multiboot2_info_size(
+    char* cmdline, 
+    struct elf_section_hdr_info* section_hdr_info
+) {
+    return ALIGN_UP(sizeof(struct multiboot2_start_tag), MULTIBOOT_TAG_ALIGN) +                                         // start
+        ALIGN_UP(strlen(cmdline) + 1 + offsetof(struct multiboot_tag_string, string), MULTIBOOT_TAG_ALIGN) +            // cmdline
+        ALIGN_UP(8 + offsetof(struct multiboot_tag_string, string), MULTIBOOT_TAG_ALIGN) +                              // bootloader brand
+        ALIGN_UP(sizeof(struct multiboot_tag_framebuffer), MULTIBOOT_TAG_ALIGN) +                                       // framebuffer
+        ALIGN_UP(sizeof(struct multiboot_tag_new_acpi), MULTIBOOT_TAG_ALIGN) + 36 +                                     // new ACPI info
+        ALIGN_UP(sizeof(struct multiboot_tag_elf_sections), MULTIBOOT_TAG_ALIGN) + section_hdr_info->section_hdr_size + // ELF info
+        ALIGN_UP(sizeof(struct multiboot_tag_mmap), MULTIBOOT_TAG_ALIGN + sizeof(struct multiboot_mmap_entry) * 256) +  // MMAP
+#if uefi == 1
+        ALIGN_UP(sizeof(struct multiboot_tag_efi_mmap), MULTIBOOT_TAG_ALIGN) * 256 +                                    // EFI MMAP
+#endif
+        ALIGN_UP(sizeof(struct multiboot_tag), MULTIBOOT_TAG_ALIGN);                                                    // end
 }
 
+#define append_tag(P, TAG) ({ (P) += ALIGN_UP((TAG)->size, MULTIBOOT_TAG_ALIGN); })
+
 void multiboot2_load(char *config, char* cmdline) {
-    struct file_handle *kernel_file = ext_mem_alloc(sizeof(*kernel_file));
+    struct file_handle *kernel_file = ext_mem_alloc(sizeof(struct file_handle));
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
@@ -94,7 +79,7 @@ void multiboot2_load(char *config, char* cmdline) {
     if (!uri_open(kernel_file, kernel_path))
         panic("multiboot2: failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
-    uint8_t *kernel = freadall(kernel_file, MEMMAP_USABLE);
+    uint8_t *kernel = freadall(kernel_file, MEMMAP_BOOTLOADER_RECLAIMABLE);
     struct multiboot_header* header = load_multiboot2_header(kernel);
 
     uint32_t entry_point;
@@ -105,12 +90,15 @@ void multiboot2_load(char *config, char* cmdline) {
 
     switch (bits) {
         case 32:
+            section_hdr_info = elf32_section_hdr_info(kernel);
+
             if (elf32_load(kernel, &entry_point, &kernel_top, MEMMAP_KERNEL_AND_MODULES))
                 panic("multiboot2: ELF32 load failure");
 
-            section_hdr_info = elf32_section_hdr_info(kernel);
             break;
         case 64: {
+            section_hdr_info = elf64_section_hdr_info(kernel);
+
             uint64_t e, t;
             if (elf64_load(kernel, &e, &t, NULL, MEMMAP_KERNEL_AND_MODULES, false, true, NULL, NULL))
                 panic("multiboot2: ELF64 load failure");
@@ -118,7 +106,6 @@ void multiboot2_load(char *config, char* cmdline) {
             entry_point = e;
             kernel_top = t;
 
-            section_hdr_info = elf64_section_hdr_info(kernel);
             break;
         }
         default:
@@ -176,20 +163,25 @@ void multiboot2_load(char *config, char* cmdline) {
         }
     }
 
-    uint32_t start_size = sizeof(struct multiboot2_start_tag*);
-    struct multiboot2_start_tag* mbi_start = (struct multiboot2_start_tag*)push_boot_param(NULL, start_size);
+    size_t mb2_info_size = get_multiboot2_info_size(cmdline, section_hdr_info);
+    size_t info_idx = 0;
+    uint8_t* mb2_info = ext_mem_alloc(mb2_info_size);
+
+    struct multiboot2_start_tag* mbi_start = (struct multiboot2_start_tag*)mb2_info;
+    info_idx += sizeof(struct multiboot2_start_tag);
 
     //////////////////////////////////////////////
     // Create command line tag
     //////////////////////////////////////////////
     {
         uint32_t size = strlen(cmdline) + 1 + offsetof(struct multiboot_tag_string, string);
-        struct multiboot_tag_string* tag = (struct multiboot_tag_string*)push_boot_param(NULL, size);
+        struct multiboot_tag_string* tag = (struct multiboot_tag_string*)(mb2_info + info_idx);
     
         tag->type = MULTIBOOT_TAG_TYPE_CMDLINE;
         tag->size = size;
 
         strcpy(tag->string, cmdline);
+        append_tag(info_idx, tag);
     }
 
     //////////////////////////////////////////////
@@ -198,12 +190,13 @@ void multiboot2_load(char *config, char* cmdline) {
     {
         char* brand = "Limine";
         uint32_t size = sizeof(brand) + offsetof(struct multiboot_tag_string, string);
-        struct multiboot_tag_string* tag = (struct multiboot_tag_string*)push_boot_param(NULL, size);
+        struct multiboot_tag_string* tag = (struct multiboot_tag_string*)(mb2_info + info_idx);
 
         tag->type = MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME;
         tag->size = size;
 
         strcpy(tag->string, brand);
+        append_tag(info_idx, tag);
     }
 
     //////////////////////////////////////////////
@@ -227,27 +220,26 @@ void multiboot2_load(char *config, char* cmdline) {
                             (uint64_t)fbinfo.framebuffer_pitch * fbinfo.framebuffer_height,
                             MEMMAP_FRAMEBUFFER, false, false, false, true);
 
-            struct multiboot_tag_framebuffer framebuffer = {
-                .common = {
-                    .type = MULTIBOOT_TAG_TYPE_FRAMEBUFFER,
-                    .size = sizeof(struct multiboot_tag_framebuffer),
-                    .framebuffer_addr = fbinfo.framebuffer_addr,
-                    .framebuffer_pitch = fbinfo.framebuffer_pitch,
-                    .framebuffer_width = fbinfo.framebuffer_width,
-                    .framebuffer_height = fbinfo.framebuffer_height,
-                    .framebuffer_bpp = fbinfo.framebuffer_bpp,
-                    .framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_RGB // We only support RGB for VBE
-                },
 
-                .framebuffer_red_field_position = fbinfo.red_mask_shift,
-                .framebuffer_red_mask_size = fbinfo.red_mask_size,
-                .framebuffer_green_field_position = fbinfo.green_mask_shift,
-                .framebuffer_green_mask_size = fbinfo.green_mask_size,
-                .framebuffer_blue_field_position = fbinfo.blue_mask_shift,
-                .framebuffer_blue_mask_size = fbinfo.blue_mask_size,
-            };
+            struct multiboot_tag_framebuffer* tag = (struct multiboot_tag_framebuffer*)(mb2_info + info_idx);
 
-            push_boot_param(&framebuffer, sizeof(struct multiboot_tag_elf_sections));
+            tag->common.type = MULTIBOOT_TAG_TYPE_FRAMEBUFFER;
+            tag->common.size = sizeof(struct multiboot_tag_framebuffer);
+            tag->common.framebuffer_addr = fbinfo.framebuffer_addr;
+            tag->common.framebuffer_pitch = fbinfo.framebuffer_pitch;
+            tag->common.framebuffer_width = fbinfo.framebuffer_width;
+            tag->common.framebuffer_height = fbinfo.framebuffer_height;
+            tag->common.framebuffer_bpp = fbinfo.framebuffer_bpp;
+            tag->common.framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_RGB; // We only support RGB for VBE
+
+            tag->framebuffer_red_field_position = fbinfo.red_mask_shift;
+            tag->framebuffer_red_mask_size = fbinfo.red_mask_size;
+            tag->framebuffer_green_field_position = fbinfo.green_mask_shift;
+            tag->framebuffer_green_mask_size = fbinfo.green_mask_size;
+            tag->framebuffer_blue_field_position = fbinfo.blue_mask_shift;
+            tag->framebuffer_blue_mask_size = fbinfo.blue_mask_size;
+
+            info_idx += tag->common.size;
         } else {
 #if uefi == 1
             panic("multiboot2: cannot use text mode with UEFI");
@@ -266,12 +258,13 @@ void multiboot2_load(char *config, char* cmdline) {
 
         if (new_rsdp != NULL) {
             uint32_t size = sizeof(struct multiboot_tag_new_acpi) + 36; // XSDP is 36 bytes wide
-            struct multiboot_tag_new_acpi* tag = (struct multiboot_tag_new_acpi*)push_boot_param(NULL, size);
+            struct multiboot_tag_new_acpi* tag = (struct multiboot_tag_new_acpi*)(mb2_info + info_idx);
 
             tag->type = MULTIBOOT_TAG_TYPE_ACPI_NEW;
             tag->size = size;
 
             memcpy(tag->rsdp, new_rsdp, 36);
+            append_tag(info_idx, tag);
         } else if (is_new_acpi_required) {
             panic("multiboot2: new ACPI table not present");
         }
@@ -282,7 +275,7 @@ void multiboot2_load(char *config, char* cmdline) {
     //////////////////////////////////////////////
     {
         uint32_t size = sizeof(struct multiboot_tag_elf_sections) + section_hdr_info->section_hdr_size;
-        struct multiboot_tag_elf_sections* tag = (struct multiboot_tag_elf_sections*)push_boot_param(NULL, size);
+        struct multiboot_tag_elf_sections* tag = (struct multiboot_tag_elf_sections*)(mb2_info + info_idx);
 
         tag->type = MULTIBOOT_TAG_TYPE_ELF_SECTIONS;
         tag->size = size;
@@ -292,6 +285,7 @@ void multiboot2_load(char *config, char* cmdline) {
         tag->shndx = section_hdr_info->str_section_idx;
 
         memcpy(tag->sections, section_hdr_info->section_hdrs, section_hdr_info->section_hdr_size);
+        append_tag(info_idx, tag);
     }
 
 #if uefi == 1
@@ -307,7 +301,7 @@ void multiboot2_load(char *config, char* cmdline) {
     {
         // Create the normal memory map tag.
         uint32_t mmap_size = sizeof(struct multiboot_tag_mmap) + sizeof(struct multiboot_mmap_entry) * mb_mmap_count;
-        struct multiboot_tag_mmap* mmap_tag = (struct multiboot_tag_mmap*)push_boot_param(NULL, mmap_size);
+        struct multiboot_tag_mmap* mmap_tag = (struct multiboot_tag_mmap*)(mb2_info + info_idx);
         
         mmap_tag->type = MULTIBOOT_TAG_TYPE_MMAP;
         mmap_tag->entry_size = sizeof(struct multiboot_mmap_entry);
@@ -321,6 +315,8 @@ void multiboot2_load(char *config, char* cmdline) {
             entry->type = raw_memmap[i].type;
             entry->zero = 0;
         }
+
+        append_tag(info_idx, mmap_tag);
     }
 
     //////////////////////////////////////////////
@@ -330,14 +326,16 @@ void multiboot2_load(char *config, char* cmdline) {
     {
         // Create the EFI memory map tag.
         uint32_t size = sizeof(struct multiboot_tag_efi_mmap) * efi_mmap_size;
-        struct multiboot_tag_efi_mmap* mmap_tag = (struct multiboot_tag_efi_mmap*)push_boot_param(NULL, size);
+        struct multiboot_tag_efi_mmap* mmap_tag = (struct multiboot_tag_efi_mmap*)(mb2_info + info_idx);
 
         mmap_tag->type = MULTIBOOT_TAG_TYPE_EFI_MMAP;
         mmap_tag->descr_vers = efi_desc_ver;
         mmap_tag->descr_size = efi_desc_size;
+        mmap_tag->size = size;
 
         // Copy over the EFI memory map.
         memcpy(mmap_tag->efi_mmap, efi_mmap, efi_mmap_size);
+        append_tag(info_idx, mmap_tag);
     }
 #endif
 
@@ -345,14 +343,21 @@ void multiboot2_load(char *config, char* cmdline) {
     // Create end tag
     //////////////////////////////////////////////
     {
-        struct multiboot_tag* end_tag = push_boot_param(NULL, sizeof(struct multiboot_tag));
+        struct multiboot_tag* end_tag = (struct multiboot_tag*)(mb2_info + info_idx);
         end_tag->type = MULTIBOOT_TAG_TYPE_END;
         end_tag->size = sizeof(struct multiboot_tag);
+
+        append_tag(info_idx, end_tag);
     }
 
-    mbi_start->size = multiboot2_info_size;
+    mbi_start->size = mb2_info_size;
     mbi_start->reserved = 0x00;
 
+    // This assertion is mostly unreachable and will only be reached if the
+    // memory map has more then then 256 entries (which is unusual).
+    if (mbi_start->size < info_idx) 
+        panic("multiboot2: failed to allocate large enough multiboot2 info buffer");
+
     common_spinup(multiboot2_spinup_32, 2,
-                    entry_point, (uint32_t)(uintptr_t)multiboot2_info_buffer);
+                    entry_point, (uint32_t)(uintptr_t)mbi_start);
 }

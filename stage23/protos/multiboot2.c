@@ -56,11 +56,11 @@ static size_t get_multiboot2_info_size(
         ALIGN_UP(strlen(cmdline) + 1 + offsetof(struct multiboot_tag_string, string), MULTIBOOT_TAG_ALIGN) +            // cmdline
         ALIGN_UP(8 + offsetof(struct multiboot_tag_string, string), MULTIBOOT_TAG_ALIGN) +                              // bootloader brand
         ALIGN_UP(sizeof(struct multiboot_tag_framebuffer), MULTIBOOT_TAG_ALIGN) +                                       // framebuffer
-        ALIGN_UP(sizeof(struct multiboot_tag_new_acpi), MULTIBOOT_TAG_ALIGN) + 36 +                                     // new ACPI info
-        ALIGN_UP(sizeof(struct multiboot_tag_elf_sections), MULTIBOOT_TAG_ALIGN) + section_hdr_info->section_hdr_size + // ELF info
-        ALIGN_UP(sizeof(struct multiboot_tag_mmap), MULTIBOOT_TAG_ALIGN + sizeof(struct multiboot_mmap_entry) * 256) +  // MMAP
+        ALIGN_UP(sizeof(struct multiboot_tag_new_acpi) + 36, MULTIBOOT_TAG_ALIGN) +                                     // new ACPI info
+        ALIGN_UP(sizeof(struct multiboot_tag_elf_sections) + section_hdr_info->section_hdr_size, MULTIBOOT_TAG_ALIGN) + // ELF info
+        ALIGN_UP(sizeof(struct multiboot_tag_mmap) + sizeof(struct multiboot_mmap_entry) * 256, MULTIBOOT_TAG_ALIGN) +  // MMAP
 #if uefi == 1
-        ALIGN_UP(sizeof(struct multiboot_tag_efi_mmap), MULTIBOOT_TAG_ALIGN) * 256 +                                    // EFI MMAP
+        ALIGN_UP(sizeof(struct multiboot_tag_efi_mmap) + (efi_desc_size * 256), MULTIBOOT_TAG_ALIGN) +                  // EFI MMAP
 #endif
         ALIGN_UP(sizeof(struct multiboot_tag), MULTIBOOT_TAG_ALIGN);                                                    // end
 }
@@ -292,13 +292,17 @@ void multiboot2_load(char *config, char* cmdline) {
     efi_exit_boot_services();
 #endif
 
-    size_t mb_mmap_count;
-    struct e820_entry_t *raw_memmap = get_raw_memmap(&mb_mmap_count);
-
     //////////////////////////////////////////////
     // Create memory map tag
     //////////////////////////////////////////////
     {
+        size_t mb_mmap_count;
+        struct e820_entry_t *raw_memmap = get_raw_memmap(&mb_mmap_count);
+
+        if (mb_mmap_count > 256) {
+            panic("multiboot2: too many memory map entries");
+        }
+
         // Create the normal memory map tag.
         uint32_t mmap_size = sizeof(struct multiboot_tag_mmap) + sizeof(struct multiboot_mmap_entry) * mb_mmap_count;
         struct multiboot_tag_mmap* mmap_tag = (struct multiboot_tag_mmap*)(mb2_info + info_idx);
@@ -324,6 +328,10 @@ void multiboot2_load(char *config, char* cmdline) {
     //////////////////////////////////////////////
 #if uefi == 1
     {
+        if ((efi_mmap_size / efi_desc_size) > 256) {
+            panic("multiboot2: too many EFI memory map entries");
+        }
+
         // Create the EFI memory map tag.
         uint32_t size = sizeof(struct multiboot_tag_efi_mmap) * efi_mmap_size;
         struct multiboot_tag_efi_mmap* mmap_tag = (struct multiboot_tag_efi_mmap*)(mb2_info + info_idx);
@@ -352,11 +360,6 @@ void multiboot2_load(char *config, char* cmdline) {
 
     mbi_start->size = mb2_info_size;
     mbi_start->reserved = 0x00;
-
-    // This assertion is mostly unreachable and will only be reached if the
-    // memory map has more then then 256 entries (which is unusual).
-    if (mbi_start->size < info_idx) 
-        panic("multiboot2: failed to allocate large enough multiboot2 info buffer");
 
     common_spinup(multiboot2_spinup_32, 2,
                     entry_point, (uint32_t)(uintptr_t)mbi_start);

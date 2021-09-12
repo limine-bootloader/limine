@@ -29,10 +29,10 @@ int elf_bits(uint8_t *elf);
 
 int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_slide, uint32_t alloc_type, bool kaslr, bool use_paddr, struct elf_range **ranges, uint64_t *ranges_count);
 int elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t limit, uint64_t slide);
-void elf64_section_hdr_info(uint8_t *elf, struct elf_section_hdr_info** info);
+struct elf_section_hdr_info* elf64_section_hdr_info(uint8_t *elf);
 
 int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t alloc_type);
 int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limit);
-void elf32_section_hdr_info(uint8_t *elf, struct elf_section_hdr_info** info);
+struct elf_section_hdr_info* elf32_section_hdr_info(uint8_t *elf);
 
 #endif

@@ -106,23 +106,23 @@ void multiboot2_load(char *config, char* cmdline) {
     switch (bits) {
         case 32:
             if (elf32_load(kernel, &entry_point, &kernel_top, MEMMAP_KERNEL_AND_MODULES))
-                panic("multiboot1: ELF32 load failure");
+                panic("multiboot2: ELF32 load failure");
 
-            elf32_section_hdr_info(kernel, &section_hdr_info);
+            section_hdr_info = elf32_section_hdr_info(kernel);
             break;
         case 64: {
             uint64_t e, t;
             if (elf64_load(kernel, &e, &t, NULL, MEMMAP_KERNEL_AND_MODULES, false, true, NULL, NULL))
-                panic("multiboot1: ELF64 load failure");
+                panic("multiboot2: ELF64 load failure");
             
             entry_point = e;
             kernel_top = t;
 
-            elf64_section_hdr_info(kernel, &section_hdr_info);
+            section_hdr_info = elf64_section_hdr_info(kernel);
             break;
         }
         default:
-            panic("multiboot1: invalid ELF file bitness");
+            panic("multiboot2: invalid ELF file bitness");
     }
 
     print("multiboot2: found kernel entry point at: %x\n", entry_point);

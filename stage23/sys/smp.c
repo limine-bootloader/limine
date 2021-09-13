@@ -39,9 +39,10 @@ struct madt_x2apic {
     uint32_t acpi_processor_uid;
 } __attribute__((packed));
 
-static void delay(uint32_t cycles) {
-    for (uint32_t i = 0; i < cycles; i++)
-        inb(0x80);
+static void delay(uint64_t cycles) {
+    uint64_t next_stop = rdtsc() + cycles;
+
+    while (rdtsc() < next_stop);
 }
 
 extern symbol _binary_smp_trampoline_bin_start;
@@ -95,7 +96,7 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
         lapic_write(LAPIC_REG_ICR1, lapic_id << 24);
         lapic_write(LAPIC_REG_ICR0, 0x4500);
     }
-    delay(5000);
+    delay(10000000);
 
     // Send the Startup IPI
     if (x2apic) {
@@ -110,7 +111,7 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
         if (locked_read(&passed_info->smp_tpl_booted_flag) == 1) {
             return true;
         }
-        delay(10000);
+        delay(10000000);
     }
 
     return false;

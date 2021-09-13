@@ -20,6 +20,7 @@ Like Limine and want to support it? Donate Bitcoin to
 * stivale and stivale2 (Limine's native boot protocols, see [their specifications](https://github.com/stivale/stivale) for details)
 * Linux
 * Multiboot 1
+* Multiboot 2
 * Chainloading
 
 ### Supported filesystems

@@ -304,7 +304,7 @@ void multiboot2_load(char *config, char* cmdline) {
             tag->framebuffer_blue_field_position = fbinfo.blue_mask_shift;
             tag->framebuffer_blue_mask_size = fbinfo.blue_mask_size;
 
-            append_tag(info_idx, tag->common);
+            append_tag(info_idx, &tag->common);
         } else {
 #if uefi == 1
             panic("multiboot2: cannot use text mode with UEFI");

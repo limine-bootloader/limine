@@ -823,7 +823,7 @@ static uint8_t dec_special_to_cp437(uint8_t c) {
 }
 
 void term_putchar(uint8_t c) {
-    if (discard_next || c == 0x18 || c == 0x1a) {
+    if (discard_next || (term_runtime == true && (c == 0x18 || c == 0x1a))) {
         discard_next = false;
         escape = false;
         csi = false;

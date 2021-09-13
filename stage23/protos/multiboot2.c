@@ -50,6 +50,7 @@ static struct multiboot_header* load_multiboot2_header(uint8_t* kernel) {
 /// Returns the size required to store the multiboot2 info.
 static size_t get_multiboot2_info_size(
     char* cmdline, 
+    size_t modules_size,
     struct elf_section_hdr_info* section_hdr_info
 ) {
     return ALIGN_UP(sizeof(struct multiboot2_start_tag), MULTIBOOT_TAG_ALIGN) +                                         // start
@@ -58,6 +59,7 @@ static size_t get_multiboot2_info_size(
         ALIGN_UP(sizeof(struct multiboot_tag_framebuffer), MULTIBOOT_TAG_ALIGN) +                                       // framebuffer
         ALIGN_UP(sizeof(struct multiboot_tag_new_acpi) + 36, MULTIBOOT_TAG_ALIGN) +                                     // new ACPI info
         ALIGN_UP(sizeof(struct multiboot_tag_elf_sections) + section_hdr_info->section_hdr_size, MULTIBOOT_TAG_ALIGN) + // ELF info
+        ALIGN_UP(modules_size, MULTIBOOT_TAG_ALIGN) +                                                                   // modules
         ALIGN_UP(sizeof(struct multiboot_tag_mmap) + sizeof(struct multiboot_mmap_entry) * 256, MULTIBOOT_TAG_ALIGN) +  // MMAP
 #if uefi == 1
         ALIGN_UP(sizeof(struct multiboot_tag_efi_mmap) + (efi_desc_size * 256), MULTIBOOT_TAG_ALIGN) +                  // EFI MMAP
@@ -119,7 +121,7 @@ void multiboot2_load(char *config, char* cmdline) {
     bool is_new_acpi_required = false;
 
     // Iterate through the entries...
-    for (struct multiboot_header_tag* tag = (struct multiboot_header_tag*)(header + 1);
+    for (struct multiboot_header_tag* tag = (struct multiboot_header_tag*)(header + 1); // header + 1 to skip the header struct.
          tag < (struct multiboot_header_tag*)((uintptr_t)header + header->header_length) && tag->type != MULTIBOOT_HEADER_TAG_END;
          tag = (struct multiboot_header_tag*)((uintptr_t)tag + ALIGN_UP(tag->size, MULTIBOOT_TAG_ALIGN))) {
   
@@ -159,16 +161,78 @@ void multiboot2_load(char *config, char* cmdline) {
                 fbtag = (struct multiboot_header_tag_framebuffer*)tag;
             } break;
 
+            // We always align the modules ;^)
+            case MULTIBOOT_HEADER_TAG_MODULE_ALIGN: break;
+
             default: panic("multiboot2: unknown tag type");
         }
     }
 
-    size_t mb2_info_size = get_multiboot2_info_size(cmdline, section_hdr_info);
+    size_t modules_size;
+    size_t n_modules = 0;
+
+    for (n_modules = 0;; n_modules++) {
+        if (config_get_value(config, modules_size, "MODULE_PATH") == NULL)
+            break;
+        
+        char* module_cmdline = config_get_value(config, modules_size, "MODULE_STRING");
+        modules_size += sizeof(struct multiboot_tag_module) + strlen(module_cmdline) + 1;
+    }
+
+    size_t mb2_info_size = get_multiboot2_info_size(cmdline, modules_size, section_hdr_info);
     size_t info_idx = 0;
     uint8_t* mb2_info = ext_mem_alloc(mb2_info_size);
 
     struct multiboot2_start_tag* mbi_start = (struct multiboot2_start_tag*)mb2_info;
     info_idx += sizeof(struct multiboot2_start_tag);
+
+    //////////////////////////////////////////////
+    // Create modules tag
+    //////////////////////////////////////////////
+    for (size_t i = 0; i < n_modules; i++) {
+        char* module_path = config_get_value(config, i, "MODULE_PATH");
+        if (module_path == NULL)
+            panic("multiboot2: Module disappeared unexpectedly");
+
+        print("multiboot2: Loading module `%s`...\n", module_path);
+
+        struct file_handle f;
+        if (!uri_open(&f, module_path))
+            panic("multiboot2: Failed to open module with path `%s`. Is the path correct?", module_path);
+        
+        char* module_cmdline = config_get_value(config, i, "MODULE_STRING");
+        void* module_addr = (void *)(uintptr_t)ALIGN_UP(kernel_top, 4096);
+
+        // Module commandline can be null, so we guard against that and make the 
+        // string "".
+        if (module_cmdline == NULL) {
+            module_cmdline = "";
+        }
+
+        memmap_alloc_range((uintptr_t)module_addr, f.size, MEMMAP_KERNEL_AND_MODULES,
+                            true, true, false, false);
+
+        kernel_top = (uintptr_t)module_addr + f.size;
+        fread(&f, module_addr, 0, f.size);
+    
+        struct multiboot_tag_module* module_tag = (struct multiboot_tag_module*)(mb2_info + info_idx);
+
+        module_tag->type = MULTIBOOT_TAG_TYPE_MODULE;
+        module_tag->size = sizeof(struct multiboot_tag_module) + strlen(module_cmdline) + 1;
+        module_tag->mod_start   = (uint32_t)(size_t)module_addr;
+        module_tag->mod_end     = module_tag->mod_start + f.size;
+        strcpy(module_tag->cmdline, module_cmdline); // Copy over the command line
+
+        if (verbose) {
+            print("multiboot2: Requested module %u:\n", i);
+            print("            Path:   %s\n", module_path);
+            print("            String: \"%s\"\n", module_cmdline ?: "");
+            print("            Begin:  %x\n", module_tag->mod_start);
+            print("            End:    %x\n", module_tag->mod_end);
+        }
+
+        append_tag(mb2_info, module_tag);
+    }
 
     //////////////////////////////////////////////
     // Create command line tag

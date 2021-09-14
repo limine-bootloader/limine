@@ -337,8 +337,13 @@ static void clear_cursor(void) {
 static void draw_cursor(void) {
     if (cursor_status) {
         struct gterm_char c = grid[cursor_x + cursor_y * cols];
-        c.fg = 0;
-        c.bg = 0xcccccc;
+        uint32_t tmp = c.bg;
+        c.bg = c.fg;
+        if (tmp == 0xffffffff) {
+            c.fg = 0;
+        } else {
+            c.fg = c.bg;
+        }
         plot_char_grid_force(&c, cursor_x, cursor_y);
     }
 }

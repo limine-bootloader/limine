@@ -29,8 +29,6 @@ static struct context {
 #define cursor_status context.cursor_status
     uint8_t text_palette;
 #define text_palette context.text_palette
-    uint8_t cursor_palette;
-#define cursor_palette context.cursor_palette
     bool scroll_enabled;
 #define scroll_enabled context.scroll_enabled
 } context;
@@ -43,7 +41,8 @@ static void clear_cursor(void) {
 
 static void draw_cursor(void) {
     if (cursor_status) {
-        video_mem[cursor_offset + 1] = cursor_palette;
+        uint8_t pal = current_buffer[cursor_offset + 1];
+        video_mem[cursor_offset + 1] = ((pal & 0xf0) >> 4) | ((pal & 0x0f) << 4);
     }
 }
 
@@ -165,7 +164,6 @@ void init_vga_textmode(size_t *_rows, size_t *_cols, bool managed) {
     cursor_offset = 0;
     cursor_status = true;
     text_palette = 0x07;
-    cursor_palette = 0x70;
     scroll_enabled = true;
 
     text_clear(false);

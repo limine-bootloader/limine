@@ -20,7 +20,6 @@
 
 static struct multiboot_header *load_multiboot2_header(uint8_t *kernel) {
     struct multiboot_header *ptr = NULL;
-    struct multiboot_header header;
 
     size_t header_offset;
 
@@ -29,11 +28,7 @@ static struct multiboot_header *load_multiboot2_header(uint8_t *kernel) {
         memcpy(&v, kernel + header_offset, 4);
 
         if (v == MULTIBOOT2_HEADER_MAGIC) {
-            memcpy(&header, kernel + header_offset, sizeof(header));
-
-            ptr = ext_mem_alloc(header.header_length);
-            memcpy(ptr, kernel + header_offset, header.header_length);
-
+            ptr = (void *)(kernel + header_offset);
             break;
         }
     }
@@ -53,14 +48,14 @@ static struct multiboot_header *load_multiboot2_header(uint8_t *kernel) {
 static size_t get_multiboot2_info_size(
     char *cmdline,
     size_t modules_size,
-    struct elf_section_hdr_info *section_hdr_info
+    uint32_t section_hdr_size
 ) {
     return ALIGN_UP(sizeof(struct multiboot2_start_tag), MULTIBOOT_TAG_ALIGN) +                                         // start
         ALIGN_UP(strlen(cmdline) + 1 + offsetof(struct multiboot_tag_string, string), MULTIBOOT_TAG_ALIGN) +            // cmdline
         ALIGN_UP(8 + offsetof(struct multiboot_tag_string, string), MULTIBOOT_TAG_ALIGN) +                              // bootloader brand
         ALIGN_UP(sizeof(struct multiboot_tag_framebuffer), MULTIBOOT_TAG_ALIGN) +                                       // framebuffer
         ALIGN_UP(sizeof(struct multiboot_tag_new_acpi) + 36, MULTIBOOT_TAG_ALIGN) +                                     // new ACPI info
-        ALIGN_UP(sizeof(struct multiboot_tag_elf_sections) + section_hdr_info->section_hdr_size, MULTIBOOT_TAG_ALIGN) + // ELF info
+        ALIGN_UP(sizeof(struct multiboot_tag_elf_sections) + section_hdr_size, MULTIBOOT_TAG_ALIGN) + // ELF info
         ALIGN_UP(modules_size, MULTIBOOT_TAG_ALIGN) +                                                                   // modules
         ALIGN_UP(sizeof(struct multiboot_tag_mmap) + sizeof(struct multiboot_mmap_entry) * 256, MULTIBOOT_TAG_ALIGN) +  // MMAP
 #if uefi == 1
@@ -86,38 +81,12 @@ void multiboot2_load(char *config, char* cmdline) {
     uint8_t *kernel = freadall(kernel_file, MEMMAP_KERNEL_AND_MODULES);
     struct multiboot_header *header = load_multiboot2_header(kernel);
 
-    uint32_t entry_point;
-    uint32_t kernel_top;
-
-    int bits = elf_bits(kernel);
-    struct elf_section_hdr_info *section_hdr_info;
-
-    switch (bits) {
-        case 32:
-            section_hdr_info = elf32_section_hdr_info(kernel);
-
-            if (elf32_load(kernel, &entry_point, &kernel_top, MEMMAP_KERNEL_AND_MODULES))
-                panic("multiboot2: ELF32 load failure");
-
-            break;
-        case 64: {
-            section_hdr_info = elf64_section_hdr_info(kernel);
-
-            uint64_t e, t;
-            if (elf64_load(kernel, &e, &t, NULL, MEMMAP_KERNEL_AND_MODULES, false, true, NULL, NULL))
-                panic("multiboot2: ELF64 load failure");
-
-            entry_point = e;
-            kernel_top = t;
-
-            break;
-        }
-        default:
-            panic("multiboot2: invalid ELF file bitness");
-    }
-
+    struct multiboot_header_tag_address *addresstag = NULL;
     struct multiboot_header_tag_framebuffer *fbtag = NULL;
     bool is_new_acpi_required = false;
+    bool is_elf_info_requested = false;
+
+    uint32_t entry_point = 0xffffffff;
 
     // Iterate through the entries...
     for (struct multiboot_header_tag *tag = (struct multiboot_header_tag*)(header + 1); // header + 1 to skip the header struct.
@@ -126,12 +95,12 @@ void multiboot2_load(char *config, char* cmdline) {
         switch (tag->type) {
             case MULTIBOOT_HEADER_TAG_INFORMATION_REQUEST: {
                 // Iterate the requests and check if they are supported by or not.
-                struct multiboot_header_tag_information_request *request = (void*)tag;
+                struct multiboot_header_tag_information_request *request = (void *)tag;
                 uint32_t size = (request->size - sizeof(struct multiboot_header_tag_information_request)) / sizeof(uint32_t);
+                bool is_required = !(request->flags & MULTIBOOT_HEADER_TAG_OPTIONAL);
 
                 for (uint32_t i = 0; i < size; i++) {
                     uint32_t r = request->requests[i];
-                    bool is_required = !(tag->flags & MULTIBOOT_HEADER_TAG_OPTIONAL);
 
                     switch (r) {
                         // We already support the following requests:
@@ -141,13 +110,15 @@ void multiboot2_load(char *config, char* cmdline) {
                         case MULTIBOOT_TAG_TYPE_MMAP:
                         case MULTIBOOT_TAG_TYPE_EFI_MMAP:
                         case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
-                        case MULTIBOOT_TAG_TYPE_ELF_SECTIONS:
                             break;
                         case MULTIBOOT_TAG_TYPE_ACPI_NEW:
                             is_new_acpi_required = is_required;
                             break;
+                        case MULTIBOOT_TAG_TYPE_ELF_SECTIONS:
+                            is_elf_info_requested = is_required;
+                            break;
                         default:
-                            if (!(request->flags & MULTIBOOT_HEADER_TAG_OPTIONAL))
+                            if (is_required)
                                 panic("multiboot2: Requested tag `%d` which is not supported", r);
                             break;
                     }
@@ -155,13 +126,94 @@ void multiboot2_load(char *config, char* cmdline) {
                 break;
             }
             case MULTIBOOT_HEADER_TAG_FRAMEBUFFER: {
-                fbtag = (struct multiboot_header_tag_framebuffer *)tag;
+                fbtag = (void *)tag;
+                break;
+            }
+            case MULTIBOOT_HEADER_TAG_ENTRY_ADDRESS: {
+                struct multiboot_header_tag_entry_address *entrytag = (void *)tag;
+                entry_point = entrytag->entry_addr;
+                break;
+            }
+            case MULTIBOOT_HEADER_TAG_ADDRESS: {
+                addresstag = (void *)tag;
                 break;
             }
             // We always align the modules ;^)
             case MULTIBOOT_HEADER_TAG_MODULE_ALIGN: break;
 
             default: panic("multiboot2: Unknown header tag type");
+        }
+    }
+
+    uint32_t kernel_top;
+
+    if (addresstag != NULL) {
+        if (addresstag->load_addr > addresstag->header_addr)
+            panic("multiboot2: Illegal load address");
+
+        size_t load_size = 0;
+
+        if (addresstag->load_end_addr)
+            load_size = addresstag->load_end_addr - addresstag->load_addr;
+        else
+            load_size = kernel_file->size;
+
+        size_t header_offset = (size_t)header - (size_t)kernel;
+
+        memmap_alloc_range(addresstag->load_addr, load_size, MEMMAP_KERNEL_AND_MODULES, true, true, false, false);
+        memcpy((void *)(uintptr_t)addresstag->load_addr, kernel + (header_offset
+                - (addresstag->header_addr - addresstag->load_addr)), load_size);
+
+        kernel_top = addresstag->load_addr + load_size;
+
+        if (addresstag->bss_end_addr) {
+            uintptr_t bss_addr = addresstag->load_addr + load_size;
+            if (addresstag->bss_end_addr < bss_addr)
+                panic("multiboot2: Illegal bss end address");
+
+            uint32_t bss_size = addresstag->bss_end_addr - bss_addr;
+
+            memmap_alloc_range(bss_addr, bss_size, MEMMAP_KERNEL_AND_MODULES, true, true, false, false);
+            memset((void *)bss_addr, 0, bss_size);
+
+            kernel_top = bss_addr + bss_size;
+        }
+    } else {
+        int bits = elf_bits(kernel);
+        uint64_t e = 0, t = 0;
+
+        switch (bits) {
+            case 32:
+                if (elf32_load(kernel, (uint32_t *)&e, (uint32_t *)&t, MEMMAP_KERNEL_AND_MODULES))
+                    panic("multiboot2: ELF32 load failure");
+
+                break;
+            case 64: {
+                if (elf64_load(kernel, &e, &t, NULL, MEMMAP_KERNEL_AND_MODULES, false, true, NULL, NULL))
+                    panic("multiboot2: ELF64 load failure");
+
+                break;
+            }
+            default:
+                panic("multiboot2: Invalid ELF file bitness");
+        }
+
+        if (entry_point == 0xffffffff) {
+            entry_point = e;
+        }
+        kernel_top = t;
+    }
+
+    struct elf_section_hdr_info *section_hdr_info = NULL;
+    int bits = elf_bits(kernel);
+
+    switch (bits) {
+        case 32:
+            section_hdr_info = elf32_section_hdr_info(kernel);
+            break;
+        case 64: {
+            section_hdr_info = elf64_section_hdr_info(kernel);
+            break;
         }
     }
 
@@ -180,7 +232,7 @@ void multiboot2_load(char *config, char* cmdline) {
         modules_size += sizeof(struct multiboot_tag_module) + strlen(module_cmdline) + 1;
     }
 
-    size_t mb2_info_size = get_multiboot2_info_size(cmdline, modules_size, section_hdr_info);
+    size_t mb2_info_size = get_multiboot2_info_size(cmdline, modules_size, section_hdr_info ? section_hdr_info->section_hdr_size : 0);
     size_t info_idx = 0;
     uint8_t *mb2_info = conv_mem_alloc(mb2_info_size);
 
@@ -348,18 +400,24 @@ void multiboot2_load(char *config, char* cmdline) {
     // Create ELF info tag
     //////////////////////////////////////////////
     {
-        uint32_t size = sizeof(struct multiboot_tag_elf_sections) + section_hdr_info->section_hdr_size;
-        struct multiboot_tag_elf_sections *tag = (struct multiboot_tag_elf_sections*)(mb2_info + info_idx);
+        if (section_hdr_info == NULL) {
+            if (is_elf_info_requested) {
+                panic("multiboot2: Cannot return ELF file information");
+            }
+        } else {
+            uint32_t size = sizeof(struct multiboot_tag_elf_sections) + section_hdr_info->section_hdr_size;
+            struct multiboot_tag_elf_sections *tag = (struct multiboot_tag_elf_sections*)(mb2_info + info_idx);
 
-        tag->type = MULTIBOOT_TAG_TYPE_ELF_SECTIONS;
-        tag->size = size;
+            tag->type = MULTIBOOT_TAG_TYPE_ELF_SECTIONS;
+            tag->size = size;
 
-        tag->num = section_hdr_info->num;
-        tag->entsize = section_hdr_info->section_entry_size;
-        tag->shndx = section_hdr_info->str_section_idx;
+            tag->num = section_hdr_info->num;
+            tag->entsize = section_hdr_info->section_entry_size;
+            tag->shndx = section_hdr_info->str_section_idx;
 
-        memcpy(tag->sections, section_hdr_info->section_hdrs, section_hdr_info->section_hdr_size);
-        append_tag(info_idx, tag);
+            memcpy(tag->sections, section_hdr_info->section_hdrs, section_hdr_info->section_hdr_size);
+            append_tag(info_idx, tag);
+        }
     }
 
 #if uefi == 1

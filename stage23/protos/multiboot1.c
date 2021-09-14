@@ -34,7 +34,7 @@ void multiboot1_load(char *config, char *cmdline) {
     if (!uri_open(kernel_file, kernel_path))
         panic("multiboot1: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
-    uint8_t *kernel = freadall(kernel_file, MEMMAP_USABLE);
+    uint8_t *kernel = freadall(kernel_file, MEMMAP_KERNEL_AND_MODULES);
 
     struct multiboot1_header header = {0};
     size_t header_offset = 0;
@@ -55,8 +55,8 @@ void multiboot1_load(char *config, char *cmdline) {
     if (header.magic + header.flags + header.checksum)
         panic("multiboot1: Header checksum is invalid");
 
-    uint32_t entry_point = 0;
-    uint32_t kernel_top = 0;
+    uint32_t entry_point;
+    uint32_t kernel_top;
 
     if (header.flags & (1 << 16)) {
         if (header.load_addr > header.header_addr)
@@ -190,8 +190,9 @@ void multiboot1_load(char *config, char *cmdline) {
                 parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
             struct fb_info fbinfo;
-            if (!fb_init(&fbinfo, req_width, req_height, req_bpp))
-                panic("multiboot1: Unable to set video mode");
+            if (!fb_init(&fbinfo, req_width, req_height, req_bpp)) {
+                goto nofb;
+            }
 
             multiboot1_info.fb_addr    = (uint64_t)fbinfo.framebuffer_addr;
             multiboot1_info.fb_width   = fbinfo.framebuffer_width;
@@ -206,13 +207,14 @@ void multiboot1_load(char *config, char *cmdline) {
             multiboot1_info.fb_blue_mask_size   = fbinfo.blue_mask_size;
             multiboot1_info.fb_blue_mask_shift  = fbinfo.blue_mask_shift;
         } else if (header.fb_mode == 1) {
+nofb:;
 #if uefi == 1
             panic("multiboot1: Cannot use text mode with UEFI.");
 #elif bios == 1
             size_t rows, cols;
             init_vga_textmode(&rows, &cols, false);
 
-            multiboot1_info.fb_addr    = 0xB8000;
+            multiboot1_info.fb_addr    = 0xb8000;
             multiboot1_info.fb_width   = cols;
             multiboot1_info.fb_height  = rows;
             multiboot1_info.fb_bpp     = 16;

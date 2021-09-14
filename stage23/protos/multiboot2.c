@@ -58,9 +58,14 @@ static size_t get_multiboot2_info_size(
         ALIGN_UP(sizeof(struct multiboot_tag_elf_sections) + section_hdr_size, MULTIBOOT_TAG_ALIGN) + // ELF info
         ALIGN_UP(modules_size, MULTIBOOT_TAG_ALIGN) +                                                                   // modules
         ALIGN_UP(sizeof(struct multiboot_tag_mmap) + sizeof(struct multiboot_mmap_entry) * 256, MULTIBOOT_TAG_ALIGN) +  // MMAP
-#if uefi == 1
-        ALIGN_UP(sizeof(struct multiboot_tag_efi_mmap) + (efi_desc_size * 256), MULTIBOOT_TAG_ALIGN) +                  // EFI MMAP
-#endif
+        #if uefi == 1
+            ALIGN_UP(sizeof(struct multiboot_tag_efi_mmap) + (efi_desc_size * 256), MULTIBOOT_TAG_ALIGN) +                  // EFI MMAP
+            #if defined (__i386__)
+                ALIGN_UP(sizeof(struct multiboot_tag_efi32), MULTIBOOT_TAG_ALIGN) +                  // EFI system table 32
+            #elif defined (__x86_64__)
+                ALIGN_UP(sizeof(struct multiboot_tag_efi64), MULTIBOOT_TAG_ALIGN) +                  // EFI system table 64
+            #endif
+        #endif
         ALIGN_UP(sizeof(struct multiboot_tag), MULTIBOOT_TAG_ALIGN);                                                    // end
 }
 
@@ -108,7 +113,14 @@ void multiboot2_load(char *config, char* cmdline) {
                         case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
                         case MULTIBOOT_TAG_TYPE_MODULE:
                         case MULTIBOOT_TAG_TYPE_MMAP:
-                        case MULTIBOOT_TAG_TYPE_EFI_MMAP:
+                        #if uefi == 1
+                            case MULTIBOOT_TAG_TYPE_EFI_MMAP:
+                            #if defined (__i386__)
+                                case MULTIBOOT_TAG_TYPE_EFI32:
+                            #elif defined (__x86_64__)
+                                case MULTIBOOT_TAG_TYPE_EFI64:
+                            #endif
+                        #endif
                         case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
                             break;
                         case MULTIBOOT_TAG_TYPE_ACPI_NEW:
@@ -139,7 +151,9 @@ void multiboot2_load(char *config, char* cmdline) {
                 break;
             }
             // We always align the modules ;^)
-            case MULTIBOOT_HEADER_TAG_MODULE_ALIGN: break;
+            case MULTIBOOT_HEADER_TAG_MODULE_ALIGN:
+            case MULTIBOOT_HEADER_TAG_EFI_BS:
+                break;
 
             default: panic("multiboot2: Unknown header tag type");
         }
@@ -338,6 +352,7 @@ void multiboot2_load(char *config, char* cmdline) {
 
             struct fb_info fbinfo;
             if (!fb_init(&fbinfo, req_width, req_height, req_bpp)) {
+#if bios == 1
                 size_t rows, cols;
                 init_vga_textmode(&rows, &cols, false);
 
@@ -347,6 +362,9 @@ void multiboot2_load(char *config, char* cmdline) {
                 tag->common.framebuffer_height = rows;
                 tag->common.framebuffer_bpp = 16;
                 tag->common.framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT;
+#elif uefi == 1
+                panic("multiboot2: Cannot use text mode with UEFI");
+#endif
             } else {
                 tag->common.type = MULTIBOOT_TAG_TYPE_FRAMEBUFFER;
                 tag->common.size = sizeof(struct multiboot_tag_framebuffer);
@@ -368,7 +386,7 @@ void multiboot2_load(char *config, char* cmdline) {
             append_tag(info_idx, &tag->common);
         } else {
 #if uefi == 1
-            panic("multiboot2: cannot use text mode with UEFI");
+            panic("multiboot2: Cannot use text mode with UEFI");
 #elif bios == 1
             size_t rows, cols;
             init_vga_textmode(&rows, &cols, false);
@@ -395,6 +413,30 @@ void multiboot2_load(char *config, char* cmdline) {
             panic("multiboot2: RSDP requested but not found");
         }
     }
+
+    //////////////////////////////////////////////
+    // Create EFI system table info tag
+    //////////////////////////////////////////////
+#if uefi == 1
+    {
+    #if defined (__i386__)
+        uint32_t size = sizeof(struct multiboot_tag_efi32);
+        struct multiboot_tag_efi32 *tag = (void *)(mb2_info + info_idx);
+
+        tag->type = MULTIBOOT_TAG_TYPE_EFI32;
+    #elif defined (__x86_64__)
+        uint32_t size = sizeof(struct multiboot_tag_efi64);
+        struct multiboot_tag_efi64 *tag = (void *)(mb2_info + info_idx);
+
+        tag->type = MULTIBOOT_TAG_TYPE_EFI64;
+    #endif
+
+        tag->size = size;
+        tag->pointer = (uintptr_t)gST;
+
+        append_tag(info_idx, tag);
+    }
+#endif
 
     //////////////////////////////////////////////
     // Create ELF info tag

@@ -196,7 +196,7 @@ failed_to_load_header_section:
 
     // The spec says the stack has to be 16-byte aligned
     if ((stivale2_hdr.stack & (16 - 1)) != 0) {
-        panic("stivale2: Requested stack is not 16-byte aligned");
+        print("stivale2: WARNING: Requested stack is not 16-byte aligned\n");
     }
 
     // It also says the stack cannot be NULL for 32-bit kernels

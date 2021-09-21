@@ -1,9 +1,5 @@
-BITS 16
-ORG 0x7C00
-
-%define STAGE2_LOCATION       0x60000
-%define DECOMPRESSOR_LOCATION 0x70000
-%define BOOT_FROM_CD 2
+org 0x7c00
+bits 16
 
 jmp skip_bpb
 nop
@@ -25,42 +21,31 @@ skip_bpb:
     cld
     jmp 0x0000:.initialise_cs
   .initialise_cs:
-    xor ax, ax
-    mov ds, ax
-    mov es, ax
-    mov ss, ax
-    mov sp, 0x7C00
+    xor si, si
+    mov ds, si
+    mov es, si
+    mov ss, si
+    mov sp, 0x7c00
     sti
 
     ; int 13h?
     mov ah, 0x41
-    mov bx, 0x55AA
+    mov bx, 0x55aa
     int 0x13
-    jc err
-    cmp bx, 0xAA55
-    jne err
-
-    mov esp, 0x7C00
+    jc err.0
+    cmp bx, 0xaa55
+    jne err.1
 
     ; --- Load the decompressor ---
     mov eax, dword [bi_boot_LBA]
-    add eax, DEC_LBA_OFFSET
-    mov ecx, DEC_LBA_COUNT
+    add eax, 1
+    mov ecx, stage2.fullsize / 2048
     ; DECOMPRESSOR_LOCATION = 0x70000 = 0x7000:0x0000
-    mov si, 0x7000
-    xor di, di
+    push 0x7000
+    pop es
+    xor bx, bx
     call read_2k_sectors
-    jc err
-
-    ; --- Load the stage2.bin.gz ---
-    mov eax, dword [bi_boot_LBA]
-    add eax, STAGE2_LBA_OFFSET
-    mov ecx, STAGE2_LBA_COUNT
-    ; STAGE2_LOCATION = 0x60000 = 0x6000:0x0000
-    mov si, 0x6000
-    xor di, di
-    call read_2k_sectors
-    jc err
+    jc err.2
 
     ; Enable GDT
     lgdt [gdt]
@@ -72,13 +57,25 @@ skip_bpb:
     jmp 0x08:pmode
 
 err:
-    hlt
-    jmp err
+  .2:
+    inc si
+  .1:
+    inc si
+  .0:
+    add si, '0' | (0x4f << 8)
+
+    push 0xb800
+    pop es
+    mov word [es:0], si
+
+    sti
+    .h: hlt
+    jmp .h
 
 %include 'read_2k_sectors.asm'
 %include '../gdt.asm'
 
-BITS 32
+bits 32
 pmode:
     mov eax, 0x10
     mov ds, ax
@@ -88,27 +85,22 @@ pmode:
     mov ss, ax
 
     ; Time to handle control over to the decompressor
-    push BOOT_FROM_CD
-    and edx, 0xFF
+    push 2
+    and edx, 0xff
     push edx  ; Boot drive
-    push STAGE2_SIZE
-    push STAGE2_LOCATION
-    call DECOMPRESSOR_LOCATION
-    hlt
-
-%define FILEPOS ($-$$)
-%define UPPER2K ((FILEPOS+2047) & ~2047)
-%define ALIGN2K times UPPER2K - FILEPOS db 0
+    push stage2.size
+    push (stage2 - decompressor) + 0x70000
+    call 0x70000
 
 ; Align stage2 to 2K ON DISK
-ALIGN2K
-DEC_LBA_OFFSET equ ($-$$)/2048
+times 2048-($-$$) db 0
+decompressor:
 incbin '../../build/decompressor/decompressor.bin'
 
-ALIGN2K
-STAGE2_START equ $-$$
-STAGE2_LBA_OFFSET equ STAGE2_START/2048
-DEC_LBA_COUNT equ STAGE2_LBA_OFFSET - DEC_LBA_OFFSET
+align 16
+stage2:
 incbin '../../build/stage23-bios/stage2.bin.gz'
-STAGE2_SIZE equ ($-$$) - STAGE2_START
-STAGE2_LBA_COUNT equ (2047 + $-$$)/2048
+.size: equ $ - stage2
+
+times ((($-$$)+2047) & ~2047)-($-$$) db 0
+.fullsize: equ $ - decompressor

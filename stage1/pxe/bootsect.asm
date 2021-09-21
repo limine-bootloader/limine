@@ -2,6 +2,8 @@ org 0x7c00
 bits 16
 
 start:
+    cli
+    cld
     jmp 0x0000:.initialise_cs
   .initialise_cs:
     xor ax, ax
@@ -9,10 +11,8 @@ start:
     mov es, ax
     mov ss, ax
     mov sp, 0x7c00
-    sti
-    lgdt [gdt]
 
-    cli
+    lgdt [gdt]
 
     mov eax, cr0
     bts ax, 0
@@ -21,7 +21,7 @@ start:
     jmp 0x08:.mode32
     bits 32
   .mode32:
-    mov ax, 0x10
+    mov eax, 0x10
     mov ds, ax
     mov es, ax
     mov fs, ax
@@ -41,12 +41,6 @@ start:
     rep movsb
 
     call 0x70000
-
-bits 16
-
-err:
-    hlt
-    jmp err
 
 ; Includes
 

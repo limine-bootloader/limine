@@ -1,4 +1,4 @@
-BITS 16
+bits 16
 
 ; --- Read sectors from disk ---
 ; IN:
@@ -6,8 +6,8 @@ BITS 16
 ; cx <- number of 2k sectors
 ; dl <- drive number
 ; ds <- ZERO
-; di <- buffer offset
-; si <- buffer segment
+; bx <- buffer offset
+; es <- buffer segment
 
 ; OUT:
 ; Carry if error
@@ -25,8 +25,8 @@ read_2k_sectors:
     pusha
     mov dword [dapack_LBA], eax
     mov word  [dapack_nblocks], cx
-    mov word  [dapack_offset], di
-    mov word  [dapack_segment], si
+    mov word  [dapack_offset], bx
+    mov word  [dapack_segment], es
 
     mov ah, 0x42
     mov si, dapack

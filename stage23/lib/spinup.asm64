@@ -35,7 +35,15 @@ common_spinup:
     mov gs, eax
     mov ss, eax
 
+    push r8
+    push r9
+    push rcx
+    push rdx
     call flush_irqs
+    pop rdx
+    pop rcx
+    pop r9
+    pop r8
 
     mov rbp, rsp
 

@@ -125,9 +125,6 @@ __attribute__((section(".stage3_entry")))
 #endif
 __attribute__((noreturn))
 void stage3_common(void) {
-    init_flush_irqs();
-    init_io_apics();
-
     volume_iterate_parts(boot_volume,
         if (!init_config_disk(_PART)) {
             boot_volume = _PART;
@@ -144,6 +141,9 @@ void stage3_common(void) {
     bool randomise_mem = randomise_mem_str != NULL && strcmp(randomise_mem_str, "yes") == 0;
     if (randomise_mem)
         pmm_randomise_memory();
+
+    init_flush_irqs();
+    init_io_apics();
 
     if (verbose) {
         print("Boot drive: %x\n", boot_volume->index);

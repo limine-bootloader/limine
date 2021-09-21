@@ -74,6 +74,8 @@ bool x2apic_check(void) {
     return true;
 }
 
+static bool x2apic_mode = false;
+
 bool x2apic_enable(void) {
     if (!x2apic_check())
         return false;
@@ -82,7 +84,17 @@ bool x2apic_enable(void) {
     ia32_apic_base |= (1 << 10);
     wrmsr(0x1b, ia32_apic_base);
 
+    x2apic_mode = true;
+
     return true;
+}
+
+void lapic_eoi(void) {
+    if (!x2apic_mode) {
+        lapic_write(0xb0, 0);
+    } else {
+        x2apic_write(0xb0, 0);
+    }
 }
 
 uint64_t x2apic_read(uint32_t reg) {
@@ -122,7 +134,6 @@ void init_io_apics(void) {
     io_apics = ext_mem_alloc(max_io_apics * sizeof(struct madt_io_apic *));
     max_io_apics = 0;
 
-    // Try to start all APs
     for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
       (uintptr_t)madt_ptr < (uintptr_t)madt + madt->header.length;
       madt_ptr += *(madt_ptr + 1)) {

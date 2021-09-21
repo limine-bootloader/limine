@@ -39,12 +39,6 @@ struct madt_x2apic {
     uint32_t acpi_processor_uid;
 } __attribute__((packed));
 
-static void delay(uint64_t cycles) {
-    uint64_t next_stop = rdtsc() + cycles;
-
-    while (rdtsc() < next_stop);
-}
-
 extern symbol _binary_smp_trampoline_bin_start;
 extern symbol _binary_smp_trampoline_bin_end;
 

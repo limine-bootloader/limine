@@ -16,6 +16,7 @@
 #include <sys/pic.h>
 #include <sys/cpu.h>
 #include <sys/gdt.h>
+#include <sys/idt.h>
 #include <sys/lapic.h>
 #include <fs/file.h>
 #include <mm/vmm.h>
@@ -423,8 +424,6 @@ __attribute__((noreturn)) void stivale_spinup(
     }
 
     pic_mask_all();
-    pic_flush();
-
     io_apic_mask_all();
 
     common_spinup(stivale_spinup_32, 9,

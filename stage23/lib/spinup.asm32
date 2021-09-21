@@ -4,6 +4,8 @@ extern gdt
 
 section .text
 
+extern flush_irqs
+
 global common_spinup
 bits 32
 common_spinup:
@@ -36,6 +38,8 @@ common_spinup:
     mov fs, eax
     mov gs, eax
     mov ss, eax
+
+    call flush_irqs
 
     xor eax, eax
     lldt ax

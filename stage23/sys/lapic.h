@@ -11,6 +11,7 @@
 #define LAPIC_REG_EOI      0x0b0
 
 bool lapic_check(void);
+void lapic_eoi(void);
 uint32_t lapic_read(uint32_t reg);
 void lapic_write(uint32_t reg, uint32_t data);
 

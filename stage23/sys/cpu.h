@@ -160,6 +160,12 @@ inline uint64_t rdtsc(void) {
     return ((uint64_t)edx << 32) | eax;
 }
 
+static inline void delay(uint64_t cycles) {
+    uint64_t next_stop = rdtsc() + cycles;
+
+    while (rdtsc() < next_stop);
+}
+
 #define rdrand(type) ({ \
     type ret; \
     asm volatile ( \

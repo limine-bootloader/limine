@@ -5,12 +5,16 @@ invalid_idt:
 
 section .text
 
+extern flush_irqs
+
 global common_spinup
 bits 32
 common_spinup:
     cli
 
     lidt [invalid_idt]
+
+    call flush_irqs
 
     xor eax, eax
     lldt ax

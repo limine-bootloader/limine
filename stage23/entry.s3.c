@@ -7,6 +7,7 @@
 #include <lib/trace.h>
 #include <sys/e820.h>
 #include <sys/a20.h>
+#include <sys/idt.h>
 #include <lib/print.h>
 #include <fs/file.h>
 #include <lib/elf.h>
@@ -63,8 +64,6 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     copyright_notice();
 
     disk_create_index();
-
-    init_io_apics();
 
     boot_volume = NULL;
 
@@ -126,6 +125,9 @@ __attribute__((section(".stage3_entry")))
 #endif
 __attribute__((noreturn))
 void stage3_common(void) {
+    init_flush_irqs();
+    init_io_apics();
+
     volume_iterate_parts(boot_volume,
         if (!init_config_disk(_PART)) {
             boot_volume = _PART;

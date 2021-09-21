@@ -5,6 +5,8 @@ invalid_idt:
 
 section .text
 
+extern flush_irqs
+
 %macro push32 1
     sub rsp, 4
     mov dword [rsp], %1
@@ -19,6 +21,21 @@ common_spinup:
 
     lgdt [rel gdt]
     lidt [rel invalid_idt]
+
+    lea rbx, [rel .reload_cs]
+
+    push 0x28
+    push rbx
+    retfq
+.reload_cs:
+    mov eax, 0x30
+    mov ds, eax
+    mov es, eax
+    mov fs, eax
+    mov gs, eax
+    mov ss, eax
+
+    call flush_irqs
 
     mov rbp, rsp
 

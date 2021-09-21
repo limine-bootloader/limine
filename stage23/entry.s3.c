@@ -21,6 +21,7 @@
 #include <pxe/pxe.h>
 #include <pxe/tftp.h>
 #include <drivers/disk.h>
+#include <sys/lapic.h>
 
 void stage3_common(void);
 
@@ -62,6 +63,8 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     copyright_notice();
 
     disk_create_index();
+
+    init_io_apics();
 
     boot_volume = NULL;
 

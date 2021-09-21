@@ -5,6 +5,23 @@
 #include <sys/cpu.h>
 #include <lib/blib.h>
 #include <lib/acpi.h>
+#include <mm/pmm.h>
+
+struct madt {
+    struct sdt header;
+    uint32_t local_controller_addr;
+    uint32_t flags;
+    char     madt_entries_begin[];
+} __attribute__((packed));
+
+struct madt_io_apic {
+    uint8_t type;
+    uint8_t length;
+    uint8_t apic_id;
+    uint8_t reserved;
+    uint32_t address;
+    uint32_t gsib;
+} __attribute__((packed));
 
 struct dmar {
     struct sdt header;
@@ -74,4 +91,75 @@ uint64_t x2apic_read(uint32_t reg) {
 
 void x2apic_write(uint32_t reg, uint64_t data) {
     wrmsr(0x800 + (reg >> 4), data);
+}
+
+static struct madt_io_apic **io_apics = NULL;
+static size_t max_io_apics = 0;
+
+void init_io_apics(void) {
+    static bool already_inited = false;
+    if (already_inited) {
+        return;
+    }
+
+    struct madt *madt = acpi_get_table("APIC", 0);
+
+    if (madt == NULL) {
+        panic("IO APIC error");
+    }
+
+    for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
+      (uintptr_t)madt_ptr < (uintptr_t)madt + madt->header.length;
+      madt_ptr += *(madt_ptr + 1)) {
+        switch (*madt_ptr) {
+            case 1: {
+                max_io_apics++;
+                continue;
+            }
+        }
+    }
+
+    io_apics = ext_mem_alloc(max_io_apics * sizeof(struct madt_io_apic *));
+    max_io_apics = 0;
+
+    // Try to start all APs
+    for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
+      (uintptr_t)madt_ptr < (uintptr_t)madt + madt->header.length;
+      madt_ptr += *(madt_ptr + 1)) {
+        switch (*madt_ptr) {
+            case 1: {
+                io_apics[max_io_apics++] = (void *)madt_ptr;
+                continue;
+            }
+        }
+    }
+
+    already_inited = true;
+}
+
+uint32_t io_apic_read(size_t io_apic, uint32_t reg) {
+    uintptr_t base = (uintptr_t)io_apics[io_apic]->address;
+    mmoutd(base, reg);
+    return mmind(base + 16);
+}
+
+void io_apic_write(size_t io_apic, uint32_t reg, uint32_t value) {
+    uintptr_t base = (uintptr_t)io_apics[io_apic]->address;
+    mmoutd(base, reg);
+    mmoutd(base + 16, value);
+}
+
+uint32_t io_apic_gsi_count(size_t io_apic) {
+	return ((io_apic_read(io_apic, 1) & 0xff0000) >> 16) + 1;
+}
+
+void io_apic_mask_all(void) {
+    for (size_t i = 0; i < max_io_apics; i++) {
+        uint32_t gsi_count = io_apic_gsi_count(i);
+        for (uint32_t j = 0; j < gsi_count; j++) {
+            uintptr_t ioredtbl = j * 2 + 16;
+            io_apic_write(i, ioredtbl, (1 << 16)); // mask
+            io_apic_write(i, ioredtbl + 1, 0);
+        }
+    }
 }

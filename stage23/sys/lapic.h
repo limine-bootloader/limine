@@ -1,6 +1,7 @@
 #ifndef __SYS__APIC_H__
 #define __SYS__APIC_H__
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -17,5 +18,11 @@ bool x2apic_check(void);
 bool x2apic_enable(void);
 uint64_t x2apic_read(uint32_t reg);
 void x2apic_write(uint32_t reg, uint64_t data);
+
+void init_io_apics(void);
+uint32_t io_apic_read(size_t io_apic, uint32_t reg);
+void io_apic_write(size_t io_apic, uint32_t reg, uint32_t value);
+uint32_t io_apic_gsi_count(size_t io_apic);
+void io_apic_mask_all(void);
 
 #endif

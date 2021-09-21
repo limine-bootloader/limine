@@ -296,8 +296,20 @@ endif
 
 -include $(HEADER_DEPS)
 
+ifeq ($(TARGET), uefi)
+$(BUILDDIR)/%.o: %.c $(BUILDDIR)/gnu-efi
+	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
+endif
+
+ifeq ($(TARGET), uefi32)
+$(BUILDDIR)/%.o: %.c $(BUILDDIR)/gnu-efi
+	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
+endif
+
+ifeq ($(TARGET), bios)
 $(BUILDDIR)/%.o: %.c
 	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
+endif
 
 -include $(HEADER_DEPS)
 
@@ -309,7 +321,7 @@ endif
 -include $(HEADER_DEPS)
 
 ifeq ($(TARGET), uefi)
-$(BUILDDIR)/%.32.o: %.32.c
+$(BUILDDIR)/%.32.o: %.32.c $(BUILDDIR)/gnu-efi
 	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS32) -c $< -o $@.32
 	$(TOOLCHAIN_OBJCOPY) -I elf32-i386 -O elf64-x86-64 $@.32 $@
 	rm $@.32

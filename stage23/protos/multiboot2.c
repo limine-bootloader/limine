@@ -532,8 +532,6 @@ void multiboot2_load(char *config, char* cmdline) {
         append_tag(info_idx, end_tag);
     }
 
-    pic_flush();
-
     common_spinup(multiboot2_spinup_32, 2,
                     entry_point, (uint32_t)(uintptr_t)mbi_start);
 }

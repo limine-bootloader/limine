@@ -276,8 +276,6 @@ nofb:;
     multiboot1_info.mmap_addr = ((uint32_t)(size_t)mmap);
     multiboot1_info.flags |= (1 << 0) | (1 << 6);
 
-    pic_flush();
-
     common_spinup(multiboot1_spinup_32, 2,
                   entry_point, (uint32_t)(uintptr_t)&multiboot1_info);
 }

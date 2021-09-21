@@ -332,7 +332,7 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
             uint64_t phys = virt;
 
             if (phys & ((uint64_t)1 << 63)) {
-                phys -= FIXED_HIGHER_HALF_OFFSET_64;
+                phys -= elf64_get_higher_half_offset();
             } else {
                 panic("stivale2: Protected memory ranges are only supported for higher half kernels");
             }

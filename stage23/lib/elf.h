@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <fs/file.h>
 
-#define FIXED_HIGHER_HALF_OFFSET_64 ((uint64_t)0xffffffff80000000)
+#define DEFAULT_HIGHER_HALF_OFFSET_64 ((uint64_t)0xffffffff80000000)
 
 #define ELF_PF_X 1
 #define ELF_PF_W 2
@@ -34,5 +34,7 @@ struct elf_section_hdr_info* elf64_section_hdr_info(uint8_t *elf);
 int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t alloc_type);
 int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limit);
 struct elf_section_hdr_info* elf32_section_hdr_info(uint8_t *elf);
+
+uint64_t elf64_get_higher_half_offset();
 
 #endif

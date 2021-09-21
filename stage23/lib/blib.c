@@ -47,6 +47,21 @@ bool parse_resolution(size_t *width, size_t *height, size_t *bpp, const char *bu
     return true;
 }
 
+bool parse_address(uint64_t* addr, const char* addr_str)
+{
+  int base = 10;
+  if (strlen(addr_str) > 2 && addr_str[0] == '0' && addr_str[1] == 'x') {
+    addr_str += 2;
+    base = 16;
+  }
+
+  const char* end;
+  *addr = strtoui(addr_str, &end, base);
+  if (addr_str == end)
+    return false;
+  return true;
+}
+
 // This integer sqrt implementation has been adapted from:
 // https://stackoverflow.com/questions/1100090/looking-for-an-efficient-integer-square-root-algorithm-for-arm-thumb2
 uint64_t sqrt(uint64_t a_nInput) {

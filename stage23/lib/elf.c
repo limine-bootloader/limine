@@ -7,6 +7,7 @@
 #include <lib/rand.h>
 #include <mm/pmm.h>
 #include <fs/file.h>
+#include <lib/config.h>
 
 #define PT_LOAD     0x00000001
 #define PT_INTERP   0x00000003
@@ -465,7 +466,7 @@ final:
 
             if (load_addr & ((uint64_t)1 << 63)) {
                 higher_half = true;
-                load_addr -= FIXED_HIGHER_HALF_OFFSET_64;
+                load_addr -= elf64_get_higher_half_offset();
             }
         }
 
@@ -607,4 +608,14 @@ int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t allo
     *entry_point = entry;
 
     return 0;
+}
+
+uint64_t elf64_get_higher_half_offset()
+{
+  const char* offset_str = config_get_value(NULL, 0, "HIGHER_HALF_OFFSET");
+
+  uint64_t addr;
+  if (offset_str == NULL || !parse_address(&addr, offset_str))
+    return DEFAULT_HIGHER_HALF_OFFSET_64;
+  return addr;
 }

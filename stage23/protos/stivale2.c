@@ -34,7 +34,7 @@ struct stivale2_struct stivale2_struct = {0};
 
 inline static size_t get_phys_addr(uint64_t addr) {
     if (addr & ((uint64_t)1 << 63))
-        return addr - FIXED_HIGHER_HALF_OFFSET_64;
+        return addr - elf64_get_higher_half_offset();
     return addr;
 }
 
@@ -403,7 +403,7 @@ failed_to_load_header_section:
     char *textmode_str = config_get_value(config, 0, "TEXTMODE");
     bool textmode = textmode_str != NULL && strcmp(textmode_str, "yes") == 0;
 
-    int preference;
+    int preference = 0;
     if (avtag != NULL) {
         preference = textmode ? 1 : avtag->preference;
     }

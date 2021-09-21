@@ -34,6 +34,7 @@ extern bool stage3_loaded;
 
 extern bool verbose;
 
+bool parse_address(uint64_t* addr, const char* addr_str);
 bool parse_resolution(size_t *width, size_t *height, size_t *bpp, const char *buf);
 
 uint32_t get_crc32(void *_stream, size_t len);

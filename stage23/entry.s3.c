@@ -56,6 +56,11 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 
     EFI_STATUS status;
 
+    status = gBS->SetWatchdogTimer(0, 0x10000, 0, NULL);
+    if (status) {
+        print("WARNING: Failed to disable watchdog timer!\n");
+    }
+
     init_memmap();
 
     term_vbe(0, 0);

@@ -105,7 +105,7 @@ void init_io_apics(void) {
     struct madt *madt = acpi_get_table("APIC", 0);
 
     if (madt == NULL) {
-        panic("IO APIC error");
+        goto out;
     }
 
     for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
@@ -134,6 +134,7 @@ void init_io_apics(void) {
         }
     }
 
+out:
     already_inited = true;
 }
 

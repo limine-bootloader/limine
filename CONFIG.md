@@ -84,6 +84,7 @@ Some keys take *URIs* as values; these are described in the next section.
 * `VERBOSE` - If set to `yes`, print additional information during boot. Defaults to not verbose.
 * `RANDOMISE_MEMORY` - If set to `yes`, randomise the contents of RAM at bootup in order to find bugs related to non zeroed memory or for security reasons. This option will slow down boot time significantly.
 * `RANDOMIZE_MEMORY` - Alias of `RANDOMISE_MEMORY`.
+* `HIGHER_HALF_OFFSET` - Can be used to override the default higher half load address. Defaults to `0xffffffff80000000`.
 
 *Locally assignable (non protocol specific)* keys are:
 * `COMMENT` - An optional comment string that will be displayed by the bootloader on the menu when an entry is selected.

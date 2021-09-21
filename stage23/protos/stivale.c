@@ -426,7 +426,7 @@ __attribute__((noreturn)) void stivale_spinup(
     pic_mask_all();
     io_apic_mask_all();
 
-    common_spinup(stivale_spinup_32, 9,
+    common_spinup(stivale_spinup_32, 10,
         bits, level5pg, enable_nx, (uint32_t)(uintptr_t)pagemap->top_level,
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
         (uint32_t)_stivale_struct, (uint32_t)(_stivale_struct >> 32),

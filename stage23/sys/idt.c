@@ -5,6 +5,7 @@
 #include <sys/pic.h>
 #include <sys/lapic.h>
 #include <mm/pmm.h>
+#include <lib/blib.h>
 
 static struct idt_entry *dummy_idt = NULL;
 
@@ -31,7 +32,21 @@ void init_flush_irqs(void) {
     }
 }
 
+int irq_flush_type = IRQ_NO_FLUSH;
+
 void flush_irqs(void) {
+    switch (irq_flush_type) {
+        case IRQ_PIC_ONLY_FLUSH:
+            pic_flush();
+            // FALLTHRU
+        case IRQ_NO_FLUSH:
+            return;
+        case IRQ_PIC_APIC_FLUSH:
+            break;
+        default:
+            panic("Invalid IRQ flush type");
+    }
+
     struct idtr old_idt;
     asm volatile ("sidt %0" : "=m"(old_idt) :: "memory");
 

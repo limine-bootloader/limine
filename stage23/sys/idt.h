@@ -45,6 +45,14 @@ void init_idt(void);
 
 #endif
 
+enum {
+    IRQ_NO_FLUSH,
+    IRQ_PIC_ONLY_FLUSH,
+    IRQ_PIC_APIC_FLUSH
+};
+
+extern int irq_flush_type;
+
 void init_flush_irqs(void);
 void flush_irqs(void);
 

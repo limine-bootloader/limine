@@ -11,6 +11,7 @@
 #include <lib/term.h>
 #include <sys/pic.h>
 #include <sys/cpu.h>
+#include <sys/idt.h>
 #include <fs/file.h>
 #include <mm/vmm.h>
 #include <lib/acpi.h>
@@ -531,6 +532,8 @@ void multiboot2_load(char *config, char* cmdline) {
 
         append_tag(info_idx, end_tag);
     }
+
+    irq_flush_type = IRQ_PIC_ONLY_FLUSH;
 
     common_spinup(multiboot2_spinup_32, 2,
                     entry_point, (uint32_t)(uintptr_t)mbi_start);

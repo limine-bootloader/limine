@@ -574,5 +574,7 @@ void linux_load(char *config, char *cmdline) {
     // Spin up
     ///////////////////////////////////////
 
+    irq_flush_type = IRQ_PIC_ONLY_FLUSH;
+
     common_spinup(linux_spinup, 2, (void *)kernel_load_addr, boot_params);
 }

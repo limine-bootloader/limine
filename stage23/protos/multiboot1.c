@@ -11,6 +11,7 @@
 #include <lib/term.h>
 #include <sys/pic.h>
 #include <sys/cpu.h>
+#include <sys/idt.h>
 #include <fs/file.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>
@@ -275,6 +276,8 @@ nofb:;
     multiboot1_info.mmap_length = mb_mmap_len;
     multiboot1_info.mmap_addr = ((uint32_t)(size_t)mmap);
     multiboot1_info.flags |= (1 << 0) | (1 << 6);
+
+    irq_flush_type = IRQ_PIC_ONLY_FLUSH;
 
     common_spinup(multiboot1_spinup_32, 2,
                   entry_point, (uint32_t)(uintptr_t)&multiboot1_info);

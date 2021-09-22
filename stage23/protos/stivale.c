@@ -426,6 +426,8 @@ __attribute__((noreturn)) void stivale_spinup(
     pic_mask_all();
     io_apic_mask_all();
 
+    irq_flush_type = IRQ_PIC_APIC_FLUSH;
+
     common_spinup(stivale_spinup_32, 10,
         bits, level5pg, enable_nx, (uint32_t)(uintptr_t)pagemap->top_level,
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),

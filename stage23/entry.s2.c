@@ -70,15 +70,16 @@ enum {
 
 __attribute__((noreturn))
 void entry(uint8_t boot_drive, int boot_from) {
+    // XXX DO NOT MOVE A20 ENABLE CALL
+    if (!a20_enable())
+        panic("Could not enable A20 line");
+
     init_e820();
     init_memmap();
 
     term_textmode();
 
     copyright_notice();
-
-    if (!a20_enable())
-        panic("Could not enable A20 line");
 
     init_idt();
 

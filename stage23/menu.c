@@ -151,6 +151,27 @@ found_equals:
     goto fail;
 }
 
+static void putchar_tokencol(int type, char c) {
+    switch (type) {
+        case TOK_KEY:
+            print("\e[36m%c\e[0m", c);
+            break;
+        case TOK_EQUALS:
+            print("\e[32m%c\e[0m", c);
+            break;
+        default:
+        case TOK_VALUE:
+            print("\e[39m%c\e[0m", c);
+            break;
+        case TOK_BADKEY:
+            print("\e[31m%c\e[0m", c);
+            break;
+        case TOK_COMMENT:
+            print("\e[33m%c\e[0m", c);
+            break;
+    }
+}
+
 static char *config_entry_editor(const char *title, const char *orig_entry) {
     size_t cursor_offset  = 0;
     size_t entry_size     = strlen(orig_entry);
@@ -225,6 +246,7 @@ refresh:
     size_t cursor_x, cursor_y;
     size_t current_line = 0, line_offset = 0, window_size = _window_size;
     bool printed_cursor = false;
+    bool printed_early = false;
     int token_type = validate_line(buffer);
     for (size_t i = 0; ; i++) {
         // newline
@@ -244,17 +266,31 @@ refresh:
             else
                 print("\xb3\xb3");
             line_offset = 0;
-            token_type = validate_line(buffer+i+1);
+            token_type = validate_line(buffer + i + 1);
             current_line++;
             continue;
         }
 
-        if (line_offset && !(line_offset % line_size)) {
+        // switch to token type 1 if equals sign
+        if (token_type == TOK_KEY && buffer[i] == '=') token_type = TOK_EQUALS;
+
+        if (buffer[i] != 0 && line_offset % line_size == line_size - 1) {
+            if (current_line <  window_offset + window_size
+             && current_line >= window_offset) {
+                if (syntax_highlighting_enabled) {
+                    putchar_tokencol(token_type, buffer[i]);
+                } else {
+                    print("%c", buffer[i]);
+                }
+                printed_early = true;
+                size_t x, y;
+                get_cursor_pos(&x, &y);
+                if (y == term_rows - 3)
+                    print("\x1a\xc0");
+                else
+                    print("\x1a\x1b\x1b");
+            }
             window_size--;
-            if (current_line == window_offset + window_size)
-                print("\x1a\xc0");
-            else
-                print("\x1a\x1b\x1b");
         }
 
         if (i == cursor_offset
@@ -280,6 +316,7 @@ refresh:
 
         if (buffer[i] == '\n') {
             line_offset = 0;
+            token_type = validate_line(buffer + i + 1);
             current_line++;
             continue;
         }
@@ -287,33 +324,19 @@ refresh:
         if (current_line >= window_offset) {
             line_offset++;
 
-            // switch to token type 1 if equals sign
-            if (token_type == TOK_KEY && buffer[i] == '=') token_type = TOK_EQUALS;
-
             // syntax highlighting
-            if (syntax_highlighting_enabled) {
-                switch (token_type) {
-                    case TOK_KEY:
-                        print("\e[36m%c\e[0m", buffer[i]);
-                        break;
-                    case TOK_EQUALS:
-                        print("\e[32m%c\e[0m", buffer[i]);
-                        break;
-                    case TOK_VALUE:
-                        print("\e[39m%c\e[0m", buffer[i]);
-                        break;
-                    case TOK_BADKEY:
-                        print("\e[31m%c\e[0m", buffer[i]);
-                        break;
-                    case TOK_COMMENT:
-                        print("\e[33m%c\e[0m", buffer[i]);
-               }
-           } else {
-               print("%c", buffer[i]);
-           }
+            if (!printed_early) {
+                if (syntax_highlighting_enabled) {
+                    putchar_tokencol(token_type, buffer[i]);
+                } else {
+                    print("%c", buffer[i]);
+                }
+            }
 
-           // switch to token type 2 after equals sign
-           if (token_type == TOK_EQUALS) token_type = TOK_VALUE;
+            printed_early = false;
+
+            // switch to token type 2 after equals sign
+            if (token_type == TOK_EQUALS) token_type = TOK_VALUE;
         }
     }
 

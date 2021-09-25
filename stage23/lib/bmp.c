@@ -40,7 +40,15 @@ int bmp_open_image(struct image *image, struct file_handle *file) {
         return -1;
 
     image->img = ext_mem_alloc(header.bf_size);
-    fread(file, image->img, header.bf_offset, header.bf_size);
+
+    uint32_t bf_size;
+    if (header.bf_offset + header.bf_size > file->size) {
+        bf_size = file->size - header.bf_offset;
+    } else {
+        bf_size = header.bf_size;
+    }
+
+    fread(file, image->img, header.bf_offset, bf_size);
 
     image->x_size     = header.bi_width;
     image->y_size     = header.bi_height;

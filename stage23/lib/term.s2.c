@@ -36,7 +36,6 @@ void (*term_move_character)(size_t new_x, size_t new_y, size_t old_x, size_t old
 void (*term_scroll)(void);
 void (*term_swap_palette)(void);
 
-void (*term_double_buffer)(bool status);
 void (*term_double_buffer_flush)(void);
 
 uint64_t (*term_context_size)(void);
@@ -121,7 +120,6 @@ void term_textmode(void) {
     term_scroll = text_scroll;
     term_swap_palette = text_swap_palette;
 
-    term_double_buffer       = text_double_buffer;
     term_double_buffer_flush = text_double_buffer_flush;
 
     term_context_size = text_context_size;
@@ -165,6 +163,8 @@ static void context_restore(uint64_t ptr) {
 
 static uint8_t xfer_buf[TERM_XFER_CHUNK];
 #endif
+
+bool term_autoflush = true;
 
 void term_write(uint64_t buf, uint64_t count) {
     if (term_backend == NOT_READY)
@@ -225,6 +225,10 @@ void term_write(uint64_t buf, uint64_t count) {
             buf += chunk;
         }
 #endif
+    }
+
+    if (term_autoflush) {
+        term_double_buffer_flush();
     }
 }
 

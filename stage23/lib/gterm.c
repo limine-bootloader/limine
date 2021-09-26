@@ -55,13 +55,27 @@ static size_t rows;
 static size_t cols;
 static size_t margin_gradient;
 
-static bool double_buffer_enabled = false;
-
 static size_t last_grid_size = 0;
-static size_t last_front_grid_size = 0;
+static size_t last_queue_size = 0;
+static size_t last_map_size = 0;
+
+struct gterm_char {
+    uint32_t c;
+    uint32_t fg;
+    uint32_t bg;
+};
 
 static struct gterm_char *grid = NULL;
-static struct gterm_char *front_grid = NULL;
+
+struct queue_item {
+    size_t x, y;
+    struct gterm_char c;
+};
+
+static struct queue_item *queue = NULL;
+static size_t queue_i = 0;
+
+static struct queue_item **map = NULL;
 
 static struct context {
     uint32_t text_fg;
@@ -75,6 +89,9 @@ static struct context {
     size_t cursor_y;
 #define cursor_y context.cursor_y
 } context;
+
+static size_t old_cursor_x = (size_t)-1;
+static size_t old_cursor_y = (size_t)-1;
 
 void gterm_swap_palette(void) {
     uint32_t tmp = text_bg;
@@ -103,7 +120,7 @@ static inline uint32_t colour_blend(uint32_t fg, uint32_t bg) {
     return ARGB(0, r, g, b);
 }
 
-void gterm_plot_px(size_t x, size_t y, uint32_t hex) {
+static void gterm_plot_px(size_t x, size_t y, uint32_t hex) {
     if (x >= gterm_width || y >= gterm_height) {
         return;
     }
@@ -211,6 +228,7 @@ __attribute__((always_inline)) static inline void genloop(size_t xstart, size_t 
         break;
     }
 }
+
 static uint32_t blend_external(size_t x, size_t y, uint32_t orig) { (void)x; (void)y; return orig; }
 static uint32_t blend_internal(size_t x, size_t y, uint32_t orig) { (void)x; (void)y; return colour_blend(default_bg, orig); }
 static uint32_t blend_margin(size_t x, size_t y, uint32_t orig) { return blend_gradient_from_box(x, y, orig, default_bg); }
@@ -219,7 +237,7 @@ static void loop_external(size_t xstart, size_t xend, size_t ystart, size_t yend
 static void loop_margin(size_t xstart, size_t xend, size_t ystart, size_t yend) { genloop(xstart, xend, ystart, yend, blend_margin); }
 static void loop_internal(size_t xstart, size_t xend, size_t ystart, size_t yend) { genloop(xstart, xend, ystart, yend, blend_internal); }
 
-void gterm_generate_canvas(void) {
+static void gterm_generate_canvas(void) {
     if (background) {
         const size_t frame_height_end = frame_height + glyph_height * rows, frame_width_end = frame_width + glyph_width * cols;
         const size_t fheight = frame_height - margin_gradient, fheight_end = frame_height_end + margin_gradient,
@@ -248,13 +266,7 @@ void gterm_generate_canvas(void) {
     }
 }
 
-struct gterm_char {
-    uint32_t c;
-    uint32_t fg;
-    uint32_t bg;
-};
-
-void gterm_plot_char(struct gterm_char *c, size_t x, size_t y) {
+static void gterm_plot_char(struct gterm_char *c, size_t x, size_t y) {
     if (x > gterm_width - vga_font_scale_x || y > gterm_width - vga_font_scale_y) {
         return;
     }
@@ -275,7 +287,7 @@ void gterm_plot_char(struct gterm_char *c, size_t x, size_t y) {
     }
 }
 
-void gterm_plot_char_fast(struct gterm_char *old, struct gterm_char *c, size_t x, size_t y) {
+static void gterm_plot_char_fast(struct gterm_char *old, struct gterm_char *c, size_t x, size_t y) {
     if (x > gterm_width - vga_font_scale_x || y > gterm_width - vga_font_scale_y) {
         return;
     }
@@ -299,7 +311,7 @@ void gterm_plot_char_fast(struct gterm_char *old, struct gterm_char *c, size_t x
     }
 }
 
-static void plot_char_grid_force(struct gterm_char *c, size_t x, size_t y) {
+static inline void plot_char_grid_force(struct gterm_char *c, size_t x, size_t y) {
     if (x >= cols || y >= rows) {
         return;
     }
@@ -307,49 +319,30 @@ static void plot_char_grid_force(struct gterm_char *c, size_t x, size_t y) {
     gterm_plot_char(c, frame_width + x * glyph_width, frame_height + y * glyph_height);
 }
 
+static inline bool compare_char(struct gterm_char *a, struct gterm_char *b) {
+    return !(a->c != b->c || a->bg != b->bg || a->fg != b->fg);
+}
+
 static void plot_char_grid(struct gterm_char *c, size_t x, size_t y) {
     if (x >= cols || y >= rows) {
         return;
     }
 
-    if (!double_buffer_enabled) {
-        struct gterm_char *old = &grid[x + y * cols];
+    size_t i = y * cols + x;
 
-        if (old->c != c->c || old->fg != c->fg || old->bg != c->bg) {
-            if (old->fg == c->fg && old->bg == c->bg) {
-                gterm_plot_char_fast(old, c, frame_width + x * glyph_width, frame_height + y * glyph_height);
-            } else {
-                gterm_plot_char(c, frame_width + x * glyph_width, frame_height + y * glyph_height);
-            }
+    struct queue_item *q = map[i];
+
+    if (q == NULL) {
+        if (compare_char(&grid[i], c)) {
+            return;
         }
+        q = &queue[queue_i++];
+        q->x = x;
+        q->y = y;
+        map[i] = q;
     }
 
-    grid[x + y * cols] = *c;
-}
-
-static void clear_cursor(void) {
-    if (cursor_status) {
-        struct gterm_char c = grid[cursor_x + cursor_y * cols];
-        plot_char_grid_force(&c, cursor_x, cursor_y);
-    }
-}
-
-static void draw_cursor(void) {
-    if (cursor_status) {
-        struct gterm_char c = grid[cursor_x + cursor_y * cols];
-        uint32_t tmp = c.bg;
-        c.bg = c.fg;
-        if (tmp == 0xffffffff) {
-            c.fg = 0;
-        } else {
-            c.fg = c.bg;
-        }
-        plot_char_grid_force(&c, cursor_x, cursor_y);
-    }
-}
-
-static inline bool compare_char(struct gterm_char *a, struct gterm_char *b) {
-    return !(a->c != b->c || a->bg != b->bg || a->fg != b->fg);
+    q->c = *c;
 }
 
 static bool scroll_enabled = true;
@@ -365,12 +358,16 @@ void gterm_scroll_enable(void) {
 }
 
 void gterm_scroll(void) {
-    clear_cursor();
-
     for (size_t i = (term_context.scroll_top_margin + 1) * cols;
          i < term_context.scroll_bottom_margin * cols; i++) {
-        if (!compare_char(&grid[i], &grid[i - cols]))
-            plot_char_grid(&grid[i], (i - cols) % cols, (i - cols) / cols);
+        struct gterm_char *c;
+        struct queue_item *q = map[i];
+        if (q != NULL) {
+            c = &q->c;
+        } else {
+            c = &grid[i];
+        }
+        plot_char_grid(c, (i - cols) % cols, (i - cols) / cols);
     }
 
     // Clear the last line of the screen.
@@ -380,16 +377,11 @@ void gterm_scroll(void) {
     empty.bg = text_bg;
     for (size_t i = (term_context.scroll_bottom_margin - 1) * cols;
          i < term_context.scroll_bottom_margin * cols; i++) {
-        if (!compare_char(&grid[i], &empty))
-            plot_char_grid(&empty, i % cols, i / cols);
+        plot_char_grid(&empty, i % cols, i / cols);
     }
-
-    draw_cursor();
 }
 
 void gterm_clear(bool move) {
-    clear_cursor();
-
     struct gterm_char empty;
     empty.c  = ' ';
     empty.fg = text_fg;
@@ -402,24 +394,19 @@ void gterm_clear(bool move) {
         cursor_x = 0;
         cursor_y = 0;
     }
-
-    draw_cursor();
 }
 
 void gterm_enable_cursor(void) {
     cursor_status = true;
-    draw_cursor();
 }
 
 bool gterm_disable_cursor(void) {
     bool ret = cursor_status;
-    clear_cursor();
     cursor_status = false;
     return ret;
 }
 
 void gterm_set_cursor_pos(size_t x, size_t y) {
-    clear_cursor();
     if (x >= cols) {
         if ((int)x < 0) {
             x = 0;
@@ -436,7 +423,6 @@ void gterm_set_cursor_pos(size_t x, size_t y) {
     }
     cursor_x = x;
     cursor_y = y;
-    draw_cursor();
 }
 
 void gterm_get_cursor_pos(size_t *x, size_t *y) {
@@ -450,12 +436,17 @@ void gterm_move_character(size_t new_x, size_t new_y, size_t old_x, size_t old_y
         return;
     }
 
-    if (!double_buffer_enabled) {
-        gterm_plot_char(&grid[old_x + old_y * cols],
-                        frame_width + new_x * glyph_width,
-                        frame_height + new_y * glyph_height);
+    size_t i = old_x + old_y * cols;
+
+    struct gterm_char *c;
+    struct queue_item *q = map[i];
+    if (q != NULL) {
+        c = &q->c;
+    } else {
+        c = &grid[i];
     }
-    grid[new_x + new_y * cols] = grid[old_x + old_y * cols];
+
+    plot_char_grid(c, new_x, new_y);
 }
 
 void gterm_set_text_fg(size_t fg) {
@@ -483,37 +474,56 @@ void gterm_set_text_bg_default(void) {
 }
 
 void gterm_double_buffer_flush(void) {
-    for (size_t i = 0; i < (size_t)rows * cols; i++) {
-        if (!memcmp(&grid[i], &front_grid[i], sizeof(struct gterm_char)))
+    if (cursor_status) {
+        size_t i = cursor_x + cursor_y * cols;
+        struct gterm_char c;
+        struct queue_item *q = map[i];
+        if (q != NULL) {
+            c = q->c;
+        } else {
+            c = grid[i];
+        }
+        uint32_t tmp = c.bg;
+        c.bg = c.fg;
+        if (tmp == 0xffffffff) {
+            c.fg = 0;
+        } else {
+            c.fg = c.bg;
+        }
+        plot_char_grid_force(&c, cursor_x, cursor_y);
+        if (q != NULL) {
+            grid[i] = q->c;
+            map[i] = NULL;
+        }
+    }
+
+    for (size_t i = 0; i < queue_i; i++) {
+        struct queue_item *q = &queue[i];
+        size_t offset = q->y * cols + q->x;
+        if (map[offset] == NULL) {
             continue;
-
-        front_grid[i] = grid[i];
-
-        size_t x = i % cols;
-        size_t y = i / cols;
-
-        gterm_plot_char(&grid[i], x * glyph_width + frame_width,
-                                y * glyph_height + frame_height);
+        }
+        struct gterm_char *old = &grid[offset];
+        if (q->c.bg == old->bg && q->c.fg == old->fg) {
+            gterm_plot_char_fast(old, &q->c, frame_width + q->x * glyph_width, frame_height + q->y * glyph_height);
+        } else {
+            gterm_plot_char(&q->c, frame_width + q->x * glyph_width, frame_height + q->y * glyph_height);
+        }
+        grid[offset] = q->c;
+        map[offset] = NULL;
     }
 
-    draw_cursor();
-}
-
-void gterm_double_buffer(bool state) {
-    if (state) {
-        memcpy(front_grid, grid, rows * cols * sizeof(struct gterm_char));
-        double_buffer_enabled = true;
-        gterm_clear(true);
-        gterm_double_buffer_flush();
-    } else {
-        gterm_clear(true);
-        gterm_double_buffer_flush();
-        double_buffer_enabled = false;
+    if ((old_cursor_x != cursor_x || old_cursor_y != cursor_y) && old_cursor_x != (size_t)-1) {
+        plot_char_grid_force(&grid[old_cursor_x + old_cursor_y * cols], old_cursor_x, old_cursor_y);
     }
+
+    old_cursor_x = cursor_x;
+    old_cursor_y = cursor_y;
+
+    queue_i = 0;
 }
 
 void gterm_putchar(uint8_t c) {
-    clear_cursor();
     struct gterm_char ch;
     ch.c  = c;
     ch.fg = text_fg;
@@ -527,7 +537,6 @@ void gterm_putchar(uint8_t c) {
         cursor_y--;
         gterm_scroll();
     }
-    draw_cursor();
 }
 
 bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
@@ -810,10 +819,17 @@ no_load_font:;
         last_grid_size = new_grid_size;
     }
 
-    size_t new_front_grid_size = rows * cols * sizeof(struct gterm_char);
-    if (new_front_grid_size > last_front_grid_size) {
-        front_grid = ext_mem_alloc(new_front_grid_size);
-        last_front_grid_size = new_front_grid_size;
+    size_t new_queue_size = rows * cols * sizeof(struct queue_item);
+    if (new_queue_size > last_queue_size) {
+        queue = ext_mem_alloc(new_queue_size);
+        last_queue_size = new_queue_size;
+    }
+    queue_i = 0;
+
+    size_t new_map_size = rows * cols * sizeof(struct queue_item *);
+    if (new_map_size > last_map_size) {
+        map = ext_mem_alloc(new_map_size);
+        last_map_size = new_map_size;
     }
 
     frame_height = gterm_height / 2 - (glyph_height * rows) / 2;
@@ -860,8 +876,6 @@ void gterm_context_restore(uint64_t ptr) {
         gterm_plot_char(&grid[i], x * glyph_width + frame_width,
                                 y * glyph_height + frame_height);
     }
-
-    draw_cursor();
 }
 
 void gterm_full_refresh(void) {
@@ -874,6 +888,4 @@ void gterm_full_refresh(void) {
         gterm_plot_char(&grid[i], x * glyph_width + frame_width,
                                 y * glyph_height + frame_height);
     }
-
-    draw_cursor();
 }

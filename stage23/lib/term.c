@@ -39,7 +39,6 @@ void term_vbe(size_t width, size_t height) {
     term_scroll = gterm_scroll;
     term_swap_palette = gterm_swap_palette;
 
-    term_double_buffer       = gterm_double_buffer;
     term_double_buffer_flush = gterm_double_buffer_flush;
 
     term_context_size = gterm_context_size;

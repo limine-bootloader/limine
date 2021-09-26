@@ -69,7 +69,6 @@ extern void (*term_move_character)(size_t new_x, size_t new_y, size_t old_x, siz
 extern void (*term_scroll)(void);
 extern void (*term_swap_palette)(void);
 
-extern void (*term_double_buffer)(bool status);
 extern void (*term_double_buffer_flush)(void);
 
 extern uint64_t (*term_context_size)(void);

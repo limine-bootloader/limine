@@ -576,7 +576,7 @@ char *menu(char **cmdline) {
 
     disable_cursor();
 
-    term_double_buffer(true);
+    term_autoflush = false;
 
 refresh:
     clear(true);
@@ -709,7 +709,7 @@ timeout_aborted:
                     *cmdline = "";
                 }
                 clear(true);
-                term_double_buffer(false);
+                term_autoflush = true;
                 return selected_menu_entry->body;
             case 'e': {
                 if (editor_enabled) {

@@ -36,6 +36,10 @@ int fopen(struct file_handle *ret, struct volume *part, const char *filename) {
     }
 #endif
 
+#if uefi == 1
+    ret->efi_part_handle = part->efi_part_handle;
+#endif
+
     if (iso9660_check_signature(part)) {
         struct iso9660_file_handle *fd = ext_mem_alloc(sizeof(struct iso9660_file_handle));
 

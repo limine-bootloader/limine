@@ -324,18 +324,25 @@ void init_memmap(void) {
                 our_type = MEMMAP_USABLE; break;
         }
 
-        memmap[memmap_entries].type = our_type;
-        memmap[memmap_entries].base = entry->PhysicalStart;
-        memmap[memmap_entries].length = entry->NumberOfPages * 4096;
+        uint64_t base = entry->PhysicalStart;
+        uint64_t length = entry->NumberOfPages * 4096;
 
-        if (memmap[memmap_entries].base < 0x1000) {
-            if (memmap[memmap_entries].base + memmap[memmap_entries].length <= 0x1000) {
-                continue;
+        if (our_type == MEMMAP_USABLE) {
+            if (base + length >= 0x100000000) {
+                our_type = MEMMAP_EFI_RECLAIMABLE;
+            } else if (base < 0x1000) {
+                if (base + length <= 0x1000) {
+                    continue;
+                }
+
+                length -= 0x1000 - base;
+                base = 0x1000;
             }
-
-            memmap[memmap_entries].length -= 0x1000 - memmap[memmap_entries].base;
-            memmap[memmap_entries].base = 0x1000;
         }
+
+        memmap[memmap_entries].base = base;
+        memmap[memmap_entries].length = length;
+        memmap[memmap_entries].type = our_type;
 
         memmap_entries++;
     }
@@ -344,7 +351,7 @@ void init_memmap(void) {
 
     allocations_disallowed = false;
 
-    // Let's leave 64MiB to the firmware
+    // Let's leave 64MiB to the firmware below 4GiB
     for (size_t i = 0; i < 64; i++) {
         ext_mem_alloc_type(0x100000, MEMMAP_EFI_RECLAIMABLE);
     }

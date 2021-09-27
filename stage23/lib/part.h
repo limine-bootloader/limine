@@ -16,6 +16,7 @@
 struct volume {
 #if uefi == 1
     EFI_HANDLE efi_handle;
+    EFI_HANDLE efi_part_handle;
     EFI_BLOCK_IO *block_io;
 
     bool unique_sector_valid;

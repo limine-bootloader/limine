@@ -372,6 +372,16 @@ static void find_unique_sectors(void) {
     }
 }
 
+static void find_part_handles(EFI_HANDLE *handles, size_t handle_count) {
+    for (size_t i = 0; i < handle_count; i++) {
+        struct volume *vol = disk_volume_from_efi_handle(handles[i]);
+        if (vol == NULL) {
+            continue;
+        }
+        vol->efi_part_handle = handles[i];
+    }
+}
+
 void disk_create_index(void) {
     EFI_STATUS status;
 
@@ -389,7 +399,9 @@ void disk_create_index(void) {
 
     int optical_indices = 1, hdd_indices = 1;
 
-    for (size_t i = 0; i < handles_size / sizeof(EFI_HANDLE); i++) {
+    size_t handle_count = handles_size / sizeof(EFI_HANDLE);
+
+    for (size_t i = 0; i < handle_count; i++) {
         if (volume_index_i == MAX_VOLUMES) {
             print("WARNING: TOO MANY VOLUMES!");
             break;
@@ -456,6 +468,7 @@ void disk_create_index(void) {
     }
 
     find_unique_sectors();
+    find_part_handles(handles, handle_count);
 }
 
 #endif

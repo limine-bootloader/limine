@@ -120,6 +120,8 @@ void chainload(char *config) {
     if (!uri_open(image, image_path))
         panic("chainload: Failed to open image with path `%s`. Is the path correct?", image_path);
 
+    EFI_HANDLE efi_part_handle = image->efi_part_handle;
+
     void *_ptr = freadall(image, MEMMAP_RESERVED);
     size_t image_size = image->size;
     void *ptr;
@@ -171,13 +173,6 @@ void chainload(char *config) {
     // as us (the loader) for some EFI images to properly work (Windows for instance)
     EFI_GUID loaded_img_prot_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
 
-    EFI_LOADED_IMAGE_PROTOCOL *loader_loaded_image = NULL;
-    status = gBS->HandleProtocol(efi_image_handle, &loaded_img_prot_guid,
-                                 (void **)&loader_loaded_image);
-    if (status) {
-        panic("chainload: HandleProtocol failure (%x)", status);
-    }
-
     EFI_LOADED_IMAGE_PROTOCOL *new_handle_loaded_image = NULL;
     status = gBS->HandleProtocol(new_handle, &loaded_img_prot_guid,
                                  (void **)&new_handle_loaded_image);
@@ -185,7 +180,9 @@ void chainload(char *config) {
         panic("chainload: HandleProtocol failure (%x)", status);
     }
 
-    new_handle_loaded_image->DeviceHandle = loader_loaded_image->DeviceHandle;
+    if (efi_part_handle != 0) {
+        new_handle_loaded_image->DeviceHandle = efi_part_handle;
+    }
 
     UINTN exit_data_size = 0;
     CHAR16 *exit_data = NULL;

@@ -90,8 +90,8 @@ static struct context {
 #define cursor_y context.cursor_y
 } context;
 
-static size_t old_cursor_x = (size_t)-1;
-static size_t old_cursor_y = (size_t)-1;
+static size_t old_cursor_x = 0;
+static size_t old_cursor_y = 0;
 
 void gterm_swap_palette(void) {
     uint32_t tmp = text_bg;
@@ -285,35 +285,61 @@ static void plot_char(struct gterm_char *c, size_t x, size_t y) {
             for (size_t i = 0; i < vga_font_scale_x; i++) {
                 size_t gx = vga_font_scale_x * fx + i;
                 uint32_t bg = c->bg == 0xffffffff ? canvas_line[gx] : c->bg;
-                fb_line[gx] = draw ? c->fg : bg;
+                uint32_t fg = c->fg == 0xffffffff ? canvas_line[gx] : c->fg;
+                fb_line[gx] = draw ? fg : bg;
             }
         }
     }
 }
 
-static void plot_char_fast(struct gterm_char *old, struct gterm_char *c, size_t x, size_t y) {
-    if (x >= cols || y >= rows) {
-        return;
-    }
-
-    x = frame_width + x * glyph_width;
-    y = frame_height + y * glyph_height;
-
-    bool *new_glyph = &vga_font_bool[c->c * vga_font_height * vga_font_width];
-    bool *old_glyph = &vga_font_bool[old->c * vga_font_height * vga_font_width];
-    for (size_t gy = 0; gy < glyph_height; gy++) {
-        uint8_t fy = gy / vga_font_scale_y;
-        uint32_t *fb_line = gterm_framebuffer + x + (y + gy) * (gterm_pitch / 4);
-        uint32_t *canvas_line = bg_canvas + x + (y + gy) * gterm_width;
-        for (size_t fx = 0; fx < vga_font_width; fx++) {
-            bool old_draw = old_glyph[fy * vga_font_width + fx];
-            bool new_draw = new_glyph[fy * vga_font_width + fx];
-            if (old_draw == new_draw)
+static size_t plot_from_queue(struct queue_item *qu, size_t max) {
+    for (size_t gy = 0; ; gy++) {
+        size_t y = frame_height + qu->y * glyph_height;
+        size_t fy = (gy / vga_font_scale_y) * vga_font_width;
+        uint32_t *fb_line = gterm_framebuffer + (y + gy) * (gterm_pitch / 4);
+        uint32_t *canvas_line = bg_canvas + (y + gy) * gterm_width;
+        for (size_t qi = 0; ; qi++) {
+            struct queue_item *q = &qu[qi];
+            if (qi != 0 && q->y != qu[qi - 1].y) {
+                if (gy == glyph_height - 1) {
+                    return qi;
+                } else {
+                    // break to next line
+                    break;
+                }
+            }
+            size_t offset = q->y * cols + q->x;
+            if (map[offset] == NULL) {
                 continue;
-            for (size_t i = 0; i < vga_font_scale_x; i++) {
-                size_t gx = vga_font_scale_x * fx + i;
-                uint32_t bg = c->bg == 0xffffffff ? canvas_line[gx] : c->bg;
-                fb_line[gx] = new_draw ? c->fg : bg;
+            }
+            size_t x = frame_width + q->x * glyph_width;
+            struct gterm_char *old = &grid[offset];
+            bool *new_glyph = &vga_font_bool[q->c.c * vga_font_height * vga_font_width];
+            bool *old_glyph = &vga_font_bool[old->c * vga_font_height * vga_font_width];
+            bool same_palette = q->c.fg == old->fg && q->c.bg == old->bg;
+            for (size_t fx = 0; fx < vga_font_width; fx++) {
+                bool old_draw = old_glyph[fy + fx];
+                bool new_draw = new_glyph[fy + fx];
+                if (old_draw == new_draw && same_palette) {
+                    continue;
+                }
+                for (size_t i = 0; i < vga_font_scale_x; i++) {
+                    size_t gx = x + vga_font_scale_x * fx + i;
+                    uint32_t bg = q->c.bg == 0xffffffff ? canvas_line[gx] : q->c.bg;
+                    uint32_t fg = q->c.fg == 0xffffffff ? canvas_line[gx] : q->c.fg;
+                    fb_line[gx] = new_draw ? fg : bg;
+                }
+            }
+            if (gy == glyph_height - 1) {
+                grid[offset] = q->c;
+                map[offset] = NULL;
+            }
+            if (qi == max - 1) {
+                if (gy == glyph_height - 1) {
+                    return max;
+                } else {
+                    break;
+                }
             }
         }
     }
@@ -483,13 +509,9 @@ void gterm_double_buffer_flush(void) {
         } else {
             c = grid[i];
         }
-        uint32_t tmp = c.bg;
-        c.bg = c.fg;
-        if (tmp == 0xffffffff) {
-            c.fg = 0;
-        } else {
-            c.fg = c.bg;
-        }
+        uint32_t tmp = c.fg;
+        c.fg = c.bg;
+        c.bg = tmp;
         plot_char(&c, cursor_x, cursor_y);
         if (q != NULL) {
             grid[i] = q->c;
@@ -497,23 +519,11 @@ void gterm_double_buffer_flush(void) {
         }
     }
 
-    for (size_t i = 0; i < queue_i; i++) {
-        struct queue_item *q = &queue[i];
-        size_t offset = q->y * cols + q->x;
-        if (map[offset] == NULL) {
-            continue;
-        }
-        struct gterm_char *old = &grid[offset];
-        if (q->c.bg == old->bg && q->c.fg == old->fg) {
-            plot_char_fast(old, &q->c, q->x, q->y);
-        } else {
-            plot_char(&q->c, q->x, q->y);
-        }
-        grid[offset] = q->c;
-        map[offset] = NULL;
+    for (size_t i = 0; i < queue_i; ) {
+        i += plot_from_queue(&queue[i], queue_i - i);
     }
 
-    if ((old_cursor_x != cursor_x || old_cursor_y != cursor_y) && old_cursor_x != (size_t)-1) {
+    if (old_cursor_x != cursor_x || old_cursor_y != cursor_y) {
         plot_char(&grid[old_cursor_x + old_cursor_y * cols], old_cursor_x, old_cursor_y);
     }
 
@@ -529,11 +539,11 @@ void gterm_putchar(uint8_t c) {
     ch.fg = text_fg;
     ch.bg = text_bg;
     push_to_queue(&ch, cursor_x++, cursor_y);
-    if (cursor_x == cols && ((size_t)cursor_y < term_context.scroll_bottom_margin - 1 || scroll_enabled)) {
+    if (cursor_x == cols && (cursor_y < term_context.scroll_bottom_margin - 1 || scroll_enabled)) {
         cursor_x = 0;
         cursor_y++;
     }
-    if ((size_t)cursor_y == term_context.scroll_bottom_margin) {
+    if (cursor_y == term_context.scroll_bottom_margin) {
         cursor_y--;
         gterm_scroll();
     }
@@ -599,11 +609,11 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
             if (first == last)
                 break;
             if (i < 8) {
-                ansi_colours[i] = col;
+                ansi_colours[i] = col & 0xffffff;
             } else if (i == 8) {
                 default_bg = col;
             } else if (i == 9) {
-                default_fg = col;
+                default_fg = col & 0xffffff;
             }
             if (*last == 0)
                 break;
@@ -631,7 +641,7 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
             uint32_t col = strtoui(first, &last, 16);
             if (first == last)
                 break;
-            ansi_bright_colours[i] = col;
+            ansi_bright_colours[i] = col & 0xffffff;
             if (*last == 0)
                 break;
             first = last + 1;
@@ -645,7 +655,7 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
 
     char *theme_foreground = config_get_value(NULL, 0, "THEME_FOREGROUND");
     if (theme_foreground != NULL) {
-        default_fg = strtoui(theme_foreground, NULL, 16);
+        default_fg = strtoui(theme_foreground, NULL, 16) & 0xffffff;
     }
 
     text_fg = default_fg;
@@ -817,6 +827,8 @@ no_load_font:;
     if (new_grid_size > last_grid_size) {
         grid = ext_mem_alloc(new_grid_size);
         last_grid_size = new_grid_size;
+    } else {
+        memset(grid, 0, new_grid_size);
     }
 
     size_t new_queue_size = rows * cols * sizeof(struct queue_item);
@@ -830,6 +842,8 @@ no_load_font:;
     if (new_map_size > last_map_size) {
         map = ext_mem_alloc(new_map_size);
         last_map_size = new_map_size;
+    } else {
+        memset(map, 0, new_map_size);
     }
 
     frame_height = gterm_height / 2 - (glyph_height * rows) / 2;

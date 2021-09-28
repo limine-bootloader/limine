@@ -499,24 +499,28 @@ void gterm_set_text_bg_default(void) {
     text_bg = 0xffffffff;
 }
 
+static void draw_cursor(void) {
+    size_t i = cursor_x + cursor_y * cols;
+    struct gterm_char c;
+    struct queue_item *q = map[i];
+    if (q != NULL) {
+        c = q->c;
+    } else {
+        c = grid[i];
+    }
+    uint32_t tmp = c.fg;
+    c.fg = c.bg;
+    c.bg = tmp;
+    plot_char(&c, cursor_x, cursor_y);
+    if (q != NULL) {
+        grid[i] = q->c;
+        map[i] = NULL;
+    }
+}
+
 void gterm_double_buffer_flush(void) {
     if (cursor_status) {
-        size_t i = cursor_x + cursor_y * cols;
-        struct gterm_char c;
-        struct queue_item *q = map[i];
-        if (q != NULL) {
-            c = q->c;
-        } else {
-            c = grid[i];
-        }
-        uint32_t tmp = c.fg;
-        c.fg = c.bg;
-        c.bg = tmp;
-        plot_char(&c, cursor_x, cursor_y);
-        if (q != NULL) {
-            grid[i] = q->c;
-            map[i] = NULL;
-        }
+        draw_cursor();
     }
 
     for (size_t i = 0; i < queue_i; ) {
@@ -857,6 +861,7 @@ no_load_font:;
 
     gterm_generate_canvas();
     gterm_clear(true);
+    gterm_double_buffer_flush();
 
     return true;
 }
@@ -889,6 +894,10 @@ void gterm_context_restore(uint64_t ptr) {
 
         plot_char(&grid[i], x, y);
     }
+
+    if (cursor_status) {
+        draw_cursor();
+    }
 }
 
 void gterm_full_refresh(void) {
@@ -899,5 +908,9 @@ void gterm_full_refresh(void) {
         size_t y = i / cols;
 
         plot_char(&grid[i], x, y);
+    }
+
+    if (cursor_status) {
+        draw_cursor();
     }
 }

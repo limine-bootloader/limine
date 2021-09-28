@@ -40,6 +40,9 @@ struct ntfs_file_handle {
 
     uint64_t mft_offset;
 
+    uint64_t file_record_size;
+    uint64_t sectors_per_file_record;
+
     uint32_t size_bytes;
 };
 

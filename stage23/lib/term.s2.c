@@ -691,7 +691,7 @@ static void control_sequence_parse(uint8_t c) {
             break;
         case 'r':
             scroll_top_margin = 0;
-            scroll_bottom_margin = 0;
+            scroll_bottom_margin = term_rows;
             if (esc_values_i > 0) {
                 scroll_top_margin = esc_values[0] - 1;
             }
@@ -699,7 +699,7 @@ static void control_sequence_parse(uint8_t c) {
                 scroll_bottom_margin = esc_values[1];
             }
             if (scroll_top_margin >= term_rows
-             || scroll_bottom_margin >= term_rows
+             || scroll_bottom_margin > term_rows
              || scroll_top_margin >= (scroll_bottom_margin - 1)) {
                 scroll_top_margin = 0;
                 scroll_bottom_margin = term_rows;

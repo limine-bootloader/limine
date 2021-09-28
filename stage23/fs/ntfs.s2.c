@@ -1,5 +1,5 @@
 #include <fs/ntfs.h>
-
+#include <mm/pmm.h>
 #include <lib/print.h>
 
 #include <stdbool.h>
@@ -102,6 +102,45 @@ int ntfs_check_signature(struct volume *part) {
     return 1;
 }
 
+// the temp buffer is used for storing dirs and alike
+// in memory, because limine only has allocate without 
+// free we are going to allocate it once globally and just 
+// make sure to only use it in the ntfs_open function...
+static uint8_t *temp_buffer = NULL;
+static size_t temp_buffer_size = 0;
+
+/**
+ * Get an attribute from the given file record
+ */
+static bool ntfs_get_file_record_attr(uint8_t* file_record, uint32_t attr_type, uint8_t **out_attr) {
+    struct mft_file_record *fr = (struct mft_file_record *)file_record;
+
+    // get the offset to the first attribute
+    uint8_t *cur_attr_ptr = file_record + fr->attribute_offset;
+
+    while (true) {
+        // TODO: don't check for the min size, but for the actual size...
+        if (cur_attr_ptr + sizeof(struct file_record_attr_header) > file_record + MIN_FILE_RECORD_SIZE)
+            panic("NTFS: File record attribute is outside of file record");
+
+        struct file_record_attr_header *cur_attr = (struct file_record_attr_header *)cur_attr_ptr;
+
+        if (cur_attr->type == attr_type) {
+            *out_attr = cur_attr_ptr;
+            return true;
+        }
+
+        // we either found an attr with higher type or the end type
+        if (cur_attr->type > attr_type || cur_attr->type == 0xFF)
+            return false;
+
+        if (cur_attr->length == 0)
+            panic("NTFS: File record attribute has zero length");
+
+        cur_attr_ptr += cur_attr->length;
+    }
+}
+
 /**
  * Gets a count and cluster from the runlist, if next is true then it updates the list intenrally
  * so the next call will return the next element
@@ -201,7 +240,7 @@ static bool ntfs_get_file_record(struct ntfs_file_handle *handle, uint64_t mft_r
         panic("NTFS: Failed to read file record from mft");
 
     // make sure this is a valid file record
-    struct mft_file_record* fr = (struct mft_file_record*)file_record_buffer;
+    struct mft_file_record *fr = (struct mft_file_record *)file_record_buffer;
     if (strncmp(fr->name, "FILE", SIZEOF_ARRAY(fr->name)))
         panic("NTFS: File record has invalid signature (got %c%c%c%c, should be FILE)!",
             fr->name[0], fr->name[1], fr->name[2], fr->name[3]);
@@ -213,44 +252,57 @@ static bool ntfs_get_file_record(struct ntfs_file_handle *handle, uint64_t mft_r
 /**
  * Read the the directory's file record from the mft
  */
-static bool ntfs_read_directory(struct ntfs_file_handle *handle, uint64_t mft_record, uint8_t *file_record) {
+static int ntfs_read_directory(struct ntfs_file_handle *handle, uint64_t mft_record, uint8_t *file_record) {
     // get the record of the directory
     if (!ntfs_get_file_record(handle, mft_record, file_record))
-        return false;
+        return 0;
 
-    return true;
-}
+    //
+    // get the runlist of the directory
+    //
 
-/**
- * Get an attribute from the given file record
- */
-static bool ntfs_get_file_record_attr(uint8_t* file_record, uint32_t attr_type, uint8_t **out_attr) {
-    struct mft_file_record *fr = (struct mft_file_record *)file_record;
+    // get the index alloc attribute, it should have the runlist offset
+    // copy the runlist from it to our handle for easier access
+    uint8_t *index_alloc_ptr;
+    if (!ntfs_get_file_record_attr(file_record, FR_ATTRIBUTE_INDEX_ALLOC, &index_alloc_ptr))
+        panic("NTFS: Directory has no runlist?!");
+    struct file_record_attr_header_non_res *index_alloc = (struct file_record_attr_header_non_res *)index_alloc_ptr;
+    uint8_t *runlist_ptr = index_alloc_ptr + index_alloc->run_offset;
+    if (runlist_ptr - file_record + 128u > handle->file_record_size)
+        panic("NTFS: runlist is outside of file record!");
+    memcpy(handle->run_list, runlist_ptr, sizeof(handle->run_list));
 
-    // get the offset to the first attribute
-    uint8_t* cur_attr_ptr = file_record + fr->attribute_offset;
+    // calculate the directory size by just going through the runlist
+    uint8_t *runlist = handle->run_list;
+    uint64_t dir_size = 0;
+    uint64_t cluster = 0;
+    uint64_t cluster_count = 0;
+    bool status = false;
+    do {
+        status = ntfs_get_next_run_list_element(&runlist, &cluster_count, &cluster, true);
+        if (status)
+            dir_size += cluster_count;
+    } while(status);
+    dir_size *= handle->bpb.sectors_per_cluster * handle->bpb.bytes_per_sector;
 
-    while (true) {
-        // TODO: don't check for the min size, but for the actual size...
-        if (cur_attr_ptr + sizeof(struct file_record_attr_header) > file_record + MIN_FILE_RECORD_SIZE)
-            panic("NTFS: File record attribute is outside of file record");
-
-        struct file_record_attr_header *cur_attr = (struct file_record_attr_header *)cur_attr_ptr;
-
-        if (cur_attr->type == attr_type) {
-            *out_attr = cur_attr_ptr;
-            return true;
+    // allocate a buffer for the directory data
+    if (temp_buffer == NULL) {
+        // allocate enough just in case, idk how much is good
+        temp_buffer_size = dir_size > 64 * 1024 ? dir_size : 64 * 1024;
+        temp_buffer = ext_mem_alloc(temp_buffer_size);
+    } else {
+        // we must truncate it...
+        if (dir_size > temp_buffer_size) {
+            dir_size = temp_buffer_size;
         }
-
-        // we either found an attr with higher type or the end type
-        if (cur_attr->type > attr_type || cur_attr->type == 0xFF)
-            return false;
-
-        if (cur_attr->length == 0)
-            panic("NTFS: File record attribute has zero length");
-
-        cur_attr_ptr += cur_attr->length;
     }
+
+    // read the directory
+    if (ntfs_read(handle, temp_buffer, 0, dir_size) != (int)dir_size)
+        panic("NTFS: EOF before reading directory fully...");
+
+    // return the size of the directory
+    return dir_size;
 }
 
 /**
@@ -261,14 +313,15 @@ static void ntfs_read_root(struct ntfs_file_handle *handle) {
     handle->mft_offset = (uint64_t)handle->bpb.mft_cluster * (uint64_t)handle->bpb.sectors_per_cluster * (uint64_t)handle->bpb.bytes_per_sector;
 
     // read the mft file record, this should be the size of a sector
-    uint8_t file_record_buffer[handle->file_record_size];
+    uint8_t file_record_buffer[MIN_FILE_RECORD_SIZE];
     if (!volume_read(handle->part, file_record_buffer, handle->mft_offset, sizeof(file_record_buffer)))
         panic("NTFS: Failed to read MFT file record");
 
     // get the file attribute
-    struct file_record_attr_header_non_res *attr;
-    if (!ntfs_get_file_record_attr(file_record_buffer, FR_ATTRIBUTE_DATA, (uint8_t **)&attr))
+    uint8_t *attr_ptr = NULL;
+    if (!ntfs_get_file_record_attr(file_record_buffer, FR_ATTRIBUTE_DATA, &attr_ptr))
         panic("NTFS: MFT file record missing DATA attribute");
+    struct file_record_attr_header_non_res *attr = (struct file_record_attr_header_non_res *)attr_ptr;
 
     // verify the attr and run list are in the buffer
     if ((uint8_t *)attr + sizeof(*attr) > file_record_buffer + sizeof(file_record_buffer))
@@ -304,7 +357,7 @@ int ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *pat
         ret->sectors_per_file_record = 1;
         ret->file_record_size = ret->bpb.bytes_per_sector;
     }
-    
+
     // now prepare the root directory so we can search for 
     // the rest of the stuff
     ntfs_read_root(ret);
@@ -316,9 +369,55 @@ int ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *pat
 }
 
 int ntfs_read(struct ntfs_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
-    (void)file;
-    (void)buf;
-    (void)loc;
-    (void)count;
-    return 1;
+    // get the runlist
+    uint8_t *runlist = file->run_list;
+
+    // we are going to go over the runlist until we get to the offset
+    // once we get to the offset we are going to continue going over
+    // the runlist while copying bytes
+    uint64_t wanted_to_read = count;
+    uint64_t bytes_per_cluster = file->bpb.sectors_per_cluster * file->bpb.bytes_per_sector;
+    do {
+        // get the next element from the runlist
+        uint64_t cluster_count;
+        uint64_t cluster;
+        if (!ntfs_get_next_run_list_element(&runlist, &cluster_count, &cluster, true))
+            break;
+
+        // calculate the cont size and offset on disk
+        uint64_t total_cont_bytes = cluster_count * bytes_per_cluster;
+        uint64_t abs_byte = cluster * bytes_per_cluster;
+
+        // check if we arrived at the wanted offset
+        if (loc != 0) {
+            if (loc >= total_cont_bytes) {
+                // we need to go more...
+                loc -= total_cont_bytes;
+            } else {
+                // we got to the offset, adjust base and size
+                // and set the loc to 0
+                total_cont_bytes -= loc;
+                abs_byte += loc;
+                loc = 0;
+            }
+        }
+
+        if (loc == 0) {
+            // get how much we wanna read now and 
+            // subtract that from the total we need 
+            // to read
+            size_t read_now = total_cont_bytes;
+            if (read_now > count) {
+                read_now = count;
+            }
+            count -= read_now;
+
+            // read it!
+            if (!volume_read(file->part, buf, abs_byte, read_now))
+                panic("NTFS: Runlist points to outside the volume (%x)", abs_byte);
+        }
+    } while(count);
+
+    // return how much we read...
+    return wanted_to_read - count;
 }

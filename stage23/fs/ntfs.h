@@ -33,16 +33,22 @@ struct ntfs_file_handle {
     struct volume *part;
 
     struct ntfs_bpb bpb;
-    uint8_t mft_run_list[256];
-    uint8_t root_run_list[128];
-    uint8_t resident_index[256];
-    uint8_t attribute_list[256];
 
-    uint64_t mft_offset;
-
+    // file record sizes
     uint64_t file_record_size;
     uint64_t sectors_per_file_record;
 
+    // MFT info, the offset and its runlist
+    uint64_t mft_offset;
+    uint8_t mft_run_list[256];
+
+    // the runlist, resident index and attribute list of the 
+    // current open file/directory
+    uint8_t run_list[128];
+    uint8_t resident_index[256];
+    uint8_t attribute_list[256];
+
+    // info about the current file
     uint32_t size_bytes;
 };
 

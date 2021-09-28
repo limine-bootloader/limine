@@ -304,6 +304,28 @@ iso9660-test:
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table test_image/ -o test.iso
 	qemu-system-x86_64 -net none -smp 4   -cdrom test.iso -debugcon stdio
 
+.PHONY: ntfs-test
+ntfs-test:
+	$(MAKE) test-clean
+	$(MAKE) test.hdd
+	$(MAKE) limine-bios
+	$(MAKE) bin/limine-install
+	$(MAKE) -C test
+	rm -rf test_image/
+	mkdir test_image
+	sudo losetup -Pf --show test.hdd > loopback_dev
+	sudo partprobe `cat loopback_dev`
+	sudo mkfs.ntfs `cat loopback_dev`p1
+	sudo mount `cat loopback_dev`p1 test_image
+	sudo mkdir test_image/boot
+	sudo cp -rv bin/* test/* test_image/boot/
+	sync
+	sudo umount test_image/
+	sudo losetup -d `cat loopback_dev`
+	rm -rf test_image loopback_dev
+	bin/limine-install test.hdd
+	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
+
 .PHONY: full-hybrid-test
 full-hybrid-test:
 	$(MAKE) ovmf-x64

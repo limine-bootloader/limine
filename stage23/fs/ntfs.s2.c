@@ -4,9 +4,16 @@
 
 #include <stdbool.h>
 
+// created using documentation from:
+//  https://dubeyko.com/development/FileSystems/NTFS/ntfsdoc.pdf
+
 // This is the total size of a file record, including the attributes
 // TODO: calculate this
 #define MIN_FILE_RECORD_SIZE 1024
+
+// The mft number is only 48bit, the other bits are used 
+// for something else
+#define MFT_RECORD_NO_MASK (0xFFFFFFFFFFFF)
 
 struct mft_file_record {
     char name[4];
@@ -53,6 +60,21 @@ struct file_record_attr_header_non_res {
     uint16_t run_offset;
 } __attribute__((packed));
 
+struct index_record {
+    char name[4];
+    uint16_t update_seq_offset;
+    uint16_t update_seq_size;
+    uint64_t log_seq_number;
+    uint64_t vcn;
+    uint32_t index_entry_offset;
+    uint32_t index_entry_size;
+    uint32_t index_entry_alloc;
+    uint8_t leaf_node;
+    uint8_t _reserved[3];
+    uint16_t update_seq;
+    uint16_t sequence_array[];
+} __attribute__((packed));
+
 struct index_entry {
     uint64_t mft_record;
     uint16_t entry_size;
@@ -69,7 +91,7 @@ struct index_entry {
     uint64_t file_flags;
     uint8_t name_length;
     uint8_t name_type;
-    wchar_t name[];
+    uint16_t name[];
 } __attribute__((packed));
 
 int ntfs_check_signature(struct volume *part) {
@@ -106,8 +128,9 @@ int ntfs_check_signature(struct volume *part) {
 // in memory, because limine only has allocate without 
 // free we are going to allocate it once globally and just 
 // make sure to only use it in the ntfs_open function...
-static uint8_t *temp_buffer = NULL;
-static size_t temp_buffer_size = 0;
+static uint8_t *dir_buffer = NULL;
+static size_t dir_buffer_size = 0;
+static size_t dir_buffer_cap = 0;
 
 /**
  * Get an attribute from the given file record
@@ -203,6 +226,9 @@ static bool ntfs_get_next_run_list_element(uint8_t **runlist, uint64_t *out_clus
 static bool ntfs_get_file_record(struct ntfs_file_handle *handle, uint64_t mft_record_no, uint8_t *file_record_buffer) {
     uint8_t *runlist = handle->mft_run_list;
 
+    // make sure we only take the number itself
+    mft_record_no &= MFT_RECORD_NO_MASK;
+
     // get the 
     uint64_t count = 0;
     uint64_t cluster = 0;
@@ -230,6 +256,7 @@ static bool ntfs_get_file_record(struct ntfs_file_handle *handle, uint64_t mft_r
             continue;
         }
         record_count++;
+
     } while (record_count < mft_record_no);
 
     // we found the sector of the file record!
@@ -252,10 +279,10 @@ static bool ntfs_get_file_record(struct ntfs_file_handle *handle, uint64_t mft_r
 /**
  * Read the the directory's file record from the mft
  */
-static int ntfs_read_directory(struct ntfs_file_handle *handle, uint64_t mft_record, uint8_t *file_record) {
+static bool ntfs_read_directory(struct ntfs_file_handle *handle, uint64_t mft_record, uint8_t *file_record) {
     // get the record of the directory
-    if (!ntfs_get_file_record(handle, mft_record, file_record))
-        return 0;
+    if (!ntfs_get_file_record(handle, mft_record, file_record)) 
+        return false;
 
     //
     // get the runlist of the directory
@@ -266,6 +293,7 @@ static int ntfs_read_directory(struct ntfs_file_handle *handle, uint64_t mft_rec
     uint8_t *index_alloc_ptr;
     if (!ntfs_get_file_record_attr(file_record, FR_ATTRIBUTE_INDEX_ALLOC, &index_alloc_ptr))
         panic("NTFS: Directory has no runlist?!");
+    
     struct file_record_attr_header_non_res *index_alloc = (struct file_record_attr_header_non_res *)index_alloc_ptr;
     uint8_t *runlist_ptr = index_alloc_ptr + index_alloc->run_offset;
     if (runlist_ptr - file_record + 128u > handle->file_record_size)
@@ -286,23 +314,25 @@ static int ntfs_read_directory(struct ntfs_file_handle *handle, uint64_t mft_rec
     dir_size *= handle->bpb.sectors_per_cluster * handle->bpb.bytes_per_sector;
 
     // allocate a buffer for the directory data
-    if (temp_buffer == NULL) {
+    if (dir_buffer == NULL) {
         // allocate enough just in case, idk how much is good
-        temp_buffer_size = dir_size > 64 * 1024 ? dir_size : 64 * 1024;
-        temp_buffer = ext_mem_alloc(temp_buffer_size);
+        dir_buffer_cap = dir_size > 64 * 1024 ? dir_size : 64 * 1024;
+        dir_buffer = ext_mem_alloc(dir_buffer_cap);
     } else {
         // we must truncate it...
-        if (dir_size > temp_buffer_size) {
-            dir_size = temp_buffer_size;
+        if (dir_size > dir_buffer_cap) {
+            dir_size = dir_buffer_cap;
         }
     }
 
+    // set the size of the dir size
+    dir_buffer_size = dir_size;
+
     // read the directory
-    if (ntfs_read(handle, temp_buffer, 0, dir_size) != (int)dir_size)
+    if (ntfs_read(handle, dir_buffer, 0, dir_size) != (int)dir_size)
         panic("NTFS: EOF before reading directory fully...");
 
-    // return the size of the directory
-    return dir_size;
+    return true;
 }
 
 /**
@@ -337,6 +367,85 @@ static void ntfs_read_root(struct ntfs_file_handle *handle) {
         panic("NTFS: Missing root directory file record!");
 }
 
+/**
+ * Search for a file in the ntfs directory, assumes the directory has been read and is stored in
+ * the temp buffer
+ */
+static bool ntfs_find_file_in_directory(const char* filename, struct index_entry** out_entry) {
+    size_t dir_size = dir_buffer_size;
+    uint8_t *dir_ptr = dir_buffer;
+
+    (void)filename;
+    (void)out_entry;
+    
+    // TODO: iterate resident record...
+
+    // get the size of the name we need to compare
+    const char* temp_filename = filename;
+    size_t filename_size = 0;
+    while (*temp_filename != '\0' && *temp_filename != '\\' && *temp_filename != '/') {
+        filename_size++;
+        temp_filename++;
+    }
+
+    // iterate the non-resident files in the directory
+    size_t offset = 0;
+    while (dir_size) {
+        // check if the dir pointer is still in the buffer, if not then we could
+        // not find the file...
+        if (dir_ptr + sizeof(struct index_record) > dir_buffer + dir_buffer_size)
+            panic("NTFS: Tried to read index record outside of directory");
+
+        // get the index and check it, if it is not valid just return 
+        // we did not find the file
+        struct index_record *index_record = (struct index_record *)dir_ptr;
+        if (strncmp(index_record->name, "INDX", SIZEOF_ARRAY(index_record->name)))
+            return false;
+        
+        // calculate the offset to the entry
+        size_t index_size = index_record->index_entry_size;
+        offset += index_record->index_entry_offset + offsetof(struct index_record, index_entry_offset);
+        uint8_t *entry_ptr = dir_ptr + offset;
+        
+        // loop the record for all of its indexes
+        while (index_size) {
+            // make sure we still have an entry
+            if (entry_ptr + sizeof(struct index_entry) > dir_buffer + dir_buffer_size)
+                panic("NTFS: Tried to read index entry outside of directory");
+
+            // get the entry, if size is zero we done                
+            struct index_entry *entry = (struct index_entry *)entry_ptr;
+            if (entry->entry_size == 0)
+                break;
+
+            if (filename_size == entry->name_length) {
+                // compare filename
+                for (int i = 0; i < entry->name_length; i++) {
+                    if (filename[i] != entry->name[i]) {
+                        goto next_entry;
+                    }
+                }
+
+                // name is good, return the entry and return true
+                // that we found the entry
+                *out_entry = entry;
+                return true;
+            }
+
+            // next entry
+        next_entry:
+            entry_ptr += entry->entry_size;
+            index_size -= entry->entry_size;
+        }
+
+        // next record
+        dir_ptr += index_record->index_entry_size;
+        dir_size -= index_record->index_entry_size;
+    }
+
+    return false;
+}
+
 int ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *path) {
     // save the part
     ret->part = part;
@@ -357,15 +466,66 @@ int ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *pat
         ret->sectors_per_file_record = 1;
         ret->file_record_size = ret->bpb.bytes_per_sector;
     }
+    if (ret->file_record_size != MIN_FILE_RECORD_SIZE)
+        panic("NTFS: TODO: support file record size which is not 1024 bytes");
 
     // now prepare the root directory so we can search for 
     // the rest of the stuff
     ntfs_read_root(ret);
 
-    // TODO: search for the file we want
-    (void)path;
+    // iterate the directories to find the entry
+    const char* current_path = path;
+    struct index_entry* entry = NULL;
+    for (;;) {
+        // skip slash
+        current_path++;
+        
+        // find the file in the directory
+        entry = NULL;
+        if (!ntfs_find_file_in_directory(current_path, &entry))
+            return 1;
 
-    return 1;
+        size_t filename_len = entry->name_length;
+
+        // check if this is the last entry
+        uint8_t file_record_buffer[MIN_FILE_RECORD_SIZE];
+        if (*(current_path + filename_len) == '\0') {
+            // we found the file!
+            ret->size_bytes = entry->real_size;
+
+            // get its runlist...
+            if (!ntfs_get_file_record(ret, entry->mft_record, file_record_buffer))
+                panic("NTFS: Failed to get file record of file");
+
+            // get the file attribute
+            uint8_t *attr_ptr = NULL;
+            if (!ntfs_get_file_record_attr(file_record_buffer, FR_ATTRIBUTE_DATA, &attr_ptr))
+                panic("NTFS: File record missing DATA attribute");
+            struct file_record_attr_header_non_res *attr = (struct file_record_attr_header_non_res *)attr_ptr;
+
+            // verify the attr and run list are in the buffer
+            if ((uint8_t *)attr + sizeof(*attr) > file_record_buffer + sizeof(file_record_buffer))
+                panic("NTFS: File record attribute is outside of file record");
+            if ((uint8_t *)attr + attr->run_offset + 256 > file_record_buffer + sizeof(file_record_buffer))
+                panic("NTFS: Run list is outside of file record");
+
+            // save the run list
+            memcpy(ret->run_list, (uint8_t *)attr + attr->run_offset, sizeof(ret->run_list));
+
+            return 0;
+
+        } else {
+            // read the directory
+            if (!ntfs_read_directory(ret, entry->mft_record, file_record_buffer))
+                panic("NTFS: Failed to read directory");
+
+            // next path element
+            current_path += filename_len;
+        }
+    }
+
+    // should not be able to reach here...
+    __builtin_unreachable();
 }
 
 int ntfs_read(struct ntfs_file_handle *file, void *buf, uint64_t loc, uint64_t count) {

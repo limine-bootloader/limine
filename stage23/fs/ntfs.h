@@ -45,6 +45,8 @@ struct ntfs_file_handle {
     // the runlist, resident index and attribute list of the 
     // current open file/directory
     uint8_t run_list[128];
+
+    bool has_resident;
     uint8_t resident_index[256];
     uint8_t attribute_list[256];
 

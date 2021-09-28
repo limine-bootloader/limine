@@ -60,6 +60,21 @@ struct file_record_attr_header_non_res {
     uint16_t run_offset;
 } __attribute__((packed));
 
+struct file_record_attr_name {
+    uint64_t mft_parent_record;
+    uint64_t creation_time;
+    uint64_t altered_time;
+    uint64_t mft_changed_time;
+    uint64_t read_time;
+    uint64_t allocated_size;
+    uint64_t real_size;
+    uint32_t flags;
+    uint32_t reparse;
+    uint8_t name_length;
+    uint8_t name_type;
+    uint16_t name[];
+} __attribute__((packed));
+
 struct index_record {
     char name[4];
     uint16_t update_seq_offset;
@@ -329,7 +344,7 @@ static bool ntfs_read_directory(struct ntfs_file_handle *handle, uint64_t mft_re
     dir_buffer_size = dir_size;
 
     // read the directory
-    if (ntfs_read(handle, dir_buffer, 0, dir_size) != (int)dir_size)
+    if (ntfs_read(handle, dir_buffer, 0, dir_size))
         panic("NTFS: EOF before reading directory fully...");
 
     return true;
@@ -371,13 +386,10 @@ static void ntfs_read_root(struct ntfs_file_handle *handle) {
  * Search for a file in the ntfs directory, assumes the directory has been read and is stored in
  * the temp buffer
  */
-static bool ntfs_find_file_in_directory(const char* filename, struct index_entry** out_entry) {
+static bool ntfs_find_file_in_directory(struct ntfs_file_handle *handle, const char* filename, struct index_entry** out_entry) {
     size_t dir_size = dir_buffer_size;
     uint8_t *dir_ptr = dir_buffer;
 
-    (void)filename;
-    (void)out_entry;
-    
     // TODO: iterate resident record...
 
     // get the size of the name we need to compare
@@ -419,9 +431,25 @@ static bool ntfs_find_file_in_directory(const char* filename, struct index_entry
                 break;
 
             if (filename_size == entry->name_length) {
-                // compare filename
-                for (int i = 0; i < entry->name_length; i++) {
-                    if (filename[i] != entry->name[i]) {
+                // this name seem legit, need to get the real name from the mft
+                // sometimes it works to use the index name but sometimes it has
+                // invalid names for whatever reason that I can not understand, so
+                // just always take it from the mft file record
+                uint8_t file_record_buffer[MIN_FILE_RECORD_SIZE];
+                if (!ntfs_get_file_record(handle, entry->mft_record, file_record_buffer))
+                    panic("NTFS: Failed to get file record");
+
+                uint8_t *name_attr = NULL;
+                if (!ntfs_get_file_record_attr(file_record_buffer, FR_ATTRIBUTE_NAME, &name_attr))
+                    panic("NTFS: File record missing name attribute");
+
+                // get the offset to the actual info
+                struct file_record_attr_header_res *header = (struct file_record_attr_header_res *)name_attr;
+                struct file_record_attr_name *name = (struct file_record_attr_name *)(name_attr + header->info_offset);
+
+                // compare the name
+                for (int i = 0; i < name->name_length; i++) {
+                    if (name->name[i] != filename[i]) {
                         goto next_entry;
                     }
                 }
@@ -438,9 +466,16 @@ static bool ntfs_find_file_in_directory(const char* filename, struct index_entry
             index_size -= entry->entry_size;
         }
 
-        // next record
-        dir_ptr += index_record->index_entry_size;
-        dir_size -= index_record->index_entry_size;
+        // next record, need to do some rounding
+        index_size = index_record->index_entry_size;
+        if (index_size < 0x1000) {
+            index_size = 0x1000;
+        } else {
+            index_size = (index_size + 0x100) & 0xffffff00;
+        }
+
+        dir_ptr += index_size;
+        dir_size -= index_size;
     }
 
     return false;
@@ -478,11 +513,13 @@ int ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *pat
     struct index_entry* entry = NULL;
     for (;;) {
         // skip slash
-        current_path++;
+        while (*current_path == '\\' || *current_path == '/') {
+            current_path++;
+        }
         
         // find the file in the directory
         entry = NULL;
-        if (!ntfs_find_file_in_directory(current_path, &entry))
+        if (!ntfs_find_file_in_directory(ret, current_path, &entry))
             return 1;
 
         size_t filename_len = entry->name_length;
@@ -532,10 +569,11 @@ int ntfs_read(struct ntfs_file_handle *file, void *buf, uint64_t loc, uint64_t c
     // get the runlist
     uint8_t *runlist = file->run_list;
 
+    // TODO: remember the last read location so we can have faster sequential reads...
+
     // we are going to go over the runlist until we get to the offset
     // once we get to the offset we are going to continue going over
     // the runlist while copying bytes
-    uint64_t wanted_to_read = count;
     uint64_t bytes_per_cluster = file->bpb.sectors_per_cluster * file->bpb.bytes_per_sector;
     do {
         // get the next element from the runlist
@@ -578,6 +616,6 @@ int ntfs_read(struct ntfs_file_handle *file, void *buf, uint64_t loc, uint64_t c
         }
     } while(count);
 
-    // return how much we read...
-    return wanted_to_read - count;
+    // if we didn't read it all then we got a problem
+    return count != 0;
 }

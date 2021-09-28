@@ -46,10 +46,6 @@ struct ntfs_file_handle {
     // current open file/directory
     uint8_t run_list[128];
 
-    bool has_resident;
-    uint8_t resident_index[256];
-    uint8_t attribute_list[256];
-
     // info about the current file
     uint32_t size_bytes;
 };

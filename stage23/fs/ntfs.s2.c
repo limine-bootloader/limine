@@ -332,7 +332,7 @@ static bool ntfs_read_directory(struct ntfs_file_handle *handle, uint64_t mft_re
     if (ntfs_get_file_record_attr(file_record, FR_ATTRIBUTE_INDEX_ALLOC, &index_alloc_ptr)) {
         struct file_record_attr_header_non_res *index_alloc = (struct file_record_attr_header_non_res *)index_alloc_ptr;
         uint8_t *runlist_ptr = index_alloc_ptr + index_alloc->run_offset;
-        if (runlist_ptr - file_record + 128u > handle->file_record_size)
+        if ((uintptr_t)runlist_ptr - (uintptr_t)file_record + 128u > handle->file_record_size)
             panic("NTFS: runlist is outside of file record!");
         memcpy(handle->run_list, runlist_ptr, sizeof(handle->run_list));
 

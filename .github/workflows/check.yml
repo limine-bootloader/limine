@@ -8,6 +8,9 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install git build-essential nasm curl mtools -y
 

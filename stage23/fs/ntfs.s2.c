@@ -193,41 +193,36 @@ static bool ntfs_get_next_run_list_element(uint8_t **runlist, uint64_t *out_clus
         return false;
     }
 
-    uint8_t low = runlist_ptr[0] & 0xF;
-    uint8_t high = (runlist_ptr[0] >> 4) & 0xF;
+    uint8_t count_size = runlist_ptr[0] & 0xF;
+    uint8_t cluster_size = (runlist_ptr[0] >> 4) & 0xF;
     runlist_ptr++;
 
     // get the run length
     uint64_t count = 0;
-    for (int i = low; i > 0; i--) {
+    for (int i = count_size; i > 0; i--) {
         count <<= 8;
         count |= runlist_ptr[i - 1];
     }
-    runlist_ptr += low;
-
-    // get the high byte first
-    int8_t high_byte = (int8_t)runlist_ptr[high - 1];
+    runlist_ptr += count_size;
 
     // get the run offset
-    uint64_t cluster = 0;
-    for (int i = high; i > 0; i--) {
+    int64_t cluster = 0;
+    for (int i = cluster_size; i > 0; i--) {
         cluster <<= 8;
         cluster |= runlist_ptr[i - 1];
     }
-    runlist_ptr += high;
+    runlist_ptr += cluster_size;
 
-    // if the offset is negative, fill the empty bytes with 0xff
-    if (high_byte < 0 && high < 8) {
-        uint64_t fill = 0;
-        for (int i = 8; i > high; i--) {
-            fill >>= 8;
-            fill |= 0xFF00000000000000;
+    // sign exten the run offset
+    if (cluster >> (cluster_size * 8 - 1)) {
+        for (int i = 7; i >= cluster_size; i--) {
+            cluster |= (uint64_t)0xFF << (i * 8);
         }
-        cluster |= fill;
     }
 
-    // out it
-    *out_cluster = cluster;
+    // out it, the cluster is relative to the last cluster
+    // so add it
+    *out_cluster += cluster;
     *out_cluster_count = count;
 
     // update it 
@@ -577,8 +572,8 @@ int ntfs_read(struct ntfs_file_handle *file, void *buf, uint64_t loc, uint64_t c
     uint64_t bytes_per_cluster = file->bpb.sectors_per_cluster * file->bpb.bytes_per_sector;
     do {
         // get the next element from the runlist
-        uint64_t cluster_count;
-        uint64_t cluster;
+        uint64_t cluster = 0;
+        uint64_t cluster_count = 0;
         if (!ntfs_get_next_run_list_element(&runlist, &cluster_count, &cluster, true))
             break;
 

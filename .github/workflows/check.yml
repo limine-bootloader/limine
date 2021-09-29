@@ -1,0 +1,15 @@
+name: Check for compilation failures
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Check for compilation failures
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install git build-essential nasm curl mtools -y
+
+      - name: Build the bootloader
+        run: make all

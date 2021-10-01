@@ -29,7 +29,7 @@ static size_t vga_font_scale_x = 1;
 static size_t vga_font_scale_y = 1;
 
 struct fb_info fbinfo;
-static uint32_t *gterm_framebuffer;
+static volatile uint32_t *gterm_framebuffer;
 static uint16_t  gterm_pitch;
 static uint16_t  gterm_width;
 static uint16_t  gterm_height;
@@ -278,7 +278,7 @@ static void plot_char(struct gterm_char *c, size_t x, size_t y) {
     // naming: fx,fy for font coordinates, gx,gy for glyph coordinates
     for (size_t gy = 0; gy < glyph_height; gy++) {
         uint8_t fy = gy / vga_font_scale_y;
-        uint32_t *fb_line = gterm_framebuffer + x + (y + gy) * (gterm_pitch / 4);
+        volatile uint32_t *fb_line = gterm_framebuffer + x + (y + gy) * (gterm_pitch / 4);
         uint32_t *canvas_line = bg_canvas + x + (y + gy) * gterm_width;
         for (size_t fx = 0; fx < vga_font_width; fx++) {
             bool draw = glyph[fy * vga_font_width + fx];
@@ -296,7 +296,7 @@ static size_t plot_from_queue(struct queue_item *qu, size_t max) {
     for (size_t gy = 0; ; gy++) {
         size_t y = frame_height + qu->y * glyph_height;
         size_t fy = (gy / vga_font_scale_y) * vga_font_width;
-        uint32_t *fb_line = gterm_framebuffer + (y + gy) * (gterm_pitch / 4);
+        volatile uint32_t *fb_line = gterm_framebuffer + (y + gy) * (gterm_pitch / 4);
         uint32_t *canvas_line = bg_canvas + (y + gy) * gterm_width;
         for (size_t qi = 0; ; qi++) {
             struct queue_item *q = &qu[qi];
@@ -310,7 +310,7 @@ static size_t plot_from_queue(struct queue_item *qu, size_t max) {
             }
             size_t offset = q->y * cols + q->x;
             if (map[offset] == NULL) {
-                continue;
+                goto epilogue;
             }
             size_t x = frame_width + q->x * glyph_width;
             struct gterm_char *old = &grid[offset];
@@ -334,6 +334,7 @@ static size_t plot_from_queue(struct queue_item *qu, size_t max) {
                 grid[offset] = q->c;
                 map[offset] = NULL;
             }
+epilogue:
             if (qi == max - 1) {
                 if (gy == glyph_height - 1) {
                     return max;

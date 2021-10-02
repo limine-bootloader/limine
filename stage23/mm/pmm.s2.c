@@ -356,9 +356,6 @@ void init_memmap(void) {
         ext_mem_alloc_type(0x100000, MEMMAP_EFI_RECLAIMABLE);
     }
 
-    memcpy(untouched_memmap, memmap, memmap_entries * sizeof(struct e820_entry_t));
-    untouched_memmap_entries = memmap_entries;
-
     // Now own all the usable entries
     for (size_t i = 0; i < memmap_entries; i++) {
         if (memmap[i].type != MEMMAP_USABLE)
@@ -369,9 +366,14 @@ void init_memmap(void) {
         status = gBS->AllocatePages(AllocateAddress, EfiLoaderData,
                                     memmap[i].length / 4096, &base);
 
-        if (status)
-            panic("pmm: AllocatePages failure (%x)", status);
+        if (status) {
+            print("pmm: WARNING: AllocatePages failure (%d)\n", status);
+            memmap_alloc_range(memmap[i].base, memmap[i].length, MEMMAP_RESERVED, true, true, false, false);
+        }
     }
+
+    memcpy(untouched_memmap, memmap, memmap_entries * sizeof(struct e820_entry_t));
+    untouched_memmap_entries = memmap_entries;
 
     return;
 fail:

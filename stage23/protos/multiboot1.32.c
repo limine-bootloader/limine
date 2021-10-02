@@ -25,15 +25,19 @@ __attribute__((noreturn)) void multiboot1_spinup_32(
     asm volatile (
         "cld\n\t"
 
-        "pushl $0x18\n\t"
-        "pushl %%edi\n\t"
+        "push %2\n\t"
 
-        "movl $0x2BADB002, %%eax\n\t"
+        "xor %%ecx, %%ecx\n\t"
+        "xor %%edx, %%edx\n\t"
+        "xor %%esi, %%esi\n\t"
+        "xor %%edi, %%edi\n\t"
+        "xor %%ebp, %%ebp\n\t"
 
-        "lret\n\t"
+        "ret\n\t"
         :
-        : "D" (entry_point),
-          "b" (multiboot1_info)
+        : "a" (0x2badb002),
+          "b" (multiboot1_info),
+          "r" (entry_point)
         : "memory"
     );
 

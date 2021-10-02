@@ -522,7 +522,7 @@ final:
         }
 
         if (use_paddr) {
-            if (!entry_adjusted && entry >= phdr.p_vaddr && entry <= (phdr.p_vaddr + phdr.p_memsz)) {
+            if (!entry_adjusted && entry >= phdr.p_vaddr && entry < (phdr.p_vaddr + phdr.p_memsz)) {
                 entry -= phdr.p_vaddr;
                 entry += phdr.p_paddr;
                 entry_adjusted = true;
@@ -597,7 +597,7 @@ int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t allo
             memset(ptr, 0, to_zero);
         }
 
-        if (!entry_adjusted && entry >= phdr.p_vaddr && entry <= (phdr.p_vaddr + phdr.p_memsz)) {
+        if (!entry_adjusted && entry >= phdr.p_vaddr && entry < (phdr.p_vaddr + phdr.p_memsz)) {
             entry -= phdr.p_vaddr;
             entry += phdr.p_paddr;
             entry_adjusted = true;

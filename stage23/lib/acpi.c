@@ -64,14 +64,18 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
 #include <efi.h>
 
 void *acpi_get_rsdp(void) {
+    EFI_GUID acpi_2_guid = ACPI_20_TABLE_GUID;
+    EFI_GUID acpi_1_guid = ACPI_TABLE_GUID;
+
     for (size_t i = 0; i < gST->NumberOfTableEntries; i++) {
         EFI_CONFIGURATION_TABLE *cur_table = &gST->ConfigurationTable[i];
-        EFI_GUID acpi_2_guid = ACPI_20_TABLE_GUID;
 
-        if (memcmp(&cur_table->VendorGuid, &acpi_2_guid, sizeof(EFI_GUID)) != 0)
+        if (memcmp(&cur_table->VendorGuid, &acpi_2_guid, sizeof(EFI_GUID)) != 0 || // XSDP
+            memcmp(&cur_table->VendorGuid, &acpi_1_guid, sizeof(EFI_GUID)) != 0)   // RSDP
             continue;
 
-        if (acpi_checksum(cur_table->VendorTable, sizeof(struct rsdp)) != 0)
+        if (acpi_checksum(cur_table->VendorTable, sizeof(struct rsdp)) != 0 || // XSDP is 36 bytes wide
+            acpi_checksum(cur_table->VendorTable, 20) != 0)                   // RSDP is 20 bytes wide
             continue;
 
         printv("acpi: Found RSDP at %X\n", cur_table->VendorTable);

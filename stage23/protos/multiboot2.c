@@ -56,15 +56,17 @@ static size_t get_multiboot2_info_size(
         ALIGN_UP(8 + offsetof(struct multiboot_tag_string, string), MULTIBOOT_TAG_ALIGN) +                              // bootloader brand
         ALIGN_UP(sizeof(struct multiboot_tag_framebuffer), MULTIBOOT_TAG_ALIGN) +                                       // framebuffer
         ALIGN_UP(sizeof(struct multiboot_tag_new_acpi) + 36, MULTIBOOT_TAG_ALIGN) +                                     // new ACPI info
-        ALIGN_UP(sizeof(struct multiboot_tag_elf_sections) + section_hdr_size, MULTIBOOT_TAG_ALIGN) + // ELF info
+        ALIGN_UP(sizeof(struct multiboot_tag_elf_sections) + section_hdr_size, MULTIBOOT_TAG_ALIGN) +                   // ELF info
         ALIGN_UP(modules_size, MULTIBOOT_TAG_ALIGN) +                                                                   // modules
         ALIGN_UP(sizeof(struct multiboot_tag_mmap) + sizeof(struct multiboot_mmap_entry) * 256, MULTIBOOT_TAG_ALIGN) +  // MMAP
         #if uefi == 1
-            ALIGN_UP(sizeof(struct multiboot_tag_efi_mmap) + (efi_desc_size * 256), MULTIBOOT_TAG_ALIGN) +                  // EFI MMAP
+            ALIGN_UP(sizeof(struct multiboot_tag_efi_mmap) + (efi_desc_size * 256), MULTIBOOT_TAG_ALIGN) +              // EFI MMAP
             #if defined (__i386__)
-                ALIGN_UP(sizeof(struct multiboot_tag_efi32), MULTIBOOT_TAG_ALIGN) +                  // EFI system table 32
+                ALIGN_UP(sizeof(struct multiboot_tag_efi32), MULTIBOOT_TAG_ALIGN) +                                     // EFI system table 32
+                ALIGN_UP(sizeof(struct multiboot_tag_efi32_ih), MULTIBOOT_TAG_ALIGN) +                                  // EFI image handle 32
             #elif defined (__x86_64__)
-                ALIGN_UP(sizeof(struct multiboot_tag_efi64), MULTIBOOT_TAG_ALIGN) +                  // EFI system table 64
+                ALIGN_UP(sizeof(struct multiboot_tag_efi64), MULTIBOOT_TAG_ALIGN) +                                     // EFI system table 64
+                ALIGN_UP(sizeof(struct multiboot_tag_efi64_ih), MULTIBOOT_TAG_ALIGN) +                                  // EFI image handle 64
             #endif
         #endif
         ALIGN_UP(sizeof(struct multiboot_tag), MULTIBOOT_TAG_ALIGN);                                                    // end
@@ -333,6 +335,28 @@ void multiboot2_load(char *config, char* cmdline) {
         strcpy(tag->string, brand);
         append_tag(info_idx, tag);
     }
+
+    //////////////////////////////////////////////
+    // Create EFI image handle tag
+    //////////////////////////////////////////////
+#if uefi == 1
+    {
+    #if defined (__i386__)
+        struct multiboot_tag_efi64_ih *tag = (struct multiboot_tag_efi64_ih *)(mb2_info + info_idx);
+
+        tag->type = MULTIBOOT_TAG_TYPE_EFI64_IH;
+        tag->size = sizeof(struct multiboot_tag_efi64_ih);
+    #elif defined (__x86_64__)
+        struct multiboot_tag_efi32_ih *tag = (struct multiboot_tag_efi32_ih *)(mb2_info + info_idx);
+
+        tag->type = MULTIBOOT_TAG_TYPE_EFI32_IH;
+        tag->size = sizeof(struct multiboot_tag_efi32_ih);
+    #endif
+
+        tag->pointer = (uintptr_t)efi_image_handle;
+        append_tag(info_idx, tag);
+    }
+#endif
 
     //////////////////////////////////////////////
     // Create framebuffer tag

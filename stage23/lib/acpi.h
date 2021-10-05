@@ -38,6 +38,10 @@ struct rsdt {
 
 uint8_t acpi_checksum(void *ptr, size_t size);
 void   *acpi_get_rsdp(void);
+
+void   *acpi_get_rsdp_v1(void);
+void   *acpi_get_rsdp_v2(void);
+
 void   *acpi_get_table(const char *signature, int index);
 void    acpi_get_smbios(void **smbios32, void **smbios64);
 

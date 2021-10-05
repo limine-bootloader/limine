@@ -55,7 +55,8 @@ static size_t get_multiboot2_info_size(
         ALIGN_UP(strlen(cmdline) + 1 + offsetof(struct multiboot_tag_string, string), MULTIBOOT_TAG_ALIGN) +            // cmdline
         ALIGN_UP(8 + offsetof(struct multiboot_tag_string, string), MULTIBOOT_TAG_ALIGN) +                              // bootloader brand
         ALIGN_UP(sizeof(struct multiboot_tag_framebuffer), MULTIBOOT_TAG_ALIGN) +                                       // framebuffer
-        ALIGN_UP(sizeof(struct multiboot_tag_new_acpi) + 36, MULTIBOOT_TAG_ALIGN) +                                     // new ACPI info
+        ALIGN_UP(sizeof(struct multiboot_tag_new_acpi) + sizeof(struct rsdp), MULTIBOOT_TAG_ALIGN) +                    // new ACPI info
+        ALIGN_UP(sizeof(struct multiboot_tag_old_acpi) + 20, MULTIBOOT_TAG_ALIGN) +                                     // old ACPI info
         ALIGN_UP(sizeof(struct multiboot_tag_elf_sections) + section_hdr_size, MULTIBOOT_TAG_ALIGN) +                   // ELF info
         ALIGN_UP(modules_size, MULTIBOOT_TAG_ALIGN) +                                                                   // modules
         ALIGN_UP(sizeof(struct multiboot_tag_mmap) + sizeof(struct multiboot_mmap_entry) * 256, MULTIBOOT_TAG_ALIGN) +  // MMAP
@@ -91,7 +92,10 @@ void multiboot2_load(char *config, char* cmdline) {
 
     struct multiboot_header_tag_address *addresstag = NULL;
     struct multiboot_header_tag_framebuffer *fbtag = NULL;
+
     bool is_new_acpi_required = false;
+    bool is_old_acpi_required = false;
+
     bool is_elf_info_requested = false;
 
     uint32_t entry_point = 0xffffffff;
@@ -128,6 +132,9 @@ void multiboot2_load(char *config, char* cmdline) {
                             break;
                         case MULTIBOOT_TAG_TYPE_ACPI_NEW:
                             is_new_acpi_required = is_required;
+                            break;
+                        case MULTIBOOT_TAG_TYPE_ACPI_OLD:
+                            is_old_acpi_required = is_required;
                             break;
                         case MULTIBOOT_TAG_TYPE_ELF_SECTIONS:
                             is_elf_info_requested = is_required;
@@ -426,15 +433,35 @@ void multiboot2_load(char *config, char* cmdline) {
         void *new_rsdp = acpi_get_rsdp();
 
         if (new_rsdp != NULL) {
-            uint32_t size = sizeof(struct multiboot_tag_new_acpi) + 36; // XSDP is 36 bytes wide
+            uint32_t size = sizeof(struct multiboot_tag_new_acpi) + sizeof(struct rsdp); // XSDP is 36 bytes wide
             struct multiboot_tag_new_acpi *tag = (struct multiboot_tag_new_acpi *)(mb2_info + info_idx);
 
             tag->type = MULTIBOOT_TAG_TYPE_ACPI_NEW;
             tag->size = size;
 
-            memcpy(tag->rsdp, new_rsdp, 36);
+            memcpy(tag->rsdp, new_rsdp, sizeof(struct rsdp));
             append_tag(info_idx, tag);
         } else if (is_new_acpi_required) {
+            panic("multiboot2: XSDP requested but not found");
+        }
+    }
+
+    //////////////////////////////////////////////
+    // Create old ACPI info tag
+    //////////////////////////////////////////////
+    {
+        void *old_rsdp = acpi_get_rsdp_v1();
+
+        if (old_rsdp != NULL) {
+            uint32_t size = sizeof(struct multiboot_tag_old_acpi) + 20; // RSDP is 20 bytes wide
+            struct multiboot_tag_old_acpi *tag = (struct multiboot_tag_old_acpi *)(mb2_info + info_idx);
+
+            tag->type = MULTIBOOT_TAG_TYPE_ACPI_OLD;
+            tag->size = size;
+
+            memcpy(tag->rsdp, old_rsdp, 20);
+            append_tag(info_idx, tag);
+        } else if (is_old_acpi_required) {
             panic("multiboot2: RSDP requested but not found");
         }
     }

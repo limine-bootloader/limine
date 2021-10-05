@@ -34,6 +34,21 @@ void *acpi_get_rsdp(void) {
     return NULL;
 }
 
+/// Returns the RSDP v1 pointer if avaliable or else NULL.
+void *acpi_get_rsdp_v1(void) {
+    // In BIOS according to the ACPI spec (see ACPI 6.2 section 
+    // 5.2.5.1 'Finding the RSDP on IA-PC Systems') it either contains
+    // the RSDP or the XSDP and it cannot contain both. So, we directly
+    // use acpi_get_rsdp function to find the RSDP and if it has the correct
+    // revision, return it.
+    struct rsdp *rsdp = acpi_get_rsdp();
+
+    if (rsdp != NULL && rsdp->rev == 1)
+        return rsdp;
+    
+    return NULL;
+}
+
 void acpi_get_smbios(void **smbios32, void **smbios64) {
     *smbios32 = NULL;
     *smbios64 = NULL;
@@ -67,18 +82,56 @@ void *acpi_get_rsdp(void) {
     EFI_GUID acpi_2_guid = ACPI_20_TABLE_GUID;
     EFI_GUID acpi_1_guid = ACPI_TABLE_GUID;
 
+    void *rsdp = NULL;
+
     for (size_t i = 0; i < gST->NumberOfTableEntries; i++) {
         EFI_CONFIGURATION_TABLE *cur_table = &gST->ConfigurationTable[i];
 
-        if (memcmp(&cur_table->VendorGuid, &acpi_2_guid, sizeof(EFI_GUID)) != 0 || // XSDP
-            memcmp(&cur_table->VendorGuid, &acpi_1_guid, sizeof(EFI_GUID)) != 0)   // RSDP
+        bool is_xsdp = memcmp(&cur_table->VendorGuid, &acpi_2_guid, sizeof(EFI_GUID)) == 0;
+        bool is_rsdp = memcmp(&cur_table->VendorGuid, &acpi_1_guid, sizeof(EFI_GUID)) == 0;
+
+        if (!is_xsdp && !is_rsdp)
+            continue;
+        
+        if ((is_xsdp && acpi_checksum(cur_table->VendorTable, sizeof(struct rsdp)) != 0) || // XSDP is 36 bytes wide
+            (is_rsdp && acpi_checksum(cur_table->VendorTable, 20) != 0)) // RSDP is 20 bytes wide
             continue;
 
-        if (acpi_checksum(cur_table->VendorTable, sizeof(struct rsdp)) != 0 || // XSDP is 36 bytes wide
-            acpi_checksum(cur_table->VendorTable, 20) != 0)                   // RSDP is 20 bytes wide
-            continue;
+        printv("acpi: Found %s at %X\n", is_xsdp ? "XSDP" : "RSDP", cur_table->VendorTable);
 
-        printv("acpi: Found RSDP at %X\n", cur_table->VendorTable);
+        // We want to return the XSDP if it exists rather then returning
+        // the RSDP. We need to add a check for that since the table entries
+        // are not in the same order for all EFI systems since it might be the
+        // case where the RSDP ocurs before the XSDP.
+        if (rsdp != NULL && is_xsdp) {
+            rsdp = (void *)cur_table->VendorTable;
+            break; // Found it!.
+        } else {
+            // Found the RSDP but we continue to loop since we might
+            // find the XSDP.
+            rsdp = (void *)cur_table->VendorTable;
+        }
+    }
+
+    return rsdp;
+}
+
+/// Returns the RSDP v1 pointer if avaliable or else NULL.
+void *acpi_get_rsdp_v1(void) {
+    // To maintain GRUB compatibility we will need to probe for the RSDP
+    // again since UEFI can contain both XSDP and RSDP (see ACPI 6.2 section 
+    // 5.2.5.2 'Finding the RSDP on UEFI Enabled Systems') and in the acpi_get_rsdp
+    // function we look for the RSDP with the latest revision.
+    EFI_GUID acpi_1_guid = ACPI_TABLE_GUID;
+
+    for (size_t i = 0; i < gST->NumberOfTableEntries; i++) {
+        EFI_CONFIGURATION_TABLE *cur_table = &gST->ConfigurationTable[i];
+
+        if (memcmp(&cur_table->VendorGuid, &acpi_1_guid, sizeof(EFI_GUID)) != 0)
+            continue;
+        
+        if (acpi_checksum(cur_table->VendorTable, 20) != 0)
+            continue;
 
         return (void *)cur_table->VendorTable;
     }
@@ -128,6 +181,18 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
 }
 
 #endif
+
+/// Returns the RSDP v2 pointer if avaliable or else NULL.
+void *acpi_get_rsdp_v2(void) {
+    // Since the acpi_get_rsdp function already looks for the XSDP we can
+    // just check if it has the correct revision and return the pointer :^)
+    struct rsdp *rsdp = acpi_get_rsdp();
+
+    if (rsdp != NULL && rsdp->rev >= 2)
+        return rsdp;
+
+    return NULL;
+}
 
 void *acpi_get_table(const char *signature, int index) {
     int cnt = 0;

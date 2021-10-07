@@ -59,6 +59,7 @@ static size_t get_multiboot2_info_size(
         ALIGN_UP(sizeof(struct multiboot_tag_old_acpi) + 20, MULTIBOOT_TAG_ALIGN) +                                     // old ACPI info
         ALIGN_UP(sizeof(struct multiboot_tag_elf_sections) + section_hdr_size, MULTIBOOT_TAG_ALIGN) +                   // ELF info
         ALIGN_UP(modules_size, MULTIBOOT_TAG_ALIGN) +                                                                   // modules
+        ALIGN_UP(sizeof(struct multiboot_tag_basic_meminfo), MULTIBOOT_TAG_ALIGN) +                                     // basic memory info
         ALIGN_UP(sizeof(struct multiboot_tag_mmap) + sizeof(struct multiboot_mmap_entry) * 256, MULTIBOOT_TAG_ALIGN) +  // MMAP
         #if uefi == 1
             ALIGN_UP(sizeof(struct multiboot_tag_efi_mmap) + (efi_desc_size * 256), MULTIBOOT_TAG_ALIGN) +              // EFI MMAP
@@ -120,12 +121,15 @@ void multiboot2_load(char *config, char* cmdline) {
                         case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
                         case MULTIBOOT_TAG_TYPE_MODULE:
                         case MULTIBOOT_TAG_TYPE_MMAP:
+                        case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO:
                         #if uefi == 1
                             case MULTIBOOT_TAG_TYPE_EFI_MMAP:
                             #if defined (__i386__)
                                 case MULTIBOOT_TAG_TYPE_EFI32:
+                                case MULTIBOOT_TAG_TYPE_EFI32_IH:
                             #elif defined (__x86_64__)
                                 case MULTIBOOT_TAG_TYPE_EFI64:
+                                case MULTIBOOT_TAG_TYPE_EFI64_IH:
                             #endif
                         #endif
                         case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
@@ -430,7 +434,7 @@ void multiboot2_load(char *config, char* cmdline) {
     // Create new ACPI info tag
     //////////////////////////////////////////////
     {
-        void *new_rsdp = acpi_get_rsdp();
+        void *new_rsdp = acpi_get_rsdp_v2();
 
         if (new_rsdp != NULL) {
             uint32_t size = sizeof(struct multiboot_tag_new_acpi) + sizeof(struct rsdp); // XSDP is 36 bytes wide
@@ -518,13 +522,13 @@ void multiboot2_load(char *config, char* cmdline) {
     efi_exit_boot_services();
 #endif
 
+    size_t mb_mmap_count;
+    struct e820_entry_t *raw_memmap = get_raw_memmap(&mb_mmap_count);
+
     //////////////////////////////////////////////
     // Create memory map tag
     //////////////////////////////////////////////
     {
-        size_t mb_mmap_count;
-        struct e820_entry_t *raw_memmap = get_raw_memmap(&mb_mmap_count);
-
         if (mb_mmap_count > 256) {
             panic("multiboot2: too many memory map entries");
         }
@@ -547,6 +551,24 @@ void multiboot2_load(char *config, char* cmdline) {
         }
 
         append_tag(info_idx, mmap_tag);
+    }
+
+    //////////////////////////////////////////////
+    // Create basic memory info tag
+    //////////////////////////////////////////////
+    {
+        struct meminfo meminfo = mmap_get_info(mb_mmap_count, raw_memmap);
+        struct multiboot_tag_basic_meminfo *tag = (struct multiboot_tag_basic_meminfo *)(mb2_info + info_idx);
+
+        tag->type = MULTIBOOT_TAG_TYPE_BASIC_MEMINFO;
+        tag->size = sizeof(struct multiboot_tag_basic_meminfo);
+
+        // Convert the uppermem and lowermem fields from bytes to
+        // KiB.
+        tag->mem_upper = (uint32_t)(meminfo.uppermem / 1024);
+        tag->mem_lower = (uint32_t)(meminfo.lowermem / 1024);
+
+        append_tag(info_idx, tag);
     }
 
     //////////////////////////////////////////////

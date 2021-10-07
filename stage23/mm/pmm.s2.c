@@ -611,6 +611,35 @@ void *ext_mem_alloc_type(size_t count, uint32_t type) {
     panic("High memory allocator: Out of memory");
 }
 
+
+/// Compute and returns the amount of upper and lower memory till 
+/// the first hole.
+struct meminfo mmap_get_info(size_t mmap_count, struct e820_entry_t *mmap) {
+    struct meminfo info = {0};
+
+    for (size_t i = 0; i < mmap_count; i++) {
+        if (mmap[i].type == MEMMAP_USABLE) {
+            // NOTE: Upper memory starts at address 1MiB and the
+            // value of uppermem is the address of the first upper memory
+            // hole minus 1MiB.
+            if (mmap[i].base < 0x100000) {
+                if (mmap[i].base + mmap[i].length > 0x100000) {
+                    size_t low_len = 0x100000 - mmap[i].base;
+
+                    info.lowermem += low_len;
+                    info.uppermem += mmap[i].length - low_len;
+                } else {
+                    info.lowermem += mmap[i].length;
+                }
+            } else {
+                info.uppermem += mmap[i].length;
+            }
+        }
+    }
+
+    return info;
+}
+
 bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only, bool do_panic, bool simulation, bool new_entry) {
     if (length == 0)
         return true;

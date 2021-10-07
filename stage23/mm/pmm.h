@@ -17,6 +17,13 @@
 #define MEMMAP_EFI_RECLAIMABLE        0x2000
 #define MEMMAP_EFI_BOOTSERVICES       0x2001
 
+struct meminfo {
+    size_t uppermem;
+    size_t lowermem;
+};
+
+struct meminfo mmap_get_info(size_t mmap_count, struct e820_entry_t *mmap);
+
 #if bios == 1
 extern struct e820_entry_t memmap[];
 extern size_t memmap_entries;

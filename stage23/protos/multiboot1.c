@@ -246,32 +246,22 @@ nofb:;
     size_t mb_mmap_len = mb_mmap_count * sizeof(struct multiboot1_mmap_entry);
     struct multiboot1_mmap_entry *mmap = conv_mem_alloc(mb_mmap_len);
 
-    size_t memory_lower = 0, memory_upper = 0;
-
     // Multiboot is bad and passes raw memmap. We do the same to support it.
     for (size_t i = 0; i < mb_mmap_count; i++) {
         mmap[i].size = sizeof(struct multiboot1_mmap_entry) - 4;
         mmap[i].addr = raw_memmap[i].base;
         mmap[i].len  = raw_memmap[i].length;
         mmap[i].type = raw_memmap[i].type;
-
-        if (mmap[i].type == MEMMAP_USABLE) {
-            if (mmap[i].addr < 0x100000) {
-                if (mmap[i].addr + mmap[i].len > 0x100000) {
-                    size_t low_len = 0x100000 - mmap[i].addr;
-                    memory_lower += low_len;
-                    memory_upper += mmap[i].len - low_len;
-                } else {
-                    memory_lower += mmap[i].len;
-                }
-            } else {
-                memory_upper += mmap[i].len;
-            }
-        }
     }
 
-    multiboot1_info.mem_lower = memory_lower / 1024;
-    multiboot1_info.mem_upper = memory_upper / 1024;
+    {
+        struct meminfo memory_info = mmap_get_info(mb_mmap_count, raw_memmap);
+
+        // Convert the uppermem and lowermem fields from bytes to
+        // KiB.
+        multiboot1_info.mem_lower = memory_info.lowermem / 1024;
+        multiboot1_info.mem_upper = memory_info.uppermem / 1024;
+    }
 
     multiboot1_info.mmap_length = mb_mmap_len;
     multiboot1_info.mmap_addr = ((uint32_t)(size_t)mmap);

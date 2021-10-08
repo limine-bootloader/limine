@@ -54,19 +54,23 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
     *smbios64 = NULL;
 
     for (size_t i = 0xf0000; i < 0x100000; i += 16) {
-        if (!memcmp((char *)i, "_SM_", 4)
-         && !acpi_checksum((void *)i, *((uint8_t *)(i + 5)))) {
+        struct smbios_entry_point_32 *ptr = (struct smbios_entry_point_32 *)i;
+
+        if (!memcmp(ptr->anchor_str, "_SM_", 4) &&
+            !acpi_checksum((void *)ptr, ptr->length)) {
             printv("acpi: Found SMBIOS 32-bit entry point at %x\n", i);
-            *smbios32 = (void *)i;
+            *smbios32 = (void *)ptr;
             break;
         }
     }
 
     for (size_t i = 0xf0000; i < 0x100000; i += 16) {
-        if (!memcmp((char *)i, "_SM3_", 5)
-         && !acpi_checksum((void *)i, *((uint8_t *)(i + 6)))) {
+        struct smbios_entry_point_64 *ptr = (struct smbios_entry_point_64 *)i;
+
+        if (!memcmp(ptr->anchor_str, "_SM3_", 5) &&
+            !acpi_checksum((void *)ptr, ptr->length)) {
             printv("acpi: Found SMBIOS 64-bit entry point at %x\n", i);
-            *smbios64 = (void *)i;
+            *smbios64 = (void *)ptr;
             break;
         }
     }
@@ -150,13 +154,14 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
         if (memcmp(&cur_table->VendorGuid, &smbios_guid, sizeof(EFI_GUID)) != 0)
             continue;
 
-        if (acpi_checksum(cur_table->VendorTable,
-                          *((uint8_t *)(cur_table->VendorTable + 5))) != 0)
+        struct smbios_entry_point_32 *ptr = (struct smbios_entry_point_32 *)cur_table->VendorTable;
+
+        if (acpi_checksum((void *)ptr, ptr->length) != 0)
             continue;
 
-        printv("acpi: Found SMBIOS 32-bit entry point at %X\n", cur_table->VendorTable);
+        printv("acpi: Found SMBIOS 32-bit entry point at %X\n", ptr);
 
-        *smbios32 = cur_table->VendorTable;
+        *smbios32 = (void *)ptr;
 
         break;
     }
@@ -168,13 +173,14 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
         if (memcmp(&cur_table->VendorGuid, &smbios3_guid, sizeof(EFI_GUID)) != 0)
             continue;
 
-        if (acpi_checksum(cur_table->VendorTable,
-                          *((uint8_t *)(cur_table->VendorTable + 6))) != 0)
+        struct smbios_entry_point_64 *ptr = (struct smbios_entry_point_64 *)cur_table->VendorTable;
+
+        if (acpi_checksum((void *)ptr, ptr->length) != 0)
             continue;
 
-        printv("acpi: Found SMBIOS 64-bit entry point at %X\n", cur_table->VendorTable);
+        printv("acpi: Found SMBIOS 64-bit entry point at %X\n", ptr);
 
-        *smbios64 = cur_table->VendorTable;
+        *smbios64 = (void *)ptr;
 
         break;
     }

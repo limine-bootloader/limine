@@ -24,7 +24,7 @@ struct rsdp {
     char     oem_id[6];
     uint8_t  rev;
     uint32_t rsdt_addr;
-    // Rev 2 only after this comment
+    // Revision 2 only after this comment
     uint32_t length;
     uint64_t xsdt_addr;
     uint8_t  ext_checksum;
@@ -34,6 +34,59 @@ struct rsdp {
 struct rsdt {
     struct sdt header;
     char ptrs_start[];
+} __attribute__((packed));
+
+struct smbios_entry_point_32 {
+    char anchor_str[4];
+    /// This value summed with all the values of the table.
+    uint8_t checksum;
+    /// Length of the entry point table.
+    uint8_t length;
+    /// Major version of SMBIOS.
+    uint8_t major_version;
+    /// Minor version of SMBIOS.
+    uint8_t minor_version;
+    /// Size of the largest SMBIOS structure, in bytes, and encompasses the
+    /// structure’s formatted area and text strings
+    uint16_t max_structure_size;
+    uint8_t entry_point_revision;
+    char formatted_area[5];
+
+    char intermediate_anchor_str[5];
+    /// Checksum for values from intermediate anchor str to the 
+    /// end of table.
+    uint8_t intermediate_checksum;
+    /// Total length of SMBIOS Structure Table, pointed to by the structure
+    /// table address, in bytes.
+    uint16_t table_length;
+    /// 32-bit physical starting address of the read-only SMBIOS Structure
+    /// Table.
+    uint32_t table_address;
+    /// Total number of structures present in the SMBIOS Structure Table.
+    uint16_t number_of_structures;
+    /// Indicates compliance with a revision of this specification.
+    uint8_t bcd_revision;
+} __attribute__((packed));
+
+struct smbios_entry_point_64 {
+    char anchor_str[5];
+    /// This value summed with all the values of the table.
+    uint8_t checksum;
+    /// Length of the entry point table.
+    uint8_t length;
+    /// Major version of SMBIOS.
+    uint8_t major_version;
+    /// Minor version of SMBIOS.
+    uint8_t minor_version;
+    uint8_t docrev;
+    uint8_t entry_point_revision;
+    uint8_t reserved;
+    /// Size of the largest SMBIOS structure, in bytes, and encompasses the
+    /// structure’s formatted area and text strings
+    uint16_t max_structure_size;
+    /// 64-bit physical starting address of the read-only SMBIOS Structure
+    /// Table.
+    uint64_t table_address;
 } __attribute__((packed));
 
 uint8_t acpi_checksum(void *ptr, size_t size);

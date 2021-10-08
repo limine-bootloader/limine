@@ -36,7 +36,7 @@ void *acpi_get_rsdp(void) {
 
 /// Returns the RSDP v1 pointer if avaliable or else NULL.
 void *acpi_get_rsdp_v1(void) {
-    // In BIOS according to the ACPI spec (see ACPI 6.2 section 
+    // In BIOS according to the ACPI spec (see ACPI 6.2 section
     // 5.2.5.1 'Finding the RSDP on IA-PC Systems') it either contains
     // the RSDP or the XSDP and it cannot contain both. So, we directly
     // use acpi_get_rsdp function to find the RSDP and if it has the correct
@@ -45,7 +45,7 @@ void *acpi_get_rsdp_v1(void) {
 
     if (rsdp != NULL && rsdp->rev == 1)
         return rsdp;
-    
+
     return NULL;
 }
 
@@ -96,7 +96,7 @@ void *acpi_get_rsdp(void) {
 
         if (!is_xsdp && !is_rsdp)
             continue;
-        
+
         if ((is_xsdp && acpi_checksum(cur_table->VendorTable, sizeof(struct rsdp)) != 0) || // XSDP is 36 bytes wide
             (is_rsdp && acpi_checksum(cur_table->VendorTable, 20) != 0)) // RSDP is 20 bytes wide
             continue;
@@ -107,7 +107,7 @@ void *acpi_get_rsdp(void) {
         // the RSDP. We need to add a check for that since the table entries
         // are not in the same order for all EFI systems since it might be the
         // case where the RSDP ocurs before the XSDP.
-        if (rsdp != NULL && is_xsdp) {
+        if (is_xsdp) {
             rsdp = (void *)cur_table->VendorTable;
             break; // Found it!.
         } else {
@@ -123,7 +123,7 @@ void *acpi_get_rsdp(void) {
 /// Returns the RSDP v1 pointer if avaliable or else NULL.
 void *acpi_get_rsdp_v1(void) {
     // To maintain GRUB compatibility we will need to probe for the RSDP
-    // again since UEFI can contain both XSDP and RSDP (see ACPI 6.2 section 
+    // again since UEFI can contain both XSDP and RSDP (see ACPI 6.2 section
     // 5.2.5.2 'Finding the RSDP on UEFI Enabled Systems') and in the acpi_get_rsdp
     // function we look for the RSDP with the latest revision.
     EFI_GUID acpi_1_guid = ACPI_TABLE_GUID;
@@ -133,7 +133,7 @@ void *acpi_get_rsdp_v1(void) {
 
         if (memcmp(&cur_table->VendorGuid, &acpi_1_guid, sizeof(EFI_GUID)) != 0)
             continue;
-        
+
         if (acpi_checksum(cur_table->VendorTable, 20) != 0)
             continue;
 

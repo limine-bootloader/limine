@@ -49,7 +49,8 @@ static struct multiboot_header *load_multiboot2_header(uint8_t *kernel) {
 static size_t get_multiboot2_info_size(
     char *cmdline,
     size_t modules_size,
-    uint32_t section_hdr_size
+    uint32_t section_hdr_size,
+    uint32_t smbios_tag_size
 ) {
     return ALIGN_UP(sizeof(struct multiboot2_start_tag), MULTIBOOT_TAG_ALIGN) +                                         // start
         ALIGN_UP(strlen(cmdline) + 1 + offsetof(struct multiboot_tag_string, string), MULTIBOOT_TAG_ALIGN) +            // cmdline
@@ -59,6 +60,7 @@ static size_t get_multiboot2_info_size(
         ALIGN_UP(sizeof(struct multiboot_tag_old_acpi) + 20, MULTIBOOT_TAG_ALIGN) +                                     // old ACPI info
         ALIGN_UP(sizeof(struct multiboot_tag_elf_sections) + section_hdr_size, MULTIBOOT_TAG_ALIGN) +                   // ELF info
         ALIGN_UP(modules_size, MULTIBOOT_TAG_ALIGN) +                                                                   // modules
+        ALIGN_UP(smbios_tag_size, MULTIBOOT_TAG_ALIGN) +                                                                // SMBIOS
         ALIGN_UP(sizeof(struct multiboot_tag_basic_meminfo), MULTIBOOT_TAG_ALIGN) +                                     // basic memory info
         ALIGN_UP(sizeof(struct multiboot_tag_mmap) + sizeof(struct multiboot_mmap_entry) * 256, MULTIBOOT_TAG_ALIGN) +  // MMAP
         #if uefi == 1
@@ -121,6 +123,7 @@ void multiboot2_load(char *config, char* cmdline) {
                         case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
                         case MULTIBOOT_TAG_TYPE_MODULE:
                         case MULTIBOOT_TAG_TYPE_MMAP:
+                        case MULTIBOOT_TAG_TYPE_SMBIOS:
                         case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO:
                         #if uefi == 1
                             case MULTIBOOT_TAG_TYPE_EFI_MMAP:
@@ -260,7 +263,25 @@ void multiboot2_load(char *config, char* cmdline) {
         modules_size += sizeof(struct multiboot_tag_module) + strlen(module_cmdline) + 1;
     }
 
-    size_t mb2_info_size = get_multiboot2_info_size(cmdline, modules_size, section_hdr_info ? section_hdr_info->section_hdr_size : 0);
+    struct smbios_entry_point_32* smbios_entry_32 = NULL;
+    struct smbios_entry_point_64* smbios_entry_64 = NULL;
+
+    acpi_get_smbios((void **)&smbios_entry_32, (void **)&smbios_entry_64);
+
+    uint32_t smbios_tag_size = 0;
+
+    if (smbios_entry_32 != NULL)
+        smbios_tag_size = sizeof(struct multiboot_tag_smbios) + smbios_entry_32->length;
+    else if (smbios_entry_64 != NULL)
+        smbios_tag_size = sizeof(struct multiboot_tag_smbios) + smbios_entry_64->length;
+
+    size_t mb2_info_size = get_multiboot2_info_size(
+        cmdline,
+        modules_size,
+        section_hdr_info ? section_hdr_info->section_hdr_size : 0,
+        smbios_tag_size
+    );
+
     size_t info_idx = 0;
     uint8_t *mb2_info = conv_mem_alloc(mb2_info_size);
 
@@ -467,6 +488,39 @@ void multiboot2_load(char *config, char* cmdline) {
             append_tag(info_idx, tag);
         } else if (is_old_acpi_required) {
             panic("multiboot2: RSDP requested but not found");
+        }
+    }
+
+    //////////////////////////////////////////////
+    // Create SMBIOS tag
+    //////////////////////////////////////////////
+    {
+        if (smbios_entry_32 != NULL) {
+            struct multiboot_tag_smbios *tag = (struct multiboot_tag_smbios *)(mb2_info + info_idx);
+
+            tag->type = MULTIBOOT_TAG_TYPE_SMBIOS;
+            tag->size = sizeof(struct multiboot_tag_smbios);
+
+            tag->major = smbios_entry_32->major_version;
+            tag->minor = smbios_entry_32->minor_version;
+
+            memset(tag->reserved, 0, 6);
+            memcpy(tag->tables, smbios_entry_32, smbios_entry_32->length);
+
+            append_tag(info_idx, tag);
+        } else if (smbios_entry_64 != NULL) {
+            struct multiboot_tag_smbios *tag = (struct multiboot_tag_smbios *)(mb2_info + info_idx);
+
+            tag->type = MULTIBOOT_TAG_TYPE_SMBIOS;
+            tag->size = sizeof(struct multiboot_tag_smbios);
+
+            tag->major = smbios_entry_64->major_version;
+            tag->minor = smbios_entry_64->minor_version;
+
+            memset(tag->reserved, 0, 6);
+            memcpy(tag->tables, smbios_entry_64, smbios_entry_64->length);
+
+            append_tag(info_idx, tag);
         }
     }
 

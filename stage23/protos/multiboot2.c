@@ -271,9 +271,9 @@ void multiboot2_load(char *config, char* cmdline) {
     uint32_t smbios_tag_size = 0;
 
     if (smbios_entry_32 != NULL)
-        smbios_tag_size = sizeof(struct multiboot_tag_smbios) + smbios_entry_32->length;
-    else if (smbios_entry_64 != NULL)
-        smbios_tag_size = sizeof(struct multiboot_tag_smbios) + smbios_entry_64->length;
+        smbios_tag_size += sizeof(struct multiboot_tag_smbios) + smbios_entry_32->length;
+    if (smbios_entry_64 != NULL)
+        smbios_tag_size += sizeof(struct multiboot_tag_smbios) + smbios_entry_64->length;
 
     size_t mb2_info_size = get_multiboot2_info_size(
         cmdline,
@@ -495,6 +495,10 @@ void multiboot2_load(char *config, char* cmdline) {
     // Create SMBIOS tag
     //////////////////////////////////////////////
     {
+        // NOTE: The multiboot2 specification does not say anything about if both
+        // smbios 32 and 64 bit entry points are present, then we pass both of them + smbios 
+        // support for grub2 is unimplemented. So, we are going to assume they expect us to
+        // pass both of them if avaliable. Oh well...
         if (smbios_entry_32 != NULL) {
             struct multiboot_tag_smbios *tag = (struct multiboot_tag_smbios *)(mb2_info + info_idx);
 
@@ -508,7 +512,9 @@ void multiboot2_load(char *config, char* cmdline) {
             memcpy(tag->tables, smbios_entry_32, smbios_entry_32->length);
 
             append_tag(info_idx, tag);
-        } else if (smbios_entry_64 != NULL) {
+        }
+
+        if (smbios_entry_64 != NULL) {
             struct multiboot_tag_smbios *tag = (struct multiboot_tag_smbios *)(mb2_info + info_idx);
 
             tag->type = MULTIBOOT_TAG_TYPE_SMBIOS;

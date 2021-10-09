@@ -9,7 +9,7 @@
 
 static const char *base_digits = "0123456789abcdef";
 
-#define PRINT_BUF_MAX 512
+#define PRINT_BUF_MAX 4096
 
 static void prn_str(char *print_buf, size_t *print_buf_i, const char *string) {
     size_t i;

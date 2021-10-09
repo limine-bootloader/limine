@@ -92,4 +92,13 @@ extern void (*term_full_refresh)(void);
 
 extern void (*term_callback)(uint64_t, uint64_t, uint64_t, uint64_t);
 
+extern bool term_autoflush;
+
+inline void reset_term(void) {
+    term_autoflush = true;
+    enable_cursor();
+    clear(true);
+    term_double_buffer_flush();
+}
+
 #endif

@@ -7,7 +7,6 @@
 #include <drivers/vbe.h>
 
 extern struct fb_info fbinfo;
-extern bool term_autoflush;
 
 bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height);
 void gterm_deinit(void);

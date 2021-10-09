@@ -5,12 +5,6 @@
 
 bool verbose = true;
 
-void copyright_notice(void) {
-    print("Limine " LIMINE_VERSION "\n");
-    print(LIMINE_COPYRIGHT "\n");
-    print("This bootloader is distributed under the terms of the BSD-2-Clause license.\n\n");
-}
-
 uint8_t bcd_to_int(uint8_t val) {
     return (val & 0x0f) + ((val & 0xf0) >> 4) * 10;
 }

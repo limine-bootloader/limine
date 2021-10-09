@@ -79,8 +79,6 @@ void entry(uint8_t boot_drive, int boot_from) {
 
     term_textmode();
 
-    copyright_notice();
-
     init_idt();
 
     disk_create_index();

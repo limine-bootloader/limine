@@ -12,6 +12,7 @@
 #include <lib/uri.h>
 #include <mm/pmm.h>
 #include <drivers/vbe.h>
+#include <console.h>
 
 static char *menu_branding = NULL;
 static char *menu_branding_colour = NULL;
@@ -574,11 +575,11 @@ char *menu(char **cmdline) {
         term_vbe(req_width, req_height);
     }
 
+refresh:
     disable_cursor();
 
     term_autoflush = false;
 
-refresh:
     clear(true);
     {
         size_t x, y;
@@ -644,6 +645,8 @@ refresh:
             print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m %s",
                   selected_menu_entry->expanded ? "Collapse" : "Expand");
         }
+        set_cursor_pos(term_cols - 12, 3);
+        print("\e[32mC\e[0m Console");
         set_cursor_pos(x, y);
     }
 
@@ -700,7 +703,6 @@ timeout_aborted:
                     selected_menu_entry->expanded = !selected_menu_entry->expanded;
                     goto refresh;
                 }
-                enable_cursor();
                 *cmdline = config_get_value(selected_menu_entry->body, 0, "KERNEL_CMDLINE");
                 if (!*cmdline) {
                     *cmdline = config_get_value(selected_menu_entry->body, 0, "CMDLINE");
@@ -708,8 +710,7 @@ timeout_aborted:
                 if (!*cmdline) {
                     *cmdline = "";
                 }
-                clear(true);
-                term_autoflush = true;
+                reset_term();
                 return selected_menu_entry->body;
             case 'e': {
                 if (editor_enabled) {
@@ -722,6 +723,12 @@ timeout_aborted:
                     selected_menu_entry->body = new_body;
                     goto autoboot;
                 }
+                break;
+            }
+            case 'c': {
+                reset_term();
+                console();
+                goto refresh;
             }
         }
     }

@@ -26,6 +26,7 @@ CFLAGS ?= -Os -pipe -Wall -Wextra $(WERROR)
 INTERNAL_CFLAGS = \
 	-m32 \
 	-march=i386 \
+	-mtune=generic \
 	-mabi=sysv \
 	-std=gnu11 \
 	-ffreestanding \

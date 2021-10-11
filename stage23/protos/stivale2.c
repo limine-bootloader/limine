@@ -403,7 +403,7 @@ failed_to_load_header_section:
     char *textmode_str = config_get_value(config, 0, "TEXTMODE");
     bool textmode = textmode_str != NULL && strcmp(textmode_str, "yes") == 0;
 
-    int preference;
+    int preference = 0;
     if (avtag != NULL) {
         preference = textmode ? 1 : avtag->preference;
     }

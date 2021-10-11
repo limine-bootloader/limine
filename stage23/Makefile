@@ -83,6 +83,7 @@ ifeq ($(TARGET), bios)
 		-Duefi=0 \
 		-m32 \
 		-march=i386 \
+		-mtune=generic \
 		-mabi=sysv \
 		-fno-pic \
 		-fno-pie
@@ -95,6 +96,7 @@ ifeq ($(TARGET), uefi)
 		-Duefi=1 \
 		-m32 \
 		-march=i386 \
+		-mtune=generic \
 		-mabi=sysv \
 		-DGNU_EFI_USE_MS_ABI \
 		-fpie
@@ -104,6 +106,7 @@ ifeq ($(TARGET), uefi)
 		-Duefi=1 \
 		-m64 \
 		-march=x86-64 \
+		-mtune=generic \
 		-mabi=sysv \
 		-DGNU_EFI_USE_MS_ABI \
 		-I../gnu-efi/inc \
@@ -118,6 +121,7 @@ ifeq ($(TARGET), uefi32)
 		-Duefi=1 \
 		-m32 \
 		-march=i386 \
+		-mtune=generic \
 		-mabi=sysv \
 		-DGNU_EFI_USE_MS_ABI \
 		-I../gnu-efi/inc \
@@ -255,7 +259,7 @@ $(BUILDDIR)/BOOTX64.EFI: $(BUILDDIR)/limine_efi.elf
 	$(TOOLCHAIN_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc -j .sbat --target efi-app-x86_64 --subsystem=10 $< $@
 
 $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a: $(BUILDDIR)/gnu-efi
-	$(MAKE) -C $(BUILDDIR)/gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m64 -march=x86-64" AR="$(TOOLCHAIN_AR)" ARCH=x86_64
+	$(MAKE) -C $(BUILDDIR)/gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m64 -march=x86-64 -mtune=generic" AR="$(TOOLCHAIN_AR)" ARCH=x86_64
 
 $(BUILDDIR)/limine_efi_nomap.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
 	$(TOOLCHAIN_LD) \
@@ -280,7 +284,7 @@ $(BUILDDIR)/BOOTIA32.EFI: $(BUILDDIR)/limine_efi.elf
 	$(TOOLCHAIN_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc -j .sbat --target efi-app-ia32 --subsystem=10 $< $@
 
 $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a: $(BUILDDIR)/gnu-efi
-	$(MAKE) -C $(BUILDDIR)/gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m32 -march=i386" AR="$(TOOLCHAIN_AR)" ARCH=ia32
+	$(MAKE) -C $(BUILDDIR)/gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m32 -march=i386 -mtune=generic" AR="$(TOOLCHAIN_AR)" ARCH=ia32
 
 $(BUILDDIR)/limine_efi_nomap.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
 	$(TOOLCHAIN_LD) \

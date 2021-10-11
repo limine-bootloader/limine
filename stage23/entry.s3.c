@@ -155,7 +155,7 @@ void stage3_common(void) {
     init_io_apics();
 
     if (verbose) {
-        print("Boot drive: %x\n", boot_volume->index);
+        print("Boot drive: %d\n", boot_volume->index);
         print("Boot partition: %d\n", boot_volume->partition);
     }
 

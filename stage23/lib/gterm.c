@@ -44,8 +44,6 @@ static uint32_t ansi_colours[8];
 static uint32_t ansi_bright_colours[8];
 static uint32_t default_fg, default_bg;
 
-static size_t frame_height, frame_width;
-
 static struct image *background;
 
 static size_t last_bg_canvas_size = 0;
@@ -53,6 +51,7 @@ static uint32_t *bg_canvas = NULL;
 
 static size_t rows;
 static size_t cols;
+static size_t margin;
 static size_t margin_gradient;
 
 static size_t last_grid_size = 0;
@@ -132,20 +131,22 @@ static inline void gterm_plot_px(size_t x, size_t y, uint32_t hex) {
 
 static uint32_t blend_gradient_from_box(size_t x, size_t y, uint32_t bg_px, uint32_t hex) {
     size_t distance, x_distance, y_distance;
+    size_t gradient_stop_x = gterm_width - margin;
+    size_t gradient_stop_y = gterm_height - margin;
 
-    if (x < frame_width)
-        x_distance = frame_width - x;
+    if (x < margin)
+        x_distance = margin - x;
     else
-        x_distance = x - (frame_width + glyph_width * cols);
+        x_distance = x - gradient_stop_x;
 
-    if (y < frame_height)
-        y_distance = frame_height - y;
+    if (y < margin)
+        y_distance = margin - y;
     else
-        y_distance = y - (frame_height + glyph_height * rows);
+        y_distance = y - gradient_stop_y;
 
-    if (x >= frame_width && x < frame_width + glyph_width * cols) {
+    if (x >= margin && x < gradient_stop_x) {
         distance = y_distance;
-    } else if (y >= frame_height && y < frame_height + glyph_height * rows) {
+    } else if (y >= margin && y < gradient_stop_y) {
         distance = x_distance;
     } else {
         distance = sqrt((uint64_t)x_distance * (uint64_t)x_distance
@@ -239,23 +240,26 @@ static void loop_internal(size_t xstart, size_t xend, size_t ystart, size_t yend
 
 static void gterm_generate_canvas(void) {
     if (background) {
-        const size_t frame_height_end = frame_height + glyph_height * rows, frame_width_end = frame_width + glyph_width * cols;
-        const size_t fheight = frame_height - margin_gradient, fheight_end = frame_height_end + margin_gradient,
-            fwidth = frame_width - margin_gradient, fwidth_end = frame_width_end + margin_gradient;
+        size_t margin_no_gradient = margin - margin_gradient;
+        size_t scan_stop_x = gterm_width - margin_no_gradient;
+        size_t scan_stop_y = gterm_height - margin_no_gradient;
 
-        loop_external(0, gterm_width, 0, fheight);
-        loop_external(0, gterm_width, fheight_end, gterm_height);
-        loop_external(0, fwidth, fheight, fheight_end);
-        loop_external(fwidth_end, gterm_width, fheight, fheight_end);
+        loop_external(0, gterm_width, 0, margin_no_gradient);
+        loop_external(0, gterm_width, scan_stop_y, gterm_height);
+        loop_external(0, margin_no_gradient, margin_no_gradient, scan_stop_y);
+        loop_external(scan_stop_x, gterm_width, margin_no_gradient, scan_stop_y);
+
+        size_t gradient_stop_x = gterm_width - margin;
+        size_t gradient_stop_y = gterm_height - margin;
 
         if (margin_gradient) {
-            loop_margin(fwidth, fwidth_end, fheight, frame_height);
-            loop_margin(fwidth, fwidth_end, frame_height_end, fheight_end);
-            loop_margin(fwidth, frame_width, frame_height, frame_height_end);
-            loop_margin(frame_width_end, fwidth_end, frame_height, frame_height_end);
+            loop_margin(margin_no_gradient, scan_stop_x, margin_no_gradient, margin);
+            loop_margin(margin_no_gradient, scan_stop_x, gradient_stop_y, scan_stop_y);
+            loop_margin(margin_no_gradient, margin, margin, gradient_stop_y);
+            loop_margin(gradient_stop_x, scan_stop_x, margin, gradient_stop_y);
         }
 
-        loop_internal(frame_width, frame_width_end, frame_height, frame_height_end);
+        loop_internal(margin, gradient_stop_x, margin, gradient_stop_y);
     } else {
         for (size_t y = 0; y < gterm_height; y++) {
             for (size_t x = 0; x < gterm_width; x++) {
@@ -271,8 +275,8 @@ static void plot_char(struct gterm_char *c, size_t x, size_t y) {
         return;
     }
 
-    x = frame_width + x * glyph_width;
-    y = frame_height + y * glyph_height;
+    x = margin + x * glyph_width;
+    y = margin + y * glyph_height;
 
     bool *glyph = &vga_font_bool[c->c * vga_font_height * vga_font_width];
     // naming: fx,fy for font coordinates, gx,gy for glyph coordinates
@@ -294,7 +298,7 @@ static void plot_char(struct gterm_char *c, size_t x, size_t y) {
 
 static size_t plot_from_queue(struct queue_item *qu, size_t max) {
     for (size_t gy = 0; ; gy++) {
-        size_t y = frame_height + qu->y * glyph_height;
+        size_t y = margin + qu->y * glyph_height;
         size_t fy = (gy / vga_font_scale_y) * vga_font_width;
         volatile uint32_t *fb_line = gterm_framebuffer + (y + gy) * (gterm_pitch / 4);
         uint32_t *canvas_line = bg_canvas + (y + gy) * gterm_width;
@@ -312,7 +316,7 @@ static size_t plot_from_queue(struct queue_item *qu, size_t max) {
             if (map[offset] == NULL) {
                 goto epilogue;
             }
-            size_t x = frame_width + q->x * glyph_width;
+            size_t x = margin + q->x * glyph_width;
             struct gterm_char *old = &grid[offset];
             bool *new_glyph = &vga_font_bool[q->c.c * vga_font_height * vga_font_width];
             bool *old_glyph = &vga_font_bool[old->c * vga_font_height * vga_font_width];
@@ -587,7 +591,7 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     cursor_status = true;
 
     // default scheme
-    size_t margin = 64;
+    margin = 64;
     margin_gradient = 4;
 
     default_bg = 0x00000000; // background (black)
@@ -850,9 +854,6 @@ no_load_font:;
     } else {
         memset(map, 0, new_map_size);
     }
-
-    frame_height = gterm_height / 2 - (glyph_height * rows) / 2;
-    frame_width  = gterm_width  / 2 - (glyph_width  * cols) / 2;
 
     size_t new_bg_canvas_size = gterm_width * gterm_height * sizeof(uint32_t);
     if (new_bg_canvas_size > last_bg_canvas_size) {

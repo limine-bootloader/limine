@@ -275,8 +275,11 @@ static void plot_char(struct gterm_char *c, size_t x, size_t y) {
         return;
     }
 
-    x = margin + x * glyph_width;
-    y = margin + y * glyph_height;
+    size_t offset_x = margin + ((gterm_width - margin * 2) % glyph_width) / 2;
+    size_t offset_y = margin + ((gterm_height - margin * 2) % glyph_height) / 2;
+
+    x = offset_x + x * glyph_width;
+    y = offset_y + y * glyph_height;
 
     bool *glyph = &vga_font_bool[c->c * vga_font_height * vga_font_width];
     // naming: fx,fy for font coordinates, gx,gy for glyph coordinates
@@ -297,8 +300,11 @@ static void plot_char(struct gterm_char *c, size_t x, size_t y) {
 }
 
 static size_t plot_from_queue(struct queue_item *qu, size_t max) {
+    size_t offset_x = margin + ((gterm_width - margin * 2) % glyph_width) / 2;
+    size_t offset_y = margin + ((gterm_height - margin * 2) % glyph_height) / 2;
+
     for (size_t gy = 0; ; gy++) {
-        size_t y = margin + qu->y * glyph_height;
+        size_t y = offset_y + qu->y * glyph_height;
         size_t fy = (gy / vga_font_scale_y) * vga_font_width;
         volatile uint32_t *fb_line = gterm_framebuffer + (y + gy) * (gterm_pitch / 4);
         uint32_t *canvas_line = bg_canvas + (y + gy) * gterm_width;
@@ -316,7 +322,7 @@ static size_t plot_from_queue(struct queue_item *qu, size_t max) {
             if (map[offset] == NULL) {
                 goto epilogue;
             }
-            size_t x = margin + q->x * glyph_width;
+            size_t x = offset_x + q->x * glyph_width;
             struct gterm_char *old = &grid[offset];
             bool *new_glyph = &vga_font_bool[q->c.c * vga_font_height * vga_font_width];
             bool *old_glyph = &vga_font_bool[old->c * vga_font_height * vga_font_width];

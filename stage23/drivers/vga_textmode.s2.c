@@ -190,7 +190,7 @@ void text_double_buffer_flush(void) {
         draw_cursor();
     }
 
-    if (cursor_offset != old_cursor_offset) {
+    if (cursor_offset != old_cursor_offset || cursor_status == false) {
         video_mem[old_cursor_offset + 1] = back_buffer[old_cursor_offset + 1];
     }
 

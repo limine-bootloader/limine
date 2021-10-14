@@ -16,8 +16,6 @@ int term_backend = NOT_READY;
 size_t term_rows, term_cols;
 bool term_runtime = false;
 
-static bool old_cur_stat;
-
 void (*raw_putchar)(uint8_t c);
 void (*clear)(bool move);
 void (*enable_cursor)(void);
@@ -198,11 +196,8 @@ void term_write(uint64_t buf, uint64_t count) {
     if (!term_runtime || native) {
         const char *s = (const char *)(uintptr_t)buf;
 
-        old_cur_stat = disable_cursor();
         for (size_t i = 0; i < count; i++)
             term_putchar(s[i]);
-        if (old_cur_stat)
-            enable_cursor();
     } else {
 #if defined (__i386__)
         while (count != 0) {
@@ -215,11 +210,8 @@ void term_write(uint64_t buf, uint64_t count) {
 
             memcpy32to64((uint64_t)(uintptr_t)xfer_buf, buf, chunk);
 
-            old_cur_stat = disable_cursor();
             for (size_t i = 0; i < chunk; i++)
                 term_putchar(xfer_buf[i]);
-            if (old_cur_stat)
-                enable_cursor();
 
             count -= chunk;
             buf += chunk;
@@ -401,8 +393,14 @@ static void dec_private_parse(uint8_t c) {
     }
 
     switch (esc_values[0]) {
-        case 25:
-            old_cur_stat = set; return;
+        case 25: {
+            if (set) {
+                enable_cursor();
+            } else {
+                disable_cursor();
+            }
+            return;
+        }
     }
 
     if (term_callback != NULL) {

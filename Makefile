@@ -169,7 +169,7 @@ toolchain:
 	MAKE="$(MAKE)" aux/make_toolchain.sh "`pwd`/toolchain" -j$(NCPUS)
 
 gnu-efi:
-	git clone https://git.code.sf.net/p/gnu-efi/code --branch=3.0.14 --depth=1 $@
+	git clone https://github.com/limine-bootloader/gnu-efi.git --branch=3.0.14 --depth=1 $@
 	cp aux/elf/* gnu-efi/inc/
 
 ovmf-x64:

@@ -79,13 +79,15 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
             print("         Using the first volume containing a Limine configuration!\n");
 
             for (size_t i = 0; i < volume_index_i; i++) {
-                struct file_handle f;
+                struct file_handle *f;
 
-                if (fopen(&f, volume_index[i], "/limine.cfg")
-                 && fopen(&f, volume_index[i], "/boot/limine.cfg")
-                 && fopen(&f, volume_index[i], "/EFI/BOOT/limine.cfg")) {
+                if ((f = fopen(volume_index[i], "/limine.cfg")) == NULL
+                 && (f = fopen(volume_index[i], "/boot/limine.cfg")) == NULL
+                 && (f = fopen(volume_index[i], "/EFI/BOOT/limine.cfg")) == NULL) {
                     continue;
                 }
+
+                fclose(f);
 
                 if (volume_index[i]->backing_dev != NULL) {
                     boot_volume = volume_index[i]->backing_dev;

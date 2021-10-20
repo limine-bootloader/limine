@@ -125,7 +125,8 @@ struct ext2_file_handle {
 int ext2_check_signature(struct volume *part);
 bool ext2_get_guid(struct guid *guid, struct volume *part);
 
-int ext2_open(struct ext2_file_handle *ret, struct volume *part, const char *path);
-int ext2_read(struct ext2_file_handle *file, void *buf, uint64_t loc, uint64_t count);
+bool ext2_open(struct ext2_file_handle *ret, struct volume *part, const char *path);
+void ext2_read(struct ext2_file_handle *file, void *buf, uint64_t loc, uint64_t count);
+void ext2_close(struct ext2_file_handle *file);
 
 #endif

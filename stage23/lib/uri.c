@@ -86,63 +86,54 @@ static bool parse_bios_partition(char *loc, int *drive, int *partition) {
     return true;
 }
 
-static bool uri_hdd_dispatch(struct file_handle *fd, char *loc, char *path) {
+static struct file_handle *uri_hdd_dispatch(char *loc, char *path) {
     int drive, partition;
 
     if (!parse_bios_partition(loc, &drive, &partition))
-        return false;
+        return NULL;
 
     struct volume *volume = volume_get_by_coord(false, drive, partition);
 
     if (volume == NULL)
-        return false;
+        return NULL;
 
-    if (fopen(fd, volume, path))
-        return false;
-
-    return true;
+    return fopen(volume, path);
 }
 
-static bool uri_odd_dispatch(struct file_handle *fd, char *loc, char *path) {
+static struct file_handle *uri_odd_dispatch(char *loc, char *path) {
     int drive, partition;
 
     if (!parse_bios_partition(loc, &drive, &partition))
-        return false;
+        return NULL;
 
     struct volume *volume = volume_get_by_coord(true, drive, partition);
 
     if (volume == NULL)
-        return false;
+        return NULL;
 
-    if (fopen(fd, volume, path))
-        return false;
-
-    return true;
+    return fopen(volume, path);
 }
 
-static bool uri_guid_dispatch(struct file_handle *fd, char *guid_str, char *path) {
+static struct file_handle *uri_guid_dispatch(char *guid_str, char *path) {
     struct guid guid;
     if (!string_to_guid_be(&guid, guid_str))
-        return false;
+        return NULL;
 
     struct volume *volume = volume_get_by_guid(&guid);
     if (volume == NULL) {
         if (!string_to_guid_mixed(&guid, guid_str))
-            return false;
+            return NULL;
 
         volume = volume_get_by_guid(&guid);
         if (volume == NULL)
-            return false;
+            return NULL;
     }
 
-    if (fopen(fd, volume, path))
-        return false;
-
-    return true;
+    return fopen(volume, path);
 }
 
 #if bios == 1
-static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
+static struct file_handle *uri_tftp_dispatch(char *root, char *path) {
     uint32_t ip;
     if (!strcmp(root, "")) {
         ip = 0;
@@ -152,18 +143,19 @@ static bool uri_tftp_dispatch(struct file_handle *fd, char *root, char *path) {
         }
     }
 
-    if (tftp_open(fd, ip, 69, path)) {
-        return false;
+    struct file_handle *ret = ext_mem_alloc(sizeof(struct file_handle));
+    if (!tftp_open(ret, ip, 69, path)) {
+        return NULL;
     }
 
-    return true;
+    return ret;
 }
 #endif
 
-static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) {
+static struct file_handle *uri_boot_dispatch(char *s_part, char *path) {
 #if bios == 1
     if (boot_volume->pxe)
-        return uri_tftp_dispatch(fd, s_part, path);
+        return uri_tftp_dispatch(s_part, path);
 #endif
 
     int partition;
@@ -181,16 +173,13 @@ static bool uri_boot_dispatch(struct file_handle *fd, char *s_part, char *path) 
     struct volume *volume = volume_get_by_coord(boot_volume->is_optical,
                                                 boot_volume->index, partition);
     if (volume == NULL)
-        return false;
+        return NULL;
 
-    if (fopen(fd, volume, path))
-        return false;
-
-    return true;
+    return fopen(volume, path);
 }
 
-bool uri_open(struct file_handle *fd, char *uri) {
-    bool ret;
+struct file_handle *uri_open(char *uri) {
+    struct file_handle *ret;
 
     char *resource, *root, *path;
     uri_resolve(uri, &resource, &root, &path);
@@ -208,33 +197,33 @@ bool uri_open(struct file_handle *fd, char *uri) {
     if (!strcmp(resource, "bios")) {
         panic("bios:// resource is no longer supported. Check CONFIG.md for hdd:// and odd://");
     } else if (!strcmp(resource, "hdd")) {
-        ret = uri_hdd_dispatch(fd, root, path);
+        ret = uri_hdd_dispatch(root, path);
     } else if (!strcmp(resource, "odd")) {
-        ret = uri_odd_dispatch(fd, root, path);
+        ret = uri_odd_dispatch(root, path);
     } else if (!strcmp(resource, "boot")) {
-        ret = uri_boot_dispatch(fd, root, path);
+        ret = uri_boot_dispatch(root, path);
     } else if (!strcmp(resource, "guid")) {
-        ret = uri_guid_dispatch(fd, root, path);
+        ret = uri_guid_dispatch(root, path);
     } else if (!strcmp(resource, "uuid")) {
-        ret = uri_guid_dispatch(fd, root, path);
+        ret = uri_guid_dispatch(root, path);
 #if bios == 1
     } else if (!strcmp(resource, "tftp")) {
-        ret = uri_tftp_dispatch(fd, root, path);
+        ret = uri_tftp_dispatch(root, path);
 #endif
     } else {
         panic("Resource `%s` not valid.", resource);
     }
 
-    if (compressed && ret) {
-        struct file_handle compressed_fd = {0};
-        fread(fd, &compressed_fd.size, fd->size - 4, sizeof(uint32_t));
-        compressed_fd.fd = ext_mem_alloc(compressed_fd.size);
-        void *src = ext_mem_alloc(fd->size);
-        fread(fd, src, 0, fd->size);
-        if (tinf_gzip_uncompress(compressed_fd.fd, src, fd->size))
+    if (compressed && ret != NULL) {
+        struct file_handle *compressed_fd = ext_mem_alloc(sizeof(struct file_handle));
+        fread(ret, &compressed_fd->size, ret->size - 4, sizeof(uint32_t));
+        compressed_fd->fd = ext_mem_alloc(compressed_fd->size);
+        void *src = freadall(ret, MEMMAP_BOOTLOADER_RECLAIMABLE);
+        if (tinf_gzip_uncompress(compressed_fd->fd, src, ret->size))
             panic("tinf error");
-        compressed_fd.is_memfile = true;
-        *fd = compressed_fd;
+        fclose(ret);
+        compressed_fd->is_memfile = true;
+        ret = compressed_fd;
     }
 
     return ret;

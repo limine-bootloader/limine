@@ -671,12 +671,13 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
 
     char *background_path = config_get_value(NULL, 0, "BACKGROUND_PATH");
     if (background_path != NULL) {
-        struct file_handle *bg_file = ext_mem_alloc(sizeof(struct file_handle));
-        if (uri_open(bg_file, background_path)) {
+        struct file_handle *bg_file;
+        if ((bg_file = uri_open(background_path)) != NULL) {
             background = ext_mem_alloc(sizeof(struct image));
             if (open_image(background, bg_file)) {
                 background = NULL;
             }
+            fclose(bg_file);
         }
     }
 
@@ -741,16 +742,16 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     if (menu_font == NULL)
         menu_font = config_get_value(NULL, 0, "TERMINAL_FONT");
     if (menu_font != NULL) {
-        struct file_handle f;
-        if (!uri_open(&f, menu_font)) {
+        struct file_handle *f;
+        if ((f = uri_open(menu_font)) == NULL) {
             print("menu: Could not open font file.\n");
         } else {
-            if (fread(&f, vga_font_bits, 0, font_bytes) == 0) {
-                if (menu_font_size != NULL) {
-                    vga_font_width = tmp_font_width;
-                    vga_font_height = tmp_font_height;
-                }
+            fread(f, vga_font_bits, 0, font_bytes);
+            if (menu_font_size != NULL) {
+                vga_font_width = tmp_font_width;
+                vga_font_height = tmp_font_height;
             }
+            fclose(f);
         }
     }
 

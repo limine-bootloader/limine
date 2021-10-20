@@ -229,22 +229,34 @@ int elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
     char *names = ext_mem_alloc(shstrtab.sh_size);
     memcpy(names, elf + (shstrtab.sh_offset), shstrtab.sh_size);
 
+    int ret;
+
     for (uint16_t i = 0; i < hdr.sh_num; i++) {
         struct elf64_shdr section;
         memcpy(&section, elf + (hdr.shoff + i * sizeof(struct elf64_shdr)),
                    sizeof(struct elf64_shdr));
 
         if (!strcmp(&names[section.sh_name], name)) {
-            if (section.sh_size > limit)
-                return 3;
-            if (section.sh_size < limit)
-                return 4;
+            if (section.sh_size > limit) {
+                ret = 3;
+                goto out;
+            }
+            if (section.sh_size < limit) {
+                ret = 4;
+                goto out;
+            }
             memcpy(buffer, elf + (section.sh_offset), section.sh_size);
-            return elf64_apply_relocations(elf, &hdr, buffer, section.sh_addr, section.sh_size, slide);
+            ret = elf64_apply_relocations(elf, &hdr, buffer, section.sh_addr, section.sh_size, slide);
+            goto out;
         }
     }
 
-    return 2;
+    ret = 2;
+
+out:
+    pmm_free(names, shstrtab.sh_size);
+
+    return ret;
 }
 
 /// SAFETY: The caller must ensure that the provided `elf` is a valid 64-bit
@@ -311,22 +323,34 @@ int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
     char *names = ext_mem_alloc(shstrtab.sh_size);
     memcpy(names, elf + (shstrtab.sh_offset), shstrtab.sh_size);
 
+    int ret;
+
     for (uint16_t i = 0; i < hdr.sh_num; i++) {
         struct elf32_shdr section;
         memcpy(&section, elf + (hdr.shoff + i * sizeof(struct elf32_shdr)),
                    sizeof(struct elf32_shdr));
 
         if (!strcmp(&names[section.sh_name], name)) {
-            if (section.sh_size > limit)
-                return 3;
-            if (section.sh_size < limit)
-                return 4;
+            if (section.sh_size > limit) {
+                ret = 3;
+                goto out;
+            }
+            if (section.sh_size < limit) {
+                ret = 4;
+                goto out;
+            }
             memcpy(buffer, elf + (section.sh_offset), section.sh_size);
-            return 0;
+            ret = 0;
+            goto out;
         }
     }
 
-    return 2;
+    ret = 2;
+
+out:
+    pmm_free(names, shstrtab.sh_size);
+
+    return ret;
 }
 
 static uint64_t elf64_max_align(uint8_t *elf) {

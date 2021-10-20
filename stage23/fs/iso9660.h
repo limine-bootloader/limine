@@ -19,7 +19,8 @@ struct iso9660_file_handle {
 };
 
 int iso9660_check_signature(struct volume *vol);
-int iso9660_open(struct iso9660_file_handle *ret, struct volume *vol, const char *path);
-int iso9660_read(struct iso9660_file_handle *file, void *buf, uint64_t loc, uint64_t count);
+bool iso9660_open(struct iso9660_file_handle *ret, struct volume *vol, const char *path);
+void iso9660_read(struct iso9660_file_handle *file, void *buf, uint64_t loc, uint64_t count);
+void iso9660_close(struct iso9660_file_handle *file);
 
 #endif

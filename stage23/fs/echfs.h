@@ -28,6 +28,7 @@ struct echfs_file_handle {
     uint64_t alloc_table_size;
     uint64_t alloc_table_offset;
     uint64_t dir_offset;
+    uint64_t file_block_count;
     uint64_t *alloc_map;
     struct echfs_dir_entry dir_entry;
 };
@@ -35,7 +36,8 @@ struct echfs_file_handle {
 int echfs_check_signature(struct volume *part);
 bool echfs_get_guid(struct guid *guid, struct volume *part);
 
-int echfs_open(struct echfs_file_handle *ret, struct volume *part, const char *filename);
-int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t count);
+bool echfs_open(struct echfs_file_handle *ret, struct volume *part, const char *filename);
+void echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t count);
+void echfs_close(struct echfs_file_handle *file);
 
 #endif

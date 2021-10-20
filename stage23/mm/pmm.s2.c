@@ -563,6 +563,13 @@ struct e820_entry_t *get_raw_memmap(size_t *entry_count) {
 }
 #endif
 
+void pmm_free(void *ptr, size_t count) {
+    count = ALIGN_UP(count, 4096);
+    if (allocations_disallowed)
+        panic("Memory allocations disallowed");
+    memmap_alloc_range((uintptr_t)ptr, count, MEMMAP_USABLE, false, false, false, false);
+}
+
 void *ext_mem_alloc(size_t count) {
     return ext_mem_alloc_type(count, MEMMAP_BOOTLOADER_RECLAIMABLE);
 }
@@ -612,7 +619,7 @@ void *ext_mem_alloc_type(size_t count, uint32_t type) {
 }
 
 
-/// Compute and returns the amount of upper and lower memory till 
+/// Compute and returns the amount of upper and lower memory till
 /// the first hole.
 struct meminfo mmap_get_info(size_t mmap_count, struct e820_entry_t *mmap) {
     struct meminfo info = {0};

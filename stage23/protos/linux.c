@@ -346,13 +346,13 @@ struct boot_params {
 // End of Linux code
 
 void linux_load(char *config, char *cmdline) {
-    struct file_handle *kernel = ext_mem_alloc(sizeof(struct file_handle));
+    struct file_handle *kernel;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
         panic("linux: KERNEL_PATH not specified");
 
-    if (!uri_open(kernel, kernel_path))
+    if ((kernel = uri_open(kernel_path)) == NULL)
         panic("linux: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
     uint32_t signature;
@@ -441,11 +441,13 @@ void linux_load(char *config, char *cmdline) {
         if (module_path == NULL)
             break;
 
-        struct file_handle module;
-        if (!uri_open(&module, module_path))
+        struct file_handle *module;
+        if ((module = uri_open(module_path)) == NULL)
             panic("linux: Failed to open module with path `%s`. Is the path correct?", module_path);
 
-        size_of_all_modules += module.size;
+        size_of_all_modules += module->size;
+
+        fclose(module);
     }
 
     modules_mem_base -= size_of_all_modules;
@@ -464,15 +466,15 @@ void linux_load(char *config, char *cmdline) {
         if (module_path == NULL)
             break;
 
-        struct file_handle module;
-        if (!uri_open(&module, module_path))
+        struct file_handle *module;
+        if ((module = uri_open(module_path)) == NULL)
             panic("linux: Could not open `%s`", module_path);
 
         print("linux: Loading module `%s`...\n", module_path);
 
-        fread(&module, (void *)_modules_mem_base, 0, module.size);
+        fread(module, (void *)_modules_mem_base, 0, module->size);
 
-        _modules_mem_base += module.size;
+        _modules_mem_base += module->size;
     }
 
     if (size_of_all_modules != 0) {

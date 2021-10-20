@@ -26,7 +26,7 @@ static bool read_block(struct echfs_file_handle *file, void *buf, uint64_t block
     return volume_read(file->part, buf, (file->alloc_map[block] * file->block_size) + offset, count);
 }
 
-int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
+void echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
     for (uint64_t progress = 0; progress < count;) {
         uint64_t block = (loc + progress) / file->block_size;
 
@@ -38,8 +38,6 @@ int echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t
         read_block(file, buf + progress, block, offset, chunk);
         progress += chunk;
     }
-
-    return 0;
 }
 
 int echfs_check_signature(struct volume *part) {
@@ -66,7 +64,12 @@ bool echfs_get_guid(struct guid *guid, struct volume *part) {
     return true;
 }
 
-int echfs_open(struct echfs_file_handle *ret, struct volume *part, const char *path) {
+void echfs_close(struct echfs_file_handle *file) {
+    pmm_free(file->alloc_map, file->file_block_count * sizeof(uint64_t));
+    pmm_free(file, sizeof(struct echfs_file_handle));
+}
+
+bool echfs_open(struct echfs_file_handle *ret, struct volume *part, const char *path) {
     ret->part = part;
 
     struct echfs_identity_table id_table;
@@ -74,7 +77,7 @@ int echfs_open(struct echfs_file_handle *ret, struct volume *part, const char *p
 
     if (strncmp(id_table.signature, "_ECH_FS_", 8)) {
         print("echfs: signature invalid\n");
-        return -1;
+        return false;
     }
 
     ret->block_size         = id_table.block_size;
@@ -121,16 +124,16 @@ next:;
         }
     }
 
-    return -1;
+    return false;
 
 found:;
     // Load the allocation map.
-    uint64_t file_block_count = DIV_ROUNDUP(ret->dir_entry.size, ret->block_size);
+    ret->file_block_count = DIV_ROUNDUP(ret->dir_entry.size, ret->block_size);
 
-    ret->alloc_map = ext_mem_alloc(file_block_count * sizeof(uint64_t));
+    ret->alloc_map = ext_mem_alloc(ret->file_block_count * sizeof(uint64_t));
 
     ret->alloc_map[0] = ret->dir_entry.payload;
-    for (uint64_t i = 1; i < file_block_count; i++) {
+    for (uint64_t i = 1; i < ret->file_block_count; i++) {
         // Read the next block.
         volume_read(ret->part,
             &ret->alloc_map[i],
@@ -138,5 +141,5 @@ found:;
             sizeof(uint64_t));
     }
 
-    return 0;
+    return true;
 }

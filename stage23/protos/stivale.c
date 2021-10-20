@@ -66,7 +66,7 @@ void stivale_load(char *config, char *cmdline) {
     stivale_struct.flags |= (1 << 1);    // we give colour information
     stivale_struct.flags |= (1 << 2);    // we give SMBIOS information
 
-    struct file_handle *kernel_file = ext_mem_alloc(sizeof(struct file_handle));
+    struct file_handle *kernel_file;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
@@ -74,7 +74,7 @@ void stivale_load(char *config, char *cmdline) {
 
     print("stivale: Loading kernel `%s`...\n", kernel_path);
 
-    if (!uri_open(kernel_file, kernel_path))
+    if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic("stivale: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
     char *kaslr_s = config_get_value(config, 0, "KASLR");
@@ -91,6 +91,8 @@ void stivale_load(char *config, char *cmdline) {
     uint8_t *kernel = freadall(kernel_file, STIVALE_MMAP_BOOTLOADER_RECLAIMABLE);
     int bits = elf_bits(kernel);
     bool loaded_by_anchor = false;
+
+    fclose(kernel_file);
 
     if (bits == -1) {
         struct stivale_anchor *anchor;
@@ -210,16 +212,18 @@ void stivale_load(char *config, char *cmdline) {
 
         print("stivale: Loading module `%s`...\n", module_path);
 
-        struct file_handle f;
-        if (!uri_open(&f, module_path))
+        struct file_handle *f;
+        if ((f = uri_open(module_path)) == NULL)
             panic("stivale: Failed to open module with path `%s`. Is the path correct?", module_path);
 
-        m->begin = REPORTED_ADDR((uint64_t)(size_t)freadall(&f, STIVALE_MMAP_KERNEL_AND_MODULES));
-        m->end   = m->begin + f.size;
+        m->begin = REPORTED_ADDR((uint64_t)(size_t)freadall(f, STIVALE_MMAP_KERNEL_AND_MODULES));
+        m->end   = m->begin + f->size;
         m->next  = 0;
 
         *prev_mod_ptr = REPORTED_ADDR((uint64_t)(size_t)m);
         prev_mod_ptr  = &m->next;
+
+        fclose(f);
 
         if (verbose) {
             print("stivale: Requested module %u:\n", i);

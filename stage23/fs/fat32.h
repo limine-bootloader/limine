@@ -26,11 +26,13 @@ struct fat32_file_handle {
     uint32_t size_bytes;
     uint32_t size_clusters;
     uint32_t *cluster_chain;
+    size_t chain_len;
 };
 
 int fat32_check_signature(struct volume *part);
 
-int fat32_open(struct fat32_file_handle *ret, struct volume *part, const char *path);
-int fat32_read(struct fat32_file_handle *file, void *buf, uint64_t loc, uint64_t count);
+bool fat32_open(struct fat32_file_handle *ret, struct volume *part, const char *path);
+void fat32_read(struct fat32_file_handle *file, void *buf, uint64_t loc, uint64_t count);
+void fat32_close(struct fat32_file_handle *file);
 
 #endif

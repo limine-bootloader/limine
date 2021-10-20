@@ -34,23 +34,25 @@ extern symbol stage3_addr;
 extern symbol limine_sys_size;
 
 static bool stage3_init(struct volume *part) {
-    struct file_handle stage3;
+    struct file_handle *stage3;
 
-    if (fopen(&stage3, part, "/limine.sys")
-     && fopen(&stage3, part, "/boot/limine.sys")) {
+    if ((stage3 = fopen(part, "/limine.sys")) == NULL
+     && (stage3 = fopen(part, "/boot/limine.sys")) == NULL) {
         return false;
     }
 
     stage3_found = true;
 
-    if (stage3.size != (size_t)limine_sys_size) {
+    if (stage3->size != (size_t)limine_sys_size) {
         print("limine.sys size incorrect.\n");
         return false;
     }
 
-    fread(&stage3, stage3_addr,
+    fread(stage3, stage3_addr,
           (uintptr_t)stage3_addr - 0x8000,
-          stage3.size - ((uintptr_t)stage3_addr - 0x8000));
+          stage3->size - ((uintptr_t)stage3_addr - 0x8000));
+
+    fclose(stage3);
 
     if (BUILD_ID != stage3_build_id) {
         print("limine.sys build ID mismatch.\n");

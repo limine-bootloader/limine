@@ -24,7 +24,7 @@ __attribute__((noreturn)) void multiboot1_spinup_32(
 struct multiboot1_info multiboot1_info = {0};
 
 void multiboot1_load(char *config, char *cmdline) {
-    struct file_handle *kernel_file = ext_mem_alloc(sizeof(*kernel_file));
+    struct file_handle *kernel_file;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
@@ -32,10 +32,12 @@ void multiboot1_load(char *config, char *cmdline) {
 
     print("multiboot1: Loading kernel `%s`...\n", kernel_path);
 
-    if (!uri_open(kernel_file, kernel_path))
+    if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic("multiboot1: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
     uint8_t *kernel = freadall(kernel_file, MEMMAP_KERNEL_AND_MODULES);
+
+    fclose(kernel_file);
 
     struct multiboot1_header header = {0};
     size_t header_offset = 0;
@@ -134,8 +136,8 @@ void multiboot1_load(char *config, char *cmdline) {
 
             print("multiboot1: Loading module `%s`...\n", module_path);
 
-            struct file_handle f;
-            if (!uri_open(&f, module_path))
+            struct file_handle *f;
+            if ((f = uri_open(module_path)) == NULL)
                 panic("multiboot1: Failed to open module with path `%s`. Is the path correct?", module_path);
 
             char *module_cmdline = config_get_value(config, i, "MODULE_STRING");
@@ -143,15 +145,17 @@ void multiboot1_load(char *config, char *cmdline) {
             strcpy(lowmem_modstr, module_cmdline);
 
             void *module_addr = (void *)(uintptr_t)ALIGN_UP(kernel_top, 4096);
-            memmap_alloc_range((uintptr_t)module_addr, f.size, MEMMAP_KERNEL_AND_MODULES,
+            memmap_alloc_range((uintptr_t)module_addr, f->size, MEMMAP_KERNEL_AND_MODULES,
                                true, true, false, false);
-            kernel_top = (uintptr_t)module_addr + f.size;
-            fread(&f, module_addr, 0, f.size);
+            kernel_top = (uintptr_t)module_addr + f->size;
+            fread(f, module_addr, 0, f->size);
 
             m->begin   = (uint32_t)(size_t)module_addr;
-            m->end     = m->begin + f.size;
+            m->end     = m->begin + f->size;
             m->cmdline = (uint32_t)(size_t)lowmem_modstr;
             m->pad     = 0;
+
+            fclose(f);
 
             if (verbose) {
                 print("multiboot1: Requested module %u:\n", i);

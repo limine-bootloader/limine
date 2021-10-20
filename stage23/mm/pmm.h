@@ -49,6 +49,8 @@ void *ext_mem_alloc_type(size_t count, uint32_t type);
 
 void *conv_mem_alloc(size_t count);
 
+void pmm_free(void *ptr, size_t length);
+
 #if uefi == 1
 void pmm_reclaim_uefi_mem(void);
 void pmm_release_uefi_mem(void);

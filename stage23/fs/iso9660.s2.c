@@ -76,7 +76,8 @@ struct iso9660_contexts_node {
     struct iso9660_context context;
     struct iso9660_contexts_node *next;
 };
-struct iso9660_contexts_node *contexts = NULL;
+
+static struct iso9660_contexts_node *contexts = NULL;
 
 static void iso9660_find_PVD(struct iso9660_volume_descriptor *desc, struct volume *vol) {
     uint32_t lba = ISO9660_FIRST_VOLUME_DESCRIPTOR;
@@ -207,7 +208,7 @@ int iso9660_check_signature(struct volume *vol) {
     return !strcmp(buf, "CD001");
 }
 
-int iso9660_open(struct iso9660_file_handle *ret, struct volume *vol, const char *path) {
+bool iso9660_open(struct iso9660_file_handle *ret, struct volume *vol, const char *path) {
     ret->context = iso9660_get_context(vol);
 
     while (*path == '/')
@@ -215,6 +216,8 @@ int iso9660_open(struct iso9660_file_handle *ret, struct volume *vol, const char
 
     struct iso9660_directory_entry *current = ret->context->root;
     uint32_t current_size = ret->context->root_size;
+
+    bool first = true;
 
     uint32_t next_sector = 0;
     uint32_t next_size = 0;
@@ -228,7 +231,7 @@ int iso9660_open(struct iso9660_file_handle *ret, struct volume *vol, const char
 
         struct iso9660_directory_entry *entry = iso9660_find(current, current_size, filename);
         if (!entry)
-            return 1;    // Not found :(
+            return false;    // Not found :(
 
         next_sector = entry->extent.little;
         next_size = entry->extent_size.little;
@@ -236,17 +239,27 @@ int iso9660_open(struct iso9660_file_handle *ret, struct volume *vol, const char
         if (*path++ == '\0')
             break;    // Found :)
 
+        if (!first) {
+            pmm_free(current, current_size);
+        }
+
         current_size = next_size;
         current = ext_mem_alloc(current_size);
+
+        first = false;
+
         volume_read(vol, current, next_sector * ISO9660_SECTOR_SIZE, current_size);
     }
 
     ret->LBA = next_sector;
     ret->size = next_size;
-    return 0;
+    return true;
 }
 
-int iso9660_read(struct iso9660_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
+void iso9660_read(struct iso9660_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
     volume_read(file->context->vol, buf, file->LBA * ISO9660_SECTOR_SIZE + loc, count);
-    return 0;
+}
+
+void iso9660_close(struct iso9660_file_handle *file) {
+    pmm_free(file, sizeof(struct iso9660_file_handle));
 }

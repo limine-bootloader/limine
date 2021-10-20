@@ -249,8 +249,9 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
 
         directory_entries = ext_mem_alloc(dir_chain_len * block_size);
 
-        if (!read_cluster_chain(context, directory_cluster_chain, directory_entries, 0, dir_chain_len * block_size))
-            return -1;
+        read_cluster_chain(context, directory_cluster_chain, directory_entries, 0, dir_chain_len * block_size);
+
+        pmm_free(directory_cluster_chain, dir_chain_len * sizeof(uint32_t));
     } else {
         dir_chain_len = DIV_ROUNDUP(context->root_entries * sizeof(struct fat32_directory_entry), block_size);
 
@@ -258,6 +259,8 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
 
         volume_read(context->part, directory_entries, context->root_start * FAT32_SECTOR_SIZE, context->root_entries * sizeof(struct fat32_directory_entry));
     }
+
+    int ret;
 
     for (size_t i = 0; i < (dir_chain_len * block_size) / sizeof(struct fat32_directory_entry); i++) {
         if (directory_entries[i].file_name_and_ext[0] == 0x00) {
@@ -295,7 +298,8 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
 
             if (!strcmp(current_lfn, name)) {
                 *file = directory_entries[i+1];
-                return 0;
+                ret = 0;
+                goto out;
             }
         }
 
@@ -310,12 +314,17 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
         }
         if (!strncmp(directory_entries[i].file_name_and_ext, fn, 8+3)) {
             *file = directory_entries[i];
-            return 0;
+            ret = 0;
+            goto out;
         }
     }
 
     // file not found
-    return -1;
+    ret = -1;
+
+out:
+    pmm_free(directory_entries, dir_chain_len * block_size);
+    return ret;
 }
 
 int fat32_check_signature(struct volume *part) {
@@ -323,13 +332,13 @@ int fat32_check_signature(struct volume *part) {
     return fat32_init_context(&context, part) == 0;
 }
 
-int fat32_open(struct fat32_file_handle* ret, struct volume *part, const char* path) {
+bool fat32_open(struct fat32_file_handle* ret, struct volume *part, const char* path) {
     struct fat32_context context;
     int r = fat32_init_context(&context, part);
 
     if (r) {
         print("fat32: context init failure (%d)\n", r);
-        return r;
+        return false;
     }
 
     struct fat32_directory_entry _current_directory;
@@ -379,7 +388,7 @@ int fat32_open(struct fat32_file_handle* ret, struct volume *part, const char* p
         }
 
         if ((r = fat32_open_in(&context, current_directory, &current_file, current_part)) != 0) {
-            return r;
+            return false;
         }
 
         if (expect_directory) {
@@ -392,13 +401,17 @@ int fat32_open(struct fat32_file_handle* ret, struct volume *part, const char* p
                 ret->first_cluster |= (uint64_t)current_file.cluster_num_high << 16;
             ret->size_clusters = DIV_ROUNDUP(current_file.file_size_bytes, FAT32_SECTOR_SIZE);
             ret->size_bytes = current_file.file_size_bytes;
-            size_t file_chain_len;
-            ret->cluster_chain = cache_cluster_chain(&context, ret->first_cluster, &file_chain_len);
-            return 0;
+            ret->cluster_chain = cache_cluster_chain(&context, ret->first_cluster, &ret->chain_len);
+            return true;
         }
     }
 }
 
-int fat32_read(struct fat32_file_handle* file, void* buf, uint64_t loc, uint64_t count) {
-    return !read_cluster_chain(&file->context, file->cluster_chain, buf, loc, count);
+void fat32_read(struct fat32_file_handle* file, void* buf, uint64_t loc, uint64_t count) {
+    read_cluster_chain(&file->context, file->cluster_chain, buf, loc, count);
+}
+
+void fat32_close(struct fat32_file_handle *file) {
+    pmm_free(file->cluster_chain, file->chain_len * sizeof(uint32_t));
+    pmm_free(file, sizeof(struct fat32_file_handle));
 }

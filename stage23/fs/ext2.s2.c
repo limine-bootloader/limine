@@ -250,6 +250,8 @@ static bool ext2_parse_dirent(struct ext2_dir_entry *dir, struct ext2_file_handl
     bool escape = false;
     static char token[256];
 
+    bool ret;
+
 next:
     memset(token, 0, 256);
 
@@ -277,19 +279,24 @@ next:
 
         if (!strcmp(token, name)) {
             if (escape) {
-                return true;
+                ret = true;
+                goto out;
             } else {
                 // update the current inode
                 ext2_get_inode(&current_inode, fd, dir->inode);
                 while ((current_inode.i_mode & FMT_MASK) != S_IFDIR) {
                     if ((current_inode.i_mode & FMT_MASK) == S_IFLNK) {
-                        if (!symlink_to_inode(&current_inode, fd))
-                            return false;
+                        if (!symlink_to_inode(&current_inode, fd)) {
+                            ret = false;
+                            goto out;
+                        }
                     } else {
                         print("ext2: Part of path is not directory nor symlink\n");
-                        return false;
+                        ret = false;
+                        goto out;
                     }
                 }
+                pmm_free(alloc_map, current_inode.i_blocks_count * sizeof(uint32_t));
                 goto next;
             }
         }
@@ -297,10 +304,14 @@ next:
         i += dir->rec_len;
     }
 
-    return false;
+    ret = false;
+
+out:
+    pmm_free(alloc_map, current_inode.i_blocks_count * sizeof(uint32_t));
+    return ret;
 }
 
-int ext2_open(struct ext2_file_handle *ret, struct volume *part, const char *path) {
+bool ext2_open(struct ext2_file_handle *ret, struct volume *part, const char *path) {
     ret->part = part;
 
     volume_read(ret->part, &ret->sb, 1024, sizeof(struct ext2_superblock));
@@ -317,17 +328,17 @@ int ext2_open(struct ext2_file_handle *ret, struct volume *part, const char *pat
     struct ext2_dir_entry entry;
 
     if (!ext2_parse_dirent(&entry, ret, path))
-        return -1;
+        return false;
 
     ext2_get_inode(&ret->inode, ret, entry.inode);
 
     while ((ret->inode.i_mode & FMT_MASK) != S_IFREG) {
         if ((ret->inode.i_mode & FMT_MASK) == S_IFLNK) {
             if (!symlink_to_inode(&ret->inode, ret))
-                return -1;
+                return false;
         } else {
             print("ext2: Entity is not regular file nor symlink\n");
-            return -1;
+            return false;
         }
     }
 
@@ -335,11 +346,16 @@ int ext2_open(struct ext2_file_handle *ret, struct volume *part, const char *pat
 
     ret->alloc_map = create_alloc_map(ret, &ret->inode);
 
-    return 0;
+    return true;
 }
 
-int ext2_read(struct ext2_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
-    return inode_read(buf, loc, count, &file->inode, file, file->alloc_map);
+void ext2_close(struct ext2_file_handle *file) {
+    pmm_free(file->alloc_map, file->inode.i_blocks_count * sizeof(uint32_t));
+    pmm_free(file, sizeof(struct ext2_file_handle));
+}
+
+void ext2_read(struct ext2_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
+    inode_read(buf, loc, count, &file->inode, file, file->alloc_map);
 }
 
 static struct ext4_extent_header* ext4_find_leaf(struct ext4_extent_header* ext_block, uint32_t read_block, uint64_t block_size, struct volume *part) {
@@ -415,6 +431,8 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
             } else {
                 panic("extent for block not found");
             }
+
+            pmm_free(leaf, fd->block_size);
         } else {
             block_index = alloc_map[block];
         }

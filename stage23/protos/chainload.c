@@ -116,8 +116,8 @@ void chainload(char *config) {
     if (image_path == NULL)
         panic("chainload: IMAGE_PATH not specified");
 
-    struct file_handle *image = ext_mem_alloc(sizeof(struct file_handle));
-    if (!uri_open(image, image_path))
+    struct file_handle *image;
+    if ((image = uri_open(image_path)) == NULL)
         panic("chainload: Failed to open image with path `%s`. Is the path correct?", image_path);
 
     EFI_HANDLE efi_part_handle = image->efi_part_handle;
@@ -129,6 +129,9 @@ void chainload(char *config) {
     if (status)
         panic("chainload: Allocation failure");
     memcpy(ptr, _ptr, image_size);
+
+    pmm_free(_ptr, image->size);
+    fclose(image);
 
     term_deinit();
 

@@ -17,18 +17,20 @@ bool config_ready = false;
 static char *config_addr;
 
 int init_config_disk(struct volume *part) {
-    struct file_handle f;
+    struct file_handle *f;
 
-    if (fopen(&f, part, "/limine.cfg")
-     && fopen(&f, part, "/boot/limine.cfg")
-     && fopen(&f, part, "/EFI/BOOT/limine.cfg")) {
+    if ((f = fopen(part, "/limine.cfg")) == NULL
+     && (f = fopen(part, "/boot/limine.cfg")) == NULL
+     && (f = fopen(part, "/EFI/BOOT/limine.cfg")) == NULL) {
         return -1;
     }
 
-    size_t config_size = f.size + 1;
+    size_t config_size = f->size + 1;
     config_addr = ext_mem_alloc(config_size);
 
-    fread(&f, config_addr, 0, f.size);
+    fread(f, config_addr, 0, f->size);
+
+    fclose(f);
 
     return init_config(config_size);
 }

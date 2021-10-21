@@ -22,10 +22,7 @@ static void console_help(void) {
 void console(void) {
     print("Welcome to the Limine console.\nType 'help' for more information.\n\n");
 
-    static char *prompt = NULL;
-    if (prompt == NULL) {
-        prompt = ext_mem_alloc(256);
-    }
+    char *prompt = ext_mem_alloc(256);
 
     for (;;) {
         print(">>> ");
@@ -34,8 +31,7 @@ void console(void) {
         if (strcmp(prompt, "help") == 0) {
             console_help();
         } else if (strcmp(prompt, "exit") == 0) {
-            reset_term();
-            return;
+            break;
         } else if (strcmp(prompt, "version") == 0) {
             print(LIMINE_VERSION "\n");
         } else if (strcmp(prompt, "copyright") == 0) {
@@ -47,4 +43,7 @@ void console(void) {
             print("Invalid command: `%s`.\n", prompt);
         }
     }
+
+    reset_term();
+    pmm_free(prompt, 256);
 }

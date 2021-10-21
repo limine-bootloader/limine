@@ -129,10 +129,6 @@ void term_textmode(void) {
 }
 #endif
 
-void term_deinit(void) {
-    term_backend = NOT_READY;
-}
-
 static uint64_t context_size(void) {
     uint64_t ret = 0;
 

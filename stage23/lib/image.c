@@ -21,13 +21,19 @@ void image_make_stretched(struct image *image, int new_x_size, int new_y_size) {
     image->y_size = new_y_size;
 }
 
-int open_image(struct image *image, struct file_handle *file) {
-    image->file = file;
-
-    if (!bmp_open_image(image, file))
-        return 0;
+struct image *image_open(struct file_handle *file) {
+    struct image *image = ext_mem_alloc(sizeof(struct image));
 
     image->type = IMAGE_TILED;
 
-    return -1;
+    if (bmp_open_image(image, file))
+        return image;
+
+    pmm_free(image, sizeof(struct image));
+    return NULL;
+}
+
+void image_close(struct image *image) {
+    pmm_free(image->img, image->allocated_size);
+    pmm_free(image, sizeof(struct image));
 }

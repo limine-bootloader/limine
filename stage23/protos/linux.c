@@ -403,6 +403,7 @@ void linux_load(char *config, char *cmdline) {
             fread(kernel, kernel_version, setup_header->kernel_version + 0x200, 128);
             print("linux: Kernel version: %s\n", kernel_version);
         }
+        pmm_free(kernel_version, 128);
     }
 
     setup_header->type_of_loader = 0xff;

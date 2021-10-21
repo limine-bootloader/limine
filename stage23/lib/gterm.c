@@ -19,7 +19,6 @@
 #define DEFAULT_FONT_WIDTH 8
 #define DEFAULT_FONT_HEIGHT 16
 
-static size_t last_vga_font_bool = 0;
 static size_t vga_font_width;
 static size_t vga_font_height;
 static size_t glyph_width = 8;
@@ -40,6 +39,7 @@ static uint16_t  gterm_bpp;
 extern symbol _binary_font_bin_start;
 
 static uint8_t *vga_font_bits = NULL;
+static size_t vga_font_bool_size = 0;
 static bool *vga_font_bool = NULL;
 
 static uint32_t ansi_colours[8];
@@ -48,7 +48,7 @@ static uint32_t default_fg, default_bg;
 
 static struct image *background;
 
-static size_t last_bg_canvas_size = 0;
+static size_t bg_canvas_size = 0;
 static uint32_t *bg_canvas = NULL;
 
 static size_t rows;
@@ -56,9 +56,9 @@ static size_t cols;
 static size_t margin;
 static size_t margin_gradient;
 
-static size_t last_grid_size = 0;
-static size_t last_queue_size = 0;
-static size_t last_map_size = 0;
+static size_t grid_size = 0;
+static size_t queue_size = 0;
+static size_t map_size = 0;
 
 struct gterm_char {
     uint32_t c;
@@ -673,10 +673,7 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     if (background_path != NULL) {
         struct file_handle *bg_file;
         if ((bg_file = uri_open(background_path)) != NULL) {
-            background = ext_mem_alloc(sizeof(struct image));
-            if (open_image(background, bg_file)) {
-                background = NULL;
-            }
+            background = image_open(bg_file);
             fclose(bg_file);
         }
     }
@@ -714,9 +711,7 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     vga_font_width = DEFAULT_FONT_WIDTH, vga_font_height = DEFAULT_FONT_HEIGHT;
     size_t font_bytes = (vga_font_width * vga_font_height * VGA_FONT_GLYPHS) / 8;
 
-    if (vga_font_bits == NULL) {
-        vga_font_bits = ext_mem_alloc(VGA_FONT_MAX);
-    }
+    vga_font_bits = ext_mem_alloc(VGA_FONT_MAX);
 
     memcpy(vga_font_bits, (void *)_binary_font_bin_start, VGA_FONT_MAX);
 
@@ -766,11 +761,8 @@ no_load_font:;
 
     vga_font_width += font_spacing;
 
-    size_t this_vga_font_bool = VGA_FONT_GLYPHS * vga_font_height * vga_font_width * sizeof(bool);
-    if (last_vga_font_bool < this_vga_font_bool) {
-        vga_font_bool = ext_mem_alloc(this_vga_font_bool);
-        last_vga_font_bool = this_vga_font_bool;
-    }
+    vga_font_bool_size = VGA_FONT_GLYPHS * vga_font_height * vga_font_width * sizeof(bool);
+    vga_font_bool = ext_mem_alloc(vga_font_bool_size);
 
     for (size_t i = 0; i < VGA_FONT_GLYPHS; i++) {
         uint8_t *glyph = &vga_font_bits[i * vga_font_height];
@@ -825,34 +817,18 @@ no_load_font:;
     offset_x = margin + ((gterm_width - margin * 2) % glyph_width) / 2;
     offset_y = margin + ((gterm_height - margin * 2) % glyph_height) / 2;
 
-    size_t new_grid_size = rows * cols * sizeof(struct gterm_char);
-    if (new_grid_size > last_grid_size) {
-        grid = ext_mem_alloc(new_grid_size);
-        last_grid_size = new_grid_size;
-    } else {
-        memset(grid, 0, new_grid_size);
-    }
+    grid_size = rows * cols * sizeof(struct gterm_char);
+    grid = ext_mem_alloc(grid_size);
 
-    size_t new_queue_size = rows * cols * sizeof(struct queue_item);
-    if (new_queue_size > last_queue_size) {
-        queue = ext_mem_alloc(new_queue_size);
-        last_queue_size = new_queue_size;
-    }
+    queue_size = rows * cols * sizeof(struct queue_item);
+    queue = ext_mem_alloc(queue_size);
     queue_i = 0;
 
-    size_t new_map_size = rows * cols * sizeof(struct queue_item *);
-    if (new_map_size > last_map_size) {
-        map = ext_mem_alloc(new_map_size);
-        last_map_size = new_map_size;
-    } else {
-        memset(map, 0, new_map_size);
-    }
+    map_size = rows * cols * sizeof(struct queue_item *);
+    map = ext_mem_alloc(map_size);
 
-    size_t new_bg_canvas_size = gterm_width * gterm_height * sizeof(uint32_t);
-    if (new_bg_canvas_size > last_bg_canvas_size) {
-        bg_canvas = ext_mem_alloc(new_bg_canvas_size);
-        last_bg_canvas_size = new_bg_canvas_size;
-    }
+    bg_canvas_size = gterm_width * gterm_height * sizeof(uint32_t);
+    bg_canvas = ext_mem_alloc(bg_canvas_size);
 
     gterm_generate_canvas();
     gterm_clear(true);
@@ -861,11 +837,23 @@ no_load_font:;
     return true;
 }
 
+void gterm_deinit(void) {
+    if (background != NULL) {
+        image_close(background);
+    }
+    pmm_free(vga_font_bits, VGA_FONT_MAX);
+    pmm_free(vga_font_bool, vga_font_bool_size);
+    pmm_free(grid, grid_size);
+    pmm_free(queue, queue_size);
+    pmm_free(map, map_size);
+    pmm_free(bg_canvas, bg_canvas_size);
+}
+
 uint64_t gterm_context_size(void) {
     uint64_t ret = 0;
 
     ret += sizeof(struct context);
-    ret += last_grid_size;
+    ret += grid_size;
 
     return ret;
 }
@@ -874,14 +862,14 @@ void gterm_context_save(uint64_t ptr) {
     memcpy32to64(ptr, (uint64_t)(uintptr_t)&context, sizeof(struct context));
     ptr += sizeof(struct context);
 
-    memcpy32to64(ptr, (uint64_t)(uintptr_t)grid, last_grid_size);
+    memcpy32to64(ptr, (uint64_t)(uintptr_t)grid, grid_size);
 }
 
 void gterm_context_restore(uint64_t ptr) {
     memcpy32to64((uint64_t)(uintptr_t)&context, ptr, sizeof(struct context));
     ptr += sizeof(struct context);
 
-    memcpy32to64((uint64_t)(uintptr_t)grid, ptr, last_grid_size);
+    memcpy32to64((uint64_t)(uintptr_t)grid, ptr, grid_size);
 
     for (size_t i = 0; i < (size_t)rows * cols; i++) {
         size_t x = i % cols;

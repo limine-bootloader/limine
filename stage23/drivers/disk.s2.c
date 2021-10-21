@@ -469,6 +469,8 @@ void disk_create_index(void) {
 
     find_unique_sectors();
     find_part_handles(handles, handle_count);
+
+    pmm_free(handles, handles_size);
 }
 
 #endif

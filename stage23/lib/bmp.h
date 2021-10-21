@@ -5,6 +5,6 @@
 #include <fs/file.h>
 #include <lib/image.h>
 
-int bmp_open_image(struct image *image, struct file_handle *file);
+bool bmp_open_image(struct image *image, struct file_handle *file);
 
 #endif

@@ -61,7 +61,7 @@ struct edid_info_struct *get_edid_info(void) {
     status = gBS->LocateHandle(ByProtocol, &gop_guid, NULL, &handles_size, handles);
 
     if (status && status != EFI_BUFFER_TOO_SMALL)
-        goto fail;
+        goto fail_n;
 
     handles = ext_mem_alloc(handles_size);
 
@@ -88,10 +88,13 @@ struct edid_info_struct *get_edid_info(void) {
             goto success;
 
 fail:
+    pmm_free(handles, handles_size);
+fail_n:
     printv("edid: Could not fetch EDID data.\n");
     return NULL;
 
 success:
+    pmm_free(handles, handles_size);
     printv("edid: Success.\n");
     return buf;
 }

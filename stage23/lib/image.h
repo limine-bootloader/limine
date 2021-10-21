@@ -5,7 +5,7 @@
 #include <fs/file.h>
 
 struct image {
-    struct file_handle *file;
+    size_t allocated_size;
     size_t x_size;
     size_t y_size;
     int type;
@@ -27,6 +27,7 @@ enum {
 
 void image_make_centered(struct image *image, int frame_x_size, int frame_y_size, uint32_t back_colour);
 void image_make_stretched(struct image *image, int new_x_size, int new_y_size);
-int open_image(struct image *image, struct file_handle *file);
+struct image *image_open(struct file_handle *file);
+void image_close(struct image *image);
 
 #endif

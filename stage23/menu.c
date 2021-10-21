@@ -200,9 +200,7 @@ static char *config_entry_editor(const char *title, const char *orig_entry) {
     char *validation_enabled_config = config_get_value(NULL, 0, "EDITOR_VALIDATION");
     if (!strcmp(validation_enabled_config, "no")) validation_enabled = false;
 
-    static char *buffer = NULL;
-    if (buffer == NULL)
-        buffer = ext_mem_alloc(EDITOR_MAX_BUFFER_SIZE);
+    char *buffer = ext_mem_alloc(EDITOR_MAX_BUFFER_SIZE);
     memcpy(buffer, orig_entry, entry_size);
     buffer[entry_size] = 0;
 
@@ -439,6 +437,7 @@ refresh:
             return buffer;
         case GETCHAR_ESCAPE:
             disable_cursor();
+            pmm_free(buffer, EDITOR_MAX_BUFFER_SIZE);
             return NULL;
         default:
             if (strlen(buffer) < EDITOR_MAX_BUFFER_SIZE - 1) {

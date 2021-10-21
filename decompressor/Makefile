@@ -1,3 +1,7 @@
+ifneq (,)
+This makefile requires GNU Make.
+endif
+
 BUILDDIR =
 
 ifeq ($(BUILDDIR), )

@@ -8,6 +8,15 @@
 
 bool early_term = false;
 
+void term_deinit(void) {
+    switch (term_backend) {
+        case VBE:
+            gterm_deinit();
+    }
+
+    term_backend = NOT_READY;
+}
+
 void term_vbe(size_t width, size_t height) {
     term_backend = NOT_READY;
 

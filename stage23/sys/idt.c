@@ -16,7 +16,8 @@ static void dummy_isr(void *p) {
 }
 
 void init_flush_irqs(void) {
-    dummy_idt = ext_mem_alloc(256 * sizeof(struct idt_entry));
+    size_t dummy_idt_size = 256 * sizeof(struct idt_entry);
+    dummy_idt = ext_mem_alloc(dummy_idt_size);
 
     for (size_t i = 0; i < 256; i++) {
         dummy_idt[i].offset_lo = (uint16_t)(uintptr_t)dummy_isr;
@@ -30,6 +31,8 @@ void init_flush_irqs(void) {
         dummy_idt[i].offset_hi = (uint32_t)((uintptr_t)dummy_isr >> 32);
 #endif
     }
+
+    pmm_free(dummy_idt, dummy_idt_size);
 }
 
 int irq_flush_type = IRQ_NO_FLUSH;

@@ -28,16 +28,16 @@ struct bmp_header {
     uint32_t blue_mask;
 } __attribute__((packed));
 
-int bmp_open_image(struct image *image, struct file_handle *file) {
+bool bmp_open_image(struct image *image, struct file_handle *file) {
     struct bmp_header header;
     fread(file, &header, 0, sizeof(struct bmp_header));
 
     if (memcmp(&header.bf_signature, "BM", 2) != 0)
-        return -1;
+        return false;
 
     // We don't support bpp lower than 8
     if (header.bi_bpp % 8 != 0)
-        return -1;
+        return false;
 
     image->img = ext_mem_alloc(header.bf_size);
 
@@ -50,6 +50,8 @@ int bmp_open_image(struct image *image, struct file_handle *file) {
 
     fread(file, image->img, header.bf_offset, bf_size);
 
+    image->allocated_size = header.bf_size;
+
     image->x_size     = header.bi_width;
     image->y_size     = header.bi_height;
     image->pitch      = ALIGN_UP(header.bi_width * header.bi_bpp, 32) / 8;
@@ -57,5 +59,5 @@ int bmp_open_image(struct image *image, struct file_handle *file) {
     image->img_width  = header.bi_width;
     image->img_height = header.bi_height;
 
-    return 0;
+    return true;
 }

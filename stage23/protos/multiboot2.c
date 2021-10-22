@@ -92,6 +92,8 @@ void multiboot2_load(char *config, char* cmdline) {
 
     uint8_t *kernel = freadall(kernel_file, MEMMAP_KERNEL_AND_MODULES);
 
+    size_t kernel_file_size = kernel_file->size;
+
     fclose(kernel_file);
 
     struct multiboot_header *header = load_multiboot2_header(kernel);
@@ -190,7 +192,7 @@ void multiboot2_load(char *config, char* cmdline) {
         if (addresstag->load_end_addr)
             load_size = addresstag->load_end_addr - addresstag->load_addr;
         else
-            load_size = kernel_file->size;
+            load_size = kernel_file_size;
 
         size_t header_offset = (size_t)header - (size_t)kernel;
 

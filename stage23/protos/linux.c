@@ -346,17 +346,17 @@ struct boot_params {
 // End of Linux code
 
 void linux_load(char *config, char *cmdline) {
-    struct file_handle *kernel;
+    struct file_handle *kernel_file;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
         panic("linux: KERNEL_PATH not specified");
 
-    if ((kernel = uri_open(kernel_path)) == NULL)
+    if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic("linux: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
     uint32_t signature;
-    fread(kernel, &signature, 0x202, sizeof(uint32_t));
+    fread(kernel_file, &signature, 0x202, sizeof(uint32_t));
 
     // validate signature
     if (signature != 0x53726448) {
@@ -364,7 +364,7 @@ void linux_load(char *config, char *cmdline) {
     }
 
     size_t setup_code_size = 0;
-    fread(kernel, &setup_code_size, 0x1f1, 1);
+    fread(kernel_file, &setup_code_size, 0x1f1, 1);
 
     if (setup_code_size == 0)
         setup_code_size = 4;
@@ -379,11 +379,11 @@ void linux_load(char *config, char *cmdline) {
 
     size_t setup_header_end = ({
         uint8_t x;
-        fread(kernel, &x, 0x201, 1);
+        fread(kernel_file, &x, 0x201, 1);
         0x202 + x;
     });
 
-    fread(kernel, setup_header, 0x1f1, setup_header_end - 0x1f1);
+    fread(kernel_file, setup_header, 0x1f1, setup_header_end - 0x1f1);
 
     printv("linux: Boot protocol: %u.%u\n",
            setup_header->version >> 8, setup_header->version & 0xff);
@@ -400,7 +400,7 @@ void linux_load(char *config, char *cmdline) {
     if (verbose) {
         char *kernel_version = ext_mem_alloc(128);
         if (setup_header->kernel_version != 0) {
-            fread(kernel, kernel_version, setup_header->kernel_version + 0x200, 128);
+            fread(kernel_file, kernel_version, setup_header->kernel_version + 0x200, 128);
             print("linux: Kernel version: %s\n", kernel_version);
         }
         pmm_free(kernel_version, 128);
@@ -419,13 +419,15 @@ void linux_load(char *config, char *cmdline) {
     print("linux: Loading kernel `%s`...\n", kernel_path);
     for (;;) {
         if (memmap_alloc_range(kernel_load_addr,
-                ALIGN_UP(kernel->size - real_mode_code_size, 4096),
+                ALIGN_UP(kernel_file->size - real_mode_code_size, 4096),
                 MEMMAP_BOOTLOADER_RECLAIMABLE, true, false, false, false))
             break;
 
         kernel_load_addr += 0x100000;
     }
-    fread(kernel, (void *)kernel_load_addr, real_mode_code_size, kernel->size - real_mode_code_size);
+    fread(kernel_file, (void *)kernel_load_addr, real_mode_code_size, kernel_file->size - real_mode_code_size);
+
+    fclose(kernel_file);
 
     ///////////////////////////////////////
     // Modules

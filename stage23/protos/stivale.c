@@ -92,11 +92,13 @@ void stivale_load(char *config, char *cmdline) {
     int bits = elf_bits(kernel);
     bool loaded_by_anchor = false;
 
+    size_t kernel_file_size = kernel_file->size;
+
     fclose(kernel_file);
 
     if (bits == -1) {
         struct stivale_anchor *anchor;
-        if (!stivale_load_by_anchor((void **)&anchor, "STIVALE1 ANCHOR", kernel, kernel_file->size)) {
+        if (!stivale_load_by_anchor((void **)&anchor, "STIVALE1 ANCHOR", kernel, kernel_file_size)) {
             panic("stivale: Not a valid ELF or anchored file.");
         }
 

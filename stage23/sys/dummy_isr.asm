@@ -1,0 +1,8 @@
+extern lapic_eoi
+
+global dummy_isr
+dummy_isr:
+    pusha
+    call lapic_eoi
+    popa
+    iretd

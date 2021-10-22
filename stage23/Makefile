@@ -167,16 +167,22 @@ endif
 
 C_FILES := $(shell find -L ./ -type f -name '*.c' | sort)
 ifeq ($(TARGET), bios)
-ASM_FILES := $(shell find -L ./ -type f -name '*.asm' | sort)
-OBJ := $(addprefix $(BUILDDIR)/, $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o))
+ASM32_FILES := $(shell find -L ./ -type f -name '*.asm32' | sort)
+ASMB_FILES := $(shell find -L ./ -type f -name '*.asmb' | sort)
+
+OBJ := $(addprefix $(BUILDDIR)/, $(ASM32_FILES:.asm32=.o) $(ASMB_FILES:.asmb=.o) $(C_FILES:.c=.o))
 endif
 ifeq ($(TARGET), uefi)
-ASM_FILES := $(shell find -L ./ -type f -name '*.asm64' | sort)
-OBJ := $(addprefix $(BUILDDIR)/, $(ASM_FILES:.asm64=.o) $(C_FILES:.c=.o))
+ASM64_FILES := $(shell find -L ./ -type f -name '*.asm64' | sort)
+ASM64U_FILES := $(shell find -L ./ -type f -name '*.asm64u' | sort)
+
+OBJ := $(addprefix $(BUILDDIR)/, $(ASM64_FILES:.asm64=.o) $(ASM64U_FILES:.asm64u=.o) $(C_FILES:.c=.o))
 endif
 ifeq ($(TARGET), uefi32)
-ASM_FILES := $(shell find -L ./ -type f -name '*.asm32' | sort)
-OBJ := $(addprefix $(BUILDDIR)/, $(ASM_FILES:.asm32=.o) $(C_FILES:.c=.o))
+ASM32_FILES := $(shell find -L ./ -type f -name '*.asm32' | sort)
+ASM32U_FILES := $(shell find -L ./ -type f -name '*.asm32u' | sort)
+
+OBJ := $(addprefix $(BUILDDIR)/, $(ASM32_FILES:.asm32=.o) $(ASM32U_FILES:.asm32u=.o) $(C_FILES:.c=.o))
 endif
 HEADER_DEPS := $(addprefix $(BUILDDIR)/, $(C_FILES:.c=.d))
 
@@ -336,17 +342,26 @@ $(BUILDDIR)/%.32.o: %.32.c $(BUILDDIR)/gnu-efi
 endif
 
 ifeq ($(TARGET), bios)
-$(BUILDDIR)/%.o: %.asm
+$(BUILDDIR)/%.o: %.asm32
+	nasm $< -F dwarf -g -Werror -f elf32 -o $@
+
+$(BUILDDIR)/%.o: %.asmb
 	nasm $< -F dwarf -g -Werror -f elf32 -o $@
 endif
 
 ifeq ($(TARGET), uefi)
 $(BUILDDIR)/%.o: %.asm64
 	nasm $< -F dwarf -g -Werror -f elf64 -o $@
+
+$(BUILDDIR)/%.o: %.asm64u
+	nasm $< -F dwarf -g -Werror -f elf64 -o $@
 endif
 
 ifeq ($(TARGET), uefi32)
 $(BUILDDIR)/%.o: %.asm32
+	nasm $< -F dwarf -g -Werror -f elf32 -o $@
+
+$(BUILDDIR)/%.o: %.asm32u
 	nasm $< -F dwarf -g -Werror -f elf32 -o $@
 endif
 

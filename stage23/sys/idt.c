@@ -9,11 +9,7 @@
 
 static struct idt_entry *dummy_idt = NULL;
 
-__attribute__((interrupt))
-static void dummy_isr(void *p) {
-    (void)p;
-    lapic_eoi();
-}
+void dummy_isr(void);
 
 void init_flush_irqs(void) {
     size_t dummy_idt_size = 256 * sizeof(struct idt_entry);

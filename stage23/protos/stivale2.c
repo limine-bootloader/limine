@@ -91,11 +91,13 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     int bits = elf_bits(kernel);
     bool loaded_by_anchor = false;
 
+    size_t kernel_file_size = kernel_file->size;
+
     fclose(kernel_file);
 
     if (bits == -1) {
         struct stivale2_anchor *anchor;
-        if (!stivale_load_by_anchor((void **)&anchor, "STIVALE2 ANCHOR", kernel, kernel_file->size)) {
+        if (!stivale_load_by_anchor((void **)&anchor, "STIVALE2 ANCHOR", kernel, kernel_file_size)) {
             panic("stivale2: Not a valid ELF or anchored file.");
         }
 
@@ -229,7 +231,7 @@ failed_to_load_header_section:
 
     tag->tag.identifier = STIVALE2_STRUCT_TAG_KERNEL_FILE_V2_ID;
     tag->kernel_file = REPORTED_ADDR((uint64_t)(uintptr_t)kernel);
-    tag->kernel_size = kernel_file->size;
+    tag->kernel_size = kernel_file_size;
 
     append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }

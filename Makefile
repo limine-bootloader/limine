@@ -57,6 +57,7 @@ bin/limine-install:
 .PHONY: clean
 clean: limine-bios-clean limine-uefi-clean limine-uefi32-clean
 	$(MAKE) -C limine-install clean
+	rm -rf bin build
 
 .PHONY: install
 install: all
@@ -122,7 +123,7 @@ limine-uefi32-clean: stage23-uefi32-clean
 
 .PHONY: distclean2
 distclean2: clean test-clean
-	rm -rf bin build toolchain ovmf* gnu-efi
+	rm -rf toolchain ovmf* gnu-efi
 
 .PHONY: distclean
 distclean: distclean2

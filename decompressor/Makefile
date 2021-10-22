@@ -45,7 +45,8 @@ INTERNAL_CFLAGS = \
 	-mno-sse \
 	-mno-sse2 \
 	-MMD \
-	-I.
+	-I. \
+	-I$(BUILDDIR)/tinf
 
 LDFLAGS ?=
 
@@ -70,13 +71,21 @@ all:
 builddir:
 	for i in $(OBJ); do mkdir -p `dirname $$i`; done
 
-$(BUILDDIR)/decompressor.bin: $(OBJ)
-	$(TOOLCHAIN_LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $(BUILDDIR)/decompressor.elf
+$(BUILDDIR)/decompressor.bin: $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o
+	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $(BUILDDIR)/decompressor.elf
 	$(TOOLCHAIN_OBJCOPY) -O binary $(BUILDDIR)/decompressor.elf $@
+
+$(BUILDDIR)/tinf-copied: ../tinf/*
+	rm -rf $(BUILDDIR)/tinf
+	cp -r ../tinf $(BUILDDIR)/
+	touch $(BUILDDIR)/tinf-copied
+
+$(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o: $(BUILDDIR)/tinf-copied
+	$(TOOLCHAIN_CC) $(CFLAGS) -Os $(INTERNAL_CFLAGS) -c $(@:.o=.c) -o $@
 
 -include $(HEADER_DEPS)
 
-$(BUILDDIR)/%.o: %.c
+$(BUILDDIR)/%.o: %.c $(BUILDDIR)/tinf-copied
 	$(TOOLCHAIN_CC) $(CFLAGS) -Os $(INTERNAL_CFLAGS) -c $< -o $@
 
 $(BUILDDIR)/%.o: %.asm

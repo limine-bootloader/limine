@@ -79,7 +79,8 @@ INTERNAL_CFLAGS := \
 	-DCOM_OUTPUT=$(COM_OUTPUT) \
 	-DE9_OUTPUT=$(E9_OUTPUT) \
 	-I. \
-	-I..
+	-I../stivale \
+	-I$(BUILDDIR)/tinf
 
 ifeq ($(TARGET), bios)
 	INTERNAL_CFLAGS += \
@@ -113,8 +114,8 @@ ifeq ($(TARGET), uefi)
 		-mtune=generic \
 		-mabi=sysv \
 		-DGNU_EFI_USE_MS_ABI \
-		-I../gnu-efi/inc \
-		-I../gnu-efi/inc/x86_64 \
+		-I$(BUILDDIR)/gnu-efi/inc \
+		-I$(BUILDDIR)/gnu-efi/inc/x86_64 \
 		-fpie \
 		-mno-red-zone
 endif
@@ -128,8 +129,8 @@ ifeq ($(TARGET), uefi32)
 		-mtune=generic \
 		-mabi=sysv \
 		-DGNU_EFI_USE_MS_ABI \
-		-I../gnu-efi/inc \
-		-I../gnu-efi/inc/ia32 \
+		-I$(BUILDDIR)/gnu-efi/inc \
+		-I$(BUILDDIR)/gnu-efi/inc/ia32 \
 		-fpie
 endif
 
@@ -214,6 +215,14 @@ $(BUILDDIR)/font.o: font.bin
 	cd "`dirname $<`" && \
 		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) "`basename $<`" $@
 
+$(BUILDDIR)/tinf-copied: ../tinf/*
+	rm -rf $(BUILDDIR)/tinf
+	cp -r ../tinf $(BUILDDIR)/
+	touch $(BUILDDIR)/tinf-copied
+
+$(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o: $(BUILDDIR)/tinf-copied
+	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $(@:.o=.c) -o $@
+
 ifeq ($(TARGET), bios)
 
 $(BUILDDIR)/stage2.bin.gz: $(BUILDDIR)/stage2.bin
@@ -240,13 +249,13 @@ $(BUILDDIR)/limine_stage2only.elf: $(OBJ)
 		( echo "This error may mean that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
 		  false )
 
-$(BUILDDIR)/limine_nomap.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o
+$(BUILDDIR)/limine_nomap.elf: $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o
 	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
 
-$(BUILDDIR)/limine.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o
+$(BUILDDIR)/limine.elf: $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o
 	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o $@
 
-$(BUILDDIR)/limine_dbg.elf: $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o
+$(BUILDDIR)/limine_dbg.elf: $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o
 	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o $@
 
 endif
@@ -271,12 +280,12 @@ $(BUILDDIR)/BOOTX64.EFI: $(BUILDDIR)/limine_efi.elf
 $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a: $(BUILDDIR)/gnu-efi
 	$(MAKE) -C $(BUILDDIR)/gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m64 -march=x86-64 -mtune=generic" AR="$(TOOLCHAIN_AR)" ARCH=x86_64
 
-$(BUILDDIR)/limine_efi_nomap.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
+$(BUILDDIR)/limine_efi_nomap.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi_nomap.ld \
 		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
-$(BUILDDIR)/limine_efi.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
+$(BUILDDIR)/limine_efi.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi.ld \
 		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
@@ -296,12 +305,12 @@ $(BUILDDIR)/BOOTIA32.EFI: $(BUILDDIR)/limine_efi.elf
 $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a: $(BUILDDIR)/gnu-efi
 	$(MAKE) -C $(BUILDDIR)/gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m32 -march=i386 -mtune=generic" AR="$(TOOLCHAIN_AR)" ARCH=ia32
 
-$(BUILDDIR)/limine_efi_nomap.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
+$(BUILDDIR)/limine_efi_nomap.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi32_nomap.ld \
 		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
-$(BUILDDIR)/limine_efi.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
+$(BUILDDIR)/limine_efi.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi32.ld \
 		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
@@ -311,17 +320,17 @@ endif
 -include $(HEADER_DEPS)
 
 ifeq ($(TARGET), uefi)
-$(BUILDDIR)/%.o: %.c $(BUILDDIR)/gnu-efi
+$(BUILDDIR)/%.o: %.c $(BUILDDIR)/tinf-copied $(BUILDDIR)/gnu-efi
 	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 endif
 
 ifeq ($(TARGET), uefi32)
-$(BUILDDIR)/%.o: %.c $(BUILDDIR)/gnu-efi
+$(BUILDDIR)/%.o: %.c $(BUILDDIR)/tinf-copied $(BUILDDIR)/gnu-efi
 	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 endif
 
 ifeq ($(TARGET), bios)
-$(BUILDDIR)/%.o: %.c
+$(BUILDDIR)/%.o: %.c $(BUILDDIR)/tinf-copied
 	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 endif
 

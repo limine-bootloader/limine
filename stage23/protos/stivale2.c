@@ -21,7 +21,7 @@
 #include <sys/lapic.h>
 #include <fs/file.h>
 #include <mm/pmm.h>
-#include <stivale/stivale2.h>
+#include <stivale2.h>
 #include <pxe/tftp.h>
 #include <drivers/edid.h>
 #include <drivers/vga_textmode.h>

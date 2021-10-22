@@ -21,7 +21,7 @@
 #include <fs/file.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>
-#include <stivale/stivale.h>
+#include <stivale.h>
 #include <drivers/vga_textmode.h>
 
 #define REPORTED_ADDR(PTR) \

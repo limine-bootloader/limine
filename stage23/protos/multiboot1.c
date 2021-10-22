@@ -37,6 +37,8 @@ void multiboot1_load(char *config, char *cmdline) {
 
     uint8_t *kernel = freadall(kernel_file, MEMMAP_KERNEL_AND_MODULES);
 
+    size_t kernel_file_size = kernel_file->size;
+
     fclose(kernel_file);
 
     struct multiboot1_header header = {0};
@@ -70,7 +72,7 @@ void multiboot1_load(char *config, char *cmdline) {
         if (header.load_end_addr)
             load_size = header.load_end_addr - header.load_addr;
         else
-            load_size = kernel_file->size;
+            load_size = kernel_file_size;
 
         memmap_alloc_range(header.load_addr, load_size, MEMMAP_KERNEL_AND_MODULES, true, true, false, false);
         memcpy((void *)(uintptr_t)header.load_addr, kernel + (header_offset

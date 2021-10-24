@@ -96,11 +96,8 @@ jobs:
       - name: Cleanup source tree
         run: git checkout $TAG_NAME && rm -rf * && git checkout .
 
-      - name: Burn version number
-        run: echo "$TAG_NAME" > version
-
       - name: Package release tarball
-        run: cd .. && cp -r limine "limine-$TAG_NAME" && rm -rf "limine-$TAG_NAME/.git" && tar -Jcf "limine/limine-$TAG_NAME.tar.xz" "limine-$TAG_NAME"
+        run: make dist
 
       - name: Create release notes
         run: echo "Binary release can be found at https://github.com/limine-bootloader/limine/tree/$TAG_NAME-binary" > rel_notes.txt

@@ -9,6 +9,10 @@ export PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
 NCPUS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 
+export LIMINE_VERSION := $(shell cat ../version 2>/dev/null || ( git describe --exact-match --tags `git log -n1 --pretty='%h'` 2>/dev/null || git log -n1 --pretty='%h' ) )
+
+export LIMINE_COPYRIGHT := $(shell grep Copyright LICENSE.md)
+
 TOOLCHAIN ?= limine
 
 TOOLCHAIN_CC ?= $(TOOLCHAIN)-gcc
@@ -121,13 +125,27 @@ limine-uefi-clean: stage23-uefi-clean
 .PHONY: limine-uefi32-clean
 limine-uefi32-clean: stage23-uefi32-clean
 
-.PHONY: distclean2
-distclean2: clean test-clean
-	rm -rf toolchain ovmf* gnu-efi
+.PHONY: dist
+dist:
+	rm -rf "limine-$(LIMINE_VERSION)"
+	LIST="$$(ls -A)"; mkdir "limine-$(LIMINE_VERSION)" && cp -r $$LIST "limine-$(LIMINE_VERSION)/"
+	rm -rf "limine-$(LIMINE_VERSION)/"*.tar*
+	$(MAKE) -C "limine-$(LIMINE_VERSION)" repoclean
+	$(MAKE) -C "limine-$(LIMINE_VERSION)" gnu-efi stivale
+	rm -rf "limine-$(LIMINE_VERSION)/gnu-efi/.git"
+	rm -rf "limine-$(LIMINE_VERSION)/stivale/.git"
+	rm -rf "limine-$(LIMINE_VERSION)/.git"
+	echo "$(LIMINE_VERSION)" > "limine-$(LIMINE_VERSION)/version"
+	tar -Jcf "limine-$(LIMINE_VERSION).tar.xz" "limine-$(LIMINE_VERSION)"
+	rm -rf "limine-$(LIMINE_VERSION)"
 
 .PHONY: distclean
-distclean: distclean2
-	rm -rf stivale
+distclean: clean test-clean
+	rm -rf toolchain ovmf*
+
+.PHONY: repoclean
+repoclean: distclean
+	rm -rf stivale gnu-efi *.tar.xz
 
 stivale:
 	git clone https://github.com/stivale/stivale.git

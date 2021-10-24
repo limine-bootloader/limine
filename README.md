@@ -86,7 +86,7 @@ make toolchain    # (or gmake where applicable)
 ### Building Limine
 
 In order to build Limine, the following packages have to be installed:
-`GNU make`, `git`, `nasm`, `mtools` (optional, necessary to build
+`GNU make`, `nasm`, `mtools` (optional, necessary to build
 `limine-eltorito-efi.bin`).
 Furthermore, either the toolchain must have been built in the previous
 paragraph, or `gcc` or `llvm/clang` must also be installed.

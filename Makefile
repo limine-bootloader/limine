@@ -9,7 +9,7 @@ export PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
 NCPUS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 
-export LIMINE_VERSION := $(shell cat ../version 2>/dev/null || ( git describe --exact-match --tags `git log -n1 --pretty='%h'` 2>/dev/null || git log -n1 --pretty='%h' ) )
+export LIMINE_VERSION := $(shell cat version 2>/dev/null || ( git describe --exact-match --tags `git log -n1 --pretty='%h'` 2>/dev/null || git log -n1 --pretty='%h' ) )
 
 export LIMINE_COPYRIGHT := $(shell grep Copyright LICENSE.md)
 

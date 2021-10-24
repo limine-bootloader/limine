@@ -51,8 +51,6 @@ COM_OUTPUT = false
 E9_OUTPUT = false
 
 BUILD_ID := $(shell dd if=/dev/urandom count=8 bs=1 2>/dev/null | od -An -t x4 | sed 's/^ /0x/g;s/ //g')
-LIMINE_VERSION := $(shell cat ../version 2>/dev/null || ( git describe --exact-match --tags `git log -n1 --pretty='%h'` 2>/dev/null || ( git log -n1 --pretty='%h' && echo -n "(`git branch --show-current`)" ) ) )
-LIMINE_COPYRIGHT := $(shell grep Copyright ../LICENSE.md)
 
 WERROR = -Werror
 CFLAGS ?= -O3 -g -pipe -Wall -Wextra $(WERROR)

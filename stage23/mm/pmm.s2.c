@@ -574,9 +574,13 @@ void *ext_mem_alloc(size_t count) {
     return ext_mem_alloc_type(count, MEMMAP_BOOTLOADER_RECLAIMABLE);
 }
 
-// Allocate memory top down, hopefully without bumping into kernel or modules
 void *ext_mem_alloc_type(size_t count, uint32_t type) {
-    count = ALIGN_UP(count, 4096);
+    return ext_mem_alloc_type_aligned(count, type, 4096);
+}
+
+// Allocate memory top down, hopefully without bumping into kernel or modules
+void *ext_mem_alloc_type_aligned(size_t count, uint32_t type, size_t alignment) {
+    count = ALIGN_UP(count, alignment);
 
     if (allocations_disallowed)
         panic("Memory allocations disallowed");
@@ -595,7 +599,7 @@ void *ext_mem_alloc_type(size_t count, uint32_t type) {
                 continue;
         }
 
-        int64_t alloc_base = ALIGN_DOWN(entry_top - (int64_t)count, 4096);
+        int64_t alloc_base = ALIGN_DOWN(entry_top - (int64_t)count, alignment);
 
         // This entry is too small for us.
         if (alloc_base < entry_base)

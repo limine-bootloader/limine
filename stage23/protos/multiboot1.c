@@ -104,7 +104,7 @@ void multiboot1_load(char *config, char *cmdline) {
                 break;
             case 64: {
                 uint64_t e, t;
-                if (elf64_load(kernel, &e, &t, NULL, MEMMAP_KERNEL_AND_MODULES, false, true, NULL, NULL))
+                if (elf64_load(kernel, &e, &t, NULL, MEMMAP_KERNEL_AND_MODULES, false, true, NULL, NULL, false, NULL, NULL))
                     panic("multiboot1: ELF64 load failure");
                 entry_point = e;
                 kernel_top = t;

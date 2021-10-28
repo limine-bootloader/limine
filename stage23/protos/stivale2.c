@@ -32,22 +32,36 @@
 
 struct stivale2_struct stivale2_struct = {0};
 
-inline static size_t get_phys_addr(uint64_t addr) {
-    if (addr & ((uint64_t)1 << 63))
-        return addr - FIXED_HIGHER_HALF_OFFSET_64;
-    return addr;
-}
+#define get_phys_addr(addr) ({ \
+    uintptr_t r1; \
+    if ((addr) & ((uint64_t)1 << 63)) { \
+        if (want_fully_virtual) { \
+            r1 = physical_base + ((addr) - virtual_base); \
+        } else { \
+            r1 = (addr) - FIXED_HIGHER_HALF_OFFSET_64; \
+        } \
+    } else { \
+        r1 = addr; \
+    } \
+    r1; \
+})
 
-static void *get_tag(struct stivale2_header *s, uint64_t id) {
-    struct stivale2_tag *tag = (void*)get_phys_addr(s->tags);
-    for (;;) {
-        if (tag == NULL)
-            return NULL;
-        if (tag->identifier == id)
-            return tag;
-        tag = (void*)get_phys_addr(tag->next);
-    }
-}
+#define get_tag(s, id) ({ \
+    void *r; \
+    struct stivale2_tag *tag = (void *)get_phys_addr((s)->tags); \
+    for (;;) { \
+        if (tag == NULL) { \
+            r = NULL; \
+            break; \
+        } \
+        if (tag->identifier == (id)) { \
+            r = tag; \
+            break; \
+        } \
+        tag = (void *)get_phys_addr(tag->next); \
+    } \
+    r; \
+})
 
 #define append_tag(S, TAG) ({                              \
     (TAG)->next = (S)->tags;                               \
@@ -110,6 +124,9 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
     }
 
     bool want_pmrs = false;
+    bool want_fully_virtual = false;
+
+    uint64_t physical_base, virtual_base;
 
     int ret = 0;
     switch (bits) {
@@ -141,10 +158,15 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
                     want_pmrs = true;
                 }
 
+                if (want_pmrs && (stivale2_hdr.flags & (1 << 3))) {
+                    want_fully_virtual = true;
+                }
+
                 if (elf64_load(kernel, &entry_point, NULL, &slide,
                                STIVALE2_MMAP_KERNEL_AND_MODULES, kaslr, false,
                                want_pmrs ? &ranges : NULL,
-                               want_pmrs ? &ranges_count : NULL))
+                               want_pmrs ? &ranges_count : NULL,
+                               want_fully_virtual, &physical_base, &virtual_base))
                     panic("stivale2: ELF64 load failure");
 
                 ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
@@ -580,6 +602,23 @@ have_tm_tag:;
     }
 
     //////////////////////////////////////////////
+    // Create PMRs struct tag
+    //////////////////////////////////////////////
+    {
+    if (want_fully_virtual) {
+        struct stivale2_struct_tag_kernel_base_address *tag =
+            ext_mem_alloc(sizeof(struct stivale2_struct_tag_kernel_base_address));
+
+        tag->tag.identifier = STIVALE2_STRUCT_TAG_KERNEL_BASE_ADDRESS_ID;
+
+        tag->physical_base_address = physical_base;
+        tag->virtual_base_address = virtual_base;
+
+        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    }
+    }
+
+    //////////////////////////////////////////////
     // Create EFI system table struct tag
     //////////////////////////////////////////////
     {
@@ -599,7 +638,8 @@ have_tm_tag:;
     if (bits == 64)
         pagemap = stivale_build_pagemap(want_5lv, unmap_null,
                                         want_pmrs ? ranges : NULL,
-                                        want_pmrs ? ranges_count : 0);
+                                        want_pmrs ? ranges_count : 0,
+                                        want_fully_virtual, physical_base);
 
 #if uefi == 1
     efi_exit_boot_services();

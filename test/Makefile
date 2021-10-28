@@ -1,5 +1,5 @@
 CC              = cc
-CFLAGS          = -O2
+CFLAGS          = -O2 -g
 LDFLAGS         =
 LD              = ld
 QEMU            = qemu-system-x86_64
@@ -9,10 +9,7 @@ INTERNALLDFLAGS :=         \
 	-Tlinker.ld            \
 	-nostdlib              \
 	-zmax-page-size=0x1000 \
-	-static                \
-	-pie                   \
-	--no-dynamic-linker    \
-	-ztext
+	-static
 
 INTERNALCFLAGS  :=       \
 	-I../stivale         \
@@ -20,14 +17,15 @@ INTERNALCFLAGS  :=       \
 	-std=gnu11           \
 	-ffreestanding       \
 	-fno-stack-protector \
-	-fno-pic -fpie       \
+	-fno-pic -fno-pie       \
 	-mabi=sysv           \
 	-mno-80387           \
 	-mno-mmx             \
 	-mno-3dnow           \
 	-mno-sse             \
 	-mno-sse2            \
-	-mno-red-zone
+	-mno-red-zone \
+	-mcmodel=kernel
 
 all: test.elf
 

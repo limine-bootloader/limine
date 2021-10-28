@@ -430,7 +430,7 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
     *_ranges = ranges;
 }
 
-int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_slide, uint32_t alloc_type, bool kaslr, bool use_paddr, struct elf_range **ranges, uint64_t *ranges_count) {
+int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_slide, uint32_t alloc_type, bool kaslr, bool use_paddr, struct elf_range **ranges, uint64_t *ranges_count, bool fully_virtual, uint64_t *physical_base, uint64_t *virtual_base) {
     struct elf64_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
@@ -456,6 +456,41 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
     bool entry_adjusted = false;
 
     uint64_t max_align = elf64_max_align(elf);
+
+    uint64_t base_load_addr;
+
+    if (fully_virtual) {
+        simulation = false;
+
+        uint64_t min_vaddr = (uint64_t)-1;
+        uint64_t max_vaddr = 0;
+        for (uint16_t i = 0; i < hdr.ph_num; i++) {
+            struct elf64_phdr phdr;
+            memcpy(&phdr, elf + (hdr.phoff + i * sizeof(struct elf64_phdr)),
+                       sizeof(struct elf64_phdr));
+
+            if (phdr.p_type != PT_LOAD)
+                continue;
+
+            if (phdr.p_type != PT_LOAD)
+                continue;
+
+            if (phdr.p_vaddr < min_vaddr) {
+                min_vaddr = phdr.p_vaddr;
+            }
+
+            if (phdr.p_vaddr + phdr.p_memsz > max_vaddr) {
+                max_vaddr = phdr.p_vaddr + phdr.p_memsz;
+            }
+        }
+
+        uint64_t image_size = max_vaddr - min_vaddr;
+
+        base_load_addr = (uintptr_t)ext_mem_alloc_type_aligned(image_size, alloc_type, max_align);
+
+        *physical_base = base_load_addr;
+        *virtual_base = min_vaddr;
+    }
 
     if (!elf64_is_relocatable(elf, &hdr)) {
         simulation = false;
@@ -490,6 +525,10 @@ final:
             if (load_addr & ((uint64_t)1 << 63)) {
                 higher_half = true;
                 load_addr -= FIXED_HIGHER_HALF_OFFSET_64;
+
+                if (fully_virtual) {
+                    load_addr += base_load_addr;
+                }
             }
         }
 
@@ -497,7 +536,9 @@ final:
             panic("elf: Higher half executable trying to load too high");
         }
 
-        load_addr += slide;
+        if (!fully_virtual) {
+            load_addr += slide;
+        }
 
         uint64_t this_top = load_addr + phdr.p_memsz;
 
@@ -522,7 +563,8 @@ final:
             mem_size = phdr.p_memsz;
         }
 
-        if (!memmap_alloc_range((size_t)mem_base, (size_t)mem_size, alloc_type, true, false, simulation, false)) {
+        if (!fully_virtual &&
+            !memmap_alloc_range((size_t)mem_base, (size_t)mem_size, alloc_type, true, false, simulation, false)) {
             if (++try_count == max_simulated_tries || simulation == false) {
                 panic("elf: Failed to allocate necessary memory ranges");
             }

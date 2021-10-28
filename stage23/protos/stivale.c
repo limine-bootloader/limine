@@ -127,7 +127,7 @@ void stivale_load(char *config, char *cmdline) {
             if (!loaded_by_anchor) {
                 if (elf64_load(kernel, &entry_point, NULL, &slide,
                                STIVALE_MMAP_KERNEL_AND_MODULES, kaslr, false,
-                               NULL, NULL))
+                               NULL, NULL, false, NULL, NULL))
                     panic("stivale: ELF64 load failure");
 
                 ret = elf64_load_section(kernel, &stivale_hdr, ".stivalehdr",
@@ -300,7 +300,7 @@ void stivale_load(char *config, char *cmdline) {
 
     pagemap_t pagemap = {0};
     if (bits == 64)
-        pagemap = stivale_build_pagemap(want_5lv, false, NULL, 0);
+        pagemap = stivale_build_pagemap(want_5lv, false, NULL, 0, false, 0);
 
     // Reserve 32K at 0x70000
     memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, true, false, false);
@@ -324,7 +324,8 @@ void stivale_load(char *config, char *cmdline) {
                    stivale_hdr.stack, false);
 }
 
-pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range *ranges, size_t ranges_count) {
+pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range *ranges, size_t ranges_count,
+                                bool want_fully_virtual, uint64_t physical_base) {
     pagemap_t pagemap = new_pagemap(level5pg ? 5 : 4);
     uint64_t higher_half_base = level5pg ? 0xff00000000000000 : 0xffff800000000000;
 
@@ -336,10 +337,14 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
     } else {
         for (size_t i = 0; i < ranges_count; i++) {
             uint64_t virt = ranges[i].base;
-            uint64_t phys = virt;
+            uint64_t phys;
 
-            if (phys & ((uint64_t)1 << 63)) {
-                phys -= FIXED_HIGHER_HALF_OFFSET_64;
+            if (virt & ((uint64_t)1 << 63)) {
+                if (want_fully_virtual) {
+                    phys = physical_base + (virt - FIXED_HIGHER_HALF_OFFSET_64);
+                } else {
+                    phys = virt - FIXED_HIGHER_HALF_OFFSET_64;
+                }
             } else {
                 panic("stivale2: Protected memory ranges are only supported for higher half kernels");
             }

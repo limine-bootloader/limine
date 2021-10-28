@@ -225,7 +225,7 @@ void multiboot2_load(char *config, char* cmdline) {
 
                 break;
             case 64: {
-                if (elf64_load(kernel, &e, &t, NULL, MEMMAP_KERNEL_AND_MODULES, false, true, NULL, NULL))
+                if (elf64_load(kernel, &e, &t, NULL, MEMMAP_KERNEL_AND_MODULES, false, true, NULL, NULL, false, NULL, NULL))
                     panic("multiboot2: ELF64 load failure");
 
                 break;

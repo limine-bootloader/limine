@@ -40,7 +40,7 @@ __attribute__((section(".stivale2hdr"), used))
 struct stivale2_header header2 = {
     .entry_point = (uint64_t)stivale2_main,
     .stack       = (uintptr_t)stacks[0] + sizeof(stack),
-    .flags       = (1 << 1) | (1 << 2),
+    .flags       = (1 << 1) | (1 << 2) | (1 << 3),
     .tags        = (uint64_t)&any_video_request
 };
 
@@ -202,6 +202,13 @@ void stivale2_main(struct stivale2_struct *info) {
                     e9_printf("\t\tBase: %x  Length: %x  Perms: %x",
                           t->pmrs[i].base, t->pmrs[i].length, t->pmrs[i].permissions);
                 }
+                break;
+            }
+            case STIVALE2_STRUCT_TAG_KERNEL_BASE_ADDRESS_ID: {
+                struct stivale2_struct_tag_kernel_base_address *t = (void *)tag;
+                e9_puts("Kernel base address:");
+                e9_printf("\tPhysical base address: %x", t->physical_base_address);
+                e9_printf("\tVirtual base address:  %x", t->virtual_base_address);
                 break;
             }
             case STIVALE2_STRUCT_TAG_SMP_ID: {

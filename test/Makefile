@@ -9,7 +9,10 @@ INTERNALLDFLAGS :=         \
 	-Tlinker.ld            \
 	-nostdlib              \
 	-zmax-page-size=0x1000 \
-	-static
+	-static                \
+	-pie                   \
+	--no-dynamic-linker    \
+	-ztext
 
 INTERNALCFLAGS  :=       \
 	-I../stivale         \
@@ -17,15 +20,14 @@ INTERNALCFLAGS  :=       \
 	-std=gnu11           \
 	-ffreestanding       \
 	-fno-stack-protector \
-	-fno-pic -fno-pie       \
+	-fpie                \
 	-mabi=sysv           \
 	-mno-80387           \
 	-mno-mmx             \
 	-mno-3dnow           \
 	-mno-sse             \
 	-mno-sse2            \
-	-mno-red-zone \
-	-mcmodel=kernel
+	-mno-red-zone
 
 all: test.elf
 

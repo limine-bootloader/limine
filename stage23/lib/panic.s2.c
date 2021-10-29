@@ -7,12 +7,21 @@
 #include <lib/blib.h>
 #include <lib/readline.h>
 #include <lib/gterm.h>
+#include <lib/term.h>
 #include <mm/pmm.h>
 
 __attribute__((noreturn)) void panic(const char *fmt, ...) {
     va_list args;
 
     va_start(args, fmt);
+
+    if (term_backend == NOT_READY) {
+#if bios == 1
+        term_textmode();
+#elif uefi == 1
+        term_vbe(0, 0);
+#endif
+    }
 
     print("\033[31mPANIC\033[37;1m\033[0m: ");
     vprint(fmt, args);

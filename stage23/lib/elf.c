@@ -457,6 +457,8 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
 
     uint64_t max_align = elf64_max_align(elf);
 
+    uint64_t image_size = 0;
+
     if (fully_virtual) {
         simulation = false;
 
@@ -470,9 +472,6 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
             if (phdr.p_type != PT_LOAD)
                 continue;
 
-            if (phdr.p_type != PT_LOAD)
-                continue;
-
             if (phdr.p_vaddr < min_vaddr) {
                 min_vaddr = phdr.p_vaddr;
             }
@@ -482,7 +481,7 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
             }
         }
 
-        uint64_t image_size = max_vaddr - min_vaddr;
+        image_size = max_vaddr - min_vaddr;
 
         *physical_base = (uintptr_t)ext_mem_alloc_type_aligned(image_size, alloc_type, max_align);
         *virtual_base = min_vaddr;
@@ -494,8 +493,18 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
     }
 
 again:
-    if (kaslr)
+    if (kaslr) {
         slide = rand32() & ~(max_align - 1);
+
+        if (fully_virtual) {
+            if ((*virtual_base - FIXED_HIGHER_HALF_OFFSET_64) + slide + image_size >= 0x80000000) {
+                if (++try_count == max_simulated_tries) {
+                    panic("elf: Image wants to load too high");
+                }
+                goto again;
+            }
+        }
+    }
 
 final:
     if (top)
@@ -528,16 +537,12 @@ final:
         }
 
         if (!fully_virtual) {
-            if (higher_half == true && load_addr + phdr.p_memsz > 0x80000000) {
-                panic("elf: Higher half executable trying to load too high");
-            }
-
             load_addr += slide;
         }
 
         uint64_t this_top = load_addr + phdr.p_memsz;
 
-        // Make sure we don't overshoot due to KASLR
+        // Make sure we don't overshoot
         if (higher_half == true && this_top > 0x80000000) {
             goto again;
         }
@@ -594,6 +599,10 @@ final:
     if (simulation) {
         simulation = false;
         goto final;
+    }
+
+    if (fully_virtual) {
+        *virtual_base += slide;
     }
 
     *entry_point = entry + slide;

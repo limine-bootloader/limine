@@ -457,8 +457,6 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
 
     uint64_t max_align = elf64_max_align(elf);
 
-    uint64_t base_load_addr;
-
     if (fully_virtual) {
         simulation = false;
 
@@ -486,9 +484,7 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
 
         uint64_t image_size = max_vaddr - min_vaddr;
 
-        base_load_addr = (uintptr_t)ext_mem_alloc_type_aligned(image_size, alloc_type, max_align);
-
-        *physical_base = base_load_addr;
+        *physical_base = (uintptr_t)ext_mem_alloc_type_aligned(image_size, alloc_type, max_align);
         *virtual_base = min_vaddr;
     }
 
@@ -520,23 +516,22 @@ final:
         if (use_paddr) {
             load_addr = phdr.p_paddr;
         } else {
-            load_addr = phdr.p_vaddr;
-
-            if (load_addr & ((uint64_t)1 << 63)) {
+            if (phdr.p_vaddr >= 0xffffffff80000000) {
                 higher_half = true;
-                load_addr -= FIXED_HIGHER_HALF_OFFSET_64;
 
                 if (fully_virtual) {
-                    load_addr += base_load_addr;
+                    load_addr = *physical_base + (phdr.p_vaddr - *virtual_base);
+                } else {
+                    load_addr = phdr.p_vaddr - FIXED_HIGHER_HALF_OFFSET_64;
                 }
             }
         }
 
-        if (higher_half == true && load_addr + phdr.p_memsz > 0x80000000) {
-            panic("elf: Higher half executable trying to load too high");
-        }
-
         if (!fully_virtual) {
+            if (higher_half == true && load_addr + phdr.p_memsz > 0x80000000) {
+                panic("elf: Higher half executable trying to load too high");
+            }
+
             load_addr += slide;
         }
 

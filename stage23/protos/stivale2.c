@@ -639,7 +639,7 @@ have_tm_tag:;
         pagemap = stivale_build_pagemap(want_5lv, unmap_null,
                                         want_pmrs ? ranges : NULL,
                                         want_pmrs ? ranges_count : 0,
-                                        want_fully_virtual, physical_base);
+                                        want_fully_virtual, physical_base, virtual_base);
 
 #if uefi == 1
     efi_exit_boot_services();

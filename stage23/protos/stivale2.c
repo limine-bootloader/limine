@@ -169,8 +169,10 @@ void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table
                                want_fully_virtual, &physical_base, &virtual_base))
                     panic("stivale2: ELF64 load failure");
 
-                printv("stivale2: Physical base: %X\n", physical_base);
-                printv("stivale2: Virtual base:  %X\n", virtual_base);
+                if (want_fully_virtual) {
+                    printv("stivale2: Physical base: %X\n", physical_base);
+                    printv("stivale2: Virtual base:  %X\n", virtual_base);
+                }
 
                 ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
                                          sizeof(struct stivale2_header), slide);

@@ -167,6 +167,21 @@ static void sanitise_entries(struct e820_entry_t *m, size_t *_count, bool align_
         }
     }
 
+    // Remove 0 length usable entries
+    for (size_t i = 0; i < count; i++) {
+        if (m[i].type != MEMMAP_USABLE)
+            continue;
+
+        if (m[i].length == 0) {
+            // Eradicate from memmap
+            for (size_t j = i + 1; j < count; j++) {
+                m[j - 1] = m[j];
+            }
+            count--;
+            i--;
+        }
+    }
+
     // Sort the entries
     for (size_t p = 0; p < count - 1; p++) {
         uint64_t min = m[p].base;
@@ -503,8 +518,9 @@ void pmm_release_uefi_mem(void) {
 
         status = gBS->FreePages(memmap[i].base, memmap[i].length / 4096);
 
-        if (status)
+        if (status) {
             panic("pmm: FreePages failure (%x)", status);
+        }
     }
 
     allocations_disallowed = true;
@@ -621,7 +637,6 @@ void *ext_mem_alloc_type_aligned(size_t count, uint32_t type, size_t alignment) 
 
     panic("High memory allocator: Out of memory");
 }
-
 
 /// Compute and returns the amount of upper and lower memory till
 /// the first hole.

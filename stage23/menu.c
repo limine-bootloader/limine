@@ -709,7 +709,15 @@ timeout_aborted:
                 if (!*cmdline) {
                     *cmdline = "";
                 }
-                reset_term();
+                if (term_backend == NOT_READY) {
+#if bios == 1
+                    term_textmode();
+#elif uefi == 1
+                    term_vbe(0, 0);
+#endif
+                } else {
+                    reset_term();
+                }
                 return selected_menu_entry->body;
             case 'e': {
                 if (editor_enabled) {

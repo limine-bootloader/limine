@@ -165,16 +165,10 @@ void stage3_common(void) {
         panic("PROTOCOL not specified");
     }
 
-    if (!strcmp(proto, "stivale")) {
+    if (!strcmp(proto, "stivale1") || !strcmp(proto, "stivale")) {
         stivale_load(config, cmdline);
     } else if (!strcmp(proto, "stivale2")) {
-#if bios == 1
-        void *efi_system_table = NULL;
-#elif uefi == 1
-        void *efi_system_table = gST;
-#endif
-
-        stivale2_load(config, cmdline, boot_volume->pxe, efi_system_table);
+        stivale2_load(config, cmdline);
     } else if (!strcmp(proto, "linux")) {
         linux_load(config, cmdline);
     } else if (!strcmp(proto, "chainload")) {

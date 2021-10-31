@@ -75,7 +75,7 @@ uint64_t stivale2_term_callback_ptr = 0;
 void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t);
 #endif
 
-void stivale2_load(char *config, char *cmdline, bool pxe, void *efi_system_table) {
+void stivale2_load(char *config, char *cmdline) {
     struct file_handle *kernel_file;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
@@ -577,14 +577,12 @@ have_tm_tag:;
     //////////////////////////////////////////////
     // Create PXE struct tag
     //////////////////////////////////////////////
-    if (pxe) {
+    if (boot_volume->pxe) {
         struct stivale2_struct_tag_pxe_server_info *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_pxe_server_info));
         tag->tag.identifier = STIVALE2_STRUCT_TAG_PXE_SERVER_INFO;
         tag->server_ip = get_boot_server_info();
         append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
-#else
-    (void)pxe;
 #endif
 
     //////////////////////////////////////////////
@@ -626,16 +624,16 @@ have_tm_tag:;
     //////////////////////////////////////////////
     // Create EFI system table struct tag
     //////////////////////////////////////////////
+#if uefi == 1
     {
-    if (efi_system_table != NULL) {
         struct stivale2_struct_tag_efi_system_table *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_efi_system_table));
         tag->tag.identifier = STIVALE2_STRUCT_TAG_EFI_SYSTEM_TABLE_ID;
 
-        tag->system_table = REPORTED_ADDR((uint64_t)(uintptr_t)efi_system_table);
+        tag->system_table = REPORTED_ADDR((uint64_t)(uintptr_t)gST);
 
         append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
     }
-    }
+#endif
 
     bool unmap_null = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_UNMAP_NULL_ID) ? true : false;
 

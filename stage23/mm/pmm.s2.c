@@ -518,15 +518,13 @@ another_recl:;
 void pmm_release_uefi_mem(void) {
     EFI_STATUS status;
 
-    sanitise_entries(memmap, &memmap_entries, true);
-
-    for (size_t i = 0; i < memmap_entries; i++) {
-        if (memmap[i].type != MEMMAP_USABLE
-         && memmap[i].type != MEMMAP_BOOTLOADER_RECLAIMABLE) {
+    for (size_t i = 0; i < untouched_memmap_entries; i++) {
+        if (untouched_memmap[i].type != MEMMAP_USABLE
+         && untouched_memmap[i].type != MEMMAP_BOOTLOADER_RECLAIMABLE) {
             continue;
         }
 
-        status = gBS->FreePages(memmap[i].base, memmap[i].length / 4096);
+        status = gBS->FreePages(untouched_memmap[i].base, untouched_memmap[i].length / 4096);
 
         if (status) {
             panic("pmm: FreePages failure (%x)", status);

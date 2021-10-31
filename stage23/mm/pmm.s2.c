@@ -167,12 +167,22 @@ static void sanitise_entries(struct e820_entry_t *m, size_t *_count, bool align_
         }
     }
 
-    // Remove 0 length usable entries
+    // Remove 0 length usable entries and usable entries below 0x1000
     for (size_t i = 0; i < count; i++) {
         if (m[i].type != MEMMAP_USABLE)
             continue;
 
+        if (m[i].base < 0x1000) {
+            if (m[i].base + m[i].length <= 0x1000) {
+                goto del_mm1;
+            }
+
+            m[i].length -= 0x1000 - m[i].base;
+            m[i].base = 0x1000;
+        }
+
         if (m[i].length == 0) {
+del_mm1:
             // Eradicate from memmap
             for (size_t j = i + 1; j < count; j++) {
                 m[j - 1] = m[j];

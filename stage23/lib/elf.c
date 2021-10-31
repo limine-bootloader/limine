@@ -542,11 +542,6 @@ final:
 
         uint64_t this_top = load_addr + phdr.p_memsz;
 
-        // Make sure we don't overshoot
-        if (higher_half == true && this_top > 0x80000000) {
-            goto again;
-        }
-
         if (top) {
             if (this_top > *top) {
                 *top = this_top;
@@ -564,7 +559,8 @@ final:
         }
 
         if (!fully_virtual &&
-            !memmap_alloc_range((size_t)mem_base, (size_t)mem_size, alloc_type, true, false, simulation, false)) {
+            ((higher_half == true && this_top > 0x80000000)
+          || !memmap_alloc_range((size_t)mem_base, (size_t)mem_size, alloc_type, true, false, simulation, false))) {
             if (++try_count == max_simulated_tries || simulation == false) {
                 panic("elf: Failed to allocate necessary memory ranges");
             }

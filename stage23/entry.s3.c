@@ -111,8 +111,6 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
                                      (void **)&loaded_image);
 
         if (status) {
-            term_vbe(0, 0);
-            early_term = true;
             panic("HandleProtocol failure (%x)", status);
         }
 

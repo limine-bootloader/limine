@@ -420,7 +420,7 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
         uint64_t this_top = load_addr + phdr.p_memsz;
 
         ranges[r].base = load_addr & ~(phdr.p_align - 1);
-        ranges[r].length = ALIGN_UP(this_top - ranges[r].base, 4096);
+        ranges[r].length = ALIGN_UP(this_top - ranges[r].base, phdr.p_align);
         ranges[r].permissions = phdr.p_flags & 0b111;
 
         r++;

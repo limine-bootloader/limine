@@ -146,12 +146,12 @@ void bootboot_load(char *config, void *efi_system_table) {
         }
     }
     BOOTBOOT* bootboot = (BOOTBOOT*)ext_mem_alloc_type_aligned(4096, MEMMAP_BOOTLOADER_RECLAIMABLE, 4096);
-    map_page(pmap, struct_vaddr, (uint64_t)bootboot, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
+    map_page(pmap, struct_vaddr, (uint64_t)(size_t)bootboot, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
 
     /// Environment ///
     {
         char* env = (char*)ext_mem_alloc_type_aligned(4096, MEMMAP_BOOTLOADER_RECLAIMABLE, 4096);
-        map_page(pmap, env_vaddr, (uint64_t)env, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
+        map_page(pmap, env_vaddr, (uint64_t)(size_t)env, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
         uint32_t index = 0, offset = 0;
         char* cfgent = NULL;
         do {
@@ -207,8 +207,6 @@ void bootboot_load(char *config, void *efi_system_table) {
     bootboot->protocol = 2 | (0 << 2);
 #elif uefi
     bootboot->protocol = 2 | (1 << 2);
-#else
-#error bootboot: unknown target, not uefi or bios, what the fuck?
 #endif
 
     /// SMP info ///
@@ -219,7 +217,7 @@ void bootboot_load(char *config, void *efi_system_table) {
     bootboot->numcores = numcores;
     bootboot->bspid = bsplapic;
     for (size_t i = 0;i < numcores;i++) {
-        cores[i].stack_addr = ((uint64_t)ext_mem_alloc(init_stack_size)) + init_stack_size;
+        cores[i].stack_addr = ((uint64_t)(size_t)ext_mem_alloc(init_stack_size)) + init_stack_size;
     }
 
     /// Time stubs ///
@@ -257,7 +255,7 @@ void bootboot_load(char *config, void *efi_system_table) {
     if (smbios_entry_64) bootboot->arch.x86_64.smbi_ptr = smbios_entry_64;
     else if (smbios_entry_32) bootboot->arch.x86_64.smbi_ptr = smbios_entry_32;
     else bootboot->arch.x86_64.smbi_ptr = 0;
-    bootboot->arch.x86_64.efi_ptr = (uint64_t)efi_system_table;
+    bootboot->arch.x86_64.efi_ptr = (uint64_t)(size_t)efi_system_table;
     bootboot->arch.x86_64.mp_ptr = 0;
     
     /// Memory map ///

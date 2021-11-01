@@ -70,10 +70,10 @@ struct elf64_sym {
 #define BOOTBOOT_ENV    0xffffffffffe01000
 #define BOOTBOOT_CORE   0xffffffffffe02000
 
-void bootboot_load(char *config, char *cmdline, void *efi_system_table) {    
+void bootboot_load(char *config, void *efi_system_table) {    
     uint64_t fb_vaddr = BOOTBOOT_FB;
     uint64_t struct_vaddr = BOOTBOOT_INFO;
-    uint64_t cmdline_vaddr = BOOTBOOT_ENV;
+    uint64_t env_vaddr = BOOTBOOT_ENV;
     uint64_t init_stack_size = 1024;
 
     /// Config ///
@@ -85,7 +85,6 @@ void bootboot_load(char *config, char *cmdline, void *efi_system_table) {
     if (ramdisk == NULL) {
         print("bootboot: no ramdisk!\n");
     }
-
 
     /// Kernel loading code ///
     print("bootboot: Loading kernel `%s`...\n", kernel_path);
@@ -120,14 +119,14 @@ void bootboot_load(char *config, char *cmdline, void *efi_system_table) {
             char* symbol = &symbol_strings[symbols[i].st_name];
             uint64_t symaddr = symbols[i].st_value;
 
-            print("bootboot: symbol `%s`\n", symbol);
-
             if(!strcmp(symbol, "bootboot")) struct_vaddr = symaddr;
-            if(!strcmp(symbol, "environment")) cmdline_vaddr = symaddr;
+            if(!strcmp(symbol, "environment")) env_vaddr = symaddr;
             if(!strcmp(symbol, "fb")) fb_vaddr = symaddr;
             if(!strcmp(symbol, "initstack")) init_stack_size = symaddr;
         }
     }
+
+    print("bootboot: mapping struct to %X", struct_vaddr);
 
     uint64_t entry, top, slide, rangecount, physbase, virtbase = 0;
     struct elf_range* ranges;
@@ -149,9 +148,27 @@ void bootboot_load(char *config, char *cmdline, void *efi_system_table) {
     BOOTBOOT* bootboot = (BOOTBOOT*)ext_mem_alloc_type_aligned(4096, MEMMAP_BOOTLOADER_RECLAIMABLE, 4096);
     map_page(pmap, struct_vaddr, (uint64_t)bootboot, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
 
-    char** env = (char**)ext_mem_alloc_type_aligned(4096, MEMMAP_BOOTLOADER_RECLAIMABLE, 4096);
-    map_page(pmap, cmdline_vaddr, (uint64_t)env, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
-    memcpy(env, cmdline, strlen(cmdline));
+    /// Environment ///
+    {
+        char* env = (char*)ext_mem_alloc_type_aligned(4096, MEMMAP_BOOTLOADER_RECLAIMABLE, 4096);
+        map_page(pmap, env_vaddr, (uint64_t)env, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
+        uint32_t index = 0, offset = 0;
+        char* cfgent = NULL;
+        do {
+            cfgent = config_get_value(config, index++, "BOOTBOOT_ENV");
+            if (cfgent) {
+                uint32_t off = strlen(cfgent);
+                if (offset + off + 1 > 4095) {
+                    panic("Too much config options! we only have 4k of env vars!");
+                }
+                memcpy(&env[offset], cfgent, off);
+                offset += off;
+                env[offset++] = '\n';
+            }
+        } while (cfgent);
+        cfgent[offset] = 0;
+    }
+
 
     for (uint64_t i = 0; i < 0x400000000; i += 0x200000) {
         map_page(pmap, i, i, 0x03, true);
@@ -206,9 +223,19 @@ void bootboot_load(char *config, char *cmdline, void *efi_system_table) {
     }
 
     /// Time stubs ///
+    uint32_t year, month, day, hour, minute, second;
+    bootboot_time(&day, &month, &year, &second, &minute, &hour);
     print("bootboot: todo/help wanted: if you feel like adding support for weird time bullshit, please contribute\n");
     bootboot->timezone = 0;
-    memset(bootboot->datetime, 0, 8);
+    bootboot->datetime[0] = int_to_bcd(year / 100);
+    bootboot->datetime[1] = int_to_bcd(year % 100);
+    bootboot->datetime[2] = int_to_bcd(month);
+    bootboot->datetime[3] = int_to_bcd(day);
+    bootboot->datetime[4] = int_to_bcd(hour);
+    bootboot->datetime[5] = int_to_bcd(minute);
+    bootboot->datetime[6] = int_to_bcd(second);
+    bootboot->datetime[7] = 0;
+
 
     /// Ramdisk ///
     bootboot->initrd_ptr = ramdisk_start;
@@ -239,27 +266,14 @@ void bootboot_load(char *config, char *cmdline, void *efi_system_table) {
         struct e820_entry_t* e820e = get_memmap(&mmapent);
         if (mmapent > 248) {
             term_reinit();
-            size_t rows, cols;
-            gterm_init(&rows, &cols, 0, 0);
             panic("Too much memory entries! our god bzt decided that %d entries is too much, max is 248", mmapent);
         }
         for (uint32_t i = 0;i < mmapent;i++) {
             uint32_t btype = 0;
-// #define MEMMAP_USABLE                 1
-// #define MEMMAP_RESERVED               2
-// #define MEMMAP_ACPI_RECLAIMABLE       3
-// #define MEMMAP_ACPI_NVS               4
-// #define MEMMAP_BAD_MEMORY             5
-// #define MEMMAP_BOOTLOADER_RECLAIMABLE 0x1000
-// #define MEMMAP_KERNEL_AND_MODULES     0x1001
-// #define MEMMAP_FRAMEBUFFER            0x1002
-// #define MEMMAP_EFI_RECLAIMABLE        0x2000
-// #define MEMMAP_EFI_BOOTSERVICES       0x2001
             if (e820e[i].type == 1) btype = 1;
             if (e820e[i].type == 3) btype = 2;
             if (e820e[i].type == 4) btype = 2;
 
-            print("mapping the type %x to bootboot type %x\n", e820e[i].type, btype);
             bootboot->mmap[i].size = (e820e[i].length & 0xF) | btype;
             bootboot->mmap[i].ptr = e820e[i].base;
         }

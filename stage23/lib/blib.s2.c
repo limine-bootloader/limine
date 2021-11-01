@@ -8,6 +8,9 @@ bool verbose = true;
 uint8_t bcd_to_int(uint8_t val) {
     return (val & 0x0f) + ((val & 0xf0) >> 4) * 10;
 }
+uint8_t int_to_bcd(uint8_t val) {
+    return (val % 10) | (val / 10) << 4;
+}
 
 int digit_to_int(char c) {
     if (c >= 'a' && c <= 'f') {

@@ -47,6 +47,28 @@ uint64_t time(void) {
 
     return get_unix_epoch(second, minute, hour, day, month, year);
 }
+void bootboot_time(
+         uint32_t* day, uint32_t* month, uint32_t* year,
+         uint32_t* second, uint32_t* minute, uint32_t* hour) {
+    struct rm_regs r = {0};
+
+    r.eax = 0x0400;
+    rm_int(0x1a, &r, &r);
+
+    *day    = bcd_to_int( r.edx & 0x00ff);
+    *month  = bcd_to_int((r.edx & 0xff00) >> 8);
+    *year   = bcd_to_int( r.ecx & 0x00ff) +
+    /* century */     bcd_to_int((r.ecx & 0xff00) >> 8) * 100;
+
+    r.eax = 0x0200;
+    rm_int(0x1a, &r, &r);
+
+    *second  = bcd_to_int((r.edx & 0xff00) >> 8);
+    *minute  = bcd_to_int( r.ecx & 0x00ff);
+    *hour    = bcd_to_int((r.ecx & 0xff00) >> 8);
+
+    
+}
 #endif
 
 #if uefi == 1
@@ -56,5 +78,14 @@ uint64_t time(void) {
 
     return get_unix_epoch(time.Second, time.Minute, time.Hour,
                           time.Day, time.Month, time.Year);
+}
+void bootboot_time(
+         uint32_t* day, uint32_t* month, uint32_t* year,
+         uint32_t* second, uint32_t* minute, uint32_t* hour) {
+    EFI_TIME time;
+    gRT->GetTime(&time, NULL);
+
+    *day = time.Day; *month = time.Month; *year = time.Year;
+    *second = time.Second; *minute = time.Minute; *hour = time.Hour;
 }
 #endif

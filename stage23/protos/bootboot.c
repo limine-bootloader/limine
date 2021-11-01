@@ -29,42 +29,7 @@ __attribute__((noreturn)) void bootboot_spinup(
                  pagemap_t *pagemap,
                  uint64_t entry_point, uint64_t stack,
                  size_t numcores, struct smp_information* cores);
-struct elf64_hdr {
-    uint8_t  ident[16];
-    uint16_t type;
-    uint16_t machine;
-    uint32_t version;
-    uint64_t entry;
-    uint64_t phoff;
-    uint64_t shoff;
-    uint32_t flags;
-    uint16_t hdr_size;
-    uint16_t phdr_size;
-    uint16_t ph_num;
-    uint16_t shdr_size;
-    uint16_t sh_num;
-    uint16_t shstrndx;
-};
-struct elf64_shdr {
-    uint32_t sh_name;
-    uint32_t sh_type;
-    uint64_t sh_flags;
-    uint64_t sh_addr;
-    uint64_t sh_offset;
-    uint64_t sh_size;
-    uint32_t sh_link;
-    uint32_t sh_info;
-    uint64_t sh_addralign;
-    uint64_t sh_entsize;
-};
-struct elf64_sym {
-    uint32_t st_name;
-    uint8_t  st_info;
-    uint8_t  st_other;
-    uint16_t st_shndx;
-    uint64_t st_value;
-    uint64_t st_size;
-};
+
 #define BOOTBOOT_FB     0xfffffffffc000000
 #define BOOTBOOT_INFO   0xffffffffffe00000
 #define BOOTBOOT_ENV    0xffffffffffe01000
@@ -199,6 +164,7 @@ void bootboot_load(char *config, void *efi_system_table) {
         uint8_t* ramdisk_data = freadall(ramdisk_file, MEMMAP_KERNEL_AND_MODULES);
         ramdisk_size = ramdisk_file->size;
         ramdisk_start = (uint64_t)(size_t)ramdisk_data;
+        fclose(ramdisk_file);
     }
 
     /// Header info ///
@@ -263,7 +229,6 @@ void bootboot_load(char *config, void *efi_system_table) {
         size_t mmapent;
         struct e820_entry_t* e820e = get_memmap(&mmapent);
         if (mmapent > 248) {
-            term_reinit();
             panic("Too much memory entries! our god bzt decided that %d entries is too much, max is 248", mmapent);
         }
         for (uint32_t i = 0;i < mmapent;i++) {

@@ -1,5 +1,3 @@
-#include "lib/gterm.h"
-#include "sys/smp.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -20,6 +18,7 @@
 #include <sys/gdt.h>
 #include <sys/idt.h>
 #include <sys/lapic.h>
+#include <sys/smp.h>
 #include <fs/file.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>

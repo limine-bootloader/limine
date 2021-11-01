@@ -47,7 +47,7 @@ void bootboot_load(char *config, void *efi_system_table) {
     
     char *ramdisk = config_get_value(config, 0, "RAMDISK");
     if (ramdisk == NULL) {
-        print("bootboot: no ramdisk!\n");
+        print("bootboot: warning: no ramdisk!\n");
     }
 
     /// Kernel loading code ///
@@ -90,7 +90,10 @@ void bootboot_load(char *config, void *efi_system_table) {
         }
     }
 
-    print("bootboot: mapping struct to %X", struct_vaddr);
+    printv("bootboot: mapping struct to %X", struct_vaddr);
+    printv("bootboot: mapping environemnt to %X", env_vaddr);
+    printv("bootboot: mapping framebuffer to %X", fb_vaddr);
+    printv("bootboot: the init stack is %X bytes", init_stack_size);
 
     uint64_t entry, top, slide, rangecount, physbase, virtbase = 0;
     struct elf_range* ranges;
@@ -188,7 +191,6 @@ void bootboot_load(char *config, void *efi_system_table) {
     /// Time stubs ///
     uint32_t year, month, day, hour, minute, second;
     bootboot_time(&day, &month, &year, &second, &minute, &hour);
-    print("bootboot: todo/help wanted: if you feel like adding support for weird time bullshit, please contribute\n");
     bootboot->timezone = 0;
     bootboot->datetime[0] = int_to_bcd(year / 100);
     bootboot->datetime[1] = int_to_bcd(year % 100);

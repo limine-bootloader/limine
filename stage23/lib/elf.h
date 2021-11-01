@@ -35,4 +35,41 @@ int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t allo
 int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limit);
 struct elf_section_hdr_info* elf32_section_hdr_info(uint8_t *elf);
 
+struct elf64_hdr {
+    uint8_t  ident[16];
+    uint16_t type;
+    uint16_t machine;
+    uint32_t version;
+    uint64_t entry;
+    uint64_t phoff;
+    uint64_t shoff;
+    uint32_t flags;
+    uint16_t hdr_size;
+    uint16_t phdr_size;
+    uint16_t ph_num;
+    uint16_t shdr_size;
+    uint16_t sh_num;
+    uint16_t shstrndx;
+};
+struct elf64_shdr {
+    uint32_t sh_name;
+    uint32_t sh_type;
+    uint64_t sh_flags;
+    uint64_t sh_addr;
+    uint64_t sh_offset;
+    uint64_t sh_size;
+    uint32_t sh_link;
+    uint32_t sh_info;
+    uint64_t sh_addralign;
+    uint64_t sh_entsize;
+};
+struct elf64_sym {
+    uint32_t st_name;
+    uint8_t  st_info;
+    uint8_t  st_other;
+    uint16_t st_shndx;
+    uint64_t st_value;
+    uint64_t st_size;
+};
+
 #endif

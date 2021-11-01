@@ -26,22 +26,6 @@
 #define EI_VERSION  6
 #define EI_OSABI    7
 
-struct elf64_hdr {
-    uint8_t  ident[16];
-    uint16_t type;
-    uint16_t machine;
-    uint32_t version;
-    uint64_t entry;
-    uint64_t phoff;
-    uint64_t shoff;
-    uint32_t flags;
-    uint16_t hdr_size;
-    uint16_t phdr_size;
-    uint16_t ph_num;
-    uint16_t shdr_size;
-    uint16_t sh_num;
-    uint16_t shstrndx;
-};
 
 struct elf32_hdr {
     uint8_t  ident[16];
@@ -80,19 +64,6 @@ struct elf32_phdr {
     uint32_t p_memsz;
     uint32_t p_flags;
     uint32_t p_align;
-};
-
-struct elf64_shdr {
-    uint32_t sh_name;
-    uint32_t sh_type;
-    uint64_t sh_flags;
-    uint64_t sh_addr;
-    uint64_t sh_offset;
-    uint64_t sh_size;
-    uint32_t sh_link;
-    uint32_t sh_info;
-    uint64_t sh_addralign;
-    uint64_t sh_entsize;
 };
 
 struct elf32_shdr {

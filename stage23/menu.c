@@ -75,6 +75,7 @@ static size_t get_prev_line(size_t index, const char *buffer) {
 }
 
 static const char *VALID_KEYS[] = {
+    "BOOTBOOT_ENV",
     "TIMEOUT",
     "DEFAULT_ENTRY",
     "GRAPHICS",
@@ -108,6 +109,7 @@ static const char *VALID_KEYS[] = {
     "VERBOSE",
     "RANDOMISE_MEMORY",
     "RANDOMIZE_MEMORY",
+    "RAMDISK",
     "COMMENT",
     "PROTOCOL",
     "CMDLINE",

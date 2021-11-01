@@ -43,6 +43,7 @@ size_t get_trailing_zeros(uint64_t val);
 
 int digit_to_int(char c);
 uint8_t bcd_to_int(uint8_t val);
+uint8_t int_to_bcd(uint8_t val);
 
 __attribute__((noreturn)) void panic(const char *fmt, ...);
 

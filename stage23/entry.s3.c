@@ -184,7 +184,7 @@ void stage3_common(void) {
 #elif uefi == 1
         void *efi_system_table = gST;
 #endif
-        bootboot_load(config, cmdline, efi_system_table);
+        bootboot_load(config, efi_system_table);
     }
 
     panic("Invalid protocol specified");

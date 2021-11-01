@@ -198,7 +198,7 @@ void bootboot_load(char *config, void *efi_system_table) {
 
         uint8_t* ramdisk_data = freadall(ramdisk_file, MEMMAP_KERNEL_AND_MODULES);
         ramdisk_size = ramdisk_file->size;
-        ramdisk_start = (uint64_t)ramdisk_data;
+        ramdisk_start = (uint64_t)(size_t)ramdisk_data;
     }
 
     /// Header info ///

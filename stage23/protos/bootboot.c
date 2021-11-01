@@ -278,9 +278,6 @@ void bootboot_load(char *config, void *efi_system_table) {
         bootboot->size = 128 + mmapent * 16;
     }
 
-    /// Late framebuffer init ///
-    memset((void*)(size_t)fbi.framebuffer_addr, 0, fb_size);
-
     /// Spinup ///
     bootboot_spinup(&pmap, entry, cores[0].stack_addr, numcores, cores);
 

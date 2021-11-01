@@ -14,6 +14,7 @@
 #include <mm/pmm.h>
 #include <protos/stivale.h>
 #include <protos/stivale2.h>
+#include <protos/bootboot.h>
 #include <protos/linux.h>
 #include <protos/chainload.h>
 #include <protos/multiboot1.h>
@@ -177,6 +178,13 @@ void stage3_common(void) {
         multiboot1_load(config, cmdline);
     } else if (!strcmp(proto, "multiboot2")) {
         multiboot2_load(config, cmdline);
+    } else if (!strcmp(proto, "bootboot")) {
+#if bios == 1
+        void *efi_system_table = NULL;
+#elif uefi == 1
+        void *efi_system_table = gST;
+#endif
+        bootboot_load(config, cmdline, efi_system_table);
     }
 
     panic("Invalid protocol specified");

@@ -525,6 +525,8 @@ final:
         if (use_paddr) {
             load_addr = phdr.p_paddr;
         } else {
+            load_addr = phdr.p_vaddr;
+
             if (phdr.p_vaddr >= 0xffffffff80000000) {
                 higher_half = true;
 

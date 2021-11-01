@@ -102,8 +102,8 @@ void bootboot_load(char *config, void *efi_system_table) {
     struct elf64_hdr* elf_header = (struct elf64_hdr*)kernel;
     struct elf64_shdr* section_header_strings_section = ESECTION(elf_header->shstrndx);
     char* section_header_strings = KOFFSET(char*, section_header_strings_section->sh_offset);
-    struct elf64_shdr* symbol_table;
-    struct elf64_shdr* string_table;
+    struct elf64_shdr* symbol_table = NULL;
+    struct elf64_shdr* string_table = NULL;
     for(uint32_t i = 0; i < elf_header->sh_num; i++){
         struct elf64_shdr* section_header = ESECTION(i);
         char* secname = &section_header_strings[section_header->sh_name];
@@ -116,13 +116,13 @@ void bootboot_load(char *config, void *efi_system_table) {
         struct elf64_sym* symbols = KOFFSET(struct elf64_sym*, symbol_table->sh_offset);
         char* symbol_strings = KOFFSET(char*, string_table->sh_offset);
         for (uint32_t i = 0, symcount = symbol_table->sh_size / sizeof(struct elf64_sym);i < symcount;i++) {
-            char* symbol = &symbol_strings[symbols[i].st_name];
+            char* elf_sym = &symbol_strings[symbols[i].st_name];
             uint64_t symaddr = symbols[i].st_value;
 
-            if(!strcmp(symbol, "bootboot")) struct_vaddr = symaddr;
-            if(!strcmp(symbol, "environment")) env_vaddr = symaddr;
-            if(!strcmp(symbol, "fb")) fb_vaddr = symaddr;
-            if(!strcmp(symbol, "initstack")) init_stack_size = symaddr;
+            if(!strcmp(elf_sym, "bootboot")) struct_vaddr = symaddr;
+            if(!strcmp(elf_sym, "environment")) env_vaddr = symaddr;
+            if(!strcmp(elf_sym, "fb")) fb_vaddr = symaddr;
+            if(!strcmp(elf_sym, "initstack")) init_stack_size = symaddr;
         }
     }
 

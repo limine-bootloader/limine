@@ -305,9 +305,6 @@ __attribute__((noreturn)) void bootboot_spinup(
     rm_int(0x15, &r, &r);
 #endif
 
-    pic_mask_all();
-    io_apic_mask_all();
-
     irq_flush_type = IRQ_PIC_APIC_FLUSH;
 
     for (size_t i = 0;i < numcores;i++) {

@@ -443,8 +443,13 @@ void disk_create_index(void) {
         block->sect_count = drive->Media->LastBlock + 1;
         block->max_partition = -1;
 
-        // TODO: get fastest xfer size also for UEFI?
-        block->fastest_xfer_size = 8;
+        if (drive->Revision >= EFI_BLOCK_IO_PROTOCOL_REVISION3) {
+            block->fastest_xfer_size = drive->Media->OptimalTransferLengthGranularity;
+        }
+
+        if (block->fastest_xfer_size == 0) {
+            block->fastest_xfer_size = 64;
+        }
 
         if (gpt_get_guid(&block->guid, block)) {
             block->guid_valid = true;

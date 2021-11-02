@@ -99,6 +99,14 @@ Some keys take *URIs* as values; these are described in the next section.
   Note that one can define this last variable multiple times to specify multiple
   modules.
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
+* Bootboot protocol:
+  * `KERNEL_PATH` - The URI path of the kernel.
+  * `INITRD_PATH` - The URI path to the ramdisk/initrd.
+  * `BOOTBOOT_ENV` - A configuration key to be passed into the kernel.
+
+  Note that one can define this last variable multiple times to specify multiple
+  environemnt keys.
+  * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
 * stivale and stivale2 protocols:
   * `KERNEL_PATH` - The URI path of the kernel.
   * `MODULE_PATH` - The URI path to a module.

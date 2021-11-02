@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-void bootboot_load(char *config, void *efi_system_table);
+void bootboot_load(char *config);
 
 /*
  * what follows is (modified) bootboot.h

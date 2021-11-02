@@ -179,12 +179,7 @@ void stage3_common(void) {
     } else if (!strcmp(proto, "multiboot2")) {
         multiboot2_load(config, cmdline);
     } else if (!strcmp(proto, "bootboot")) {
-#if bios == 1
-        void *efi_system_table = NULL;
-#elif uefi == 1
-        void *efi_system_table = gST;
-#endif
-        bootboot_load(config, efi_system_table);
+        bootboot_load(config);
     }
 
     panic("Invalid protocol specified");

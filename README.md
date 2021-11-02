@@ -18,6 +18,7 @@ Like Limine and want to support it? Donate Bitcoin to
 
 ### Supported boot protocols
 * stivale and stivale2 (Limine's native boot protocols, see [their specifications](https://github.com/stivale/stivale) for details)
+* Bootboot (Another hobby OS boot protocol designed for microkernels, see the [specification](https://gitlab.com/bztsrc/bootboot) for details)
 * Linux
 * Multiboot 1
 * Multiboot 2

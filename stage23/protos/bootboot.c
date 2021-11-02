@@ -34,7 +34,18 @@ __attribute__((noreturn)) void bootboot_spinup(
 #define BOOTBOOT_ENV    0xffffffffffe01000
 #define BOOTBOOT_CORE   0xffffffffffe02000
 
-void bootboot_load(char *config, void *efi_system_table) {    
+
+__attribute__((noreturn)) void bootboot_spinup_32(
+                 uint32_t pagemap_top_lv,
+                 uint32_t entry_point_lo, uint32_t entry_point_hi,
+                 uint32_t stack_lo, uint32_t stack_hi);
+
+void bootboot_load(char *config) {
+#if bios
+    void *efi_system_table = NULL;
+#elif uefi
+    void *efi_system_table = gST;
+#endif
     uint64_t fb_vaddr = BOOTBOOT_FB;
     uint64_t struct_vaddr = BOOTBOOT_INFO;
     uint64_t env_vaddr = BOOTBOOT_ENV;
@@ -45,9 +56,9 @@ void bootboot_load(char *config, void *efi_system_table) {
     if (kernel_path == NULL)
         panic("bootboot: KERNEL_PATH not specified");
     
-    char *ramdisk = config_get_value(config, 0, "RAMDISK");
-    if (ramdisk == NULL) {
-        print("bootboot: warning: no ramdisk!\n");
+    char *initrd = config_get_value(config, 0, "INITRD");
+    if (initrd == NULL) {
+        print("bootboot: warning: no initrd!\n");
     }
 
     /// Kernel loading code ///
@@ -156,17 +167,17 @@ void bootboot_load(char *config, void *efi_system_table) {
         map_page(pmap, fb_vaddr + current, fbi.framebuffer_addr + current, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
     }
 
-    /// Ramdisk loading ///
-    uint64_t ramdisk_start = 0, ramdisk_size = 0;
-    if (ramdisk) {
-        struct file_handle* ramdisk_file;
-        if ((ramdisk_file = uri_open(ramdisk)) == NULL)
-            panic("bootboot: Failed to open ramdisk with path `%s`. Is the path correct?\n", ramdisk);
+    /// Initrd loading ///
+    uint64_t initrd_start = 0, initrd_size = 0;
+    if (initrd) {
+        struct file_handle* initrd_file;
+        if ((initrd_file = uri_open(initrd)) == NULL)
+            panic("bootboot: Failed to open initrd with path `%s`. Is the path correct?\n", initrd);
 
-        uint8_t* ramdisk_data = freadall(ramdisk_file, MEMMAP_KERNEL_AND_MODULES);
-        ramdisk_size = ramdisk_file->size;
-        ramdisk_start = (uint64_t)(size_t)ramdisk_data;
-        fclose(ramdisk_file);
+        uint8_t* initrd_data = freadall(initrd_file, MEMMAP_KERNEL_AND_MODULES);
+        initrd_size = initrd_file->size;
+        initrd_start = (uint64_t)(size_t)initrd_data;
+        fclose(initrd_file);
     }
 
     /// Header info ///
@@ -203,8 +214,8 @@ void bootboot_load(char *config, void *efi_system_table) {
 
 
     /// Ramdisk ///
-    bootboot->initrd_ptr = ramdisk_start;
-    bootboot->initrd_size = ramdisk_size;
+    bootboot->initrd_ptr = initrd_start;
+    bootboot->initrd_size = initrd_size;
 
     /// Framebuffer ///
     bootboot->fb_ptr = fbi.framebuffer_addr;
@@ -245,19 +256,6 @@ void bootboot_load(char *config, void *efi_system_table) {
     }
 
     /// Spinup ///
-    bootboot_spinup(&pmap, entry, cores[0].stack_addr, numcores, cores);
-
-}
-
-__attribute__((noreturn)) void bootboot_spinup_32(
-                 uint32_t pagemap_top_lv,
-                 uint32_t entry_point_lo, uint32_t entry_point_hi,
-                 uint32_t stack_lo, uint32_t stack_hi);
-
-__attribute__((noreturn)) void bootboot_spinup(
-                 pagemap_t *pagemap,
-                 uint64_t entry_point, uint64_t stack,
-                 size_t numcores, struct smp_information* cores) {
 #if bios == 1
     // If we're going 64, we might as well call this BIOS interrupt
     // to tell the BIOS that we are entering Long Mode, since it is in
@@ -268,15 +266,16 @@ __attribute__((noreturn)) void bootboot_spinup(
     rm_int(0x15, &r, &r);
 #endif
 
-    irq_flush_type = IRQ_PIC_APIC_FLUSH;
+    irq_flush_type = IRQ_PIC_ONLY_FLUSH;
 
     for (size_t i = 0;i < numcores;i++) {
         cores[i].extra_argument = 0;
-        cores[i].goto_address = entry_point;
+        cores[i].goto_address = entry;
     }
 
     common_spinup(bootboot_spinup_32, 10,
-        (uint32_t)(uintptr_t)pagemap->top_level,
-        (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
-        (uint32_t)stack, (uint32_t)(stack >> 32));
+        (uint32_t)(uintptr_t)pmap.top_level,
+        (uint32_t)entry, (uint32_t)(entry >> 32),
+        (uint32_t)cores[0].stack_addr, (uint32_t)(cores[0].stack_addr >> 32));
+
 }

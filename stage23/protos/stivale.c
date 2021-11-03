@@ -302,8 +302,12 @@ void stivale_load(char *config, char *cmdline) {
     if (bits == 64)
         pagemap = stivale_build_pagemap(want_5lv, false, NULL, 0, false, 0, 0);
 
-    // Reserve 32K at 0x70000
-    memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, true, false, false);
+    // Reserve 32K at 0x70000 if possible
+    if (!memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, false, false, false)) {
+        if ((stivale_hdr.flags & (1 << 4)) == 0) {
+            panic("stivale: Could not allocate low memory area");
+        }
+    }
 
     struct e820_entry_t *mmap_copy = ext_mem_alloc(256 * sizeof(struct e820_entry_t));
 

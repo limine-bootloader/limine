@@ -682,8 +682,12 @@ have_tm_tag:;
         ext_mem_alloc(sizeof(struct stivale2_struct_tag_memmap) +
                        sizeof(struct e820_entry_t) * 256);
 
-    // Reserve 32K at 0x70000
-    memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, true, false, false);
+    // Reserve 32K at 0x70000, if possible
+    if (!memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, false, false, false)) {
+        if ((stivale2_hdr.flags & (1 << 4)) == 0) {
+            panic("stivale2: Could not allocate low memory area");
+        }
+    }
 
     size_t mmap_entries;
     struct e820_entry_t *mmap = get_memmap(&mmap_entries);

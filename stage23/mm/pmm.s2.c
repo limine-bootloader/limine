@@ -419,6 +419,15 @@ void pmm_reclaim_uefi_mem(void) {
         for (size_t j = 0; j < entry_count; j++) {
             EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + j * efi_desc_size;
 
+            switch (entry->Type) {
+                case EfiBootServicesCode:
+                case EfiBootServicesData:
+                case EfiConventionalMemory:
+                    break;
+                default:
+                    continue;
+            }
+
             uintptr_t base = memmap[i].base;
             uintptr_t top = base + memmap[i].length;
             uintptr_t efi_base = entry->PhysicalStart;
@@ -429,12 +438,7 @@ void pmm_reclaim_uefi_mem(void) {
                && top  >  efi_base && top  <= efi_top))
                 continue;
 
-            switch (entry->Type) {
-                case EfiBootServicesCode:
-                case EfiBootServicesData:
-                case EfiConventionalMemory:
-                    memmap[i].type = MEMMAP_USABLE; break;
-            }
+            memmap[i].type = MEMMAP_USABLE;
         }
     }
 
@@ -674,6 +678,73 @@ struct meminfo mmap_get_info(size_t mmap_count, struct e820_entry_t *mmap) {
     return info;
 }
 
+static bool pmm_new_entry(uint64_t base, uint64_t length, uint32_t type) {
+    uint64_t top = base + length;
+
+    // Handle overlapping new entries.
+    for (size_t i = 0; i < memmap_entries; i++) {
+        uint64_t entry_base = memmap[i].base;
+        uint64_t entry_top  = memmap[i].base + memmap[i].length;
+
+        // Full overlap
+        if (base <= entry_base && top >= entry_top) {
+            // Remove overlapped entry
+            for (size_t j = i + 1; j < memmap_entries; j++) {
+                memmap[j - 1] = memmap[j];
+            }
+            memmap_entries--;
+            i--;
+            continue;
+        }
+
+        // Partial overlap (bottom)
+        if (base <= entry_base && top < entry_top && top > entry_base) {
+            // Entry gets bottom shaved off
+            memmap[i].base += top - entry_base;
+            memmap[i].length -= top - entry_base;
+            continue;
+        }
+
+        // Partial overlap (top)
+        if (base > entry_base && base < entry_top && top >= entry_top) {
+            // Entry gets top shaved off
+            memmap[i].length -= entry_top - base;
+            continue;
+        }
+
+        // Nested (pain)
+        if (base > entry_base && top < entry_top) {
+            // Entry gets top shaved off first
+            memmap[i].length -= entry_top - base;
+
+            // Now we need to create a new entry
+            if (memmap_entries >= memmap_max_entries)
+                panic("Memory map exhausted.");
+
+            struct e820_entry_t *new_entry = &memmap[memmap_entries++];
+
+            new_entry->type = memmap[i].type;
+            new_entry->base = top;
+            new_entry->length = entry_top - top;
+
+            continue;
+        }
+    }
+
+    if (memmap_entries >= memmap_max_entries)
+        panic("Memory map exhausted.");
+
+    struct e820_entry_t *target = &memmap[memmap_entries++];
+
+    target->type = type;
+    target->base = base;
+    target->length = length;
+
+    sanitise_entries(memmap, &memmap_entries, false);
+
+    return true;
+}
+
 bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only, bool do_panic, bool simulation, bool new_entry) {
     if (length == 0)
         return true;
@@ -730,18 +801,7 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
         panic("Memory allocation failure.");
 
     if (new_entry) {
-        if (memmap_entries >= memmap_max_entries)
-            panic("Memory map exhausted.");
-
-        struct e820_entry_t *target = &memmap[memmap_entries++];
-
-        target->type = type;
-        target->base = base;
-        target->length = length;
-
-        sanitise_entries(memmap, &memmap_entries, false);
-
-        return true;
+        return pmm_new_entry(base, length, type);
     }
 
     return false;

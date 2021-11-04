@@ -269,7 +269,7 @@ void bootboot_load(char *config) {
     pic_mask_all();
     io_apic_mask_all();
 
-    irq_flush_type = IRQ_PIC_ONLY_FLUSH;
+    irq_flush_type = IRQ_PIC_APIC_FLUSH;
 
     for (size_t i = 0;i < numcores;i++) {
         cores[i].extra_argument = 0;

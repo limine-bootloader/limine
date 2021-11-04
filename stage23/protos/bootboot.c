@@ -147,7 +147,7 @@ void bootboot_load(char *config) {
         cfgent[offset] = 0;
     }
 
-
+    /// Identity mapping ///
     for (uint64_t i = 0; i < 0x400000000; i += 0x200000) {
         map_page(pmap, i, i, 0x03, true);
     }
@@ -249,7 +249,7 @@ void bootboot_load(char *config) {
             if (e820e[i].type == 3) btype = 2;
             if (e820e[i].type == 4) btype = 2;
 
-            bootboot->mmap[i].size = (e820e[i].length & 0xF) | btype;
+            bootboot->mmap[i].size = (e820e[i].length & ~0xF) | btype;
             bootboot->mmap[i].ptr = e820e[i].base;
         }
         bootboot->size = 128 + mmapent * 16;
@@ -265,6 +265,9 @@ void bootboot_load(char *config) {
     r.ebx = 0x02;   // Long mode only
     rm_int(0x15, &r, &r);
 #endif
+
+    pic_mask_all();
+    io_apic_mask_all();
 
     irq_flush_type = IRQ_PIC_ONLY_FLUSH;
 

@@ -202,13 +202,24 @@ void stivale_load(char *config, char *cmdline) {
         struct stivale_module *m = ext_mem_alloc(sizeof(struct stivale_module));
 
         char *module_string = config_get_value(config, i, "MODULE_STRING");
+
+        // TODO: perhaps change the module string to to be a pointer.
+        //
+        // NOTE: By default, the module string is the file name.
         if (module_string == NULL) {
-            m->string[0] = '\0';
+            size_t str_len = strlen(module_path);
+
+            if (str_len > 127)
+                str_len = 127;
+
+            memcpy(m->string, module_path, str_len);
         } else {
             // TODO perhaps change this to be a pointer
             size_t str_len = strlen(module_string);
+            
             if (str_len > 127)
                 str_len = 127;
+            
             memcpy(m->string, module_string, str_len);
         }
 

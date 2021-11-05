@@ -364,6 +364,10 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
         if (phdr.p_type != PT_LOAD)
             continue;
 
+        if (!use_paddr && phdr.p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
+            continue;
+        }
+
         ranges_count++;
     }
 
@@ -384,6 +388,10 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
             load_addr = phdr.p_paddr;
         } else {
             load_addr = phdr.p_vaddr;
+
+            if (phdr.p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
+                continue;
+            }
         }
 
         load_addr += slide;
@@ -440,8 +448,14 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
             memcpy(&phdr, elf + (hdr.phoff + i * sizeof(struct elf64_phdr)),
                        sizeof(struct elf64_phdr));
 
-            if (phdr.p_type != PT_LOAD)
+            if (phdr.p_type != PT_LOAD) {
                 continue;
+            }
+
+            // Drop entries not in the higher half
+            if (phdr.p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
+                continue;
+            }
 
             if (phdr.p_vaddr < min_vaddr) {
                 min_vaddr = phdr.p_vaddr;
@@ -498,7 +512,7 @@ final:
         } else {
             load_addr = phdr.p_vaddr;
 
-            if (phdr.p_vaddr >= 0xffffffff80000000) {
+            if (phdr.p_vaddr >= FIXED_HIGHER_HALF_OFFSET_64) {
                 higher_half = true;
 
                 if (fully_virtual) {
@@ -506,6 +520,9 @@ final:
                 } else {
                     load_addr = phdr.p_vaddr - FIXED_HIGHER_HALF_OFFSET_64;
                 }
+            } else if (ranges) {
+                // Drop lower half
+                continue;
             }
         }
 

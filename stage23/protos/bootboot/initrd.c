@@ -11,7 +11,7 @@ INITRD_HANDLER(cpio);
 INITRD_HANDLER(auto) {
 #define DETECT_FAILED panic("bootboot: cannot read file `%s`: cannot detect initrd type (only ustar, cpio and jamesm is supported).", path)
     if (file.size < 4) DETECT_FAILED;
-    if (!memcmp(file.data, "ELF\x7f", 4)) {
+    if (!memcmp(file.data, "\x7f""ELF", 4)) {
         if (strcmp("sys/core", path) == 0) {
             printv("bootboot: using ELF as initrd to open sys/core\n");
             return file;

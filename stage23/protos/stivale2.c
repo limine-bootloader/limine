@@ -313,13 +313,23 @@ failed_to_load_header_section:
         struct stivale2_module *m = &tag->modules[i];
 
         char *module_string = config_get_value(config, i, "MODULE_STRING");
+
+        // TODO: perhaps change the module string to to be a pointer.
+        //
+        // NOTE: By default, the module string is the file name.
         if (module_string == NULL) {
-            m->string[0] = '\0';
-        } else {
-            // TODO perhaps change this to be a pointer
-            size_t str_len = strlen(module_string);
+            size_t str_len = strlen(module_path);
+
             if (str_len > 127)
                 str_len = 127;
+
+            memcpy(m->string, module_path, str_len);
+        } else {
+            size_t str_len = strlen(module_string);
+            
+            if (str_len > 127)
+                str_len = 127;
+            
             memcpy(m->string, module_string, str_len);
         }
 

@@ -135,8 +135,6 @@ void bootboot_load(char *config) {
 
     /// Memory mappings ///
     pagemap_t pmap = new_pagemap(4);
-    BOOTBOOT* bootboot = (BOOTBOOT*)ext_mem_alloc_type_aligned(4096, MEMMAP_BOOTLOADER_RECLAIMABLE, 4096);
-    map_page(pmap, struct_vaddr, (uint64_t)(size_t)bootboot, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
 
     /// Load kernel ///
     uint64_t entry, top, slide, rangecount, physbase, virtbase = 0;
@@ -193,6 +191,11 @@ void bootboot_load(char *config) {
     printv("bootboot: mapping environemnt to %X\n", env_vaddr);
     printv("bootboot: mapping framebuffer to %X\n", fb_vaddr);
     printv("bootboot: the init stack is %X bytes\n", init_stack_size);;
+
+    /// Bootboot structure ///
+    BOOTBOOT* bootboot = (BOOTBOOT*)ext_mem_alloc_type_aligned(4096, MEMMAP_BOOTLOADER_RECLAIMABLE, 4096);
+    map_page(pmap, struct_vaddr, (uint64_t)(size_t)bootboot, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
+
 
     /// Environment ///
     {

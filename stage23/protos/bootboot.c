@@ -186,7 +186,7 @@ void bootboot_load(char *config) {
 
     if (init_stack_size == ~0UL) {
         print("bootboot: warning: no init stack size entered, assuming 1024\n");
-        print("1024 is really small, specify more using ");
+        print("1024 is really small, specify more using initstack=size ini initrd;\n");
         init_stack_size = 1024;
     }
     printv("bootboot: mapping struct to %X\n", struct_vaddr);

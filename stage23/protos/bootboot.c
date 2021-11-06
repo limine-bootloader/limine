@@ -196,7 +196,6 @@ void bootboot_load(char *config) {
     BOOTBOOT* bootboot = (BOOTBOOT*)ext_mem_alloc_type_aligned(4096, MEMMAP_BOOTLOADER_RECLAIMABLE, 4096);
     map_page(pmap, struct_vaddr, (uint64_t)(size_t)bootboot, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
 
-
     /// Environment ///
     {
         map_page(pmap, env_vaddr, (uint64_t)(size_t)env, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);

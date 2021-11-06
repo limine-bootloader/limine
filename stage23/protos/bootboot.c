@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <protos/bootboot.h>
+#include <protos/bootboot/initrd.h>
 #include <lib/libc.h>
 #include <lib/elf.h>
 #include <lib/blib.h>
@@ -49,25 +50,107 @@ void bootboot_load(char *config) {
     uint64_t fb_vaddr = BOOTBOOT_FB;
     uint64_t struct_vaddr = BOOTBOOT_INFO;
     uint64_t env_vaddr = BOOTBOOT_ENV;
-    uint64_t init_stack_size = 1024;
+    uint64_t init_stack_size = ~0;
 
     /// Config ///
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
-    if (kernel_path == NULL)
-        panic("bootboot: KERNEL_PATH not specified");
     
-    char *initrd = config_get_value(config, 0, "INITRD");
+    char *initrd = config_get_value(config, 0, "INITRD_PATH");
     if (initrd == NULL) {
-        print("bootboot: warning: no initrd!\n");
+        initrd = kernel_path;
+        kernel_path = NULL;
     }
 
-    /// Kernel loading code ///
-    print("bootboot: Loading kernel `%s`...\n", kernel_path);
-    struct file_handle* kernel_file;
-    if ((kernel_file = uri_open(kernel_path)) == NULL)
-        panic("bootboot: Failed to open kernel with path `%s`. Is the path correct?\n", kernel_path);
+    if (kernel_path == NULL && initrd == NULL)
+        panic("bootboot: no KERNEL_PATH or INITRD_PATH specified!");
 
-    uint8_t* kernel = freadall(kernel_file, MEMMAP_KERNEL_AND_MODULES);
+    /// Initrd loading ///
+    file_t bootboot_initrd_file;
+    uint64_t initrd_start = 0, initrd_size = 0;
+    if (initrd) {
+        struct file_handle* initrd_file;
+        if ((initrd_file = uri_open(initrd)) == NULL)
+            panic("bootboot: Failed to open initrd with path `%s`. Is the path correct?\n", initrd);
+
+        uint8_t* initrd_data = freadall(initrd_file, MEMMAP_KERNEL_AND_MODULES);
+        initrd_size = initrd_file->size;
+        initrd_start = (uint64_t)(size_t)initrd_data;
+        fclose(initrd_file);
+        bootboot_initrd_file.size = initrd_size;
+        bootboot_initrd_file.data = initrd_data;
+    } else {
+        panic("bootboot: logic error: no initrd, even though one MUST be present");
+    }
+
+    /// Load bootboot config ///
+#define _emitenv(e) do { \
+        if(envoff >= 4095) panic("bootboot: too much env data!"); \
+        env[envoff++] = e; \
+    } while (false);
+    uint8_t* env = (uint8_t*)ext_mem_alloc_type_aligned(4096, MEMMAP_BOOTLOADER_RECLAIMABLE, 4096);
+    uint64_t envoff = 0;
+    do {
+        file_t conf = initrd_open_auto(bootboot_initrd_file, "sys/config");
+        if (!conf.data) break;
+
+        uint8_t state = 0;
+        uint8_t ipeq = 0;
+
+        // state 0: kv
+        // state 1: precomment
+        // state 2: comment
+
+        for (uint64_t inoff = 0;inoff < conf.size;inoff++) {
+            if (conf.data[inoff] == ' ' && !(state == 0 && ipeq == 2)) continue;
+            if (conf.data[inoff] != ' ' && state == 0 && ipeq == 1) { ipeq = 2; }
+            if (conf.data[inoff] == '/' && state == 1) { state = 2; continue; }
+            if (conf.data[inoff] == '\n' && state == 2) { state = 0; continue; }
+            if (conf.data[inoff] == '\n') { ipeq = 0; }
+            if (conf.data[inoff] == '/' && state == 0) { state = 1; continue; }
+            if (state == 1) { state = 0; _emitenv('/'); _emitenv(conf.data[inoff]); continue; }
+            if (state == 2) continue;
+            if (state == 0 && conf.data[inoff] == '=') ipeq = 1;
+            _emitenv(conf.data[inoff]);
+        }
+    } while (false);
+    _emitenv(0);
+    print("env: ---------\n%s\n--------\n", env);
+
+    /// Kernel loading code ///
+    uint8_t* kernel;
+    if (kernel_path) {
+        print("bootboot: Loading kernel `%s`...\n", kernel_path);
+        struct file_handle* kernel_file;
+        if ((kernel_file = uri_open(kernel_path)) == NULL)
+            panic("bootboot: Failed to open kernel with path `%s`. Is the path correct?\n", kernel_path);
+
+        kernel = freadall(kernel_file, MEMMAP_KERNEL_AND_MODULES);
+    } else {
+        const char* corefile = config_get_value((char*)env, 0, "kernel");
+        if (!corefile) corefile = "sys/core";
+        file_t file = initrd_open_auto(bootboot_initrd_file, corefile);
+        kernel = file.data;
+        if (!file.size) panic("bootboot: cannot find the kernel!");
+    }
+
+    /// Memory mappings ///
+    pagemap_t pmap = new_pagemap(4);
+    BOOTBOOT* bootboot = (BOOTBOOT*)ext_mem_alloc_type_aligned(4096, MEMMAP_BOOTLOADER_RECLAIMABLE, 4096);
+    map_page(pmap, struct_vaddr, (uint64_t)(size_t)bootboot, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
+
+    /// Load kernel ///
+    uint64_t entry, top, slide, rangecount, physbase, virtbase = 0;
+    struct elf_range* ranges;
+    {
+        if (elf64_load(
+            kernel, &entry, &top, &slide, MEMMAP_KERNEL_AND_MODULES,
+            false, false, &ranges, &rangecount, true, &physbase, &virtbase)) {
+            panic("bootboot: elf64 load failed");
+        }
+        for (uint64_t mapvirt = virtbase, mapphys = physbase; mapphys < top;mapvirt += 0x1000, mapphys += 0x1000) {
+            map_page(pmap, mapvirt, mapphys, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
+        }
+    }
     
     /// Funky macros ///
 #define KOFFSET(type, off) (type)&kernel[(off)]
@@ -86,7 +169,7 @@ void bootboot_load(char *config) {
         if(!strcmp(secname, ".strtab")) string_table = section_header;
     }
     if (!symbol_table || !string_table) {
-        print("bootboot: warning: no symbol/string tables in the ELF!");
+        print("bootboot: warning: no symbol/string tables in the ELF!\n");
     } else {
         struct elf64_sym* symbols = KOFFSET(struct elf64_sym*, symbol_table->sh_offset);
         char* symbol_strings = KOFFSET(char*, string_table->sh_offset);
@@ -101,34 +184,18 @@ void bootboot_load(char *config) {
         }
     }
 
-    printv("bootboot: mapping struct to %X", struct_vaddr);
-    printv("bootboot: mapping environemnt to %X", env_vaddr);
-    printv("bootboot: mapping framebuffer to %X", fb_vaddr);
-    printv("bootboot: the init stack is %X bytes", init_stack_size);
-
-    uint64_t entry, top, slide, rangecount, physbase, virtbase = 0;
-    struct elf_range* ranges;
-
-    /// Memory mappings ///
-    pagemap_t pmap = new_pagemap(4);
-
-    /// Load kernel ///
-    {
-        if (elf64_load(
-            kernel, &entry, &top, &slide, MEMMAP_KERNEL_AND_MODULES,
-            false, false, &ranges, &rangecount, true, &physbase, &virtbase)) {
-            panic("bootboot: elf64 load failed");
-        }
-        for (uint64_t mapvirt = virtbase, mapphys = physbase; mapphys < top;mapvirt += 0x1000, mapphys += 0x1000) {
-            map_page(pmap, mapvirt, mapphys, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
-        }
+    if (init_stack_size == ~0UL) {
+        print("bootboot: warning: no init stack size entered, assuming 1024\n");
+        print("1024 is really small, specify more using ");
+        init_stack_size = 1024;
     }
-    BOOTBOOT* bootboot = (BOOTBOOT*)ext_mem_alloc_type_aligned(4096, MEMMAP_BOOTLOADER_RECLAIMABLE, 4096);
-    map_page(pmap, struct_vaddr, (uint64_t)(size_t)bootboot, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
+    printv("bootboot: mapping struct to %X\n", struct_vaddr);
+    printv("bootboot: mapping environemnt to %X\n", env_vaddr);
+    printv("bootboot: mapping framebuffer to %X\n", fb_vaddr);
+    printv("bootboot: the init stack is %X bytes\n", init_stack_size);;
 
     /// Environment ///
     {
-        char* env = (char*)ext_mem_alloc_type_aligned(4096, MEMMAP_BOOTLOADER_RECLAIMABLE, 4096);
         map_page(pmap, env_vaddr, (uint64_t)(size_t)env, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
         uint32_t index = 0, offset = 0;
         char* cfgent = NULL;
@@ -167,19 +234,6 @@ void bootboot_load(char *config) {
         map_page(pmap, fb_vaddr + current, fbi.framebuffer_addr + current, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
     }
 
-    /// Initrd loading ///
-    uint64_t initrd_start = 0, initrd_size = 0;
-    if (initrd) {
-        struct file_handle* initrd_file;
-        if ((initrd_file = uri_open(initrd)) == NULL)
-            panic("bootboot: Failed to open initrd with path `%s`. Is the path correct?\n", initrd);
-
-        uint8_t* initrd_data = freadall(initrd_file, MEMMAP_KERNEL_AND_MODULES);
-        initrd_size = initrd_file->size;
-        initrd_start = (uint64_t)(size_t)initrd_data;
-        fclose(initrd_file);
-    }
-
     /// Header info ///
     memcpy(bootboot->magic, "BOOT", 4);
 #if bios
@@ -191,7 +245,7 @@ void bootboot_load(char *config) {
     /// SMP info ///
     size_t numcores;
     uint32_t bsplapic;
-    struct smp_information* cores;
+    volatile struct smp_information* cores;
     init_smp(0, (void**)&cores, &numcores, &bsplapic, true, false, pmap, false, false);
     bootboot->numcores = numcores;
     bootboot->bspid = bsplapic;

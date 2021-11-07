@@ -112,10 +112,13 @@ Some keys take *URIs* as values; these are described in the next section.
   * `MODULE_PATH` - The URI path to a module.
   * `MODULE_STRING` - A string to be passed to a module.
 
-  Note that one can define these 2 last variable multiple times to specify multiple
+  **Note:** One can define these 2 last variable multiple times to specify multiple
   modules.
-  The entries will be matched in order. E.g.: the 1st module path entry will be matched
+  The entries will be matched in order. E.g.: The 1st module path entry will be matched
   to the 1st module string entry that appear, and so on.
+
+  **Note**: If `MODULE_STRING` is not specified for an entry, the `MODULE_STRING` will default to the `MODULE_PATH`.
+  
   * `RESOLUTION` - The resolution to be used should the kernel request a graphical framebuffer. This setting takes the form of `<width>x<height>x<bpp>` and *overrides* any resolution requested by the kernel, or automatic resolution requests. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
   * `KASLR` - For relocatable kernels, if set to `no`, disable kernel address space layout randomisation. KASLR is enabled by default.
   * `TEXTMODE` - If set to `yes`, prefer text mode if the kernel has no video mode requirements. (Only for stivale2)

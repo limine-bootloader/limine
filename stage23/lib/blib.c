@@ -140,6 +140,30 @@ uint32_t get_crc32(void *_stream, size_t len) {
     return ret;
 }
 
+uint32_t oct2bin(uint8_t *str, uint32_t max) {
+    uint32_t value = 0;
+    while (max-- > 0) {
+        value <<= 3;
+        value += *str++ - '0';
+    }
+    return value;
+}
+
+uint32_t hex2bin(uint8_t *str, uint32_t size) {
+    uint32_t value = 0;
+    while (size-- > 0) {
+        value <<= 4;
+        if (*str >= '0' && *str <= '9')
+            value += (uint32_t)((*str) - '0');
+        else if (*str >= 'A' && *str <= 'F')
+            value += (uint32_t)((*str) - 'A' + 10);
+        else if (*str >= 'a' && *str <= 'f')
+            value += (uint32_t)((*str) - 'a' + 10);
+        str++;
+    }
+    return value;
+}
+
 #if uefi == 1
 
 bool efi_boot_services_exited = false;

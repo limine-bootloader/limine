@@ -17,6 +17,11 @@ SECTIONS
         *.s2.o(.text*)
     }
 
+    .stage2.build-id : {
+        build_id_s2 = .;
+        *build-id.s2.o(*)
+    }
+
     .stage2.data : {
         *.s2.o(.data*)
         *.s2.o(.rodata*)
@@ -26,8 +31,12 @@ SECTIONS
     .stage3.text : {
         stage3_addr = .;
         *(.stage3_entry*)
-        *(.stage3_build_id*)
         *(.text*)
+    }
+
+    .stage3.build-id : {
+        build_id_s3 = .;
+        *build-id.s3.o(*)
     }
 
     .stage3.data : {
@@ -35,6 +44,10 @@ SECTIONS
         *(.rodata*)
         *(.full_map*)
         limine_sys_size = . - 0x8000;
+    }
+
+    .note.gnu.build-id : {
+        *(.note.gnu.build-id)
     }
 
     .bss : {

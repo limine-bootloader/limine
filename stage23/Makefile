@@ -50,8 +50,6 @@ endif
 COM_OUTPUT = false
 E9_OUTPUT = false
 
-BUILD_ID := $(shell dd if=/dev/urandom count=8 bs=1 2>/dev/null | od -An -t x4 | sed 's/^ /0x/g;s/ //g')
-
 WERROR = -Werror
 CFLAGS ?= -O3 -g -pipe -Wall -Wextra $(WERROR)
 
@@ -71,7 +69,6 @@ INTERNAL_CFLAGS := \
 	-mno-sse \
 	-mno-sse2 \
 	-MMD \
-	-DBUILD_ID=$(BUILD_ID) \
 	-DLIMINE_VERSION='"$(LIMINE_VERSION)"' \
 	-DLIMINE_COPYRIGHT='"$(LIMINE_COPYRIGHT)"' \
 	-DCOM_OUTPUT=$(COM_OUTPUT) \
@@ -141,7 +138,8 @@ INTERNAL_LDFLAGS := \
 ifeq ($(TARGET), bios)
 	INTERNAL_LDFLAGS += \
 		-melf_i386 \
-		-static
+		-static \
+		--build-id=sha1
 endif
 
 ifeq ($(TARGET), uefi)
@@ -246,15 +244,43 @@ $(BUILDDIR)/limine_stage2only.elf: $(OBJ)
 	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_stage2only.ld -o $@ || \
 		( echo "This error may mean that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
 		  false )
+	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id $@ $(BUILDDIR)/build-id.s2.bin
+	cd "$(BUILDDIR)" && \
+		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s2.bin build-id.s2.o
+	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id $@ $(BUILDDIR)/build-id.s3.bin
+	cd "$(BUILDDIR)" && \
+		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s3.bin build-id.s3.o
+	$(TOOLCHAIN_LD) $(BUILDDIR)/build-id.s2.o $(BUILDDIR)/build-id.s3.o $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_stage2only.ld -o $@
 
 $(BUILDDIR)/limine_nomap.elf: $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o
 	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
+	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id $@ $(BUILDDIR)/build-id.s2.bin
+	cd "$(BUILDDIR)" && \
+		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s2.bin build-id.s2.o
+	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id $@ $(BUILDDIR)/build-id.s3.bin
+	cd "$(BUILDDIR)" && \
+		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s3.bin build-id.s3.o
+	$(TOOLCHAIN_LD) $(BUILDDIR)/build-id.s2.o $(BUILDDIR)/build-id.s3.o $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
 
 $(BUILDDIR)/limine.elf: $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o
 	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o $@
+	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id $@ $(BUILDDIR)/build-id.s2.bin
+	cd "$(BUILDDIR)" && \
+		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s2.bin build-id.s2.o
+	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id $@ $(BUILDDIR)/build-id.s3.bin
+	cd "$(BUILDDIR)" && \
+		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s3.bin build-id.s3.o
+	$(TOOLCHAIN_LD) $(BUILDDIR)/build-id.s2.o $(BUILDDIR)/build-id.s3.o $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o $@
 
 $(BUILDDIR)/limine_dbg.elf: $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o
 	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o $@
+	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id $@ $(BUILDDIR)/build-id.s2.bin
+	cd "$(BUILDDIR)" && \
+		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s2.bin build-id.s2.o
+	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id $@ $(BUILDDIR)/build-id.s3.bin
+	cd "$(BUILDDIR)" && \
+		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s3.bin build-id.s3.o
+	$(TOOLCHAIN_LD) $(BUILDDIR)/build-id.s2.o $(BUILDDIR)/build-id.s3.o $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o $@
 
 endif
 

@@ -17,15 +17,28 @@ SECTIONS
         *.s2.o(.text*)
     }
 
+    .stage2.build-id : {
+        build_id_s2 = .;
+        *build-id.s2.o(*)
+    }
+
     .stage2.data : {
         *.s2.o(.data*)
         *.s2.o(.rodata*)
         stage2_map = .;
         stage3_addr = .;
-        *(.stage3_build_id*)
         full_map = .;
         limine_sys_size = .;
         getchar_internal = .;
+    }
+
+    .stage3.build-id : {
+        build_id_s3 = .;
+        *build-id.s3.o(*)
+    }
+
+    .note.gnu.build-id : {
+        *(.note.gnu.build-id)
     }
 
     .bss : {

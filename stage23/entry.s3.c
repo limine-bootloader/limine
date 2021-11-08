@@ -126,9 +126,6 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 #endif
 
 #if bios == 1
-__attribute__((section(".stage3_build_id")))
-uint64_t stage3_build_id = BUILD_ID;
-
 __attribute__((section(".stage3_entry")))
 #endif
 __attribute__((noreturn))

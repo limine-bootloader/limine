@@ -21,8 +21,6 @@
 #include <drivers/disk.h>
 #include <sys/idt.h>
 
-extern uint64_t stage3_build_id;
-
 struct volume *boot_volume;
 
 #if bios == 1
@@ -32,6 +30,8 @@ static bool stage3_found = false;
 
 extern symbol stage3_addr;
 extern symbol limine_sys_size;
+extern symbol build_id_s2;
+extern symbol build_id_s3;
 
 static bool stage3_init(struct volume *part) {
     struct file_handle *stage3;
@@ -54,7 +54,7 @@ static bool stage3_init(struct volume *part) {
 
     fclose(stage3);
 
-    if (BUILD_ID != stage3_build_id) {
+    if (memcmp(build_id_s2 + 16, build_id_s3 + 16, 20) != 0) {
         print("limine.sys build ID mismatch.\n");
         return false;
     }

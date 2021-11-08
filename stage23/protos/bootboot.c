@@ -258,17 +258,6 @@ void bootboot_load(char *config) {
     bootboot->protocol = 2 | (1 << 2);
 #endif
 
-    /// SMP info ///
-    size_t numcores;
-    uint32_t bsplapic;
-    volatile struct smp_information *cores;
-    init_smp(0, (void **)&cores, &numcores, &bsplapic, true, false, pmap, false, false);
-    bootboot->numcores = numcores;
-    bootboot->bspid = bsplapic;
-    for (size_t i = 0; i < numcores; i++) {
-        cores[i].stack_addr = ((uint64_t)(size_t)ext_mem_alloc(init_stack_size)) + init_stack_size;
-    }
-
     /// Time stubs ///
     uint32_t year, month, day, hour, minute, second;
     bootboot_time(&day, &month, &year, &second, &minute, &hour);
@@ -316,6 +305,21 @@ void bootboot_load(char *config) {
 
     bootboot->arch.x86_64.mp_ptr = 0;
 
+#if uefi == 1
+    efi_exit_boot_services();
+#endif
+
+    /// SMP info ///
+    size_t numcores;
+    uint32_t bsplapic;
+    volatile struct smp_information *cores;
+    init_smp(0, (void **)&cores, &numcores, &bsplapic, true, false, pmap, false, false);
+    bootboot->numcores = numcores;
+    bootboot->bspid = bsplapic;
+    for (size_t i = 0; i < numcores; i++) {
+        cores[i].stack_addr = ((uint64_t)(size_t)ext_mem_alloc(init_stack_size)) + init_stack_size;
+    }
+
     /// Memory map ///
     {
         size_t mmapent;
@@ -359,7 +363,7 @@ void bootboot_load(char *config) {
         cores[i].goto_address = entry;
     }
 
-    common_spinup(bootboot_spinup_32, 10,
+    common_spinup(bootboot_spinup_32, 5,
         (uint32_t)(uintptr_t)pmap.top_level,
         (uint32_t)entry, (uint32_t)(entry >> 32),
         (uint32_t)cores[0].stack_addr, (uint32_t)(cores[0].stack_addr >> 32));

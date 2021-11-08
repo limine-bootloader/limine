@@ -12,7 +12,6 @@ __attribute__((noreturn)) void bootboot_spinup_32(
         (uint64_t)stack_lo | ((uint64_t)stack_hi << 32)
     };
 
-
     asm volatile (
         "cld\n\t"
         "movl %%eax, %%cr3\n\t"

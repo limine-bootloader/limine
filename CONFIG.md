@@ -128,7 +128,7 @@ Some keys take *URIs* as values; these are described in the next section.
 * Chainload protocol on UEFI:
   * `IMAGE_PATH` - URI of the EFI application to chainload.
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
-* Multiboot1 protocol:
+* multiboot1 and multiboot2 protocols:
   * `KERNEL_PATH` - The URI path of the kernel.
   * `MODULE_PATH` - The URI path to a module.
   * `MODULE_STRING` - A string to be passed to a module.

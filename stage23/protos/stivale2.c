@@ -308,11 +308,13 @@ failed_to_load_header_section:
     tag->module_count   = module_count;
 
     for (size_t i = 0; i < module_count; i++) {
-        char *module_path = config_get_value(config, i, "MODULE_PATH");
+        struct conf_tuple conf_tuple =
+                config_get_tuple(config, i, "MODULE_PATH", "MODULE_STRING");
+
+        char *module_path = conf_tuple.value1;
+        char *module_string = conf_tuple.value2;
 
         struct stivale2_module *m = &tag->modules[i];
-
-        char *module_string = config_get_value(config, i, "MODULE_STRING");
 
         // TODO: perhaps change the module string to to be a pointer.
         //
@@ -326,10 +328,10 @@ failed_to_load_header_section:
             memcpy(m->string, module_path, str_len);
         } else {
             size_t str_len = strlen(module_string);
-            
+
             if (str_len > 127)
                 str_len = 127;
-            
+
             memcpy(m->string, module_string, str_len);
         }
 

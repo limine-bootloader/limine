@@ -219,6 +219,34 @@ cont:
     return ret;
 }
 
+static const char *lastkey;
+
+struct conf_tuple config_get_tuple(const char *config, size_t index,
+                                   const char *key1, const char *key2) {
+    struct conf_tuple conf_tuple;
+
+    conf_tuple.value1 = config_get_value(config, index, key1);
+    if (conf_tuple.value1 == NULL) {
+        return (struct conf_tuple){0};
+    }
+
+    conf_tuple.value2 = config_get_value(lastkey, 0, key2);
+
+    const char *lk1 = lastkey;
+
+    const char *next_value1 = config_get_value(config, index + 1, key1);
+
+    const char *lk2 = lastkey;
+
+    if (conf_tuple.value2 != NULL && next_value1 != NULL) {
+        if ((uintptr_t)lk1 > (uintptr_t)lk2) {
+            conf_tuple.value2 = NULL;
+        }
+    }
+
+    return conf_tuple;
+}
+
 char *config_get_value(const char *config, size_t index, const char *key) {
     if (!key || !config_ready)
         return NULL;
@@ -241,6 +269,7 @@ char *config_get_value(const char *config, size_t index, const char *key) {
                  value_len++);
             char *buf = ext_mem_alloc(value_len + 1);
             memcpy(buf, config + i, value_len);
+            lastkey = config + i;
             return buf;
         }
     }

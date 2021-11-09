@@ -169,7 +169,7 @@ void bootboot_load(char *config) {
     }
 
     if (!symbol_table || !string_table) {
-        print("bootboot: warning: no symbol/string tables in the ELF!\n");
+        print("bootboot: WARNING: no symbol/string tables in the ELF!\n");
     } else {
         struct elf64_sym *symbols = KOFFSET(struct elf64_sym *, symbol_table->sh_offset);
         char *symbol_strings = KOFFSET(char *, string_table->sh_offset);
@@ -193,7 +193,7 @@ void bootboot_load(char *config) {
     }
 
     if (init_stack_size == (uint64_t)-1) {
-        print("bootboot: warning: no init stack size entered, assuming 1024\n");
+        print("bootboot: WARNING: no init stack size entered, assuming 1024\n");
         print("1024 is really small, specify more using initstack=size ini initrd;\n");
         init_stack_size = 1024;
         delay(1000000);

@@ -193,15 +193,18 @@ void stivale_load(char *config, char *cmdline) {
     stivale_struct.module_count = 0;
     uint64_t *prev_mod_ptr = &stivale_struct.modules;
     for (int i = 0; ; i++) {
-        char *module_path = config_get_value(config, i, "MODULE_PATH");
+        struct conf_tuple conf_tuple =
+                config_get_tuple(config, i, "MODULE_PATH", "MODULE_STRING");
+
+        char *module_path = conf_tuple.value1;
+        char *module_string = conf_tuple.value2;
+
         if (module_path == NULL)
             break;
 
         stivale_struct.module_count++;
 
         struct stivale_module *m = ext_mem_alloc(sizeof(struct stivale_module));
-
-        char *module_string = config_get_value(config, i, "MODULE_STRING");
 
         // TODO: perhaps change the module string to to be a pointer.
         //
@@ -216,10 +219,10 @@ void stivale_load(char *config, char *cmdline) {
         } else {
             // TODO perhaps change this to be a pointer
             size_t str_len = strlen(module_string);
-            
+
             if (str_len > 127)
                 str_len = 127;
-            
+
             memcpy(m->string, module_string, str_len);
         }
 

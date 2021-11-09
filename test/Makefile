@@ -14,6 +14,13 @@ INTERNALLDFLAGS :=         \
 	--no-dynamic-linker    \
 	-ztext
 
+INTERNALLDFLAGSMBOOT2 :=   \
+	-Tmultiboot2.ld        \
+	-nostdlib              \
+	-zmax-page-size=0x1000 \
+	-static                \
+	--no-dynamic-linker    \
+
 INTERNALCFLAGS  :=       \
 	-I../stivale         \
 	-I.                  \
@@ -29,13 +36,21 @@ INTERNALCFLAGS  :=       \
 	-mno-sse2            \
 	-mno-red-zone
 
-all: test.elf
+all: test.elf multiboot2.elf
 
 test.elf: stivale.o stivale2.o e9print.o memory.o
 	$(LD) $^ $(LDFLAGS) $(INTERNALLDFLAGS) -o $@
 
+multiboot2.elf: multiboot2_trampoline.o
+	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -I../stage23/protos -m32 -c multiboot2.c -o multiboot2.o
+	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -m32 -c e9print.c -o e9print.o
+	$(LD) $^ multiboot2.o e9print.o $(LDFLAGS) $(INTERNALLDFLAGSMBOOT2) -m elf_i386 -o $@
+
 %.o: %.c
 	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -c $< -o $@
 
+%.o: %.asm
+	nasm -felf32 $< -o $@
+
 clean:
-	rm -rf test.elf stivale.o stivale2.o e9print.o memory.o
+	rm -rf test.elf stivale.o stivale2.o e9print.o memory.o multiboot2.o multiboot2.elf multiboot2_trampoline.o

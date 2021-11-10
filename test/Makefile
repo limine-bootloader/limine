@@ -14,12 +14,19 @@ INTERNALLDFLAGS :=         \
 	--no-dynamic-linker    \
 	-ztext
 
-INTERNALLDFLAGSMBOOT2 :=   \
-	-Tmultiboot2.ld        \
-	-nostdlib              \
-	-zmax-page-size=0x1000 \
-	-static                \
-	--no-dynamic-linker    \
+INTERNAL_LD_FLAGS_MULTIBOOT2 := \
+	-Tmultiboot2.ld             \
+	-nostdlib                   \
+	-zmax-page-size=0x1000      \
+	-static                     \
+	--no-dynamic-linker         \
+
+INTERNAL_LD_FLAGS_MULTIBOOT1 := \
+	-Tmultiboot.ld              \
+	-nostdlib                   \
+	-zmax-page-size=0x1000      \
+	-static                     \
+	--no-dynamic-linker         \
 
 INTERNALCFLAGS  :=       \
 	-I../stivale         \
@@ -36,7 +43,7 @@ INTERNALCFLAGS  :=       \
 	-mno-sse2            \
 	-mno-red-zone
 
-all: test.elf multiboot2.elf
+all: test.elf multiboot2.elf multiboot.elf
 
 test.elf: stivale.o stivale2.o e9print.o memory.o
 	$(LD) $^ $(LDFLAGS) $(INTERNALLDFLAGS) -o $@
@@ -44,7 +51,12 @@ test.elf: stivale.o stivale2.o e9print.o memory.o
 multiboot2.elf: multiboot2_trampoline.o
 	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -I../stage23/protos -m32 -c multiboot2.c -o multiboot2.o
 	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -m32 -c e9print.c -o e9print.o
-	$(LD) $^ multiboot2.o e9print.o $(LDFLAGS) $(INTERNALLDFLAGSMBOOT2) -m elf_i386 -o $@
+	$(LD) $^ multiboot2.o e9print.o $(LDFLAGS) $(INTERNAL_LD_FLAGS_MULTIBOOT2) -m elf_i386 -o $@
+
+multiboot.elf: multiboot_trampoline.o
+	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -I../stage23/protos -m32 -c multiboot.c -o multiboot.o
+	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -m32 -c e9print.c -o e9print.o
+	$(LD) $^ multiboot.o e9print.o $(LDFLAGS) $(INTERNAL_LD_FLAGS_MULTIBOOT1) -m elf_i386 -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -c $< -o $@
@@ -53,4 +65,4 @@ multiboot2.elf: multiboot2_trampoline.o
 	nasm -felf32 $< -o $@
 
 clean:
-	rm -rf test.elf stivale.o stivale2.o e9print.o memory.o multiboot2.o multiboot2.elf multiboot2_trampoline.o
+	rm -rf test.elf stivale.o stivale2.o e9print.o memory.o multiboot2.o multiboot2.elf multiboot2_trampoline.o multiboot_trampoline.o multiboot.elf

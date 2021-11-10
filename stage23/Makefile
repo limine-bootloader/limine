@@ -82,7 +82,7 @@ ifeq ($(TARGET), bios)
 		-Dbios=1 \
 		-Duefi=0 \
 		-m32 \
-		-march=i386 \
+		-march=i686 \
 		-mtune=generic \
 		-mabi=sysv \
 		-fno-pic \
@@ -95,7 +95,7 @@ ifeq ($(TARGET), uefi)
 		-Dbios=0 \
 		-Duefi=1 \
 		-m32 \
-		-march=i386 \
+		-march=i686 \
 		-mtune=generic \
 		-mabi=sysv \
 		-DGNU_EFI_USE_MS_ABI \
@@ -120,7 +120,7 @@ ifeq ($(TARGET), uefi32)
 		-Dbios=0 \
 		-Duefi=1 \
 		-m32 \
-		-march=i386 \
+		-march=i686 \
 		-mtune=generic \
 		-mabi=sysv \
 		-DGNU_EFI_USE_MS_ABI \
@@ -327,7 +327,7 @@ $(BUILDDIR)/BOOTIA32.EFI: $(BUILDDIR)/limine_efi.elf
 	$(TOOLCHAIN_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc -j .sbat --target efi-app-ia32 --subsystem=10 $< $@
 
 $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a: $(BUILDDIR)/gnu-efi
-	$(MAKE) -C $(BUILDDIR)/gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m32 -march=i386 -mtune=generic" AR="$(TOOLCHAIN_AR)" ARCH=ia32
+	$(MAKE) -C $(BUILDDIR)/gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m32 -march=i686 -mtune=generic" AR="$(TOOLCHAIN_AR)" ARCH=ia32
 
 $(BUILDDIR)/limine_efi_nomap.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
 	$(TOOLCHAIN_LD) \

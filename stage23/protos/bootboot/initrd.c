@@ -7,7 +7,7 @@
 #include <lib/blib.h>
 
 struct initrd_file bruteforce_kernel(struct initrd_file file) {
-    for (size_t i = 0; i < file.size; i++) {
+    for (size_t i = 0; i < file.size - 19; i++) {
         if (memcmp(file.data + i, "\177ELF", 4) == 0
          && file.data[i + 18] == 62 && file.data[i + 19] == 0 /* ehdr->e_machine == EM_X86_64 */) {
             printv("bootboot: using bruteforced kernel at initrd offset %X\n", file.data + i);

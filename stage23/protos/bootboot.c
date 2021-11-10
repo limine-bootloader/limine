@@ -103,7 +103,7 @@ void bootboot_load(char *config) {
     /// Kernel loading code ///
     uint8_t *kernel;
 
-    if (known_initrd_format(bootboot_initrd_file)) {
+    if (initrd_format(bootboot_initrd_file) != INITRD_FORMAT_UNKNOWN) {
         const char *corefile = config_get_value((char *)env, 0, "kernel");
         if (corefile == NULL) {
             corefile = "sys/core";

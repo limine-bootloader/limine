@@ -20,20 +20,20 @@ struct initrd_file bruteforce_kernel(struct initrd_file file) {
     return (struct initrd_file){0};
 }
 
-bool known_initrd_format(struct initrd_file file) {
+enum initrd_format initrd_format(struct initrd_file file) {
     if (file.size >= 5 && file.data[4] == 0xbf) {
-        return true;
+        return INITRD_FORMAT_JAMESM;
     }
 
     if (file.size >= 5 && memcmp("07070", file.data, 5) == 0) {
-        return true;
+        return INITRD_FORMAT_CPIO;
     }
 
     if (file.size >= 262 && memcmp("ustar", file.data + 257, 5) == 0) {
-        return true;
+        return INITRD_FORMAT_USTAR;
     }
 
-    return false;
+    return INITRD_FORMAT_UNKNOWN;
 }
 
 INITRD_HANDLER(jamesm);
@@ -41,17 +41,14 @@ INITRD_HANDLER(ustar);
 INITRD_HANDLER(cpio);
 
 INITRD_HANDLER(auto) {
-    if (file.size >= 5 && file.data[4] == 0xbf) {
-        return initrd_open_jamesm(file, path);
+    switch (initrd_format(file)) {
+        case INITRD_FORMAT_JAMESM:
+            return initrd_open_jamesm(file, path);
+        case INITRD_FORMAT_CPIO:
+            return initrd_open_cpio(file, path);
+        case INITRD_FORMAT_USTAR:
+            return initrd_open_ustar(file, path);
+        default:
+            return (struct initrd_file){0};
     }
-
-    if (file.size >= 5 && memcmp("07070", file.data, 5) == 0) {
-        return initrd_open_cpio(file, path);
-    }
-
-    if (file.size >= 262 && memcmp("ustar", file.data + 257, 5) == 0) {
-        return initrd_open_ustar(file, path);
-    }
-
-    return (struct initrd_file){0};
 }

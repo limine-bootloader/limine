@@ -87,7 +87,7 @@ void multiboot2_main(uint32_t magic, struct multiboot_info* mb_info_addr) {
 
                     e9_printf("\t\t\t addr=%x", entry->addr);
                     e9_printf("\t\t\t len=%x", entry->len);
-                    e9_printf("\t\t\t type=%x", entry->type);
+                    e9_printf("\t\t\t type=Useable");
 
                     total_mem += entry->len;
                 }

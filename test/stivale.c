@@ -12,7 +12,7 @@ struct stivale_header header = {
     .framebuffer_bpp    = 0,
     .framebuffer_width  = 0,
     .framebuffer_height = 0,
-    .flags              = (1 << 3),
+    .flags              = (1 << 3) | (1 << 4),
     .entry_point        = (uint64_t)(uintptr_t)stivale_main
 };
 

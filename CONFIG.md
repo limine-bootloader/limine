@@ -100,12 +100,7 @@ Some keys take *URIs* as values; these are described in the next section.
   modules.
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
 * Bootboot protocol:
-  * `KERNEL_PATH` - The URI path of the kernel.
-  * `INITRD_PATH` - The URI path to the ramdisk/initrd.
-  * `BOOTBOOT_ENV` - A configuration key to be passed into the kernel.
-
-  Note that one can define this last variable multiple times to specify multiple
-  environemnt keys.
+  * `INITRD_PATH` - The URI path to the ramdisk/initrd or kernel.
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
 * stivale and stivale2 protocols:
   * `KERNEL_PATH` - The URI path of the kernel.
@@ -118,7 +113,7 @@ Some keys take *URIs* as values; these are described in the next section.
   to the 1st module string entry that appear, and so on.
 
   **Note**: If `MODULE_STRING` is not specified for an entry, the `MODULE_STRING` will default to the `MODULE_PATH`.
-  
+
   * `RESOLUTION` - The resolution to be used should the kernel request a graphical framebuffer. This setting takes the form of `<width>x<height>x<bpp>` and *overrides* any resolution requested by the kernel, or automatic resolution requests. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
   * `KASLR` - For relocatable kernels, if set to `no`, disable kernel address space layout randomisation. KASLR is enabled by default.
   * `TEXTMODE` - If set to `yes`, prefer text mode if the kernel has no video mode requirements. (Only for stivale2)

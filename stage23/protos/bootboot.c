@@ -46,37 +46,26 @@ void bootboot_load(char *config) {
     uint64_t env_vaddr = BOOTBOOT_ENV;
     uint64_t init_stack_size = (uint64_t)-1;
 
-    /// Config ///
-    char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
-
     char *initrd = config_get_value(config, 0, "INITRD_PATH");
     if (initrd == NULL) {
-        initrd = kernel_path;
-        kernel_path = NULL;
-    }
-
-    if (kernel_path == NULL && initrd == NULL) {
-        panic("bootboot: no KERNEL_PATH or INITRD_PATH specified!");
+        panic("bootboot: no INITRD_PATH specified!");
     }
 
     /// Initrd loading ///
     struct initrd_file bootboot_initrd_file;
     uint64_t initrd_start = 0, initrd_size = 0;
-    if (initrd) {
-        struct file_handle *initrd_file;
-        if ((initrd_file = uri_open(initrd)) == NULL) {
-            panic("bootboot: Failed to open initrd with path `%s`. Is the path correct?", initrd);
-        }
 
-        uint8_t *initrd_data = freadall(initrd_file, MEMMAP_KERNEL_AND_MODULES);
-        initrd_size = initrd_file->size;
-        initrd_start = (uint64_t)(size_t)initrd_data;
-        fclose(initrd_file);
-        bootboot_initrd_file.size = initrd_size;
-        bootboot_initrd_file.data = initrd_data;
-    } else {
-        panic("bootboot: logic error: no initrd, even though one MUST be present");
+    struct file_handle *initrd_file;
+    if ((initrd_file = uri_open(initrd)) == NULL) {
+        panic("bootboot: Failed to open initrd with path `%s`. Is the path correct?", initrd);
     }
+
+    uint8_t *initrd_data = freadall(initrd_file, MEMMAP_KERNEL_AND_MODULES);
+    initrd_size = initrd_file->size;
+    initrd_start = (uint64_t)(size_t)initrd_data;
+    fclose(initrd_file);
+    bootboot_initrd_file.size = initrd_size;
+    bootboot_initrd_file.data = initrd_data;
 
     /// Load bootboot config ///
     uint8_t *env = ext_mem_alloc_type_aligned(4096, MEMMAP_BOOTLOADER_RECLAIMABLE, 4096);
@@ -113,25 +102,23 @@ void bootboot_load(char *config) {
 
     /// Kernel loading code ///
     uint8_t *kernel;
-    if (kernel_path) {
-        print("bootboot: Loading kernel `%s`...\n", kernel_path);
-        struct file_handle *kernel_file;
-        if ((kernel_file = uri_open(kernel_path)) == NULL)
-            panic("bootboot: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
-        kernel = freadall(kernel_file, MEMMAP_KERNEL_AND_MODULES);
-
-        fclose(kernel_file);
-    } else {
+    if (known_initrd_format(bootboot_initrd_file)) {
         const char *corefile = config_get_value((char *)env, 0, "kernel");
-        if (!corefile) {
+        if (corefile == NULL) {
             corefile = "sys/core";
         }
         struct initrd_file file = initrd_open_auto(bootboot_initrd_file, corefile);
-        kernel = file.data;
         if (!file.size) {
             panic("bootboot: cannot find the kernel!");
         }
+        kernel = file.data;
+    } else {
+        struct initrd_file file = bruteforce_kernel(bootboot_initrd_file);
+        if (!file.size) {
+            panic("bootboot: cannot find the kernel!");
+        }
+        kernel = file.data;
     }
 
     /// Memory mappings ///
@@ -208,24 +195,7 @@ void bootboot_load(char *config) {
     map_page(pmap, struct_vaddr, (uintptr_t)bootboot, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
 
     /// Environment ///
-    {
-        map_page(pmap, env_vaddr, (uintptr_t)env, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
-        uint32_t index = 0, offset = 0;
-        char *cfgent = NULL;
-        do {
-            cfgent = config_get_value(config, index++, "BOOTBOOT_ENV");
-            if (cfgent) {
-                uint32_t off = strlen(cfgent);
-                if (offset + off + 1 > 4095) {
-                    panic("Too much config options! we only have 4k of env vars!");
-                }
-                memcpy(&env[offset], cfgent, off);
-                offset += off;
-                env[offset++] = '\n';
-            }
-        } while (cfgent);
-        cfgent[offset] = 0;
-    }
+    map_page(pmap, env_vaddr, (uintptr_t)env, VMM_FLAG_PRESENT | VMM_FLAG_WRITE, false);
 
     /// Identity mapping ///
     for (uint64_t i = 0; i < 0x400000000; i += 0x200000) {

@@ -40,7 +40,7 @@ __attribute__((section(".stivale2hdr"), used))
 struct stivale2_header header2 = {
     .entry_point = (uint64_t)stivale2_main,
     .stack       = (uintptr_t)stacks[0] + sizeof(stack),
-    .flags       = (1 << 1) | (1 << 2) | (1 << 3),
+    .flags       = (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4),
     .tags        = (uint64_t)&any_video_request
 };
 

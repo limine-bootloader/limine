@@ -65,4 +65,6 @@ multiboot.elf: multiboot_trampoline.o
 	nasm -felf32 $< -o $@
 
 clean:
-	rm -rf test.elf stivale.o stivale2.o e9print.o memory.o multiboot2.o multiboot2.elf multiboot2_trampoline.o multiboot_trampoline.o multiboot.elf
+	rm -rf test.elf stivale.o stivale2.o e9print.o memory.o
+	rm -rf multiboot2.o multiboot2.elf multiboot2_trampoline.o
+	rm -rf multiboot.o multiboot_trampoline.o multiboot.elf

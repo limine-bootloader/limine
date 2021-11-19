@@ -158,12 +158,9 @@ static void sanitise_entries(struct e820_entry_t *m, size_t *_count, bool align_
 
         if (!m[i].length
          || (align_entries && !align_entry(&m[i].base, &m[i].length))) {
-            // Eradicate from memmap
-            for (size_t j = i + 1; j < count; j++) {
-                m[j - 1] = m[j];
-            }
-            count--;
-            i--;
+            // Remove i from memmap
+            m[i] = m[count - 1];
+            count--; i--;
         }
     }
 
@@ -183,12 +180,9 @@ static void sanitise_entries(struct e820_entry_t *m, size_t *_count, bool align_
 
         if (m[i].length == 0) {
 del_mm1:
-            // Eradicate from memmap
-            for (size_t j = i + 1; j < count; j++) {
-                m[j - 1] = m[j];
-            }
-            count--;
-            i--;
+            // Remove i from memmap
+            m[i] = m[count - 1];
+            count--; i--;
         }
     }
 
@@ -251,15 +245,6 @@ void init_memmap(void) {
         uint64_t top = memmap[memmap_entries].base + memmap[memmap_entries].length;
 
         if (memmap[memmap_entries].type == MEMMAP_USABLE) {
-            if (memmap[memmap_entries].base < 0x1000) {
-                if (top <= 0x1000) {
-                    continue;
-                }
-
-                memmap[memmap_entries].length -= 0x1000 - memmap[memmap_entries].base;
-                memmap[memmap_entries].base = 0x1000;
-            }
-
             if (memmap[memmap_entries].base >= EBDA && memmap[memmap_entries].base < 0x100000) {
                 if (top <= 0x100000)
                     continue;
@@ -275,6 +260,8 @@ void init_memmap(void) {
 
         memmap_entries++;
     }
+
+    sanitise_entries(memmap, &memmap_entries, false);
 
     // Allocate bootloader itself
     memmap_alloc_range(4096,
@@ -355,13 +342,6 @@ void init_memmap(void) {
         if (our_type == MEMMAP_USABLE) {
             if (base + length >= 0x100000000) {
                 our_type = MEMMAP_EFI_RECLAIMABLE;
-            } else if (base < 0x1000) {
-                if (base + length <= 0x1000) {
-                    continue;
-                }
-
-                length -= 0x1000 - base;
-                base = 0x1000;
             }
         }
 
@@ -401,6 +381,7 @@ void init_memmap(void) {
     untouched_memmap_entries = memmap_entries;
 
     return;
+
 fail:
     panic("pmm: Failure initialising memory map");
 }

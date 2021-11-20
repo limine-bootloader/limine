@@ -7,6 +7,7 @@
 #include <lib/blib.h>
 #include <drivers/vga_textmode.h>
 #include <lib/print.h>
+#include <sys/cpu.h>
 
 // Tries to implement this standard for terminfo
 // https://man7.org/linux/man-pages/man4/console_codes.4.html
@@ -74,6 +75,15 @@ void term_notready(void) {
 
     term_rows = 100;
     term_cols = 100;
+
+#if bios == 1
+    struct rm_regs r = {0};
+    r.eax = 0x0003;
+    rm_int(0x10, &r, &r);
+
+    outb(0x3d4, 0x0a);
+    outb(0x3d5, 0x20);
+#endif
 }
 
 void (*raw_putchar)(uint8_t c);

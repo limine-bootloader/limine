@@ -35,46 +35,46 @@ jobs:
         run: make -C limine-install clean
 
       - name: Build limine-install-linux-x86_64
-        run: make CFLAGS="-O2 -pipe -static" bin/limine-install
+        run: make CFLAGS="-O2 -pipe -static" limine-install
 
       - name: Strip limine-install-linux-x86_64
-        run: strip bin/limine-install
+        run: strip build/bin/limine-install
 
       - name: Rename limine-install-linux-x86_64
-        run: mv bin/limine-install bin/limine-install-linux-x86_64
+        run: mv build/bin/limine-install build/bin/limine-install-linux-x86_64
 
       - name: Clean limine-install
         run: make -C limine-install clean
 
       - name: Build limine-install-linux-x86_32
-        run: make CC="gcc -m32" CFLAGS="-O2 -pipe -static" bin/limine-install
+        run: make CC="gcc -m32" CFLAGS="-O2 -pipe -static" limine-install
 
       - name: Strip limine-install-linux-x86_32
-        run: strip bin/limine-install
+        run: strip build/bin/limine-install
 
       - name: Rename limine-install-linux-x86_32
-        run: mv bin/limine-install bin/limine-install-linux-x86_32
+        run: mv build/bin/limine-install build/bin/limine-install-linux-x86_32
 
       - name: Clean limine-install
         run: make -C limine-install clean
 
       - name: Build limine-install-win32
-        run: make CC="i686-w64-mingw32-gcc" CFLAGS="-O2 -pipe" bin/limine-install
+        run: make CC="i686-w64-mingw32-gcc" CFLAGS="-O2 -pipe" limine-install
 
       - name: Strip limine-install-win32
-        run: i686-w64-mingw32-strip bin/limine-install.exe
+        run: i686-w64-mingw32-strip build/bin/limine-install.exe
 
       - name: Rename limine-install-win32
-        run: mv bin/limine-install.exe bin/limine-install-win32.exe
+        run: mv build/bin/limine-install.exe build/bin/limine-install-win32.exe
 
       - name: Clean limine-install
         run: make -C limine-install clean
 
       - name: Copy limine-install to bin
-        run: cp limine-install/* limine-install/.gitignore bin/
+        run: cp limine-install/* limine-install/.gitignore build/bin/
 
       - name: Copy LICENSE to bin
-        run: cp LICENSE.md bin/
+        run: cp LICENSE.md build/bin/
 
       - name: Push binaries to binary branch
         run: |
@@ -82,9 +82,9 @@ jobs:
           git config user.email 'mintsuki@users.noreply.github.com'
           git fetch --all
           git checkout $BRANCH_NAME-binary || git checkout --orphan $BRANCH_NAME-binary
-          rm -rf $(ls -a | grep -v '^\.git$' | grep -v '^\.\.$' | grep -v '^\.$' | grep -v '^bin$')
-          cp -r bin/. ./
-          rm -rf bin
+          rm -rf $(ls -a | grep -v '^\.git$' | grep -v '^\.\.$' | grep -v '^\.$' | grep -v '^build$')
+          cp -r build/bin/. ./
+          rm -rf build
           git add .
           git commit -m "Binary release $TAG_NAME"
           git push origin $BRANCH_NAME-binary

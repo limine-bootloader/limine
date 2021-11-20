@@ -5,6 +5,9 @@ endif
 PREFIX ?= /usr/local
 DESTDIR ?=
 
+BUILDDIR ?= $(shell pwd)/build
+BINDIR ?= $(BUILDDIR)/bin
+
 export PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
 NCPUS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
@@ -50,71 +53,69 @@ all:
 	$(MAKE) limine-uefi
 	$(MAKE) limine-uefi32
 	$(MAKE) limine-bios
-	$(MAKE) bin/limine-install
+	$(MAKE) $(BINDIR)/limine-install
 
-.PHONY: bin/limine-install
-bin/limine-install:
-	$(MAKE) -C limine-install LIMINE_HDD_BIN="`pwd`/bin/limine-hdd.bin"
-	[ -f limine-install/limine-install ] && cp limine-install/limine-install bin/ || true
-	[ -f limine-install/limine-install.exe ] && cp limine-install/limine-install.exe bin/ || true
+.PHONY: $(BINDIR)/limine-install
+$(BINDIR)/limine-install:
+	$(MAKE) -C limine-install LIMINE_HDD_BIN="$(BINDIR)/limine-hdd.bin" BUILDDIR="$(BINDIR)"
 
 .PHONY: clean
 clean: limine-bios-clean limine-uefi-clean limine-uefi32-clean
 	$(MAKE) -C limine-install clean
-	rm -rf bin build
 
 .PHONY: install
 install: all
 	install -d "$(DESTDIR)$(PREFIX)/bin"
-	install -s bin/limine-install "$(DESTDIR)$(PREFIX)/bin/"
+	install -s $(BINDIR)/limine-install "$(DESTDIR)$(PREFIX)/bin/"
 	install -d "$(DESTDIR)$(PREFIX)/share"
 	install -d "$(DESTDIR)$(PREFIX)/share/limine"
-	install -m 644 bin/limine.sys "$(DESTDIR)$(PREFIX)/share/limine/" || true
-	install -m 644 bin/limine-cd.bin "$(DESTDIR)$(PREFIX)/share/limine/" || true
-	install -m 644 bin/limine-eltorito-efi.bin "$(DESTDIR)$(PREFIX)/share/limine/" || true
-	install -m 644 bin/limine-pxe.bin "$(DESTDIR)$(PREFIX)/share/limine/" || true
-	install -m 644 bin/BOOTX64.EFI "$(DESTDIR)$(PREFIX)/share/limine/" || true
-	install -m 644 bin/BOOTIA32.EFI "$(DESTDIR)$(PREFIX)/share/limine/" || true
+	install -m 644 $(BINDIR)/limine.sys "$(DESTDIR)$(PREFIX)/share/limine/" || true
+	install -m 644 $(BINDIR)/limine-cd.bin "$(DESTDIR)$(PREFIX)/share/limine/" || true
+	install -m 644 $(BINDIR)/limine-eltorito-efi.bin "$(DESTDIR)$(PREFIX)/share/limine/" || true
+	install -m 644 $(BINDIR)/limine-pxe.bin "$(DESTDIR)$(PREFIX)/share/limine/" || true
+	install -m 644 $(BINDIR)/BOOTX64.EFI "$(DESTDIR)$(PREFIX)/share/limine/" || true
+	install -m 644 $(BINDIR)/BOOTIA32.EFI "$(DESTDIR)$(PREFIX)/share/limine/" || true
 
-build/stage1: $(STAGE1_FILES) build/decompressor/decompressor.bin build/stage23-bios/stage2.bin.gz
-	mkdir -p bin
-	cd stage1/hdd && nasm bootsect.asm -Werror -fbin -o ../../bin/limine-hdd.bin
-	cd stage1/cd  && nasm bootsect.asm -Werror -fbin -o ../../bin/limine-cd.bin
-	cd stage1/pxe && nasm bootsect.asm -Werror -fbin -o ../../bin/limine-pxe.bin
-	cp build/stage23-bios/limine.sys ./bin/
-	touch build/stage1
+$(BUILDDIR)/stage1: $(STAGE1_FILES) $(BUILDDIR)/decompressor/decompressor.bin $(BUILDDIR)/stage23-bios/stage2.bin.gz
+	mkdir -p $(BINDIR)
+	cd stage1/hdd && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'$(BUILDDIR)'" -o $(BINDIR)/limine-hdd.bin
+	cd stage1/cd  && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'$(BUILDDIR)'" -o $(BINDIR)/limine-cd.bin
+	cd stage1/pxe && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'$(BUILDDIR)'" -o $(BINDIR)/limine-pxe.bin
+	cp $(BUILDDIR)/stage23-bios/limine.sys $(BINDIR)/
+	touch $(BUILDDIR)/stage1
 
 .PHONY: limine-bios
 limine-bios: stage23-bios decompressor
-	$(MAKE) build/stage1
+	$(MAKE) $(BUILDDIR)/stage1
 
-.PHONY: bin/limine-eltorito-efi.bin
-bin/limine-eltorito-efi.bin:
+.PHONY: $(BINDIR)/limine-eltorito-efi.bin
+$(BINDIR)/limine-eltorito-efi.bin:
+	mkdir -p $(BINDIR)
 	dd if=/dev/zero of=$@ bs=512 count=2880
 	( mformat -i $@ -f 1440 :: && \
 	  mmd -D s -i $@ ::/EFI && \
 	  mmd -D s -i $@ ::/EFI/BOOT && \
-	  ( ( [ -f build/stage23-uefi/BOOTX64.EFI ] && \
-	      mcopy -D o -i $@ build/stage23-uefi/BOOTX64.EFI ::/EFI/BOOT ) || true ) && \
-	  ( ( [ -f build/stage23-uefi32/BOOTIA32.EFI ] && \
-	      mcopy -D o -i $@ build/stage23-uefi32/BOOTIA32.EFI ::/EFI/BOOT ) || true ) \
+	  ( ( [ -f $(BUILDDIR)/stage23-uefi/BOOTX64.EFI ] && \
+	      mcopy -D o -i $@ $(BUILDDIR)/stage23-uefi/BOOTX64.EFI ::/EFI/BOOT ) || true ) && \
+	  ( ( [ -f $(BUILDDIR)/stage23-uefi32/BOOTIA32.EFI ] && \
+	      mcopy -D o -i $@ $(BUILDDIR)/stage23-uefi32/BOOTIA32.EFI ::/EFI/BOOT ) || true ) \
 	) || rm -f $@
 
 .PHONY: limine-uefi
 limine-uefi:
 	$(MAKE) gnu-efi
 	$(MAKE) stage23-uefi
-	mkdir -p bin
-	cp build/stage23-uefi/BOOTX64.EFI ./bin/
-	$(MAKE) bin/limine-eltorito-efi.bin
+	mkdir -p $(BINDIR)
+	cp $(BUILDDIR)/stage23-uefi/BOOTX64.EFI $(BINDIR)/
+	$(MAKE) $(BINDIR)/limine-eltorito-efi.bin
 
 .PHONY: limine-uefi32
 limine-uefi32:
 	$(MAKE) gnu-efi
 	$(MAKE) stage23-uefi32
-	mkdir -p bin
-	cp build/stage23-uefi32/BOOTIA32.EFI ./bin/
-	$(MAKE) bin/limine-eltorito-efi.bin
+	mkdir -p $(BINDIR)
+	cp $(BUILDDIR)/stage23-uefi32/BOOTIA32.EFI $(BINDIR)/
+	$(MAKE) $(BINDIR)/limine-eltorito-efi.bin
 
 .PHONY: limine-bios-clean
 limine-bios-clean: stage23-bios-clean decompressor-clean
@@ -141,7 +142,7 @@ dist:
 
 .PHONY: distclean
 distclean: clean test-clean
-	rm -rf toolchain ovmf*
+	rm -rf build toolchain ovmf*
 
 .PHONY: repoclean
 repoclean: distclean
@@ -152,35 +153,35 @@ stivale:
 
 .PHONY: stage23-uefi
 stage23-uefi: stivale
-	$(MAKE) -C stage23 all TARGET=uefi BUILDDIR="`pwd`/build/stage23-uefi"
+	$(MAKE) -C stage23 all TARGET=uefi BUILDDIR="$(BUILDDIR)/stage23-uefi"
 
 .PHONY: stage23-uefi-clean
 stage23-uefi-clean:
-	$(MAKE) -C stage23 clean TARGET=uefi BUILDDIR="`pwd`/build/stage23-uefi"
+	$(MAKE) -C stage23 clean TARGET=uefi BUILDDIR="$(BUILDDIR)/stage23-uefi"
 
 .PHONY: stage23-uefi32
 stage23-uefi32: stivale
-	$(MAKE) -C stage23 all TARGET=uefi32 BUILDDIR="`pwd`/build/stage23-uefi32"
+	$(MAKE) -C stage23 all TARGET=uefi32 BUILDDIR="$(BUILDDIR)/stage23-uefi32"
 
 .PHONY: stage23-uefi32-clean
 stage23-uefi32-clean:
-	$(MAKE) -C stage23 clean TARGET=uefi32 BUILDDIR="`pwd`/build/stage23-uefi32"
+	$(MAKE) -C stage23 clean TARGET=uefi32 BUILDDIR="$(BUILDDIR)/stage23-uefi32"
 
 .PHONY: stage23-bios
 stage23-bios: stivale
-	$(MAKE) -C stage23 all TARGET=bios BUILDDIR="`pwd`/build/stage23-bios"
+	$(MAKE) -C stage23 all TARGET=bios BUILDDIR="$(BUILDDIR)/stage23-bios"
 
 .PHONY: stage23-bios-clean
 stage23-bios-clean:
-	$(MAKE) -C stage23 clean TARGET=bios BUILDDIR="`pwd`/build/stage23-bios"
+	$(MAKE) -C stage23 clean TARGET=bios BUILDDIR="$(BUILDDIR)/stage23-bios"
 
 .PHONY: decompressor
 decompressor:
-	$(MAKE) -C decompressor all BUILDDIR="`pwd`/build/decompressor"
+	$(MAKE) -C decompressor all BUILDDIR="$(BUILDDIR)/decompressor"
 
 .PHONY: decompressor-clean
 decompressor-clean:
-	$(MAKE) -C decompressor clean BUILDDIR="`pwd`/build/decompressor"
+	$(MAKE) -C decompressor clean BUILDDIR="$(BUILDDIR)/decompressor"
 
 .PHONY: test-clean
 test-clean:
@@ -215,7 +216,7 @@ echfs-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) bin/limine-install
+	$(MAKE) $(BINDIR)/limine-install
 	$(MAKE) -C test
 	echfs-utils -g -p0 test.hdd quick-format 512 > part_guid
 	sed "s/@GUID@/`cat part_guid`/g" < test/limine.cfg > limine.cfg.tmp
@@ -223,8 +224,8 @@ echfs-test:
 	rm -f limine.cfg.tmp part_guid
 	echfs-utils -g -p0 test.hdd import test/test.elf boot/test.elf
 	echfs-utils -g -p0 test.hdd import test/bg.bmp boot/bg.bmp
-	echfs-utils -g -p0 test.hdd import bin/limine.sys boot/limine.sys
-	bin/limine-install test.hdd
+	echfs-utils -g -p0 test.hdd import $(BINDIR)/limine.sys boot/limine.sys
+	$(BINDIR)/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: ext2-test
@@ -232,7 +233,7 @@ ext2-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) bin/limine-install
+	$(MAKE) $(BINDIR)/limine-install
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -241,12 +242,12 @@ ext2-test:
 	sudo mkfs.ext2 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv bin/* test/* test_image/boot/
+	sudo cp -rv $(BINDIR)/* test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	bin/limine-install test.hdd
+	$(BINDIR)/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: fat12-test
@@ -254,7 +255,7 @@ fat12-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) bin/limine-install
+	$(MAKE) $(BINDIR)/limine-install
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -263,12 +264,12 @@ fat12-test:
 	sudo mkfs.fat -F 12 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv bin/* test/* test_image/boot/
+	sudo cp -rv $(BINDIR)/* test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	bin/limine-install test.hdd
+	$(BINDIR)/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: fat16-test
@@ -276,7 +277,7 @@ fat16-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) bin/limine-install
+	$(MAKE) $(BINDIR)/limine-install
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -285,12 +286,12 @@ fat16-test:
 	sudo mkfs.fat -F 16 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv bin/* test/* test_image/boot/
+	sudo cp -rv $(BINDIR)/* test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	bin/limine-install test.hdd
+	$(BINDIR)/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: fat32-test
@@ -298,7 +299,7 @@ fat32-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) bin/limine-install
+	$(MAKE) $(BINDIR)/limine-install
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -307,12 +308,12 @@ fat32-test:
 	sudo mkfs.fat -F 32 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv bin/* test/* test_image/boot/
+	sudo cp -rv $(BINDIR)/* test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	bin/limine-install test.hdd
+	$(BINDIR)/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: iso9660-test
@@ -323,7 +324,7 @@ iso9660-test:
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir -p test_image/boot
-	cp -rv bin/* test/* test_image/boot/
+	cp -rv $(BINDIR)/* test/* test_image/boot/
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table test_image/ -o test.iso
 	qemu-system-x86_64 -net none -smp 4   -cdrom test.iso -debugcon stdio
 
@@ -335,13 +336,13 @@ full-hybrid-test:
 	$(MAKE) limine-uefi
 	$(MAKE) limine-uefi32
 	$(MAKE) limine-bios
-	$(MAKE) bin/limine-install
+	$(MAKE) $(BINDIR)/limine-install
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir -p test_image/boot
-	cp -rv bin/* test/* test_image/boot/
+	cp -rv $(BINDIR)/* test/* test_image/boot/
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine-eltorito-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label test_image/ -o test.iso
-	bin/limine-install test.iso
+	$(BINDIR)/limine-install test.iso
 	qemu-system-x86_64 -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -cdrom test.iso -debugcon stdio
 	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -hda test.iso -debugcon stdio
 	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4   -cdrom test.iso -debugcon stdio
@@ -356,7 +357,7 @@ pxe-test:
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir -p test_image/boot
-	cp -rv bin/* test/* test_image/boot/
+	cp -rv $(BINDIR)/* test/* test_image/boot/
 	qemu-system-x86_64  -smp 4  -netdev user,id=n0,tftp=./test_image,bootfile=boot/limine-pxe.bin -device rtl8139,netdev=n0,mac=00:00:00:11:11:11 -debugcon stdio
 
 .PHONY: uefi-test
@@ -373,9 +374,9 @@ uefi-test:
 	sudo mkfs.fat -F 32 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv bin/* test/* test_image/boot/
+	sudo cp -rv $(BINDIR)/* test/* test_image/boot/
 	sudo mkdir -p test_image/EFI/BOOT
-	sudo cp bin/BOOTX64.EFI test_image/EFI/BOOT/
+	sudo cp $(BINDIR)/BOOTX64.EFI test_image/EFI/BOOT/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
@@ -396,9 +397,9 @@ uefi32-test:
 	sudo mkfs.fat -F 32 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv bin/* test/* test_image/boot/
+	sudo cp -rv $(BINDIR)/* test/* test_image/boot/
 	sudo mkdir -p test_image/EFI/BOOT
-	sudo cp bin/BOOTIA32.EFI test_image/EFI/BOOT/
+	sudo cp $(BINDIR)/BOOTIA32.EFI test_image/EFI/BOOT/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`

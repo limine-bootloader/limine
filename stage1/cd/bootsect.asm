@@ -95,11 +95,13 @@ pmode:
 ; Align stage2 to 2K ON DISK
 times 2048-($-$$) db 0
 decompressor:
-incbin '../../build/decompressor/decompressor.bin'
+%strcat DECOMPRESSOR_PATH BUILDDIR, '/decompressor/decompressor.bin'
+incbin DECOMPRESSOR_PATH
 
 align 16
 stage2:
-incbin '../../build/stage23-bios/stage2.bin.gz'
+%strcat STAGE2_PATH BUILDDIR, '/stage23-bios/stage2.bin.gz'
+incbin STAGE2_PATH
 .size: equ $ - stage2
 
 times ((($-$$)+2047) & ~2047)-($-$$) db 0

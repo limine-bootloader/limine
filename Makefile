@@ -53,10 +53,10 @@ all:
 	$(MAKE) limine-uefi
 	$(MAKE) limine-uefi32
 	$(MAKE) limine-bios
-	$(MAKE) $(BINDIR)/limine-install
+	$(MAKE) limine-install
 
-.PHONY: $(BINDIR)/limine-install
-$(BINDIR)/limine-install:
+.PHONY: limine-install
+limine-install:
 	$(MAKE) -C limine-install LIMINE_HDD_BIN="$(BINDIR)/limine-hdd.bin" BUILDDIR="$(BINDIR)"
 
 .PHONY: clean
@@ -219,7 +219,7 @@ echfs-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) $(BINDIR)/limine-install
+	$(MAKE) limine-install
 	$(MAKE) -C test
 	echfs-utils -g -p0 test.hdd quick-format 512 > part_guid
 	sed "s/@GUID@/`cat part_guid`/g" < test/limine.cfg > limine.cfg.tmp
@@ -236,7 +236,7 @@ ext2-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) $(BINDIR)/limine-install
+	$(MAKE) limine-install
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -258,7 +258,7 @@ fat12-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) $(BINDIR)/limine-install
+	$(MAKE) limine-install
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -280,7 +280,7 @@ fat16-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) $(BINDIR)/limine-install
+	$(MAKE) limine-install
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -302,7 +302,7 @@ fat32-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) $(BINDIR)/limine-install
+	$(MAKE) limine-install
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -336,7 +336,7 @@ ntfs-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) $(BINDIR)/limine-install
+	$(MAKE) limine-install
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -361,7 +361,7 @@ full-hybrid-test:
 	$(MAKE) limine-uefi
 	$(MAKE) limine-uefi32
 	$(MAKE) limine-bios
-	$(MAKE) $(BINDIR)/limine-install
+	$(MAKE) limine-install
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir -p test_image/boot

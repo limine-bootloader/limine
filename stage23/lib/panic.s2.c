@@ -15,6 +15,8 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
 
     va_start(args, fmt);
 
+    quiet = false;
+
     if (term_backend == NOT_READY) {
 #if bios == 1
         term_textmode();

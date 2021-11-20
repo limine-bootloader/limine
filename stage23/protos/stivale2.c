@@ -456,6 +456,8 @@ failed_to_load_header_section:
     struct stivale2_header_tag_terminal *terminal_hdr_tag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_TERMINAL_ID);
 
     if (bits == 64 && terminal_hdr_tag != NULL) {
+        quiet = false;
+
         if (bios &&
           ((avtag == NULL && hdrtag == NULL) || (avtag != NULL && preference == 1))) {
             term_textmode();

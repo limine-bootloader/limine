@@ -82,6 +82,7 @@ Some keys take *URIs* as values; these are described in the next section.
 * `EDITOR_HIGHLIGHTING` - If set to `no`, syntax highlighting in the editor will be disabled. Defaults to `yes`.
 * `EDITOR_VALIDATION` - If set to `no`, the editor will not alert you about invalid keys / syntax errors. Defaults to `yes`.
 * `VERBOSE` - If set to `yes`, print additional information during boot. Defaults to not verbose.
+* `QUIET` - If set to `yes`, enable quiet mode, where all screen output except panics and important warnings is suppressed.
 * `RANDOMISE_MEMORY` - If set to `yes`, randomise the contents of RAM at bootup in order to find bugs related to non zeroed memory or for security reasons. This option will slow down boot time significantly.
 * `RANDOMIZE_MEMORY` - Alias of `RANDOMISE_MEMORY`.
 

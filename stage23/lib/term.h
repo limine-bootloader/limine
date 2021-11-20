@@ -48,6 +48,7 @@ void term_reinit(void);
 void term_deinit(void);
 void term_vbe(size_t width, size_t height);
 void term_textmode(void);
+void term_notready(void);
 void term_putchar(uint8_t c);
 void term_write(uint64_t buf, uint64_t count);
 
@@ -95,12 +96,10 @@ extern void (*term_callback)(uint64_t, uint64_t, uint64_t, uint64_t);
 extern bool term_autoflush;
 
 inline void reset_term(void) {
-    if (term_backend != NOT_READY) {
-        term_autoflush = true;
-        enable_cursor();
-        clear(true);
-        term_double_buffer_flush();
-    }
+    term_autoflush = true;
+    enable_cursor();
+    clear(true);
+    term_double_buffer_flush();
 }
 
 #endif

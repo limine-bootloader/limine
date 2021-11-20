@@ -14,11 +14,15 @@ void term_deinit(void) {
             gterm_deinit();
     }
 
-    term_backend = NOT_READY;
+    term_notready();
 }
 
 void term_vbe(size_t width, size_t height) {
-    term_backend = NOT_READY;
+    term_notready();
+
+    if (quiet) {
+        return;
+    }
 
     if (!gterm_init(&term_rows, &term_cols, width, height)) {
 #if bios == 1

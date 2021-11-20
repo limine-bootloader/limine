@@ -4,6 +4,7 @@
 #include <lib/print.h>
 
 bool verbose = true;
+bool quiet = false;
 
 uint8_t bcd_to_int(uint8_t val) {
     return (val & 0x0f) + ((val & 0xf0) >> 4) * 10;

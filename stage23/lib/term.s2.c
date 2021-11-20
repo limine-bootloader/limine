@@ -16,6 +16,66 @@ int term_backend = NOT_READY;
 size_t term_rows, term_cols;
 bool term_runtime = false;
 
+static void notready_raw_putchar(uint8_t c) {
+    (void)c;
+}
+static void notready_clear(bool move) {
+    (void)move;
+}
+static void notready_void(void) {}
+static void notready_set_cursor_pos(size_t x, size_t y) {
+    (void)x; (void)y;
+}
+static void notready_get_cursor_pos(size_t *x, size_t *y) {
+    *x = 0;
+    *y = 0;
+}
+static void notready_size_t(size_t n) {
+    (void)n;
+}
+static bool notready_disable(void) {
+    return false;
+}
+static void notready_move_character(size_t a, size_t b, size_t c, size_t d) {
+    (void)a; (void)b; (void)c; (void)d;
+}
+static uint64_t notready_context_size(void) {
+    return 0;
+}
+static void notready_uint64_t(uint64_t n) {
+    (void)n;
+}
+
+void term_notready(void) {
+    term_backend = NOT_READY;
+
+    raw_putchar = notready_raw_putchar;
+    clear = notready_clear;
+    enable_cursor = notready_void;
+    disable_cursor = notready_disable;
+    set_cursor_pos = notready_set_cursor_pos;
+    get_cursor_pos = notready_get_cursor_pos;
+    set_text_fg = notready_size_t;
+    set_text_bg = notready_size_t;
+    set_text_fg_bright = notready_size_t;
+    set_text_bg_bright = notready_size_t;
+    set_text_fg_default = notready_void;
+    set_text_bg_default = notready_void;
+    scroll_disable = notready_disable;
+    scroll_enable = notready_void;
+    term_move_character = notready_move_character;
+    term_scroll = notready_void;
+    term_swap_palette = notready_void;
+    term_double_buffer_flush = notready_void;
+    term_context_size = notready_context_size;
+    term_context_save = notready_uint64_t;
+    term_context_restore = notready_uint64_t;
+    term_full_refresh = notready_void;
+
+    term_rows = 100;
+    term_cols = 100;
+}
+
 void (*raw_putchar)(uint8_t c);
 void (*clear)(bool move);
 void (*enable_cursor)(void);
@@ -90,11 +150,16 @@ void term_reinit(void) {
     g_select = 0;
     charsets[0] = CHARSET_DEFAULT;
     charsets[1] = CHARSET_DEC_SPECIAL;
+    term_autoflush = true;
 }
 
 #if bios == 1
 void term_textmode(void) {
-    term_backend = NOT_READY;
+    term_notready();
+
+    if (quiet) {
+        return;
+    }
 
     init_vga_textmode(&term_rows, &term_cols, true);
 

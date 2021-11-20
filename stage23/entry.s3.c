@@ -63,6 +63,8 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
         print("WARNING: Failed to disable watchdog timer!\n");
     }
 
+    term_notready();
+
     init_memmap();
 
     disk_create_index();
@@ -135,6 +137,9 @@ void stage3_common(void) {
             break;
         }
     );
+
+    char *quiet_str = config_get_value(NULL, 0, "QUIET");
+    quiet = quiet_str != NULL && strcmp(quiet_str, "yes") == 0;
 
     char *verbose_str = config_get_value(NULL, 0, "VERBOSE");
     verbose = verbose_str != NULL && strcmp(verbose_str, "yes") == 0;

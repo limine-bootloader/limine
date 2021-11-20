@@ -45,9 +45,9 @@ For example, to clone the latest binary release of the `v2.x` branch one can do
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v2.0-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example v2.40)
+or, to clone a specific binary point release (for example v2.65)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v2.40-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v2.65-binary --depth=1
 ```
 
 Additionally, the absolute latest Limine binary release can be obtained by
@@ -103,16 +103,18 @@ make    # (or gmake where applicable)
 It is possible to pass `make` additional flags, most relevantly,
 `TOOLCHAIN=`, which allows one to specify an alternative toolchain for the build
 system to use (the default is `limine`, resulting in program names like `limine-gcc`,
-falling back to no-prefix, or host, toolchain).
+falling back to no-prefix, or host, toolchain), and `BUILDDIR=`, which specifies an
+alternative build directory (for example, out of tree - the default is `./build`).
 
-The generated bootloader files are going to be in `bin`.
+The generated bootloader files are going to be in `$BUILDDIR/bin` (by default that
+is `./build/bin`).
 
 #### Using clang/LLVM
 
 In order to build the BIOS port fully using clang/LLVM, run `make` as such:
 ```bash
 # (or gmake where applicable)
-make limine-bios bin/limine-install CC="clang" TOOLCHAIN="llvm" TOOLCHAIN_CC="clang" TOOLCHAIN_LD="ld.lld"
+make limine-bios limine-install CC="clang" TOOLCHAIN="llvm" TOOLCHAIN_CC="clang" TOOLCHAIN_LD="ld.lld"
 ```
 
 And in order to build the UEFI port using clang/LLVM + `GNU binutils`, run

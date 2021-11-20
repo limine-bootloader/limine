@@ -77,12 +77,23 @@ void term_notready(void) {
     term_cols = 100;
 
 #if bios == 1
-    struct rm_regs r = {0};
-    r.eax = 0x0003;
-    rm_int(0x10, &r, &r);
+    {
+    if (current_video_mode != -1) {
+        struct rm_regs r = {0};
+        r.eax = 0x0003;
+        rm_int(0x10, &r, &r);
+
+        current_video_mode = -1;
+    }
+
+    volatile uint16_t *vmem = (volatile uint16_t *)0xb8000;
+    for (size_t i = 0; i < 80*25; i++) {
+        vmem[i] = 0x0720;
+    }
 
     outb(0x3d4, 0x0a);
     outb(0x3d5, 0x20);
+    }
 #endif
 }
 

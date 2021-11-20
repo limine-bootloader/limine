@@ -126,13 +126,16 @@ limine-uefi-clean: stage23-uefi-clean
 .PHONY: limine-uefi32-clean
 limine-uefi32-clean: stage23-uefi32-clean
 
+.PHONY: regenerate
+regenerate: gnu-efi stivale
+
 .PHONY: dist
 dist:
 	rm -rf "limine-$(LIMINE_VERSION)"
 	LIST="$$(ls -A)"; mkdir "limine-$(LIMINE_VERSION)" && cp -r $$LIST "limine-$(LIMINE_VERSION)/"
 	rm -rf "limine-$(LIMINE_VERSION)/"*.tar*
 	$(MAKE) -C "limine-$(LIMINE_VERSION)" repoclean
-	$(MAKE) -C "limine-$(LIMINE_VERSION)" gnu-efi stivale
+	$(MAKE) -C "limine-$(LIMINE_VERSION)" regenerate
 	rm -rf "limine-$(LIMINE_VERSION)/gnu-efi/.git"
 	rm -rf "limine-$(LIMINE_VERSION)/stivale/.git"
 	rm -rf "limine-$(LIMINE_VERSION)/.git"

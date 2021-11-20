@@ -3,17 +3,18 @@ CC = cc
 PREFIX = /usr/local
 DESTDIR =
 
+BUILDDIR = .
 LIMINE_HDD_BIN = limine-hdd.bin
 
 CFLAGS = -O2 -pipe -Wall -Wextra
 
 .PHONY: all install clean
 
-all: limine-install
+all: $(BUILDDIR)/limine-install
 
 install: all
 	install -d "$(DESTDIR)$(PREFIX)/bin"
-	install -s limine-install "$(DESTDIR)$(PREFIX)/bin/"
+	install -s "$(BUILDDIR)/limine-install" "$(DESTDIR)$(PREFIX)/bin/"
 	install -d "$(DESTDIR)$(PREFIX)/share"
 	install -d "$(DESTDIR)$(PREFIX)/share/limine"
 	install -m 644 limine.sys "$(DESTDIR)$(PREFIX)/share/limine/"
@@ -24,7 +25,7 @@ install: all
 	install -m 644 BOOTIA32.EFI "$(DESTDIR)$(PREFIX)/share/limine/"
 
 clean:
-	rm -f limine-install limine-install.exe
+	rm -f "$(BUILDDIR)/limine-install" "$(BUILDDIR)/limine-install.exe"
 
-limine-install: limine-install.c inc.S $(LIMINE_HDD_BIN)
-	$(CC) $(CFLAGS) -std=c11 -DLIMINE_HDD_BIN='"$(LIMINE_HDD_BIN)"' limine-install.c inc.S -o $@
+$(BUILDDIR)/limine-install: limine-install.c inc.S $(LIMINE_HDD_BIN)
+	$(CC) $(CFLAGS) -std=c11 -DLIMINE_HDD_BIN='"$(LIMINE_HDD_BIN)"' limine-install.c inc.S -o "$@"

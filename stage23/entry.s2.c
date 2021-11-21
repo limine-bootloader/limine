@@ -20,6 +20,7 @@
 #include <pxe/tftp.h>
 #include <drivers/disk.h>
 #include <sys/idt.h>
+#include <sys/cpu.h>
 
 struct volume *boot_volume;
 
@@ -79,6 +80,19 @@ void entry(uint8_t boot_drive, int boot_from) {
         panic("Could not enable A20 line");
 
     term_notready();
+
+#if bios == 1
+    {
+    struct rm_regs r = {0};
+    r.eax = 0x0003;
+    rm_int(0x10, &r, &r);
+
+    current_video_mode = -1;
+
+    outb(0x3d4, 0x0a);
+    outb(0x3d5, 0x20);
+    }
+#endif
 
     init_e820();
     init_memmap();

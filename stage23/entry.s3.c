@@ -141,6 +141,10 @@ void stage3_common(void) {
     char *quiet_str = config_get_value(NULL, 0, "QUIET");
     quiet = quiet_str != NULL && strcmp(quiet_str, "yes") == 0;
 
+#if bios == 1
+    term_textmode();
+#endif
+
     char *verbose_str = config_get_value(NULL, 0, "VERBOSE");
     verbose = verbose_str != NULL && strcmp(verbose_str, "yes") == 0;
 

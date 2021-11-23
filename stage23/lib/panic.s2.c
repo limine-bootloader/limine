@@ -34,7 +34,7 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
     print_stacktrace(NULL);
 
 #if bios == 1
-    print("System halted.");
+    print("Press CTRL+ALT+DEL to reboot.");
     rm_hcf();
 #elif uefi == 1
     if (efi_boot_services_exited == false) {

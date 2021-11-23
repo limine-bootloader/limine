@@ -76,6 +76,7 @@ static size_t get_prev_line(size_t index, const char *buffer) {
 
 static const char *VALID_KEYS[] = {
     "TIMEOUT",
+    "QUIET",
     "DEFAULT_ENTRY",
     "GRAPHICS",
     "MENU_RESOLUTION",
@@ -565,6 +566,8 @@ char *menu(char **cmdline) {
 #elif uefi == 1
     char *graphics = "yes";
 #endif
+
+reterm:
     if (graphics != NULL && !strcmp(graphics, "yes")) {
         size_t req_width = 0, req_height = 0, req_bpp = 0;
 
@@ -573,6 +576,10 @@ char *menu(char **cmdline) {
             parse_resolution(&req_width, &req_height, &req_bpp, menu_resolution);
 
         term_vbe(req_width, req_height);
+    } else {
+#if bios == 1
+        term_textmode();
+#endif
     }
 
 refresh:
@@ -665,9 +672,14 @@ refresh:
             term_double_buffer_flush();
             if ((c = pit_sleep_and_quit_on_keypress(1))) {
                 skip_timeout = true;
-                print("\e[2K");
-                term_double_buffer_flush();
-                goto timeout_aborted;
+                if (quiet) {
+                    quiet = false;
+                    goto reterm;
+                } else {
+                    print("\e[2K");
+                    term_double_buffer_flush();
+                    goto timeout_aborted;
+                }
             }
         }
         goto autoboot;

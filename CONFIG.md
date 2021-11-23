@@ -52,6 +52,7 @@ Some keys take *URIs* as values; these are described in the next section.
 
 *Globally assignable* keys are:
 * `TIMEOUT` - Specifies the timeout in seconds before the first *entry* is automatically booted. If set to `no`, disable automatic boot. If set to `0`, boots default entry instantly (see `DEFAULT_ENTRY` key).
+* `QUIET` - If set to `yes`, enable quiet mode, where all screen output except panics and important warnings is suppressed. If `TIMEOUT` is not 0, the `TIMEOUT` still occurs, and pressing any key during the timeout will reveal the menu and disable quiet mode.
 * `DEFAULT_ENTRY` - 1-based entry index of the entry which will be automatically selected at startup. If unspecified, it is `1`.
 * `GRAPHICS` - If set to `yes`, use a graphical framebuffer for the boot menu, else use text mode. Ignored with Limine UEFI, forced to `yes`.
 * `MENU_RESOLUTION` - Specify screen resolution to be used by the Limine menu in the form `<width>x<height>`. This will *only* affect the menu, not any booted OS. If not specified, Limine will pick a resolution automatically. If the resolution is not available, Limine will pick another one automatically. Ignored if `GRAPHICS` is not `yes`.
@@ -82,7 +83,6 @@ Some keys take *URIs* as values; these are described in the next section.
 * `EDITOR_HIGHLIGHTING` - If set to `no`, syntax highlighting in the editor will be disabled. Defaults to `yes`.
 * `EDITOR_VALIDATION` - If set to `no`, the editor will not alert you about invalid keys / syntax errors. Defaults to `yes`.
 * `VERBOSE` - If set to `yes`, print additional information during boot. Defaults to not verbose.
-* `QUIET` - If set to `yes`, enable quiet mode, where all screen output except panics and important warnings is suppressed.
 * `RANDOMISE_MEMORY` - If set to `yes`, randomise the contents of RAM at bootup in order to find bugs related to non zeroed memory or for security reasons. This option will slow down boot time significantly.
 * `RANDOMIZE_MEMORY` - Alias of `RANDOMISE_MEMORY`.
 

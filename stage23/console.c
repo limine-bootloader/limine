@@ -15,6 +15,7 @@ static void console_help(void) {
         "version   -- Print version.\n"
         "copyright -- Print copyright.\n"
         "help      -- Print this help message.\n"
+        "info      -- Print all info.\n"
     );
 }
 
@@ -37,6 +38,10 @@ void console(void) {
             print(LIMINE_COPYRIGHT "\n");
             print("Limine is distributed under the terms of the BSD-2-Clause license.\n");
             print("There is ABSOLUTELY NO WARRANTY, to the extent permitted by law.\n");
+        } else if (strcmp(prompt, "info") == 0) {
+            print("Version: " LIMINE_VERSION "\n\n");
+            print("Copyright:\n");
+            print(LIMINE_COPYRIGHT "\n");
         } else if (*prompt != 0) {
             print("Invalid command: `%s`.\n", prompt);
         }

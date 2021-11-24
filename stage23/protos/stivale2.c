@@ -25,10 +25,11 @@
 #include <pxe/tftp.h>
 #include <drivers/edid.h>
 #include <drivers/vga_textmode.h>
+#include <lib/rand.h>
 
 #define REPORTED_ADDR(PTR) \
     ((PTR) + ((stivale2_hdr.flags & (1 << 1)) ? \
-    (want_5lv ? 0xff00000000000000 : 0xffff800000000000) : 0))
+    direct_map_offset : 0))
 
 struct stivale2_struct stivale2_struct = {0};
 
@@ -231,6 +232,19 @@ failed_to_load_header_section:
     }
 
     bool want_5lv = (get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_5LV_PAGING_ID) ? true : false) && level5pg;
+
+    uint64_t direct_map_offset = want_5lv ? 0xff00000000000000 : 0xffff800000000000;
+
+    {
+        struct stivale2_header_tag_slide_hhdm *slt = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_SLIDE_HHDM_ID);
+        if (slt != NULL) {
+            if (slt->alignment % 0x200000 != 0 || slt->alignment == 0) {
+                panic("stivale2: Requested HHDM slide alignment is not a multiple of 2MiB");
+            }
+
+            direct_map_offset += (rand64() & ~(slt->alignment - 1)) & 0xffffffffff;
+        }
+    }
 
     if (stivale2_hdr.entry_point != 0)
         entry_point = stivale2_hdr.entry_point;
@@ -624,6 +638,18 @@ have_tm_tag:;
     }
     }
 
+    //////////////////////////////////////////////
+    // Create HHDM struct tag
+    //////////////////////////////////////////////
+    {
+    struct stivale2_struct_tag_hhdm *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_hhdm));
+    tag->tag.identifier = STIVALE2_STRUCT_TAG_HHDM_ID;
+
+    tag->addr = direct_map_offset;
+
+    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    }
+
 #if bios == 1
     //////////////////////////////////////////////
     // Create PXE struct tag
@@ -693,7 +719,8 @@ have_tm_tag:;
         pagemap = stivale_build_pagemap(want_5lv, unmap_null,
                                         want_pmrs ? ranges : NULL,
                                         want_pmrs ? ranges_count : 0,
-                                        want_fully_virtual, physical_base, virtual_base);
+                                        want_fully_virtual, physical_base, virtual_base,
+                                        direct_map_offset);
 
 #if uefi == 1
     efi_exit_boot_services();
@@ -762,11 +789,11 @@ have_tm_tag:;
     if (verbose) {
         print("stivale2: Generated tags:\n");
         struct stivale2_tag *taglist =
-                    (void*)(uintptr_t)(stivale2_struct.tags & (uint64_t)0xffffffff);
+                    (void*)(uintptr_t)(stivale2_struct.tags - ((stivale2_hdr.flags & (1 << 1)) ? direct_map_offset : 0));
         for (size_t i = 0; ; i++) {
             print("          Tag #%u  ID: %X\n", i, taglist->identifier);
             if (taglist->next) {
-                taglist = (void*)(uintptr_t)(taglist->next & (uint64_t)0xffffffff);
+                taglist = (void*)(uintptr_t)(taglist->next - ((stivale2_hdr.flags & (1 << 1)) ? direct_map_offset : 0));
             } else {
                 break;
             }
@@ -781,6 +808,8 @@ have_tm_tag:;
     stivale_spinup(bits, want_5lv, &pagemap, entry_point,
                    REPORTED_ADDR((uint64_t)(uintptr_t)&stivale2_struct),
                    stivale2_hdr.stack, want_pmrs);
+
+    __builtin_unreachable();
 
 fail:
     pmm_free(kernel, kernel_file_size);

@@ -164,22 +164,38 @@ void stage3_common(void) {
 
     char *proto = config_get_value(config, 0, "PROTOCOL");
     if (proto == NULL) {
-        panic("PROTOCOL not specified");
+        printv("PROTOCOL not specified, using autodetection...\n");
+autodetect:
+        stivale2_load(config, cmdline);
+        stivale_load(config, cmdline);
+        multiboot2_load(config, cmdline);
+        multiboot1_load(config, cmdline);
+        linux_load(config, cmdline);
+        panic("Kernel protocol autodetection failed");
     }
+
+    bool ret = true;
 
     if (!strcmp(proto, "stivale1") || !strcmp(proto, "stivale")) {
-        stivale_load(config, cmdline);
+        ret = stivale_load(config, cmdline);
     } else if (!strcmp(proto, "stivale2")) {
-        stivale2_load(config, cmdline);
+        ret = stivale2_load(config, cmdline);
     } else if (!strcmp(proto, "linux")) {
-        linux_load(config, cmdline);
+        ret = linux_load(config, cmdline);
+    } else if (!strcmp(proto, "multiboot1") || !strcmp(proto, "multiboot")) {
+        ret = multiboot1_load(config, cmdline);
+    } else if (!strcmp(proto, "multiboot2")) {
+        ret = multiboot2_load(config, cmdline);
     } else if (!strcmp(proto, "chainload")) {
         chainload(config);
-    } else if (!strcmp(proto, "multiboot1") || !strcmp(proto, "multiboot")) {
-        multiboot1_load(config, cmdline);
-    } else if (!strcmp(proto, "multiboot2")) {
-        multiboot2_load(config, cmdline);
     }
 
-    panic("Invalid protocol specified");
+    if (ret) {
+        print("WARNING: Unsupported protocol specified: %s.\n", proto);
+    } else {
+        print("WARNING: Incorrect protocol specified for kernel.\n");
+    }
+
+    print("         Attempting autodetection.\n");
+    goto autodetect;
 }

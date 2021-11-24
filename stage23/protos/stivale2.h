@@ -1,6 +1,8 @@
 #ifndef __PROTOS__STIVALE2_H__
 #define __PROTOS__STIVALE2_H__
 
-void stivale2_load(char *config, char *cmdline);
+#include <stdbool.h>
+
+bool stivale2_load(char *config, char *cmdline);
 
 #endif

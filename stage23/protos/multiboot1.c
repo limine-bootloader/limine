@@ -23,7 +23,7 @@ __attribute__((noreturn)) void multiboot1_spinup_32(
 
 struct multiboot1_info multiboot1_info = {0};
 
-void multiboot1_load(char *config, char *cmdline) {
+bool multiboot1_load(char *config, char *cmdline) {
     struct file_handle *kernel_file;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
@@ -54,8 +54,10 @@ void multiboot1_load(char *config, char *cmdline) {
         }
     }
 
-    if (header.magic != MULTIBOOT1_HEADER_MAGIC)
-        panic("multiboot1: Could not find header");
+    if (header.magic != MULTIBOOT1_HEADER_MAGIC) {
+        pmm_free(kernel_file, kernel_file_size);
+        return false;
+    }
 
     if (header.magic + header.flags + header.checksum)
         panic("multiboot1: Header checksum is invalid");

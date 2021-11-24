@@ -9,7 +9,7 @@ struct guid {
     uint16_t b;
     uint16_t c;
     uint8_t  d[8];
-} __attribute__((packed));
+};
 
 bool is_valid_guid(const char *s);
 bool string_to_guid_be(struct guid *guid, const char *s);

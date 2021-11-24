@@ -107,6 +107,8 @@ void stivale2_load(char *config, char *cmdline) {
 
     size_t kernel_file_size = kernel_file->size;
 
+    struct volume *kernel_volume = kernel_file->vol;
+
     fclose(kernel_file);
 
     if (bits == -1) {
@@ -237,6 +239,26 @@ failed_to_load_header_section:
 
     strcpy(stivale2_struct.bootloader_brand, "Limine");
     strcpy(stivale2_struct.bootloader_version, LIMINE_VERSION);
+
+    //////////////////////////////////////////////
+    // Create boot volume tag
+    //////////////////////////////////////////////
+    {
+    struct stivale2_struct_tag_boot_volume *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_boot_volume));
+    tag->tag.identifier = STIVALE2_STRUCT_TAG_BOOT_VOLUME_ID;
+
+    if (kernel_volume->guid_valid) {
+        tag->flags |= (1 << 0);
+        memcpy(&tag->guid, &kernel_volume->guid, sizeof(struct stivale2_guid));
+    }
+
+    if (kernel_volume->part_guid_valid) {
+        tag->flags |= (1 << 1);
+        memcpy(&tag->part_guid, &kernel_volume->part_guid, sizeof(struct stivale2_guid));
+    }
+
+    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    }
 
     //////////////////////////////////////////////
     // Create kernel file struct tag

@@ -29,6 +29,8 @@ struct file_handle *fopen(struct volume *part, const char *filename) {
     ret->is_memfile = false;
     ret->readall = false;
 
+    ret->vol = part;
+
 #if bios == 1
     if (part->pxe) {
         if (!tftp_open(ret, 0, 69, filename)) {

@@ -6,7 +6,7 @@
 #include <mm/vmm.h>
 #include <lib/elf.h>
 
-void stivale_load(char *config, char *cmdline);
+bool stivale_load(char *config, char *cmdline);
 
 bool stivale_load_by_anchor(void **_anchor, const char *magic,
                             uint8_t *file, uint64_t filesize);

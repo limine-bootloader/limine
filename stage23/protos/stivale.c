@@ -57,7 +57,7 @@ bool stivale_load_by_anchor(void **_anchor, const char *magic,
 
 struct stivale_struct stivale_struct = {0};
 
-void stivale_load(char *config, char *cmdline) {
+bool stivale_load(char *config, char *cmdline) {
     // BIOS or UEFI?
 #if bios == 1
     stivale_struct.flags |= (1 << 0);
@@ -71,8 +71,6 @@ void stivale_load(char *config, char *cmdline) {
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
         panic("stivale: KERNEL_PATH not specified");
-
-    print("stivale: Loading kernel `%s`...\n", kernel_path);
 
     if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic("stivale: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
@@ -99,7 +97,7 @@ void stivale_load(char *config, char *cmdline) {
     if (bits == -1) {
         struct stivale_anchor *anchor;
         if (!stivale_load_by_anchor((void **)&anchor, "STIVALE1 ANCHOR", kernel, kernel_file_size)) {
-            panic("stivale: Not a valid ELF or anchored file.");
+            goto fail;
         }
 
         bits = anchor->bits;
@@ -108,7 +106,24 @@ void stivale_load(char *config, char *cmdline) {
                sizeof(struct stivale_header));
 
         loaded_by_anchor = true;
+    } else {
+        switch (bits) {
+            case 64:
+                if (elf64_load_section(kernel, &stivale_hdr, ".stivalehdr",
+                                       sizeof(struct stivale_header), slide)) {
+                    goto fail;
+                }
+                break;
+            case 32:
+                if (elf32_load_section(kernel, &stivale_hdr, ".stivalehdr",
+                                       sizeof(struct stivale_header))) {
+                    goto fail;
+                }
+                break;
+        }
     }
+
+    print("stivale: Loading kernel `%s`...\n", kernel_path);
 
     int ret = 0;
     switch (bits) {
@@ -340,6 +355,10 @@ void stivale_load(char *config, char *cmdline) {
     stivale_spinup(bits, want_5lv, &pagemap,
                    entry_point, REPORTED_ADDR((uint64_t)(uintptr_t)&stivale_struct),
                    stivale_hdr.stack, false);
+
+fail:
+    pmm_free(kernel, kernel_file_size);
+    return false;
 }
 
 pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range *ranges, size_t ranges_count,

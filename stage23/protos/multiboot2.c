@@ -19,32 +19,6 @@
 #include <lib/blib.h>
 #include <drivers/vga_textmode.h>
 
-static struct multiboot_header *load_multiboot2_header(uint8_t *kernel) {
-    struct multiboot_header *ptr = NULL;
-
-    size_t header_offset;
-
-    for (header_offset = 0; header_offset < MULTIBOOT_SEARCH; header_offset += MULTIBOOT_HEADER_ALIGN) {
-        uint32_t v;
-        memcpy(&v, kernel + header_offset, 4);
-
-        if (v == MULTIBOOT2_HEADER_MAGIC) {
-            ptr = (void *)(kernel + header_offset);
-            break;
-        }
-    }
-
-    if (ptr->magic != MULTIBOOT2_HEADER_MAGIC) {
-        panic("multiboot2: Could not find header");
-    }
-
-    if (ptr->magic + ptr->architecture + ptr->checksum + ptr->header_length) {
-        panic("mutliboot2: Header checksum is invalid");
-    }
-
-    return ptr;
-}
-
 /// Returns the size required to store the multiboot2 info.
 static size_t get_multiboot2_info_size(
     char *cmdline,
@@ -78,7 +52,7 @@ static size_t get_multiboot2_info_size(
 
 #define append_tag(P, TAG) ({ (P) += ALIGN_UP((TAG)->size, MULTIBOOT_TAG_ALIGN); })
 
-void multiboot2_load(char *config, char* cmdline) {
+bool multiboot2_load(char *config, char* cmdline) {
     struct file_handle *kernel_file;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
@@ -96,7 +70,24 @@ void multiboot2_load(char *config, char* cmdline) {
 
     fclose(kernel_file);
 
-    struct multiboot_header *header = load_multiboot2_header(kernel);
+    struct multiboot_header *header;
+
+    for (size_t header_offset = 0; header_offset < MULTIBOOT_SEARCH; header_offset += MULTIBOOT_HEADER_ALIGN) {
+        header = (void *)(kernel + header_offset);
+
+        if (header->magic == MULTIBOOT2_HEADER_MAGIC) {
+            break;
+        }
+    }
+
+    if (header->magic != MULTIBOOT2_HEADER_MAGIC) {
+        pmm_free(kernel_file, kernel_file_size);
+        return false;
+    }
+
+    if (header->magic + header->architecture + header->checksum + header->header_length) {
+        panic("multiboot2: Header checksum is invalid");
+    }
 
     struct multiboot_header_tag_address *addresstag = NULL;
     struct multiboot_header_tag_framebuffer *fbtag = NULL;

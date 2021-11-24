@@ -345,7 +345,7 @@ struct boot_params {
 
 // End of Linux code
 
-void linux_load(char *config, char *cmdline) {
+bool linux_load(char *config, char *cmdline) {
     struct file_handle *kernel_file;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
@@ -360,7 +360,8 @@ void linux_load(char *config, char *cmdline) {
 
     // validate signature
     if (signature != 0x53726448) {
-        panic("linux: Invalid Linux kernel signature");
+        fclose(kernel_file);
+        return false;
     }
 
     size_t setup_code_size = 0;

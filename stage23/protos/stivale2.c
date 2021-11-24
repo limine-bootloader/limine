@@ -75,14 +75,12 @@ uint64_t stivale2_term_callback_ptr = 0;
 void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t);
 #endif
 
-void stivale2_load(char *config, char *cmdline) {
+bool stivale2_load(char *config, char *cmdline) {
     struct file_handle *kernel_file;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
         panic("stivale2: KERNEL_PATH not specified");
-
-    print("stivale2: Loading kernel `%s`...\n", kernel_path);
 
     if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic("stivale2: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
@@ -114,7 +112,7 @@ void stivale2_load(char *config, char *cmdline) {
     if (bits == -1) {
         struct stivale2_anchor *anchor;
         if (!stivale_load_by_anchor((void **)&anchor, "STIVALE2 ANCHOR", kernel, kernel_file_size)) {
-            panic("stivale2: Not a valid ELF or anchored file.");
+            goto fail;
         }
 
         bits = anchor->bits;
@@ -123,7 +121,24 @@ void stivale2_load(char *config, char *cmdline) {
                sizeof(struct stivale2_header));
 
         loaded_by_anchor = true;
+    } else {
+        switch (bits) {
+            case 64:
+                if (elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
+                                       sizeof(struct stivale2_header), slide)) {
+                    goto fail;
+                }
+                break;
+            case 32:
+                if (elf32_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
+                                       sizeof(struct stivale2_header))) {
+                    goto fail;
+                }
+                break;
+        }
     }
+
+    print("stivale2: Loading kernel `%s`...\n", kernel_path);
 
     bool want_pmrs = false;
     bool want_fully_virtual = false;
@@ -766,4 +781,8 @@ have_tm_tag:;
     stivale_spinup(bits, want_5lv, &pagemap, entry_point,
                    REPORTED_ADDR((uint64_t)(uintptr_t)&stivale2_struct),
                    stivale2_hdr.stack, want_pmrs);
+
+fail:
+    pmm_free(kernel, kernel_file_size);
+    return false;
 }

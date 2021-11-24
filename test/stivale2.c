@@ -7,10 +7,19 @@ typedef uint8_t stack[4096];
 static stack stacks[64] = {0};
 void stivale2_main(struct stivale2_struct *info);
 
+struct stivale2_header_tag_slide_hhdm slide_hhdm = {
+    .tag = {
+        .identifier = STIVALE2_HEADER_TAG_SLIDE_HHDM_ID,
+        .next       = 0
+    },
+    .flags = 0,
+    .alignment = 0x10000000
+};
+
 struct stivale2_header_tag_terminal terminal_request = {
     .tag = {
         .identifier = STIVALE2_HEADER_TAG_TERMINAL_ID,
-        .next       = 0
+        .next       = (uint64_t)&slide_hhdm
     },
     .flags = 0
 };
@@ -202,6 +211,11 @@ void stivale2_main(struct stivale2_struct *info) {
                     e9_printf("\t\tBase: %x  Length: %x  Perms: %x",
                           t->pmrs[i].base, t->pmrs[i].length, t->pmrs[i].permissions);
                 }
+                break;
+            }
+            case STIVALE2_STRUCT_TAG_HHDM_ID: {
+                struct stivale2_struct_tag_hhdm *t = (struct stivale2_struct_tag_hhdm *)tag;
+                e9_printf("Higher half direct map at: %x", t->addr);
                 break;
             }
             case STIVALE2_STRUCT_TAG_KERNEL_BASE_ADDRESS_ID: {

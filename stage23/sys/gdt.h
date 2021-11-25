@@ -24,4 +24,6 @@ struct gdt_desc {
 
 extern struct gdtr gdt;
 
+void init_gdt(void);
+
 #endif

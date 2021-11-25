@@ -8,6 +8,7 @@
 #include <sys/e820.h>
 #include <sys/a20.h>
 #include <sys/idt.h>
+#include <sys/gdt.h>
 #include <lib/print.h>
 #include <fs/file.h>
 #include <lib/elf.h>
@@ -66,6 +67,8 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     term_notready();
 
     init_memmap();
+
+    init_gdt();
 
     disk_create_index();
 

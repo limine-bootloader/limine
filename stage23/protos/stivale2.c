@@ -15,6 +15,7 @@
 #include <lib/uri.h>
 #include <sys/smp.h>
 #include <sys/cpu.h>
+#include <sys/gdt.h>
 #include <lib/fb.h>
 #include <lib/term.h>
 #include <sys/pic.h>
@@ -245,6 +246,17 @@ failed_to_load_header_section:
             direct_map_offset += (rand64() & ~(slt->alignment - 1)) & 0xffffffffff;
         }
     }
+
+    struct gdtr *local_gdt = ext_mem_alloc(sizeof(struct gdtr));
+    local_gdt->limit = gdt.limit;
+    uint64_t local_gdt_base = (uint64_t)gdt.ptr;
+    if (stivale2_hdr.flags & (1 << 1)) {
+        local_gdt_base += direct_map_offset;
+    }
+    local_gdt->ptr = local_gdt_base;
+#if bios == 1
+    local_gdt->ptr_hi = local_gdt_base >> 32;
+#endif
 
     if (stivale2_hdr.entry_point != 0)
         entry_point = stivale2_hdr.entry_point;
@@ -807,7 +819,7 @@ have_tm_tag:;
 
     stivale_spinup(bits, want_5lv, &pagemap, entry_point,
                    REPORTED_ADDR((uint64_t)(uintptr_t)stivale2_struct),
-                   stivale2_hdr.stack, want_pmrs);
+                   stivale2_hdr.stack, want_pmrs, (uintptr_t)local_gdt);
 
     __builtin_unreachable();
 

@@ -7,11 +7,13 @@ __attribute__((noreturn)) void stivale_spinup_32(
                  int bits, bool level5pg, bool enable_nx, uint32_t pagemap_top_lv,
                  uint32_t entry_point_lo, uint32_t entry_point_hi,
                  uint32_t stivale_struct_lo, uint32_t stivale_struct_hi,
-                 uint32_t stack_lo, uint32_t stack_hi) {
+                 uint32_t stack_lo, uint32_t stack_hi,
+                 uint32_t local_gdt) {
     uint64_t casted_to_64[] = {
         (uint64_t)stivale_struct_lo | ((uint64_t)stivale_struct_hi << 32),
         (uint64_t)entry_point_lo | ((uint64_t)entry_point_hi << 32),
-        (uint64_t)stack_lo | ((uint64_t)stack_hi << 32)
+        (uint64_t)stack_lo | ((uint64_t)stack_hi << 32),
+        (uint64_t)local_gdt
     };
 
     if (bits == 64) {
@@ -70,7 +72,11 @@ __attribute__((noreturn)) void stivale_spinup_32(
             // Move in 64-bit values
             "movq 0x00(%%rsi), %%rdi\n\t"
             "movq 0x08(%%rsi), %%rbx\n\t"
+            "movq 0x18(%%rsi), %%rax\n\t"
             "movq 0x10(%%rsi), %%rsi\n\t"
+
+            // Load 64 bit GDT
+            "lgdt (%%rax)\n\t"
 
             // Let's pretend we push a return address
             "testq %%rsi, %%rsi\n\t"

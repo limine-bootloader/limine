@@ -28,8 +28,6 @@ bool multiboot1_load(char *config, char *cmdline) {
     if (kernel_path == NULL)
         panic("multiboot1: KERNEL_PATH not specified");
 
-    print("multiboot1: Loading kernel `%s`...\n", kernel_path);
-
     if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic("multiboot1: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
@@ -56,6 +54,8 @@ bool multiboot1_load(char *config, char *cmdline) {
         pmm_free(kernel_file, kernel_file_size);
         return false;
     }
+
+    print("multiboot1: Loading kernel `%s`...\n", kernel_path);
 
     struct multiboot1_info *multiboot1_info = conv_mem_alloc(sizeof(struct multiboot1_info));
 

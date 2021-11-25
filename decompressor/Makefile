@@ -3,6 +3,7 @@ This makefile requires GNU Make.
 endif
 
 BUILDDIR =
+override BUILDDIR := $(shell echo '$(BUILDDIR)' | sed 's/ /\\ /g')
 
 ifeq ($(BUILDDIR), )
 	$(error BUILDDIR not specified)
@@ -69,11 +70,11 @@ all:
 	$(MAKE) $(BUILDDIR)/decompressor.bin
 
 builddir:
-	for i in $(OBJ); do mkdir -p `dirname $$i`; done
+	for i in $(OBJ); do mkdir -p "`dirname "$$i"`"; done
 
 $(BUILDDIR)/decompressor.bin: $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o
-	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $(BUILDDIR)/decompressor.elf
-	$(TOOLCHAIN_OBJCOPY) -O binary $(BUILDDIR)/decompressor.elf $@
+	$(TOOLCHAIN_LD) $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $(BUILDDIR)/decompressor.elf
+	$(TOOLCHAIN_OBJCOPY) -O binary $(BUILDDIR)/decompressor.elf "$@"
 
 $(BUILDDIR)/tinf-copied: ../tinf/*
 	rm -rf $(BUILDDIR)/tinf
@@ -81,15 +82,15 @@ $(BUILDDIR)/tinf-copied: ../tinf/*
 	touch $(BUILDDIR)/tinf-copied
 
 $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o: $(BUILDDIR)/tinf-copied
-	$(TOOLCHAIN_CC) $(CFLAGS) -Os $(INTERNAL_CFLAGS) -c $(@:.o=.c) -o $@
+	$(TOOLCHAIN_CC) $(CFLAGS) -Os $(INTERNAL_CFLAGS) -c "$(@:.o=.c)" -o "$@"
 
 -include $(HEADER_DEPS)
 
 $(BUILDDIR)/%.o: %.c $(BUILDDIR)/tinf-copied
-	$(TOOLCHAIN_CC) $(CFLAGS) -Os $(INTERNAL_CFLAGS) -c $< -o $@
+	$(TOOLCHAIN_CC) $(CFLAGS) -Os $(INTERNAL_CFLAGS) -c "$<" -o "$@"
 
 $(BUILDDIR)/%.o: %.asm
-	nasm $< -f elf32 -o $@
+	nasm "$<" -f elf32 -o "$@"
 
 clean:
 	rm -rf $(BUILDDIR)

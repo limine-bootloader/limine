@@ -6,6 +6,7 @@ PREFIX ?= /usr/local
 DESTDIR ?=
 
 BUILDDIR ?= $(shell pwd)/build
+override BUILDDIR := $(shell echo '$(BUILDDIR)' | sed 's/ /\\ /g')
 BINDIR ?= $(BUILDDIR)/bin
 
 export PATH := $(shell pwd)/toolchain/bin:$(PATH)
@@ -57,7 +58,7 @@ all:
 
 .PHONY: limine-install
 limine-install:
-	$(MAKE) -C limine-install LIMINE_HDD_BIN="$(BINDIR)/limine-hdd.bin" BUILDDIR="$(BINDIR)"
+	$(MAKE) -C limine-install LIMINE_HDD_BIN=$(BINDIR)/limine-hdd.bin BUILDDIR=$(BINDIR)
 
 .PHONY: clean
 clean: limine-bios-clean limine-uefi-clean limine-uefi32-clean
@@ -78,9 +79,9 @@ install: all
 
 $(BUILDDIR)/stage1: $(STAGE1_FILES) $(BUILDDIR)/decompressor/decompressor.bin $(BUILDDIR)/stage23-bios/stage2.bin.gz
 	mkdir -p $(BINDIR)
-	cd stage1/hdd && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'$(BUILDDIR)'" -o $(BINDIR)/limine-hdd.bin
-	cd stage1/cd  && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'$(BUILDDIR)'" -o $(BINDIR)/limine-cd.bin
-	cd stage1/pxe && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'$(BUILDDIR)'" -o $(BINDIR)/limine-pxe.bin
+	cd stage1/hdd && nasm bootsect.asm -Werror -fbin -DBUILDDIR=\'$(BUILDDIR)\' -o $(BINDIR)/limine-hdd.bin
+	cd stage1/cd  && nasm bootsect.asm -Werror -fbin -DBUILDDIR=\'$(BUILDDIR)\' -o $(BINDIR)/limine-cd.bin
+	cd stage1/pxe && nasm bootsect.asm -Werror -fbin -DBUILDDIR=\'$(BUILDDIR)\' -o $(BINDIR)/limine-pxe.bin
 	cp $(BUILDDIR)/stage23-bios/limine.sys $(BINDIR)/
 	touch $(BUILDDIR)/stage1
 
@@ -91,15 +92,15 @@ limine-bios: stage23-bios decompressor
 .PHONY: $(BINDIR)/limine-eltorito-efi.bin
 $(BINDIR)/limine-eltorito-efi.bin:
 	mkdir -p $(BINDIR)
-	dd if=/dev/zero of=$@ bs=512 count=2880
-	( mformat -i $@ -f 1440 :: && \
-	  mmd -D s -i $@ ::/EFI && \
-	  mmd -D s -i $@ ::/EFI/BOOT && \
+	dd if=/dev/zero of="$@" bs=512 count=2880
+	( mformat -i "$@" -f 1440 :: && \
+	  mmd -D s -i "$@" ::/EFI && \
+	  mmd -D s -i "$@" ::/EFI/BOOT && \
 	  ( ( [ -f $(BUILDDIR)/stage23-uefi/BOOTX64.EFI ] && \
-	      mcopy -D o -i $@ $(BUILDDIR)/stage23-uefi/BOOTX64.EFI ::/EFI/BOOT ) || true ) && \
+	      mcopy -D o -i "$@" $(BUILDDIR)/stage23-uefi/BOOTX64.EFI ::/EFI/BOOT ) || true ) && \
 	  ( ( [ -f $(BUILDDIR)/stage23-uefi32/BOOTIA32.EFI ] && \
-	      mcopy -D o -i $@ $(BUILDDIR)/stage23-uefi32/BOOTIA32.EFI ::/EFI/BOOT ) || true ) \
-	) || rm -f $@
+	      mcopy -D o -i "$@" $(BUILDDIR)/stage23-uefi32/BOOTIA32.EFI ::/EFI/BOOT ) || true ) \
+	) || rm -f "$@"
 
 .PHONY: limine-uefi
 limine-uefi:
@@ -156,35 +157,35 @@ stivale:
 
 .PHONY: stage23-uefi
 stage23-uefi: stivale
-	$(MAKE) -C stage23 all TARGET=uefi BUILDDIR="$(BUILDDIR)/stage23-uefi"
+	$(MAKE) -C stage23 all TARGET=uefi BUILDDIR=$(BUILDDIR)/stage23-uefi
 
 .PHONY: stage23-uefi-clean
 stage23-uefi-clean:
-	$(MAKE) -C stage23 clean TARGET=uefi BUILDDIR="$(BUILDDIR)/stage23-uefi"
+	$(MAKE) -C stage23 clean TARGET=uefi BUILDDIR=$(BUILDDIR)/stage23-uefi
 
 .PHONY: stage23-uefi32
 stage23-uefi32: stivale
-	$(MAKE) -C stage23 all TARGET=uefi32 BUILDDIR="$(BUILDDIR)/stage23-uefi32"
+	$(MAKE) -C stage23 all TARGET=uefi32 BUILDDIR=$(BUILDDIR)/stage23-uefi32
 
 .PHONY: stage23-uefi32-clean
 stage23-uefi32-clean:
-	$(MAKE) -C stage23 clean TARGET=uefi32 BUILDDIR="$(BUILDDIR)/stage23-uefi32"
+	$(MAKE) -C stage23 clean TARGET=uefi32 BUILDDIR=$(BUILDDIR)/stage23-uefi32
 
 .PHONY: stage23-bios
 stage23-bios: stivale
-	$(MAKE) -C stage23 all TARGET=bios BUILDDIR="$(BUILDDIR)/stage23-bios"
+	$(MAKE) -C stage23 all TARGET=bios BUILDDIR=$(BUILDDIR)/stage23-bios
 
 .PHONY: stage23-bios-clean
 stage23-bios-clean:
-	$(MAKE) -C stage23 clean TARGET=bios BUILDDIR="$(BUILDDIR)/stage23-bios"
+	$(MAKE) -C stage23 clean TARGET=bios BUILDDIR=$(BUILDDIR)/stage23-bios
 
 .PHONY: decompressor
 decompressor:
-	$(MAKE) -C decompressor all BUILDDIR="$(BUILDDIR)/decompressor"
+	$(MAKE) -C decompressor all BUILDDIR=$(BUILDDIR)/decompressor
 
 .PHONY: decompressor-clean
 decompressor-clean:
-	$(MAKE) -C decompressor clean BUILDDIR="$(BUILDDIR)/decompressor"
+	$(MAKE) -C decompressor clean BUILDDIR=$(BUILDDIR)/decompressor
 
 .PHONY: test-clean
 test-clean:
@@ -196,7 +197,7 @@ toolchain:
 	MAKE="$(MAKE)" aux/make_toolchain.sh "`pwd`/toolchain" -j$(NCPUS)
 
 gnu-efi:
-	git clone https://github.com/limine-bootloader/gnu-efi.git --branch=3.0.14 --depth=1 $@
+	git clone https://github.com/limine-bootloader/gnu-efi.git --branch=3.0.14 --depth=1 "$@"
 	cp aux/elf/* gnu-efi/inc/
 
 ovmf-x64:

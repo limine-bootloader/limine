@@ -139,7 +139,13 @@ bool init_vbe(struct fb_info *ret,
     struct resolution fallback_resolutions[] = {
         { 1024, 768, 32 },
         { 800,  600, 32 },
-        { 640,  480, 32 }
+        { 640,  480, 32 },
+        { 1024, 768, 24 },
+        { 800,  600, 24 },
+        { 640,  480, 24 },
+        { 1024, 768, 16 },
+        { 800,  600, 16 },
+        { 640,  480, 16 }
     };
 
     if (!target_width || !target_height || !target_bpp) {

@@ -15,6 +15,7 @@
 #include <lib/uri.h>
 #include <sys/smp.h>
 #include <sys/cpu.h>
+#include <sys/gdt.h>
 #include <lib/fb.h>
 #include <lib/term.h>
 #include <sys/pic.h>
@@ -30,8 +31,6 @@
 #define REPORTED_ADDR(PTR) \
     ((PTR) + ((stivale2_hdr.flags & (1 << 1)) ? \
     direct_map_offset : 0))
-
-struct stivale2_struct stivale2_struct = {0};
 
 #define get_phys_addr(addr) ({ \
     uintptr_t r1; \
@@ -77,6 +76,8 @@ void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t);
 #endif
 
 bool stivale2_load(char *config, char *cmdline) {
+    struct stivale2_struct *stivale2_struct = ext_mem_alloc(sizeof(struct stivale2_struct));
+
     struct file_handle *kernel_file;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
@@ -246,6 +247,17 @@ failed_to_load_header_section:
         }
     }
 
+    struct gdtr *local_gdt = ext_mem_alloc(sizeof(struct gdtr));
+    local_gdt->limit = gdt.limit;
+    uint64_t local_gdt_base = (uint64_t)gdt.ptr;
+    if (stivale2_hdr.flags & (1 << 1)) {
+        local_gdt_base += direct_map_offset;
+    }
+    local_gdt->ptr = local_gdt_base;
+#if bios == 1
+    local_gdt->ptr_hi = local_gdt_base >> 32;
+#endif
+
     if (stivale2_hdr.entry_point != 0)
         entry_point = stivale2_hdr.entry_point;
 
@@ -266,8 +278,8 @@ failed_to_load_header_section:
         panic("stivale2: The stack cannot be 0 for 32-bit kernels");
     }
 
-    strcpy(stivale2_struct.bootloader_brand, "Limine");
-    strcpy(stivale2_struct.bootloader_version, LIMINE_VERSION);
+    strcpy(stivale2_struct->bootloader_brand, "Limine");
+    strcpy(stivale2_struct->bootloader_version, LIMINE_VERSION);
 
     //////////////////////////////////////////////
     // Create boot volume tag
@@ -286,7 +298,7 @@ failed_to_load_header_section:
         memcpy(&tag->part_guid, &kernel_volume->part_guid, sizeof(struct stivale2_guid));
     }
 
-    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
 
     //////////////////////////////////////////////
@@ -298,7 +310,7 @@ failed_to_load_header_section:
 
     tag->kernel_file = REPORTED_ADDR((uint64_t)(uintptr_t)kernel);
 
-    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
 
     //////////////////////////////////////////////
@@ -311,7 +323,7 @@ failed_to_load_header_section:
     tag->kernel_file = REPORTED_ADDR((uint64_t)(uintptr_t)kernel);
     tag->kernel_size = kernel_file_size;
 
-    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
 
     //////////////////////////////////////////////
@@ -323,7 +335,7 @@ failed_to_load_header_section:
 
     tag->kernel_slide = slide;
 
-    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
 
     //////////////////////////////////////////////
@@ -337,7 +349,7 @@ failed_to_load_header_section:
     tag->flags = 1 << 0;   // bit 0 = BIOS boot
 #endif
 
-    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
 
     //////////////////////////////////////////////
@@ -406,7 +418,7 @@ failed_to_load_header_section:
         }
     }
 
-    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
 
     //////////////////////////////////////////////
@@ -420,7 +432,7 @@ failed_to_load_header_section:
     if (rsdp)
         tag->rsdp = REPORTED_ADDR(rsdp);
 
-    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
 
     //////////////////////////////////////////////
@@ -438,7 +450,7 @@ failed_to_load_header_section:
     if (smbios_entry_64)
         tag->smbios_entry_64 = REPORTED_ADDR(smbios_entry_64);
 
-    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
 
     //////////////////////////////////////////////
@@ -450,7 +462,7 @@ failed_to_load_header_section:
 
     tag->cmdline = REPORTED_ADDR((uint64_t)(size_t)cmdline);
 
-    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
 
     //////////////////////////////////////////////
@@ -463,7 +475,7 @@ failed_to_load_header_section:
     tag->epoch = time();
     printv("stivale2: Current epoch: %U\n", tag->epoch);
 
-    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
 
     //////////////////////////////////////////////
@@ -561,7 +573,7 @@ failed_to_load_header_section:
         tag->cols = term_cols;
         tag->rows = term_rows;
 
-        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+        append_tag(stivale2_struct, (struct stivale2_tag *)tag);
 
         if (textmode) {
 #if bios == 1
@@ -599,7 +611,7 @@ have_fb_tag:;
             tag->blue_mask_size     = fb->blue_mask_size;
             tag->blue_mask_shift    = fb->blue_mask_shift;
 
-            append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+            append_tag(stivale2_struct, (struct stivale2_tag *)tag);
         }
     } else {
 #if bios == 1
@@ -615,7 +627,7 @@ have_tm_tag:;
         tmtag->cols = 80;
         tmtag->bytes_per_char = 2;
 
-        append_tag(&stivale2_struct, (struct stivale2_tag *)tmtag);
+        append_tag(stivale2_struct, (struct stivale2_tag *)tmtag);
 #endif
     }
     }
@@ -634,7 +646,7 @@ have_tm_tag:;
 
         memcpy(tag->edid_information, edid_info, sizeof(struct edid_info_struct));
 
-        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+        append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
     }
 
@@ -647,7 +659,7 @@ have_tm_tag:;
 
     tag->addr = direct_map_offset;
 
-    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
 
 #if bios == 1
@@ -658,7 +670,7 @@ have_tm_tag:;
         struct stivale2_struct_tag_pxe_server_info *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_pxe_server_info));
         tag->tag.identifier = STIVALE2_STRUCT_TAG_PXE_SERVER_INFO;
         tag->server_ip = get_boot_server_info();
-        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+        append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
 #endif
 
@@ -677,7 +689,7 @@ have_tm_tag:;
 
         memcpy(tag->pmrs, ranges, ranges_count * sizeof(struct stivale2_pmr));
 
-        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+        append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
     }
 
@@ -694,7 +706,7 @@ have_tm_tag:;
         tag->physical_base_address = physical_base;
         tag->virtual_base_address = virtual_base;
 
-        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+        append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
     }
 
@@ -708,7 +720,7 @@ have_tm_tag:;
 
         tag->system_table = REPORTED_ADDR((uint64_t)(uintptr_t)gST);
 
-        append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+        append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
 #endif
 
@@ -747,7 +759,7 @@ have_tm_tag:;
             tag->cpu_count      = cpu_count;
             tag->flags         |= (smp_hdr_tag->flags & 1) && x2apic_check();
 
-            append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+            append_tag(stivale2_struct, (struct stivale2_tag *)tag);
         }
     }
     }
@@ -780,7 +792,7 @@ have_tm_tag:;
     memcpy((void*)tag + sizeof(struct stivale2_struct_tag_memmap),
            mmap, sizeof(struct e820_entry_t) * mmap_entries);
 
-    append_tag(&stivale2_struct, (struct stivale2_tag *)tag);
+    append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
 
     //////////////////////////////////////////////
@@ -789,7 +801,7 @@ have_tm_tag:;
     if (verbose) {
         print("stivale2: Generated tags:\n");
         struct stivale2_tag *taglist =
-                    (void*)(uintptr_t)(stivale2_struct.tags - ((stivale2_hdr.flags & (1 << 1)) ? direct_map_offset : 0));
+                    (void*)(uintptr_t)(stivale2_struct->tags - ((stivale2_hdr.flags & (1 << 1)) ? direct_map_offset : 0));
         for (size_t i = 0; ; i++) {
             print("          Tag #%u  ID: %X\n", i, taglist->identifier);
             if (taglist->next) {
@@ -806,12 +818,13 @@ have_tm_tag:;
     term_runtime = true;
 
     stivale_spinup(bits, want_5lv, &pagemap, entry_point,
-                   REPORTED_ADDR((uint64_t)(uintptr_t)&stivale2_struct),
-                   stivale2_hdr.stack, want_pmrs);
+                   REPORTED_ADDR((uint64_t)(uintptr_t)stivale2_struct),
+                   stivale2_hdr.stack, want_pmrs, (uintptr_t)local_gdt);
 
     __builtin_unreachable();
 
 fail:
     pmm_free(kernel, kernel_file_size);
+    pmm_free(stivale2_struct, sizeof(struct stivale2_struct));
     return false;
 }

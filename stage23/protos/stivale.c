@@ -55,16 +55,16 @@ bool stivale_load_by_anchor(void **_anchor, const char *magic,
     return true;
 }
 
-struct stivale_struct stivale_struct = {0};
-
 bool stivale_load(char *config, char *cmdline) {
+    struct stivale_struct *stivale_struct = ext_mem_alloc(sizeof(struct stivale_struct));
+
     // BIOS or UEFI?
 #if bios == 1
-    stivale_struct.flags |= (1 << 0);
+    stivale_struct->flags |= (1 << 0);
 #endif
 
-    stivale_struct.flags |= (1 << 1);    // we give colour information
-    stivale_struct.flags |= (1 << 2);    // we give SMBIOS information
+    stivale_struct->flags |= (1 << 1);    // we give colour information
+    stivale_struct->flags |= (1 << 2);    // we give SMBIOS information
 
     struct file_handle *kernel_file;
 
@@ -187,6 +187,17 @@ bool stivale_load(char *config, char *cmdline) {
 
     uint64_t direct_map_offset = want_5lv ? 0xff00000000000000 : 0xffff800000000000;
 
+    struct gdtr *local_gdt = ext_mem_alloc(sizeof(struct gdtr));
+    local_gdt->limit = gdt.limit;
+    uint64_t local_gdt_base = (uint64_t)gdt.ptr;
+    if (stivale_hdr.flags & (1 << 3)) {
+        local_gdt_base += direct_map_offset;
+    }
+    local_gdt->ptr = local_gdt_base;
+#if bios == 1
+    local_gdt->ptr_hi = local_gdt_base >> 32;
+#endif
+
     if (stivale_hdr.entry_point != 0)
         entry_point = stivale_hdr.entry_point;
 
@@ -207,8 +218,8 @@ bool stivale_load(char *config, char *cmdline) {
         panic("stivale: The stack cannot be 0 for 32-bit kernels");
     }
 
-    stivale_struct.module_count = 0;
-    uint64_t *prev_mod_ptr = &stivale_struct.modules;
+    stivale_struct->module_count = 0;
+    uint64_t *prev_mod_ptr = &stivale_struct->modules;
     for (int i = 0; ; i++) {
         struct conf_tuple conf_tuple =
                 config_get_tuple(config, i, "MODULE_PATH", "MODULE_STRING");
@@ -219,7 +230,7 @@ bool stivale_load(char *config, char *cmdline) {
         if (module_path == NULL)
             break;
 
-        stivale_struct.module_count++;
+        stivale_struct->module_count++;
 
         struct stivale_module *m = ext_mem_alloc(sizeof(struct stivale_module));
 
@@ -270,20 +281,20 @@ bool stivale_load(char *config, char *cmdline) {
     uint64_t rsdp = (uint64_t)(size_t)acpi_get_rsdp();
 
     if (rsdp)
-        stivale_struct.rsdp = REPORTED_ADDR(rsdp);
+        stivale_struct->rsdp = REPORTED_ADDR(rsdp);
 
     uint64_t smbios_entry_32 = 0, smbios_entry_64 = 0;
     acpi_get_smbios((void **)&smbios_entry_32, (void **)&smbios_entry_64);
 
     if (smbios_entry_32)
-        stivale_struct.smbios_entry_32 = REPORTED_ADDR(smbios_entry_32);
+        stivale_struct->smbios_entry_32 = REPORTED_ADDR(smbios_entry_32);
     if (smbios_entry_64)
-        stivale_struct.smbios_entry_64 = REPORTED_ADDR(smbios_entry_64);
+        stivale_struct->smbios_entry_64 = REPORTED_ADDR(smbios_entry_64);
 
-    stivale_struct.cmdline = REPORTED_ADDR((uint64_t)(size_t)cmdline);
+    stivale_struct->cmdline = REPORTED_ADDR((uint64_t)(size_t)cmdline);
 
-    stivale_struct.epoch = time();
-    printv("stivale: Current epoch: %U\n", stivale_struct.epoch);
+    stivale_struct->epoch = time();
+    printv("stivale: Current epoch: %U\n", stivale_struct->epoch);
 
     term_deinit();
 
@@ -304,18 +315,18 @@ bool stivale_load(char *config, char *cmdline) {
                            (uint64_t)fbinfo.framebuffer_pitch * fbinfo.framebuffer_height,
                            MEMMAP_FRAMEBUFFER, false, false, false, true);
 
-        stivale_struct.framebuffer_addr    = REPORTED_ADDR((uint64_t)fbinfo.framebuffer_addr);
-        stivale_struct.framebuffer_width   = fbinfo.framebuffer_width;
-        stivale_struct.framebuffer_height  = fbinfo.framebuffer_height;
-        stivale_struct.framebuffer_bpp     = fbinfo.framebuffer_bpp;
-        stivale_struct.framebuffer_pitch   = fbinfo.framebuffer_pitch;
-        stivale_struct.fb_memory_model     = STIVALE_FBUF_MMODEL_RGB;
-        stivale_struct.fb_red_mask_size    = fbinfo.red_mask_size;
-        stivale_struct.fb_red_mask_shift   = fbinfo.red_mask_shift;
-        stivale_struct.fb_green_mask_size  = fbinfo.green_mask_size;
-        stivale_struct.fb_green_mask_shift = fbinfo.green_mask_shift;
-        stivale_struct.fb_blue_mask_size   = fbinfo.blue_mask_size;
-        stivale_struct.fb_blue_mask_shift  = fbinfo.blue_mask_shift;
+        stivale_struct->framebuffer_addr    = REPORTED_ADDR((uint64_t)fbinfo.framebuffer_addr);
+        stivale_struct->framebuffer_width   = fbinfo.framebuffer_width;
+        stivale_struct->framebuffer_height  = fbinfo.framebuffer_height;
+        stivale_struct->framebuffer_bpp     = fbinfo.framebuffer_bpp;
+        stivale_struct->framebuffer_pitch   = fbinfo.framebuffer_pitch;
+        stivale_struct->fb_memory_model     = STIVALE_FBUF_MMODEL_RGB;
+        stivale_struct->fb_red_mask_size    = fbinfo.red_mask_size;
+        stivale_struct->fb_red_mask_shift   = fbinfo.red_mask_shift;
+        stivale_struct->fb_green_mask_size  = fbinfo.green_mask_size;
+        stivale_struct->fb_green_mask_shift = fbinfo.green_mask_shift;
+        stivale_struct->fb_blue_mask_size   = fbinfo.blue_mask_size;
+        stivale_struct->fb_blue_mask_shift  = fbinfo.blue_mask_shift;
     } else {
 #if uefi == 1
         panic("stivale: Cannot use text mode with UEFI.");
@@ -351,17 +362,18 @@ bool stivale_load(char *config, char *cmdline) {
 
     memcpy(mmap_copy, mmap, mmap_entries * sizeof(struct e820_entry_t));
 
-    stivale_struct.memory_map_entries = (uint64_t)mmap_entries;
-    stivale_struct.memory_map_addr    = REPORTED_ADDR((uint64_t)(size_t)mmap_copy);
+    stivale_struct->memory_map_entries = (uint64_t)mmap_entries;
+    stivale_struct->memory_map_addr    = REPORTED_ADDR((uint64_t)(size_t)mmap_copy);
 
     stivale_spinup(bits, want_5lv, &pagemap,
-                   entry_point, REPORTED_ADDR((uint64_t)(uintptr_t)&stivale_struct),
-                   stivale_hdr.stack, false);
+                   entry_point, REPORTED_ADDR((uint64_t)(uintptr_t)stivale_struct),
+                   stivale_hdr.stack, false, (uintptr_t)local_gdt);
 
     __builtin_unreachable();
 
 fail:
     pmm_free(kernel, kernel_file_size);
+    pmm_free(stivale_struct, sizeof(struct stivale_struct));
     return false;
 }
 
@@ -453,12 +465,12 @@ __attribute__((noreturn)) void stivale_spinup_32(
                  int bits, bool level5pg, uint32_t pagemap_top_lv,
                  uint32_t entry_point_lo, uint32_t entry_point_hi,
                  uint32_t stivale_struct_lo, uint32_t stivale_struct_hi,
-                 uint32_t stack_lo, uint32_t stack_hi);
+                 uint32_t stack_lo, uint32_t stack_hi, uint32_t local_gdt);
 
 __attribute__((noreturn)) void stivale_spinup(
                  int bits, bool level5pg, pagemap_t *pagemap,
                  uint64_t entry_point, uint64_t _stivale_struct, uint64_t stack,
-                 bool enable_nx) {
+                 bool enable_nx, uint32_t local_gdt) {
 #if bios == 1
     if (bits == 64) {
         // If we're going 64, we might as well call this BIOS interrupt
@@ -480,9 +492,9 @@ __attribute__((noreturn)) void stivale_spinup(
 
     irq_flush_type = IRQ_PIC_APIC_FLUSH;
 
-    common_spinup(stivale_spinup_32, 10,
+    common_spinup(stivale_spinup_32, 11,
         bits, level5pg, enable_nx, (uint32_t)(uintptr_t)pagemap->top_level,
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
         (uint32_t)_stivale_struct, (uint32_t)(_stivale_struct >> 32),
-        (uint32_t)stack, (uint32_t)(stack >> 32));
+        (uint32_t)stack, (uint32_t)(stack >> 32), local_gdt);
 }

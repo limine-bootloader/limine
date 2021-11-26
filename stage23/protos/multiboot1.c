@@ -21,16 +21,12 @@ __attribute__((noreturn)) void multiboot1_spinup_32(
                  uint32_t entry_point,
                  uint32_t multiboot1_info);
 
-struct multiboot1_info multiboot1_info = {0};
-
 bool multiboot1_load(char *config, char *cmdline) {
     struct file_handle *kernel_file;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
         panic("multiboot1: KERNEL_PATH not specified");
-
-    print("multiboot1: Loading kernel `%s`...\n", kernel_path);
 
     if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic("multiboot1: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
@@ -58,6 +54,10 @@ bool multiboot1_load(char *config, char *cmdline) {
         pmm_free(kernel_file, kernel_file_size);
         return false;
     }
+
+    print("multiboot1: Loading kernel `%s`...\n", kernel_path);
+
+    struct multiboot1_info *multiboot1_info = conv_mem_alloc(sizeof(struct multiboot1_info));
 
     if (header.magic + header.flags + header.checksum)
         panic("multiboot1: Header checksum is invalid");
@@ -128,8 +128,8 @@ bool multiboot1_load(char *config, char *cmdline) {
     if (n_modules) {
         struct multiboot1_module *mods = conv_mem_alloc(sizeof(*mods) * n_modules);
 
-        multiboot1_info.mods_count = n_modules;
-        multiboot1_info.mods_addr = (uint32_t)(size_t)mods;
+        multiboot1_info->mods_count = n_modules;
+        multiboot1_info->mods_addr = (uint32_t)(size_t)mods;
 
         for (size_t i = 0; i < n_modules; i++) {
             struct multiboot1_module *m = mods + i;
@@ -170,21 +170,21 @@ bool multiboot1_load(char *config, char *cmdline) {
             }
         }
 
-        multiboot1_info.flags |= (1 << 3);
+        multiboot1_info->flags |= (1 << 3);
     }
 
     char *lowmem_cmdline = conv_mem_alloc(strlen(cmdline) + 1);
     strcpy(lowmem_cmdline, cmdline);
-    multiboot1_info.cmdline = (uint32_t)(size_t)lowmem_cmdline;
+    multiboot1_info->cmdline = (uint32_t)(size_t)lowmem_cmdline;
     if (cmdline)
-        multiboot1_info.flags |= (1 << 2);
+        multiboot1_info->flags |= (1 << 2);
 
     char *bootload_name = "Limine";
     char *lowmem_bootname = conv_mem_alloc(strlen(bootload_name) + 1);
     strcpy(lowmem_bootname, bootload_name);
 
-    multiboot1_info.bootloader_name = (uint32_t)(size_t)lowmem_bootname;
-    multiboot1_info.flags |= (1 << 9);
+    multiboot1_info->bootloader_name = (uint32_t)(size_t)lowmem_bootname;
+    multiboot1_info->flags |= (1 << 9);
 
     term_deinit();
 
@@ -203,18 +203,18 @@ bool multiboot1_load(char *config, char *cmdline) {
                 goto nofb;
             }
 
-            multiboot1_info.fb_addr    = (uint64_t)fbinfo.framebuffer_addr;
-            multiboot1_info.fb_width   = fbinfo.framebuffer_width;
-            multiboot1_info.fb_height  = fbinfo.framebuffer_height;
-            multiboot1_info.fb_bpp     = fbinfo.framebuffer_bpp;
-            multiboot1_info.fb_pitch   = fbinfo.framebuffer_pitch;
-            multiboot1_info.fb_type    = 1;
-            multiboot1_info.fb_red_mask_size    = fbinfo.red_mask_size;
-            multiboot1_info.fb_red_mask_shift   = fbinfo.red_mask_shift;
-            multiboot1_info.fb_green_mask_size  = fbinfo.green_mask_size;
-            multiboot1_info.fb_green_mask_shift = fbinfo.green_mask_shift;
-            multiboot1_info.fb_blue_mask_size   = fbinfo.blue_mask_size;
-            multiboot1_info.fb_blue_mask_shift  = fbinfo.blue_mask_shift;
+            multiboot1_info->fb_addr    = (uint64_t)fbinfo.framebuffer_addr;
+            multiboot1_info->fb_width   = fbinfo.framebuffer_width;
+            multiboot1_info->fb_height  = fbinfo.framebuffer_height;
+            multiboot1_info->fb_bpp     = fbinfo.framebuffer_bpp;
+            multiboot1_info->fb_pitch   = fbinfo.framebuffer_pitch;
+            multiboot1_info->fb_type    = 1;
+            multiboot1_info->fb_red_mask_size    = fbinfo.red_mask_size;
+            multiboot1_info->fb_red_mask_shift   = fbinfo.red_mask_shift;
+            multiboot1_info->fb_green_mask_size  = fbinfo.green_mask_size;
+            multiboot1_info->fb_green_mask_shift = fbinfo.green_mask_shift;
+            multiboot1_info->fb_blue_mask_size   = fbinfo.blue_mask_size;
+            multiboot1_info->fb_blue_mask_shift  = fbinfo.blue_mask_shift;
         } else if (header.fb_mode == 1) {
 nofb:;
 #if uefi == 1
@@ -223,18 +223,18 @@ nofb:;
             size_t rows, cols;
             init_vga_textmode(&rows, &cols, false);
 
-            multiboot1_info.fb_addr    = 0xb8000;
-            multiboot1_info.fb_width   = cols;
-            multiboot1_info.fb_height  = rows;
-            multiboot1_info.fb_bpp     = 16;
-            multiboot1_info.fb_pitch   = 2 * cols;
-            multiboot1_info.fb_type    = 2;
+            multiboot1_info->fb_addr    = 0xb8000;
+            multiboot1_info->fb_width   = cols;
+            multiboot1_info->fb_height  = rows;
+            multiboot1_info->fb_bpp     = 16;
+            multiboot1_info->fb_pitch   = 2 * cols;
+            multiboot1_info->fb_type    = 2;
 #endif
         } else {
             panic("multiboot1: Illegal framebuffer type requested");
         }
 
-        multiboot1_info.flags |= (1 << 12);
+        multiboot1_info->flags |= (1 << 12);
     } else {
 #if uefi == 1
         panic("multiboot1: Cannot use text mode with UEFI.");
@@ -267,16 +267,16 @@ nofb:;
 
         // Convert the uppermem and lowermem fields from bytes to
         // KiB.
-        multiboot1_info.mem_lower = memory_info.lowermem / 1024;
-        multiboot1_info.mem_upper = memory_info.uppermem / 1024;
+        multiboot1_info->mem_lower = memory_info.lowermem / 1024;
+        multiboot1_info->mem_upper = memory_info.uppermem / 1024;
     }
 
-    multiboot1_info.mmap_length = mb_mmap_len;
-    multiboot1_info.mmap_addr = ((uint32_t)(size_t)mmap);
-    multiboot1_info.flags |= (1 << 0) | (1 << 6);
+    multiboot1_info->mmap_length = mb_mmap_len;
+    multiboot1_info->mmap_addr = ((uint32_t)(size_t)mmap);
+    multiboot1_info->flags |= (1 << 0) | (1 << 6);
 
     irq_flush_type = IRQ_PIC_ONLY_FLUSH;
 
     common_spinup(multiboot1_spinup_32, 2,
-                  entry_point, (uint32_t)(uintptr_t)&multiboot1_info);
+                  entry_point, (uint32_t)(uintptr_t)multiboot1_info);
 }

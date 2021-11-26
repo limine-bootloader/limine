@@ -118,6 +118,8 @@ static bool align_entry(uint64_t *base, uint64_t *length) {
     return true;
 }
 
+static bool sanitiser_keep_first_page = false;
+
 static void sanitise_entries(struct e820_entry_t *m, size_t *_count, bool align_entries) {
     size_t count = *_count;
 
@@ -169,7 +171,7 @@ static void sanitise_entries(struct e820_entry_t *m, size_t *_count, bool align_
         if (m[i].type != MEMMAP_USABLE)
             continue;
 
-        if (m[i].base < 0x1000) {
+        if (!sanitiser_keep_first_page && m[i].base < 0x1000) {
             if (m[i].base + m[i].length <= 0x1000) {
                 goto del_mm1;
             }
@@ -565,7 +567,10 @@ struct e820_entry_t *get_raw_memmap(size_t *entry_count) {
         mmap[i].type   = our_type;
     }
 
+    bool s_old = sanitiser_keep_first_page;
+    sanitiser_keep_first_page = true;
     sanitise_entries(mmap, &mmap_count, false);
+    sanitiser_keep_first_page = s_old;
 
     *entry_count = mmap_count;
     return mmap;

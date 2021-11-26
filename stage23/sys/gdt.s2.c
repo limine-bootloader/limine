@@ -1,5 +1,7 @@
 #include <stdint.h>
 #include <sys/gdt.h>
+#include <mm/pmm.h>
+#include <lib/libc.h>
 
 static struct gdt_desc gdt_descs[] = {
     {0},
@@ -69,3 +71,11 @@ struct gdtr gdt = {
     0
 #endif
 };
+
+#if uefi == 1
+void init_gdt(void) {
+    struct gdt_desc *gdt_copy = ext_mem_alloc(sizeof(gdt_descs));
+    memcpy(gdt_copy, gdt_descs, sizeof(gdt_descs));
+    gdt.ptr = (uintptr_t)gdt_copy;
+}
+#endif

@@ -9,7 +9,7 @@ struct gdtr {
     uint64_t ptr;
 #elif defined (__i386__)
     uint32_t ptr;
-    uint32_t pad;
+    uint32_t ptr_hi;
 #endif
 } __attribute__((packed));
 
@@ -23,5 +23,7 @@ struct gdt_desc {
 } __attribute__((packed));
 
 extern struct gdtr gdt;
+
+void init_gdt(void);
 
 #endif

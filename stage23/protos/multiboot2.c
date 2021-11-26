@@ -59,8 +59,6 @@ bool multiboot2_load(char *config, char* cmdline) {
     if (kernel_path == NULL)
         panic("multiboot2: KERNEL_PATH not specified");
 
-    print("multiboot2: Loading kernel `%s`...\n", kernel_path);
-
     if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic("multiboot2: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
@@ -84,6 +82,8 @@ bool multiboot2_load(char *config, char* cmdline) {
         pmm_free(kernel_file, kernel_file_size);
         return false;
     }
+
+    print("multiboot2: Loading kernel `%s`...\n", kernel_path);
 
     if (header->magic + header->architecture + header->checksum + header->header_length) {
         panic("multiboot2: Header checksum is invalid");

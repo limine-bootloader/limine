@@ -495,6 +495,16 @@ bool linux_load(char *config, char *cmdline) {
 
     struct screen_info *screen_info = &boot_params->screen_info;
 
+#if bios == 1
+    {
+    char *textmode_str = config_get_value(config, 0, "TEXTMODE");
+    bool textmode = textmode_str != NULL && strcmp(textmode_str, "yes") == 0;
+    if (textmode) {
+        goto set_textmode;
+    }
+    }
+#endif
+
     size_t req_width = 0, req_height = 0, req_bpp = 0;
 
     char *resolution = config_get_value(config, 0, "RESOLUTION");
@@ -506,6 +516,7 @@ bool linux_load(char *config, char *cmdline) {
 #if uefi == 1
         panic("linux: Unable to set video mode");
 #elif bios == 1
+set_textmode:;
         size_t rows, cols;
         init_vga_textmode(&rows, &cols, false);
 

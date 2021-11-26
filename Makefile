@@ -231,6 +231,30 @@ echfs-test:
 	$(BINDIR)/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
+.PHONY: fwcfg-common fwcfg-test fwcfg-simple-test
+fwcfg-common:
+	$(MAKE) test-clean
+	$(MAKE) limine-bios
+	$(MAKE) limine-install
+	$(MAKE) -C test
+	rm -rf test_image/
+	mkdir -p test_image/boot
+	cp -rv $(BINDIR)/* test_image/boot/
+	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table test_image/ -o test.iso
+
+fwcfg-simple-test:
+	$(MAKE) fwcfg-common
+	qemu-system-x86_64 -net none -smp 4   -cdrom test.iso -debugcon stdio \
+		-fw_cfg opt/org.limine-bootloader.background,file=test/bg.bmp \
+		-fw_cfg opt/org.limine-bootloader.kernel,file=test/test.elf
+
+fwcfg-test:
+	$(MAKE) fwcfg-common
+	qemu-system-x86_64 -net none -smp 4   -cdrom test.iso -debugcon stdio \
+		-fw_cfg opt/org.limine-bootloader.config,file=test/limine-fwcfg.cfg \
+		-fw_cfg opt/org.limine-bootloader.background,file=test/bg.bmp \
+		-fw_cfg opt/org.limine-bootloader.kernel,file=test/test.elf
+
 .PHONY: ext2-test
 ext2-test:
 	$(MAKE) test-clean

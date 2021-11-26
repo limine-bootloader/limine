@@ -1,3 +1,4 @@
+#include "lib/uri.h"
 #include <stddef.h>
 #include <stdbool.h>
 #include <lib/config.h>
@@ -21,7 +22,8 @@ int init_config_disk(struct volume *part) {
 
     if ((f = fopen(part, "/limine.cfg")) == NULL
      && (f = fopen(part, "/boot/limine.cfg")) == NULL
-     && (f = fopen(part, "/EFI/BOOT/limine.cfg")) == NULL) {
+     && (f = fopen(part, "/EFI/BOOT/limine.cfg")) == NULL
+	 && (f = uri_open("fwcfg:///opt/org.limine-bootloader.config")) == NULL) {
         return -1;
     }
 

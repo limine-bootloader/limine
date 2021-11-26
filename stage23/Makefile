@@ -4,7 +4,6 @@ endif
 
 TARGET =
 BUILDDIR =
-override BUILDDIR := $(shell echo '$(BUILDDIR)' | sed 's/ /\\ /g')
 
 ifeq ($(BUILDDIR), )
 	$(error BUILDDIR not specified)
@@ -199,18 +198,18 @@ all:
 endif
 
 builddir:
-	for i in $(OBJ); do mkdir -p "`dirname "$$i"`"; done
+	for i in $(OBJ); do mkdir -p `dirname $$i`; done
 
 $(BUILDDIR)/sys/smp_trampoline.bin: sys/smp_trampoline.real
-	nasm "$<" -f bin -o "$@"
+	nasm $< -f bin -o $@
 
 $(BUILDDIR)/sys/smp_trampoline.o: $(BUILDDIR)/sys/smp_trampoline.bin
-	cd "`dirname "$<"`" && \
-		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) "`basename "$<"`" "$@"
+	cd "`dirname $<`" && \
+		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) "`basename $<`" $@
 
 $(BUILDDIR)/font.o: font.bin
-	cd "`dirname "$<"`" && \
-		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) "`basename "$<"`" "$@"
+	cd "`dirname $<`" && \
+		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) "`basename $<`" $@
 
 $(BUILDDIR)/tinf-copied: ../tinf/*
 	rm -rf $(BUILDDIR)/tinf
@@ -218,70 +217,70 @@ $(BUILDDIR)/tinf-copied: ../tinf/*
 	touch $(BUILDDIR)/tinf-copied
 
 $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o: $(BUILDDIR)/tinf-copied
-	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c "$(@:.o=.c)" -o "$@"
+	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $(@:.o=.c) -o $@
 
 ifeq ($(TARGET), bios)
 
 $(BUILDDIR)/stage2.bin.gz: $(BUILDDIR)/stage2.bin
-	gzip -n -9 < "$<" > "$@"
+	gzip -n -9 < $< > $@
 
 $(BUILDDIR)/stage2.bin: $(BUILDDIR)/limine.sys
-	dd if="$<" bs=$$(( 0x$$($(TOOLCHAIN_READELF) -S $(BUILDDIR)/limine.elf | grep .stage3.text | sed 's/^.*] //' | awk '{print $$3}' | sed 's/^0*//') - 0x8000 )) count=1 of="$@"
+	dd if=$< bs=$$(( 0x$$($(TOOLCHAIN_READELF) -S $(BUILDDIR)/limine.elf | grep .stage3.text | sed 's/^.*] //' | awk '{print $$3}' | sed 's/^0*//') - 0x8000 )) count=1 of=$@
 
 $(BUILDDIR)/stage2.map.o: $(BUILDDIR)/limine_stage2only.elf
 	GENSYMS="`pwd`/gensyms.sh" && \
-	cd "`dirname "$<"`" && \
-	"$$GENSYMS" $(TOOLCHAIN_OBJDUMP) "$<" stage2 32
+	cd "`dirname $<`" && \
+	"$$GENSYMS" $(TOOLCHAIN_OBJDUMP) $< stage2 32
 
 $(BUILDDIR)/full.map.o: $(BUILDDIR)/limine_nomap.elf
 	GENSYMS="`pwd`/gensyms.sh" && \
-	cd "`dirname "$<"`" && \
-	"$$GENSYMS" $(TOOLCHAIN_OBJDUMP) "$<" full 32
+	cd "`dirname $<`" && \
+	"$$GENSYMS" $(TOOLCHAIN_OBJDUMP) $< full 32
 
 $(BUILDDIR)/limine.sys: $(BUILDDIR)/limine.elf
-	$(TOOLCHAIN_OBJCOPY) -O binary "$<" "$@"
+	$(TOOLCHAIN_OBJCOPY) -O binary $< $@
 
 $(BUILDDIR)/limine_stage2only.elf: $(OBJ)
-	$(TOOLCHAIN_LD) $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_stage2only.ld -o "$@" || \
+	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_stage2only.ld -o $@ || \
 		( echo "This error may mean that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
 		  false )
-	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id "$@" $(BUILDDIR)/build-id.s2.bin
-	cd $(BUILDDIR) && \
+	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id $@ $(BUILDDIR)/build-id.s2.bin
+	cd "$(BUILDDIR)" && \
 		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s2.bin build-id.s2.o
-	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id "$@" $(BUILDDIR)/build-id.s3.bin
-	cd $(BUILDDIR) && \
+	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id $@ $(BUILDDIR)/build-id.s3.bin
+	cd "$(BUILDDIR)" && \
 		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s3.bin build-id.s3.o
-	$(TOOLCHAIN_LD) $(BUILDDIR)/build-id.s2.o $(BUILDDIR)/build-id.s3.o $(OBJ) $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_stage2only.ld -o "$@"
+	$(TOOLCHAIN_LD) $(BUILDDIR)/build-id.s2.o $(BUILDDIR)/build-id.s3.o $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_stage2only.ld -o $@
 
 $(BUILDDIR)/limine_nomap.elf: $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o
-	$(TOOLCHAIN_LD) $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o "$@"
-	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id "$@" $(BUILDDIR)/build-id.s2.bin
-	cd $(BUILDDIR) && \
+	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
+	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id $@ $(BUILDDIR)/build-id.s2.bin
+	cd "$(BUILDDIR)" && \
 		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s2.bin build-id.s2.o
-	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id "$@" $(BUILDDIR)/build-id.s3.bin
-	cd $(BUILDDIR) && \
+	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id $@ $(BUILDDIR)/build-id.s3.bin
+	cd "$(BUILDDIR)" && \
 		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s3.bin build-id.s3.o
-	$(TOOLCHAIN_LD) $(BUILDDIR)/build-id.s2.o $(BUILDDIR)/build-id.s3.o $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o "$@"
+	$(TOOLCHAIN_LD) $(BUILDDIR)/build-id.s2.o $(BUILDDIR)/build-id.s3.o $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o $@
 
 $(BUILDDIR)/limine.elf: $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o
-	$(TOOLCHAIN_LD) $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o "$@"
-	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id "$@" $(BUILDDIR)/build-id.s2.bin
-	cd $(BUILDDIR) && \
+	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o $@
+	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id $@ $(BUILDDIR)/build-id.s2.bin
+	cd "$(BUILDDIR)" && \
 		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s2.bin build-id.s2.o
-	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id "$@" $(BUILDDIR)/build-id.s3.bin
-	cd $(BUILDDIR) && \
+	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id $@ $(BUILDDIR)/build-id.s3.bin
+	cd "$(BUILDDIR)" && \
 		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s3.bin build-id.s3.o
-	$(TOOLCHAIN_LD) $(BUILDDIR)/build-id.s2.o $(BUILDDIR)/build-id.s3.o $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o "$@"
+	$(TOOLCHAIN_LD) $(BUILDDIR)/build-id.s2.o $(BUILDDIR)/build-id.s3.o $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o $@
 
 $(BUILDDIR)/limine_dbg.elf: $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o
-	$(TOOLCHAIN_LD) $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o "$@"
-	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id "$@" $(BUILDDIR)/build-id.s2.bin
-	cd $(BUILDDIR) && \
+	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o $@
+	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id $@ $(BUILDDIR)/build-id.s2.bin
+	cd "$(BUILDDIR)" && \
 		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s2.bin build-id.s2.o
-	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id "$@" $(BUILDDIR)/build-id.s3.bin
-	cd $(BUILDDIR) && \
+	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id $@ $(BUILDDIR)/build-id.s3.bin
+	cd "$(BUILDDIR)" && \
 		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s3.bin build-id.s3.o
-	$(TOOLCHAIN_LD) $(BUILDDIR)/build-id.s2.o $(BUILDDIR)/build-id.s3.o $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/stage2.map.o $(BUILDDIR)/full.map.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o "$@"
+	$(TOOLCHAIN_LD) $(BUILDDIR)/build-id.s2.o $(BUILDDIR)/build-id.s3.o $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o $@
 
 endif
 
@@ -289,18 +288,18 @@ $(BUILDDIR)/gnu-efi:
 	cp -r ../gnu-efi $(BUILDDIR)/
 	# gnu-efi's build system is broken and fails to actually detect clang.
 	# This is a workaround.
-	sed 's/-maccumulate-outgoing-args//g' < $(BUILDDIR)/gnu-efi/Make.defaults > sed.tmp
-	mv sed.tmp $(BUILDDIR)/gnu-efi/Make.defaults
+	sed 's/-maccumulate-outgoing-args//g' < "$(BUILDDIR)/gnu-efi/Make.defaults" > sed.tmp
+	mv sed.tmp "$(BUILDDIR)/gnu-efi/Make.defaults"
 
 ifeq ($(TARGET), uefi)
 
 $(BUILDDIR)/full.map.o: $(BUILDDIR)/limine_efi_nomap.elf
 	GENSYMS="`pwd`/gensyms.sh" && \
-	cd "`dirname "$<"`" && \
-	"$$GENSYMS" $(TOOLCHAIN_OBJDUMP) "$<" full 64
+	cd "`dirname $<`" && \
+	"$$GENSYMS" $(TOOLCHAIN_OBJDUMP) $< full 64
 
 $(BUILDDIR)/BOOTX64.EFI: $(BUILDDIR)/limine_efi.elf
-	$(TOOLCHAIN_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc -j .sbat --target efi-app-x86_64 --subsystem=10 "$<" "$@"
+	$(TOOLCHAIN_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc -j .sbat --target efi-app-x86_64 --subsystem=10 $< $@
 
 $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a: $(BUILDDIR)/gnu-efi
 	$(MAKE) -C $(BUILDDIR)/gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m64 -march=x86-64 -mtune=generic" AR="$(TOOLCHAIN_AR)" ARCH=x86_64
@@ -308,12 +307,12 @@ $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuef
 $(BUILDDIR)/limine_efi_nomap.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi_nomap.ld \
-		$(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -o "$@"
+		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
 $(BUILDDIR)/limine_efi.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi.ld \
-		$(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-x86_64.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -o "$@"
+		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
 endif
 
@@ -321,11 +320,11 @@ ifeq ($(TARGET), uefi32)
 
 $(BUILDDIR)/full.map.o: $(BUILDDIR)/limine_efi_nomap.elf
 	GENSYMS="`pwd`/gensyms.sh" && \
-	cd "`dirname "$<"`" && \
-	"$$GENSYMS" $(TOOLCHAIN_OBJDUMP) "$<" full 32
+	cd "`dirname $<`" && \
+	"$$GENSYMS" $(TOOLCHAIN_OBJDUMP) $< full 32
 
 $(BUILDDIR)/BOOTIA32.EFI: $(BUILDDIR)/limine_efi.elf
-	$(TOOLCHAIN_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc -j .sbat --target efi-app-ia32 --subsystem=10 "$<" "$@"
+	$(TOOLCHAIN_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc -j .sbat --target efi-app-ia32 --subsystem=10 $< $@
 
 $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a: $(BUILDDIR)/gnu-efi
 	$(MAKE) -C $(BUILDDIR)/gnu-efi/gnuefi CC="$(TOOLCHAIN_CC) -m32 -march=i686 -mtune=generic" AR="$(TOOLCHAIN_AR)" ARCH=ia32
@@ -333,12 +332,12 @@ $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.
 $(BUILDDIR)/limine_efi_nomap.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi32_nomap.ld \
-		$(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -o "$@"
+		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
 $(BUILDDIR)/limine_efi.elf: $(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi32.ld \
-		$(BUILDDIR)/gnu-efi/gnuefi/crt0-efi-ia32.o $(BUILDDIR)/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o $(BUILDDIR)/font.o $(BUILDDIR)/sys/smp_trampoline.o $(BUILDDIR)/full.map.o $(LDFLAGS) $(INTERNAL_LDFLAGS) -o "$@"
+		$^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $@
 
 endif
 
@@ -346,57 +345,57 @@ endif
 
 ifeq ($(TARGET), uefi)
 $(BUILDDIR)/%.o: %.c $(BUILDDIR)/tinf-copied $(BUILDDIR)/gnu-efi
-	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c "$<" -o "$@"
+	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 endif
 
 ifeq ($(TARGET), uefi32)
 $(BUILDDIR)/%.o: %.c $(BUILDDIR)/tinf-copied $(BUILDDIR)/gnu-efi
-	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c "$<" -o "$@"
+	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 endif
 
 ifeq ($(TARGET), bios)
 $(BUILDDIR)/%.o: %.c $(BUILDDIR)/tinf-copied
-	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c "$<" -o "$@"
+	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 endif
 
 -include $(HEADER_DEPS)
 
 ifeq ($(TARGET), bios)
 $(BUILDDIR)/%.s2.o: %.s2.c
-	$(TOOLCHAIN_CC) $(S2CFLAGS) $(INTERNAL_CFLAGS) -c "$<" -o "$@"
+	$(TOOLCHAIN_CC) $(S2CFLAGS) $(INTERNAL_CFLAGS) -c $< -o $@
 endif
 
 -include $(HEADER_DEPS)
 
 ifeq ($(TARGET), uefi)
 $(BUILDDIR)/%.32.o: %.32.c $(BUILDDIR)/gnu-efi
-	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS32) -c "$<" -o "$@".32
-	$(TOOLCHAIN_OBJCOPY) -I elf32-i386 -O elf64-x86-64 "$@".32 "$@"
-	rm "$@".32
+	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS32) -c $< -o $@.32
+	$(TOOLCHAIN_OBJCOPY) -I elf32-i386 -O elf64-x86-64 $@.32 $@
+	rm $@.32
 endif
 
 ifeq ($(TARGET), bios)
 $(BUILDDIR)/%.o: %.asm32
-	nasm "$<" -F dwarf -g -Werror -f elf32 -o "$@"
+	nasm $< -F dwarf -g -Werror -f elf32 -o $@
 
 $(BUILDDIR)/%.o: %.asmb
-	nasm "$<" -F dwarf -g -Werror -f elf32 -o "$@"
+	nasm $< -F dwarf -g -Werror -f elf32 -o $@
 endif
 
 ifeq ($(TARGET), uefi)
 $(BUILDDIR)/%.o: %.asm64
-	nasm "$<" -F dwarf -g -Werror -f elf64 -o "$@"
+	nasm $< -F dwarf -g -Werror -f elf64 -o $@
 
 $(BUILDDIR)/%.o: %.asm64u
-	nasm "$<" -F dwarf -g -Werror -f elf64 -o "$@"
+	nasm $< -F dwarf -g -Werror -f elf64 -o $@
 endif
 
 ifeq ($(TARGET), uefi32)
 $(BUILDDIR)/%.o: %.asm32
-	nasm "$<" -F dwarf -g -Werror -f elf32 -o "$@"
+	nasm $< -F dwarf -g -Werror -f elf32 -o $@
 
 $(BUILDDIR)/%.o: %.asm32u
-	nasm "$<" -F dwarf -g -Werror -f elf32 -o "$@"
+	nasm $< -F dwarf -g -Werror -f elf32 -o $@
 endif
 
 clean:

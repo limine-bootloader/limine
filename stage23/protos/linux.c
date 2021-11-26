@@ -14,6 +14,7 @@
 #include <lib/fb.h>
 #include <lib/acpi.h>
 #include <drivers/edid.h>
+#include <drivers/vga_textmode.h>
 
 __attribute__((noreturn)) void linux_spinup(void *entry, void *boot_params);
 
@@ -501,30 +502,44 @@ bool linux_load(char *config, char *cmdline) {
         parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
     struct fb_info fbinfo;
-    if (!fb_init(&fbinfo, req_width, req_height, req_bpp))
+    if (!fb_init(&fbinfo, req_width, req_height, req_bpp)) {
+#if uefi == 1
         panic("linux: Unable to set video mode");
+#elif bios == 1
+        size_t rows, cols;
+        init_vga_textmode(&rows, &cols, false);
 
-    screen_info->capabilities   = VIDEO_CAPABILITY_64BIT_BASE | VIDEO_CAPABILITY_SKIP_QUIRKS;
-    screen_info->flags          = VIDEO_FLAGS_NOCURSOR;
-    screen_info->lfb_base       = (uint32_t)fbinfo.framebuffer_addr;
-    screen_info->ext_lfb_base   = (uint32_t)(fbinfo.framebuffer_addr >> 32);
-    screen_info->lfb_size       = fbinfo.framebuffer_pitch * fbinfo.framebuffer_height;
-    screen_info->lfb_width      = fbinfo.framebuffer_width;
-    screen_info->lfb_height     = fbinfo.framebuffer_height;
-    screen_info->lfb_depth      = fbinfo.framebuffer_bpp;
-    screen_info->lfb_linelength = fbinfo.framebuffer_pitch;
-    screen_info->red_size       = fbinfo.red_mask_size;
-    screen_info->red_pos        = fbinfo.red_mask_shift;
-    screen_info->green_size     = fbinfo.green_mask_size;
-    screen_info->green_pos      = fbinfo.green_mask_shift;
-    screen_info->blue_size      = fbinfo.blue_mask_size;
-    screen_info->blue_pos       = fbinfo.blue_mask_shift;
+        screen_info->orig_video_mode = 3;
+        screen_info->orig_video_ega_bx = 3;
+        screen_info->orig_video_lines = rows;
+        screen_info->orig_video_cols = cols;
+        screen_info->orig_video_points = 16;
+
+        screen_info->orig_video_isVGA = VIDEO_TYPE_VGAC;
+#endif
+    } else {
+        screen_info->capabilities   = VIDEO_CAPABILITY_64BIT_BASE | VIDEO_CAPABILITY_SKIP_QUIRKS;
+        screen_info->flags          = VIDEO_FLAGS_NOCURSOR;
+        screen_info->lfb_base       = (uint32_t)fbinfo.framebuffer_addr;
+        screen_info->ext_lfb_base   = (uint32_t)(fbinfo.framebuffer_addr >> 32);
+        screen_info->lfb_size       = fbinfo.framebuffer_pitch * fbinfo.framebuffer_height;
+        screen_info->lfb_width      = fbinfo.framebuffer_width;
+        screen_info->lfb_height     = fbinfo.framebuffer_height;
+        screen_info->lfb_depth      = fbinfo.framebuffer_bpp;
+        screen_info->lfb_linelength = fbinfo.framebuffer_pitch;
+        screen_info->red_size       = fbinfo.red_mask_size;
+        screen_info->red_pos        = fbinfo.red_mask_shift;
+        screen_info->green_size     = fbinfo.green_mask_size;
+        screen_info->green_pos      = fbinfo.green_mask_shift;
+        screen_info->blue_size      = fbinfo.blue_mask_size;
+        screen_info->blue_pos       = fbinfo.blue_mask_shift;
 
 #if bios == 1
-    screen_info->orig_video_isVGA = VIDEO_TYPE_VLFB;
+        screen_info->orig_video_isVGA = VIDEO_TYPE_VLFB;
 #elif uefi == 1
-    screen_info->orig_video_isVGA = VIDEO_TYPE_EFI;
+        screen_info->orig_video_isVGA = VIDEO_TYPE_EFI;
 #endif
+    }
 
     struct edid_info_struct *edid_info = get_edid_info();
 

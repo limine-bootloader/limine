@@ -8,6 +8,7 @@
 #include <mm/pmm.h>
 #include <lib/print.h>
 #include <pxe/tftp.h>
+#include <drivers/fwcfg.h>
 #include <tinf.h>
 
 // A URI takes the form of: resource://root/path
@@ -132,6 +133,15 @@ static struct file_handle *uri_guid_dispatch(char *guid_str, char *path) {
     return fopen(volume, path);
 }
 
+static struct file_handle *uri_fwcfg_dispatch(char *path) {
+    struct file_handle *ret = ext_mem_alloc(sizeof(struct file_handle));
+    if (!fwcfg_open(ret, path)) {
+        return NULL;
+    }
+
+    return ret;
+}
+
 #if bios == 1
 static struct file_handle *uri_tftp_dispatch(char *root, char *path) {
     uint32_t ip;
@@ -210,6 +220,10 @@ struct file_handle *uri_open(char *uri) {
     } else if (!strcmp(resource, "tftp")) {
         ret = uri_tftp_dispatch(root, path);
 #endif
+	// note: fwcfg MUST be the last on the list due to fwcfg simple mode.
+    } else if (!strcmp(resource, "fwcfg")) {
+		if (*root != 0) panic("no root supported in an fwcfg:// uri!");
+        ret = uri_fwcfg_dispatch(path);
     } else {
         panic("Resource `%s` not valid.", resource);
     }

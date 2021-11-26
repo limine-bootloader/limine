@@ -10,8 +10,7 @@ CFLAGS = -O2 -pipe -Wall -Wextra
 
 .PHONY: all install clean
 
-all:
-	$(CC) $(CFLAGS) -std=c11 -DLIMINE_HDD_BIN='"$(LIMINE_HDD_BIN)"' limine-install.c inc.S -o "$(BUILDDIR)/limine-install"
+all: $(BUILDDIR)/limine-install
 
 install: all
 	install -d "$(DESTDIR)$(PREFIX)/bin"
@@ -27,3 +26,6 @@ install: all
 
 clean:
 	rm -f "$(BUILDDIR)/limine-install" "$(BUILDDIR)/limine-install.exe"
+
+$(BUILDDIR)/limine-install: limine-install.c inc.S $(LIMINE_HDD_BIN)
+	$(CC) $(CFLAGS) -std=c11 -DLIMINE_HDD_BIN='"$(LIMINE_HDD_BIN)"' limine-install.c inc.S -o "$@"

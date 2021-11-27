@@ -39,9 +39,11 @@ void console(void) {
             print("Limine is distributed under the terms of the BSD-2-Clause license.\n");
             print("There is ABSOLUTELY NO WARRANTY, to the extent permitted by law.\n");
         } else if (strcmp(prompt, "info") == 0) {
-            print("Version: " LIMINE_VERSION "\n\n");
-            print("Copyright:\n");
-            print(LIMINE_COPYRIGHT "\n");
+            print(
+                "Version: " LIMINE_VERSION "\n"
+                "Source: " LIMINE_REPO "\n\n"
+                "Copyright:\n" LIMINE_COPYRIGHT "\n"
+            );
         } else if (*prompt != 0) {
             print("Invalid command: `%s`.\n", prompt);
         }

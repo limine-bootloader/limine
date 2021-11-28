@@ -4,8 +4,14 @@ endif
 
 BUILDDIR =
 
-ifeq ($(BUILDDIR), )
-	$(error BUILDDIR not specified)
+SPACE := $(subst ,, )
+
+MKESCAPE = $(subst #,\#,$(subst $$,$$$$,$(subst $(SPACE),\ ,$(1))))
+SHESCAPE = $(subst ','\'',$(1))
+OBJESCAPE = $(subst .a ,.a' ',$(subst .o ,.o' ',$(call SHESCAPE,$(1))))
+
+ifeq ($(call MKESCAPE,$(BUILDDIR)), )
+	$(error $(call MKESCAPE,$(BUILDDIR)) not specified)
 endif
 
 TOOLCHAIN ?= limine
@@ -46,7 +52,7 @@ INTERNAL_CFLAGS = \
 	-mno-sse2 \
 	-MMD \
 	-I. \
-	-I$(BUILDDIR)/tinf
+	-I'$(call SHESCAPE,$(BUILDDIR))/tinf'
 
 LDFLAGS ?=
 
@@ -57,39 +63,39 @@ INTERNAL_LDFLAGS = \
 	-static \
 	-Tlinker.ld
 
-.PHONY: all clean builddir
+.PHONY: all clean
 
 C_FILES := $(shell find -L ./ -type f -name '*.c' | sort)
 ASM_FILES := $(shell find -L ./ -type f -name '*.asm' | sort)
-OBJ := $(addprefix $(BUILDDIR)/, $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o))
-HEADER_DEPS := $(addprefix $(BUILDDIR)/, $(C_FILES:.c=.d))
+OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o))
+HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.d))
 
 all:
-	$(MAKE) builddir
-	$(MAKE) $(BUILDDIR)/decompressor.bin
+	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/decompressor.bin'
 
-builddir:
-	for i in $(OBJ); do mkdir -p `dirname $$i`; done
+$(call MKESCAPE,$(BUILDDIR))/decompressor.bin: $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o
+	$(TOOLCHAIN_LD) '$(call OBJESCAPE,$^)' $(LDFLAGS) $(INTERNAL_LDFLAGS) -o '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf'
+	$(TOOLCHAIN_OBJCOPY) -O binary '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf' '$(call SHESCAPE,$@)'
 
-$(BUILDDIR)/decompressor.bin: $(OBJ) $(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o
-	$(TOOLCHAIN_LD) $^ $(LDFLAGS) $(INTERNAL_LDFLAGS) -o $(BUILDDIR)/decompressor.elf
-	$(TOOLCHAIN_OBJCOPY) -O binary $(BUILDDIR)/decompressor.elf $@
+$(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))/tinf'
+	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
+	cp -r ../tinf '$(call SHESCAPE,$(BUILDDIR))/'
+	touch '$(call SHESCAPE,$(BUILDDIR))/tinf-copied'
 
-$(BUILDDIR)/tinf-copied: ../tinf/*
-	rm -rf $(BUILDDIR)/tinf
-	cp -r ../tinf $(BUILDDIR)/
-	touch $(BUILDDIR)/tinf-copied
-
-$(BUILDDIR)/tinf/tinfgzip.o $(BUILDDIR)/tinf/tinflate.o: $(BUILDDIR)/tinf-copied
-	$(TOOLCHAIN_CC) $(CFLAGS) -Os $(INTERNAL_CFLAGS) -c $(@:.o=.c) -o $@
+$(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
+	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	$(TOOLCHAIN_CC) $(CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
 
 -include $(HEADER_DEPS)
 
-$(BUILDDIR)/%.o: %.c $(BUILDDIR)/tinf-copied
-	$(TOOLCHAIN_CC) $(CFLAGS) -Os $(INTERNAL_CFLAGS) -c $< -o $@
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied
+	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	$(TOOLCHAIN_CC) $(CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
-$(BUILDDIR)/%.o: %.asm
-	nasm $< -f elf32 -o $@
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.asm
+	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	nasm '$(call SHESCAPE,$<)' -f elf32 -o '$(call SHESCAPE,$@)'
 
 clean:
-	rm -rf $(BUILDDIR)
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))'

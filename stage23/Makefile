@@ -9,7 +9,7 @@ SRCDIR := $(shell pwd)
 
 SPACE := $(subst ,, )
 
-MKESCAPE = $(subst #,\#,$(subst $$,$$$$,$(subst $(SPACE),\ ,$(1))))
+MKESCAPE = $(subst $(SPACE),\ ,$(1))
 SHESCAPE = $(subst ','\'',$(1))
 OBJESCAPE = $(subst .a ,.a' ',$(subst .o ,.o' ',$(call SHESCAPE,$(1))))
 

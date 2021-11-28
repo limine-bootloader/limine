@@ -40,7 +40,7 @@ void console(void) {
             print("There is ABSOLUTELY NO WARRANTY, to the extent permitted by law.\n");
         } else if (strcmp(prompt, "info") == 0) {
             print("Version: " LIMINE_VERSION "\n");
-            print("Source: " LIMINE_REPO "\n\n");
+            print("Source: https://github.com/limine-bootloader/limine\n\n");
             print("Copyright:\n" LIMINE_COPYRIGHT "\n");
         } else if (*prompt != 0) {
             print("Invalid command: `%s`.\n", prompt);

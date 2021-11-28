@@ -2,9 +2,21 @@
 
 set -e
 
-SCRIPT_PATH="$(dirname $0)"
+TMP0=$(mktemp)
 
-"$SCRIPT_PATH/test_pipefail.sh" && set -o pipefail
+cat >"$TMP0" <<EOF
+#!/bin/sh
+
+set -e
+
+set -o pipefail 2>/dev/null
+EOF
+
+chmod +x "$TMP0"
+
+"$TMP0" && set -o pipefail
+
+rm "$TMP0"
 
 TMP1=$(mktemp)
 TMP2=$(mktemp)

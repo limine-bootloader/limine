@@ -8,6 +8,11 @@ DESTDIR ?=
 BUILDDIR ?= $(shell pwd)/build
 BINDIR ?= $(BUILDDIR)/bin
 
+SPACE := $(subst ,, )
+
+MKESCAPE = $(subst #,\#,$(subst $$,$$$$,$(subst $(SPACE),\ ,$(1))))
+SHESCAPE = $(subst ','\'',$(1))
+
 export PATH := $(shell pwd)/toolchain/bin:$(PATH)
 
 NCPUS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
@@ -20,7 +25,7 @@ TOOLCHAIN ?= limine
 
 TOOLCHAIN_CC ?= $(TOOLCHAIN)-gcc
 
-ifeq ($(shell PATH="$(PATH)" command -v $(TOOLCHAIN_CC) ; ), )
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(TOOLCHAIN_CC) ; ), )
 override TOOLCHAIN_CC := cc
 endif
 
@@ -32,7 +37,7 @@ MAKEOVERRIDES += TOOLCHAIN_CC+=--target=x86_64-elf
 endif
 endif
 
-CC_MACHINE := $(shell PATH="$(PATH)" $(TOOLCHAIN_CC) -dumpmachine | dd bs=6 count=1 2>/dev/null)
+CC_MACHINE := $(shell PATH='$(call SHESCAPE,$(PATH))' $(TOOLCHAIN_CC) -dumpmachine | dd bs=6 count=1 2>/dev/null)
 
 ifneq ($(MAKECMDGOALS), toolchain)
 ifneq ($(MAKECMDGOALS), distclean)
@@ -57,65 +62,67 @@ all:
 
 .PHONY: limine-install
 limine-install:
-	$(MAKE) -C limine-install LIMINE_HDD_BIN="$(BINDIR)/limine-hdd.bin" BUILDDIR="$(BINDIR)"
+	mkdir -p '$(call SHESCAPE,$(BINDIR))'
+	cp limine-install/* limine-install/.gitignore '$(call SHESCAPE,$(BINDIR))/'
+	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))'
 
 .PHONY: clean
 clean: limine-bios-clean limine-uefi-clean limine-uefi32-clean
-	$(MAKE) -C limine-install clean
+	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))' clean || true
 
 .PHONY: install
 install: all
-	install -d "$(DESTDIR)$(PREFIX)/bin"
-	install -s $(BINDIR)/limine-install "$(DESTDIR)$(PREFIX)/bin/"
-	install -d "$(DESTDIR)$(PREFIX)/share"
-	install -d "$(DESTDIR)$(PREFIX)/share/limine"
-	install -m 644 $(BINDIR)/limine.sys "$(DESTDIR)$(PREFIX)/share/limine/" || true
-	install -m 644 $(BINDIR)/limine-cd.bin "$(DESTDIR)$(PREFIX)/share/limine/" || true
-	install -m 644 $(BINDIR)/limine-eltorito-efi.bin "$(DESTDIR)$(PREFIX)/share/limine/" || true
-	install -m 644 $(BINDIR)/limine-pxe.bin "$(DESTDIR)$(PREFIX)/share/limine/" || true
-	install -m 644 $(BINDIR)/BOOTX64.EFI "$(DESTDIR)$(PREFIX)/share/limine/" || true
-	install -m 644 $(BINDIR)/BOOTIA32.EFI "$(DESTDIR)$(PREFIX)/share/limine/" || true
+	install -d '$(DESTDIR)$(PREFIX)/bin'
+	install -s '$(call SHESCAPE,$(BINDIR))/limine-install' '$(DESTDIR)$(PREFIX)/bin/'
+	install -d '$(DESTDIR)$(PREFIX)/share'
+	install -d '$(DESTDIR)$(PREFIX)/share/limine'
+	install -m 644 '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(DESTDIR)$(PREFIX)/share/limine/' || true
+	install -m 644 '$(call SHESCAPE,$(BINDIR))/limine-cd.bin' '$(DESTDIR)$(PREFIX)/share/limine/' || true
+	install -m 644 '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' '$(DESTDIR)$(PREFIX)/share/limine/' || true
+	install -m 644 '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin' '$(DESTDIR)$(PREFIX)/share/limine/' || true
+	install -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(DESTDIR)$(PREFIX)/share/limine/' || true
+	install -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(DESTDIR)$(PREFIX)/share/limine/' || true
 
-$(BUILDDIR)/stage1: $(STAGE1_FILES) $(BUILDDIR)/decompressor/decompressor.bin $(BUILDDIR)/stage23-bios/stage2.bin.gz
-	mkdir -p $(BINDIR)
-	cd stage1/hdd && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'$(BUILDDIR)'" -o $(BINDIR)/limine-hdd.bin
-	cd stage1/cd  && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'$(BUILDDIR)'" -o $(BINDIR)/limine-cd.bin
-	cd stage1/pxe && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'$(BUILDDIR)'" -o $(BINDIR)/limine-pxe.bin
-	cp $(BUILDDIR)/stage23-bios/limine.sys $(BINDIR)/
-	touch $(BUILDDIR)/stage1
+$(call MKESCAPE,$(BUILDDIR))/stage1: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/stage23-bios/stage2.bin.gz
+	mkdir -p '$(call SHESCAPE,$(BINDIR))'
+	cd stage1/hdd && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call SHESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
+	cd stage1/cd  && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call SHESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
+	cd stage1/pxe && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call SHESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin'
+	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-bios/limine.sys' '$(call SHESCAPE,$(BINDIR))/'
+	touch '$(call SHESCAPE,$(BUILDDIR))/stage1'
 
 .PHONY: limine-bios
 limine-bios: stage23-bios decompressor
-	$(MAKE) $(BUILDDIR)/stage1
+	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/stage1'
 
-.PHONY: $(BINDIR)/limine-eltorito-efi.bin
-$(BINDIR)/limine-eltorito-efi.bin:
-	mkdir -p $(BINDIR)
-	dd if=/dev/zero of=$@ bs=512 count=2880
-	( mformat -i $@ -f 1440 :: && \
-	  mmd -D s -i $@ ::/EFI && \
-	  mmd -D s -i $@ ::/EFI/BOOT && \
-	  ( ( [ -f $(BUILDDIR)/stage23-uefi/BOOTX64.EFI ] && \
-	      mcopy -D o -i $@ $(BUILDDIR)/stage23-uefi/BOOTX64.EFI ::/EFI/BOOT ) || true ) && \
-	  ( ( [ -f $(BUILDDIR)/stage23-uefi32/BOOTIA32.EFI ] && \
-	      mcopy -D o -i $@ $(BUILDDIR)/stage23-uefi32/BOOTIA32.EFI ::/EFI/BOOT ) || true ) \
-	) || rm -f $@
+.PHONY: $(call MKESCAPE,$(BINDIR))/limine-eltorito-efi.bin
+$(call MKESCAPE,$(BINDIR))/limine-eltorito-efi.bin:
+	mkdir -p '$(call SHESCAPE,$(BINDIR))'
+	dd if=/dev/zero of='$(call SHESCAPE,$@)' bs=512 count=2880
+	( mformat -i '$(call SHESCAPE,$@)' -f 1440 :: && \
+	  mmd -D s -i '$(call SHESCAPE,$@)' ::/EFI && \
+	  mmd -D s -i '$(call SHESCAPE,$@)' ::/EFI/BOOT && \
+	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi/BOOTX64.EFI' ] && \
+	      mcopy -D o -i '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi/BOOTX64.EFI' ::/EFI/BOOT ) || true ) && \
+	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32/BOOTIA32.EFI' ] && \
+	      mcopy -D o -i '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32/BOOTIA32.EFI' ::/EFI/BOOT ) || true ) \
+	) || rm -f '$(call SHESCAPE,$@)'
 
 .PHONY: limine-uefi
 limine-uefi:
 	$(MAKE) gnu-efi
 	$(MAKE) stage23-uefi
-	mkdir -p $(BINDIR)
-	cp $(BUILDDIR)/stage23-uefi/BOOTX64.EFI $(BINDIR)/
-	$(MAKE) $(BINDIR)/limine-eltorito-efi.bin
+	mkdir -p '$(call SHESCAPE,$(BINDIR))'
+	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi/BOOTX64.EFI' '$(call SHESCAPE,$(BINDIR))/'
+	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin'
 
 .PHONY: limine-uefi32
 limine-uefi32:
 	$(MAKE) gnu-efi
 	$(MAKE) stage23-uefi32
-	mkdir -p $(BINDIR)
-	cp $(BUILDDIR)/stage23-uefi32/BOOTIA32.EFI $(BINDIR)/
-	$(MAKE) $(BINDIR)/limine-eltorito-efi.bin
+	mkdir -p '$(call SHESCAPE,$(BINDIR))'
+	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32/BOOTIA32.EFI' '$(call SHESCAPE,$(BINDIR))/'
+	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin'
 
 .PHONY: limine-bios-clean
 limine-bios-clean: stage23-bios-clean decompressor-clean
@@ -156,35 +163,35 @@ stivale:
 
 .PHONY: stage23-uefi
 stage23-uefi: stivale
-	$(MAKE) -C stage23 all TARGET=uefi BUILDDIR="$(BUILDDIR)/stage23-uefi"
+	$(MAKE) -C stage23 all TARGET=uefi BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi'
 
 .PHONY: stage23-uefi-clean
 stage23-uefi-clean:
-	$(MAKE) -C stage23 clean TARGET=uefi BUILDDIR="$(BUILDDIR)/stage23-uefi"
+	$(MAKE) -C stage23 clean TARGET=uefi BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi'
 
 .PHONY: stage23-uefi32
 stage23-uefi32: stivale
-	$(MAKE) -C stage23 all TARGET=uefi32 BUILDDIR="$(BUILDDIR)/stage23-uefi32"
+	$(MAKE) -C stage23 all TARGET=uefi32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32'
 
 .PHONY: stage23-uefi32-clean
 stage23-uefi32-clean:
-	$(MAKE) -C stage23 clean TARGET=uefi32 BUILDDIR="$(BUILDDIR)/stage23-uefi32"
+	$(MAKE) -C stage23 clean TARGET=uefi32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32'
 
 .PHONY: stage23-bios
 stage23-bios: stivale
-	$(MAKE) -C stage23 all TARGET=bios BUILDDIR="$(BUILDDIR)/stage23-bios"
+	$(MAKE) -C stage23 all TARGET=bios BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-bios'
 
 .PHONY: stage23-bios-clean
 stage23-bios-clean:
-	$(MAKE) -C stage23 clean TARGET=bios BUILDDIR="$(BUILDDIR)/stage23-bios"
+	$(MAKE) -C stage23 clean TARGET=bios BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-bios'
 
 .PHONY: decompressor
 decompressor:
-	$(MAKE) -C decompressor all BUILDDIR="$(BUILDDIR)/decompressor"
+	$(MAKE) -C decompressor all BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/decompressor'
 
 .PHONY: decompressor-clean
 decompressor-clean:
-	$(MAKE) -C decompressor clean BUILDDIR="$(BUILDDIR)/decompressor"
+	$(MAKE) -C decompressor clean BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/decompressor'
 
 .PHONY: test-clean
 test-clean:
@@ -196,7 +203,7 @@ toolchain:
 	MAKE="$(MAKE)" build-aux/make_toolchain.sh "`pwd`/toolchain" -j$(NCPUS)
 
 gnu-efi:
-	git clone https://github.com/limine-bootloader/gnu-efi.git --branch=3.0.14 --depth=1 $@
+	git clone https://github.com/limine-bootloader/gnu-efi.git --branch=3.0.14 --depth=1
 	cp build-aux/elf/* gnu-efi/inc/
 
 ovmf-x64:

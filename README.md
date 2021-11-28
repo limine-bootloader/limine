@@ -66,9 +66,6 @@ release.
 *These steps are not necessary if cloning a binary release. If so, skip to*
 *"Installing Limine binaries".*
 
-**Note that the build system does not support building from a directory whose**
-**full path contains spaces.**
-
 ### Building the toolchain
 
 This step can take a long time, but it will ensure that the toolchain will work

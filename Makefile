@@ -16,7 +16,7 @@ export LIMINE_VERSION := $(shell cat version 2>/dev/null || ( git describe --exa
 
 export LIMINE_COPYRIGHT := $(shell grep Copyright LICENSE.md)
 
-export LIMINE_REPO := $(shell git config --get remote.origin.url)
+export LIMINE_REPO := "$(shell git config --get remote.origin.url)"
 
 TOOLCHAIN ?= limine
 

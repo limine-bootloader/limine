@@ -24,6 +24,7 @@
 #include <pxe/tftp.h>
 #include <drivers/disk.h>
 #include <sys/lapic.h>
+#include <lib/readline.h>
 
 void stage3_common(void);
 
@@ -162,8 +163,11 @@ void stage3_common(void) {
         print("Boot partition: %d\n", boot_volume->partition);
     }
 
+    bool disable_timeout = false;
+
+menu_again:;
     char *cmdline;
-    char *config = menu(&cmdline);
+    char *config = menu(&cmdline, disable_timeout);
 
     char *proto = config_get_value(config, 0, "PROTOCOL");
     if (proto == NULL) {
@@ -199,6 +203,13 @@ autodetect:
         print("WARNING: Incorrect protocol specified for kernel.\n");
     }
 
-    print("         Attempting autodetection.\n");
-    goto autodetect;
+    print("         Press A to attempt autodetection or any other key to return to menu.\n");
+
+    int c = getchar();
+    if (c == 'a' || c == 'A') {
+        goto autodetect;
+    } else {
+        disable_timeout = true;
+        goto menu_again;
+    }
 }

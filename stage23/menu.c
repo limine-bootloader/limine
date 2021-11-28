@@ -513,7 +513,7 @@ static size_t print_tree(const char *shift, size_t level, size_t base_index, siz
     return max_entries;
 }
 
-char *menu(char **cmdline) {
+char *menu(char **cmdline, bool disable_timeout) {
     menu_branding = config_get_value(NULL, 0, "MENU_BRANDING");
     if (menu_branding == NULL)
         menu_branding = "Limine " LIMINE_VERSION;
@@ -542,6 +542,10 @@ char *menu(char **cmdline) {
             skip_timeout = true;
         else
             timeout = strtoui(timeout_config, NULL, 10);
+    }
+
+    if (disable_timeout) {
+        skip_timeout = true;
     }
 
     bool editor_enabled = true;

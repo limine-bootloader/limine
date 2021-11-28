@@ -1,6 +1,8 @@
 #ifndef __MENU_H__
 #define __MENU_H__
 
-char *menu(char **cmdline_ret);
+#include <stdbool.h>
+
+char *menu(char **cmdline_ret, bool disable_timeout);
 
 #endif

@@ -10,7 +10,7 @@ BINDIR ?= $(BUILDDIR)/bin
 
 SPACE := $(subst ,, )
 
-MKESCAPE = $(subst #,\#,$(subst $$,$$$$,$(subst $(SPACE),\ ,$(1))))
+MKESCAPE = $(subst $(SPACE),\ ,$(1))
 SHESCAPE = $(subst ','\'',$(1))
 
 export PATH := $(shell pwd)/toolchain/bin:$(PATH)

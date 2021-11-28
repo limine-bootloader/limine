@@ -91,7 +91,7 @@ int elf_bits(uint8_t *elf) {
     memcpy(&hdr, elf + (0), 20);
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
-        print("elf: Not a valid ELF file.\n");
+        printv("elf: Not a valid ELF file.\n");
         return -1;
     }
 
@@ -179,17 +179,17 @@ int elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
-        print("elf: Not a valid ELF file.\n");
+        printv("elf: Not a valid ELF file.\n");
         return 1;
     }
 
     if (hdr.ident[EI_DATA] != BITS_LE) {
-        print("elf: Not a Little-endian ELF file.\n");
+        printv("elf: Not a Little-endian ELF file.\n");
         return 1;
     }
 
     if (hdr.machine != ARCH_X86_64) {
-        print("elf: Not an x86_64 ELF file.\n");
+        printv("elf: Not an x86_64 ELF file.\n");
         return 1;
     }
 
@@ -273,17 +273,17 @@ int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
     memcpy(&hdr, elf + (0), sizeof(struct elf32_hdr));
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
-        print("elf: Not a valid ELF file.\n");
+        printv("elf: Not a valid ELF file.\n");
         return 1;
     }
 
     if (hdr.ident[EI_DATA] != BITS_LE) {
-        print("elf: Not a Little-endian ELF file.\n");
+        printv("elf: Not a Little-endian ELF file.\n");
         return 1;
     }
 
     if (hdr.machine != ARCH_X86_32) {
-        print("elf: Not an x86_32 ELF file.\n");
+        printv("elf: Not an x86_32 ELF file.\n");
         return 1;
     }
 
@@ -607,17 +607,17 @@ int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t allo
     memcpy(&hdr, elf + (0), sizeof(struct elf32_hdr));
 
     if (strncmp((char *)hdr.ident, "\177ELF", 4)) {
-        print("elf: Not a valid ELF file.\n");
+        printv("elf: Not a valid ELF file.\n");
         return -1;
     }
 
     if (hdr.ident[EI_DATA] != BITS_LE) {
-        print("elf: Not a Little-endian ELF file.\n");
+        printv("elf: Not a Little-endian ELF file.\n");
         return -1;
     }
 
     if (hdr.machine != ARCH_X86_32) {
-        print("elf: Not an x86_32 ELF file.\n");
+        printv("elf: Not an x86_32 ELF file.\n");
         return -1;
     }
 

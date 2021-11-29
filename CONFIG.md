@@ -6,9 +6,9 @@ Limine scans for a config file on *the boot drive*. Every partition on the boot 
 is scanned sequentially (first partition first, last partition last) for the presence
 of either a `/limine.cfg`, `/boot/limine.cfg`, or a `/EFI/BOOT/limine.cfg` file, in that order.
 
-If no config file is found in the aforementioned locations, limine looks for the file on the fw_cfg
+If no config file is found in the aforementioned locations, Limine looks for the file on the fw_cfg
 interface called `opt/org.limine-bootloader.config`.
-If that is not present, limine enters the so-called "simple mode", where the kernel is loaded from 
+If that is not present, Limine enters the so-called "simple mode", where the kernel is loaded from 
 `opt/org.limine-bootloader.kernel`, and, (if present), the background is loaded from 
 `opt/org.limine-bootloader.background`.
 

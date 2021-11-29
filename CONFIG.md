@@ -7,8 +7,8 @@ is scanned sequentially (first partition first, last partition last) for the pre
 of either a `/limine.cfg`, `/boot/limine.cfg`, or a `/EFI/BOOT/limine.cfg` file, in that order.
 
 If no config file is found in the aforementioned locations, Limine looks for the file on the fw_cfg
-interface called `opt/org.limine-bootloader.config`.
-If that is not present, Limine enters the so-called "simple mode", where the kernel is loaded from 
+interface called `opt/org.limine-bootloader.config`. If that is not present and the kernel is found at
+`opt/org.limine-bootloader.kernel`, Limine enters the so-called "simple mode", where the kernel is loaded from 
 `opt/org.limine-bootloader.kernel`, and, (if present), the background is loaded from 
 `opt/org.limine-bootloader.background`.
 

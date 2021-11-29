@@ -6,6 +6,12 @@ Limine scans for a config file on *the boot drive*. Every partition on the boot 
 is scanned sequentially (first partition first, last partition last) for the presence
 of either a `/limine.cfg`, `/boot/limine.cfg`, or a `/EFI/BOOT/limine.cfg` file, in that order.
 
+If no config file is found in the aforementioned locations, limine looks for the file on the fw_cfg
+interface called `opt/org.limine-bootloader.config`.
+If that is not present, limine enters the so-called "simple mode", where the kernel is loaded from 
+`opt/org.limine-bootloader.kernel`, and, (if present), the background is loaded from 
+`opt/org.limine-bootloader.background`.
+
 Once the file is located, Limine will use it as its config file. Other possible
 candidates in subsequent partitions or directories are ignored.
 
@@ -149,6 +155,7 @@ A resource can be one of the following:
 * `guid` - The `root` takes the form of a GUID/UUID, such as `guid://736b5698-5ae1-4dff-be2c-ef8f44a61c52/...`. The GUID is that of either a filesystem, when available, or a GPT partition GUID, when using GPT, in a unified namespace.
 * `uuid` - Alias of `guid`.
 * `tftp` - The `root` is the IP address of the tftp server to load the file from. If the root is left empty (`tftp:///...`) the file will be loaded from the server Limine booted from. This resource is only available when booting off PXE.
+* `fwcfg` - The `root` must be empty. The `path` refers to a fw_cfg filename to be loaded. The canonical place to put fw_cfg files is in the `opt/fqdn.<name>` namespace.
 
 A URI can optionally be prefixed by a `$` character to indicate that the file
 pointed to be the URI is a gzip-compressed payload to be uncompressed on the

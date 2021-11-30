@@ -4,7 +4,7 @@
 .data
 .global __binary_limine_hdd_bin_start
 __binary_limine_hdd_bin_start:
-    .incbin LIMINE_HDD_BIN
+    .incbin "limine-hdd.bin"
 .global __binary_limine_hdd_bin_end
 __binary_limine_hdd_bin_end:
 
@@ -13,7 +13,7 @@ __binary_limine_hdd_bin_end:
 .section .data
 .global __binary_limine_hdd_bin_start
 __binary_limine_hdd_bin_start:
-    .incbin LIMINE_HDD_BIN
+    .incbin "limine-hdd.bin"
 .global __binary_limine_hdd_bin_end
 __binary_limine_hdd_bin_end:
 
@@ -26,7 +26,7 @@ __binary_limine_hdd_bin_end:
 .section .data
 .global _binary_limine_hdd_bin_start
 _binary_limine_hdd_bin_start:
-    .incbin LIMINE_HDD_BIN
+    .incbin "limine-hdd.bin"
 .global _binary_limine_hdd_bin_end
 _binary_limine_hdd_bin_end:
 

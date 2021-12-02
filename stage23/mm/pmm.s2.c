@@ -276,6 +276,9 @@ void init_memmap(void) {
 #endif
 
 #if uefi == 1
+extern symbol ImageBase;
+extern symbol _edata;
+
 void init_memmap(void) {
     EFI_STATUS status;
 
@@ -381,6 +384,12 @@ void init_memmap(void) {
 
     memcpy(untouched_memmap, memmap, memmap_entries * sizeof(struct e820_entry_t));
     untouched_memmap_entries = memmap_entries;
+
+    // Allocate bootloader itself
+    memmap_alloc_range((uintptr_t)ImageBase, (uintptr_t)_edata - (uintptr_t)ImageBase,
+                       MEMMAP_BOOTLOADER_RECLAIMABLE, false, true, false, true);
+
+    sanitise_entries(memmap, &memmap_entries, false);
 
     return;
 

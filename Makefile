@@ -276,7 +276,8 @@ ext2-test:
 	sudo mkfs.ext2 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv $(BINDIR)/* test/* test_image/boot/
+	sudo cp -rv $(BINDIR)/* test_image/boot/
+	sudo cp -rv test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
@@ -298,7 +299,8 @@ fat12-test:
 	sudo mkfs.fat -F 12 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv $(BINDIR)/* test/* test_image/boot/
+	sudo cp -rv $(BINDIR)/* test_image/boot/
+	sudo cp -rv test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
@@ -320,7 +322,8 @@ fat16-test:
 	sudo mkfs.fat -F 16 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv $(BINDIR)/* test/* test_image/boot/
+	sudo cp -rv $(BINDIR)/* test_image/boot/
+	sudo cp -rv test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
@@ -342,7 +345,8 @@ fat32-test:
 	sudo mkfs.fat -F 32 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv $(BINDIR)/* test/* test_image/boot/
+	sudo cp -rv $(BINDIR)/* test_image/boot/
+	sudo cp -rv test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
@@ -358,7 +362,8 @@ iso9660-test:
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir -p test_image/boot
-	cp -rv $(BINDIR)/* test/* test_image/boot/
+	sudo cp -rv $(BINDIR)/* test_image/boot/
+	sudo cp -rv test/* test_image/boot/
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table test_image/ -o test.iso
 	qemu-system-x86_64 -net none -smp 4   -cdrom test.iso -debugcon stdio
 
@@ -396,7 +401,8 @@ full-hybrid-test:
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir -p test_image/boot
-	cp -rv $(BINDIR)/* test/* test_image/boot/
+	sudo cp -rv $(BINDIR)/* test_image/boot/
+	sudo cp -rv test/* test_image/boot/
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine-eltorito-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label test_image/ -o test.iso
 	$(BINDIR)/limine-install test.iso
 	qemu-system-x86_64 -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -cdrom test.iso -debugcon stdio
@@ -413,7 +419,8 @@ pxe-test:
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir -p test_image/boot
-	cp -rv $(BINDIR)/* test/* test_image/boot/
+	sudo cp -rv $(BINDIR)/* test_image/boot/
+	sudo cp -rv test/* test_image/boot/
 	qemu-system-x86_64  -smp 4  -netdev user,id=n0,tftp=./test_image,bootfile=boot/limine-pxe.bin -device rtl8139,netdev=n0,mac=00:00:00:11:11:11 -debugcon stdio
 
 .PHONY: uefi-test
@@ -430,7 +437,8 @@ uefi-test:
 	sudo mkfs.fat -F 32 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv $(BINDIR)/* test/* test_image/boot/
+	sudo cp -rv $(BINDIR)/* test_image/boot/
+	sudo cp -rv test/* test_image/boot/
 	sudo mkdir -p test_image/EFI/BOOT
 	sudo cp $(BINDIR)/BOOTX64.EFI test_image/EFI/BOOT/
 	sync
@@ -453,7 +461,8 @@ uefi32-test:
 	sudo mkfs.fat -F 32 `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv $(BINDIR)/* test/* test_image/boot/
+	sudo cp -rv $(BINDIR)/* test_image/boot/
+	sudo cp -rv test/* test_image/boot/
 	sudo mkdir -p test_image/EFI/BOOT
 	sudo cp $(BINDIR)/BOOTIA32.EFI test_image/EFI/BOOT/
 	sync

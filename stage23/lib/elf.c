@@ -371,6 +371,10 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
         ranges_count++;
     }
 
+    if (ranges_count == 0) {
+        panic("elf: Attempted to use PMRs but no higher half PHDR exists");
+    }
+
     struct elf_range *ranges = ext_mem_alloc(ranges_count * sizeof(struct elf_range));
 
     size_t r = 0;
@@ -464,6 +468,10 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
             if (phdr.p_vaddr + phdr.p_memsz > max_vaddr) {
                 max_vaddr = phdr.p_vaddr + phdr.p_memsz;
             }
+        }
+
+        if (max_vaddr == 0 || min_vaddr == (uint64_t)-1) {
+            panic("elf: Attempted to use fully virtual mappings but no higher half PHDR exists");
         }
 
         image_size = max_vaddr - min_vaddr;

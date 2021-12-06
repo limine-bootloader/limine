@@ -372,7 +372,7 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
     }
 
     if (ranges_count == 0) {
-        panic("elf: Attempted to use PMRs but no higher half PHDR exists");
+        panic("elf: Attempted to use PMRs but no higher half PHDRs exist");
     }
 
     struct elf_range *ranges = ext_mem_alloc(ranges_count * sizeof(struct elf_range));
@@ -471,7 +471,7 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
         }
 
         if (max_vaddr == 0 || min_vaddr == (uint64_t)-1) {
-            panic("elf: Attempted to use fully virtual mappings but no higher half PHDR exists");
+            panic("elf: Attempted to use fully virtual mappings but no higher half PHDRs exist");
         }
 
         image_size = max_vaddr - min_vaddr;
@@ -560,7 +560,7 @@ final:
             ((higher_half == true && this_top > 0x80000000)
           || !memmap_alloc_range((size_t)mem_base, (size_t)mem_size, alloc_type, true, false, simulation, false))) {
             if (++try_count == max_simulated_tries || simulation == false) {
-                panic("elf: Failed to allocate necessary memory ranges");
+                panic("elf: Failed to allocate necessary memory range (%p-%p)", mem_base, mem_base + mem_size);
             }
             if (!kaslr) {
                 slide += max_align;

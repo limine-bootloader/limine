@@ -173,6 +173,9 @@ void vprint(const char *fmt, va_list args) {
             case 'X':
                 prn_x(print_buf, &print_buf_i, va_arg(args, uint64_t));
                 break;
+            case 'p':
+                prn_x(print_buf, &print_buf_i, va_arg(args, uintptr_t));
+                break;
             case 'c': {
                 char c = (char)va_arg(args, int);
                 prn_char(print_buf, &print_buf_i, c); }

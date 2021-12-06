@@ -273,7 +273,7 @@ failed_to_load_header_section:
         print("stivale2: WARNING: Requested stack is not 16-byte aligned\n");
     }
 
-    if (stivale2_hdr.stack != 0 && ranges != NULL) {
+    if (stivale2_hdr.stack >= 0xffffffff80000000 && ranges != NULL) {
         bool stack_valid = false;
 
         for (size_t i = 0; i < ranges_count; i++) {

@@ -471,11 +471,11 @@ bool linux_load(char *config, char *cmdline) {
         if (module_path == NULL)
             break;
 
+        print("linux: Loading module `%s`...\n", module_path);
+
         struct file_handle *module;
         if ((module = uri_open(module_path)) == NULL)
             panic("linux: Could not open `%s`", module_path);
-
-        print("linux: Loading module `%s`...\n", module_path);
 
         fread(module, (void *)_modules_mem_base, 0, module->size);
 

@@ -58,8 +58,7 @@ override STAGE1_FILES := $(shell find -L ./stage1 -type f -name '*.asm')
 
 .PHONY: all
 all: limine-uefi limine-uefi32 limine-bios
-	$(MAKE) limine-install
-	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin'
+	$(MAKE) limine-install limine-eltorito-efi
 
 .PHONY: limine-install
 limine-install:
@@ -96,8 +95,8 @@ $(call MKESCAPE,$(BUILDDIR))/stage1: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR)
 limine-bios: stage23-bios decompressor
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/stage1'
 
-.PHONY: $(call MKESCAPE,$(BINDIR))/limine-eltorito-efi.bin
-$(call MKESCAPE,$(BINDIR))/limine-eltorito-efi.bin:
+.PHONY: limine-eltorito-efi
+limine-eltorito-efi:
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	dd if=/dev/zero of='$(call SHESCAPE,$@)' bs=512 count=2880
 	( mformat -i '$(call SHESCAPE,$@)' -f 1440 :: && \
@@ -391,10 +390,7 @@ full-hybrid-test:
 	$(MAKE) ovmf-x64
 	$(MAKE) ovmf-ia32
 	$(MAKE) test-clean
-	$(MAKE) limine-uefi
-	$(MAKE) limine-uefi32
-	$(MAKE) limine-bios
-	$(MAKE) limine-install
+	$(MAKE) all
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir -p test_image/boot

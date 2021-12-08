@@ -98,24 +98,24 @@ limine-bios: stage23-bios decompressor
 .PHONY: limine-eltorito-efi
 limine-eltorito-efi:
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	dd if=/dev/zero of='$(call SHESCAPE,$@)' bs=512 count=2880
-	( mformat -i '$(call SHESCAPE,$@)' -f 1440 :: && \
-	  mmd -D s -i '$(call SHESCAPE,$@)' ::/EFI && \
-	  mmd -D s -i '$(call SHESCAPE,$@)' ::/EFI/BOOT && \
+	dd if=/dev/zero of='$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' bs=512 count=2880
+	( mformat -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' -f 1440 :: && \
+	  mmd -D s -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' ::/EFI && \
+	  mmd -D s -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' ::/EFI/BOOT && \
 	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi/BOOTX64.EFI' ] && \
-	      mcopy -D o -i '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi/BOOTX64.EFI' ::/EFI/BOOT ) || true ) && \
+	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi/BOOTX64.EFI' ::/EFI/BOOT ) || true ) && \
 	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32/BOOTIA32.EFI' ] && \
-	      mcopy -D o -i '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32/BOOTIA32.EFI' ::/EFI/BOOT ) || true ) \
-	) || rm -f '$(call SHESCAPE,$@)'
+	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32/BOOTIA32.EFI' ::/EFI/BOOT ) || true ) \
+	) || rm -f '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin'
 
 .PHONY: limine-uefi
-limine-uefi: gnu-efi
+limine-uefi: reduced-gnu-efi
 	$(MAKE) stage23-uefi
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi/BOOTX64.EFI' '$(call SHESCAPE,$(BINDIR))/'
 
 .PHONY: limine-uefi32
-limine-uefi32: gnu-efi
+limine-uefi32: reduced-gnu-efi
 	$(MAKE) stage23-uefi32
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32/BOOTIA32.EFI' '$(call SHESCAPE,$(BINDIR))/'
@@ -130,7 +130,7 @@ limine-uefi-clean: stage23-uefi-clean
 limine-uefi32-clean: stage23-uefi32-clean
 
 .PHONY: regenerate
-regenerate: gnu-efi stivale
+regenerate: reduced-gnu-efi stivale
 
 .PHONY: dist
 dist:
@@ -139,7 +139,7 @@ dist:
 	rm -rf "limine-$(LIMINE_VERSION)/"*.tar*
 	$(MAKE) -C "limine-$(LIMINE_VERSION)" repoclean
 	$(MAKE) -C "limine-$(LIMINE_VERSION)" regenerate
-	rm -rf "limine-$(LIMINE_VERSION)/gnu-efi/.git"
+	rm -rf "limine-$(LIMINE_VERSION)/reduced-gnu-efi/.git"
 	rm -rf "limine-$(LIMINE_VERSION)/stivale/.git"
 	rm -rf "limine-$(LIMINE_VERSION)/.git"
 	echo "$(LIMINE_VERSION)" > "limine-$(LIMINE_VERSION)/version"
@@ -152,10 +152,13 @@ distclean: clean test-clean
 
 .PHONY: repoclean
 repoclean: distclean
-	rm -rf stivale gnu-efi *.tar.xz
+	rm -rf stivale reduced-gnu-efi *.tar.xz
 
 stivale:
 	git clone https://github.com/stivale/stivale.git
+
+reduced-gnu-efi:
+	git clone https://github.com/limine-bootloader/reduced-gnu-efi.git
 
 .PHONY: stage23-uefi
 stage23-uefi: stivale
@@ -197,10 +200,6 @@ test-clean:
 .PHONY: toolchain
 toolchain:
 	MAKE="$(MAKE)" build-aux/make_toolchain.sh "`pwd`/toolchain" -j$(NCPUS)
-
-gnu-efi:
-	git clone https://github.com/limine-bootloader/gnu-efi.git --branch=3.0.14 --depth=1
-	cp build-aux/elf/* gnu-efi/inc/
 
 ovmf-x64:
 	mkdir -p ovmf-x64

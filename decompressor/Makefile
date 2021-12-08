@@ -4,14 +4,14 @@ endif
 
 BUILDDIR =
 
-SPACE := $(subst ,, )
+override SPACE := $(subst ,, )
 
 MKESCAPE = $(subst $(SPACE),\ ,$(1))
 SHESCAPE = $(subst ','\'',$(1))
 OBJESCAPE = $(subst .a ,.a' ',$(subst .o ,.o' ',$(call SHESCAPE,$(1))))
 
 ifeq ($(call MKESCAPE,$(BUILDDIR)), )
-	$(error $(call MKESCAPE,$(BUILDDIR)) not specified)
+	$(error BUILDDIR not specified)
 endif
 
 TOOLCHAIN ?= limine
@@ -33,7 +33,7 @@ endif
 WERROR = -Werror
 CFLAGS ?= -Os -pipe -Wall -Wextra $(WERROR)
 
-INTERNAL_CFLAGS = \
+override INTERNAL_CFLAGS := \
 	-m32 \
 	-march=i686 \
 	-mtune=generic \
@@ -56,22 +56,20 @@ INTERNAL_CFLAGS = \
 
 LDFLAGS ?=
 
-INTERNAL_LDFLAGS = \
+override INTERNAL_LDFLAGS := \
 	-melf_i386 \
 	-nostdlib \
 	-z max-page-size=0x1000 \
 	-static \
 	-Tlinker.ld
 
-.PHONY: all clean
+override C_FILES := $(shell find -L ./ -type f -name '*.c')
+override ASM_FILES := $(shell find -L ./ -type f -name '*.asm')
+override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o))
+override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.d))
 
-C_FILES := $(shell find -L ./ -type f -name '*.c' | sort)
-ASM_FILES := $(shell find -L ./ -type f -name '*.asm' | sort)
-OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o))
-HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.d))
-
-all:
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/decompressor.bin'
+.PHONY: all
+all: $(call MKESCAPE,$(BUILDDIR))/decompressor.bin
 
 $(call MKESCAPE,$(BUILDDIR))/decompressor.bin: $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o
 	$(TOOLCHAIN_LD) '$(call OBJESCAPE,$^)' $(LDFLAGS) $(INTERNAL_LDFLAGS) -o '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf'
@@ -97,5 +95,6 @@ $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm
 	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
 	nasm '$(call SHESCAPE,$<)' -f elf32 -o '$(call SHESCAPE,$@)'
 
+.PHONY: clean
 clean:
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'

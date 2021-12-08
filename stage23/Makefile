@@ -5,26 +5,26 @@ endif
 TARGET =
 BUILDDIR =
 
-SRCDIR := $(shell pwd)
+override SRCDIR := $(shell pwd)
 
-SPACE := $(subst ,, )
+override SPACE := $(subst ,, )
 
 MKESCAPE = $(subst $(SPACE),\ ,$(1))
 SHESCAPE = $(subst ','\'',$(1))
 OBJESCAPE = $(subst .a ,.a' ',$(subst .o ,.o' ',$(call SHESCAPE,$(1))))
 
 ifeq ($(call MKESCAPE,$(BUILDDIR)), )
-	$(error $(call MKESCAPE,$(BUILDDIR)) not specified)
+	$(error BUILDDIR not specified)
 endif
 
 ifeq ($(TARGET), bios)
-	OBJCOPY_ARCH := elf32-i386
+override OBJCOPY_ARCH := elf32-i386
 else ifeq ($(TARGET), uefi)
-	OBJCOPY_ARCH := elf64-x86-64
+override OBJCOPY_ARCH := elf64-x86-64
 else ifeq ($(TARGET), uefi32)
-	OBJCOPY_ARCH := elf32-i386
+override OBJCOPY_ARCH := elf32-i386
 else
-	$(error Invalid target)
+$(error Invalid target)
 endif
 
 TOOLCHAIN ?= limine
@@ -61,9 +61,9 @@ E9_OUTPUT = false
 WERROR = -Werror
 CFLAGS ?= -O3 -g -pipe -Wall -Wextra $(WERROR)
 
-S2CFLAGS := $(CFLAGS) -Os
+override S2CFLAGS := $(CFLAGS) -Os
 
-INTERNAL_CFLAGS := \
+override INTERNAL_CFLAGS := \
 	-std=gnu11 \
 	-ffreestanding \
 	-fno-stack-protector \
@@ -86,7 +86,7 @@ INTERNAL_CFLAGS := \
 	-I'$(call SHESCAPE,$(BUILDDIR))/tinf'
 
 ifeq ($(TARGET), bios)
-	INTERNAL_CFLAGS += \
+override INTERNAL_CFLAGS += \
 		-Dbios=1 \
 		-Duefi=0 \
 		-m32 \
@@ -98,7 +98,7 @@ ifeq ($(TARGET), bios)
 endif
 
 ifeq ($(TARGET), uefi)
-	INTERNAL_CFLAGS32 := \
+override INTERNAL_CFLAGS32 := \
 		$(INTERNAL_CFLAGS) \
 		-Dbios=0 \
 		-Duefi=1 \
@@ -109,7 +109,7 @@ ifeq ($(TARGET), uefi)
 		-DGNU_EFI_USE_MS_ABI \
 		-fpie
 
-	INTERNAL_CFLAGS += \
+override INTERNAL_CFLAGS += \
 		-Dbios=0 \
 		-Duefi=1 \
 		-m64 \
@@ -124,7 +124,7 @@ ifeq ($(TARGET), uefi)
 endif
 
 ifeq ($(TARGET), uefi32)
-	INTERNAL_CFLAGS += \
+override INTERNAL_CFLAGS += \
 		-Dbios=0 \
 		-Duefi=1 \
 		-m32 \
@@ -139,19 +139,19 @@ endif
 
 LDFLAGS ?=
 
-INTERNAL_LDFLAGS := \
+override INTERNAL_LDFLAGS := \
 	-nostdlib \
 	-z max-page-size=0x1000
 
 ifeq ($(TARGET), bios)
-	INTERNAL_LDFLAGS += \
+override INTERNAL_LDFLAGS += \
 		-melf_i386 \
 		-static \
 		--build-id=sha1
 endif
 
 ifeq ($(TARGET), uefi)
-	INTERNAL_LDFLAGS += \
+override INTERNAL_LDFLAGS += \
 		-melf_x86_64 \
 		-static \
 		-pie \
@@ -160,7 +160,7 @@ ifeq ($(TARGET), uefi)
 endif
 
 ifeq ($(TARGET), uefi32)
-	INTERNAL_LDFLAGS += \
+override INTERNAL_LDFLAGS += \
 		-melf_i386 \
 		-static \
 		-pie \
@@ -170,36 +170,33 @@ endif
 
 .PHONY: all clean
 
-C_FILES := $(shell find -L ./ -type f -name '*.c' | sort)
+override C_FILES := $(shell find -L ./ -type f -name '*.c')
 ifeq ($(TARGET), bios)
-ASM32_FILES := $(shell find -L ./ -type f -name '*.asm32' | sort)
-ASMB_FILES := $(shell find -L ./ -type f -name '*.asmb' | sort)
+override ASM32_FILES := $(shell find -L ./ -type f -name '*.asm32')
+override ASMB_FILES := $(shell find -L ./ -type f -name '*.asmb')
 
-OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM32_FILES:.asm32=.o) $(ASMB_FILES:.asmb=.o) $(C_FILES:.c=.o))
+override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM32_FILES:.asm32=.o) $(ASMB_FILES:.asmb=.o) $(C_FILES:.c=.o))
 endif
 ifeq ($(TARGET), uefi)
-ASM64_FILES := $(shell find -L ./ -type f -name '*.asm64' | sort)
-ASM64U_FILES := $(shell find -L ./ -type f -name '*.asm64u' | sort)
+override ASM64_FILES := $(shell find -L ./ -type f -name '*.asm64')
+override ASM64U_FILES := $(shell find -L ./ -type f -name '*.asm64u')
 
-OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM64_FILES:.asm64=.o) $(ASM64U_FILES:.asm64u=.o) $(C_FILES:.c=.o))
+override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM64_FILES:.asm64=.o) $(ASM64U_FILES:.asm64u=.o) $(C_FILES:.c=.o))
 endif
 ifeq ($(TARGET), uefi32)
-ASM32_FILES := $(shell find -L ./ -type f -name '*.asm32' | sort)
-ASM32U_FILES := $(shell find -L ./ -type f -name '*.asm32u' | sort)
+override ASM32_FILES := $(shell find -L ./ -type f -name '*.asm32')
+override ASM32U_FILES := $(shell find -L ./ -type f -name '*.asm32u')
 
-OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM32_FILES:.asm32=.o) $(ASM32U_FILES:.asm32u=.o) $(C_FILES:.c=.o))
+override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM32_FILES:.asm32=.o) $(ASM32U_FILES:.asm32u=.o) $(C_FILES:.c=.o))
 endif
-HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.d))
+override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.d))
 
 ifeq ($(TARGET), bios)
-all:
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/limine_dbg.elf' '$(call SHESCAPE,$(BUILDDIR))/limine.sys' '$(call SHESCAPE,$(BUILDDIR))/stage2.bin' '$(call SHESCAPE,$(BUILDDIR))/stage2.bin.gz'
+all: $(call MKESCAPE,$(BUILDDIR))/limine_dbg.elf $(call MKESCAPE,$(BUILDDIR))/limine.sys $(call MKESCAPE,$(BUILDDIR))/stage2.bin.gz
 else ifeq ($(TARGET), uefi)
-all:
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/BOOTX64.EFI'
+all: $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI
 else ifeq ($(TARGET), uefi32)
-all:
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/BOOTIA32.EFI'
+all: $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI
 endif
 
 $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.bin: sys/smp_trampoline.real

@@ -6,20 +6,23 @@ PREFIX ?= /usr/local
 DESTDIR ?=
 
 BUILDDIR ?= $(shell pwd)/build
-BINDIR ?= $(BUILDDIR)/bin
+override BINDIR := $(BUILDDIR)/bin
 
-SPACE := $(subst ,, )
+override SPACE := $(subst ,, )
 
 MKESCAPE = $(subst $(SPACE),\ ,$(1))
 SHESCAPE = $(subst ','\'',$(1))
 
-export PATH := $(shell pwd)/toolchain/bin:$(PATH)
+override PATH := $(shell pwd)/toolchain/bin:$(PATH)
+export PATH
 
-NCPUS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
+override NCPUS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 
-export LIMINE_VERSION := $(shell cat version 2>/dev/null || ( git describe --exact-match --tags `git log -n1 --pretty='%h'` 2>/dev/null || git log -n1 --pretty='%h' ) )
+override LIMINE_VERSION := $(shell cat version 2>/dev/null || ( git describe --exact-match --tags `git log -n1 --pretty='%h'` 2>/dev/null || git log -n1 --pretty='%h' ) )
+export LIMINE_VERSION
 
-export LIMINE_COPYRIGHT := $(shell grep Copyright LICENSE.md)
+override LIMINE_COPYRIGHT := $(shell grep Copyright LICENSE.md)
+export LIMINE_COPYRIGHT
 
 TOOLCHAIN ?= limine
 
@@ -37,7 +40,7 @@ MAKEOVERRIDES += TOOLCHAIN_CC+=--target=x86_64-elf
 endif
 endif
 
-CC_MACHINE := $(shell PATH='$(call SHESCAPE,$(PATH))' $(TOOLCHAIN_CC) -dumpmachine | dd bs=6 count=1 2>/dev/null)
+override CC_MACHINE := $(shell PATH='$(call SHESCAPE,$(PATH))' $(TOOLCHAIN_CC) -dumpmachine | dd bs=6 count=1 2>/dev/null)
 
 ifneq ($(MAKECMDGOALS), toolchain)
 ifneq ($(MAKECMDGOALS), distclean)
@@ -51,14 +54,12 @@ endif
 endif
 endif
 
-STAGE1_FILES := $(shell find -L ./stage1 -type f -name '*.asm' | sort)
+override STAGE1_FILES := $(shell find -L ./stage1 -type f -name '*.asm')
 
 .PHONY: all
-all:
-	$(MAKE) limine-uefi
-	$(MAKE) limine-uefi32
-	$(MAKE) limine-bios
+all: limine-uefi limine-uefi32 limine-bios
 	$(MAKE) limine-install
+	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin'
 
 .PHONY: limine-install
 limine-install:
@@ -68,7 +69,7 @@ limine-install:
 
 .PHONY: clean
 clean: limine-bios-clean limine-uefi-clean limine-uefi32-clean
-	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))' clean || true
+	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1'
 
 .PHONY: install
 install: all
@@ -109,20 +110,16 @@ $(call MKESCAPE,$(BINDIR))/limine-eltorito-efi.bin:
 	) || rm -f '$(call SHESCAPE,$@)'
 
 .PHONY: limine-uefi
-limine-uefi:
-	$(MAKE) gnu-efi
+limine-uefi: gnu-efi
 	$(MAKE) stage23-uefi
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi/BOOTX64.EFI' '$(call SHESCAPE,$(BINDIR))/'
-	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin'
 
 .PHONY: limine-uefi32
-limine-uefi32:
-	$(MAKE) gnu-efi
+limine-uefi32: gnu-efi
 	$(MAKE) stage23-uefi32
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32/BOOTIA32.EFI' '$(call SHESCAPE,$(BINDIR))/'
-	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin'
 
 .PHONY: limine-bios-clean
 limine-bios-clean: stage23-bios-clean decompressor-clean

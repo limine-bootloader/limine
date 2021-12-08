@@ -254,7 +254,7 @@ failed_to_load_header_section:
         local_gdt_base += direct_map_offset;
     }
     local_gdt->ptr = local_gdt_base;
-#if bios == 1
+#if defined (__i386__)
     local_gdt->ptr_hi = local_gdt_base >> 32;
 #endif
 

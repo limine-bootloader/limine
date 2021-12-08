@@ -117,8 +117,8 @@ override INTERNAL_CFLAGS += \
 		-mtune=generic \
 		-mabi=sysv \
 		-DGNU_EFI_USE_MS_ABI \
-		-I'$(call SHESCAPE,$(BUILDDIR))/gnu-efi/inc' \
-		-I'$(call SHESCAPE,$(BUILDDIR))/gnu-efi/inc/x86_64' \
+		-I'$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/inc' \
+		-I'$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/inc/x86_64' \
 		-fpie \
 		-mno-red-zone
 endif
@@ -132,8 +132,8 @@ override INTERNAL_CFLAGS += \
 		-mtune=generic \
 		-mabi=sysv \
 		-DGNU_EFI_USE_MS_ABI \
-		-I'$(call SHESCAPE,$(BUILDDIR))/gnu-efi/inc' \
-		-I'$(call SHESCAPE,$(BUILDDIR))/gnu-efi/inc/ia32' \
+		-I'$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/inc' \
+		-I'$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/inc/ia32' \
 		-fpie
 endif
 
@@ -285,13 +285,9 @@ $(call MKESCAPE,$(BUILDDIR))/limine_dbg.elf: $(OBJ) $(call MKESCAPE,$(BUILDDIR))
 
 endif
 
-$(call MKESCAPE,$(BUILDDIR))/gnu-efi:
+$(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi: ../reduced-gnu-efi/*
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))/'
-	cp -r ../gnu-efi '$(call SHESCAPE,$(BUILDDIR))/'
-	# gnu-efi's build system is broken and fails to actually detect clang.
-	# This is a workaround.
-	sed 's/-maccumulate-outgoing-args//g' < '$(call SHESCAPE,$(BUILDDIR))/gnu-efi/Make.defaults' > sed.tmp
-	mv sed.tmp '$(call SHESCAPE,$(BUILDDIR))/gnu-efi/Make.defaults'
+	cp -r ../reduced-gnu-efi '$(call SHESCAPE,$(BUILDDIR))/'
 
 ifeq ($(TARGET), uefi)
 
@@ -302,15 +298,15 @@ $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_efi
 $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine_efi.elf
 	$(TOOLCHAIN_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc -j .sbat --target efi-app-x86_64 --subsystem=10 '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/gnu-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/gnu-efi/gnuefi/libgnuefi.a: $(call MKESCAPE,$(BUILDDIR))/gnu-efi
-	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/gnu-efi/gnuefi' CC="$(TOOLCHAIN_CC) -m64 -march=x86-64 -mtune=generic" AR="$(TOOLCHAIN_AR)" ARCH=x86_64
+$(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi' CC="$(TOOLCHAIN_CC) -m64 -march=x86-64 -mtune=generic" AR="$(TOOLCHAIN_AR)" ARCH=x86_64
 
-$(call MKESCAPE,$(BUILDDIR))/limine_efi_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/gnu-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o
+$(call MKESCAPE,$(BUILDDIR))/limine_efi_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi_nomap.ld \
 		'$(call OBJESCAPE,$^)' $(LDFLAGS) $(INTERNAL_LDFLAGS) -o '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_efi.elf: $(call MKESCAPE,$(BUILDDIR))/gnu-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
+$(call MKESCAPE,$(BUILDDIR))/limine_efi.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi.ld \
 		'$(call OBJESCAPE,$^)' $(LDFLAGS) $(INTERNAL_LDFLAGS) -o '$(call SHESCAPE,$@)'
@@ -326,15 +322,15 @@ $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_efi
 $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI: $(call MKESCAPE,$(BUILDDIR))/limine_efi.elf
 	$(TOOLCHAIN_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc -j .sbat --target efi-app-ia32 --subsystem=10 '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/gnu-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/gnu-efi/gnuefi/libgnuefi.a: $(call MKESCAPE,$(BUILDDIR))/gnu-efi
-	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/gnu-efi/gnuefi' CC="$(TOOLCHAIN_CC) -m32 -march=i686 -mtune=generic" AR="$(TOOLCHAIN_AR)" ARCH=ia32
+$(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi' CC="$(TOOLCHAIN_CC) -m32 -march=i686 -mtune=generic" AR="$(TOOLCHAIN_AR)" ARCH=ia32
 
-$(call MKESCAPE,$(BUILDDIR))/limine_efi_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/gnu-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o
+$(call MKESCAPE,$(BUILDDIR))/limine_efi_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi32_nomap.ld \
 		'$(call OBJESCAPE,$^)' $(LDFLAGS) $(INTERNAL_LDFLAGS) -o '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_efi.elf: $(call MKESCAPE,$(BUILDDIR))/gnu-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
+$(call MKESCAPE,$(BUILDDIR))/limine_efi.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(TOOLCHAIN_LD) \
 		-Tlinker_uefi32.ld \
 		'$(call OBJESCAPE,$^)' $(LDFLAGS) $(INTERNAL_LDFLAGS) -o '$(call SHESCAPE,$@)'
@@ -344,13 +340,13 @@ endif
 -include $(HEADER_DEPS)
 
 ifeq ($(TARGET), uefi)
-$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/gnu-efi
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
 	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
 	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET), uefi32)
-$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/gnu-efi
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
 	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
 	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
@@ -372,7 +368,7 @@ endif
 -include $(HEADER_DEPS)
 
 ifeq ($(TARGET), uefi)
-$(call MKESCAPE,$(BUILDDIR))/%.32.o: %.32.c $(call MKESCAPE,$(BUILDDIR))/gnu-efi
+$(call MKESCAPE,$(BUILDDIR))/%.32.o: %.32.c $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
 	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
 	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS32) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@).32'
 	$(TOOLCHAIN_OBJCOPY) -I elf32-i386 -O elf64-x86-64 '$(call SHESCAPE,$@).32' '$(call SHESCAPE,$@)'

@@ -560,7 +560,7 @@ final:
             ((higher_half == true && this_top > 0x80000000)
           || !memmap_alloc_range((size_t)mem_base, (size_t)mem_size, alloc_type, true, false, simulation, false))) {
             if (++try_count == max_simulated_tries || simulation == false) {
-                panic("elf: Failed to allocate necessary memory range (%p-%p)", mem_base, mem_base + mem_size);
+                panic("elf: Failed to allocate necessary memory range (%X-%X)", mem_base, mem_base + mem_size);
             }
             if (!kaslr) {
                 slide += max_align;

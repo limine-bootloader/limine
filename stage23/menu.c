@@ -278,6 +278,10 @@ refresh:
         if (buffer[i] != 0 && line_offset % line_size == line_size - 1) {
             if (current_line <  window_offset + window_size
              && current_line >= window_offset) {
+                if (i == cursor_offset) {
+                    get_cursor_pos(&cursor_x, &cursor_y);
+                    printed_cursor = true;
+                }
                 if (syntax_highlighting_enabled) {
                     putchar_tokencol(token_type, buffer[i]);
                 } else {
@@ -296,7 +300,8 @@ refresh:
 
         if (i == cursor_offset
          && current_line <  window_offset + window_size
-         && current_line >= window_offset) {
+         && current_line >= window_offset
+         && !printed_cursor) {
             get_cursor_pos(&cursor_x, &cursor_y);
             printed_cursor = true;
         }

@@ -12,6 +12,7 @@
 
 static const char* recursive_panic = 0;
 
+#if bios == 1
 void fallback_print (const char* string) {
     int i;
     struct rm_regs r = {0};
@@ -20,6 +21,7 @@ void fallback_print (const char* string) {
         rm_int(0x10,&r,&r);
     }
 }
+#endif
 
 __attribute__((noreturn)) void panic(const char *fmt, ...) {
 

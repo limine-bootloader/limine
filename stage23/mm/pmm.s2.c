@@ -801,3 +801,7 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
 
     return false;
 }
+
+bool pmm_allocation_allowed(void) {
+    return !allocations_disallowed;
+}

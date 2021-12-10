@@ -57,4 +57,6 @@ void pmm_reclaim_uefi_mem(void);
 void pmm_release_uefi_mem(void);
 #endif
 
+bool pmm_allocation_allowed();
+
 #endif

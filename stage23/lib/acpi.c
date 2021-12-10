@@ -26,7 +26,7 @@ void *acpi_get_rsdp(void) {
         }
         if (!memcmp((char *)i, "RSD PTR ", 8)
          && !acpi_checksum((void *)i, 20)) {
-            printv("acpi: Found RSDP at %x\n", i);
+            printv("acpi: Found RSDP at %p\n", i);
             return (void *)i;
         }
     }
@@ -58,7 +58,7 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
 
         if (!memcmp(ptr->anchor_str, "_SM_", 4) &&
             !acpi_checksum((void *)ptr, ptr->length)) {
-            printv("acpi: Found SMBIOS 32-bit entry point at %x\n", i);
+            printv("acpi: Found SMBIOS 32-bit entry point at %p\n", i);
             *smbios32 = (void *)ptr;
             break;
         }
@@ -69,7 +69,7 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
 
         if (!memcmp(ptr->anchor_str, "_SM3_", 5) &&
             !acpi_checksum((void *)ptr, ptr->length)) {
-            printv("acpi: Found SMBIOS 64-bit entry point at %x\n", i);
+            printv("acpi: Found SMBIOS 64-bit entry point at %p\n", i);
             *smbios64 = (void *)ptr;
             break;
         }
@@ -101,7 +101,7 @@ void *acpi_get_rsdp(void) {
             (is_rsdp && acpi_checksum(cur_table->VendorTable, 20) != 0)) // RSDP is 20 bytes wide
             continue;
 
-        printv("acpi: Found %s at %X\n", is_xsdp ? "XSDP" : "RSDP", cur_table->VendorTable);
+        printv("acpi: Found %s at %p\n", is_xsdp ? "XSDP" : "RSDP", cur_table->VendorTable);
 
         // We want to return the XSDP if it exists rather then returning
         // the RSDP. We need to add a check for that since the table entries

@@ -66,9 +66,9 @@ void print_stacktrace(size_t *base_ptr) {
         size_t off;
         char *name = trace_address(&off, ret_addr);
         if (name)
-            print("  [%x] <%s+%x>\n", ret_addr, name, off);
+            print("  [%p] <%s+%p>\n", ret_addr, name, off);
         else
-            print("  [%x]\n", ret_addr);
+            print("  [%p]\n", ret_addr);
         if (!old_bp)
             break;
         base_ptr = (void*)old_bp;

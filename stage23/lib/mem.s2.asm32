@@ -1,0 +1,109 @@
+section .text
+
+global memcpy
+memcpy:
+    push esi
+    push edi
+    mov eax, dword [esp+12]
+    mov edi, eax
+    mov esi, dword [esp+16]
+    mov ecx, dword [esp+20]
+    rep movsb
+    pop edi
+    pop esi
+    ret
+
+global memset
+memset:
+    push edi
+    mov edx, dword [esp+8]
+    mov edi, edx
+    mov eax, dword [esp+12]
+    mov ecx, dword [esp+16]
+    rep stosb
+    mov eax, edx
+    pop edi
+    ret
+
+global memmove
+memmove:
+    push esi
+    push edi
+    mov eax, dword [esp+12]
+    mov edi, eax
+    mov esi, dword [esp+16]
+    mov ecx, dword [esp+20]
+
+    cmp edi, esi
+    ja .copy_backwards
+
+    rep movsb
+    jmp .done
+
+  .copy_backwards:
+    lea edi, [edi+ecx-1]
+    lea esi, [esi+ecx-1]
+    std
+    rep movsb
+    cld
+
+  .done:
+    pop edi
+    pop esi
+    ret
+
+global memcmp
+memcmp:
+    push esi
+    push edi
+    mov edi, dword [esp+12]
+    mov esi, dword [esp+16]
+    mov ecx, dword [esp+20]
+    repe cmpsb
+    jecxz .equal
+    mov al, byte [edi-1]
+    sub al, byte [esi-1]
+    movsx eax, al
+    jmp .done
+
+  .equal:
+    xor eax, eax
+
+  .done:
+    pop edi
+    pop esi
+    ret
+
+global memcpy32to64
+memcpy32to64:
+    push ebp
+    mov ebp, esp
+
+    push esi
+    push edi
+
+    push 0x28
+    call .p1
+  .p1:
+    add dword [esp], .mode64 - .p1
+    retfd
+
+bits 64
+  .mode64:
+    mov rdi, [rbp + 8]
+    mov rsi, [rbp + 16]
+    mov rcx, [rbp + 24]
+    rep movsb
+
+    push 0x18
+    call .p2
+  .p2:
+    add qword [rsp], .mode32 - .p2
+    retfq
+
+bits 32
+  .mode32:
+    pop edi
+    pop esi
+    pop ebp
+    ret

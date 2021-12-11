@@ -17,7 +17,7 @@
 extern symbol bss_end;
 #endif
 
-static bool allocations_disallowed = true;
+bool allocations_disallowed = true;
 static void sanitise_entries(struct e820_entry_t *, size_t *, bool);
 
 void *conv_mem_alloc(size_t count) {
@@ -800,8 +800,4 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
     }
 
     return false;
-}
-
-bool pmm_allocation_allowed(void) {
-    return !allocations_disallowed;
 }

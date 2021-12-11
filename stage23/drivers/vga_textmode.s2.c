@@ -139,7 +139,7 @@ void init_vga_textmode(size_t *_rows, size_t *_cols, bool managed) {
         current_video_mode = -1;
     }
 
-    if (!pmm_allocation_allowed()) {
+    if (allocations_disallowed) {
         front_buffer = back_buffer = video_mem;
     }
 

@@ -37,6 +37,8 @@ extern struct e820_entry_t *untouched_memmap;
 extern size_t untouched_memmap_entries;
 #endif
 
+extern bool allocations_disallowed;
+
 void init_memmap(void);
 struct e820_entry_t *get_memmap(size_t *entries);
 struct e820_entry_t *get_raw_memmap(size_t *entry_count);
@@ -56,7 +58,5 @@ void pmm_free(void *ptr, size_t length);
 void pmm_reclaim_uefi_mem(void);
 void pmm_release_uefi_mem(void);
 #endif
-
-bool pmm_allocation_allowed();
 
 #endif

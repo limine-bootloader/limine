@@ -7,6 +7,7 @@
 #include <lib/blib.h>
 #include <drivers/vga_textmode.h>
 #include <lib/print.h>
+#include <mm/pmm.h>
 
 // Tries to implement this standard for terminfo
 // https://man7.org/linux/man-pages/man4/console_codes.4.html
@@ -157,7 +158,7 @@ void term_reinit(void) {
 void term_textmode(void) {
     term_notready();
 
-    if (quiet) {
+    if (quiet || allocations_disallowed) {
         return;
     }
 

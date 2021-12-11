@@ -5,6 +5,7 @@
 #include <lib/image.h>
 #include <lib/blib.h>
 #include <lib/gterm.h>
+#include <mm/pmm.h>
 
 bool early_term = false;
 
@@ -20,7 +21,7 @@ void term_deinit(void) {
 void term_vbe(size_t width, size_t height) {
     term_notready();
 
-    if (quiet) {
+    if (quiet || allocations_disallowed) {
         return;
     }
 

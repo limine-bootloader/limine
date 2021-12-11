@@ -10,8 +10,6 @@
 #include <lib/term.h>
 #include <mm/pmm.h>
 
-static const char* recursive_panic = 0;
-
 #if bios == 1
 void fallback_print(const char *string) {
     int i;
@@ -31,7 +29,15 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
 
     quiet = false;
 
-    if (recursive_panic) {
+    if (term_backend == NOT_READY) {
+#if bios == 1
+        term_textmode();
+#elif uefi == 1
+        term_vbe(0, 0);
+#endif
+    }
+
+    if (term_backend == NOT_READY) {
 #if bios == 1
         struct rm_regs r = {0};
         rm_int(0x11, &r, &r);
@@ -50,23 +56,10 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
                 break;
         }
         rm_int(0x10, &r, &r);
-        fallback_print("RECURSIVE PANIC: \r\n");
-        fallback_print("Original panic: ");
-        fallback_print(recursive_panic);
-        fallback_print("\r\nSubsequent panic: ");
+        fallback_print("PANIC: ");
         fallback_print(fmt);
         fallback_print("\r\nPress CTRL+ALT+DEL to reboot.");
         rm_hcf();
-#endif
-    }
-
-    recursive_panic = fmt;
-
-    if (term_backend == NOT_READY) {
-#if bios == 1
-        term_textmode();
-#elif uefi == 1
-        term_vbe(0, 0);
 #endif
     }
 

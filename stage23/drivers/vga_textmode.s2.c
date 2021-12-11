@@ -139,10 +139,6 @@ void init_vga_textmode(size_t *_rows, size_t *_cols, bool managed) {
         current_video_mode = -1;
     }
 
-    if (allocations_disallowed) {
-        front_buffer = back_buffer = video_mem;
-    }
-
     if (back_buffer == NULL) {
         back_buffer = ext_mem_alloc(VD_ROWS * VD_COLS);
     } else {

@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 
-char *menu(char **cmdline_ret, bool disable_timeout);
+__attribute__((noreturn))
+void menu(bool timeout_enabled);
 
 #endif

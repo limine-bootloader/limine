@@ -543,7 +543,7 @@ void menu(__attribute__((unused)) bool timeout_enabled) {
         "mov %esp, (%eax)\n\t"
         "jmp 3f\n\t"
         "1:\n\t"
-        "mov 4(%esp), %edi\n\t"
+        "mov (%esp), %edi\n\t"
         "mov (%eax), %esp\n\t"
         "push %edi\n\t"
         "jmp 3f\n\t"
@@ -651,7 +651,7 @@ static void _menu(bool timeout_enabled) {
     char *editor_enabled_config = config_get_value(NULL, 0, "EDITOR_ENABLED");
     if (!strcmp(editor_enabled_config, "no")) editor_enabled = false;
 
-    if (!timeout) {
+    if (!skip_timeout && !timeout) {
         // Use print tree to load up selected_menu_entry and determine if the
         // default entry is valid.
         print_tree(NULL, 0, 0, selected_entry, menu_tree, &selected_menu_entry);

@@ -273,25 +273,6 @@ failed_to_load_header_section:
         print("stivale2: WARNING: Requested stack is not 16-byte aligned\n");
     }
 
-    if (stivale2_hdr.stack != 0 && ranges != NULL) {
-        bool stack_valid = false;
-
-        for (size_t i = 0; i < ranges_count; i++) {
-            // Check we have at least 256 bytes of stack available
-            if (stivale2_hdr.stack >= ranges[i].base + 256
-             && stivale2_hdr.stack <= ranges[i].base + ranges[i].length
-             && (ranges[i].permissions & ELF_PF_R)
-             && (ranges[i].permissions & ELF_PF_W)) {
-                stack_valid = true;
-                break;
-            }
-        }
-
-        if (!stack_valid) {
-            panic("stivale2: The provided stack is not valid");
-        }
-    }
-
     // It also says the stack cannot be NULL for 32-bit kernels
     if (bits == 32 && stivale2_hdr.stack == 0) {
         panic("stivale2: The stack cannot be 0 for 32-bit kernels");

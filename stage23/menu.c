@@ -13,6 +13,12 @@
 #include <mm/pmm.h>
 #include <drivers/vbe.h>
 #include <console.h>
+#include <protos/stivale.h>
+#include <protos/stivale2.h>
+#include <protos/linux.h>
+#include <protos/chainload.h>
+#include <protos/multiboot1.h>
+#include <protos/multiboot2.h>
 
 static char *menu_branding = NULL;
 static char *menu_branding_colour = NULL;
@@ -191,7 +197,7 @@ static char *config_entry_editor(const char *title, const char *orig_entry) {
     }
 
     if (entry_size >= EDITOR_MAX_BUFFER_SIZE) {
-        panic("Entry is too big to be edited.");
+        panic(true, "Entry is too big to be edited.");
     }
 
     bool syntax_highlighting_enabled = true;
@@ -518,7 +524,95 @@ static size_t print_tree(const char *shift, size_t level, size_t base_index, siz
     return max_entries;
 }
 
-char *menu(char **cmdline, bool disable_timeout) {
+#if defined (__x86_64__)
+__attribute__((used))
+static uintptr_t stack_at_first_entry = 0;
+#endif
+
+__attribute__((noreturn, naked))
+void menu(__attribute__((unused)) bool timeout_enabled) {
+#if defined (__i386__)
+    asm volatile (
+        "pop %eax\n\t"
+        "call 1f\n\t"
+        "1:\n\t"
+        "pop %eax\n\t"
+        "add $(2f - 1b), %eax\n\t"
+        "cmpl $0, (%eax)\n\t"
+        "jne 1f\n\t"
+        "mov %esp, (%eax)\n\t"
+        "jmp 3f\n\t"
+        "1:\n\t"
+        "mov 4(%esp), %edi\n\t"
+        "mov (%eax), %esp\n\t"
+        "push %edi\n\t"
+        "jmp 3f\n\t"
+        "2:\n\t"
+        ".long 0\n\t"
+        "3:\n\t"
+        "push $0\n\t"
+        "jmp _menu"
+    );
+#elif defined (__x86_64__)
+    asm volatile (
+        "xor %eax, %eax\n\t"
+        "cmp %rax, stack_at_first_entry(%rip)\n\t"
+        "jne 1f\n\t"
+        "mov %rsp, stack_at_first_entry(%rip)\n\t"
+        "jmp 2f\n\t"
+        "1:\n\t"
+        "mov stack_at_first_entry(%rip), %rsp\n\t"
+        "2:\n\t"
+        "push $0\n\t"
+        "jmp _menu"
+    );
+#endif
+}
+
+static struct e820_entry_t *rewound_memmap = NULL;
+static size_t rewound_memmap_entries = 0;
+static uint8_t *rewound_bss;
+
+extern symbol bss_begin;
+extern symbol bss_end;
+
+bool *bad_config = NULL;
+
+__attribute__((noreturn, used))
+static void _menu(bool timeout_enabled) {
+    if (bad_config == NULL) {
+        bad_config = ext_mem_alloc(1);
+    }
+
+    size_t bss_size = (uintptr_t)bss_end - (uintptr_t)bss_begin;
+
+    if (rewound_memmap != NULL) {
+        memcpy(bss_begin, rewound_bss, bss_size);
+        memcpy(memmap, rewound_memmap, rewound_memmap_entries * sizeof(struct e820_entry_t));
+        memmap_entries = rewound_memmap_entries;
+    } else {
+        rewound_bss = ext_mem_alloc(bss_size);
+        rewound_memmap = ext_mem_alloc(256 * sizeof(struct e820_entry_t));
+        memcpy(rewound_memmap, memmap, memmap_entries * sizeof(struct e820_entry_t));
+        rewound_memmap_entries = memmap_entries;
+        memcpy(rewound_bss, bss_begin, bss_size);
+    }
+
+    if (*bad_config == false) {
+        volume_iterate_parts(boot_volume,
+            if (!init_config_disk(_PART)) {
+                boot_volume = _PART;
+                break;
+            }
+        );
+    }
+
+    char *quiet_str = config_get_value(NULL, 0, "QUIET");
+    quiet = quiet_str != NULL && strcmp(quiet_str, "yes") == 0;
+
+    char *verbose_str = config_get_value(NULL, 0, "VERBOSE");
+    verbose = verbose_str != NULL && strcmp(verbose_str, "yes") == 0;
+
     menu_branding = config_get_value(NULL, 0, "MENU_BRANDING");
     if (menu_branding == NULL)
         menu_branding = "Limine " LIMINE_VERSION;
@@ -549,7 +643,7 @@ char *menu(char **cmdline, bool disable_timeout) {
             timeout = strtoui(timeout_config, NULL, 10);
     }
 
-    if (disable_timeout) {
+    if (!timeout_enabled) {
         skip_timeout = true;
     }
 
@@ -703,6 +797,8 @@ refresh:
 
     term_double_buffer_flush();
 
+    char *cmdline = NULL;
+
     for (;;) {
         c = getchar();
 timeout_aborted:
@@ -724,12 +820,12 @@ timeout_aborted:
                     selected_menu_entry->expanded = !selected_menu_entry->expanded;
                     goto refresh;
                 }
-                *cmdline = config_get_value(selected_menu_entry->body, 0, "KERNEL_CMDLINE");
-                if (!*cmdline) {
-                    *cmdline = config_get_value(selected_menu_entry->body, 0, "CMDLINE");
+                cmdline = config_get_value(selected_menu_entry->body, 0, "KERNEL_CMDLINE");
+                if (!cmdline) {
+                    cmdline = config_get_value(selected_menu_entry->body, 0, "CMDLINE");
                 }
-                if (!*cmdline) {
-                    *cmdline = "";
+                if (!cmdline) {
+                    cmdline = "";
                 }
                 if (term_backend == NOT_READY) {
 #if bios == 1
@@ -740,7 +836,7 @@ timeout_aborted:
                 } else {
                     reset_term();
                 }
-                return selected_menu_entry->body;
+                goto post_menu;
             case 'e': {
                 if (editor_enabled) {
                     if (selected_menu_entry->sub != NULL)
@@ -760,5 +856,51 @@ timeout_aborted:
                 goto refresh;
             }
         }
+    }
+
+post_menu:;
+    char *config = selected_menu_entry->body;
+
+    char *proto = config_get_value(config, 0, "PROTOCOL");
+    if (proto == NULL) {
+        printv("PROTOCOL not specified, using autodetection...\n");
+autodetect:
+        stivale2_load(config, cmdline);
+        stivale_load(config, cmdline);
+        multiboot2_load(config, cmdline);
+        multiboot1_load(config, cmdline);
+        linux_load(config, cmdline);
+        panic(true, "Kernel protocol autodetection failed");
+    }
+
+    bool ret = true;
+
+    if (!strcmp(proto, "stivale1") || !strcmp(proto, "stivale")) {
+        ret = stivale_load(config, cmdline);
+    } else if (!strcmp(proto, "stivale2")) {
+        ret = stivale2_load(config, cmdline);
+    } else if (!strcmp(proto, "linux")) {
+        ret = linux_load(config, cmdline);
+    } else if (!strcmp(proto, "multiboot1") || !strcmp(proto, "multiboot")) {
+        ret = multiboot1_load(config, cmdline);
+    } else if (!strcmp(proto, "multiboot2")) {
+        ret = multiboot2_load(config, cmdline);
+    } else if (!strcmp(proto, "chainload")) {
+        chainload(config);
+    }
+
+    if (ret) {
+        print("WARNING: Unsupported protocol specified: %s.\n", proto);
+    } else {
+        print("WARNING: Incorrect protocol specified for kernel.\n");
+    }
+
+    print("         Press A to attempt autodetection or any other key to return to menu.\n");
+
+    c = getchar();
+    if (c == 'a' || c == 'A') {
+        goto autodetect;
+    } else {
+        menu(false);
     }
 }

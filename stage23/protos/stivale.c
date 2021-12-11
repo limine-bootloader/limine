@@ -70,10 +70,10 @@ bool stivale_load(char *config, char *cmdline) {
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
-        panic("stivale: KERNEL_PATH not specified");
+        panic(true, "stivale: KERNEL_PATH not specified");
 
     if ((kernel_file = uri_open(kernel_path)) == NULL)
-        panic("stivale: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
+        panic(true, "stivale: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
     char *kaslr_s = config_get_value(config, 0, "KASLR");
     bool kaslr = true;
@@ -131,7 +131,7 @@ bool stivale_load(char *config, char *cmdline) {
             // Check if 64 bit CPU
             uint32_t eax, ebx, ecx, edx;
             if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
-                panic("stivale: This CPU does not support 64-bit mode.");
+                panic(true, "stivale: This CPU does not support 64-bit mode.");
             }
             // Check if 5-level paging is available
             if (cpuid(0x00000007, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 16))) {
@@ -143,7 +143,7 @@ bool stivale_load(char *config, char *cmdline) {
                 if (elf64_load(kernel, &entry_point, NULL, &slide,
                                STIVALE_MMAP_KERNEL_AND_MODULES, kaslr, false,
                                NULL, NULL, false, NULL, NULL))
-                    panic("stivale: ELF64 load failure");
+                    panic(true, "stivale: ELF64 load failure");
 
                 ret = elf64_load_section(kernel, &stivale_hdr, ".stivalehdr",
                                          sizeof(struct stivale_header), slide);
@@ -154,7 +154,7 @@ bool stivale_load(char *config, char *cmdline) {
         case 32: {
             if (!loaded_by_anchor) {
                 if (elf32_load(kernel, (uint32_t *)&entry_point, NULL, 10))
-                    panic("stivale: ELF32 load failure");
+                    panic(true, "stivale: ELF32 load failure");
 
                 ret = elf32_load_section(kernel, &stivale_hdr, ".stivalehdr",
                                          sizeof(struct stivale_header));
@@ -163,24 +163,24 @@ bool stivale_load(char *config, char *cmdline) {
             break;
         }
         default:
-            panic("stivale: Not 32 nor 64-bit kernel. What is this?");
+            panic(true, "stivale: Not 32 nor 64-bit kernel. What is this?");
     }
 
     printv("stivale: %u-bit kernel detected\n", bits);
 
     switch (ret) {
         case 1:
-            panic("stivale: File is not a valid ELF.");
+            panic(true, "stivale: File is not a valid ELF.");
         case 2:
-            panic("stivale: Section .stivalehdr not found.");
+            panic(true, "stivale: Section .stivalehdr not found.");
         case 3:
-            panic("stivale: Section .stivalehdr exceeds the size of the struct.");
+            panic(true, "stivale: Section .stivalehdr exceeds the size of the struct.");
         case 4:
-            panic("stivale: Section .stivalehdr is smaller than size of the struct.");
+            panic(true, "stivale: Section .stivalehdr is smaller than size of the struct.");
     }
 
     if ((stivale_hdr.flags & (1 << 3)) && bits == 32) {
-        panic("stivale: Higher half addresses header flag not supported in 32-bit mode.");
+        panic(true, "stivale: Higher half addresses header flag not supported in 32-bit mode.");
     }
 
     bool want_5lv = level5pg && (stivale_hdr.flags & (1 << 1));
@@ -215,7 +215,7 @@ bool stivale_load(char *config, char *cmdline) {
 
     // It also says the stack cannot be NULL for 32-bit kernels
     if (bits == 32 && stivale_hdr.stack == 0) {
-        panic("stivale: The stack cannot be 0 for 32-bit kernels");
+        panic(true, "stivale: The stack cannot be 0 for 32-bit kernels");
     }
 
     stivale_struct->module_count = 0;
@@ -258,7 +258,7 @@ bool stivale_load(char *config, char *cmdline) {
 
         struct file_handle *f;
         if ((f = uri_open(module_path)) == NULL)
-            panic("stivale: Failed to open module with path `%s`. Is the path correct?", module_path);
+            panic(true, "stivale: Failed to open module with path `%s`. Is the path correct?", module_path);
 
         m->begin = REPORTED_ADDR((uint64_t)(size_t)freadall(f, STIVALE_MMAP_KERNEL_AND_MODULES));
         m->end   = m->begin + f->size;
@@ -309,7 +309,7 @@ bool stivale_load(char *config, char *cmdline) {
 
         struct fb_info fbinfo;
         if (!fb_init(&fbinfo, req_width, req_height, req_bpp))
-            panic("stivale: Unable to set video mode");
+            panic(true, "stivale: Unable to set video mode");
 
         memmap_alloc_range(fbinfo.framebuffer_addr,
                            (uint64_t)fbinfo.framebuffer_pitch * fbinfo.framebuffer_height,
@@ -329,7 +329,7 @@ bool stivale_load(char *config, char *cmdline) {
         stivale_struct->fb_blue_mask_shift  = fbinfo.blue_mask_shift;
     } else {
 #if uefi == 1
-        panic("stivale: Cannot use text mode with UEFI.");
+        panic(true, "stivale: Cannot use text mode with UEFI.");
 #elif bios == 1
         size_t rows, cols;
         init_vga_textmode(&rows, &cols, false);
@@ -347,7 +347,7 @@ bool stivale_load(char *config, char *cmdline) {
     // Reserve 32K at 0x70000 if possible
     if (!memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, false, false, false)) {
         if ((stivale_hdr.flags & (1 << 4)) == 0) {
-            panic("stivale: Could not allocate low memory area");
+            panic(false, "stivale: Could not allocate low memory area");
         }
     }
 
@@ -357,7 +357,7 @@ bool stivale_load(char *config, char *cmdline) {
     struct e820_entry_t *mmap = get_memmap(&mmap_entries);
 
     if (mmap_entries > 256) {
-        panic("stivale: Too many memory map entries!");
+        panic(false, "stivale: Too many memory map entries!");
     }
 
     memcpy(mmap_copy, mmap, mmap_entries * sizeof(struct e820_entry_t));
@@ -399,7 +399,7 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
                     phys = virt - FIXED_HIGHER_HALF_OFFSET_64;
                 }
             } else {
-                panic("stivale2: Protected memory ranges are only supported for higher half kernels");
+                panic(false, "stivale2: Protected memory ranges are only supported for higher half kernels");
             }
 
             uint64_t pf = VMM_FLAG_PRESENT |

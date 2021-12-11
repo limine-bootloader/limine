@@ -1,3 +1,5 @@
+#include <stddef.h>
+#include <stdbool.h>
 #include <lib/print.h>
 #include <lib/real.h>
 #include <lib/trace.h>
@@ -9,6 +11,7 @@
 #include <lib/gterm.h>
 #include <lib/term.h>
 #include <mm/pmm.h>
+#include <menu.h>
 
 #if bios == 1
 void fallback_print(const char *string) {
@@ -21,8 +24,7 @@ void fallback_print(const char *string) {
 }
 #endif
 
-__attribute__((noreturn)) void panic(const char *fmt, ...) {
-
+__attribute__((noreturn)) void panic(bool allow_menu, const char *fmt, ...) {
     va_list args;
 
     va_start(args, fmt);
@@ -71,24 +73,33 @@ __attribute__((noreturn)) void panic(const char *fmt, ...) {
     print("\n");
     print_stacktrace(NULL);
 
+    if (
 #if bios == 1
-    print("Press CTRL+ALT+DEL to reboot.");
-    rm_hcf();
-#elif uefi == 1
-    if (efi_boot_services_exited == false) {
-        print("Press [ENTER] to return to firmware.");
-        while (getchar() != '\n');
+      stage3_loaded == true &&
+#endif
+      allow_menu == true) {
+        print("Press a key to return to menu.");
+
+        getchar();
+
+        menu(false);
+        __builtin_unreachable();
+/*
         fb_clear(&fbinfo);
 
         // release all uefi memory and return to firmware
         pmm_release_uefi_mem();
         gBS->Exit(efi_image_handle, EFI_ABORTED, 0, NULL);
-        __builtin_unreachable();
+*/
     } else {
+#if bios == 1
+        print("Press CTRL+ALT+DEL to reboot.");
+        rm_hcf();
+#elif uefi == 1
         print("System halted.");
         for (;;) {
             asm ("hlt");
         }
-    }
 #endif
+    }
 }

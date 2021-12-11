@@ -75,7 +75,7 @@ bool tftp_open(struct file_handle *handle, uint32_t server_ip, uint16_t server_p
 
         ret = pxe_call(TFTP_READ, ((uint16_t)rm_seg(&read)), (uint16_t)rm_off(&read));
         if (ret) {
-            panic("tftp: Read failure");
+            panic(false, "tftp: Read failure");
         }
 
         memcpy(handle->fd + progress, buf, read.bsize);
@@ -91,7 +91,7 @@ bool tftp_open(struct file_handle *handle, uint32_t server_ip, uint16_t server_p
     uint16_t close = 0;
     ret = pxe_call(TFTP_CLOSE, ((uint16_t)rm_seg(&close)), (uint16_t)rm_off(&close));
     if (ret) {
-        panic("tftp: Close failure");
+        panic(false, "tftp: Close failure");
     }
 
     pmm_free(buf, mtu);

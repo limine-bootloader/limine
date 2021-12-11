@@ -35,7 +35,8 @@ extern struct term_context {
 enum {
     NOT_READY,
     VBE,
-    TEXTMODE
+    TEXTMODE,
+    FALLBACK
 };
 
 extern int current_video_mode;

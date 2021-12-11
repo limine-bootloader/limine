@@ -14,13 +14,48 @@
 #include <menu.h>
 
 #if bios == 1
-void fallback_print(const char *string) {
-    int i;
+void fallback_raw_putchar(uint8_t c) {
     struct rm_regs r = {0};
-    for (i=0; string[i]; i++) {
-        r.eax = 0x0e00 | string[i];
-        rm_int(0x10, &r, &r);
+    r.eax = 0x0e00 | c;
+    rm_int(0x10, &r, &r);
+}
+
+void fallback_clear(bool move) {
+    (void)move;
+    struct rm_regs r = {0};
+    rm_int(0x11, &r, &r);
+    switch ((r.eax >> 4) & 3) {
+        case 0:
+            r.eax = 3;
+            break;
+        case 1:
+            r.eax = 1;
+            break;
+        case 2:
+            r.eax = 3;
+            break;
+        case 3:
+            r.eax = 7;
+            break;
     }
+    rm_int(0x10, &r, &r);
+}
+
+void fallback_set_cursor_pos(size_t x, size_t y) {
+    struct rm_regs r = {0};
+    r.eax = 0x0200;
+    r.ebx = 0;
+    r.edx = (y << 8) + x;
+    rm_int(0x10, &r, &r);
+}
+
+void fallback_get_cursor_pos(size_t *x, size_t *y) {
+    struct rm_regs r = {0};
+    r.eax = 0x0300;
+    r.ebx = 0;
+    rm_int(0x10, &r, &r);
+    *x = r.edx & 0xff;
+    *y = r.edx >> 8;
 }
 #endif
 
@@ -41,27 +76,13 @@ __attribute__((noreturn)) void panic(bool allow_menu, const char *fmt, ...) {
 
     if (term_backend == NOT_READY) {
 #if bios == 1
-        struct rm_regs r = {0};
-        rm_int(0x11, &r, &r);
-        switch ((r.eax >> 4) & 3) {
-            case 0:
-                r.eax = 3;
-                break;
-            case 1:
-                r.eax = 1;
-                break;
-            case 2:
-                r.eax = 3;
-                break;
-            case 3:
-                r.eax = 7;
-                break;
-        }
-        rm_int(0x10, &r, &r);
-        fallback_print("PANIC: ");
-        fallback_print(fmt);
-        fallback_print("\r\nPress CTRL+ALT+DEL to reboot.");
-        rm_hcf();
+        fallback_clear(true);
+        term_notready();
+        raw_putchar = fallback_raw_putchar;
+        clear = fallback_clear;
+        set_cursor_pos = fallback_set_cursor_pos;
+        get_cursor_pos = fallback_get_cursor_pos;
+        term_backend = FALLBACK;
 #endif
     }
 

@@ -57,10 +57,10 @@ bool multiboot2_load(char *config, char* cmdline) {
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
-        panic("multiboot2: KERNEL_PATH not specified");
+        panic(true, "multiboot2: KERNEL_PATH not specified");
 
     if ((kernel_file = uri_open(kernel_path)) == NULL)
-        panic("multiboot2: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
+        panic(true, "multiboot2: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
     uint8_t *kernel = freadall(kernel_file, MEMMAP_KERNEL_AND_MODULES);
 
@@ -86,7 +86,7 @@ bool multiboot2_load(char *config, char* cmdline) {
     print("multiboot2: Loading kernel `%s`...\n", kernel_path);
 
     if (header->magic + header->architecture + header->checksum + header->header_length) {
-        panic("multiboot2: Header checksum is invalid");
+        panic(true, "multiboot2: Header checksum is invalid");
     }
 
     struct multiboot_header_tag_address *addresstag = NULL;
@@ -144,7 +144,7 @@ bool multiboot2_load(char *config, char* cmdline) {
                             break;
                         default:
                             if (is_required)
-                                panic("multiboot2: Requested tag `%d` which is not supported", r);
+                                panic(true, "multiboot2: Requested tag `%d` which is not supported", r);
                             break;
                     }
                 }
@@ -168,7 +168,7 @@ bool multiboot2_load(char *config, char* cmdline) {
             case MULTIBOOT_HEADER_TAG_EFI_BS:
                 break;
 
-            default: panic("multiboot2: Unknown header tag type");
+            default: panic(true, "multiboot2: Unknown header tag type");
         }
     }
 
@@ -176,7 +176,7 @@ bool multiboot2_load(char *config, char* cmdline) {
 
     if (addresstag != NULL) {
         if (addresstag->load_addr > addresstag->header_addr)
-            panic("multiboot2: Illegal load address");
+            panic(true, "multiboot2: Illegal load address");
 
         size_t load_size = 0;
 
@@ -196,7 +196,7 @@ bool multiboot2_load(char *config, char* cmdline) {
         if (addresstag->bss_end_addr) {
             uintptr_t bss_addr = addresstag->load_addr + load_size;
             if (addresstag->bss_end_addr < bss_addr)
-                panic("multiboot2: Illegal bss end address");
+                panic(true, "multiboot2: Illegal bss end address");
 
             uint32_t bss_size = addresstag->bss_end_addr - bss_addr;
 
@@ -212,17 +212,17 @@ bool multiboot2_load(char *config, char* cmdline) {
         switch (bits) {
             case 32:
                 if (elf32_load(kernel, (uint32_t *)&e, (uint32_t *)&t, MEMMAP_KERNEL_AND_MODULES))
-                    panic("multiboot2: ELF32 load failure");
+                    panic(true, "multiboot2: ELF32 load failure");
 
                 break;
             case 64: {
                 if (elf64_load(kernel, &e, &t, NULL, MEMMAP_KERNEL_AND_MODULES, false, true, NULL, NULL, false, NULL, NULL))
-                    panic("multiboot2: ELF64 load failure");
+                    panic(true, "multiboot2: ELF64 load failure");
 
                 break;
             }
             default:
-                panic("multiboot2: Invalid ELF file bitness");
+                panic(true, "multiboot2: Invalid ELF file bitness");
         }
 
         if (entry_point == 0xffffffff) {
@@ -293,13 +293,13 @@ bool multiboot2_load(char *config, char* cmdline) {
     for (size_t i = 0; i < n_modules; i++) {
         char *module_path = config_get_value(config, i, "MODULE_PATH");
         if (module_path == NULL)
-            panic("multiboot2: Module disappeared unexpectedly");
+            panic(true, "multiboot2: Module disappeared unexpectedly");
 
         print("multiboot2: Loading module `%s`...\n", module_path);
 
         struct file_handle *f;
         if ((f = uri_open(module_path)) == NULL)
-            panic("multiboot2: Failed to open module with path `%s`. Is the path correct?", module_path);
+            panic(true, "multiboot2: Failed to open module with path `%s`. Is the path correct?", module_path);
 
         char *module_cmdline = config_get_value(config, i, "MODULE_STRING");
         void *module_addr = (void *)(uintptr_t)ALIGN_UP(kernel_top, 4096);
@@ -418,7 +418,7 @@ bool multiboot2_load(char *config, char* cmdline) {
                 tag->common.framebuffer_bpp = 16;
                 tag->common.framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT;
 #elif uefi == 1
-                panic("multiboot2: Cannot use text mode with UEFI");
+                panic(true, "multiboot2: Cannot use text mode with UEFI");
 #endif
             } else {
                 tag->common.type = MULTIBOOT_TAG_TYPE_FRAMEBUFFER;
@@ -441,7 +441,7 @@ bool multiboot2_load(char *config, char* cmdline) {
             append_tag(info_idx, &tag->common);
         } else {
 #if uefi == 1
-            panic("multiboot2: Cannot use text mode with UEFI");
+            panic(true, "multiboot2: Cannot use text mode with UEFI");
 #elif bios == 1
             size_t rows, cols;
             init_vga_textmode(&rows, &cols, false);
@@ -465,7 +465,7 @@ bool multiboot2_load(char *config, char* cmdline) {
             memcpy(tag->rsdp, new_rsdp, sizeof(struct rsdp));
             append_tag(info_idx, tag);
         } else if (is_new_acpi_required) {
-            panic("multiboot2: XSDP requested but not found");
+            panic(true, "multiboot2: XSDP requested but not found");
         }
     }
 
@@ -485,7 +485,7 @@ bool multiboot2_load(char *config, char* cmdline) {
             memcpy(tag->rsdp, old_rsdp, 20);
             append_tag(info_idx, tag);
         } else if (is_old_acpi_required) {
-            panic("multiboot2: RSDP requested but not found");
+            panic(true, "multiboot2: RSDP requested but not found");
         }
     }
 
@@ -558,7 +558,7 @@ bool multiboot2_load(char *config, char* cmdline) {
     {
         if (section_hdr_info == NULL) {
             if (is_elf_info_requested) {
-                panic("multiboot2: Cannot return ELF file information");
+                panic(true, "multiboot2: Cannot return ELF file information");
             }
         } else {
             uint32_t size = sizeof(struct multiboot_tag_elf_sections) + section_hdr_info->section_hdr_size;
@@ -588,7 +588,7 @@ bool multiboot2_load(char *config, char* cmdline) {
     //////////////////////////////////////////////
     {
         if (mb_mmap_count > 256) {
-            panic("multiboot2: too many memory map entries");
+            panic(false, "multiboot2: too many memory map entries");
         }
 
         // Create the normal memory map tag.
@@ -635,7 +635,7 @@ bool multiboot2_load(char *config, char* cmdline) {
 #if uefi == 1
     {
         if ((efi_mmap_size / efi_desc_size) > 256) {
-            panic("multiboot2: too many EFI memory map entries");
+            panic(false, "multiboot2: too many EFI memory map entries");
         }
 
         // Create the EFI memory map tag.

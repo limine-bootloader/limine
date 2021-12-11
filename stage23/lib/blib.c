@@ -230,7 +230,7 @@ bool efi_exit_boot_services(void) {
 
                     efi_copy_i++;
                     if (efi_copy_i == EFI_COPY_MAX_ENTRIES) {
-                        panic("efi: New memory map exhausted");
+                        panic(false, "efi: New memory map exhausted");
                     }
                     new_entry = (void *)efi_copy + efi_copy_i * efi_desc_size;
                     memcpy(new_entry, orig_entry, efi_desc_size);
@@ -245,7 +245,7 @@ bool efi_exit_boot_services(void) {
                 }
 
                 if (length < untouched_memmap[j].length) {
-                    panic("efi: Memory map corruption");
+                    panic(false, "efi: Memory map corruption");
                 }
 
                 new_entry->Type = EfiConventionalMemory;
@@ -259,7 +259,7 @@ bool efi_exit_boot_services(void) {
 
                 efi_copy_i++;
                 if (efi_copy_i == EFI_COPY_MAX_ENTRIES) {
-                    panic("efi: New memory map exhausted");
+                    panic(false, "efi: New memory map exhausted");
                 }
                 new_entry = (void *)efi_copy + efi_copy_i * efi_desc_size;
                 memcpy(new_entry, orig_entry, efi_desc_size);
@@ -274,7 +274,7 @@ bool efi_exit_boot_services(void) {
 
         efi_copy_i++;
         if (efi_copy_i == EFI_COPY_MAX_ENTRIES) {
-            panic("efi: New memory map exhausted");
+            panic(false, "efi: New memory map exhausted");
         }
     }
 
@@ -288,7 +288,7 @@ bool efi_exit_boot_services(void) {
     return true;
 
 fail:
-    panic("efi: Failed to exit boot services");
+    panic(false, "efi: Failed to exit boot services");
 }
 
 #endif

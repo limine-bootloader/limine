@@ -68,20 +68,19 @@ static bool stage3_init(struct volume *part) {
 }
 
 enum {
-	BOOTED_FROM_HDD,
-	BOOTED_FROM_PXE,
-	BOOTED_FROM_CD
+    BOOTED_FROM_HDD,
+    BOOTED_FROM_PXE,
+    BOOTED_FROM_CD
 };
 
 __attribute__((noreturn))
 void entry(uint8_t boot_drive, int boot_from) {
     // XXX DO NOT MOVE A20 ENABLE CALL
     if (!a20_enable())
-        panic("Could not enable A20 line");
+        panic(false, "Could not enable A20 line");
 
     term_notready();
 
-#if bios == 1
     {
     struct rm_regs r = {0};
     r.eax = 0x0003;
@@ -92,7 +91,6 @@ void entry(uint8_t boot_drive, int boot_from) {
     outb(0x3d4, 0x0a);
     outb(0x3d5, 0x20);
     }
-#endif
 
     init_e820();
     init_memmap();
@@ -123,13 +121,10 @@ void entry(uint8_t boot_drive, int boot_from) {
     }
 
     if (!stage3_loaded) {
-        panic("Failed to load stage 3.");
+        panic(false, "Failed to load stage 3.");
     }
 
-    __attribute__((noreturn))
-    void (*stage3)(int boot_from) = (void *)stage3_addr;
-
-    stage3(boot_from);
+    stage3_common();
 }
 
 #endif

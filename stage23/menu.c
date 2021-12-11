@@ -13,6 +13,12 @@
 #include <mm/pmm.h>
 #include <drivers/vbe.h>
 #include <console.h>
+#include <protos/stivale.h>
+#include <protos/stivale2.h>
+#include <protos/linux.h>
+#include <protos/chainload.h>
+#include <protos/multiboot1.h>
+#include <protos/multiboot2.h>
 
 static char *menu_branding = NULL;
 static char *menu_branding_colour = NULL;
@@ -518,7 +524,47 @@ static size_t print_tree(const char *shift, size_t level, size_t base_index, siz
     return max_entries;
 }
 
-char *menu(char **cmdline, bool disable_timeout) {
+#if defined (__x86_64__)
+__attribute__((used))
+static uintptr_t stack_at_first_entry = 0;
+#endif
+
+__attribute__((noreturn, naked))
+void menu(__attribute__((unused)) bool timeout_enabled) {
+#if defined (__i386__)
+    asm volatile (
+        "call 1f\n\t"
+        "1:\n\t"
+        "pop %eax\n\t"
+        "add $(2f - 1b), %eax\n\t"
+        "cmpl $0, (%eax)\n\t"
+        "jne 1f\n\t"
+        "mov %esp, (%eax)\n\t"
+        "jmp _menu\n\t"
+        "1:\n\t"
+        "mov 4(%esp), %edi\n\t"
+        "mov (%eax), %esp\n\t"
+        "push %edi\n\t"
+        "call _menu\n\t"
+        "2:\n\t"
+        ".long 0"
+    );
+#elif defined (__x86_64__)
+    asm volatile (
+        "xor %eax, %eax\n\t"
+        "cmp %rax, stack_at_first_entry(%rip)\n\t"
+        "jne 1f\n\t"
+        "mov %rsp, stack_at_first_entry(%rip)\n\t"
+        "jmp _menu\n\t"
+        "1:\n\t"
+        "mov stack_at_first_entry(%rip), %rsp\n\t"
+        "jmp _menu"
+    );
+#endif
+}
+
+__attribute__((noreturn, used))
+static void _menu(bool timeout_enabled) {
     menu_branding = config_get_value(NULL, 0, "MENU_BRANDING");
     if (menu_branding == NULL)
         menu_branding = "Limine " LIMINE_VERSION;
@@ -549,7 +595,7 @@ char *menu(char **cmdline, bool disable_timeout) {
             timeout = strtoui(timeout_config, NULL, 10);
     }
 
-    if (disable_timeout) {
+    if (!timeout_enabled) {
         skip_timeout = true;
     }
 
@@ -703,6 +749,8 @@ refresh:
 
     term_double_buffer_flush();
 
+    char *cmdline = NULL;
+
     for (;;) {
         c = getchar();
 timeout_aborted:
@@ -724,12 +772,12 @@ timeout_aborted:
                     selected_menu_entry->expanded = !selected_menu_entry->expanded;
                     goto refresh;
                 }
-                *cmdline = config_get_value(selected_menu_entry->body, 0, "KERNEL_CMDLINE");
-                if (!*cmdline) {
-                    *cmdline = config_get_value(selected_menu_entry->body, 0, "CMDLINE");
+                cmdline = config_get_value(selected_menu_entry->body, 0, "KERNEL_CMDLINE");
+                if (!cmdline) {
+                    cmdline = config_get_value(selected_menu_entry->body, 0, "CMDLINE");
                 }
-                if (!*cmdline) {
-                    *cmdline = "";
+                if (!cmdline) {
+                    cmdline = "";
                 }
                 if (term_backend == NOT_READY) {
 #if bios == 1
@@ -740,7 +788,7 @@ timeout_aborted:
                 } else {
                     reset_term();
                 }
-                return selected_menu_entry->body;
+                goto post_menu;
             case 'e': {
                 if (editor_enabled) {
                     if (selected_menu_entry->sub != NULL)
@@ -760,5 +808,51 @@ timeout_aborted:
                 goto refresh;
             }
         }
+    }
+
+post_menu:
+    char *config = selected_menu_entry->body;
+
+    char *proto = config_get_value(config, 0, "PROTOCOL");
+    if (proto == NULL) {
+        printv("PROTOCOL not specified, using autodetection...\n");
+autodetect:
+        stivale2_load(config, cmdline);
+        stivale_load(config, cmdline);
+        multiboot2_load(config, cmdline);
+        multiboot1_load(config, cmdline);
+        linux_load(config, cmdline);
+        panic("Kernel protocol autodetection failed");
+    }
+
+    bool ret = true;
+
+    if (!strcmp(proto, "stivale1") || !strcmp(proto, "stivale")) {
+        ret = stivale_load(config, cmdline);
+    } else if (!strcmp(proto, "stivale2")) {
+        ret = stivale2_load(config, cmdline);
+    } else if (!strcmp(proto, "linux")) {
+        ret = linux_load(config, cmdline);
+    } else if (!strcmp(proto, "multiboot1") || !strcmp(proto, "multiboot")) {
+        ret = multiboot1_load(config, cmdline);
+    } else if (!strcmp(proto, "multiboot2")) {
+        ret = multiboot2_load(config, cmdline);
+    } else if (!strcmp(proto, "chainload")) {
+        chainload(config);
+    }
+
+    if (ret) {
+        print("WARNING: Unsupported protocol specified: %s.\n", proto);
+    } else {
+        print("WARNING: Incorrect protocol specified for kernel.\n");
+    }
+
+    print("         Press A to attempt autodetection or any other key to return to menu.\n");
+
+    c = getchar();
+    if (c == 'a' || c == 'A') {
+        goto autodetect;
+    } else {
+        menu(false);
     }
 }

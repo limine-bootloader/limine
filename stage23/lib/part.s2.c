@@ -45,7 +45,7 @@ static bool cache_block(struct volume *volume, uint64_t block) {
 
 bool volume_read(struct volume *volume, void *buffer, uint64_t loc, uint64_t count) {
     if (volume->pxe) {
-        panic("Attempted volume_read() on pxe");
+        panic(false, "Attempted volume_read() on pxe");
     }
 
     uint64_t block_size = volume->fastest_xfer_size * volume->sector_size;

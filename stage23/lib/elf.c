@@ -344,7 +344,7 @@ static uint64_t elf64_max_align(uint8_t *elf) {
     }
 
     if (ret == 0) {
-        panic("elf: Executable has no loadable segments");
+        panic(true, "elf: Executable has no loadable segments");
     }
 
     return ret;
@@ -372,7 +372,7 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
     }
 
     if (ranges_count == 0) {
-        panic("elf: Attempted to use PMRs but no higher half PHDRs exist");
+        panic(true, "elf: Attempted to use PMRs but no higher half PHDRs exist");
     }
 
     struct elf_range *ranges = ext_mem_alloc(ranges_count * sizeof(struct elf_range));
@@ -423,11 +423,11 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
     }
 
     if (hdr.ident[EI_DATA] != BITS_LE) {
-        panic("elf: Not a Little-endian ELF file.\n");
+        panic(true, "elf: Not a Little-endian ELF file.\n");
     }
 
     if (hdr.machine != ARCH_X86_64) {
-        panic("elf: Not an x86_64 ELF file.\n");
+        panic(true, "elf: Not an x86_64 ELF file.\n");
     }
 
     uint64_t slide = 0;
@@ -471,7 +471,7 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
         }
 
         if (max_vaddr == 0 || min_vaddr == (uint64_t)-1) {
-            panic("elf: Attempted to use fully virtual mappings but no higher half PHDRs exist");
+            panic(true, "elf: Attempted to use fully virtual mappings but no higher half PHDRs exist");
         }
 
         image_size = max_vaddr - min_vaddr;
@@ -492,7 +492,7 @@ again:
         if (fully_virtual) {
             if ((*virtual_base - FIXED_HIGHER_HALF_OFFSET_64) + slide + image_size >= 0x80000000) {
                 if (++try_count == max_simulated_tries) {
-                    panic("elf: Image wants to load too high");
+                    panic(true, "elf: Image wants to load too high");
                 }
                 goto again;
             }
@@ -560,7 +560,7 @@ final:
             ((higher_half == true && this_top > 0x80000000)
           || !memmap_alloc_range((size_t)mem_base, (size_t)mem_size, alloc_type, true, false, simulation, false))) {
             if (++try_count == max_simulated_tries || simulation == false) {
-                panic("elf: Failed to allocate necessary memory range (%X-%X)", mem_base, mem_base + mem_size);
+                panic(true, "elf: Failed to allocate necessary memory range (%X-%X)", mem_base, mem_base + mem_size);
             }
             if (!kaslr) {
                 slide += max_align;
@@ -578,7 +578,7 @@ final:
         }
 
         if (elf64_apply_relocations(elf, &hdr, (void *)(uintptr_t)load_addr, phdr.p_vaddr, phdr.p_memsz, slide)) {
-            panic("elf: Failed to apply relocations");
+            panic(true, "elf: Failed to apply relocations");
         }
 
         if (use_paddr) {

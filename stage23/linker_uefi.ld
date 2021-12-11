@@ -42,11 +42,13 @@ SECTIONS
    *(.sdata)
    /* the EFI loader doesn't seem to like a .bss section, so we stick
       it all into .data: */
+   bss_begin = .;
    *(.sbss)
    *(.scommon)
    *(.dynbss)
    *(.bss)
    *(COMMON)
+   bss_end = .;
    *(.rel.local)
    *(.full_map*)
   }

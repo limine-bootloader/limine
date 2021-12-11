@@ -181,7 +181,13 @@ static void putchar_tokencol(int type, char c) {
     }
 }
 
-static char *config_entry_editor(const char *title, const char *orig_entry) {
+char *config_entry_editor(const char *title, const char *orig_entry) {
+    term_autoflush = false;
+
+    enable_cursor();
+
+    clear(true);
+
     size_t cursor_offset  = 0;
     size_t entry_size     = strlen(orig_entry);
     size_t _window_size   = term_rows - 8;
@@ -446,11 +452,11 @@ refresh:
             }
             break;
         case GETCHAR_F10:
-            disable_cursor();
+            reset_term();
             return buffer;
         case GETCHAR_ESCAPE:
-            disable_cursor();
             pmm_free(buffer, EDITOR_MAX_BUFFER_SIZE);
+            reset_term();
             return NULL;
         default:
             if (strlen(buffer) < EDITOR_MAX_BUFFER_SIZE - 1) {
@@ -700,20 +706,15 @@ refresh:
         print("\n\n\n\n");
     }
 
-    if (menu_tree == NULL) {
+    while (menu_tree == NULL) {
         print("Config file %s.\n\n", config_ready ? "contains no valid entries" : "not found");
         print("For information on the format of Limine config entries, consult CONFIG.md in\n");
         print("the root of the Limine source repository.\n\n");
-        print("Press a key to enter an editor session and manually define a config entry...");
+        print("Press a key to enter the Limine console...");
         term_double_buffer_flush();
         getchar();
-        char *new_body = NULL;
-        while (new_body == NULL)
-            new_body = config_entry_editor("New Entry", "");
-        selected_menu_entry = ext_mem_alloc(sizeof(struct menu_entry));
-        selected_menu_entry->body = new_body;
-        config_ready = true;
-        goto autoboot;
+        reset_term();
+        console();
     }
 
     {   // Draw box around boot menu
@@ -797,8 +798,6 @@ refresh:
 
     term_double_buffer_flush();
 
-    char *cmdline = NULL;
-
     for (;;) {
         c = getchar();
 timeout_aborted:
@@ -820,13 +819,6 @@ timeout_aborted:
                     selected_menu_entry->expanded = !selected_menu_entry->expanded;
                     goto refresh;
                 }
-                cmdline = config_get_value(selected_menu_entry->body, 0, "KERNEL_CMDLINE");
-                if (!cmdline) {
-                    cmdline = config_get_value(selected_menu_entry->body, 0, "CMDLINE");
-                }
-                if (!cmdline) {
-                    cmdline = "";
-                }
                 if (term_backend == NOT_READY) {
 #if bios == 1
                     term_textmode();
@@ -836,12 +828,11 @@ timeout_aborted:
                 } else {
                     reset_term();
                 }
-                goto post_menu;
+                boot(selected_menu_entry->body);
             case 'e': {
                 if (editor_enabled) {
                     if (selected_menu_entry->sub != NULL)
                         goto refresh;
-                    enable_cursor();
                     char *new_body = config_entry_editor(selected_menu_entry->name, selected_menu_entry->body);
                     if (new_body == NULL)
                         goto refresh;
@@ -857,9 +848,17 @@ timeout_aborted:
             }
         }
     }
+}
 
-post_menu:;
-    char *config = selected_menu_entry->body;
+__attribute__((noreturn))
+void boot(char *config) {
+    char *cmdline = config_get_value(config, 0, "KERNEL_CMDLINE");
+    if (!cmdline) {
+        cmdline = config_get_value(config, 0, "CMDLINE");
+    }
+    if (!cmdline) {
+        cmdline = "";
+    }
 
     char *proto = config_get_value(config, 0, "PROTOCOL");
     if (proto == NULL) {
@@ -897,10 +896,12 @@ autodetect:
 
     print("         Press A to attempt autodetection or any other key to return to menu.\n");
 
-    c = getchar();
+    int c = getchar();
     if (c == 'a' || c == 'A') {
         goto autodetect;
     } else {
         menu(false);
     }
+
+    __builtin_unreachable();
 }

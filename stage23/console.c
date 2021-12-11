@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <console.h>
+#include <menu.h>
 #include <mm/pmm.h>
 #include <lib/print.h>
 #include <lib/readline.h>
@@ -11,7 +12,8 @@
 static void console_help(void) {
     print(
         "Available commands:\n"
-        "exit      -- Return to boot menu.\n"
+        "exit      -- Exit Limine console.\n"
+        "editor    -- Open an empty boot entry editor.\n"
         "version   -- Print version.\n"
         "copyright -- Print copyright.\n"
         "help      -- Print this help message.\n"
@@ -33,8 +35,12 @@ void console(void) {
         if (strcmp(prompt, "help") == 0) {
             console_help();
         } else if (strcmp(prompt, "exit") == 0) {
-            reset_term();
-            return;
+            break;
+        } else if (strcmp(prompt, "editor") == 0) {
+            char *new_entry = config_entry_editor("New Entry", "");
+            if (new_entry != NULL) {
+                boot(new_entry);
+            }
         } else if (strcmp(prompt, "version") == 0) {
             print(LIMINE_VERSION "\n");
         } else if (strcmp(prompt, "copyright") == 0) {

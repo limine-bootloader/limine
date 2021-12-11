@@ -810,7 +810,7 @@ timeout_aborted:
         }
     }
 
-post_menu:
+post_menu:;
     char *config = selected_menu_entry->body;
 
     char *proto = config_get_value(config, 0, "PROTOCOL");

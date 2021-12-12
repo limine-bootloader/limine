@@ -125,7 +125,7 @@ static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, in
 
 #define INVALID_PRESET_MODE 0xffffffff
 
-static size_t preset_mode = INVALID_PRESET_MODE;
+static no_unwind size_t preset_mode = INVALID_PRESET_MODE;
 
 bool init_gop(struct fb_info *ret,
               uint16_t target_width, uint16_t target_height, uint16_t target_bpp) {

@@ -11,7 +11,7 @@
 // Tries to implement this standard for terminfo
 // https://man7.org/linux/man-pages/man4/console_codes.4.html
 
-int current_video_mode = -1;
+no_unwind int current_video_mode = -1;
 int term_backend = NOT_READY;
 size_t term_rows, term_cols;
 bool term_runtime = false;

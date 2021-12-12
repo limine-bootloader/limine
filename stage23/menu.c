@@ -203,7 +203,7 @@ char *config_entry_editor(const char *title, const char *orig_entry) {
     }
 
     if (entry_size >= EDITOR_MAX_BUFFER_SIZE) {
-        panic(true, "Entry is too big to be edited.");
+        panic("Entry is too big to be edited.");
     }
 
     bool syntax_highlighting_enabled = true;
@@ -539,7 +539,6 @@ __attribute__((noreturn, naked))
 void menu(__attribute__((unused)) bool timeout_enabled) {
 #if defined (__i386__)
     asm volatile (
-        "pop %eax\n\t"
         "call 1f\n\t"
         "1:\n\t"
         "pop %eax\n\t"
@@ -547,17 +546,14 @@ void menu(__attribute__((unused)) bool timeout_enabled) {
         "cmpl $0, (%eax)\n\t"
         "jne 1f\n\t"
         "mov %esp, (%eax)\n\t"
-        "jmp 3f\n\t"
+        "jmp _menu\n\t"
         "1:\n\t"
         "mov (%esp), %edi\n\t"
         "mov (%eax), %esp\n\t"
         "push %edi\n\t"
-        "jmp 3f\n\t"
+        "call _menu\n\t"
         "2:\n\t"
-        ".long 0\n\t"
-        "3:\n\t"
-        "push $0\n\t"
-        "jmp _menu"
+        ".long 0"
     );
 #elif defined (__x86_64__)
     asm volatile (
@@ -565,60 +561,16 @@ void menu(__attribute__((unused)) bool timeout_enabled) {
         "cmp %rax, stack_at_first_entry(%rip)\n\t"
         "jne 1f\n\t"
         "mov %rsp, stack_at_first_entry(%rip)\n\t"
-        "jmp 2f\n\t"
+        "jmp _menu\n\t"
         "1:\n\t"
         "mov stack_at_first_entry(%rip), %rsp\n\t"
-        "2:\n\t"
-        "push $0\n\t"
         "jmp _menu"
     );
 #endif
 }
 
-static struct e820_entry_t *rewound_memmap = NULL;
-static size_t rewound_memmap_entries = 0;
-static uint8_t *rewound_bss;
-
-extern symbol bss_begin;
-extern symbol bss_end;
-
-bool *bad_config = NULL;
-
 __attribute__((noreturn, used))
 static void _menu(bool timeout_enabled) {
-    if (bad_config == NULL) {
-        bad_config = ext_mem_alloc(1);
-    }
-
-    size_t bss_size = (uintptr_t)bss_end - (uintptr_t)bss_begin;
-
-    if (rewound_memmap != NULL) {
-        memcpy(bss_begin, rewound_bss, bss_size);
-        memcpy(memmap, rewound_memmap, rewound_memmap_entries * sizeof(struct e820_entry_t));
-        memmap_entries = rewound_memmap_entries;
-    } else {
-        rewound_bss = ext_mem_alloc(bss_size);
-        rewound_memmap = ext_mem_alloc(256 * sizeof(struct e820_entry_t));
-        memcpy(rewound_memmap, memmap, memmap_entries * sizeof(struct e820_entry_t));
-        rewound_memmap_entries = memmap_entries;
-        memcpy(rewound_bss, bss_begin, bss_size);
-    }
-
-    if (*bad_config == false) {
-        volume_iterate_parts(boot_volume,
-            if (!init_config_disk(_PART)) {
-                boot_volume = _PART;
-                break;
-            }
-        );
-    }
-
-    char *quiet_str = config_get_value(NULL, 0, "QUIET");
-    quiet = quiet_str != NULL && strcmp(quiet_str, "yes") == 0;
-
-    char *verbose_str = config_get_value(NULL, 0, "VERBOSE");
-    verbose = verbose_str != NULL && strcmp(verbose_str, "yes") == 0;
-
     menu_branding = config_get_value(NULL, 0, "MENU_BRANDING");
     if (menu_branding == NULL)
         menu_branding = "Limine " LIMINE_VERSION;
@@ -869,7 +821,7 @@ autodetect:
         multiboot2_load(config, cmdline);
         multiboot1_load(config, cmdline);
         linux_load(config, cmdline);
-        panic(true, "Kernel protocol autodetection failed");
+        panic("Kernel protocol autodetection failed");
     }
 
     bool ret = true;

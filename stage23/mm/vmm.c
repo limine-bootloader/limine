@@ -12,7 +12,7 @@ typedef uint64_t pt_entry_t;
 void vmm_assert_nx(void) {
     uint32_t a, b, c, d;
     if (!cpuid(0x80000001, 0, &a, &b, &c, &d) || !(d & (1 << 20))) {
-        panic(false, "vmm: NX functionality not available on this CPU.");
+        panic("vmm: NX functionality not available on this CPU.");
     }
 }
 
@@ -58,7 +58,7 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
             pml4 = pagemap.top_level;
             goto level4;
         default:
-            __builtin_unreachable();
+            panic("");
     }
 
 level5:

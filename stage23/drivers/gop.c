@@ -86,7 +86,7 @@ static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, in
                                       mode_info->PixelInformation.BlueMask);
             break;
         default:
-            panic(false, "gop: Invalid PixelFormat");
+            panic("gop: Invalid PixelFormat");
     }
 
     if (width != 0 && height != 0 && bpp != 0) {
@@ -149,7 +149,7 @@ bool init_gop(struct fb_info *ret,
     }
 
     if (status) {
-        panic(false, "gop: Initialisation failed");
+        panic("gop: Initialisation failed");
     }
 
     if (preset_mode == INVALID_PRESET_MODE)

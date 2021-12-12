@@ -44,13 +44,11 @@ SECTIONS
    *(.got)
    /* the EFI loader doesn't seem to like a .bss section, so we stick
       it all into .data: */
-   bss_begin = .;
    *(.sbss)
    *(.scommon)
    *(.dynbss)
    *(.bss)
    *(COMMON)
-   bss_end = .;
    full_map = .;
   }
   .note.gnu.build-id : { *(.note.gnu.build-id) }

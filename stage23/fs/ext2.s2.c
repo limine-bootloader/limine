@@ -319,7 +319,7 @@ bool ext2_open(struct ext2_file_handle *ret, struct volume *part, const char *pa
     struct ext2_superblock *sb = &ret->sb;
 
     if (sb->s_state == EXT2_FS_UNRECOVERABLE_ERRORS)
-        panic(false, "ext2: unrecoverable errors found");
+        panic("ext2: unrecoverable errors found");
 
     ret->block_size = ((uint64_t)1024 << ret->sb.s_log_block_size);
 
@@ -367,7 +367,7 @@ static struct ext4_extent_header* ext4_find_leaf(struct ext4_extent_header* ext_
 
         #define EXT4_EXT_MAGIC 0xf30a
         if (ext_block->magic != EXT4_EXT_MAGIC)
-            panic(false, "invalid extent magic");
+            panic("invalid extent magic");
 
         if (ext_block->depth == 0) {
             return ext_block;
@@ -380,7 +380,7 @@ static struct ext4_extent_header* ext4_find_leaf(struct ext4_extent_header* ext_
         }
 
         if (--i < 0)
-            panic(false, "extent not found");
+            panic("extent not found");
 
         uint64_t block = ((uint64_t)index[i].leaf_hi << 32) | index[i].leaf;
         if(!buf)
@@ -411,7 +411,7 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
             leaf = ext4_find_leaf((struct ext4_extent_header*)inode->i_blocks, block, fd->block_size, fd->part);
 
             if (!leaf)
-                panic(false, "invalid extent");
+                panic("invalid extent");
             ext = (struct ext4_extent*)((size_t)leaf + 12);
 
             for (i = 0; i < leaf->entries; i++) {
@@ -423,13 +423,13 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
             if (--i >= 0) {
                 block -= ext[i].block;
                 if (block >= ext[i].len) {
-                    panic(false, "block longer than extent");
+                    panic("block longer than extent");
                 } else {
                     uint64_t start = ((uint64_t)ext[i].start_hi << 32) + ext[i].start;
                     block_index = start + block;
                 }
             } else {
-                panic(false, "extent for block not found");
+                panic("extent for block not found");
             }
 
             pmm_free(leaf, fd->block_size);
@@ -462,7 +462,7 @@ int ext2_check_signature(struct volume *part) {
         sb.s_feature_incompat & EXT2_IF_INLINE_DATA ||
         sb.s_feature_incompat & EXT2_FEATURE_INCOMPAT_META_BG ||
         sb.s_feature_incompat & EXT2_IF_ENCRYPT)
-        panic(false, "EXT2: filesystem has unsupported features %x", sb.s_feature_incompat);
+        panic("EXT2: filesystem has unsupported features %x", sb.s_feature_incompat);
 
     return 1;
 }

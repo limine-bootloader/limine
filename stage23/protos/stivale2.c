@@ -82,10 +82,10 @@ bool stivale2_load(char *config, char *cmdline) {
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
-        panic(true, "stivale2: KERNEL_PATH not specified");
+        panic("stivale2: KERNEL_PATH not specified");
 
     if ((kernel_file = uri_open(kernel_path)) == NULL)
-        panic(true, "stivale2: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
+        panic("stivale2: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
     char *kaslr_s = config_get_value(config, 0, "KASLR");
     bool kaslr = true;
@@ -153,7 +153,7 @@ bool stivale2_load(char *config, char *cmdline) {
             // Check if 64 bit CPU
             uint32_t eax, ebx, ecx, edx;
             if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
-                panic(true, "stivale2: This CPU does not support 64-bit mode.");
+                panic("stivale2: This CPU does not support 64-bit mode.");
             }
             // Check if 5-level paging is available
             if (cpuid(0x00000007, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 16))) {
@@ -170,9 +170,9 @@ bool stivale2_load(char *config, char *cmdline) {
 
                 if ((stivale2_hdr.flags & (1 << 2))) {
                     if (bits == 32) {
-                        panic(true, "stivale2: PMRs are not supported for 32-bit kernels");
+                        panic("stivale2: PMRs are not supported for 32-bit kernels");
                     } else if (loaded_by_anchor) {
-                        panic(true, "stivale2: PMRs are not supported for anchored kernels");
+                        panic("stivale2: PMRs are not supported for anchored kernels");
                     }
                     want_pmrs = true;
                 }
@@ -186,7 +186,7 @@ bool stivale2_load(char *config, char *cmdline) {
                                want_pmrs ? &ranges : NULL,
                                want_pmrs ? &ranges_count : NULL,
                                want_fully_virtual, &physical_base, &virtual_base))
-                    panic(true, "stivale2: ELF64 load failure");
+                    panic("stivale2: ELF64 load failure");
 
                 if (want_fully_virtual) {
                     printv("stivale2: Physical base: %X\n", physical_base);
@@ -202,7 +202,7 @@ bool stivale2_load(char *config, char *cmdline) {
         case 32: {
             if (!loaded_by_anchor) {
                 if (elf32_load(kernel, (uint32_t *)&entry_point, NULL, 10))
-                    panic(true, "stivale2: ELF32 load failure");
+                    panic("stivale2: ELF32 load failure");
 
                 ret = elf32_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
                                          sizeof(struct stivale2_header));
@@ -211,7 +211,7 @@ bool stivale2_load(char *config, char *cmdline) {
             break;
         }
         default:
-            panic(true, "stivale2: Not 32 nor 64-bit kernel. What is this?");
+            panic("stivale2: Not 32 nor 64-bit kernel. What is this?");
     }
 
     printv("stivale2: %u-bit kernel detected\n", bits);
@@ -219,17 +219,17 @@ bool stivale2_load(char *config, char *cmdline) {
 failed_to_load_header_section:
     switch (ret) {
         case 1:
-            panic(true, "stivale2: File is not a valid ELF.");
+            panic("stivale2: File is not a valid ELF.");
         case 2:
-            panic(true, "stivale2: Section .stivale2hdr not found.");
+            panic("stivale2: Section .stivale2hdr not found.");
         case 3:
-            panic(true, "stivale2: Section .stivale2hdr exceeds the size of the struct.");
+            panic("stivale2: Section .stivale2hdr exceeds the size of the struct.");
         case 4:
-            panic(true, "stivale2: Section .stivale2hdr is smaller than size of the struct.");
+            panic("stivale2: Section .stivale2hdr is smaller than size of the struct.");
     }
 
     if ((stivale2_hdr.flags & (1 << 1)) && bits == 32) {
-        panic(true, "stivale2: Higher half addresses header flag not supported in 32-bit mode.");
+        panic("stivale2: Higher half addresses header flag not supported in 32-bit mode.");
     }
 
     bool want_5lv = (get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_5LV_PAGING_ID) ? true : false) && level5pg;
@@ -240,7 +240,7 @@ failed_to_load_header_section:
         struct stivale2_header_tag_slide_hhdm *slt = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_SLIDE_HHDM_ID);
         if (slt != NULL) {
             if (slt->alignment % 0x200000 != 0 || slt->alignment == 0) {
-                panic(true, "stivale2: Requested HHDM slide alignment is not a multiple of 2MiB");
+                panic("stivale2: Requested HHDM slide alignment is not a multiple of 2MiB");
             }
 
             direct_map_offset += (rand64() & ~(slt->alignment - 1)) & 0xffffffffff;
@@ -275,7 +275,7 @@ failed_to_load_header_section:
 
     // It also says the stack cannot be NULL for 32-bit kernels
     if (bits == 32 && stivale2_hdr.stack == 0) {
-        panic(true, "stivale2: The stack cannot be 0 for 32-bit kernels");
+        panic("stivale2: The stack cannot be 0 for 32-bit kernels");
     }
 
     strcpy(stivale2_struct->bootloader_brand, "Limine");
@@ -402,7 +402,7 @@ failed_to_load_header_section:
 
         struct file_handle *f;
         if ((f = uri_open(module_path)) == NULL)
-            panic(true, "stivale2: Failed to open module with path `%s`. Is the path correct?", module_path);
+            panic("stivale2: Failed to open module with path `%s`. Is the path correct?", module_path);
 
         m->begin = REPORTED_ADDR((uint64_t)(size_t)freadall(f, STIVALE2_MMAP_KERNEL_AND_MODULES));
         m->end   = m->begin + f->size;
@@ -504,7 +504,7 @@ failed_to_load_header_section:
 
 #if uefi == 1
     if (hdrtag == NULL && avtag == NULL) {
-        panic(true, "stivale2: Cannot use text mode with UEFI.");
+        panic("stivale2: Cannot use text mode with UEFI.");
     }
 #endif
 
@@ -529,7 +529,7 @@ failed_to_load_header_section:
             term_vbe(req_width, req_height);
 
             if (current_video_mode < 0) {
-                panic(true, "stivale2: Failed to initialise terminal");
+                panic("stivale2: Failed to initialise terminal");
             }
 
             fb = &fbinfo;
@@ -775,7 +775,7 @@ have_tm_tag:;
     // Reserve 32K at 0x70000, if possible
     if (!memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, false, false, false)) {
         if ((stivale2_hdr.flags & (1 << 4)) == 0) {
-            panic(false, "stivale2: Could not allocate low memory area");
+            panic("stivale2: Could not allocate low memory area");
         }
     }
 
@@ -783,7 +783,7 @@ have_tm_tag:;
     struct e820_entry_t *mmap = get_memmap(&mmap_entries);
 
     if (mmap_entries > 256) {
-        panic(false, "stivale2: Too many memory map entries!");
+        panic("stivale2: Too many memory map entries!");
     }
 
     tag->tag.identifier = STIVALE2_STRUCT_TAG_MEMMAP_ID;

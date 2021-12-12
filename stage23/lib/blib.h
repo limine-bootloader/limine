@@ -48,7 +48,7 @@ int digit_to_int(char c);
 uint8_t bcd_to_int(uint8_t val);
 uint8_t int_to_bcd(uint8_t val);
 
-__attribute__((noreturn)) void panic(bool allow_menu, const char *fmt, ...);
+__attribute__((noreturn)) void panic(const char *fmt, ...);
 
 int pit_sleep_and_quit_on_keypress(int seconds);
 
@@ -79,8 +79,6 @@ void memcpy32to64(uint64_t, uint64_t, uint64_t);
 #define SIZEOF_ARRAY(array) (sizeof(array) / sizeof(array[0]))
 
 typedef char symbol[];
-
-__attribute__((noreturn)) void stage3_common(void);
 
 __attribute__((noreturn)) void common_spinup(void *fnptr, int args, ...);
 

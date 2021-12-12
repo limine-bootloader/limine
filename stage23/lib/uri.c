@@ -65,11 +65,11 @@ static bool parse_bios_partition(char *loc, int *drive, int *partition) {
         if (loc[i] == ':') {
             loc[i] = 0;
             if (*loc == 0) {
-                panic(true, "Drive number cannot be omitted for hdd:// and odd://");
+                panic("Drive number cannot be omitted for hdd:// and odd://");
             } else {
                 val = strtoui(loc, NULL, 10);
                 if (val < 1 || val > 256) {
-                    panic(true, "Drive number outside range 1-256");
+                    panic("Drive number outside range 1-256");
                 }
                 *drive = val;
             }
@@ -80,7 +80,7 @@ static bool parse_bios_partition(char *loc, int *drive, int *partition) {
 
     val = strtoui(loc, NULL, 10);
     if (val > 256) {
-        panic(true, "Partition number outside range 0-256");
+        panic("Partition number outside range 0-256");
     }
     *partition = val;
 
@@ -173,7 +173,7 @@ static struct file_handle *uri_boot_dispatch(char *s_part, char *path) {
     if (s_part[0] != '\0') {
         uint64_t val = strtoui(s_part, NULL, 10);
         if (val > 256) {
-            panic(true, "Partition number outside range 0-256");
+            panic("Partition number outside range 0-256");
         }
         partition = val;
     } else {
@@ -205,7 +205,7 @@ struct file_handle *uri_open(char *uri) {
     }
 
     if (!strcmp(resource, "bios")) {
-        panic(true, "bios:// resource is no longer supported. Check CONFIG.md for hdd:// and odd://");
+        panic("bios:// resource is no longer supported. Check CONFIG.md for hdd:// and odd://");
     } else if (!strcmp(resource, "hdd")) {
         ret = uri_hdd_dispatch(root, path);
     } else if (!strcmp(resource, "odd")) {
@@ -222,9 +222,7 @@ struct file_handle *uri_open(char *uri) {
 #endif
 	// note: fwcfg MUST be the last on the list due to fwcfg simple mode.
     } else if (!strcmp(resource, "fwcfg")) {
-		if (*root != 0) {
-		    panic(true, "No root supported in an fwcfg:// uri!");
-		}
+		if (*root != 0) panic("no root supported in an fwcfg:// uri!");
         ret = uri_fwcfg_dispatch(path);
     } else {
         panic("Resource `%s` not valid.", resource);
@@ -235,9 +233,8 @@ struct file_handle *uri_open(char *uri) {
         fread(ret, &compressed_fd->size, ret->size - 4, sizeof(uint32_t));
         compressed_fd->fd = ext_mem_alloc(compressed_fd->size);
         void *src = freadall(ret, MEMMAP_BOOTLOADER_RECLAIMABLE);
-        if (tinf_gzip_uncompress(compressed_fd->fd, src, ret->size)) {
-            panic(true, "tinf error");
-        }
+        if (tinf_gzip_uncompress(compressed_fd->fd, src, ret->size))
+            panic("tinf error");
         fclose(ret);
         compressed_fd->is_memfile = true;
         ret = compressed_fd;

@@ -26,10 +26,10 @@ bool multiboot1_load(char *config, char *cmdline) {
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
-        panic(true, "multiboot1: KERNEL_PATH not specified");
+        panic("multiboot1: KERNEL_PATH not specified");
 
     if ((kernel_file = uri_open(kernel_path)) == NULL)
-        panic(true, "multiboot1: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
+        panic("multiboot1: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
     uint8_t *kernel = freadall(kernel_file, MEMMAP_KERNEL_AND_MODULES);
 
@@ -60,14 +60,14 @@ bool multiboot1_load(char *config, char *cmdline) {
     struct multiboot1_info *multiboot1_info = conv_mem_alloc(sizeof(struct multiboot1_info));
 
     if (header.magic + header.flags + header.checksum)
-        panic(true, "multiboot1: Header checksum is invalid");
+        panic("multiboot1: Header checksum is invalid");
 
     uint32_t entry_point;
     uint32_t kernel_top;
 
     if (header.flags & (1 << 16)) {
         if (header.load_addr > header.header_addr)
-            panic(true, "multiboot1: Illegal load address");
+            panic("multiboot1: Illegal load address");
 
         size_t load_size = 0;
 
@@ -85,7 +85,7 @@ bool multiboot1_load(char *config, char *cmdline) {
         if (header.bss_end_addr) {
             uintptr_t bss_addr = header.load_addr + load_size;
             if (header.bss_end_addr < bss_addr)
-                panic(true, "multiboot1: Illegal bss end address");
+                panic("multiboot1: Illegal bss end address");
 
             uint32_t bss_size = header.bss_end_addr - bss_addr;
 
@@ -102,19 +102,19 @@ bool multiboot1_load(char *config, char *cmdline) {
         switch (bits) {
             case 32:
                 if (elf32_load(kernel, &entry_point, &kernel_top, MEMMAP_KERNEL_AND_MODULES))
-                    panic(true, "multiboot1: ELF32 load failure");
+                    panic("multiboot1: ELF32 load failure");
                 break;
             case 64: {
                 uint64_t e, t;
                 if (elf64_load(kernel, &e, &t, NULL, MEMMAP_KERNEL_AND_MODULES, false, true, NULL, NULL, false, NULL, NULL))
-                    panic(true, "multiboot1: ELF64 load failure");
+                    panic("multiboot1: ELF64 load failure");
                 entry_point = e;
                 kernel_top = t;
 
                 break;
             }
             default:
-                panic(true, "multiboot1: Invalid ELF file bitness");
+                panic("multiboot1: Invalid ELF file bitness");
         }
     }
 
@@ -136,13 +136,13 @@ bool multiboot1_load(char *config, char *cmdline) {
 
             char *module_path = config_get_value(config, i, "MODULE_PATH");
             if (module_path == NULL)
-                panic(true, "multiboot1: Module disappeared unexpectedly");
+                panic("multiboot1: Module disappeared unexpectedly");
 
             print("multiboot1: Loading module `%s`...\n", module_path);
 
             struct file_handle *f;
             if ((f = uri_open(module_path)) == NULL)
-                panic(true, "multiboot1: Failed to open module with path `%s`. Is the path correct?", module_path);
+                panic("multiboot1: Failed to open module with path `%s`. Is the path correct?", module_path);
 
             char *module_cmdline = config_get_value(config, i, "MODULE_STRING");
             char *lowmem_modstr = conv_mem_alloc(strlen(module_cmdline) + 1);
@@ -218,7 +218,7 @@ bool multiboot1_load(char *config, char *cmdline) {
         } else if (header.fb_mode == 1) {
 nofb:;
 #if uefi == 1
-            panic(true, "multiboot1: Cannot use text mode with UEFI.");
+            panic("multiboot1: Cannot use text mode with UEFI.");
 #elif bios == 1
             size_t rows, cols;
             init_vga_textmode(&rows, &cols, false);
@@ -231,13 +231,13 @@ nofb:;
             multiboot1_info->fb_type    = 2;
 #endif
         } else {
-            panic(true, "multiboot1: Illegal framebuffer type requested");
+            panic("multiboot1: Illegal framebuffer type requested");
         }
 
         multiboot1_info->flags |= (1 << 12);
     } else {
 #if uefi == 1
-        panic(true, "multiboot1: Cannot use text mode with UEFI.");
+        panic("multiboot1: Cannot use text mode with UEFI.");
 #elif bios == 1
         size_t rows, cols;
         init_vga_textmode(&rows, &cols, false);

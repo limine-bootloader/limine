@@ -88,7 +88,7 @@ static void iso9660_find_PVD(struct iso9660_volume_descriptor *desc, struct volu
         case ISO9660_VDT_PRIMARY:
             return;
         case ISO9660_VDT_TERMINATOR:
-            panic(false, "ISO9660: no primary volume descriptor");
+            panic("ISO9660: no primary volume descriptor");
             break;
         }
 

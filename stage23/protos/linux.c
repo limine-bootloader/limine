@@ -351,10 +351,10 @@ bool linux_load(char *config, char *cmdline) {
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
-        panic(true, "linux: KERNEL_PATH not specified");
+        panic("linux: KERNEL_PATH not specified");
 
     if ((kernel_file = uri_open(kernel_path)) == NULL)
-        panic(true, "linux: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
+        panic("linux: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
     uint32_t signature;
     fread(kernel_file, &signature, 0x202, sizeof(uint32_t));
@@ -391,7 +391,7 @@ bool linux_load(char *config, char *cmdline) {
            setup_header->version >> 8, setup_header->version & 0xff);
 
     if (setup_header->version < 0x203) {
-        panic(true, "linux: Protocols < 2.03 are not supported");
+        panic("linux: Protocols < 2.03 are not supported");
     }
 
     setup_header->cmd_line_ptr = (uint32_t)(uintptr_t)cmdline;
@@ -411,7 +411,7 @@ bool linux_load(char *config, char *cmdline) {
     setup_header->type_of_loader = 0xff;
 
     if (!(setup_header->loadflags & (1 << 0))) {
-        panic(true, "linux: Kernels that load at 0x10000 are not supported");
+        panic("linux: Kernels that load at 0x10000 are not supported");
     }
 
     setup_header->loadflags &= ~(1 << 5);     // print early messages
@@ -448,7 +448,7 @@ bool linux_load(char *config, char *cmdline) {
 
         struct file_handle *module;
         if ((module = uri_open(module_path)) == NULL)
-            panic(true, "linux: Failed to open module with path `%s`. Is the path correct?", module_path);
+            panic("linux: Failed to open module with path `%s`. Is the path correct?", module_path);
 
         size_of_all_modules += module->size;
 
@@ -475,7 +475,7 @@ bool linux_load(char *config, char *cmdline) {
 
         struct file_handle *module;
         if ((module = uri_open(module_path)) == NULL)
-            panic(true, "linux: Could not open `%s`", module_path);
+            panic("linux: Could not open `%s`", module_path);
 
         fread(module, (void *)_modules_mem_base, 0, module->size);
 
@@ -514,7 +514,7 @@ bool linux_load(char *config, char *cmdline) {
     struct fb_info fbinfo;
     if (!fb_init(&fbinfo, req_width, req_height, req_bpp)) {
 #if uefi == 1
-        panic(true, "linux: Unable to set video mode");
+        panic("linux: Unable to set video mode");
 #elif bios == 1
 set_textmode:;
         size_t rows, cols;

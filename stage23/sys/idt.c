@@ -43,7 +43,7 @@ void flush_irqs(void) {
         case IRQ_PIC_APIC_FLUSH:
             break;
         default:
-            panic(false, "Invalid IRQ flush type");
+            panic("Invalid IRQ flush type");
     }
 
     struct idtr old_idt;

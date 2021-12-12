@@ -80,7 +80,7 @@ void chainload(char *config) {
         } else {
             val = strtoui(part_config, NULL, 10);
             if (val > 256) {
-                panic(true, "chainload: BIOS partition number outside range 0-256");
+                panic("BIOS partition number outside range 0-256");
             }
             part = val;
         }
@@ -88,11 +88,11 @@ void chainload(char *config) {
     int drive; {
         char *drive_config = config_get_value(config, 0, "DRIVE");
         if (drive_config == NULL) {
-            panic(true, "chainload: DRIVE not specified");
+            panic("DRIVE not specified");
         }
         val = strtoui(drive_config, NULL, 10);
         if (val < 1 || val > 256) {
-            panic(true, "chainload: BIOS drive number outside range 1-256");
+            panic("BIOS drive number outside range 1-256");
         }
         drive = val;
     }
@@ -114,11 +114,11 @@ void chainload(char *config) {
 
     char *image_path = config_get_value(config, 0, "IMAGE_PATH");
     if (image_path == NULL)
-        panic(true, "chainload: IMAGE_PATH not specified");
+        panic("chainload: IMAGE_PATH not specified");
 
     struct file_handle *image;
     if ((image = uri_open(image_path)) == NULL)
-        panic(true, "chainload: Failed to open image with path `%s`. Is the path correct?", image_path);
+        panic("chainload: Failed to open image with path `%s`. Is the path correct?", image_path);
 
     EFI_HANDLE efi_part_handle = image->efi_part_handle;
 
@@ -127,7 +127,7 @@ void chainload(char *config) {
     void *ptr;
     status = gBS->AllocatePool(EfiLoaderData, image_size, &ptr);
     if (status)
-        panic(true, "chainload: Allocation failure");
+        panic("chainload: Allocation failure");
     memcpy(ptr, _ptr, image_size);
 
     pmm_free(_ptr, image->size);
@@ -143,7 +143,7 @@ void chainload(char *config) {
 
     struct fb_info fbinfo;
     if (!fb_init(&fbinfo, req_width, req_height, req_bpp))
-        panic(true, "chainload: Unable to set video mode");
+        panic("chainload: Unable to set video mode");
 
     pmm_release_uefi_mem();
 
@@ -169,7 +169,7 @@ void chainload(char *config) {
                             (EFI_DEVICE_PATH *)memdev_path,
                             ptr, image_size, &new_handle);
     if (status) {
-        panic(false, "chainload: LoadImage failure (%x)", status);
+        panic("chainload: LoadImage failure (%x)", status);
     }
 
     // Apparently we need to make sure that the DeviceHandle field is the same
@@ -180,7 +180,7 @@ void chainload(char *config) {
     status = gBS->HandleProtocol(new_handle, &loaded_img_prot_guid,
                                  (void **)&new_handle_loaded_image);
     if (status) {
-        panic(false, "chainload: HandleProtocol failure (%x)", status);
+        panic("chainload: HandleProtocol failure (%x)", status);
     }
 
     if (efi_part_handle != 0) {
@@ -193,7 +193,7 @@ void chainload(char *config) {
 
     status = gBS->Exit(efi_image_handle, exit_status, exit_data_size, exit_data);
     if (status) {
-        panic(false, "chainload: Exit failure (%x)", status);
+        panic("chainload: Exit failure (%x)", status);
     }
 
     __builtin_unreachable();

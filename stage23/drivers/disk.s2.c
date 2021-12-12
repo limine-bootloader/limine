@@ -92,7 +92,7 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
     struct dap dap = {0};
 
     if (count * volume->sector_size > XFER_BUF_SIZE)
-        panic(false, "XFER");
+        panic("XFER");
 
     if (xfer_buf == NULL)
         xfer_buf = conv_mem_alloc(XFER_BUF_SIZE);
@@ -117,7 +117,7 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
             case 0x0c:
                 return false;
             default:
-                panic(false, "Disk error %x. Drive %x, LBA %x.",
+                panic("Disk error %x. Drive %x, LBA %x.",
                       ah, volume->drive, dap.lba);
         }
     }

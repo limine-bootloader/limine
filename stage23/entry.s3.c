@@ -101,7 +101,7 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
             if (boot_volume != NULL)
                 stage3_common();
 
-            panic(false, "No volume contained a Limine configuration file");
+            panic("No volume contained a Limine configuration file");
         }
 
         EFI_GUID loaded_img_prot_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
@@ -111,7 +111,7 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
                                      (void **)&loaded_image);
 
         if (status) {
-            panic(false, "HandleProtocol failure (%x)", status);
+            panic("HandleProtocol failure (%x)", status);
         }
 
         boot_volume = disk_volume_from_efi_handle(loaded_image->DeviceHandle);
@@ -124,10 +124,38 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 }
 #endif
 
+#if bios == 1
+__attribute__((section(".stage3_entry")))
+#endif
 __attribute__((noreturn))
 void stage3_common(void) {
+    volume_iterate_parts(boot_volume,
+        if (!init_config_disk(_PART)) {
+            boot_volume = _PART;
+            break;
+        }
+    );
+
+    char *quiet_str = config_get_value(NULL, 0, "QUIET");
+    quiet = quiet_str != NULL && strcmp(quiet_str, "yes") == 0;
+
+    char *verbose_str = config_get_value(NULL, 0, "VERBOSE");
+    verbose = verbose_str != NULL && strcmp(verbose_str, "yes") == 0;
+
+    char *randomise_mem_str = config_get_value(NULL, 0, "RANDOMISE_MEMORY");
+    if (randomise_mem_str == NULL)
+        randomise_mem_str = config_get_value(NULL, 0, "RANDOMIZE_MEMORY");
+    bool randomise_mem = randomise_mem_str != NULL && strcmp(randomise_mem_str, "yes") == 0;
+    if (randomise_mem)
+        pmm_randomise_memory();
+
     init_flush_irqs();
     init_io_apics();
+
+    if (verbose) {
+        print("Boot drive: %d\n", boot_volume->index);
+        print("Boot partition: %d\n", boot_volume->partition);
+    }
 
     menu(true);
 }

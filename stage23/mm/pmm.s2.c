@@ -24,13 +24,13 @@ void *conv_mem_alloc(size_t count) {
     static uintptr_t base = 4096;
 
     if (allocations_disallowed)
-        panic(false, "Memory allocations disallowed");
+        panic("Memory allocations disallowed");
 
     count = ALIGN_UP(count, 4096);
 
     for (;;) {
         if (base + count > 0x100000)
-            panic(false, "Conventional memory allocation failed");
+            panic("Conventional memory allocation failed");
 
         if (memmap_alloc_range(base, count, MEMMAP_BOOTLOADER_RECLAIMABLE, true, false, false, false)) {
             void *ret = (void *)base;
@@ -143,7 +143,7 @@ static void sanitise_entries(struct e820_entry_t *m, size_t *_count, bool align_
             // TODO actually handle splitting off usable chunks
             if ( (res_base >= base && res_base < top)
               && (res_top  >= base && res_top  < top) ) {
-                panic(false, "A non-usable e820 entry is inside a usable section.");
+                panic("A non-usable e820 entry is inside a usable section.");
             }
 
             if (res_base >= base && res_base < top) {
@@ -239,7 +239,7 @@ struct e820_entry_t *get_memmap(size_t *entries) {
 void init_memmap(void) {
     for (size_t i = 0; i < e820_entries; i++) {
         if (memmap_entries == memmap_max_entries) {
-            panic(false, "Memory map exhausted.");
+            panic("Memory map exhausted.");
         }
 
         memmap[memmap_entries] = e820_map[i];
@@ -394,7 +394,7 @@ void init_memmap(void) {
     return;
 
 fail:
-    panic(false, "pmm: Failure initialising memory map");
+    panic("pmm: Failure initialising memory map");
 }
 
 void pmm_reclaim_uefi_mem(void) {
@@ -523,7 +523,7 @@ void pmm_release_uefi_mem(void) {
         status = gBS->FreePages(untouched_memmap[i].base, untouched_memmap[i].length / 4096);
 
         if (status) {
-            panic(false, "pmm: FreePages failure (%x)", status);
+            panic("pmm: FreePages failure (%x)", status);
         }
     }
 
@@ -589,7 +589,7 @@ struct e820_entry_t *get_raw_memmap(size_t *entry_count) {
 void pmm_free(void *ptr, size_t count) {
     count = ALIGN_UP(count, 4096);
     if (allocations_disallowed)
-        panic(false, "Memory allocations disallowed");
+        panic("Memory allocations disallowed");
     memmap_alloc_range((uintptr_t)ptr, count, MEMMAP_USABLE, false, false, false, false);
 }
 
@@ -606,7 +606,7 @@ void *ext_mem_alloc_type_aligned(size_t count, uint32_t type, size_t alignment) 
     count = ALIGN_UP(count, alignment);
 
     if (allocations_disallowed)
-        panic(false, "Memory allocations disallowed");
+        panic("Memory allocations disallowed");
 
     for (int i = memmap_entries - 1; i >= 0; i--) {
         if (memmap[i].type != 1)
@@ -642,7 +642,7 @@ void *ext_mem_alloc_type_aligned(size_t count, uint32_t type, size_t alignment) 
         return ret;
     }
 
-    panic(false, "High memory allocator: Out of memory");
+    panic("High memory allocator: Out of memory");
 }
 
 /// Compute and returns the amount of upper and lower memory till
@@ -714,7 +714,7 @@ static bool pmm_new_entry(uint64_t base, uint64_t length, uint32_t type) {
 
             // Now we need to create a new entry
             if (memmap_entries >= memmap_max_entries)
-                panic(false, "Memory map exhausted.");
+                panic("Memory map exhausted.");
 
             struct e820_entry_t *new_entry = &memmap[memmap_entries++];
 
@@ -727,7 +727,7 @@ static bool pmm_new_entry(uint64_t base, uint64_t length, uint32_t type) {
     }
 
     if (memmap_entries >= memmap_max_entries)
-        panic(false, "Memory map exhausted.");
+        panic("Memory map exhausted.");
 
     struct e820_entry_t *target = &memmap[memmap_entries++];
 
@@ -766,7 +766,7 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
                 target = &memmap[i];
             } else {
                 if (memmap_entries >= memmap_max_entries)
-                    panic(false, "Memory map exhausted.");
+                    panic("Memory map exhausted.");
 
                 target = &memmap[memmap_entries++];
             }
@@ -777,7 +777,7 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
 
             if (top < entry_top) {
                 if (memmap_entries >= memmap_max_entries)
-                    panic(false, "Memory map exhausted.");
+                    panic("Memory map exhausted.");
 
                 target = &memmap[memmap_entries++];
 
@@ -793,7 +793,7 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
     }
 
     if (!new_entry && do_panic)
-        panic(false, "Memory allocation failure.");
+        panic("Memory allocation failure.");
 
     if (new_entry) {
         return pmm_new_entry(base, length, type);

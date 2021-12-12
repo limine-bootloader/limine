@@ -41,6 +41,7 @@ SECTIONS
     .stage3.data : {
         *(.rodata*)
         *(.full_map*)
+        *(.no_unwind*)
         data_begin = .;
         *(.data*)
         limine_sys_size = . - 0x8000;

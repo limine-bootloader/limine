@@ -583,14 +583,8 @@ static uint8_t *rewound_data;
 extern symbol data_begin;
 extern symbol data_end;
 
-bool *bad_config = NULL;
-
 __attribute__((noreturn, used))
 static void _menu(bool timeout_enabled) {
-    if (bad_config == NULL) {
-        bad_config = ext_mem_alloc(1);
-    }
-
     size_t data_size = (uintptr_t)data_end - (uintptr_t)data_begin;
 
     if (rewound_memmap != NULL) {
@@ -605,7 +599,7 @@ static void _menu(bool timeout_enabled) {
         memcpy(rewound_data, data_begin, data_size);
     }
 
-    if (*bad_config == false) {
+    if (bad_config == false) {
         volume_iterate_parts(boot_volume,
             if (!init_config_disk(_PART)) {
                 boot_volume = _PART;

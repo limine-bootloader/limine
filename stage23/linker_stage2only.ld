@@ -26,10 +26,13 @@ SECTIONS
         *.s2.o(.data*)
         *.s2.o(.rodata*)
         stage2_map = .;
-        stage3_addr = .;
+        stage3_common = .;
         full_map = .;
         limine_sys_size = .;
         getchar_internal = .;
+        getchar = .;
+        menu = .;
+        stage3_addr = .;
     }
 
     .stage3.build-id : {

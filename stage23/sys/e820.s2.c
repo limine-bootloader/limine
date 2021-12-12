@@ -38,7 +38,7 @@ void init_e820(void) {
         }
     }
 
-    panic("Too many E820 entries!");
+    panic(false, "Too many E820 entries!");
 }
 
 #endif

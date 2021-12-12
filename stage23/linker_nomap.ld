@@ -30,7 +30,6 @@ SECTIONS
 
     .stage3.text : {
         stage3_addr = .;
-        *(.stage3_entry*)
         *(.text*)
     }
 

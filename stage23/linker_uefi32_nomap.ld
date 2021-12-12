@@ -36,21 +36,21 @@ SECTIONS
   .data :
   {
    *(.rodata*)
+   *(.got.plt)
+   *(.got)
+   data_begin = .;
    *(.data)
    *(.data1)
    *(.data.*)
    *(.sdata)
-   *(.got.plt)
-   *(.got)
    /* the EFI loader doesn't seem to like a .bss section, so we stick
       it all into .data: */
-   bss_begin = .;
    *(.sbss)
    *(.scommon)
    *(.dynbss)
    *(.bss)
    *(COMMON)
-   bss_end = .;
+   data_end = .;
    full_map = .;
   }
   .note.gnu.build-id : { *(.note.gnu.build-id) }

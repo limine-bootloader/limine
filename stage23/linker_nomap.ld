@@ -39,9 +39,10 @@ SECTIONS
     }
 
     .stage3.data : {
-        *(.data*)
         *(.rodata*)
         full_map = .;
+        data_begin = .;
+        *(.data*)
         limine_sys_size = . - 0x8000;
     }
 
@@ -54,6 +55,7 @@ SECTIONS
         *(COMMON)
         *(.bss*)
         bss_end = .;
+        data_end = .;
     }
 
     .symtab 0 : {

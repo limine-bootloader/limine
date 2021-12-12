@@ -81,16 +81,12 @@ void entry(uint8_t boot_drive, int boot_from) {
 
     term_notready();
 
-    {
     struct rm_regs r = {0};
     r.eax = 0x0003;
     rm_int(0x10, &r, &r);
 
-    current_video_mode = -1;
-
     outb(0x3d4, 0x0a);
     outb(0x3d5, 0x20);
-    }
 
     init_e820();
     init_memmap();

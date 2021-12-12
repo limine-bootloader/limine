@@ -539,7 +539,6 @@ __attribute__((noreturn, naked))
 void menu(__attribute__((unused)) bool timeout_enabled) {
 #if defined (__i386__)
     asm volatile (
-        "pop %eax\n\t"
         "call 1f\n\t"
         "1:\n\t"
         "pop %eax\n\t"
@@ -547,17 +546,14 @@ void menu(__attribute__((unused)) bool timeout_enabled) {
         "cmpl $0, (%eax)\n\t"
         "jne 1f\n\t"
         "mov %esp, (%eax)\n\t"
-        "jmp 3f\n\t"
+        "jmp _menu\n\t"
         "1:\n\t"
         "mov (%esp), %edi\n\t"
         "mov (%eax), %esp\n\t"
         "push %edi\n\t"
-        "jmp 3f\n\t"
+        "call _menu\n\t"
         "2:\n\t"
-        ".long 0\n\t"
-        "3:\n\t"
-        "push $0\n\t"
-        "jmp _menu"
+        ".long 0"
     );
 #elif defined (__x86_64__)
     asm volatile (
@@ -565,11 +561,9 @@ void menu(__attribute__((unused)) bool timeout_enabled) {
         "cmp %rax, stack_at_first_entry(%rip)\n\t"
         "jne 1f\n\t"
         "mov %rsp, stack_at_first_entry(%rip)\n\t"
-        "jmp 2f\n\t"
+        "jmp _menu\n\t"
         "1:\n\t"
         "mov stack_at_first_entry(%rip), %rsp\n\t"
-        "2:\n\t"
-        "push $0\n\t"
         "jmp _menu"
     );
 #endif

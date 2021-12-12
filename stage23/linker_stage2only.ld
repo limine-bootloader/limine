@@ -23,8 +23,9 @@ SECTIONS
     }
 
     .stage2.data : {
-        *.s2.o(.data*)
         *.s2.o(.rodata*)
+        data_begin = .;
+        *.s2.o(.data*)
         stage2_map = .;
         stage3_common = .;
         full_map = .;
@@ -49,6 +50,7 @@ SECTIONS
         *(COMMON)
         *(.bss*)
         bss_end = .;
+        data_end = .;
     }
 
     .symtab 0 : {

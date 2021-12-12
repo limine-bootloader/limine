@@ -578,10 +578,10 @@ void menu(__attribute__((unused)) bool timeout_enabled) {
 
 static struct e820_entry_t *rewound_memmap = NULL;
 static size_t rewound_memmap_entries = 0;
-static uint8_t *rewound_bss;
+static uint8_t *rewound_data;
 
-extern symbol bss_begin;
-extern symbol bss_end;
+extern symbol data_begin;
+extern symbol data_end;
 
 bool *bad_config = NULL;
 
@@ -591,18 +591,18 @@ static void _menu(bool timeout_enabled) {
         bad_config = ext_mem_alloc(1);
     }
 
-    size_t bss_size = (uintptr_t)bss_end - (uintptr_t)bss_begin;
+    size_t data_size = (uintptr_t)data_end - (uintptr_t)data_begin;
 
     if (rewound_memmap != NULL) {
-        memcpy(bss_begin, rewound_bss, bss_size);
+        memcpy(data_begin, rewound_data, data_size);
         memcpy(memmap, rewound_memmap, rewound_memmap_entries * sizeof(struct e820_entry_t));
         memmap_entries = rewound_memmap_entries;
     } else {
-        rewound_bss = ext_mem_alloc(bss_size);
+        rewound_data = ext_mem_alloc(data_size);
         rewound_memmap = ext_mem_alloc(256 * sizeof(struct e820_entry_t));
         memcpy(rewound_memmap, memmap, memmap_entries * sizeof(struct e820_entry_t));
         rewound_memmap_entries = memmap_entries;
-        memcpy(rewound_bss, bss_begin, bss_size);
+        memcpy(rewound_data, data_begin, data_size);
     }
 
     if (*bad_config == false) {

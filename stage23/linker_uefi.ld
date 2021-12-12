@@ -38,6 +38,7 @@ SECTIONS
    *(.rodata*)
    *(.got.plt)
    *(.got)
+   *(.no_unwind*)
    data_begin = .;
    *(.data*)
    *(.sdata)

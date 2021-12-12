@@ -24,6 +24,7 @@ SECTIONS
 
     .stage2.data : {
         *.s2.o(.rodata*)
+        *.s2.o(.no_unwind*)
         data_begin = .;
         *.s2.o(.data*)
         stage2_map = .;

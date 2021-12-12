@@ -13,9 +13,8 @@
 
 #define SEPARATOR '\n'
 
-extern bool *bad_config;
-
 bool config_ready = false;
+no_unwind bool bad_config = false;
 
 static char *config_addr;
 
@@ -80,7 +79,7 @@ static bool is_directory(char *buf, size_t limit,
         case NOT_CHILD:
             return false;
         case INDIRECT_CHILD:
-            *bad_config = true;
+            bad_config = true;
             panic(true, "config: Malformed config file. Parentless child.");
         case DIRECT_CHILD:
             return true;

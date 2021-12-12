@@ -84,4 +84,6 @@ __attribute__((noreturn)) void stage3_common(void);
 
 __attribute__((noreturn)) void common_spinup(void *fnptr, int args, ...);
 
+#define no_unwind __attribute__((section(".no_unwind")))
+
 #endif

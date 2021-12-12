@@ -570,6 +570,7 @@ void menu(__attribute__((unused)) bool timeout_enabled) {
         "mov stack_at_first_entry(%rip), %rsp\n\t"
         "2:\n\t"
         "push $0\n\t"
+        "push $0\n\t"
         "jmp _menu"
     );
 #endif

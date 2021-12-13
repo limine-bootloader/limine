@@ -57,6 +57,54 @@ void fallback_get_cursor_pos(size_t *x, size_t *y) {
     *x = r.edx & 0xff;
     *y = r.edx >> 8;
 }
+
+#elif uefi == 1
+static int cursor_x = 0, cursor_y = 0;
+
+void fallback_raw_putchar(uint8_t c) {
+    CHAR16 string[2];
+    string[0] = c;
+    string[1] = 0;
+    gST->ConOut->OutputString(gST->ConOut, string);
+    switch (c) {
+        case 0x08:
+            if (cursor_x > 0)
+                cursor_x--;
+            break;
+        case 0x0A:
+            cursor_x = 0;
+            break;
+        case 0x0D:
+            if (cursor_y < 24)
+                cursor_y++;
+            break;
+        default:
+            if (++cursor_x > 80) {
+                cursor_x = 0;
+                if (cursor_y < 24)
+                    cursor_y++;
+            }
+    }
+}
+
+void fallback_clear(bool move) {
+    (void)move;
+    gST->ConOut->ClearScreen(gST->ConOut);
+    cursor_x = cursor_y = 0;
+}
+
+void fallback_set_cursor_pos(size_t x, size_t y) {
+    if (x >= 80 || y >= 25)
+        return;
+    gST->ConOut->SetCursorPosition(gST->ConOut, x, y);
+    cursor_x = x;
+    cursor_y = y;
+}
+
+void fallback_get_cursor_pos(size_t *x, size_t *y) {
+    *x = cursor_x;
+    *y = cursor_y;
+}
 #endif
 
 __attribute__((noreturn)) void panic(bool allow_menu, const char *fmt, ...) {
@@ -75,14 +123,22 @@ __attribute__((noreturn)) void panic(bool allow_menu, const char *fmt, ...) {
     }
 
     if (term_backend == NOT_READY) {
-#if bios == 1
-        fallback_clear(true);
-        term_notready();
-        raw_putchar = fallback_raw_putchar;
-        clear = fallback_clear;
-        set_cursor_pos = fallback_set_cursor_pos;
-        get_cursor_pos = fallback_get_cursor_pos;
-        term_backend = FALLBACK;
+#if uefi == 1
+        if (!efi_boot_services_exited) {
+            gST->ConOut->Reset(gST->ConOut, false);
+            gST->ConOut->SetMode(gST->ConOut, 0);
+            cursor_x = cursor_y = 0;
+#elif bios == 1
+            fallback_clear(true);
+#endif
+            term_notready();
+            raw_putchar = fallback_raw_putchar;
+            clear = fallback_clear;
+            set_cursor_pos = fallback_set_cursor_pos;
+            get_cursor_pos = fallback_get_cursor_pos;
+            term_backend = FALLBACK;
+#if uefi == 1
+        }
 #endif
     }
 

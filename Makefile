@@ -216,6 +216,12 @@ test.hdd:
 	parted -s test.hdd mklabel gpt
 	parted -s test.hdd mkpart primary 2048s 100%
 
+.PHONY: mbrtest.hdd
+mbrtest.hdd:
+	rm -f mbrtest.hdd
+	dd if=/dev/zero bs=1M count=0 seek=64 of=mbrtest.hdd
+	echo -e "o\nn\np\n1\n2048\n\nt\n6\na\nw\n" | fdisk mbrtest.hdd -H 16 -S 63
+
 .PHONY: echfs-test
 echfs-test:
 	$(MAKE) test-clean
@@ -325,6 +331,30 @@ fat16-test:
 	rm -rf test_image loopback_dev
 	$(BINDIR)/limine-install test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
+
+.PHONY: legacy-fat16-test
+legacy-fat16-test:
+	$(MAKE) test-clean
+	$(MAKE) mbrtest.hdd
+	fdisk -l mbrtest.hdd
+	$(MAKE) limine-bios
+	$(MAKE) limine-install
+	$(MAKE) -C test
+	rm -rf test_image/
+	mkdir test_image
+	sudo losetup -Pf --show mbrtest.hdd > loopback_dev
+	sudo partprobe `cat loopback_dev`
+	sudo mkfs.fat -F 16 `cat loopback_dev`p1
+	sudo mount `cat loopback_dev`p1 test_image
+	sudo mkdir test_image/boot
+	sudo cp -rv $(BINDIR)/* test_image/boot/
+	sudo cp -rv test/* test_image/boot/
+	sync
+	sudo umount test_image/
+	sudo losetup -d `cat loopback_dev`
+	rm -rf test_image loopback_dev
+	$(BINDIR)/limine-install mbrtest.hdd
+	qemu-system-i386 -cpu pentium2 -m 16M -M isapc -net none   -hda mbrtest.hdd -debugcon stdio
 
 .PHONY: fat32-test
 fat32-test:

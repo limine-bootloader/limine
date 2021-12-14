@@ -17,7 +17,7 @@
 extern symbol bss_end;
 #endif
 
-static bool allocations_disallowed = true;
+bool allocations_disallowed = true;
 static void sanitise_entries(struct e820_entry_t *, size_t *, bool);
 
 void *conv_mem_alloc(size_t count) {

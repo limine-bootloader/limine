@@ -8,8 +8,8 @@ of either a `/limine.cfg`, `/boot/limine.cfg`, or a `/EFI/BOOT/limine.cfg` file,
 
 If no config file is found in the aforementioned locations, Limine looks for the file on the fw_cfg
 interface called `opt/org.limine-bootloader.config`. If that is not present and the kernel is found at
-`opt/org.limine-bootloader.kernel`, Limine enters the so-called "simple mode", where the kernel is loaded from 
-`opt/org.limine-bootloader.kernel`, and, (if present), the background is loaded from 
+`opt/org.limine-bootloader.kernel`, Limine enters the so-called "simple mode", where the kernel is loaded from
+`opt/org.limine-bootloader.kernel`, and, (if present), the background is loaded from
 `opt/org.limine-bootloader.background`.
 
 Once the file is located, Limine will use it as its config file. Other possible
@@ -161,3 +161,18 @@ A resource can be one of the following:
 A URI can optionally be prefixed by a `$` character to indicate that the file
 pointed to be the URI is a gzip-compressed payload to be uncompressed on the
 fly. E.g.: `$boot:///somemodule.gz`.
+
+## Macros
+
+Macros are strings that can be arbitrarily assigned to represent other strings. For example:
+```
+${MY_MACRO}=Some text
+```
+
+Now, whenever `${MY_MACRO}` is used in the config file (except for an assignment as above), it will
+be replaced by the text `Some text`. For example:
+```
+CMDLINE=something before ${MY_MACRO} something after
+```
+
+Macros must always be placed inside `${...}` where `...` is the arbitrary macro name.

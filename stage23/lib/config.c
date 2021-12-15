@@ -138,6 +138,14 @@ static struct menu_entry *create_menu_tree(struct menu_entry *parent,
 
 struct menu_entry *menu_tree = NULL;
 
+struct macro {
+    char name[1024];
+    char value[2048];
+    struct macro *next;
+};
+
+static struct macro *macros = NULL;
+
 int init_config(size_t config_size) {
     // remove windows carriage returns, if any
     for (size_t i = 0; i < config_size; i++) {
@@ -145,6 +153,105 @@ int init_config(size_t config_size) {
             for (size_t j = i; j < config_size - 1; j++)
                 config_addr[j] = config_addr[j+1];
             config_size--;
+        }
+    }
+
+    // Load macros
+    for (size_t i = 0; i < config_size;) {
+        if ((config_size - i >= 3 && memcmp(config_addr + i, "\n${", 3) == 0)
+         || (config_size - i >= 2 && i == 0 && memcmp(config_addr, "${", 2) == 0)) {
+            struct macro *macro = ext_mem_alloc(sizeof(struct macro));
+
+            i += i ? 3 : 2;
+            size_t j;
+            for (j = 0; config_addr[i] != '}' && config_addr[i] != '\n' && config_addr[i] != 0; j++, i++) {
+                macro->name[j] = config_addr[i];
+            }
+
+            if (config_addr[i] == '\n' || config_addr[i] == 0 || config_addr[i+1] != '=') {
+                bad_config = true;
+                panic(true, "config: Malformed macro definition");
+            }
+            i += 2;
+
+            macro->name[j] = 0;
+
+            for (j = 0; config_addr[i] != '\n' && config_addr[i] != 0; j++, i++) {
+                macro->value[j] = config_addr[i];
+            }
+            macro->value[j] = 0;
+
+            macro->next = macros;
+            macros = macro;
+
+            continue;
+        }
+
+        i++;
+    }
+
+    // Expand macros
+    if (macros != NULL) {
+        char *new_config = ext_mem_alloc(config_size * 4);
+
+        size_t i, in;
+        for (i = 0, in = 0; i < config_size;) {
+            if ((config_size - i >= 3 && memcmp(config_addr + i, "\n${", 3) == 0)
+             || (config_size - i >= 2 && i == 0 && memcmp(config_addr, "${", 2) == 0)) {
+                i += i ? 3 : 2;
+                while (config_addr[i] != '\n' && config_addr[i] != 0) {
+                    i++;
+                }
+                continue;
+            }
+
+            if (config_size - i >= 2 && memcmp(config_addr + i, "${", 2) == 0) {
+                char *macro_name = ext_mem_alloc(1024);
+                i += 2;
+                size_t j;
+                for (j = 0; config_addr[i] != '}' && config_addr[i] != '\n' && config_addr[i] != 0; j++, i++) {
+                    macro_name[j] = config_addr[i];
+                }
+                if (config_addr[i] != '}') {
+                    bad_config = true;
+                    panic(true, "config: Malformed macro usage");
+                }
+                i++;
+                macro_name[j] = 0;
+                char *macro_value = "";
+                struct macro *macro = macros;
+                for (;;) {
+                    if (macro == NULL) {
+                        break;
+                    }
+                    if (strcmp(macro->name, macro_name) == 0) {
+                        macro_value = macro->value;
+                        break;
+                    }
+                    macro = macro->next;
+                }
+                pmm_free(macro_name, 1024);
+                for (j = 0; macro_value[j] != 0; j++, in++) {
+                    new_config[in] = macro_value[j];
+                }
+                continue;
+            }
+
+            new_config[in++] = config_addr[i++];
+        }
+
+        config_addr = new_config;
+        config_size = in;
+
+        // Free macros
+        struct macro *macro = macros;
+        for (;;) {
+            if (macro == NULL) {
+                break;
+            }
+            struct macro *next = macro->next;
+            pmm_free(macro, sizeof(struct macro));
+            macro = next;
         }
     }
 

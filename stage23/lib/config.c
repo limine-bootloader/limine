@@ -192,7 +192,8 @@ int init_config(size_t config_size) {
 
     // Expand macros
     if (macros != NULL) {
-        char *new_config = ext_mem_alloc(config_size * 4);
+        size_t new_config_size = config_size * 4;
+        char *new_config = ext_mem_alloc(new_config_size);
 
         size_t i, in;
         for (i = 0, in = 0; i < config_size;) {
@@ -232,13 +233,23 @@ int init_config(size_t config_size) {
                 }
                 pmm_free(macro_name, 1024);
                 for (j = 0; macro_value[j] != 0; j++, in++) {
+                    if (in >= new_config_size) {
+                        goto overflow;
+                    }
                     new_config[in] = macro_value[j];
                 }
                 continue;
             }
 
+            if (in >= new_config_size) {
+overflow:
+                bad_config = true;
+                panic(true, "config: Macro-induced buffer overflow");
+            }
             new_config[in++] = config_addr[i++];
         }
+
+        pmm_free(config_addr, config_size);
 
         config_addr = new_config;
         config_size = in;

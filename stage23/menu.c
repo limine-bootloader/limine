@@ -181,6 +181,8 @@ static void putchar_tokencol(int type, char c) {
     }
 }
 
+static bool editor_no_term_reset = false;
+
 char *config_entry_editor(const char *title, const char *orig_entry) {
     term_autoflush = false;
 
@@ -452,11 +454,11 @@ refresh:
             }
             break;
         case GETCHAR_F10:
-            reset_term();
+            editor_no_term_reset ? editor_no_term_reset = false : reset_term();
             return buffer;
         case GETCHAR_ESCAPE:
             pmm_free(buffer, EDITOR_MAX_BUFFER_SIZE);
-            reset_term();
+            editor_no_term_reset ? editor_no_term_reset = false : reset_term();
             return NULL;
         default:
             if (strlen(buffer) < EDITOR_MAX_BUFFER_SIZE - 1) {
@@ -687,9 +689,9 @@ reterm:
     }
 
 refresh:
-    disable_cursor();
-
     term_autoflush = false;
+
+    disable_cursor();
 
     clear(true);
     {
@@ -828,6 +830,7 @@ timeout_aborted:
                 if (editor_enabled) {
                     if (selected_menu_entry->sub != NULL)
                         goto refresh;
+                    editor_no_term_reset = true;
                     char *new_body = config_entry_editor(selected_menu_entry->name, selected_menu_entry->body);
                     if (new_body == NULL)
                         goto refresh;

@@ -1,4 +1,5 @@
 OUTPUT_FORMAT(elf32-i386)
+OUTPUT_ARCH(i386)
 ENTRY(_start)
 
 SECTIONS
@@ -6,34 +7,34 @@ SECTIONS
     . = 0x70000;
 
     .text : {
-        KEEP(*(.entry*))
-        *(.text*)
+        *(.entry)
+        *(.text .text.*)
     }
 
     .rodata : {
-        *(.rodata*)
+        *(.rodata .rodata.*)
     }
 
     .data : {
-        *(.data*)
+        *(.data .data.*)
     }
 
     .bss : {
         bss_begin = .;
         *(COMMON)
-        *(.bss*)
+        *(.bss .bss.*)
         bss_end = .;
     }
 
-    .symtab : {
+    .symtab 0 : {
         *(.symtab)
     }
 
-    .strtab : {
+    .strtab 0 : {
         *(.strtab)
     }
 
-    .shstrtab : {
+    .shstrtab 0 : {
         *(.shstrtab)
     }
 

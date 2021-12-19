@@ -38,7 +38,8 @@ SECTIONS
    *(.rodata*)
    *(.got.plt)
    *(.got)
-   *(.no_unwind*)
+   *(.full_map)
+   *(.no_unwind)
    data_begin = .;
    *(.data*)
    *(.sdata)
@@ -51,7 +52,6 @@ SECTIONS
    *(COMMON)
    data_end = .;
    *(.rel.local)
-   *(.full_map*)
   }
   .note.gnu.build-id : { *(.note.gnu.build-id) }
 

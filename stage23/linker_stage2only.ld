@@ -1,4 +1,5 @@
 OUTPUT_FORMAT(elf32-i386)
+OUTPUT_ARCH(i386)
 ENTRY(_start)
 
 SECTIONS
@@ -6,15 +7,15 @@ SECTIONS
     . = 0x8000;
 
     .entry : {
-        *(.entry*)
+        *(.entry)
     }
 
     .realmode : {
-        *(.realmode*)
+        *(.realmode)
     }
 
     .stage2.text : {
-        *.s2.o(.text*)
+        *.s2.o(.text .text.*)
     }
 
     .stage2.build-id : {
@@ -23,10 +24,11 @@ SECTIONS
     }
 
     .stage2.data : {
-        *.s2.o(.rodata*)
-        *.s2.o(.no_unwind*)
-        data_begin = .;
-        *.s2.o(.data*)
+        *.s2.o(.no_unwind)
+        s2_data_begin = .;
+        *.s2.o(.data .data.*)
+        s2_data_end = .;
+        *.s2.o(.rodata .rodata.*)
         stage2_map = .;
         stage3_common = .;
         full_map = .;
@@ -35,6 +37,7 @@ SECTIONS
         getchar = .;
         menu = .;
         stage3_addr = .;
+        data_begin = .;
     }
 
     .stage3.build-id : {
@@ -49,7 +52,7 @@ SECTIONS
     .bss : {
         bss_begin = .;
         *(COMMON)
-        *(.bss*)
+        *(.bss .bss.*)
         bss_end = .;
         data_end = .;
     }

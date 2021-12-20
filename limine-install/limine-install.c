@@ -10,6 +10,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 #define DIV_ROUNDUP(a, b) (((a) + ((b) - 1)) / (b))
 
 struct gpt_table_header {
@@ -287,7 +291,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    device = open(argv[1], O_RDWR);
+    device = open(argv[1], O_RDWR | O_BINARY);
     if (device == -1) {
         perror("ERROR");
         goto cleanup;

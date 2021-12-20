@@ -7,6 +7,7 @@
 struct fat32_context {
     struct volume *part;
     int type;
+    uint16_t bytes_per_sector;
     uint8_t sectors_per_cluster;
     uint16_t reserved_sectors;
     uint8_t number_of_fats;

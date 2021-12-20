@@ -245,23 +245,9 @@ $(call MKESCAPE,$(BUILDDIR))/limine_stage2only.elf: $(OBJ)
 	$(TOOLCHAIN_LD) '$(call OBJESCAPE,$^)' $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_stage2only.ld -o '$(call SHESCAPE,$@)' || \
 		( echo "This error may mean that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
 		  false )
-	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
-	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s2.bin build-id.s2.o
-	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.bin'
-	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s3.bin build-id.s3.o
-	$(TOOLCHAIN_LD) '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' '$(call OBJESCAPE,$^)' $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_stage2only.ld -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/stage2.map.o
 	$(TOOLCHAIN_LD) '$(call OBJESCAPE,$^)' $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o '$(call SHESCAPE,$@)'
-	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
-	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s2.bin build-id.s2.o
-	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.bin'
-	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s3.bin build-id.s3.o
-	$(TOOLCHAIN_LD) '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' '$(call OBJESCAPE,$^)' $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_nomap.ld -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/stage2.map.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(TOOLCHAIN_LD) '$(call OBJESCAPE,$^)' $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker.ld -o '$(call SHESCAPE,$@)'
@@ -275,13 +261,6 @@ $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tin
 
 $(call MKESCAPE,$(BUILDDIR))/limine_dbg.elf: $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/stage2.map.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(TOOLCHAIN_LD) '$(call OBJESCAPE,$^)' $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o '$(call SHESCAPE,$@)'
-	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
-	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s2.bin build-id.s2.o
-	$(TOOLCHAIN_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.bin'
-	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s3.bin build-id.s3.o
-	$(TOOLCHAIN_LD) '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' '$(call OBJESCAPE,$^)' $(LDFLAGS) $(INTERNAL_LDFLAGS) -Tlinker_dbg.ld -o '$(call SHESCAPE,$@)'
 
 endif
 

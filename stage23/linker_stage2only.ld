@@ -31,8 +31,8 @@ SECTIONS
         *.s2.o(.rodata .rodata.*)
         stage2_map = .;
         stage3_common = .;
+        build_id_s3 = .;
         full_map = .;
-        limine_sys_size = .;
         getchar_internal = .;
         getchar = .;
         menu = .;
@@ -40,13 +40,9 @@ SECTIONS
         data_begin = .;
     }
 
-    .stage3.build-id : {
-        build_id_s3 = .;
-        *build-id.s3.o(*)
-    }
-
     .note.gnu.build-id : {
         *(.note.gnu.build-id)
+        limine_sys_size = . - 0x8000;
     }
 
     .bss : {

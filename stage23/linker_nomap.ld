@@ -48,11 +48,11 @@ SECTIONS
         *(.no_unwind)
         data_begin = .;
         *(.data .data.*)
-        limine_sys_size = . - 0x8000;
     }
 
     .note.gnu.build-id : {
         *(.note.gnu.build-id)
+        limine_sys_size = . - 0x8000;
     }
 
     .bss : {

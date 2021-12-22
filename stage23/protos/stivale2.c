@@ -201,7 +201,7 @@ bool stivale2_load(char *config, char *cmdline) {
         }
         case 32: {
             if (!loaded_by_anchor) {
-                if (elf32_load(kernel, (uint32_t *)&entry_point, NULL, 10))
+                if (elf32_load(kernel, (uint32_t *)&entry_point, NULL, STIVALE2_MMAP_KERNEL_AND_MODULES))
                     panic(true, "stivale2: ELF32 load failure");
 
                 ret = elf32_load_section(kernel, &stivale2_hdr, ".stivale2hdr",

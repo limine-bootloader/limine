@@ -153,7 +153,7 @@ bool stivale_load(char *config, char *cmdline) {
         }
         case 32: {
             if (!loaded_by_anchor) {
-                if (elf32_load(kernel, (uint32_t *)&entry_point, NULL, 10))
+                if (elf32_load(kernel, (uint32_t *)&entry_point, NULL, STIVALE_MMAP_KERNEL_AND_MODULES))
                     panic(true, "stivale: ELF32 load failure");
 
                 ret = elf32_load_section(kernel, &stivale_hdr, ".stivalehdr",

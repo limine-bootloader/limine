@@ -212,16 +212,16 @@ all: $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI
 endif
 
 $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.bin: sys/smp_trampoline.real
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm $< -f bin -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o: $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.bin
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	cd '$(call SHESCAPE,$(BUILDDIR))/sys' && \
 		$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) smp_trampoline.bin '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/font.o: font.bin
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(TOOLCHAIN_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) font.bin '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
@@ -231,7 +231,7 @@ $(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
 	touch '$(call SHESCAPE,$(BUILDDIR))/tinf-copied'
 
 $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
 
 ifeq ($(TARGET), bios)
@@ -332,19 +332,19 @@ endif
 
 ifeq ($(TARGET), uefi)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET), uefi32)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET), bios)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
@@ -352,7 +352,7 @@ endif
 
 ifeq ($(TARGET), bios)
 $(call MKESCAPE,$(BUILDDIR))/%.s2.o: %.s2.c
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(TOOLCHAIN_CC) $(S2CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
@@ -360,7 +360,7 @@ endif
 
 ifeq ($(TARGET), uefi)
 $(call MKESCAPE,$(BUILDDIR))/%.32.o: %.32.c $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS32) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@).32'
 	$(TOOLCHAIN_OBJCOPY) -I elf32-i386 -O elf64-x86-64 '$(call SHESCAPE,$@).32' '$(call SHESCAPE,$@)'
 	rm '$(call SHESCAPE,$@).32'
@@ -368,31 +368,31 @@ endif
 
 ifeq ($(TARGET), bios)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm32
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Werror -f elf32 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asmb
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Werror -f elf32 -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET), uefi)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm64
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Werror -f elf64 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm64u
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Werror -f elf64 -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET), uefi32)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm32
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Werror -f elf32 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm32u
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Werror -f elf32 -o '$(call SHESCAPE,$@)'
 endif
 

@@ -86,17 +86,17 @@ $(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
 	touch '$(call SHESCAPE,$(BUILDDIR))/tinf-copied'
 
 $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(TOOLCHAIN_CC) $(CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
 
 -include $(HEADER_DEPS)
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(TOOLCHAIN_CC) $(CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm
-	dirname '$(call SHESCAPE,$@)' | xargs -d '\n' mkdir -p
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' -f elf32 -o '$(call SHESCAPE,$@)'
 
 .PHONY: clean

@@ -33,11 +33,7 @@ override TOOLCHAIN_CC := cc
 endif
 
 ifeq ($(TOOLCHAIN_CC), clang)
-TOOLCHAIN_CC += --target=x86_64-elf
-ifeq ($(TOOLCHAIN_CC), clang)
 override TOOLCHAIN_CC += --target=x86_64-elf
-MAKEOVERRIDES += TOOLCHAIN_CC+=--target=x86_64-elf
-endif
 endif
 
 override CC_MACHINE := $(shell PATH='$(call SHESCAPE,$(PATH))' $(TOOLCHAIN_CC) -dumpmachine | dd bs=6 count=1 2>/dev/null)
@@ -52,6 +48,10 @@ endif
 endif
 endif
 endif
+endif
+
+ifeq ($(TOOLCHAIN_CC), clang --target=x86_64-elf)
+override TOOLCHAIN_CC := clang
 endif
 
 override STAGE1_FILES := $(shell find -L ./stage1 -type f -name '*.asm')

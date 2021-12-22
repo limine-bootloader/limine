@@ -9,9 +9,11 @@ BUILDDIR ?= $(shell pwd)/build
 override BINDIR := $(BUILDDIR)/bin
 
 override SPACE := $(subst ,, )
+override COMMA := ,
 
 MKESCAPE = $(subst $(SPACE),\ ,$(1))
 SHESCAPE = $(subst ','\'',$(1))
+NASMESCAPE = $(subst ','"'$(COMMA) \"'\"$(COMMA) '"',$(1))
 
 override PATH := $(shell pwd)/toolchain/bin:$(PATH)
 export PATH
@@ -73,7 +75,7 @@ clean: limine-bios-clean limine-uefi-clean limine-uefi32-clean
 .PHONY: install
 install: all
 	install -d '$(DESTDIR)$(PREFIX)/bin'
-	install -s '$(call SHESCAPE,$(BINDIR))/limine-install' '$(DESTDIR)$(PREFIX)/bin/'
+	install -s '$(call SHESCAPE,$(BINDIR))/limine-install' '$(DESTDIR)$(PREFIX)/bin/' || true
 	install -d '$(DESTDIR)$(PREFIX)/share'
 	install -d '$(DESTDIR)$(PREFIX)/share/limine'
 	install -m 644 '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(DESTDIR)$(PREFIX)/share/limine/' || true
@@ -85,9 +87,9 @@ install: all
 
 $(call MKESCAPE,$(BUILDDIR))/stage1: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/stage23-bios/stage2.bin.gz
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	cd stage1/hdd && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call SHESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
-	cd stage1/cd  && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call SHESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
-	cd stage1/pxe && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call SHESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin'
+	cd stage1/hdd && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
+	cd stage1/cd  && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
+	cd stage1/pxe && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin'
 	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-bios/limine.sys' '$(call SHESCAPE,$(BINDIR))/'
 	touch '$(call SHESCAPE,$(BUILDDIR))/stage1'
 

@@ -30,6 +30,10 @@ ifeq ($(shell command -v $(TOOLCHAIN_OBJCOPY) ; ), )
 override TOOLCHAIN_OBJCOPY := objcopy
 endif
 
+ifeq ($(TOOLCHAIN_CC), clang)
+override TOOLCHAIN_CC += --target=i686-elf
+endif
+
 WERROR = -Werror
 CFLAGS ?= -Os -pipe -Wall -Wextra $(WERROR)
 

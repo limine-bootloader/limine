@@ -55,6 +55,18 @@ ifeq ($(shell command -v $(TOOLCHAIN_READELF) ; ), )
 override TOOLCHAIN_READELF := readelf
 endif
 
+ifeq ($(TOOLCHAIN_CC), clang)
+ifeq ($(TARGET), bios)
+override TOOLCHAIN_CC += --target=i686-elf
+endif
+ifeq ($(TARGET), uefi)
+override TOOLCHAIN_CC += --target=x86_64-elf
+endif
+ifeq ($(TARGET), uefi32)
+override TOOLCHAIN_CC += --target=i686-elf
+endif
+endif
+
 COM_OUTPUT = false
 E9_OUTPUT = false
 

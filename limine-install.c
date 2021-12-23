@@ -459,7 +459,7 @@ int main(int argc, char *argv[]) {
     uint64_t stage2_loc_b = stage2_loc_a + stage2_size_a;
 
     if (gpt) {
-        if (argc > 3) {
+        if (argc >= 3) {
             uint32_t partition_num;
             sscanf(argv[2], "%" SCNu32, &partition_num);
             partition_num--;

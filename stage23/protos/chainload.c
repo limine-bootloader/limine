@@ -104,7 +104,7 @@ void chainload(char *config) {
 
     volume_read(p, (void *)0x7c00, 0, 512);
 
-    spinup(drive);
+    spinup(p->drive);
 }
 
 #elif uefi == 1

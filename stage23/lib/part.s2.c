@@ -32,10 +32,13 @@ static bool cache_block(struct volume *volume, uint64_t block) {
 
     size_t first_sect = volume->first_sect / (volume->sector_size / 512);
 
-    if (!disk_read_sectors(volume, volume->cache,
+    uint64_t xfer_size = volume->fastest_xfer_size;
+
+    while (!disk_read_sectors(volume, volume->cache,
                            first_sect + block * volume->fastest_xfer_size,
-                           volume->fastest_xfer_size))
-        return false;
+                           xfer_size)) {
+        xfer_size--;
+    }
 
     volume->cache_status = CACHE_READY;
     volume->cached_block = block;

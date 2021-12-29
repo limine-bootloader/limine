@@ -38,6 +38,9 @@ static bool cache_block(struct volume *volume, uint64_t block) {
                            first_sect + block * volume->fastest_xfer_size,
                            xfer_size)) {
         xfer_size--;
+        if (xfer_size == 0) {
+            return false;
+        }
     }
 
     volume->cache_status = CACHE_READY;

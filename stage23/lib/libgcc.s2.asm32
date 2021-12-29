@@ -40,8 +40,11 @@ __udivmoddi4:
     mov edx, dword [esp+8]
     div dword [esp+12]
     mov ecx, dword [esp+20]
+    test ecx, ecx
+    jz .done
     mov dword [ecx], edx
     mov dword [ecx+4], 0
+  .done:
     xor edx, edx
     ret
 
@@ -51,7 +54,10 @@ __divmoddi4:
     mov edx, dword [esp+8]
     idiv dword [esp+12]
     mov ecx, dword [esp+20]
+    test ecx, ecx
+    jz .done
     mov dword [ecx], edx
     mov dword [ecx+4], 0
+  .done:
     xor edx, edx
     ret

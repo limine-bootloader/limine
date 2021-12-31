@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdnoreturn.h>
 #include <menu.h>
 #include <lib/print.h>
 #include <lib/blib.h>
@@ -537,8 +538,8 @@ __attribute__((used))
 static uintptr_t stack_at_first_entry = 0;
 #endif
 
-__attribute__((noreturn, naked))
-void menu(__attribute__((unused)) bool timeout_enabled) {
+__attribute__((naked))
+noreturn void menu(__attribute__((unused)) bool timeout_enabled) {
 #if defined (__i386__)
     asm volatile (
         "pop %eax\n\t"
@@ -592,8 +593,8 @@ extern symbol s2_data_begin;
 extern symbol s2_data_end;
 #endif
 
-__attribute__((noreturn, used))
-static void _menu(bool timeout_enabled) {
+__attribute__((used))
+static noreturn void _menu(bool timeout_enabled) {
     size_t data_size = (uintptr_t)data_end - (uintptr_t)data_begin;
 #if bios == 1
     size_t s2_data_size = (uintptr_t)s2_data_end - (uintptr_t)s2_data_begin;
@@ -867,8 +868,7 @@ timeout_aborted:
     }
 }
 
-__attribute__((noreturn))
-void boot(char *config) {
+noreturn void boot(char *config) {
     char *cmdline = config_get_value(config, 0, "KERNEL_CMDLINE");
     if (!cmdline) {
         cmdline = config_get_value(config, 0, "CMDLINE");

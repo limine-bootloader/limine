@@ -24,8 +24,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdnoreturn.h>
 
-bool multiboot2_load(char *config, char* cmdline);
+bool multiboot2_load(char *config, char *cmdline);
 
 /*  How many bytes from the start of the file we search for the header. */
 #define MULTIBOOT_SEARCH                        32768
@@ -415,7 +416,6 @@ struct multiboot_tag_load_base_addr
     uint32_t load_base_addr;
 };
 
-__attribute__((noreturn)) void multiboot2_spinup_32(
-                 uint32_t entry_point, uint32_t multiboot1_info);
+noreturn void multiboot2_spinup_32(uint32_t entry_point, uint32_t multiboot1_info);
 
 #endif

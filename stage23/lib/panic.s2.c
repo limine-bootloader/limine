@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdnoreturn.h>
 #include <lib/print.h>
 #include <lib/real.h>
 #include <lib/trace.h>
@@ -107,7 +108,7 @@ void fallback_get_cursor_pos(size_t *x, size_t *y) {
 }
 #endif
 
-__attribute__((noreturn)) void panic(bool allow_menu, const char *fmt, ...) {
+noreturn void panic(bool allow_menu, const char *fmt, ...) {
     va_list args;
 
     va_start(args, fmt);

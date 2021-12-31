@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <stdnoreturn.h>
 #include <protos/multiboot1.h>
 #include <lib/libc.h>
 #include <lib/elf.h>
@@ -17,9 +18,7 @@
 #include <mm/pmm.h>
 #include <drivers/vga_textmode.h>
 
-__attribute__((noreturn)) void multiboot1_spinup_32(
-                 uint32_t entry_point,
-                 uint32_t multiboot1_info);
+noreturn void multiboot1_spinup_32(uint32_t entry_point, uint32_t multiboot1_info);
 
 bool multiboot1_load(char *config, char *cmdline) {
     struct file_handle *kernel_file;

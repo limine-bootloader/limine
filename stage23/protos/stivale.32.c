@@ -1,9 +1,10 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdnoreturn.h>
 #include <mm/vmm.h>
 
-__attribute__((noreturn)) void stivale_spinup_32(
+noreturn void stivale_spinup_32(
                  int bits, bool level5pg, bool enable_nx, uint32_t pagemap_top_lv,
                  uint32_t entry_point_lo, uint32_t entry_point_hi,
                  uint32_t stivale_struct_lo, uint32_t stivale_struct_hi,

@@ -1,13 +1,13 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdnoreturn.h>
 #include <mm/vmm.h>
 #if bios == 1
 #  include <sys/idt.h>
 #endif
 
-__attribute__((noreturn)) void multiboot2_spinup_32(
-                 uint32_t entry_point, uint32_t multiboot2_info) {
+noreturn void multiboot2_spinup_32(uint32_t entry_point, uint32_t multiboot2_info) {
 #if bios == 1
     struct idtr idtr;
 

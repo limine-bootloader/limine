@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <stdnoreturn.h>
 #include <protos/linux.h>
 #include <fs/file.h>
 #include <lib/libc.h>
@@ -16,7 +17,7 @@
 #include <drivers/edid.h>
 #include <drivers/vga_textmode.h>
 
-__attribute__((noreturn)) void linux_spinup(void *entry, void *boot_params);
+noreturn void linux_spinup(void *entry, void *boot_params);
 
 // The following definitions and struct were copied and adapted from Linux
 // kernel headers released under GPL-2.0 WITH Linux-syscall-note

@@ -1,3 +1,7 @@
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdnoreturn.h>
 #include <lib/term.h>
 #include <lib/real.h>
 #include <lib/blib.h>
@@ -73,8 +77,7 @@ enum {
     BOOTED_FROM_CD
 };
 
-__attribute__((noreturn))
-void entry(uint8_t boot_drive, int boot_from) {
+noreturn void entry(uint8_t boot_drive, int boot_from) {
     // XXX DO NOT MOVE A20 ENABLE CALL
     if (!a20_enable())
         panic(false, "Could not enable A20 line");

@@ -1,3 +1,6 @@
+#include <stddef.h>
+#include <stdint.h>
+#include <stdnoreturn.h>
 #include <lib/term.h>
 #include <lib/real.h>
 #include <lib/blib.h>
@@ -43,8 +46,7 @@ EFI_STATUS efi_main(
 #endif
 }
 
-__attribute__((noreturn))
-void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
+noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     gST = SystemTable;
     gBS = SystemTable->BootServices;
     gRT = SystemTable->RuntimeServices;
@@ -124,8 +126,7 @@ void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 }
 #endif
 
-__attribute__((noreturn))
-void stage3_common(void) {
+noreturn void stage3_common(void) {
     init_flush_irqs();
     init_io_apics();
 

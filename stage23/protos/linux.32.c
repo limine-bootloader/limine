@@ -1,6 +1,8 @@
+#include <stdint.h>
+#include <stdnoreturn.h>
 #include <sys/gdt.h>
 
-__attribute__((noreturn)) void linux_spinup(void *entry, void *boot_params) {
+noreturn void linux_spinup(void *entry, void *boot_params) {
     struct gdt_desc linux_gdt_descs[4];
     linux_gdt_descs[0] = (struct gdt_desc){0};
     linux_gdt_descs[1] = (struct gdt_desc){0};

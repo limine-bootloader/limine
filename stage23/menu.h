@@ -2,12 +2,11 @@
 #define __MENU_H__
 
 #include <stdbool.h>
+#include <stdnoreturn.h>
 
-__attribute__((noreturn))
-void menu(bool timeout_enabled);
+noreturn void menu(bool timeout_enabled);
 
-__attribute__((noreturn))
-void boot(char *config);
+noreturn void boot(char *config);
 
 char *config_entry_editor(const char *title, const char *orig_entry);
 

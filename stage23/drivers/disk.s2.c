@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <stdalign.h>
 #include <drivers/disk.h>
 #include <lib/libc.h>
 #if bios == 1
@@ -219,7 +220,7 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
     return true;
 }
 
-static uint8_t unique_sector_pool[8192] __attribute__((aligned(4096)));
+static alignas(4096) uint8_t unique_sector_pool[8192];
 
 struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
     EFI_STATUS status;

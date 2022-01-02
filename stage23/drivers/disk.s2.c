@@ -113,14 +113,7 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
     rm_int(0x13, &r, &r);
 
     if (r.eflags & EFLAGS_CF) {
-        int ah = (r.eax >> 8) & 0xff;
-        switch (ah) {
-            case 0x0c:
-                return false;
-            default:
-                panic(false, "Disk error %x. Drive %x, LBA %x.",
-                      ah, volume->drive, dap.lba);
-        }
+        return false;
     }
 
     if (buf != NULL)

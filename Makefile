@@ -1,14 +1,14 @@
-CC = cc
+CC ?= cc
 
-PREFIX = /usr/local
-DESTDIR =
+PREFIX ?= /usr/local
+DESTDIR ?=
 
-CFLAGS = -O2 -pipe -Wall -Wextra
+CFLAGS ?= -O2 -pipe -Wall -Wextra
 
-.PHONY: all install clean
-
+.PHONY: all
 all: limine-install
 
+.PHONY: install
 install: all
 	install -d '$(DESTDIR)$(PREFIX)/bin'
 	install -s limine-install '$(DESTDIR)$(PREFIX)/bin/'
@@ -21,6 +21,7 @@ install: all
 	install -m 644 BOOTX64.EFI '$(DESTDIR)$(PREFIX)/share/limine/'
 	install -m 644 BOOTIA32.EFI '$(DESTDIR)$(PREFIX)/share/limine/'
 
+.PHONY: clean
 clean:
 	rm -f limine-install limine-install.exe
 

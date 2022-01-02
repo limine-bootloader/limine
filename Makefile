@@ -1,7 +1,3 @@
-ifneq (,)
-This makefile requires GNU Make.
-endif
-
 PREFIX ?= /usr/local
 DESTDIR ?=
 
@@ -34,7 +30,11 @@ ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(TOOLCHAIN_CC) ; ), )
 override TOOLCHAIN_CC := cc
 endif
 
-ifeq ($(TOOLCHAIN_CC), clang)
+override USING_CLANG := $(shell $(TOOLCHAIN_CC) --version | grep clang >/dev/null && echo 1)
+export USING_CLANG
+
+ifeq ($(USING_CLANG), 1)
+override ORIG_TOOLCHAIN_CC := $(TOOLCHAIN_CC)
 override TOOLCHAIN_CC += --target=x86_64-elf
 endif
 
@@ -52,15 +52,14 @@ endif
 endif
 endif
 
-ifeq ($(TOOLCHAIN_CC), clang --target=x86_64-elf)
-override TOOLCHAIN_CC := clang
+ifeq ($(USING_CLANG), 1)
+override TOOLCHAIN_CC := $(ORIG_TOOLCHAIN_CC)
 endif
 
 override STAGE1_FILES := $(shell find -L ./stage1 -type f -name '*.asm')
 
 .PHONY: all
-all: limine-uefi limine-uefi32 limine-bios
-	$(MAKE) limine-install limine-eltorito-efi
+all: limine-uefi limine-bios
 
 .PHONY: limine-install
 limine-install:
@@ -69,7 +68,7 @@ limine-install:
 	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))'
 
 .PHONY: clean
-clean: limine-bios-clean limine-uefi-clean limine-uefi32-clean
+clean: limine-bios-clean limine-uefi32-clean limine-uefi64-clean
 	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1'
 
 .PHONY: install
@@ -96,6 +95,7 @@ $(call MKESCAPE,$(BUILDDIR))/stage1: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR)
 .PHONY: limine-bios
 limine-bios: stage23-bios decompressor
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/stage1'
+	$(MAKE) limine-install
 
 .PHONY: limine-eltorito-efi
 limine-eltorito-efi:
@@ -104,17 +104,21 @@ limine-eltorito-efi:
 	( mformat -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' -f 1440 :: && \
 	  mmd -D s -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' ::/EFI && \
 	  mmd -D s -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' ::/EFI/BOOT && \
-	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi/BOOTX64.EFI' ] && \
-	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi/BOOTX64.EFI' ::/EFI/BOOT ) || true ) && \
+	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi64/BOOTX64.EFI' ] && \
+	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi64/BOOTX64.EFI' ::/EFI/BOOT ) || true ) && \
 	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32/BOOTIA32.EFI' ] && \
 	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32/BOOTIA32.EFI' ::/EFI/BOOT ) || true ) \
 	) || rm -f '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin'
 
 .PHONY: limine-uefi
-limine-uefi: reduced-gnu-efi
-	$(MAKE) stage23-uefi
+limine-uefi: limine-uefi32 limine-uefi64
+	$(MAKE) limine-eltorito-efi
+
+.PHONY: limine-uefi64
+limine-uefi64: reduced-gnu-efi
+	$(MAKE) stage23-uefi64
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi/BOOTX64.EFI' '$(call SHESCAPE,$(BINDIR))/'
+	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi64/BOOTX64.EFI' '$(call SHESCAPE,$(BINDIR))/'
 
 .PHONY: limine-uefi32
 limine-uefi32: reduced-gnu-efi
@@ -125,8 +129,8 @@ limine-uefi32: reduced-gnu-efi
 .PHONY: limine-bios-clean
 limine-bios-clean: stage23-bios-clean decompressor-clean
 
-.PHONY: limine-uefi-clean
-limine-uefi-clean: stage23-uefi-clean
+.PHONY: limine-uefi64-clean
+limine-uefi64-clean: stage23-uefi64-clean
 
 .PHONY: limine-uefi32-clean
 limine-uefi32-clean: stage23-uefi32-clean
@@ -162,13 +166,13 @@ stivale:
 reduced-gnu-efi:
 	git clone https://github.com/limine-bootloader/reduced-gnu-efi.git
 
-.PHONY: stage23-uefi
-stage23-uefi: stivale
-	$(MAKE) -C stage23 all TARGET=uefi BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi'
+.PHONY: stage23-uefi64
+stage23-uefi64: stivale
+	$(MAKE) -C stage23 all TARGET=uefi64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi64'
 
-.PHONY: stage23-uefi-clean
-stage23-uefi-clean:
-	$(MAKE) -C stage23 clean TARGET=uefi BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi'
+.PHONY: stage23-uefi64-clean
+stage23-uefi64-clean:
+	$(MAKE) -C stage23 clean TARGET=uefi64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi64'
 
 .PHONY: stage23-uefi32
 stage23-uefi32: stivale
@@ -452,7 +456,7 @@ uefi-test:
 	$(MAKE) ovmf-x64
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
-	$(MAKE) limine-uefi
+	$(MAKE) limine-uefi64
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image

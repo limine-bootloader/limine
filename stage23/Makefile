@@ -1,9 +1,6 @@
-ifneq (,)
-This makefile requires GNU Make.
-endif
-
-TARGET =
-BUILDDIR =
+TARGET ?=
+BUILDDIR ?=
+USING_CLANG ?= 0
 
 override SRCDIR := $(shell pwd)
 
@@ -19,7 +16,7 @@ endif
 
 ifeq ($(TARGET), bios)
 override OBJCOPY_ARCH := elf32-i386
-else ifeq ($(TARGET), uefi)
+else ifeq ($(TARGET), uefi64)
 override OBJCOPY_ARCH := elf64-x86-64
 else ifeq ($(TARGET), uefi32)
 override OBJCOPY_ARCH := elf32-i386
@@ -55,11 +52,11 @@ ifeq ($(shell command -v $(TOOLCHAIN_READELF) ; ), )
 override TOOLCHAIN_READELF := readelf
 endif
 
-ifeq ($(TOOLCHAIN_CC), clang)
+ifeq ($(USING_CLANG), 1)
 ifeq ($(TARGET), bios)
 override TOOLCHAIN_CC += --target=i686-elf
 endif
-ifeq ($(TARGET), uefi)
+ifeq ($(TARGET), uefi64)
 override TOOLCHAIN_CC += --target=x86_64-elf
 endif
 ifeq ($(TARGET), uefi32)
@@ -109,7 +106,7 @@ override INTERNAL_CFLAGS += \
 		-fno-pie
 endif
 
-ifeq ($(TARGET), uefi)
+ifeq ($(TARGET), uefi64)
 override INTERNAL_CFLAGS32 := \
 		$(INTERNAL_CFLAGS) \
 		-Dbios=0 \
@@ -162,7 +159,7 @@ override INTERNAL_LDFLAGS += \
 		--build-id=sha1
 endif
 
-ifeq ($(TARGET), uefi)
+ifeq ($(TARGET), uefi64)
 override INTERNAL_LDFLAGS += \
 		-melf_x86_64 \
 		-static \
@@ -189,7 +186,7 @@ override ASMB_FILES := $(shell find -L ./ -type f -name '*.asmb')
 
 override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM32_FILES:.asm32=.o) $(ASMB_FILES:.asmb=.o) $(C_FILES:.c=.o))
 endif
-ifeq ($(TARGET), uefi)
+ifeq ($(TARGET), uefi64)
 override ASM64_FILES := $(shell find -L ./ -type f -name '*.asm64')
 override ASM64U_FILES := $(shell find -L ./ -type f -name '*.asm64u')
 
@@ -205,7 +202,7 @@ override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=
 
 ifeq ($(TARGET), bios)
 all: $(call MKESCAPE,$(BUILDDIR))/limine_dbg.elf $(call MKESCAPE,$(BUILDDIR))/limine.sys $(call MKESCAPE,$(BUILDDIR))/stage2.bin.gz
-else ifeq ($(TARGET), uefi)
+else ifeq ($(TARGET), uefi64)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI
 else ifeq ($(TARGET), uefi32)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI
@@ -280,7 +277,7 @@ $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi: ../reduced-gnu-efi/*
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))/'
 	cp -r ../reduced-gnu-efi '$(call SHESCAPE,$(BUILDDIR))/'
 
-ifeq ($(TARGET), uefi)
+ifeq ($(TARGET), uefi64)
 
 $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_efi_nomap.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
@@ -330,7 +327,7 @@ endif
 
 -include $(HEADER_DEPS)
 
-ifeq ($(TARGET), uefi)
+ifeq ($(TARGET), uefi64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
@@ -358,7 +355,7 @@ endif
 
 -include $(HEADER_DEPS)
 
-ifeq ($(TARGET), uefi)
+ifeq ($(TARGET), uefi64)
 $(call MKESCAPE,$(BUILDDIR))/%.32.o: %.32.c $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(TOOLCHAIN_CC) $(CFLAGS) $(INTERNAL_CFLAGS32) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@).32'
@@ -376,7 +373,7 @@ $(call MKESCAPE,$(BUILDDIR))/%.o: %.asmb
 	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Werror -f elf32 -o '$(call SHESCAPE,$@)'
 endif
 
-ifeq ($(TARGET), uefi)
+ifeq ($(TARGET), uefi64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm64
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Werror -f elf64 -o '$(call SHESCAPE,$@)'

@@ -111,17 +111,17 @@ is `./build/bin`).
 In order to build the BIOS port fully using clang/LLVM, run `make` as such:
 ```bash
 # (or gmake where applicable)
-make limine-bios limine-install CC="clang" TOOLCHAIN="llvm" TOOLCHAIN_CC="clang" TOOLCHAIN_LD="ld.lld"
+make limine-bios CC="clang" TOOLCHAIN="llvm" TOOLCHAIN_CC="clang" TOOLCHAIN_LD="ld.lld"
 ```
 
 And in order to build the UEFI port using clang/LLVM + `GNU binutils`, run
 `make` as such:
 ```bash
 # (or gmake where applicable)
-make limine-uefi TOOLCHAIN="llvm" TOOLCHAIN_CC="clang" TOOLCHAIN_LD="ld" TOOLCHAIN_OBJCOPY="objcopy"
+make limine-uefi TOOLCHAIN="llvm" TOOLCHAIN_CC="clang" TOOLCHAIN_LD="ld.bfd" TOOLCHAIN_OBJCOPY="objcopy"
 ```
 
-Where `ld` and `objcopy` refer to GNU binutils versions of them. Specify their
+Where `ld.bfd` and `objcopy` refer to GNU binutils versions of them. Specify their
 full path if necessary.
 
 ## Installing Limine binaries

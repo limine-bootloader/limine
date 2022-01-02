@@ -1,8 +1,5 @@
-ifneq (,)
-This makefile requires GNU Make.
-endif
-
-BUILDDIR =
+BUILDDIR ?=
+USING_CLANG ?= 0
 
 override SPACE := $(subst ,, )
 
@@ -30,11 +27,11 @@ ifeq ($(shell command -v $(TOOLCHAIN_OBJCOPY) ; ), )
 override TOOLCHAIN_OBJCOPY := objcopy
 endif
 
-ifeq ($(TOOLCHAIN_CC), clang)
+ifeq ($(USING_CLANG), 1)
 override TOOLCHAIN_CC += --target=i686-elf
 endif
 
-WERROR = -Werror
+WERROR ?= -Werror
 CFLAGS ?= -Os -pipe -Wall -Wextra $(WERROR)
 
 override INTERNAL_CFLAGS := \

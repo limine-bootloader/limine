@@ -14,7 +14,13 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle);
 
 #endif
 
+enum {
+    DISK_SUCCESS,
+    DISK_NO_MEDIA,
+    DISK_FAILURE
+};
+
 void disk_create_index(void);
-bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t count);
+int disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t count);
 
 #endif

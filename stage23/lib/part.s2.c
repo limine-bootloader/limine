@@ -34,15 +34,25 @@ static bool cache_block(struct volume *volume, uint64_t block) {
 
     uint64_t xfer_size = volume->fastest_xfer_size;
 
-    while (!disk_read_sectors(volume, volume->cache,
+    for (;;) {
+        int ret = disk_read_sectors(volume, volume->cache,
                            first_sect + block * volume->fastest_xfer_size,
-                           xfer_size)) {
+                           xfer_size);
+
+        switch (ret) {
+            case DISK_NO_MEDIA:
+                return false;
+            case DISK_SUCCESS:
+                goto disk_success;
+        }
+
         xfer_size--;
         if (xfer_size == 0) {
             return false;
         }
     }
 
+disk_success:
     volume->cache_status = CACHE_READY;
     volume->cached_block = block;
 

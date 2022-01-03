@@ -89,7 +89,7 @@ static size_t fastest_xfer_size(struct volume *volume) {
     return fastest_size;
 }
 
-bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t count) {
+int disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t count) {
     struct dap dap = {0};
 
     if (count * volume->sector_size > XFER_BUF_SIZE)
@@ -113,13 +113,13 @@ bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t 
     rm_int(0x13, &r, &r);
 
     if (r.eflags & EFLAGS_CF) {
-        return false;
+        return DISK_FAILURE;
     }
 
     if (buf != NULL)
         memcpy(buf, xfer_buf, count * volume->sector_size);
 
-    return true;
+    return DISK_SUCCESS;
 }
 
 void disk_create_index(void) {
@@ -163,7 +163,7 @@ void disk_create_index(void) {
         if (drive_params.info_flags & (1 << 2) && drive > 0x8f) {
             // The medium could not be present (e.g.: CD-ROMs)
             // Do a test run to see if we can actually read it
-            if (!disk_read_sectors(block, NULL, 0, 1)) {
+            if (disk_read_sectors(block, NULL, 0, 1) != DISK_SUCCESS) {
                 continue;
             }
             block->index = optical_indices++;
@@ -200,17 +200,18 @@ void disk_create_index(void) {
 
 #if uefi == 1
 
-bool disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t count) {
+int disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t count) {
     EFI_STATUS status;
 
     status = volume->block_io->ReadBlocks(volume->block_io,
                                volume->block_io->Media->MediaId,
                                block, count * volume->sector_size, buf);
-    if (status != 0) {
-        return false;
+    
+    switch (status) {
+        case EFI_SUCCESS: return DISK_SUCCESS;
+        case EFI_NO_MEDIA: return DISK_NO_MEDIA;
+        default: return DISK_FAILURE;
     }
-
-    return true;
 }
 
 static alignas(4096) uint8_t unique_sector_pool[8192];

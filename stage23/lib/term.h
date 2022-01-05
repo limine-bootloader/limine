@@ -45,6 +45,8 @@ extern size_t term_rows, term_cols;
 extern bool term_runtime;
 extern bool early_term;
 
+void term_fallback(void);
+
 void term_reinit(void);
 void term_deinit(void);
 void term_vbe(size_t width, size_t height);

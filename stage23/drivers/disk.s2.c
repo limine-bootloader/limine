@@ -14,6 +14,9 @@
 #include <mm/pmm.h>
 #include <sys/cpu.h>
 
+#define DEFAULT_FASTEST_XFER_SIZE 64
+#define MAX_FASTEST_XFER_SIZE 512
+
 #define MAX_VOLUMES 64
 
 #if bios == 1
@@ -206,7 +209,7 @@ int disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t c
     status = volume->block_io->ReadBlocks(volume->block_io,
                                volume->block_io->Media->MediaId,
                                block, count * volume->sector_size, buf);
-    
+
     switch (status) {
         case EFI_SUCCESS: return DISK_SUCCESS;
         case EFI_NO_MEDIA: return DISK_NO_MEDIA;
@@ -443,7 +446,9 @@ void disk_create_index(void) {
         }
 
         if (block->fastest_xfer_size == 0) {
-            block->fastest_xfer_size = 64;
+            block->fastest_xfer_size = DEFAULT_FASTEST_XFER_SIZE;
+        } else if (block->fastest_xfer_size >= MAX_FASTEST_XFER_SIZE) {
+            block->fastest_xfer_size = MAX_FASTEST_XFER_SIZE;
         }
 
         if (gpt_get_guid(&block->guid, block)) {

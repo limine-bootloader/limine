@@ -350,7 +350,9 @@ bool ext2_open(struct ext2_file_handle *ret, struct volume *part, const char *pa
 }
 
 void ext2_close(struct ext2_file_handle *file) {
-    pmm_free(file->alloc_map, file->inode.i_blocks_count * sizeof(uint32_t));
+    if (file->alloc_map != NULL) {
+        pmm_free(file->alloc_map, file->inode.i_blocks_count * sizeof(uint32_t));
+    }
     pmm_free(file, sizeof(struct ext2_file_handle));
 }
 
@@ -358,12 +360,15 @@ void ext2_read(struct ext2_file_handle *file, void *buf, uint64_t loc, uint64_t 
     inode_read(buf, loc, count, &file->inode, file, file->alloc_map);
 }
 
-static struct ext4_extent_header* ext4_find_leaf(struct ext4_extent_header* ext_block, uint32_t read_block, uint64_t block_size, struct volume *part) {
-    struct ext4_extent_idx* index;
-    void* buf = NULL;
+static struct ext4_extent_header *ext4_find_leaf(struct ext4_extent_header *ext_block, uint32_t read_block, uint64_t block_size, struct volume *part) {
+    struct ext4_extent_idx *index;
 
-    while (1) {
-        index = (struct ext4_extent_idx*)((size_t)ext_block + 12);
+    void *buf = ext_mem_alloc(block_size);
+    memcpy(buf, ext_block, block_size);
+    ext_block = buf;
+
+    for (;;) {
+        index = (struct ext4_extent_idx *)((size_t)ext_block + 12);
 
         #define EXT4_EXT_MAGIC 0xf30a
         if (ext_block->magic != EXT4_EXT_MAGIC)
@@ -375,7 +380,7 @@ static struct ext4_extent_header* ext4_find_leaf(struct ext4_extent_header* ext_
 
         int i;
         for (i = 0; i < ext_block->entries; i++) {
-            if(read_block < index[i].block)
+            if (read_block < index[i].block)
                 break;
         }
 
@@ -383,8 +388,7 @@ static struct ext4_extent_header* ext4_find_leaf(struct ext4_extent_header* ext_
             panic(false, "extent not found");
 
         uint64_t block = ((uint64_t)index[i].leaf_hi << 32) | index[i].leaf;
-        if(!buf)
-            buf = ext_mem_alloc(block_size);
+
         volume_read(part, buf, (block * block_size), block_size);
         ext_block = buf;
     }
@@ -408,7 +412,7 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
             struct ext4_extent *ext;
             int i;
 
-            leaf = ext4_find_leaf((struct ext4_extent_header*)inode->i_blocks, block, fd->block_size, fd->part);
+            leaf = ext4_find_leaf((struct ext4_extent_header *)inode->i_blocks, block, fd->block_size, fd->part);
 
             if (!leaf)
                 panic(false, "invalid extent");

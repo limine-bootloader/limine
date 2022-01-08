@@ -8,9 +8,9 @@ assignees: ''
 ---
 
 **Limine version used**
-Put the version of Limine where the bug was encountered here. If using `trunk`, the commit hash.
+Put the version of Limine where the bug was encountered here. If using `trunk`, the commit hash. Also mention if BIOS or UEFI, or both.
 
-**Expected behavior**
+**Expected behaviour**
 A clear and concise description of what you expected to happen.
 
 **Actual (broken) behaviour**

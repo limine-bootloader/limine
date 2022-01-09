@@ -318,8 +318,19 @@ bool ext2_open(struct ext2_file_handle *ret, struct volume *part, const char *pa
 
     struct ext2_superblock *sb = &ret->sb;
 
-    if (sb->s_state == EXT2_FS_UNRECOVERABLE_ERRORS)
-        panic(false, "ext2: unrecoverable errors found");
+    if (sb->s_rev_level != 0 &&
+        (sb->s_feature_incompat & EXT2_IF_COMPRESSION ||
+         sb->s_feature_incompat & EXT2_IF_INLINE_DATA ||
+         sb->s_feature_incompat & EXT2_FEATURE_INCOMPAT_META_BG ||
+         sb->s_feature_incompat & EXT2_IF_ENCRYPT)) {
+        print("ext2: filesystem has unsupported features %x\n", sb->s_feature_incompat);
+        return false;
+    }
+
+    if (sb->s_state == EXT2_FS_UNRECOVERABLE_ERRORS) {
+        print("ext2: unrecoverable errors found\n");
+        return false;
+    }
 
     ret->block_size = ((uint64_t)1024 << ret->sb.s_log_block_size);
 
@@ -449,24 +460,12 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
     return 0;
 }
 
-// attempts to initialize the ext2 filesystem
-// and checks if all features are supported
 int ext2_check_signature(struct volume *part) {
     struct ext2_superblock sb;
     volume_read(part, &sb, 1024, sizeof(struct ext2_superblock));
 
     if (sb.s_magic != EXT2_S_MAGIC)
         return 0;
-
-    // If the revision level is 0, we can't test for features.
-    if (sb.s_rev_level == 0)
-        return 1;
-
-    if (sb.s_feature_incompat & EXT2_IF_COMPRESSION ||
-        sb.s_feature_incompat & EXT2_IF_INLINE_DATA ||
-        sb.s_feature_incompat & EXT2_FEATURE_INCOMPAT_META_BG ||
-        sb.s_feature_incompat & EXT2_IF_ENCRYPT)
-        panic(false, "EXT2: filesystem has unsupported features %x", sb.s_feature_incompat);
 
     return 1;
 }

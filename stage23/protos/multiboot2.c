@@ -281,11 +281,8 @@ bool multiboot2_load(char *config, char* cmdline) {
     size_t info_idx = 0;
     uint8_t *mb2_info = conv_mem_alloc(mb2_info_size);
 
-    struct multiboot2_start_tag* mbi_start = (struct multiboot2_start_tag *)mb2_info;
+    struct multiboot2_start_tag *mbi_start = (struct multiboot2_start_tag *)mb2_info;
     info_idx += sizeof(struct multiboot2_start_tag);
-
-    mbi_start->size = mb2_info_size;
-    mbi_start->reserved = 0x00;
 
     //////////////////////////////////////////////
     // Create modules tag
@@ -663,6 +660,9 @@ bool multiboot2_load(char *config, char* cmdline) {
 
         append_tag(info_idx, end_tag);
     }
+
+    mbi_start->size = info_idx;
+    mbi_start->reserved = 0x00;
 
     irq_flush_type = IRQ_PIC_ONLY_FLUSH;
 

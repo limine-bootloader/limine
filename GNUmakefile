@@ -72,7 +72,7 @@ clean: limine-bios-clean limine-uefi32-clean limine-uefi64-clean
 	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1'
 
 .PHONY: install
-install: all
+install:
 	install -d '$(DESTDIR)$(PREFIX)/bin'
 	install -s '$(call SHESCAPE,$(BINDIR))/limine-install' '$(DESTDIR)$(PREFIX)/bin/' || true
 	install -d '$(DESTDIR)$(PREFIX)/share'

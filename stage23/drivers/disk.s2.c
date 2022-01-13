@@ -372,13 +372,16 @@ static void find_unique_sectors(void) {
                 volume_index[i]->unique_sector_valid = true;
                 volume_index[i]->unique_sector_crc32 = crc32;
             } else {
-                // next column
                 goto next_column;
             }
         }
 
         return;
-next_column:;
+
+next_column:
+        for (size_t i = 0; i < volume_index_i; i++) {
+            volume_index[i]->unique_sector_valid = false;
+        }
     }
 
     unique_sector_column = (uint64_t)-1;

@@ -20,6 +20,7 @@ struct volume {
     EFI_BLOCK_IO *block_io;
 
     bool unique_sector_valid;
+    size_t unique_sector;
     uint32_t unique_sector_crc32;
 #elif bios == 1
     int drive;
@@ -85,9 +86,10 @@ bool volume_read(struct volume *part, void *buffer, uint64_t loc, uint64_t count
  \
             struct volume *_PART = volume_get_by_coord(_VOLUME->is_optical, \
                                                        _VOLUME->index, _PARTNO); \
-            _PART_CNT++; \
             if (_PART == NULL) \
                 continue; \
+ \
+            _PART_CNT++; \
  \
             _BODY_ \
         } \

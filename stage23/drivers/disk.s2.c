@@ -217,7 +217,6 @@ int disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t c
     }
 }
 
-static uint64_t unique_sector_column;
 static alignas(4096) uint8_t unique_sector_pool[8192];
 
 struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
@@ -231,16 +230,12 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
         return NULL;
     }
 
-    if (unique_sector_column == (uint64_t)-1) {
-        goto fallback;
-    }
-
     for (size_t i = 0; i < volume_index_i; i++) {
         if (volume_index[i]->unique_sector_valid == false) {
             continue;
         }
 
-        size_t unique_sector = (unique_sector_column * volume_index[i]->sector_size) / block_io->Media->BlockSize;
+        size_t unique_sector = (volume_index[i]->unique_sector * volume_index[i]->sector_size) / block_io->Media->BlockSize;
 
         status = block_io->ReadBlocks(block_io, block_io->Media->MediaId,
                                       unique_sector,
@@ -258,7 +253,7 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
     }
 
     // Fallback to read-back method
-fallback:;
+
     EFI_GUID disk_io_guid = DISK_IO_PROTOCOL;
     EFI_DISK_IO *disk_io = NULL;
 
@@ -325,13 +320,14 @@ fallback:;
     return NULL;
 }
 
-static struct volume *volume_by_unique_sector(uint32_t crc32) {
+static struct volume *volume_by_unique_sector(size_t sect, uint32_t crc32) {
     for (size_t i = 0; i < volume_index_i; i++) {
         if (volume_index[i]->unique_sector_valid == false) {
             continue;
         }
 
-        if (volume_index[i]->unique_sector_crc32 == crc32) {
+        if (volume_index[i]->unique_sector == sect
+         && volume_index[i]->unique_sector_crc32 == crc32) {
             return volume_index[i];
         }
     }
@@ -344,13 +340,10 @@ static struct volume *volume_by_unique_sector(uint32_t crc32) {
 static void find_unique_sectors(void) {
     EFI_STATUS status;
 
-    for (size_t j = 0; j < UNIQUE_SECT_MAX_SEARCH_RANGE; j++) {
-        unique_sector_column = j;
-
-        for (size_t i = 0; i < volume_index_i; i++) {
+    for (size_t i = 0; i < volume_index_i; i++) {
+        for (size_t j = 0; j < UNIQUE_SECT_MAX_SEARCH_RANGE; j++) {
             if (volume_index[i]->first_sect % (volume_index[i]->sector_size / 512)) {
-                volume_index[i]->unique_sector_valid = false;
-                continue;
+                break;
             }
 
             size_t first_sect = volume_index[i]->first_sect / (volume_index[i]->sector_size / 512);
@@ -362,26 +355,19 @@ static void find_unique_sectors(void) {
                                 volume_index[i]->sector_size,
                                 unique_sector_pool);
             if (status != 0) {
-                volume_index[i]->unique_sector_valid = false;
-                continue;
+                break;
             }
 
             uint32_t crc32 = get_crc32(unique_sector_pool, volume_index[i]->sector_size);
 
-            if (volume_by_unique_sector(crc32) == NULL) {
+            if (volume_by_unique_sector(j, crc32) == NULL) {
                 volume_index[i]->unique_sector_valid = true;
+                volume_index[i]->unique_sector = j;
                 volume_index[i]->unique_sector_crc32 = crc32;
-            } else {
-                // next column
-                goto next_column;
+                break;
             }
         }
-
-        return;
-next_column:;
     }
-
-    unique_sector_column = (uint64_t)-1;
 }
 
 static void find_part_handles(EFI_HANDLE *handles, size_t handle_count) {

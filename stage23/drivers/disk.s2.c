@@ -217,7 +217,7 @@ int disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t c
     }
 }
 
-static alignas(4096) uint8_t unique_sector_pool[8192];
+static alignas(4096) uint8_t unique_sector_pool[4096];
 
 struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
     EFI_STATUS status;
@@ -235,17 +235,21 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
             continue;
         }
 
-        size_t unique_sector = (volume_index[i]->unique_sector * volume_index[i]->sector_size) / block_io->Media->BlockSize;
+        if (volume_index[i]->unique_sector % block_io->Media->BlockSize) {
+            continue;
+        }
+
+        size_t unique_sector = volume_index[i]->unique_sector / block_io->Media->BlockSize;
 
         status = block_io->ReadBlocks(block_io, block_io->Media->MediaId,
                                       unique_sector,
-                                      volume_index[i]->sector_size,
+                                      4096,
                                       unique_sector_pool);
         if (status != 0) {
             continue;
         }
 
-        uint32_t crc32 = get_crc32(unique_sector_pool, volume_index[i]->sector_size);
+        uint32_t crc32 = get_crc32(unique_sector_pool, 4096);
 
         if (crc32 == volume_index[i]->unique_sector_crc32) {
             return volume_index[i];
@@ -320,7 +324,7 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
     return NULL;
 }
 
-static struct volume *volume_by_unique_sector(size_t sect, uint32_t crc32) {
+static struct volume *volume_by_unique_sector(uint64_t sect, uint32_t crc32) {
     for (size_t i = 0; i < volume_index_i; i++) {
         if (volume_index[i]->unique_sector_valid == false) {
             continue;
@@ -342,27 +346,29 @@ static void find_unique_sectors(void) {
 
     for (size_t i = 0; i < volume_index_i; i++) {
         for (size_t j = 0; j < UNIQUE_SECT_MAX_SEARCH_RANGE; j++) {
-            if (volume_index[i]->first_sect % (volume_index[i]->sector_size / 512)) {
+            if ((volume_index[i]->first_sect * 512) % volume_index[i]->block_io->Media->BlockSize) {
                 break;
             }
 
-            size_t first_sect = volume_index[i]->first_sect / (volume_index[i]->sector_size / 512);
+            size_t first_sect = (volume_index[i]->first_sect * 512) / volume_index[i]->block_io->Media->BlockSize;
 
             status = volume_index[i]->block_io->ReadBlocks(
                                 volume_index[i]->block_io,
                                 volume_index[i]->block_io->Media->MediaId,
                                 first_sect + j,
-                                volume_index[i]->sector_size,
+                                4096,
                                 unique_sector_pool);
             if (status != 0) {
                 break;
             }
 
-            uint32_t crc32 = get_crc32(unique_sector_pool, volume_index[i]->sector_size);
+            uint32_t crc32 = get_crc32(unique_sector_pool, 4096);
 
-            if (volume_by_unique_sector(j, crc32) == NULL) {
+            uint64_t uniq = (uint64_t)j * volume_index[i]->block_io->Media->BlockSize;
+
+            if (volume_by_unique_sector(uniq, crc32) == NULL) {
                 volume_index[i]->unique_sector_valid = true;
-                volume_index[i]->unique_sector = j;
+                volume_index[i]->unique_sector = uniq;
                 volume_index[i]->unique_sector_crc32 = crc32;
                 break;
             }

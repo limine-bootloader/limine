@@ -20,7 +20,7 @@ struct volume {
     EFI_BLOCK_IO *block_io;
 
     bool unique_sector_valid;
-    size_t unique_sector;
+    uint64_t unique_sector;
     uint32_t unique_sector_crc32;
 #elif bios == 1
     int drive;

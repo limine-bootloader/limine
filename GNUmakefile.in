@@ -205,7 +205,7 @@ distclean: clean
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf stivale reduced-gnu-efi configure 'configure~' autom4te.cache *.tar.xz
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf stivale reduced-gnu-efi configure *'~' autom4te.cache *.tar.xz
 
 .PHONY: stage23-uefi64
 stage23-uefi64: $(call MKESCAPE,$(SRCDIR))/stivale

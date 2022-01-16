@@ -98,7 +98,7 @@ all: limine-uefi limine-bios
 limine-install:
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(SRCDIR))/limine-install/'* '$(call SHESCAPE,$(SRCDIR))/limine-install/.gitignore' '$(call SHESCAPE,$(BINDIR))/'
-	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))' CC=$(CC)
+	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))' CC="$(CC)"
 
 .PHONY: clean
 clean: limine-bios-clean limine-uefi32-clean limine-uefi64-clean

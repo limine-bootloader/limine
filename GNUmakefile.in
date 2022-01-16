@@ -44,6 +44,7 @@ TOOLCHAIN ?= @TOOLCHAIN@
 LIMINE_CC ?= @LIMINE_CC@
 LIMINE_LD ?= @LIMINE_LD@
 LIMINE_AR ?= @LIMINE_AR@
+LIMINE_AS ?= @LIMINE_AS@
 LIMINE_OBJCOPY ?= @LIMINE_OBJCOPY@
 LIMINE_OBJDUMP ?= @LIMINE_OBJDUMP@
 LIMINE_READELF ?= @LIMINE_READELF@
@@ -56,6 +57,9 @@ override LIMINE_LD := ld
 endif
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AR) ; ), )
 override LIMINE_AR := ar
+endif
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AS) ; ), )
+override LIMINE_AS := as
 endif
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJCOPY) ; ), )
 override LIMINE_OBJCOPY := objcopy
@@ -70,6 +74,7 @@ endif
 export LIMINE_CC
 export LIMINE_LD
 export LIMINE_AR
+export LIMINE_AS
 export LIMINE_OBJCOPY
 export LIMINE_OBJDUMP
 export LIMINE_READELF

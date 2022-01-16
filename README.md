@@ -113,7 +113,7 @@ The generated bootloader files are going to be in `$BUILDDIR/bin`.
 This step is optional as the bootloader binaries can be used from the `bin` or
 release directory just fine. This step will only install them to a `share` and
 `bin` directories in the specified prefix (default is `/usr/local`, see
-`.configure --help`).
+`./configure --help`).
 
 To install Limine, run:
 ```bash

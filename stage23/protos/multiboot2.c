@@ -307,8 +307,10 @@ bool multiboot2_load(char *config, char* cmdline) {
             module_cmdline = "";
         }
 
-        memmap_alloc_range((uintptr_t)module_addr, f->size, MEMMAP_KERNEL_AND_MODULES,
-                            true, true, false, false);
+        while (!memmap_alloc_range((uintptr_t)module_addr, f->size, MEMMAP_KERNEL_AND_MODULES,
+                                   true, false, false, false)) {
+            module_addr += 0x200000;
+        }
 
         kernel_top = (uintptr_t)module_addr + f->size;
         fread(f, module_addr, 0, f->size);

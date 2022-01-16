@@ -117,6 +117,11 @@ install:
 	install -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(DESTDIR)$(PREFIX)/share/limine/' || true
 	install -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(DESTDIR)$(PREFIX)/share/limine/' || true
 
+.PHONY: uninstall
+uninstall:
+	rm -f '$(DESTDIR)$(PREFIX)/bin/limine-install'
+	rm -f '$(DESTDIR)$(PREFIX)/share/limine'
+
 $(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/stage23-bios/stage2.bin.gz
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'

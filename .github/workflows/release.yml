@@ -25,17 +25,26 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install git build-essential nasm gcc-mingw-w64 gcc-multilib curl mtools -y
 
+      - name: Regenerate
+        run: NOCONFIGURE=yes ./autogen.sh
+
+      - name: Create build dir
+        run: mkdir -p build
+
+      - name: Configure
+        run: cd build && ../configure
+
       - name: Build the toolchain
-        run: make toolchain
+        run: make -C build toolchain
 
       - name: Build the bootloader
-        run: make
+        run: make -C build
 
       - name: Clean limine-install
-        run: make -C limine-install clean
+        run: rm build/bin/limine-install
 
       - name: Build limine-install-linux-x86_64
-        run: make CFLAGS="-O2 -pipe -static" limine-install
+        run: make -C build CFLAGS="-O2 -pipe -static" limine-install
 
       - name: Strip limine-install-linux-x86_64
         run: strip build/bin/limine-install
@@ -43,11 +52,8 @@ jobs:
       - name: Rename limine-install-linux-x86_64
         run: mv build/bin/limine-install build/bin/limine-install-linux-x86_64
 
-      - name: Clean limine-install
-        run: make -C limine-install clean
-
       - name: Build limine-install-linux-x86_32
-        run: make CC="gcc -m32" CFLAGS="-O2 -pipe -static" limine-install
+        run: make -C build CC="gcc -m32" CFLAGS="-O2 -pipe -static" limine-install
 
       - name: Strip limine-install-linux-x86_32
         run: strip build/bin/limine-install
@@ -55,20 +61,14 @@ jobs:
       - name: Rename limine-install-linux-x86_32
         run: mv build/bin/limine-install build/bin/limine-install-linux-x86_32
 
-      - name: Clean limine-install
-        run: make -C limine-install clean
-
       - name: Build limine-install-win32
-        run: make CC="i686-w64-mingw32-gcc" CFLAGS="-O2 -pipe" limine-install
+        run: make -C build CC="i686-w64-mingw32-gcc" CFLAGS="-O2 -pipe" limine-install
 
       - name: Strip limine-install-win32
         run: i686-w64-mingw32-strip build/bin/limine-install.exe
 
       - name: Rename limine-install-win32
         run: mv build/bin/limine-install.exe build/bin/limine-install-win32.exe
-
-      - name: Clean limine-install
-        run: make -C limine-install clean
 
       - name: Copy LICENSE to bin
         run: cp LICENSE.md build/bin/
@@ -94,7 +94,7 @@ jobs:
         run: git checkout $TAG_NAME && rm -rf * && git checkout .
 
       - name: Package release tarball
-        run: make dist
+        run: ./autogen.sh && make dist
 
       - name: Create release notes
         run: echo "Binary release can be found at https://github.com/limine-bootloader/limine/tree/$TAG_NAME-binary" > rel_notes.txt

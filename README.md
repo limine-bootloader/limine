@@ -45,9 +45,9 @@ For example, to clone the latest binary release of the `v2.x` branch one can do
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v2.0-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example v2.65)
+or, to clone a specific binary point release (for example v2.75)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v2.65-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v2.75-binary --depth=1
 ```
 
 Additionally, the absolute latest Limine binary release can be obtained by
@@ -65,6 +65,18 @@ release.
 
 *These steps are not necessary if cloning a binary release. If so, skip to*
 *"Installing Limine binaries".*
+
+### Configure
+
+If checking out from the repository, run `./autogen.sh`, else, if using a
+release tarball, run `./configure` directly.
+
+Both `./autogen.sh` and `./configure` take arguments and environment variables;
+for more information on these, run `./configure --help`.
+
+Limine supports both in-tree and out-of-tree builds. Simply run the configure
+script from the directory you wish to execute the build in. The following `make`
+commands are supposed to be ran inside the build directory.
 
 ### Building the toolchain
 
@@ -86,52 +98,27 @@ In order to build Limine, the following packages have to be installed:
 `GNU make`, `nasm`, `mtools` (optional, necessary to build
 `limine-eltorito-efi.bin`).
 Furthermore, either the toolchain must have been built in the previous
-paragraph, or `gcc` or `llvm/clang` must also be installed.
-`GNU binutils` is necessary in order to build the UEFI ports of Limine. A full
-LLVM toolchain without `GNU binutils` can be used to build just the BIOS port
-instead.
+paragraph, or `gcc` or `llvm/clang` must also be installed, alongside
+`GNU binutils`.
 
-Both the UEFI and BIOS ports of the bootloader can be built, using
-`GCC/GNU binutils` (which includes the shipped toolchain), with:
+Then, to build Limine, run:
 ```bash
 make    # (or gmake where applicable)
 ```
 
-It is possible to pass `make` additional flags, most relevantly,
-`TOOLCHAIN=`, which allows one to specify an alternative toolchain for the build
-system to use (the default is `limine`, resulting in program names like `limine-gcc`,
-falling back to no-prefix, or host, toolchain), and `BUILDDIR=`, which specifies an
-alternative build directory (for example, out of tree - the default is `./build`).
-
-The generated bootloader files are going to be in `$BUILDDIR/bin` (by default that
-is `./build/bin`).
-
-#### Using clang/LLVM
-
-In order to build the BIOS port fully using clang/LLVM, run `make` as such:
-```bash
-# (or gmake where applicable)
-make limine-bios CC="clang" TOOLCHAIN="llvm" TOOLCHAIN_CC="clang" TOOLCHAIN_LD="ld.lld"
-```
-
-And in order to build the UEFI port using clang/LLVM + `GNU binutils`, run
-`make` as such:
-```bash
-# (or gmake where applicable)
-make limine-uefi TOOLCHAIN="llvm" TOOLCHAIN_CC="clang" TOOLCHAIN_LD="ld.bfd" TOOLCHAIN_OBJCOPY="objcopy"
-```
-
-Where `ld.bfd` and `objcopy` refer to GNU binutils versions of them. Specify their
-full path if necessary.
+The generated bootloader files are going to be in `$BUILDDIR/bin`.
 
 ## Installing Limine binaries
 
 This step is optional as the bootloader binaries can be used from the `bin` or
 release directory just fine. This step will only install them to a `share` and
-`bin` directories in the specified `PREFIX` (default is `/usr/local`).
+`bin` directories in the specified prefix (default is `/usr/local`, see
+`.configure --help`).
 
-Use `make install` to install the Limine binaries, optionally specifying a
-different prefix with `make install PREFIX=/myprefix`.
+To install Limine, run:
+```bash
+make install
+```
 
 ## How to use
 

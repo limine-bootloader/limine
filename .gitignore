@@ -21,3 +21,14 @@ bx_enh_dbg.ini
 stivale
 test_image
 !stage23/font.bin
+configure
+configure~
+config.status
+config.log
+autom4te.cache
+GNUmakefile
+stage23-bios
+stage23-uefi32
+stage23-uefi64
+decompressor-build
+stage1.stamp

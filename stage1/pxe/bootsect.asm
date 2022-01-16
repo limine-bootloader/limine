@@ -49,7 +49,7 @@ start:
 ; ********************* Stage 2 *********************
 
 decompressor:
-%strcat DECOMPRESSOR_PATH BUILDDIR, '/decompressor/decompressor.bin'
+%strcat DECOMPRESSOR_PATH BUILDDIR, '/decompressor-build/decompressor.bin'
 incbin DECOMPRESSOR_PATH
 
 align 16

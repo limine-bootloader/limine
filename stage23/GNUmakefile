@@ -24,34 +24,6 @@ else
 $(error Invalid target)
 endif
 
-TOOLCHAIN ?= limine
-
-TOOLCHAIN_CC ?= $(TOOLCHAIN)-gcc
-TOOLCHAIN_LD ?= $(TOOLCHAIN)-ld
-TOOLCHAIN_AR ?= $(TOOLCHAIN)-ar
-TOOLCHAIN_OBJCOPY ?= $(TOOLCHAIN)-objcopy
-TOOLCHAIN_OBJDUMP ?= $(TOOLCHAIN)-objdump
-TOOLCHAIN_READELF ?= $(TOOLCHAIN)-readelf
-
-ifeq ($(shell command -v $(TOOLCHAIN_CC) ; ), )
-override TOOLCHAIN_CC := cc
-endif
-ifeq ($(shell command -v $(TOOLCHAIN_LD) ; ), )
-override TOOLCHAIN_LD := ld
-endif
-ifeq ($(shell command -v $(TOOLCHAIN_AR) ; ), )
-override TOOLCHAIN_AR := ar
-endif
-ifeq ($(shell command -v $(TOOLCHAIN_OBJCOPY) ; ), )
-override TOOLCHAIN_OBJCOPY := objcopy
-endif
-ifeq ($(shell command -v $(TOOLCHAIN_OBJDUMP) ; ), )
-override TOOLCHAIN_OBJDUMP := objdump
-endif
-ifeq ($(shell command -v $(TOOLCHAIN_READELF) ; ), )
-override TOOLCHAIN_READELF := readelf
-endif
-
 ifeq ($(USING_CLANG), 1)
 ifeq ($(TARGET), bios)
 override TOOLCHAIN_CC += --target=i686-elf

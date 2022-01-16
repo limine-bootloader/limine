@@ -24,6 +24,9 @@ test "x$LIMINE_LD" = "x" && LIMINE_LD='$(TOOLCHAIN)-ld'
 AC_ARG_VAR(LIMINE_AR, [Archiver command for Limine [$(TOOLCHAIN)-ar]])
 test "x$LIMINE_AR" = "x" && LIMINE_AR='$(TOOLCHAIN)-ar'
 
+AC_ARG_VAR(LIMINE_AS, [Assembler command for Limine [$(TOOLCHAIN)-as]])
+test "x$LIMINE_AS" = "x" && LIMINE_AS='$(TOOLCHAIN)-as'
+
 AC_ARG_VAR(LIMINE_OBJCOPY, [Objcopy command for Limine [$(TOOLCHAIN)-objcopy]])
 test "x$LIMINE_OBJCOPY" = "x" && LIMINE_OBJCOPY='$(TOOLCHAIN)-objcopy'
 

@@ -256,7 +256,14 @@ $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine_ef
 	$(LIMINE_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc -j .sbat --target efi-app-x86_64 '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
-	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi' CC="$(LIMINE_CC) -m64 -march=x86-64 -mtune=generic" AR="$(LIMINE_AR)" ARCH=x86_64
+	unset ARFLAGS; unset ASFLAGS; unset LDFLAGS; unset CFLAGS; unset CPPFLAGS; \
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi' \
+		CC="$(LIMINE_CC) -m64 -march=x86-64 -mtune=generic" \
+		LD="$(LIMINE_LD)" \
+		AR="$(LIMINE_AR)" \
+		AS="$(LIMINE_AS)" \
+		OBJCOPY="$(LIMINE_OBJCOPY)" \
+		ARCH=x86_64
 
 $(call MKESCAPE,$(BUILDDIR))/limine_efi_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o
 	$(LIMINE_LD) \
@@ -280,7 +287,14 @@ $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI: $(call MKESCAPE,$(BUILDDIR))/limine_e
 	$(LIMINE_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc -j .sbat --target efi-app-ia32 '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
-	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi' CC="$(LIMINE_CC) -m32 -march=i686 -mtune=generic" AR="$(LIMINE_AR)" ARCH=ia32
+	unset ARFLAGS; unset ASFLAGS; unset LDFLAGS; unset CFLAGS; unset CPPFLAGS; \
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi' \
+		CC="$(LIMINE_CC) -m32 -march=i686 -mtune=generic" \
+		LD="$(LIMINE_LD)" \
+		AR="$(LIMINE_AR)" \
+		AS="$(LIMINE_AS)" \
+		OBJCOPY="$(LIMINE_OBJCOPY)" \
+		ARCH=ia32
 
 $(call MKESCAPE,$(BUILDDIR))/limine_efi_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o
 	$(LIMINE_LD) \

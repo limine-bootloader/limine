@@ -22,7 +22,7 @@ stivale
 test_image
 !stage23/font.bin
 configure
-configure~
+*~
 config.status
 config.log
 autom4te.cache

@@ -24,54 +24,65 @@ export LIMINE_VERSION
 override LIMINE_COPYRIGHT := $(shell grep Copyright '$(call SHESCAPE,$(SRCDIR))/LICENSE.md')
 export LIMINE_COPYRIGHT
 
+WERROR ?= @werror@
+export WERROR
+
 ifeq ($(origin CC), default)
 CC := @CC@
 endif
+export CC
+
+CFLAGS ?= @CFLAGS@
+export CFLAGS
+
+LIMINE_CFLAGS ?= @LIMINE_CFLAGS@
+LIMINE_LDFLAGS ?= @LIMINE_LDFLAGS@
+export LIMINE_CFLAGS
+export LIMINE_LDFLAGS
 
 TOOLCHAIN ?= @TOOLCHAIN@
-TOOLCHAIN_CC ?= @TOOLCHAIN_CC@
-TOOLCHAIN_LD ?= @TOOLCHAIN_LD@
-TOOLCHAIN_AR ?= @TOOLCHAIN_AR@
-TOOLCHAIN_OBJCOPY ?= @TOOLCHAIN_OBJCOPY@
-TOOLCHAIN_OBJDUMP ?= @TOOLCHAIN_OBJDUMP@
-TOOLCHAIN_READELF ?= @TOOLCHAIN_READELF@
+LIMINE_CC ?= @LIMINE_CC@
+LIMINE_LD ?= @LIMINE_LD@
+LIMINE_AR ?= @LIMINE_AR@
+LIMINE_OBJCOPY ?= @LIMINE_OBJCOPY@
+LIMINE_OBJDUMP ?= @LIMINE_OBJDUMP@
+LIMINE_READELF ?= @LIMINE_READELF@
 
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(TOOLCHAIN_CC) ; ), )
-override TOOLCHAIN_CC := $(CC)
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_CC) ; ), )
+override LIMINE_CC := $(CC)
 endif
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(TOOLCHAIN_LD) ; ), )
-override TOOLCHAIN_LD := ld
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_LD) ; ), )
+override LIMINE_LD := ld
 endif
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(TOOLCHAIN_AR) ; ), )
-override TOOLCHAIN_AR := ar
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AR) ; ), )
+override LIMINE_AR := ar
 endif
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(TOOLCHAIN_OBJCOPY) ; ), )
-override TOOLCHAIN_OBJCOPY := objcopy
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJCOPY) ; ), )
+override LIMINE_OBJCOPY := objcopy
 endif
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(TOOLCHAIN_OBJDUMP) ; ), )
-override TOOLCHAIN_OBJDUMP := objdump
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJDUMP) ; ), )
+override LIMINE_OBJDUMP := objdump
 endif
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(TOOLCHAIN_READELF) ; ), )
-override TOOLCHAIN_READELF := readelf
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_READELF) ; ), )
+override LIMINE_READELF := readelf
 endif
 
-export TOOLCHAIN
-export TOOLCHAIN_CC
-export TOOLCHAIN_LD
-export TOOLCHAIN_AR
-export TOOLCHAIN_OBJCOPY
-export TOOLCHAIN_OBJDUMP
-export TOOLCHAIN_READELF
+export LIMINE_CC
+export LIMINE_LD
+export LIMINE_AR
+export LIMINE_OBJCOPY
+export LIMINE_OBJDUMP
+export LIMINE_READELF
 
-override USING_CLANG := $(shell $(TOOLCHAIN_CC) --version | grep clang >/dev/null && echo 1)
+override USING_CLANG := $(shell $(LIMINE_CC) --version | grep clang >/dev/null && echo 1)
 export USING_CLANG
 
 ifeq ($(USING_CLANG), 1)
-override ORIG_TOOLCHAIN_CC := $(TOOLCHAIN_CC)
-override TOOLCHAIN_CC += --target=x86_64-elf
+override ORIG_LIMINE_CC := $(LIMINE_CC)
+override LIMINE_CC += --target=x86_64-elf
 endif
 
-override CC_MACHINE := $(shell PATH='$(call SHESCAPE,$(PATH))' $(TOOLCHAIN_CC) -dumpmachine | dd bs=6 count=1 2>/dev/null)
+override CC_MACHINE := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_CC) -dumpmachine | dd bs=6 count=1 2>/dev/null)
 
 ifneq ($(MAKECMDGOALS), toolchain)
 ifneq ($(MAKECMDGOALS), distclean)
@@ -86,7 +97,7 @@ endif
 endif
 
 ifeq ($(USING_CLANG), 1)
-override TOOLCHAIN_CC := $(ORIG_TOOLCHAIN_CC)
+override LIMINE_CC := $(ORIG_LIMINE_CC)
 endif
 
 override STAGE1_FILES := $(shell find -L '$(call SHESCAPE,$(SRCDIR))/stage1' -type f -name '*.asm')
@@ -98,7 +109,7 @@ all: limine-uefi limine-bios
 limine-install:
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(SRCDIR))/limine-install/'* '$(call SHESCAPE,$(SRCDIR))/limine-install/.gitignore' '$(call SHESCAPE,$(BINDIR))/'
-	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))' CC="$(CC)"
+	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))'
 
 .PHONY: clean
 clean: limine-bios-clean limine-uefi32-clean limine-uefi64-clean
@@ -124,9 +135,9 @@ uninstall:
 
 $(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/stage23-bios/stage2.bin.gz
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
-	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
-	cd '$(call SHESCAPE,$(SRCDIR))/stage1/pxe' && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin'
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm @werror@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm @werror@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/pxe' && nasm bootsect.asm @werror@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin'
 	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-bios/limine.sys' '$(call SHESCAPE,$(BINDIR))/'
 	touch '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 

@@ -12,13 +12,11 @@ ifeq ($(call MKESCAPE,$(BUILDDIR)), )
 endif
 
 ifeq ($(USING_CLANG), 1)
-override TOOLCHAIN_CC += --target=i686-elf
+override LIMINE_CC += --target=i686-elf
 endif
 
-WERROR ?= -Werror
-CFLAGS ?= -Os -pipe -Wall -Wextra $(WERROR)
-
 override INTERNAL_CFLAGS := \
+	$(WERROR) \
 	-m32 \
 	-march=i686 \
 	-mtune=generic \
@@ -39,8 +37,6 @@ override INTERNAL_CFLAGS := \
 	-I. \
 	-I'$(call SHESCAPE,$(BUILDDIR))/tinf'
 
-LDFLAGS ?=
-
 override INTERNAL_LDFLAGS := \
 	-melf_i386 \
 	-nostdlib \
@@ -57,8 +53,8 @@ override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=
 all: $(call MKESCAPE,$(BUILDDIR))/decompressor.bin
 
 $(call MKESCAPE,$(BUILDDIR))/decompressor.bin: $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o
-	$(TOOLCHAIN_LD) '$(call OBJESCAPE,$^)' $(LDFLAGS) $(INTERNAL_LDFLAGS) -o '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf'
-	$(TOOLCHAIN_OBJCOPY) -O binary '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf' '$(call SHESCAPE,$@)'
+	$(LIMINE_LD) '$(call OBJESCAPE,$^)' $(LIMINE_LDFLAGS) $(INTERNAL_LDFLAGS) -o '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf'
+	$(LIMINE_OBJCOPY) -O binary '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf' '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))/tinf'
@@ -68,13 +64,13 @@ $(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
 
 $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
-	$(TOOLCHAIN_CC) $(CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
+	$(LIMINE_CC) $(LIMINE_CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
 
 -include $(HEADER_DEPS)
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
-	$(TOOLCHAIN_CC) $(CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(LIMINE_CC) $(LIMINE_CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"

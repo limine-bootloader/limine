@@ -1,8 +1,10 @@
-PREFIX ?= /usr/local
+PREFIX ?= @prefix@
 DESTDIR ?=
 
-BUILDDIR ?= $(shell pwd)/build
+BUILDDIR ?= @abs_builddir@
 override BINDIR := $(BUILDDIR)/bin
+
+SRCDIR ?= @abs_srcdir@
 
 override SPACE := $(subst ,, )
 override COMMA := ,
@@ -11,24 +13,55 @@ MKESCAPE = $(subst $(SPACE),\ ,$(1))
 SHESCAPE = $(subst ','\'',$(1))
 NASMESCAPE = $(subst ','"'$(COMMA) \"'\"$(COMMA) '"',$(1))
 
-override PATH := $(shell pwd)/toolchain/bin:$(PATH)
+override PATH := $(BUILDDIR)/toolchain/bin:$(PATH)
 export PATH
 
 override NCPUS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
 
-override LIMINE_VERSION := $(shell cat version 2>/dev/null || ( git describe --exact-match --tags `git log -n1 --pretty='%h'` 2>/dev/null || git log -n1 --pretty='%h' ) )
+override LIMINE_VERSION := @limine_version@
 export LIMINE_VERSION
 
-override LIMINE_COPYRIGHT := $(shell grep Copyright LICENSE.md)
+override LIMINE_COPYRIGHT := $(shell grep Copyright '$(call SHESCAPE,$(SRCDIR))/LICENSE.md')
 export LIMINE_COPYRIGHT
 
-TOOLCHAIN ?= limine
+ifeq ($(origin CC), default)
+CC := @CC@
+endif
 
-TOOLCHAIN_CC ?= $(TOOLCHAIN)-gcc
+TOOLCHAIN ?= @TOOLCHAIN@
+TOOLCHAIN_CC ?= @TOOLCHAIN_CC@
+TOOLCHAIN_LD ?= @TOOLCHAIN_LD@
+TOOLCHAIN_AR ?= @TOOLCHAIN_AR@
+TOOLCHAIN_OBJCOPY ?= @TOOLCHAIN_OBJCOPY@
+TOOLCHAIN_OBJDUMP ?= @TOOLCHAIN_OBJDUMP@
+TOOLCHAIN_READELF ?= @TOOLCHAIN_READELF@
 
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(TOOLCHAIN_CC) ; ), )
-override TOOLCHAIN_CC := cc
+override TOOLCHAIN_CC := $(CC)
 endif
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(TOOLCHAIN_LD) ; ), )
+override TOOLCHAIN_LD := ld
+endif
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(TOOLCHAIN_AR) ; ), )
+override TOOLCHAIN_AR := ar
+endif
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(TOOLCHAIN_OBJCOPY) ; ), )
+override TOOLCHAIN_OBJCOPY := objcopy
+endif
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(TOOLCHAIN_OBJDUMP) ; ), )
+override TOOLCHAIN_OBJDUMP := objdump
+endif
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(TOOLCHAIN_READELF) ; ), )
+override TOOLCHAIN_READELF := readelf
+endif
+
+export TOOLCHAIN
+export TOOLCHAIN_CC
+export TOOLCHAIN_LD
+export TOOLCHAIN_AR
+export TOOLCHAIN_OBJCOPY
+export TOOLCHAIN_OBJDUMP
+export TOOLCHAIN_READELF
 
 override USING_CLANG := $(shell $(TOOLCHAIN_CC) --version | grep clang >/dev/null && echo 1)
 export USING_CLANG
@@ -56,7 +89,7 @@ ifeq ($(USING_CLANG), 1)
 override TOOLCHAIN_CC := $(ORIG_TOOLCHAIN_CC)
 endif
 
-override STAGE1_FILES := $(shell find -L ./stage1 -type f -name '*.asm')
+override STAGE1_FILES := $(shell find -L '$(call SHESCAPE,$(SRCDIR))/stage1' -type f -name '*.asm')
 
 .PHONY: all
 all: limine-uefi limine-bios
@@ -64,12 +97,12 @@ all: limine-uefi limine-bios
 .PHONY: limine-install
 limine-install:
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	cp limine-install/* limine-install/.gitignore '$(call SHESCAPE,$(BINDIR))/'
-	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))'
+	cp '$(call SHESCAPE,$(SRCDIR))/limine-install/'* '$(call SHESCAPE,$(SRCDIR))/limine-install/.gitignore' '$(call SHESCAPE,$(BINDIR))/'
+	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))' CC=$(CC)
 
 .PHONY: clean
 clean: limine-bios-clean limine-uefi32-clean limine-uefi64-clean
-	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1'
+	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 
 .PHONY: install
 install:
@@ -84,17 +117,17 @@ install:
 	install -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(DESTDIR)$(PREFIX)/share/limine/' || true
 	install -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(DESTDIR)$(PREFIX)/share/limine/' || true
 
-$(call MKESCAPE,$(BUILDDIR))/stage1: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/stage23-bios/stage2.bin.gz
+$(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/stage23-bios/stage2.bin.gz
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	cd stage1/hdd && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
-	cd stage1/cd  && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
-	cd stage1/pxe && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin'
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/pxe' && nasm bootsect.asm -Werror -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin'
 	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-bios/limine.sys' '$(call SHESCAPE,$(BINDIR))/'
-	touch '$(call SHESCAPE,$(BUILDDIR))/stage1'
+	touch '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 
 .PHONY: limine-bios
 limine-bios: stage23-bios decompressor
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/stage1'
+	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 	$(MAKE) limine-install
 
 .PHONY: limine-eltorito-efi
@@ -115,13 +148,13 @@ limine-uefi: limine-uefi32 limine-uefi64
 	$(MAKE) limine-eltorito-efi
 
 .PHONY: limine-uefi64
-limine-uefi64: reduced-gnu-efi
+limine-uefi64: $(call MKESCAPE,$(SRCDIR))/reduced-gnu-efi
 	$(MAKE) stage23-uefi64
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi64/BOOTX64.EFI' '$(call SHESCAPE,$(BINDIR))/'
 
 .PHONY: limine-uefi32
-limine-uefi32: reduced-gnu-efi
+limine-uefi32: $(call MKESCAPE,$(SRCDIR))/reduced-gnu-efi
 	$(MAKE) stage23-uefi32
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32/BOOTIA32.EFI' '$(call SHESCAPE,$(BINDIR))/'
@@ -135,68 +168,60 @@ limine-uefi64-clean: stage23-uefi64-clean
 .PHONY: limine-uefi32-clean
 limine-uefi32-clean: stage23-uefi32-clean
 
-.PHONY: regenerate
-regenerate: reduced-gnu-efi stivale
-
 .PHONY: dist
 dist:
-	rm -rf "limine-$(LIMINE_VERSION)"
-	LIST="$$(ls -A)"; mkdir "limine-$(LIMINE_VERSION)" && cp -r $$LIST "limine-$(LIMINE_VERSION)/"
-	rm -rf "limine-$(LIMINE_VERSION)/"*.tar*
-	$(MAKE) -C "limine-$(LIMINE_VERSION)" repoclean
-	$(MAKE) -C "limine-$(LIMINE_VERSION)" regenerate
-	rm -rf "limine-$(LIMINE_VERSION)/reduced-gnu-efi/.git"
-	rm -rf "limine-$(LIMINE_VERSION)/stivale/.git"
-	rm -rf "limine-$(LIMINE_VERSION)/.git"
-	echo "$(LIMINE_VERSION)" > "limine-$(LIMINE_VERSION)/version"
-	tar -Jcf "limine-$(LIMINE_VERSION).tar.xz" "limine-$(LIMINE_VERSION)"
-	rm -rf "limine-$(LIMINE_VERSION)"
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"
+	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"
+	cp -r '$(call SHESCAPE,$(SRCDIR))'/.git '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"/
+	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && git checkout .
+	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && NOCONFIGURE=yes && ./autogen.sh
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/reduced-gnu-efi/.git"
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/stivale/.git"
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/.git"
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/autom4te.cache"
+	echo "$(LIMINE_VERSION)" > '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/version"
+	cd '$(call SHESCAPE,$(BUILDDIR))' && tar -Jcf "limine-$(LIMINE_VERSION).tar.xz" "limine-$(LIMINE_VERSION)"
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"
 
 .PHONY: distclean
-distclean: clean test-clean
-	rm -rf build toolchain ovmf*
+distclean: clean
+	rm -rf toolchain ovmf* config.log config.status GNUmakefile
 
-.PHONY: repoclean
-repoclean: distclean
-	rm -rf stivale reduced-gnu-efi *.tar.xz
-
-stivale:
-	git clone https://github.com/stivale/stivale.git
-
-reduced-gnu-efi:
-	git clone https://github.com/limine-bootloader/reduced-gnu-efi.git
+.PHONY: maintainer-clean
+maintainer-clean: distclean
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf stivale reduced-gnu-efi configure 'configure~' autom4te.cache *.tar.xz
 
 .PHONY: stage23-uefi64
-stage23-uefi64: stivale
-	$(MAKE) -C stage23 all TARGET=uefi64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi64'
+stage23-uefi64: $(call MKESCAPE,$(SRCDIR))/stivale
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/stage23' all TARGET=uefi64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi64'
 
 .PHONY: stage23-uefi64-clean
 stage23-uefi64-clean:
-	$(MAKE) -C stage23 clean TARGET=uefi64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi64'
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/stage23' clean TARGET=uefi64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi64'
 
 .PHONY: stage23-uefi32
-stage23-uefi32: stivale
-	$(MAKE) -C stage23 all TARGET=uefi32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32'
+stage23-uefi32: $(call MKESCAPE,$(SRCDIR))/stivale
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/stage23' all TARGET=uefi32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32'
 
 .PHONY: stage23-uefi32-clean
 stage23-uefi32-clean:
-	$(MAKE) -C stage23 clean TARGET=uefi32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32'
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/stage23' clean TARGET=uefi32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32'
 
 .PHONY: stage23-bios
-stage23-bios: stivale
-	$(MAKE) -C stage23 all TARGET=bios BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-bios'
+stage23-bios: $(call MKESCAPE,$(SRCDIR))/stivale
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/stage23' all TARGET=bios BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-bios'
 
 .PHONY: stage23-bios-clean
 stage23-bios-clean:
-	$(MAKE) -C stage23 clean TARGET=bios BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-bios'
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/stage23' clean TARGET=bios BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-bios'
 
 .PHONY: decompressor
 decompressor:
-	$(MAKE) -C decompressor all BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/decompressor'
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/decompressor' all BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/decompressor-build'
 
 .PHONY: decompressor-clean
 decompressor-clean:
-	$(MAKE) -C decompressor clean BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/decompressor'
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/decompressor' clean BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/decompressor-build'
 
 .PHONY: test-clean
 test-clean:
@@ -205,7 +230,7 @@ test-clean:
 
 .PHONY: toolchain
 toolchain:
-	MAKE="$(MAKE)" build-aux/make_toolchain.sh "`pwd`/toolchain" -j$(NCPUS)
+	MAKE="$(MAKE)" '$(call SHESCAPE,$(SRCDIR))'/build-aux/make_toolchain.sh '$(call SHESCAPE,$(BUILDDIR))'/toolchain -j$(NCPUS)
 
 ovmf-x64:
 	mkdir -p ovmf-x64

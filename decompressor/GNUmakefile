@@ -11,22 +11,6 @@ ifeq ($(call MKESCAPE,$(BUILDDIR)), )
 	$(error BUILDDIR not specified)
 endif
 
-TOOLCHAIN ?= limine
-
-TOOLCHAIN_CC ?= $(TOOLCHAIN)-gcc
-TOOLCHAIN_LD ?= $(TOOLCHAIN)-ld
-TOOLCHAIN_OBJCOPY ?= $(TOOLCHAIN)-objcopy
-
-ifeq ($(shell command -v $(TOOLCHAIN_CC) ; ), )
-override TOOLCHAIN_CC := cc
-endif
-ifeq ($(shell command -v $(TOOLCHAIN_LD) ; ), )
-override TOOLCHAIN_LD := ld
-endif
-ifeq ($(shell command -v $(TOOLCHAIN_OBJCOPY) ; ), )
-override TOOLCHAIN_OBJCOPY := objcopy
-endif
-
 ifeq ($(USING_CLANG), 1)
 override TOOLCHAIN_CC += --target=i686-elf
 endif

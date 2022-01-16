@@ -15,4 +15,4 @@ jobs:
         run: sudo apt-get update && sudo apt-get install git build-essential nasm curl mtools -y
 
       - name: Build the bootloader
-        run: make all
+        run: ./autogen.sh && make all

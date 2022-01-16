@@ -174,7 +174,7 @@ dist:
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"
 	cp -r '$(call SHESCAPE,$(SRCDIR))'/.git '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"/
 	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && git checkout .
-	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && NOCONFIGURE=yes && ./autogen.sh
+	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && NOCONFIGURE=yes ./autogen.sh
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/reduced-gnu-efi/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/stivale/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/.git"

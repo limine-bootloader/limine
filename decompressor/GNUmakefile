@@ -62,7 +62,11 @@ $(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
 	cp -r ../tinf '$(call SHESCAPE,$(BUILDDIR))/'
 	touch '$(call SHESCAPE,$(BUILDDIR))/tinf-copied'
 
-$(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
+$(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
+	$(LIMINE_CC) $(LIMINE_CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
+
+$(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(LIMINE_CC) $(LIMINE_CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
 

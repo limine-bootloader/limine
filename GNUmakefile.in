@@ -120,10 +120,8 @@ limine-install:
 clean: limine-bios-clean limine-uefi32-clean limine-uefi64-clean
 	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 
-.PHONY: install
-install:
-	install -d '$(DESTDIR)$(PREFIX)/bin'
-	install -s '$(call SHESCAPE,$(BINDIR))/limine-install' '$(DESTDIR)$(PREFIX)/bin/' || true
+.PHONY: install-data
+install-data:
 	install -d '$(DESTDIR)$(PREFIX)/share'
 	install -d '$(DESTDIR)$(PREFIX)/share/limine'
 	install -m 644 '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(DESTDIR)$(PREFIX)/share/limine/' || true
@@ -132,6 +130,16 @@ install:
 	install -m 644 '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin' '$(DESTDIR)$(PREFIX)/share/limine/' || true
 	install -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(DESTDIR)$(PREFIX)/share/limine/' || true
 	install -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(DESTDIR)$(PREFIX)/share/limine/' || true
+
+.PHONY: install-strip
+install-strip: install-data
+	install -d '$(DESTDIR)$(PREFIX)/bin'
+	install -s '$(call SHESCAPE,$(BINDIR))/limine-install' '$(DESTDIR)$(PREFIX)/bin/' || true
+
+.PHONY: install
+install: install-data
+	install -d '$(DESTDIR)$(PREFIX)/bin'
+	install '$(call SHESCAPE,$(BINDIR))/limine-install' '$(DESTDIR)$(PREFIX)/bin/' || true
 
 .PHONY: uninstall
 uninstall:

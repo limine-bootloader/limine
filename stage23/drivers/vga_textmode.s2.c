@@ -29,6 +29,11 @@ static struct context {
 #define text_palette context.text_palette
     bool scroll_enabled;
 #define scroll_enabled context.scroll_enabled
+
+    uint8_t saved_state_text_palette;
+#define saved_state_text_palette context.saved_state_text_palette
+    size_t saved_state_cursor_offset;
+#define saved_state_cursor_offset context.saved_state_cursor_offset
 } context;
 
 static size_t old_cursor_offset = 0;
@@ -36,6 +41,16 @@ static size_t old_cursor_offset = 0;
 static void draw_cursor(void) {
     uint8_t pal = back_buffer[cursor_offset + 1];
     video_mem[cursor_offset + 1] = ((pal & 0xf0) >> 4) | ((pal & 0x0f) << 4);
+}
+
+void text_save_state(void) {
+    saved_state_text_palette = text_palette;
+    saved_state_cursor_offset = cursor_offset;
+}
+
+void text_restore_state(void) {
+    text_palette = saved_state_text_palette;
+    cursor_offset = saved_state_cursor_offset;
 }
 
 void text_swap_palette(void) {
@@ -61,6 +76,22 @@ void text_scroll(void) {
     // clear the last line of the screen
     for (size_t i = (term_context.scroll_bottom_margin - 1) * VD_COLS;
          i < term_context.scroll_bottom_margin * VD_COLS; i += 2) {
+        back_buffer[i] = ' ';
+        back_buffer[i + 1] = text_palette;
+    }
+}
+
+void text_revscroll(void) {
+    // move the text up by one row
+    for (size_t i = (term_context.scroll_bottom_margin - 1) * VD_COLS - 2; ; i--) {
+        back_buffer[i + VD_COLS] = back_buffer[i];
+        if (i == term_context.scroll_top_margin * VD_COLS) {
+            break;
+        }
+    }
+    // clear the first line of the screen
+    for (size_t i = term_context.scroll_top_margin * VD_COLS;
+         i < (term_context.scroll_top_margin + 1) * VD_COLS; i += 2) {
         back_buffer[i] = ' ';
         back_buffer[i + 1] = text_palette;
     }

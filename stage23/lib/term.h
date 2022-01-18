@@ -30,6 +30,11 @@ extern struct term_context {
     size_t scroll_top_margin;
     size_t scroll_bottom_margin;
     uint32_t esc_values[MAX_ESC_VALUES];
+
+    bool saved_state_bold;
+    bool saved_state_reverse_video;
+    size_t saved_state_current_charset;
+    size_t saved_state_current_primary;
 } term_context;
 
 enum {
@@ -71,7 +76,10 @@ extern bool (*scroll_disable)(void);
 extern void (*scroll_enable)(void);
 extern void (*term_move_character)(size_t new_x, size_t new_y, size_t old_x, size_t old_y);
 extern void (*term_scroll)(void);
+extern void (*term_revscroll)(void);
 extern void (*term_swap_palette)(void);
+extern void (*term_save_state)(void);
+extern void (*term_restore_state)(void);
 
 extern void (*term_double_buffer_flush)(void);
 

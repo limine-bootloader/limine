@@ -89,19 +89,40 @@ static struct context {
 #define cursor_x context.cursor_x
     size_t cursor_y;
 #define cursor_y context.cursor_y
+    bool scroll_enabled;
+#define scroll_enabled context.scroll_enabled
+
+    uint32_t saved_state_text_fg;
+#define saved_state_text_fg context.saved_state_text_fg
+    uint32_t saved_state_text_bg;
+#define saved_state_text_bg context.saved_state_text_bg
+    size_t saved_state_cursor_x;
+#define saved_state_cursor_x context.saved_state_cursor_x
+    size_t saved_state_cursor_y;
+#define saved_state_cursor_y context.saved_state_cursor_y
 } context;
 
 static size_t old_cursor_x = 0;
 static size_t old_cursor_y = 0;
 
+void gterm_save_state(void) {
+    saved_state_text_fg = text_fg;
+    saved_state_text_bg = text_bg;
+    saved_state_cursor_x = cursor_x;
+    saved_state_cursor_y = cursor_y;
+}
+
+void gterm_restore_state(void) {
+    text_fg = saved_state_text_fg;
+    text_bg = saved_state_text_bg;
+    cursor_x = saved_state_cursor_x;
+    cursor_y = saved_state_cursor_y;
+}
+
 void gterm_swap_palette(void) {
     uint32_t tmp = text_bg;
     text_bg = text_fg;
-    if (tmp == 0xffffffff) {
-        text_fg = default_bg;
-    } else {
-        text_fg = tmp;
-    }
+    text_fg = tmp;
 }
 
 #define A(rgb) (uint8_t)(rgb >> 24)
@@ -353,8 +374,6 @@ static void push_to_queue(struct gterm_char *c, size_t x, size_t y) {
     q->c = *c;
 }
 
-static bool scroll_enabled = true;
-
 bool gterm_scroll_disable(void) {
     bool ret = scroll_enabled;
     scroll_enabled = false;
@@ -363,6 +382,32 @@ bool gterm_scroll_disable(void) {
 
 void gterm_scroll_enable(void) {
     scroll_enabled = true;
+}
+
+void gterm_revscroll(void) {
+    for (size_t i = (term_context.scroll_bottom_margin - 1) * cols - 1; ; i--) {
+        struct gterm_char *c;
+        struct queue_item *q = map[i];
+        if (q != NULL) {
+            c = &q->c;
+        } else {
+            c = &grid[i];
+        }
+        push_to_queue(c, (i + cols) % cols, (i + cols) / cols);
+        if (i == term_context.scroll_top_margin * cols) {
+            break;
+        }
+    }
+
+    // Clear the first line of the screen.
+    struct gterm_char empty;
+    empty.c  = ' ';
+    empty.fg = text_fg;
+    empty.bg = text_bg;
+    for (size_t i = term_context.scroll_top_margin * cols;
+         i < (term_context.scroll_top_margin + 1) * cols; i++) {
+        push_to_queue(&empty, i % cols, i / cols);
+    }
 }
 
 void gterm_scroll(void) {
@@ -578,6 +623,7 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
         return false;
 
     cursor_status = true;
+    scroll_enabled = true;
 
     // default scheme
     margin = 64;

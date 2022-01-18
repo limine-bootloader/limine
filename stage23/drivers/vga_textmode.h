@@ -23,7 +23,10 @@ bool text_scroll_disable(void);
 void text_scroll_enable(void);
 void text_move_character(size_t new_x, size_t new_y, size_t old_x, size_t old_y);
 void text_scroll(void);
+void text_revscroll(void);
 void text_swap_palette(void);
+void text_save_state(void);
+void text_restore_state(void);
 
 void text_double_buffer(bool state);
 void text_double_buffer_flush(void);

@@ -66,7 +66,10 @@ void term_notready(void) {
     scroll_enable = notready_void;
     term_move_character = notready_move_character;
     term_scroll = notready_void;
+    term_revscroll = notready_void;
     term_swap_palette = notready_void;
+    term_save_state = notready_void;
+    term_restore_state = notready_void;
     term_double_buffer_flush = notready_void;
     term_context_size = notready_context_size;
     term_context_save = notready_uint64_t;
@@ -207,7 +210,10 @@ bool (*scroll_disable)(void);
 void (*scroll_enable)(void);
 void (*term_move_character)(size_t new_x, size_t new_y, size_t old_x, size_t old_y);
 void (*term_scroll)(void);
+void (*term_revscroll)(void);
 void (*term_swap_palette)(void);
+void (*term_save_state)(void);
+void (*term_restore_state)(void);
 
 void (*term_double_buffer_flush)(void);
 
@@ -240,6 +246,11 @@ struct term_context term_context;
 #define current_charset term_context.current_charset
 #define charsets term_context.charsets
 #define g_select term_context.g_select
+
+#define saved_state_bold term_context.saved_state_bold
+#define saved_state_reverse_video term_context.saved_state_reverse_video
+#define saved_state_current_charset term_context.saved_state_current_charset
+#define saved_state_current_primary term_context.saved_state_current_primary
 
 #define CHARSET_DEFAULT 0
 #define CHARSET_DEC_SPECIAL 1
@@ -296,7 +307,10 @@ void term_textmode(void) {
     scroll_enable  = text_scroll_enable;
     term_move_character = text_move_character;
     term_scroll = text_scroll;
+    term_revscroll = text_revscroll;
     term_swap_palette = text_swap_palette;
+    term_save_state = text_save_state;
+    term_restore_state = text_restore_state;
 
     term_double_buffer_flush = text_double_buffer_flush;
 
@@ -897,6 +911,24 @@ cleanup:
     escape = false;
 }
 
+static void restore_state(void) {
+    bold = saved_state_bold;
+    reverse_video = saved_state_reverse_video;
+    current_charset = saved_state_current_charset;
+    current_primary = saved_state_current_primary;
+
+    term_restore_state();
+}
+
+static void save_state(void) {
+    term_save_state();
+
+    saved_state_bold = bold;
+    saved_state_reverse_video = reverse_video;
+    saved_state_current_charset = current_charset;
+    saved_state_current_primary = current_primary;
+}
+
 static void escape_parse(uint8_t c) {
     escape_offset++;
 
@@ -922,6 +954,12 @@ is_csi:
             rrr = false;
             control_sequence = true;
             return;
+        case '7':
+            save_state();
+            break;
+        case '8':
+            restore_state();
+            break;
         case 'c':
             term_reinit();
             clear(true);
@@ -944,7 +982,12 @@ is_csi:
             break;
         case 'M':
             // "Reverse linefeed"
-            set_cursor_pos(x, y - 1);
+            if (y == scroll_top_margin) {
+                term_revscroll();
+                set_cursor_pos(0, y);
+            } else {
+                set_cursor_pos(0, y - 1);
+            }
             break;
         case 'Z':
             if (term_callback != NULL) {

@@ -51,7 +51,10 @@ void term_vbe(size_t width, size_t height) {
     scroll_enable  = gterm_scroll_enable;
     term_move_character = gterm_move_character;
     term_scroll = gterm_scroll;
+    term_revscroll = gterm_revscroll;
     term_swap_palette = gterm_swap_palette;
+    term_save_state = gterm_save_state;
+    term_restore_state = gterm_restore_state;
 
     term_double_buffer_flush = gterm_double_buffer_flush;
 

@@ -27,7 +27,10 @@ bool gterm_scroll_disable(void);
 void gterm_scroll_enable(void);
 void gterm_move_character(size_t new_x, size_t new_y, size_t old_x, size_t old_y);
 void gterm_scroll(void);
+void gterm_revscroll(void);
 void gterm_swap_palette(void);
+void gterm_save_state(void);
+void gterm_restore_state(void);
 
 void gterm_double_buffer_flush(void);
 

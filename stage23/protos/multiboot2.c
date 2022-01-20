@@ -19,6 +19,8 @@
 #include <lib/blib.h>
 #include <drivers/vga_textmode.h>
 
+#define LIMINE_BRAND "Limine " LIMINE_VERSION
+
 /// Returns the size required to store the multiboot2 info.
 static size_t get_multiboot2_info_size(
     char *cmdline,
@@ -27,8 +29,8 @@ static size_t get_multiboot2_info_size(
     uint32_t smbios_tag_size
 ) {
     return ALIGN_UP(sizeof(struct multiboot2_start_tag), MULTIBOOT_TAG_ALIGN) +                                         // start
-        ALIGN_UP(strlen(cmdline) + 1 + offsetof(struct multiboot_tag_string, string), MULTIBOOT_TAG_ALIGN) +            // cmdline
-        ALIGN_UP(8 + offsetof(struct multiboot_tag_string, string), MULTIBOOT_TAG_ALIGN) +                              // bootloader brand
+        ALIGN_UP(sizeof(struct multiboot_tag_string) + strlen(cmdline) + 1, MULTIBOOT_TAG_ALIGN) +                      // cmdline
+        ALIGN_UP(sizeof(struct multiboot_tag_string) + sizeof(LIMINE_BRAND), MULTIBOOT_TAG_ALIGN) +                   // bootloader brand
         ALIGN_UP(sizeof(struct multiboot_tag_framebuffer), MULTIBOOT_TAG_ALIGN) +                                       // framebuffer
         ALIGN_UP(sizeof(struct multiboot_tag_new_acpi) + sizeof(struct rsdp), MULTIBOOT_TAG_ALIGN) +                    // new ACPI info
         ALIGN_UP(sizeof(struct multiboot_tag_old_acpi) + 20, MULTIBOOT_TAG_ALIGN) +                                     // old ACPI info
@@ -340,7 +342,7 @@ bool multiboot2_load(char *config, char* cmdline) {
     // Create command line tag
     //////////////////////////////////////////////
     {
-        uint32_t size = strlen(cmdline) + 1 + offsetof(struct multiboot_tag_string, string);
+        uint32_t size = sizeof(struct multiboot_tag_string) + strlen(cmdline) + 1;
         struct multiboot_tag_string *tag = (struct multiboot_tag_string *)(mb2_info + info_idx);
 
         tag->type = MULTIBOOT_TAG_TYPE_CMDLINE;
@@ -354,14 +356,13 @@ bool multiboot2_load(char *config, char* cmdline) {
     // Create bootloader name tag
     //////////////////////////////////////////////
     {
-        char brand[] = "Limine";
-        uint32_t size = sizeof(brand) + offsetof(struct multiboot_tag_string, string);
+        uint32_t size = sizeof(struct multiboot_tag_string) + sizeof(LIMINE_BRAND);
         struct multiboot_tag_string *tag = (struct multiboot_tag_string *)(mb2_info + info_idx);
 
         tag->type = MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME;
         tag->size = size;
 
-        strcpy(tag->string, brand);
+        strcpy(tag->string, LIMINE_BRAND);
         append_tag(info_idx, tag);
     }
 

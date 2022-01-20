@@ -24,9 +24,11 @@ override INTERNAL_CFLAGS := \
 	-std=gnu11 \
 	-ffreestanding \
 	-fno-stack-protector \
+	-fno-lto \
 	-fno-pic \
 	-fno-pie \
 	-fomit-frame-pointer \
+	-nostdinc \
 	-Wno-address-of-packed-member \
 	-mno-80387 \
 	-mno-mmx \
@@ -34,6 +36,7 @@ override INTERNAL_CFLAGS := \
 	-mno-sse \
 	-mno-sse2 \
 	-MMD \
+	-I../stdinc \
 	-I. \
 	-I'$(call SHESCAPE,$(BUILDDIR))/tinf'
 

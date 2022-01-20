@@ -180,7 +180,7 @@ bool multiboot1_load(char *config, char *cmdline) {
     if (cmdline)
         multiboot1_info->flags |= (1 << 2);
 
-    char *bootload_name = "Limine";
+    char *bootload_name = "Limine " LIMINE_VERSION;
     char *lowmem_bootname = conv_mem_alloc(strlen(bootload_name) + 1);
     strcpy(lowmem_bootname, bootload_name);
 

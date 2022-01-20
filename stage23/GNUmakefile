@@ -49,6 +49,7 @@ override INTERNAL_CFLAGS := \
 	-fno-stack-protector \
 	-fno-omit-frame-pointer \
 	-fno-lto \
+	-nostdinc \
 	-Wno-address-of-packed-member \
 	-Wshadow \
 	-mno-80387 \
@@ -61,6 +62,7 @@ override INTERNAL_CFLAGS := \
 	-DLIMINE_COPYRIGHT='"$(LIMINE_COPYRIGHT)"' \
 	-DCOM_OUTPUT=$(COM_OUTPUT) \
 	-DE9_OUTPUT=$(E9_OUTPUT) \
+	-I../stdinc \
 	-I. \
 	-I../stivale \
 	-I'$(call SHESCAPE,$(BUILDDIR))/tinf'

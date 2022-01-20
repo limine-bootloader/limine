@@ -831,6 +831,7 @@ timeout_aborted:
                 goto refresh;
             case GETCHAR_CURSOR_RIGHT:
             case '\n':
+            case ' ':
             autoboot:
                 if (selected_menu_entry->sub != NULL) {
                     selected_menu_entry->expanded = !selected_menu_entry->expanded;

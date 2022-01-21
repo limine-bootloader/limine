@@ -1,6 +1,8 @@
-#!/bin/sh
+#! /bin/sh
 
 set -e
+
+export LC_ALL=C
 
 TMP0=$(mktemp)
 

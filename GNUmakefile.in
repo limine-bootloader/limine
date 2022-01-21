@@ -53,7 +53,10 @@ ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_CC) ; ), )
 override LIMINE_CC := $(CC)
 endif
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_LD) ; ), )
+override LIMINE_LD := ld.bfd
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_LD) ; ), )
 override LIMINE_LD := ld
+endif
 endif
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AR) ; ), )
 override LIMINE_AR := ar
@@ -78,6 +81,16 @@ export LIMINE_AS
 export LIMINE_OBJCOPY
 export LIMINE_OBJDUMP
 export LIMINE_READELF
+
+override USING_GNU_LD := $(shell $(LIMINE_LD) --version | grep Binutils >/dev/null && echo 1)
+ifeq ($(USING_GNU_LD), 0)
+$(error The specified LIMINE_LD linker ($(LIMINE_LD)) is not the GNU linker)
+endif
+
+override USING_GNU_OBJCOPY := $(shell $(LIMINE_OBJCOPY) --version | grep Binutils >/dev/null && echo 1)
+ifeq ($(USING_GNU_OBJCOPY), 0)
+$(error The specified LIMINE_OBJCOPY ($(LIMINE_OBJCOPY)) is not GNU objcopy)
+endif
 
 override USING_CLANG := $(shell $(LIMINE_CC) --version | grep clang >/dev/null && echo 1)
 export USING_CLANG

@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh
 
 set -ex
 
@@ -6,7 +6,10 @@ TARGET=x86_64-elf
 BINUTILSVERSION=2.37
 GCCVERSION=11.2.0
 
-CFLAGS="-O2 -pipe"
+export CFLAGS="-O2 -pipe"
+
+unset CC
+unset CXX
 
 if [ "$(uname)" = "OpenBSD" ]; then
     # OpenBSD has an awfully ancient GCC which fails to build our toolchain.

@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install git build-essential autoconf nasm gcc-mingw-w64 gcc-multilib curl mtools -y
 
+      - name: Build the toolchain
+        run: ./make_toolchain.sh
+
       - name: Regenerate
         run: NOCONFIGURE=yes ./autogen.sh
 
@@ -33,9 +36,6 @@ jobs:
 
       - name: Configure
         run: cd build && ../configure
-
-      - name: Build the toolchain
-        run: make -C build toolchain
 
       - name: Build the bootloader
         run: make -C build

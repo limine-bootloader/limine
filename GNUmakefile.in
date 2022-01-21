@@ -95,6 +95,11 @@ ifneq ($(MAKECMDGOALS), distclean)
 ifneq ($(MAKECMDGOALS), maintainer-clean)
 ifneq ($(MAKECMDGOALS), uninstall)
 ifneq ($(MAKECMDGOALS), dist)
+ifneq ($(MAKECMDGOALS), limine-install)
+ifneq ($(MAKECMDGOALS), limine-eltorito-efi)
+ifneq ($(MAKECMDGOALS), install)
+ifneq ($(MAKECMDGOALS), install-data)
+ifneq ($(MAKECMDGOALS), install-strip)
 
 override USING_GNU_LD := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_LD) --version | grep Binutils >/dev/null && echo 1)
 ifneq ($(USING_GNU_LD), 1)
@@ -112,6 +117,11 @@ $(error No suitable x86_64 C compiler found, please install an x86_64 C toolchai
 endif
 endif
 
+endif
+endif
+endif
+endif
+endif
 endif
 endif
 endif

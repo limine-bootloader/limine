@@ -2,9 +2,20 @@
 
 set -ex
 
+srcdir="$(realpath $(dirname "$0"))"
+test -z "$srcdir" && srcdir=.
+
+cd "$srcdir"
+
 TARGET=x86_64-elf
 BINUTILSVERSION=2.37
 GCCVERSION=11.2.0
+
+if command -v gmake; then
+    export MAKE=gmake
+else
+    export MAKE=make
+fi
 
 export CFLAGS="-O2 -pipe"
 
@@ -18,10 +29,10 @@ if [ "$(uname)" = "OpenBSD" ]; then
     export CXX="clang++"
 fi
 
-mkdir -p "$1" && cd "$1"
+mkdir -p toolchain && cd toolchain
 PREFIX="$(pwd)"
 
-export MAKEFLAGS="$2"
+export MAKEFLAGS="-j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)"
 
 export PATH="$PREFIX/bin:$PATH"
 

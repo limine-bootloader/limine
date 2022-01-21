@@ -16,8 +16,6 @@ NASMESCAPE = $(subst ','"'$(COMMA) \"'\"$(COMMA) '"',$(1))
 override PATH := $(BUILDDIR)/toolchain/bin:$(PATH)
 export PATH
 
-override NCPUS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)
-
 override LIMINE_VERSION := @limine_version@
 export LIMINE_VERSION
 
@@ -82,7 +80,7 @@ export LIMINE_OBJCOPY
 export LIMINE_OBJDUMP
 export LIMINE_READELF
 
-override USING_CLANG := $(shell $(LIMINE_CC) --version | grep clang >/dev/null && echo 1)
+override USING_CLANG := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_CC) --version | grep clang >/dev/null && echo 1)
 export USING_CLANG
 
 ifeq ($(USING_CLANG), 1)
@@ -92,30 +90,28 @@ endif
 
 override CC_MACHINE := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_CC) -dumpmachine | dd bs=6 count=1 2>/dev/null)
 
-ifneq ($(MAKECMDGOALS), toolchain)
 ifneq ($(MAKECMDGOALS), clean)
 ifneq ($(MAKECMDGOALS), distclean)
 ifneq ($(MAKECMDGOALS), maintainer-clean)
 ifneq ($(MAKECMDGOALS), uninstall)
 ifneq ($(MAKECMDGOALS), dist)
 
-override USING_GNU_LD := $(shell $(LIMINE_LD) --version | grep Binutils >/dev/null && echo 1)
+override USING_GNU_LD := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_LD) --version | grep Binutils >/dev/null && echo 1)
 ifneq ($(USING_GNU_LD), 1)
 $(error The specified LIMINE_LD linker ($(LIMINE_LD)) is not the GNU linker)
 endif
 
-override USING_GNU_OBJCOPY := $(shell $(LIMINE_OBJCOPY) --version | grep Binutils >/dev/null && echo 1)
+override USING_GNU_OBJCOPY := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_OBJCOPY) --version | grep Binutils >/dev/null && echo 1)
 ifneq ($(USING_GNU_OBJCOPY), 1)
 $(error The specified LIMINE_OBJCOPY ($(LIMINE_OBJCOPY)) is not GNU objcopy)
 endif
 
 ifneq ($(CC_MACHINE), x86_64)
 ifneq ($(CC_MACHINE), amd64-)
-$(error No suitable x86_64 C compiler found, please install an x86_64 C toolchain or run "make toolchain")
+$(error No suitable x86_64 C compiler found, please install an x86_64 C toolchain or run "./make_toolchain.sh")
 endif
 endif
 
-endif
 endif
 endif
 endif
@@ -277,10 +273,6 @@ decompressor-clean:
 test-clean:
 	$(MAKE) -C test clean
 	rm -rf test_image test.hdd test.iso
-
-.PHONY: toolchain
-toolchain:
-	MAKE="$(MAKE)" '$(call SHESCAPE,$(SRCDIR))'/build-aux/make_toolchain.sh '$(call SHESCAPE,$(BUILDDIR))'/toolchain -j$(NCPUS)
 
 ovmf-x64:
 	mkdir -p ovmf-x64

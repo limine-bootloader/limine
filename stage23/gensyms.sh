@@ -7,7 +7,7 @@ export LC_ALL=C
 TMP0=$(mktemp)
 
 cat >"$TMP0" <<EOF
-#!/bin/sh
+#! /bin/sh
 
 set -e
 

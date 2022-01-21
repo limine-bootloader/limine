@@ -66,6 +66,29 @@ release.
 *These steps are not necessary if cloning a binary release. If so, skip to*
 *"Installing Limine binaries".*
 
+### Building the toolchain
+
+This step can take a long time, but it will ensure that the toolchain will work
+with Limine. If on an x86_64 host, with GCC or Clang installed, you can skip to
+the next paragraph in order to use the system's toolchain instead.
+
+The toolchain's build process depends on the following packages: `GNU make`,
+`curl`, `gzip`, `bzip2`, `gcc/clang`, `g++/clang++`.
+
+Building the toolchain can be accomplished by running:
+```bash
+./make_toolchain.sh
+```
+
+### Prerequisites
+
+In order to build Limine, the following packages have to be installed:
+`GNU make`, `nasm`, `mtools` (optional, necessary to build
+`limine-eltorito-efi.bin`).
+Furthermore, either the toolchain must have been built in the previous
+paragraph, or `gcc` or `llvm/clang` must also be installed, alongside
+`GNU binutils`.
+
 ### Configure
 
 If checking out from the repository, run `./autogen.sh`, else, if using a
@@ -78,30 +101,9 @@ Limine supports both in-tree and out-of-tree builds. Simply run the configure
 script from the directory you wish to execute the build in. The following `make`
 commands are supposed to be ran inside the build directory.
 
-### Building the toolchain
-
-This step can take a long time, but it will ensure that the toolchain will work
-with Limine. If on an x86_64 host, with GCC or Clang installed, you can skip to
-the next paragraph in order to use the system's toolchain instead.
-
-The toolchain's build process depends on the following packages: `GNU make`,
-`curl`, `gzip`, `bzip2`, `gcc/clang`, `g++/clang++`.
-
-Building the toolchain can be accomplished by running:
-```bash
-make toolchain    # (or gmake where applicable)
-```
-
 ### Building Limine
 
-In order to build Limine, the following packages have to be installed:
-`GNU make`, `nasm`, `mtools` (optional, necessary to build
-`limine-eltorito-efi.bin`).
-Furthermore, either the toolchain must have been built in the previous
-paragraph, or `gcc` or `llvm/clang` must also be installed, alongside
-`GNU binutils`.
-
-Then, to build Limine, run:
+To build Limine, run:
 ```bash
 make    # (or gmake where applicable)
 ```

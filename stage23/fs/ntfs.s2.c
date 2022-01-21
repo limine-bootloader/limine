@@ -571,16 +571,33 @@ bool ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *pa
             uint8_t *attr_ptr = NULL;
             if (!ntfs_get_file_record_attr(file_record_buffer, FR_ATTRIBUTE_DATA, &attr_ptr))
                 panic(false, "NTFS: File record missing DATA attribute");
-            struct file_record_attr_header_non_res *attr = (struct file_record_attr_header_non_res *)attr_ptr;
+            struct file_record_attr_header *attr_hdr = (struct file_record_attr_header *)attr_ptr;
+            
+            if (attr_hdr->non_res_flag) {
+                // this is non-resident data
+                struct file_record_attr_header_non_res *attr = (struct file_record_attr_header_non_res *)attr_ptr;
 
-            // verify the attr and run list are in the buffer
-            if ((uint8_t *)attr + sizeof(*attr) > file_record_buffer + sizeof(file_record_buffer))
-                panic(false, "NTFS: File record attribute is outside of file record");
-            if ((uint8_t *)attr + attr->run_offset + 256 > file_record_buffer + sizeof(file_record_buffer))
-                panic(false, "NTFS: Run list is outside of file record");
+                // mark that this has no resident data
+                ret->resident_index_size = 0;
 
-            // save the run list
-            memcpy(ret->run_list, (uint8_t *)attr + attr->run_offset, sizeof(ret->run_list));
+                // verify the attr and run list are in the buffer
+                if ((uint8_t *)attr + sizeof(*attr) > file_record_buffer + sizeof(file_record_buffer))
+                    panic(false, "NTFS: File record attribute is outside of file record");
+                if ((uint8_t *)attr + attr->run_offset + 256 > file_record_buffer + sizeof(file_record_buffer))
+                    panic(false, "NTFS: Run list is outside of file record");
+
+                // save the run list
+                memcpy(ret->run_list, (uint8_t *)attr + attr->run_offset, sizeof(ret->run_list));
+            } else {
+                // this is resident data
+                struct file_record_attr_header_res *attr = (struct file_record_attr_header_res *)attr_ptr;
+
+                if (attr->info_length > sizeof(ret->resident_data))
+                    panic(false, "NTFS: Resident data too big");
+
+                ret->resident_data_size = attr->info_length;
+                memcpy(ret->resident_data, attr + 1, attr->info_length);
+            }
 
             return true;
 
@@ -601,6 +618,23 @@ bool ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *pa
 int ntfs_read(struct ntfs_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
     // get the runlist
     uint8_t *runlist = file->run_list;
+
+    // first try and handle resident data
+    if (file->resident_data_size != 0) {
+        // check bounds
+        if (loc > file->resident_data_size)
+            return 0;
+        
+        // truncate the size 
+        if (file->resident_data_size - loc < count) {
+            count = file->resident_data_size - loc;
+        }
+
+        // copy it 
+        memcpy(buf, &file->resident_data[loc], count);
+        
+        return count;
+    }
 
     // TODO: remember the last read location so we can have faster sequential reads...
 

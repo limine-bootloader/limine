@@ -54,7 +54,8 @@ struct ntfs_file_handle {
 
 int ntfs_check_signature(struct volume *part);
 
-int ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *path);
+bool ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *path);
 int ntfs_read(struct ntfs_file_handle *file, void *buf, uint64_t loc, uint64_t count);
+void ntfs_close(struct ntfs_file_handle *file);
 
 #endif

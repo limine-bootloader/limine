@@ -514,7 +514,7 @@ static bool ntfs_find_file_in_directory(struct ntfs_file_handle *handle, const c
     return false;
 }
 
-int ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *path) {
+bool ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *path) {
     // save the part
     ret->part = part;
 
@@ -553,7 +553,7 @@ int ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *pat
         // find the file in the directory
         entry = NULL;
         if (!ntfs_find_file_in_directory(ret, current_path, &entry))
-            return 1;
+            return false;
 
         size_t filename_len = entry->name_length;
 
@@ -582,7 +582,7 @@ int ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *pat
             // save the run list
             memcpy(ret->run_list, (uint8_t *)attr + attr->run_offset, sizeof(ret->run_list));
 
-            return 0;
+            return true;
 
         } else {
             // read the directory
@@ -651,4 +651,8 @@ int ntfs_read(struct ntfs_file_handle *file, void *buf, uint64_t loc, uint64_t c
 
     // if we didn't read it all then we got a problem
     return count != 0;
+}
+
+void ntfs_close(struct ntfs_file_handle *file) {
+    pmm_free(file, sizeof(struct ntfs_file_handle));
 }

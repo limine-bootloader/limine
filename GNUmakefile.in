@@ -82,16 +82,6 @@ export LIMINE_OBJCOPY
 export LIMINE_OBJDUMP
 export LIMINE_READELF
 
-override USING_GNU_LD := $(shell $(LIMINE_LD) --version | grep Binutils >/dev/null && echo 1)
-ifeq ($(USING_GNU_LD), 0)
-$(error The specified LIMINE_LD linker ($(LIMINE_LD)) is not the GNU linker)
-endif
-
-override USING_GNU_OBJCOPY := $(shell $(LIMINE_OBJCOPY) --version | grep Binutils >/dev/null && echo 1)
-ifeq ($(USING_GNU_OBJCOPY), 0)
-$(error The specified LIMINE_OBJCOPY ($(LIMINE_OBJCOPY)) is not GNU objcopy)
-endif
-
 override USING_CLANG := $(shell $(LIMINE_CC) --version | grep clang >/dev/null && echo 1)
 export USING_CLANG
 
@@ -103,11 +93,29 @@ endif
 override CC_MACHINE := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_CC) -dumpmachine | dd bs=6 count=1 2>/dev/null)
 
 ifneq ($(MAKECMDGOALS), toolchain)
+ifneq ($(MAKECMDGOALS), clean)
 ifneq ($(MAKECMDGOALS), distclean)
-ifneq ($(MAKECMDGOALS), distclean2)
+ifneq ($(MAKECMDGOALS), maintainer-clean)
+ifneq ($(MAKECMDGOALS), uninstall)
+ifneq ($(MAKECMDGOALS), dist)
+
+override USING_GNU_LD := $(shell $(LIMINE_LD) --version | grep Binutils >/dev/null && echo 1)
+ifneq ($(USING_GNU_LD), 1)
+$(error The specified LIMINE_LD linker ($(LIMINE_LD)) is not the GNU linker)
+endif
+
+override USING_GNU_OBJCOPY := $(shell $(LIMINE_OBJCOPY) --version | grep Binutils >/dev/null && echo 1)
+ifneq ($(USING_GNU_OBJCOPY), 1)
+$(error The specified LIMINE_OBJCOPY ($(LIMINE_OBJCOPY)) is not GNU objcopy)
+endif
+
 ifneq ($(CC_MACHINE), x86_64)
 ifneq ($(CC_MACHINE), amd64-)
 $(error No suitable x86_64 C compiler found, please install an x86_64 C toolchain or run "make toolchain")
+endif
+endif
+
+endif
 endif
 endif
 endif

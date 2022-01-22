@@ -27,6 +27,7 @@ Like Limine and want to support it? Donate Bitcoin to
 * ext2/3/4
 * echfs
 * FAT12/16/32
+* NTFS
 * ISO9660 (CDs/DVDs)
 
 ### Supported partitioning schemes
@@ -45,9 +46,9 @@ For example, to clone the latest binary release of the `v2.x` branch one can do
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v2.0-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example v2.75)
+or, to clone a specific binary point release (for example v2.78)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v2.75-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v2.78-binary --depth=1
 ```
 
 Additionally, the absolute latest Limine binary release can be obtained by
@@ -58,19 +59,21 @@ git clone https://github.com/limine-bootloader/limine.git --branch=latest-binary
 
 `limine-install` binaries are provided for Linux and Windows.
 
-In case one wants to rebuild `limine-install`, simply use `make` in the binary
-release.
+In case one wants to rebuild `limine-install`, simply run `make` in the binary
+release directory.
 
 ## Building the bootloader
 
-*These steps are not necessary if cloning a binary release. If so, skip to*
+*The following steps are not necessary if cloning a binary release. If so, skip to*
 *"Installing Limine binaries".*
 
 ### Building the toolchain
 
 This step can take a long time, but it will ensure that the toolchain will work
-with Limine. If on an x86_64 host, with GCC or Clang installed, you can skip to
-the next paragraph in order to use the system's toolchain instead.
+with Limine. If on an x86_64 host, with GCC or Clang installed, it is possible
+that the host toolchain will suffice. You can skip to the next paragraph in order
+to use the system's toolchain instead. If that fails, you can still come back here
+later.
 
 The toolchain's build process depends on the following packages: `GNU make`, `GNU tar`,
 `curl`, `gzip`, `bzip2`, `gcc/clang`, `g++/clang++`.
@@ -91,13 +94,15 @@ paragraph, or `gcc` or `llvm/clang` must also be installed, alongside
 
 ### Configure
 
-If checking out from the repository, run `./autogen.sh` (GNU automake and GNU autoconf required),
-else, if using a release tarball, run `./configure` directly.
+If using a release tarball (recommended, see https://github.com/limine-bootloader/limine/releases),
+run `./configure` directly.
+
+If checking out from the repository, run `./autogen.sh` first (GNU autoconf and GNU automake required).
 
 Both `./autogen.sh` and `./configure` take arguments and environment variables;
 for more information on these, run `./configure --help`.
 
-Limine supports both in-tree and out-of-tree builds. Simply run the configure
+Limine supports both in-tree and out-of-tree builds. Simply run the `configure`
 script from the directory you wish to execute the build in. The following `make`
 commands are supposed to be ran inside the build directory.
 
@@ -115,7 +120,7 @@ The generated bootloader files are going to be in `$BUILDDIR/bin`.
 This step is optional as the bootloader binaries can be used from the `bin` or
 release directory just fine. This step will only install them to a `share` and
 `bin` directories in the specified prefix (default is `/usr/local`, see
-`./configure --help`).
+`./configure --help`, or the `PREFIX` variable if installing a binary release).
 
 To install Limine, run:
 ```bash

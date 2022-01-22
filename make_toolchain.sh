@@ -67,7 +67,6 @@ cd gcc-$GCCVERSION
 sed 's|http://gcc.gnu|https://gcc.gnu|g' < contrib/download_prerequisites > dp.sed
 mv dp.sed contrib/download_prerequisites
 chmod +x contrib/download_prerequisites
-rm dp.sed
 contrib/download_prerequisites --no-verify
 cd ..
 mkdir build-gcc

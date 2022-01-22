@@ -47,8 +47,8 @@ override INTERNAL_LDFLAGS := \
 	-static \
 	-Tlinker.ld
 
-override C_FILES := $(shell find -L ./ -type f -name '*.c')
-override ASM_FILES := $(shell find -L ./ -type f -name '*.asm')
+override C_FILES := $(shell find ./ -type f -name '*.c')
+override ASM_FILES := $(shell find ./ -type f -name '*.asm')
 override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o))
 override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.d))
 

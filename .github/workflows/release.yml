@@ -73,6 +73,9 @@ jobs:
       - name: Copy LICENSE to bin
         run: cp LICENSE.md build/bin/
 
+      - name: Copy install-sh to bin
+        run: cp install-sh build/bin/
+
       - name: Push binaries to binary branch
         run: |
           git config user.name 'mintsuki'

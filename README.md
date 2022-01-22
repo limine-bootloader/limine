@@ -91,7 +91,7 @@ paragraph, or `gcc` or `llvm/clang` must also be installed, alongside
 
 ### Configure
 
-If checking out from the repository, run `./autogen.sh` (GNU autoconf required),
+If checking out from the repository, run `./autogen.sh` (GNU automake and GNU autoconf required),
 else, if using a release tarball, run `./configure` directly.
 
 Both `./autogen.sh` and `./configure` take arguments and environment variables;

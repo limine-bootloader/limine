@@ -548,7 +548,8 @@ ntfs-test:
 	sudo mkfs.ntfs `cat loopback_dev`p1
 	sudo mount `cat loopback_dev`p1 test_image
 	sudo mkdir test_image/boot
-	sudo cp -rv $(BINDIR)/* test/* test_image/boot/
+	sudo cp -rv $(BINDIR)/* test_image/boot/
+	sudo cp -rv test/* test_image/boot/
 	sync
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`

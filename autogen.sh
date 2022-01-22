@@ -2,7 +2,9 @@
 
 set -ex
 
-srcdir="$(realpath $(dirname "$0"))"
+origdir="$(pwd -P)"
+
+srcdir="$(dirname "$0")"
 test -z "$srcdir" && srcdir=.
 
 cd "$srcdir"
@@ -11,6 +13,8 @@ cd "$srcdir"
 [ -d reduced-gnu-efi ] || git clone https://github.com/limine-bootloader/reduced-gnu-efi.git
 
 autoconf
+
+cd "$origdir"
 
 if test -z "$NOCONFIGURE"; then
     exec "$srcdir"/configure "$@"

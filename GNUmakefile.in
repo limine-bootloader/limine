@@ -51,25 +51,61 @@ ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_CC) ; ), )
 override LIMINE_CC := $(CC)
 endif
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_LD) ; ), )
+override LIMINE_LD := gld
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_LD) ; ), )
 override LIMINE_LD := ld.bfd
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_LD) ; ), )
+override LIMINE_LD := /usr/local/bin/ld
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_LD) ; ), )
 override LIMINE_LD := ld
 endif
 endif
+endif
+endif
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AR) ; ), )
+override LIMINE_AR := gar
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AR) ; ), )
+override LIMINE_AR := /usr/local/bin/ar
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AR) ; ), )
 override LIMINE_AR := ar
 endif
+endif
+endif
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AS) ; ), )
+override LIMINE_AS := gas
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AS) ; ), )
+override LIMINE_AS := /usr/local/bin/as
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AS) ; ), )
 override LIMINE_AS := as
 endif
+endif
+endif
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJCOPY) ; ), )
+override LIMINE_OBJCOPY := gobjcopy
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJCOPY) ; ), )
+override LIMINE_OBJCOPY := /usr/local/bin/objcopy
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJCOPY) ; ), )
 override LIMINE_OBJCOPY := objcopy
 endif
+endif
+endif
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJDUMP) ; ), )
+override LIMINE_OBJDUMP := gobjdump
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJDUMP) ; ), )
+override LIMINE_OBJDUMP := /usr/local/bin/objdump
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJDUMP) ; ), )
 override LIMINE_OBJDUMP := objdump
 endif
+endif
+endif
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_READELF) ; ), )
+override LIMINE_READELF := greadelf
+ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_READELF) ; ), )
+override LIMINE_READELF := /usr/local/bin/readelf
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_READELF) ; ), )
 override LIMINE_READELF := readelf
+endif
+endif
 endif
 
 export LIMINE_CC
@@ -101,14 +137,34 @@ ifneq ($(MAKECMDGOALS), install)
 ifneq ($(MAKECMDGOALS), install-data)
 ifneq ($(MAKECMDGOALS), install-strip)
 
-override USING_GNU_LD := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_LD) --version | grep Binutils >/dev/null && echo 1)
+override USING_GNU_LD := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_LD) --version | grep 'GNU Binutils' >/dev/null && echo 1)
 ifneq ($(USING_GNU_LD), 1)
 $(error The specified LIMINE_LD linker ($(LIMINE_LD)) is not the GNU linker)
 endif
 
-override USING_GNU_OBJCOPY := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_OBJCOPY) --version | grep Binutils >/dev/null && echo 1)
+override USING_GNU_AR := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_AR) --version | grep 'GNU Binutils' >/dev/null && echo 1)
+ifneq ($(USING_GNU_AR), 1)
+$(error The specified LIMINE_AR archiver ($(LIMINE_AR)) is not the GNU archiver)
+endif
+
+override USING_GNU_AS := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_AS) --version | grep 'GNU Binutils' >/dev/null && echo 1)
+ifneq ($(USING_GNU_AS), 1)
+$(error The specified LIMINE_AS assembler ($(LIMINE_AS)) is not the GNU assembler)
+endif
+
+override USING_GNU_OBJCOPY := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_OBJCOPY) --version | grep 'GNU Binutils' >/dev/null && echo 1)
 ifneq ($(USING_GNU_OBJCOPY), 1)
 $(error The specified LIMINE_OBJCOPY ($(LIMINE_OBJCOPY)) is not GNU objcopy)
+endif
+
+override USING_GNU_OBJDUMP := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_OBJDUMP) --version | grep 'GNU Binutils' >/dev/null && echo 1)
+ifneq ($(USING_GNU_OBJDUMP), 1)
+$(error The specified LIMINE_OBJDUMP ($(LIMINE_OBJDUMP)) is not GNU objdump)
+endif
+
+override USING_GNU_READELF := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_READELF) --version | grep 'GNU Binutils' >/dev/null && echo 1)
+ifneq ($(USING_GNU_READELF), 1)
+$(error The specified LIMINE_READELF ($(LIMINE_READELF)) is not GNU readelf)
 endif
 
 ifneq ($(CC_MACHINE), x86_64)
@@ -132,7 +188,7 @@ ifeq ($(USING_CLANG), 1)
 override LIMINE_CC := $(ORIG_LIMINE_CC)
 endif
 
-override STAGE1_FILES := $(shell find -L '$(call SHESCAPE,$(SRCDIR))/stage1' -type f -name '*.asm')
+override STAGE1_FILES := $(shell find '$(call SHESCAPE,$(SRCDIR))/stage1' -type f -name '*.asm')
 
 .PHONY: all
 all: limine-uefi limine-bios

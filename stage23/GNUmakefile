@@ -2,7 +2,7 @@ TARGET ?=
 BUILDDIR ?=
 USING_CLANG ?= 0
 
-override SRCDIR := $(shell pwd)
+override SRCDIR := $(shell pwd -P)
 
 override SPACE := $(subst ,, )
 
@@ -150,22 +150,22 @@ endif
 
 .PHONY: all clean
 
-override C_FILES := $(shell find -L ./ -type f -name '*.c')
+override C_FILES := $(shell find ./ -type f -name '*.c')
 ifeq ($(TARGET), bios)
-override ASM32_FILES := $(shell find -L ./ -type f -name '*.asm32')
-override ASMB_FILES := $(shell find -L ./ -type f -name '*.asmb')
+override ASM32_FILES := $(shell find ./ -type f -name '*.asm32')
+override ASMB_FILES := $(shell find ./ -type f -name '*.asmb')
 
 override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM32_FILES:.asm32=.o) $(ASMB_FILES:.asmb=.o) $(C_FILES:.c=.o))
 endif
 ifeq ($(TARGET), uefi64)
-override ASM64_FILES := $(shell find -L ./ -type f -name '*.asm64')
-override ASM64U_FILES := $(shell find -L ./ -type f -name '*.asm64u')
+override ASM64_FILES := $(shell find ./ -type f -name '*.asm64')
+override ASM64U_FILES := $(shell find ./ -type f -name '*.asm64u')
 
 override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM64_FILES:.asm64=.o) $(ASM64U_FILES:.asm64u=.o) $(C_FILES:.c=.o))
 endif
 ifeq ($(TARGET), uefi32)
-override ASM32_FILES := $(shell find -L ./ -type f -name '*.asm32')
-override ASM32U_FILES := $(shell find -L ./ -type f -name '*.asm32u')
+override ASM32_FILES := $(shell find ./ -type f -name '*.asm32')
+override ASM32U_FILES := $(shell find ./ -type f -name '*.asm32u')
 
 override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM32_FILES:.asm32=.o) $(ASM32U_FILES:.asm32u=.o) $(C_FILES:.c=.o))
 endif

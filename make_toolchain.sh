@@ -2,7 +2,7 @@
 
 set -ex
 
-srcdir="$(realpath $(dirname "$0"))"
+srcdir="$(dirname "$0")"
 test -z "$srcdir" && srcdir=.
 
 cd "$srcdir"
@@ -15,6 +15,12 @@ if command -v gmake; then
     export MAKE=gmake
 else
     export MAKE=make
+fi
+
+if command -v gtar; then
+    export TAR=gtar
+else
+    export TAR=tar
 fi
 
 export CFLAGS="-O2 -pipe"
@@ -30,9 +36,9 @@ if [ "$(uname)" = "OpenBSD" ]; then
 fi
 
 mkdir -p toolchain && cd toolchain
-PREFIX="$(pwd)"
+PREFIX="$(pwd -P)"
 
-export MAKEFLAGS="-j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)"
+export MAKEFLAGS="-j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || psrinfo -tc 2>/dev/null || echo 1)"
 
 export PATH="$PREFIX/bin:$PATH"
 
@@ -47,8 +53,8 @@ rm -rf build
 mkdir build
 cd build
 
-tar -zxf ../binutils-$BINUTILSVERSION.tar.gz
-tar -zxf ../gcc-$GCCVERSION.tar.gz
+$TAR -zxf ../binutils-$BINUTILSVERSION.tar.gz
+$TAR -zxf ../gcc-$GCCVERSION.tar.gz
 
 mkdir build-binutils
 cd build-binutils
@@ -58,7 +64,11 @@ $MAKE install
 cd ..
 
 cd gcc-$GCCVERSION
-contrib/download_prerequisites
+sed 's|http://gcc.gnu|https://gcc.gnu|g' < contrib/download_prerequisites > dp.sed
+mv dp.sed contrib/download_prerequisites
+chmod +x contrib/download_prerequisites
+rm dp.sed
+contrib/download_prerequisites --no-verify
 cd ..
 mkdir build-gcc
 cd build-gcc

@@ -72,7 +72,7 @@ This step can take a long time, but it will ensure that the toolchain will work
 with Limine. If on an x86_64 host, with GCC or Clang installed, you can skip to
 the next paragraph in order to use the system's toolchain instead.
 
-The toolchain's build process depends on the following packages: `GNU make`,
+The toolchain's build process depends on the following packages: `GNU make`, `GNU tar`,
 `curl`, `gzip`, `bzip2`, `gcc/clang`, `g++/clang++`.
 
 Building the toolchain can be accomplished by running:
@@ -91,8 +91,8 @@ paragraph, or `gcc` or `llvm/clang` must also be installed, alongside
 
 ### Configure
 
-If checking out from the repository, run `./autogen.sh`, else, if using a
-release tarball, run `./configure` directly.
+If checking out from the repository, run `./autogen.sh` (GNU autoconf required),
+else, if using a release tarball, run `./configure` directly.
 
 Both `./autogen.sh` and `./configure` take arguments and environment variables;
 for more information on these, run `./configure --help`.
@@ -119,7 +119,7 @@ release directory just fine. This step will only install them to a `share` and
 
 To install Limine, run:
 ```bash
-make install
+make install    # (or gmake where applicable)
 ```
 
 ## How to use

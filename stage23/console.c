@@ -23,10 +23,7 @@ static void console_help(void) {
 void console(void) {
     print("Welcome to the Limine console.\nType 'help' for more information.\n\n");
 
-    static char *prompt = NULL;
-    if (prompt == NULL) {
-        prompt = ext_mem_alloc(256);
-    }
+    char *prompt = ext_mem_alloc(256);
 
     for (;;) {
         print(">>> ");
@@ -51,4 +48,7 @@ void console(void) {
             print("Invalid command: `%s`.\n", prompt);
         }
     }
+
+    reset_term();
+    pmm_free(prompt, 256);
 }

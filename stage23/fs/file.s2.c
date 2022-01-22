@@ -5,6 +5,7 @@
 #include <fs/ext2.h>
 #include <fs/fat32.h>
 #include <fs/iso9660.h>
+#include <fs/ntfs.h>
 #include <lib/print.h>
 #include <lib/blib.h>
 #include <mm/pmm.h>
@@ -99,6 +100,21 @@ struct file_handle *fopen(struct volume *part, const char *filename) {
         ret->fd = (void *)fd;
         ret->read = (void *)fat32_read;
         ret->close = (void *)fat32_close;
+        ret->size = fd->size_bytes;
+
+        return ret;
+    }
+
+    if (ntfs_check_signature(part)) {
+        struct ntfs_file_handle *fd = ext_mem_alloc(sizeof(struct ntfs_file_handle));
+
+        if (!ntfs_open(fd, part, filename)) {
+            goto fail;
+        }
+
+        ret->fd = (void *)fd;
+        ret->read = (void *)ntfs_read;
+        ret->close = (void *)ntfs_close;
         ret->size = fd->size_bytes;
 
         return ret;

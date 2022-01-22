@@ -42,11 +42,17 @@ struct ntfs_file_handle {
     uint64_t mft_offset;
     uint8_t mft_run_list[256];
 
-    // the runlist, resident index and attribute list of the 
-    // current open file/directory
+    // the runlist of the open file/directory
     uint8_t run_list[128];
+
+    // The resident index, only for directories,
+    // could be at the same time as a runlist
     uint8_t resident_index_size;
     uint8_t resident_index[256];
+
+    // the resident data 
+    uint8_t resident_data_size;
+    uint8_t resident_data[256];
 
     // info about the current file
     uint32_t size_bytes;
@@ -54,7 +60,8 @@ struct ntfs_file_handle {
 
 int ntfs_check_signature(struct volume *part);
 
-int ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *path);
+bool ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *path);
 int ntfs_read(struct ntfs_file_handle *file, void *buf, uint64_t loc, uint64_t count);
+void ntfs_close(struct ntfs_file_handle *file);
 
 #endif

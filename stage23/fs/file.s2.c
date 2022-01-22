@@ -114,7 +114,7 @@ struct file_handle *fopen(struct volume *part, const char *filename) {
 
         ret->fd = (void *)fd;
         ret->read = (void *)ntfs_read;
-        //ret->close = (void *)ntfs_close;
+        ret->close = (void *)ntfs_close;
         ret->size = fd->size_bytes;
 
         return ret;

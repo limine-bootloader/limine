@@ -1,4 +1,5 @@
 CC ?= cc
+INSTALL ?= ./install-sh
 
 PREFIX ?= /usr/local
 DESTDIR ?=
@@ -10,16 +11,16 @@ all: limine-install
 
 .PHONY: install
 install: all
-	install -d '$(DESTDIR)$(PREFIX)/bin'
-	install -s limine-install '$(DESTDIR)$(PREFIX)/bin/'
-	install -d '$(DESTDIR)$(PREFIX)/share'
-	install -d '$(DESTDIR)$(PREFIX)/share/limine'
-	install -m 644 limine.sys '$(DESTDIR)$(PREFIX)/share/limine/'
-	install -m 644 limine-cd.bin '$(DESTDIR)$(PREFIX)/share/limine/'
-	install -m 644 limine-eltorito-efi.bin '$(DESTDIR)$(PREFIX)/share/limine/'
-	install -m 644 limine-pxe.bin '$(DESTDIR)$(PREFIX)/share/limine/'
-	install -m 644 BOOTX64.EFI '$(DESTDIR)$(PREFIX)/share/limine/'
-	install -m 644 BOOTIA32.EFI '$(DESTDIR)$(PREFIX)/share/limine/'
+	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/bin'
+	$(INSTALL) -s limine-install '$(DESTDIR)$(PREFIX)/bin/'
+	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/share'
+	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/share/limine'
+	$(INSTALL) -m 644 limine.sys '$(DESTDIR)$(PREFIX)/share/limine/'
+	$(INSTALL) -m 644 limine-cd.bin '$(DESTDIR)$(PREFIX)/share/limine/'
+	$(INSTALL) -m 644 limine-eltorito-efi.bin '$(DESTDIR)$(PREFIX)/share/limine/'
+	$(INSTALL) -m 644 limine-pxe.bin '$(DESTDIR)$(PREFIX)/share/limine/'
+	$(INSTALL) -m 644 BOOTX64.EFI '$(DESTDIR)$(PREFIX)/share/limine/'
+	$(INSTALL) -m 644 BOOTIA32.EFI '$(DESTDIR)$(PREFIX)/share/limine/'
 
 .PHONY: clean
 clean:

@@ -5,6 +5,7 @@ AC_PREREQ(2.69)
 AC_SUBST(limine_version, m4_esyscmd([./version.sh]))
 
 AC_PROG_CC
+AC_PROG_INSTALL
 
 AC_ARG_VAR(TOOLCHAIN, [Alternative toolchain prefix [limine]])
 test "x$TOOLCHAIN" = "x" && TOOLCHAIN='limine'

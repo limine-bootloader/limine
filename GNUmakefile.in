@@ -30,6 +30,9 @@ CC := @CC@
 endif
 export CC
 
+INSTALL ?= @INSTALL@
+export INSTALL
+
 CFLAGS ?= @CFLAGS@
 export CFLAGS
 
@@ -205,24 +208,24 @@ clean: limine-bios-clean limine-uefi32-clean limine-uefi64-clean
 
 .PHONY: install-data
 install-data:
-	install -d '$(DESTDIR)$(PREFIX)/share'
-	install -d '$(DESTDIR)$(PREFIX)/share/limine'
-	install -m 644 '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(DESTDIR)$(PREFIX)/share/limine/' || true
-	install -m 644 '$(call SHESCAPE,$(BINDIR))/limine-cd.bin' '$(DESTDIR)$(PREFIX)/share/limine/' || true
-	install -m 644 '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' '$(DESTDIR)$(PREFIX)/share/limine/' || true
-	install -m 644 '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin' '$(DESTDIR)$(PREFIX)/share/limine/' || true
-	install -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(DESTDIR)$(PREFIX)/share/limine/' || true
-	install -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(DESTDIR)$(PREFIX)/share/limine/' || true
+	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/share'
+	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/share/limine'
+	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(DESTDIR)$(PREFIX)/share/limine/' || true
+	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-cd.bin' '$(DESTDIR)$(PREFIX)/share/limine/' || true
+	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' '$(DESTDIR)$(PREFIX)/share/limine/' || true
+	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin' '$(DESTDIR)$(PREFIX)/share/limine/' || true
+	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(DESTDIR)$(PREFIX)/share/limine/' || true
+	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(DESTDIR)$(PREFIX)/share/limine/' || true
 
 .PHONY: install-strip
 install-strip: install-data
-	install -d '$(DESTDIR)$(PREFIX)/bin'
-	install -s '$(call SHESCAPE,$(BINDIR))/limine-install' '$(DESTDIR)$(PREFIX)/bin/' || true
+	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/bin'
+	$(INSTALL) -s '$(call SHESCAPE,$(BINDIR))/limine-install' '$(DESTDIR)$(PREFIX)/bin/' || true
 
 .PHONY: install
 install: install-data
-	install -d '$(DESTDIR)$(PREFIX)/bin'
-	install '$(call SHESCAPE,$(BINDIR))/limine-install' '$(DESTDIR)$(PREFIX)/bin/' || true
+	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/bin'
+	$(INSTALL) '$(call SHESCAPE,$(BINDIR))/limine-install' '$(DESTDIR)$(PREFIX)/bin/' || true
 
 .PHONY: uninstall
 uninstall:
@@ -301,7 +304,7 @@ distclean: clean
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf stivale reduced-gnu-efi configure *'~' autom4te.cache *.tar.xz
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf stivale reduced-gnu-efi configure install-sh *'~' autom4te.cache *.tar.xz
 
 .PHONY: stage23-uefi64
 stage23-uefi64: $(call MKESCAPE,$(SRCDIR))/stivale

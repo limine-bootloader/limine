@@ -208,7 +208,8 @@ static bool device_cache_block(uint64_t block) {
     return true;
 }
 
-static bool _device_read(void *buffer, uint64_t loc, size_t count) {
+static bool _device_read(void *_buffer, uint64_t loc, size_t count) {
+    uint8_t *buffer = _buffer;
     uint64_t progress = 0;
     while (progress < count) {
         uint64_t block = (loc + progress) / block_size;
@@ -230,7 +231,8 @@ static bool _device_read(void *buffer, uint64_t loc, size_t count) {
     return true;
 }
 
-static bool _device_write(const void *buffer, uint64_t loc, size_t count) {
+static bool _device_write(const void *_buffer, uint64_t loc, size_t count) {
+    const uint8_t *buffer = _buffer;
     uint64_t progress = 0;
     while (progress < count) {
         uint64_t block = (loc + progress) / block_size;

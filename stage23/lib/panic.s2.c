@@ -41,11 +41,15 @@ noreturn void panic(bool allow_menu, const char *fmt, ...) {
         term_fallback();
     }
 
+#if bios == 1
     if (stage3_loaded) {
+#endif
         print("\033[31mPANIC\033[37;1m\033[0m: ");
+#if bios == 1
     } else {
         print("PANIC: ");
     }
+#endif
     vprint(fmt, args);
 
     va_end(args);

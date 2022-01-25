@@ -49,7 +49,6 @@ static bool stage3_init(struct volume *part) {
     stage3_found = true;
 
     if (stage3->size != (size_t)limine_sys_size) {
-        term_textmode();
         print("limine.sys size incorrect.\n");
         return false;
     }
@@ -61,7 +60,6 @@ static bool stage3_init(struct volume *part) {
     fclose(stage3);
 
     if (memcmp(build_id_s2 + 16, build_id_s3 + 16, 20) != 0) {
-        term_textmode();
         print("limine.sys build ID mismatch.\n");
         return false;
     }
@@ -81,8 +79,6 @@ noreturn void entry(uint8_t boot_drive, int boot_from) {
     // XXX DO NOT MOVE A20 ENABLE CALL
     if (!a20_enable())
         panic(false, "Could not enable A20 line");
-
-    term_notready();
 
     struct rm_regs r = {0};
     r.eax = 0x0003;
@@ -112,7 +108,6 @@ noreturn void entry(uint8_t boot_drive, int boot_from) {
     );
 
     if (!stage3_found) {
-        term_textmode();
         print("\n"
               "!! Stage 3 file not found!\n"
               "!! Have you copied limine.sys to the root or /boot directories of\n"

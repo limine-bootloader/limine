@@ -127,6 +127,8 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 #endif
 
 noreturn void stage3_common(void) {
+    term_notready();
+
     init_flush_irqs();
     init_io_apics();
 

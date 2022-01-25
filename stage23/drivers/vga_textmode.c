@@ -15,7 +15,7 @@
 #define VD_COLS (80 * 2)
 #define VD_ROWS 25
 
-static uint8_t *video_mem = (uint8_t *)0xb8000;
+static volatile uint8_t *video_mem = (uint8_t *)0xb8000;
 
 static uint8_t *back_buffer = NULL;
 static uint8_t *front_buffer = NULL;

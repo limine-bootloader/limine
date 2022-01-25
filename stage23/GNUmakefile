@@ -48,6 +48,7 @@ override INTERNAL_CFLAGS := \
 	-ffreestanding \
 	-fno-stack-protector \
 	-fno-omit-frame-pointer \
+	-fno-strict-aliasing \
 	-fno-lto \
 	-nostdinc \
 	-Wno-address-of-packed-member \

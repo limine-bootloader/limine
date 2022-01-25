@@ -21,7 +21,11 @@ noreturn void panic(bool allow_menu, const char *fmt, ...) {
 
     quiet = false;
 
-    if (term_backend == NOT_READY) {
+    if (
+#if bios == 1
+      stage3_loaded == true &&
+#endif
+      term_backend == NOT_READY) {
 #if bios == 1
         term_textmode();
 #elif uefi == 1
@@ -29,11 +33,19 @@ noreturn void panic(bool allow_menu, const char *fmt, ...) {
 #endif
     }
 
-    if (term_backend == NOT_READY) {
+    if (
+#if bios == 1
+      stage3_loaded == true &&
+#endif
+      term_backend == NOT_READY) {
         term_fallback();
     }
 
-    print("\033[31mPANIC\033[37;1m\033[0m: ");
+    if (stage3_loaded) {
+        print("\033[31mPANIC\033[37;1m\033[0m: ");
+    } else {
+        print("PANIC: ");
+    }
     vprint(fmt, args);
 
     va_end(args);

@@ -36,6 +36,9 @@ SECTIONS
         getchar_internal = .;
         getchar = .;
         menu = .;
+        term_write = .;
+        term_textmode = .;
+        term_fallback = .;
         stage3_addr = .;
         data_begin = .;
     }

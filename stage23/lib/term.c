@@ -10,6 +10,8 @@
 #include <lib/print.h>
 #include <mm/pmm.h>
 
+extern void reset_term(void);
+
 bool early_term = false;
 
 void term_deinit(void) {

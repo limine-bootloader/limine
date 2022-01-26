@@ -39,7 +39,7 @@ pagemap_t new_pagemap(int lv) {
     return pagemap;
 }
 
-void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags, bool hugepages) {
+void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags, enum page_size pg_size) {
     // Calculate the indices in the various tables using the virtual address
     size_t pml5_entry = (virt_addr & ((uint64_t)0x1ff << 48)) >> 48;
     size_t pml4_entry = (virt_addr & ((uint64_t)0x1ff << 39)) >> 39;
@@ -67,7 +67,7 @@ level4:
     pml3 = get_next_level(pml4, pml4_entry);
     pml2 = get_next_level(pml3, pml3_entry);
 
-    if (hugepages) {
+    if (pg_size == Size2MiB) {
         pml2[pml2_entry] = (pt_entry_t)(phys_addr | flags | (1 << 7));
         return;
     }

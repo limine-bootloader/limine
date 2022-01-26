@@ -15,7 +15,8 @@ typedef struct {
 
 enum page_size {
     Size4KiB,
-    Size2MiB
+    Size2MiB,
+    Size1GiB
 };
 
 void vmm_assert_nx(void);

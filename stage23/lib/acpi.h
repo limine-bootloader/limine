@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define EBDA ((size_t)(*((uint16_t *)0x40e)) * 16)
+#define EBDA ((size_t)(*((volatile uint16_t *)0x40e)) * 16)
 
 struct sdt {
     char     signature[4];
@@ -53,7 +53,7 @@ struct smbios_entry_point_32 {
     char formatted_area[5];
 
     char intermediate_anchor_str[5];
-    /// Checksum for values from intermediate anchor str to the 
+    /// Checksum for values from intermediate anchor str to the
     /// end of table.
     uint8_t intermediate_checksum;
     /// Total length of SMBIOS Structure Table, pointed to by the structure

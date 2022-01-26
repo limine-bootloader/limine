@@ -37,9 +37,9 @@ test "x$LIMINE_OBJDUMP" = "x" && LIMINE_OBJDUMP='$(TOOLCHAIN)-objdump'
 AC_ARG_VAR(LIMINE_READELF, [Readelf command for Limine [$(TOOLCHAIN)-readelf]])
 test "x$LIMINE_READELF" = "x" && LIMINE_READELF='$(TOOLCHAIN)-readelf'
 
-werror_state="yes"
+werror_state="no"
 AC_ARG_ENABLE([werror],
-    AS_HELP_STRING([--disable-werror], [do not treat warnings as errors]),
+    AS_HELP_STRING([--enable-werror], [treat warnings as errors]),
     werror_state="$enableval")
 
 if test "$werror_state" = "yes"; then

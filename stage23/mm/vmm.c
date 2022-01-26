@@ -65,6 +65,12 @@ level5:
     pml4 = get_next_level(pml5, pml5_entry);
 level4:
     pml3 = get_next_level(pml4, pml4_entry);
+
+    if (pg_size == Size1GiB) {
+        pml3[pml3_entry] = (pt_entry_t)(phys_addr | flags | (1 << 7));
+        return;
+    }
+
     pml2 = get_next_level(pml3, pml3_entry);
 
     if (pg_size == Size2MiB) {

@@ -40,7 +40,7 @@ pagemap_t new_pagemap(int lv) {
     return pagemap;
 }
 
-static bool is_1gib_page_supported() {
+static bool is_1gib_page_supported(void) {
     // Cache the cpuid result :^)
     static bool CACHE_INIT = false;
     static bool CACHE = false;

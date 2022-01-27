@@ -385,8 +385,8 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
 
     if (ranges_count == 0) {
         // Map 0 to 2GiB at 0xffffffff80000000
-        for (uint64_t i = 0; i < 0x80000000; i += 0x200000) {
-            map_page(pagemap, 0xffffffff80000000 + i, i, 0x03, Size2MiB);
+        for (uint64_t i = 0; i < 0x80000000; i += 0x40000000) {
+            map_page(pagemap, 0xffffffff80000000 + i, i, 0x03, Size1GiB);
         }
     } else {
         for (size_t i = 0; i < ranges_count; i++) {

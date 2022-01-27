@@ -3,6 +3,7 @@
 #include <mm/vmm.h>
 #include <mm/pmm.h>
 #include <lib/blib.h>
+#include <lib/print.h>
 #include <sys/cpu.h>
 
 #define PT_SIZE ((uint64_t)0x1000)

@@ -421,9 +421,25 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
     }
 
     // Map 2MiB to 4GiB at higher half base and 0
-    for (uint64_t i = 0x200000; i < 0x100000000; i += 0x200000) {
+    //
+    // NOTE: We cannot just directly map from 2MiB to 4GiB with 1GiB
+    // pages because if you do the math.
+    //
+    //     start = 0x200000
+    //     end   = 0x40000000
+    //     
+    //     pages_required = (end - start) / (4096 * 512 * 512)
+    //
+    // So we map 2MiB to 1GiB with 2MiB pages and then map the rest
+    // with 1GiB pages :^)
+    for (uint64_t i = 0x200000; i < 0x40000000; i += 0x200000) {
         map_page(pagemap, i, i, 0x03, Size2MiB);
         map_page(pagemap, direct_map_offset + i, i, 0x03, Size2MiB);
+    }
+
+    for (uint64_t i = 0x40000000; i < 0x100000000; i += 0x40000000) {
+        map_page(pagemap, i, i, 0x03, Size1GiB);
+        map_page(pagemap, direct_map_offset + i, i, 0x03, Size1GiB);
     }
 
     size_t _memmap_entries = memmap_entries;

@@ -33,3 +33,4 @@ stage23-uefi32
 stage23-uefi64
 decompressor-build
 stage1.stamp
+incbin

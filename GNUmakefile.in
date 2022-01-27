@@ -196,15 +196,30 @@ override STAGE1_FILES := $(shell find '$(call SHESCAPE,$(SRCDIR))/stage1' -type 
 .PHONY: all
 all: limine-uefi limine-bios
 
+$(call MKESCAPE,$(BUILDDIR))/incbin/incbin: $(call MKESCAPE,$(SRCDIR))/incbin/incbin.c
+	mkdir -p '$(call SHESCAPE,$(BUILDDIR))/incbin'
+	$(CC) $(CFLAGS) '$(call SHESCAPE,$(SRCDIR))/incbin/incbin.c' -o '$(call SHESCAPE,$(BUILDDIR))/incbin/incbin'
+
+.PHONY: limine-hdd.h
+limine-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-hdd.h
+
+$(call MKESCAPE,$(BINDIR))/incbin.h: $(call MKESCAPE,$(SRCDIR))/incbin/incbin.h
+	cp '$(call SHESCAPE,$(SRCDIR))/incbin/incbin.h' '$(call SHESCAPE,$(BINDIR))/incbin.h'
+
+$(call MKESCAPE,$(BINDIR))/limine-hdd.h: $(call MKESCAPE,$(BINDIR))/incbin.h $(call MKESCAPE,$(BUILDDIR))/incbin/incbin $(call MKESCAPE,$(BINDIR))/limine-hdd.bin
+	cd '$(call SHESCAPE,$(BINDIR))' && \
+		'$(call SHESCAPE,$(BUILDDIR))/incbin/incbin' -p _binary_ -Ssnake limine-install.c -o limine-hdd.h
+
 .PHONY: limine-install
 limine-install:
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(SRCDIR))/limine-install/'* '$(call SHESCAPE,$(SRCDIR))/limine-install/.gitignore' '$(call SHESCAPE,$(BINDIR))/'
+	$(MAKE) limine-hdd.h
 	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))'
 
 .PHONY: clean
 clean: limine-bios-clean limine-uefi32-clean limine-uefi64-clean
-	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
+	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp' '$(call SHESCAPE,$(BUILDDIR))/incbin'
 
 .PHONY: install-data
 install-data:

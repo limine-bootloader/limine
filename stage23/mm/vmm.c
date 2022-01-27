@@ -52,7 +52,7 @@ static bool is_1gib_page_supported(void) {
         CACHE = cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) && ((edx & 1 << 26) == 1 << 26);
         CACHE_INIT = true;
 
-        print("paging: 1GiB pages are %s!\n", CACHE ? "supported" : "not supported");
+        printv("paging: 1GiB pages are %s!\n", CACHE ? "supported" : "not supported");
     }
 
     return CACHE;

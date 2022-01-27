@@ -61,6 +61,19 @@ static void ap_entry(struct stivale2_smp_info *s) {
     for (;;) asm("hlt");
 }
 
+static void print_guid(struct stivale2_guid guid) {
+    e9_printf("\t\ta: %x", guid.a);
+    e9_printf("\t\tb: %x", guid.b);
+    e9_printf("\t\tc: %x", guid.c);
+    e9_puts("\t\td: [");
+
+    for (uint8_t i = 0; i < 8; i++) {
+        e9_printf("\t\t\t%x,", guid.d[i]);
+    }
+
+    e9_puts("\t\t]\n");
+}
+
 void stivale2_main(struct stivale2_struct *info) {
     // Print the tags.
     struct stivale2_tag *tag = (struct stivale2_tag *)info->tags;
@@ -223,6 +236,15 @@ void stivale2_main(struct stivale2_struct *info) {
                 e9_puts("Kernel base address:");
                 e9_printf("\tPhysical base address: %x", t->physical_base_address);
                 e9_printf("\tVirtual base address:  %x", t->virtual_base_address);
+                break;
+            }
+            case STIVALE2_STRUCT_TAG_BOOT_VOLUME_ID: {
+                struct stivale2_struct_tag_boot_volume *t = (void *)tag;
+                e9_puts("Boot volume:");
+                e9_printf("\tGUID:");
+                print_guid(t->guid);
+                e9_printf("\tPartition GUID:");
+                print_guid(t->part_guid);
                 break;
             }
             case STIVALE2_STRUCT_TAG_SMP_ID: {

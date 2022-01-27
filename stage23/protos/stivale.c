@@ -385,8 +385,8 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
 
     if (ranges_count == 0) {
         // Map 0 to 2GiB at 0xffffffff80000000
-        for (uint64_t i = 0; i < 0x80000000; i += 0x200000) {
-            map_page(pagemap, 0xffffffff80000000 + i, i, 0x03, true);
+        for (uint64_t i = 0; i < 0x80000000; i += 0x40000000) {
+            map_page(pagemap, 0xffffffff80000000 + i, i, 0x03, Size1GiB);
         }
     } else {
         for (size_t i = 0; i < ranges_count; i++) {
@@ -408,7 +408,7 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
                 (ranges[i].permissions & ELF_PF_W ? VMM_FLAG_WRITE : 0);
 
             for (uint64_t j = 0; j < ranges[i].length; j += 0x1000) {
-                map_page(pagemap, virt + j, phys + j, pf, false);
+                map_page(pagemap, virt + j, phys + j, pf, Size4KiB);
             }
         }
     }
@@ -416,14 +416,30 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
     // Sub 2MiB mappings
     for (uint64_t i = 0; i < 0x200000; i += 0x1000) {
         if (!(i == 0 && unmap_null))
-            map_page(pagemap, i, i, 0x03, false);
-        map_page(pagemap, direct_map_offset + i, i, 0x03, false);
+            map_page(pagemap, i, i, 0x03, Size4KiB);
+        map_page(pagemap, direct_map_offset + i, i, 0x03, Size4KiB);
     }
 
     // Map 2MiB to 4GiB at higher half base and 0
-    for (uint64_t i = 0x200000; i < 0x100000000; i += 0x200000) {
-        map_page(pagemap, i, i, 0x03, true);
-        map_page(pagemap, direct_map_offset + i, i, 0x03, true);
+    //
+    // NOTE: We cannot just directly map from 2MiB to 4GiB with 1GiB
+    // pages because if you do the math.
+    //
+    //     start = 0x200000
+    //     end   = 0x40000000
+    //     
+    //     pages_required = (end - start) / (4096 * 512 * 512)
+    //
+    // So we map 2MiB to 1GiB with 2MiB pages and then map the rest
+    // with 1GiB pages :^)
+    for (uint64_t i = 0x200000; i < 0x40000000; i += 0x200000) {
+        map_page(pagemap, i, i, 0x03, Size2MiB);
+        map_page(pagemap, direct_map_offset + i, i, 0x03, Size2MiB);
+    }
+
+    for (uint64_t i = 0x40000000; i < 0x100000000; i += 0x40000000) {
+        map_page(pagemap, i, i, 0x03, Size1GiB);
+        map_page(pagemap, direct_map_offset + i, i, 0x03, Size1GiB);
     }
 
     size_t _memmap_entries = memmap_entries;
@@ -450,8 +466,8 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
 
         for (uint64_t j = 0; j < aligned_length; j += 0x200000) {
             uint64_t page = aligned_base + j;
-            map_page(pagemap, page, page, 0x03, true);
-            map_page(pagemap, direct_map_offset + page, page, 0x03, true);
+            map_page(pagemap, page, page, 0x03, Size2MiB);
+            map_page(pagemap, direct_map_offset + page, page, 0x03, Size2MiB);
         }
     }
 

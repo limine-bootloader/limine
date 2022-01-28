@@ -48,11 +48,16 @@ struct ntfs_file_handle {
     // The resident index, only for directories,
     // could be at the same time as a runlist
     uint8_t resident_index_size;
-    uint8_t resident_index[256];
-
+    
     // the resident data 
     uint8_t resident_data_size;
-    uint8_t resident_data[256];
+
+    // we are using a union just for having different names, these
+    // won't have need to be used at the same time
+    union {
+        uint8_t resident_index[1024];
+        uint8_t resident_data[1024];
+    };
 
     // info about the current file
     uint32_t size_bytes;

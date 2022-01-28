@@ -135,6 +135,7 @@ ifneq ($(MAKECMDGOALS), maintainer-clean)
 ifneq ($(MAKECMDGOALS), uninstall)
 ifneq ($(MAKECMDGOALS), dist)
 ifneq ($(MAKECMDGOALS), limine-install)
+ifneq ($(MAKECMDGOALS), limine-hdd.h)
 ifneq ($(MAKECMDGOALS), limine-eltorito-efi)
 ifneq ($(MAKECMDGOALS), install)
 ifneq ($(MAKECMDGOALS), install-data)
@@ -176,6 +177,7 @@ $(error No suitable x86_64 C compiler found, please install an x86_64 C toolchai
 endif
 endif
 
+endif
 endif
 endif
 endif

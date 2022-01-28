@@ -559,7 +559,7 @@ int main(int argc, char *argv[]) {
             gpt_header.partition_entry_array_crc32 = crc32_partition_array;
             gpt_header.number_of_partition_entries = new_partition_entry_count;
             gpt_header.crc32 = 0;
-            gpt_header.crc32 = crc32(&gpt_header, sizeof(struct gpt_table_header));
+            gpt_header.crc32 = crc32(&gpt_header, 92);
             device_write(&gpt_header,
                          lb_size,
                          sizeof(struct gpt_table_header));
@@ -568,8 +568,7 @@ int main(int argc, char *argv[]) {
             secondary_gpt_header.number_of_partition_entries =
                 new_partition_entry_count;
             secondary_gpt_header.crc32 = 0;
-            secondary_gpt_header.crc32 =
-                crc32(&secondary_gpt_header, sizeof(struct gpt_table_header));
+            secondary_gpt_header.crc32 = crc32(&secondary_gpt_header, 92);
             device_write(&secondary_gpt_header,
                          lb_size * gpt_header.alternate_lba,
                          sizeof(struct gpt_table_header));

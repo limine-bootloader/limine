@@ -316,6 +316,18 @@ void readline(const char *orig_str, char *buf, size_t limit) {
             case '\n':
                 term_write((uintptr_t)"\n", 1);
                 goto out;
+            case GETCHAR_END:
+                for (size_t j = 0; j < strlen(buf) - i; j++) {
+                    cursor_fwd();
+                }
+                i = strlen(buf);
+                continue;
+            case GETCHAR_HOME:
+                for (size_t j = 0; j < i; j++) {
+                    cursor_back();
+                }
+                i = 0;
+                continue;
             default: {
                 if (strlen(buf) < limit - 1 && isprint(c)) {
                     for (size_t j = strlen(buf); ; j--) {

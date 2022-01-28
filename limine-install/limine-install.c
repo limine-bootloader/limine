@@ -1,13 +1,3 @@
-#undef IS_WINDOWS
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
-#define IS_WINDOWS 1
-#endif
-
-#ifndef IS_WINDOWS
-#define _POSIX_C_SOURCE 200112L
-#define _FILE_OFFSET_BITS 64
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -15,13 +5,29 @@
 #include <stdbool.h>
 #include <string.h>
 #include <inttypes.h>
+#include <limits.h>
 
-static inline int seek_(FILE *stream, int64_t offset, int whence) {
-#ifdef IS_WINDOWS
-    return _fseeki64(stream, offset, whence);
-#else
-    return fseeko(stream, offset, whence);
-#endif
+static int set_pos(FILE *stream, uint64_t pos) {
+    if (sizeof(long) >= 8) {
+        return fseek(stream, (long)pos, SEEK_SET);
+    }
+
+    long jump_size = (LONG_MAX / 2) + 1;
+    long last_jump = pos % jump_size;
+    uint64_t jumps = pos / jump_size;
+
+    rewind(stream);
+
+    for (uint64_t i = 0; i < jumps; i++) {
+        if (fseek(stream, jump_size, SEEK_CUR) != 0) {
+            return -1;
+        }
+    }
+    if (fseek(stream, last_jump, SEEK_CUR) != 0) {
+        return -1;
+    }
+
+    return 0;
 }
 
 #define DIV_ROUNDUP(a, b) (((a) + ((b) - 1)) / (b))
@@ -142,10 +148,8 @@ static bool device_init(void) {
         }
         cache = tmp;
 
-        if (seek_(device, 0, SEEK_SET) == -1) {
-            perror("ERROR");
-            return false;
-        }
+        rewind(device);
+
         size_t ret = fread(cache, guesses[i], 1, device);
         if (ret != 1) {
             continue;
@@ -168,7 +172,7 @@ static bool device_flush_cache(void) {
     if (cache_state == CACHE_CLEAN)
         return true;
 
-    if (seek_(device, cached_block * block_size, SEEK_SET) == -1) {
+    if (set_pos(device, cached_block * block_size) != 0) {
         perror("ERROR");
         return false;
     }
@@ -192,7 +196,7 @@ static bool device_cache_block(uint64_t block) {
             return false;
     }
 
-    if (seek_(device, block * block_size, SEEK_SET) == -1) {
+    if (set_pos(device, block * block_size) != 0) {
         perror("ERROR");
         return false;
     }
@@ -279,13 +283,6 @@ int main(int argc, char *argv[]) {
     uint8_t *bootloader_img = (uint8_t *)_binary_limine_hdd_bin_data;
     size_t   bootloader_file_size = (size_t)_binary_limine_hdd_bin_size;
     uint8_t  orig_mbr[70], timestamp[6];
-
-#ifndef IS_WINDOWS
-    if (sizeof(off_t) != 8) {
-        fprintf(stderr, "ERROR: off_t type is not 64-bit.\n");
-        goto cleanup;
-    }
-#endif
 
     if (argc < 2) {
         printf("Usage: %s <device> [GPT partition index]\n", argv[0]);

@@ -219,7 +219,7 @@ limine-install:
 
 .PHONY: clean
 clean: limine-bios-clean limine-uefi32-clean limine-uefi64-clean
-	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp' '$(call SHESCAPE,$(BUILDDIR))/incbin'
+	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp' '$(call SHESCAPE,$(BUILDDIR))/incbin/incbin'
 
 .PHONY: install-data
 install-data:

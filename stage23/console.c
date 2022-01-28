@@ -13,6 +13,7 @@ static void console_help(void) {
     print(
         "Available commands:\n"
         "exit      -- Exit Limine console.\n"
+        "clear     -- Clears the console.\n"
         "editor    -- Open an empty boot entry editor.\n"
         "version   -- Print version.\n"
         "copyright -- Print copyright.\n"
@@ -33,6 +34,8 @@ void console(void) {
             console_help();
         } else if (strcmp(prompt, "exit") == 0) {
             break;
+        } else if (strcmp(prompt, "clear") == 0) {
+            reset_term();
         } else if (strcmp(prompt, "editor") == 0) {
             char *new_entry = config_entry_editor("New Entry", "");
             if (new_entry != NULL) {

@@ -1,5 +1,3 @@
-#define _FILE_OFFSET_BITS 64
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -7,12 +5,32 @@
 #include <stdbool.h>
 #include <string.h>
 #include <inttypes.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include <limits.h>
 
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
+#include "limine-hdd.h"
+
+static int set_pos(FILE *stream, uint64_t pos) {
+    if (sizeof(long) >= 8) {
+        return fseek(stream, (long)pos, SEEK_SET);
+    }
+
+    long jump_size = (LONG_MAX / 2) + 1;
+    long last_jump = pos % jump_size;
+    uint64_t jumps = pos / jump_size;
+
+    rewind(stream);
+
+    for (uint64_t i = 0; i < jumps; i++) {
+        if (fseek(stream, jump_size, SEEK_CUR) != 0) {
+            return -1;
+        }
+    }
+    if (fseek(stream, last_jump, SEEK_CUR) != 0) {
+        return -1;
+    }
+
+    return 0;
+}
 
 #define DIV_ROUNDUP(a, b) (((a) + ((b) - 1)) / (b))
 
@@ -38,7 +56,7 @@ struct gpt_table_header {
     uint32_t number_of_partition_entries;
     uint32_t size_of_partition_entry;
     uint32_t partition_entry_array_crc32;
-} __attribute__((packed));
+};
 
 struct gpt_entry {
     uint64_t partition_type_guid[2];
@@ -51,7 +69,7 @@ struct gpt_entry {
     uint64_t attributes;
 
     uint16_t partition_name[36];
-} __attribute__((packed));
+};
 
 // This table from https://web.mit.edu/freebsd/head/sys/libkern/crc32.c
 static const uint32_t crc32_table[] = {
@@ -118,7 +136,7 @@ static enum {
 } cache_state;
 static uint64_t cached_block;
 static uint8_t *cache  = NULL;
-static int      device = -1;
+static FILE    *device = NULL;
 static size_t   block_size;
 
 static bool device_init(void) {
@@ -132,24 +150,20 @@ static bool device_init(void) {
         }
         cache = tmp;
 
-        if (lseek(device, 0, SEEK_SET) == (off_t)-1) {
-            perror("ERROR");
-            return false;
-        }
-        ssize_t ret = read(device, cache, guesses[i]);
-        if (ret == -1) {
-            perror("ERROR");
-            return false;
-        }
-        block_size = ret;
+        rewind(device);
 
-        if (block_size == guesses[i]) {
-            fprintf(stderr, "Physical block size of %zu bytes.\n", block_size);
-
-            cache_state  = CACHE_CLEAN;
-            cached_block = 0;
-            return true;
+        size_t ret = fread(cache, guesses[i], 1, device);
+        if (ret != 1) {
+            continue;
         }
+
+        block_size = guesses[i];
+
+        fprintf(stderr, "Physical block size of %zu bytes.\n", block_size);
+
+        cache_state  = CACHE_CLEAN;
+        cached_block = 0;
+        return true;
     }
 
     fprintf(stderr, "ERROR: Couldn't determine block size of device.\n");
@@ -160,18 +174,14 @@ static bool device_flush_cache(void) {
     if (cache_state == CACHE_CLEAN)
         return true;
 
-    if (lseek(device, cached_block * block_size, SEEK_SET) == (off_t)-1) {
+    if (set_pos(device, cached_block * block_size) != 0) {
         perror("ERROR");
         return false;
     }
 
-    ssize_t ret = write(device, cache, block_size);
-    if (ret == -1) {
+    size_t ret = fwrite(cache, block_size, 1, device);
+    if (ret != 1) {
         perror("ERROR");
-        return false;
-    }
-    if ((size_t)ret != block_size) {
-        fprintf(stderr, "ERROR: Wrote back less bytes than cache size.\n");
         return false;
     }
 
@@ -188,18 +198,14 @@ static bool device_cache_block(uint64_t block) {
             return false;
     }
 
-    if (lseek(device, block * block_size, SEEK_SET) == (off_t)-1) {
+    if (set_pos(device, block * block_size) != 0) {
         perror("ERROR");
         return false;
     }
 
-    ssize_t ret = read(device, cache, block_size);
-    if (ret == -1) {
+    size_t ret = fread(cache, block_size, 1, device);
+    if (ret != 1) {
         perror("ERROR");
-        return false;
-    }
-    if ((size_t)ret != block_size) {
-        fprintf(stderr, "ERROR: Read back less bytes than cache size.\n");
         return false;
     }
 
@@ -267,20 +273,12 @@ static bool _device_write(const void *_buffer, uint64_t loc, size_t count) {
             goto cleanup;                       \
     } while (0)
 
-extern uint8_t _binary_limine_hdd_bin_start[], _binary_limine_hdd_bin_end[];
-
 int main(int argc, char *argv[]) {
     int      ok = 1;
     int      force_mbr = 0;
-    uint8_t *bootloader_img = _binary_limine_hdd_bin_start;
-    size_t   bootloader_file_size =
-        (size_t)_binary_limine_hdd_bin_end - (size_t)_binary_limine_hdd_bin_start;
+    const uint8_t *bootloader_img = _binary_limine_hdd_bin_data;
+    size_t   bootloader_file_size = sizeof(_binary_limine_hdd_bin_data);
     uint8_t  orig_mbr[70], timestamp[6];
-
-    if (sizeof(off_t) != 8) {
-        fprintf(stderr, "ERROR: off_t type is not 64-bit.\n");
-        goto cleanup;
-    }
 
     if (argc < 2) {
         printf("Usage: %s <device> [GPT partition index]\n", argv[0]);
@@ -293,8 +291,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    device = open(argv[1], O_RDWR | O_BINARY);
-    if (device == -1) {
+    device = fopen(argv[1], "r+b");
+    if (device == NULL) {
         perror("ERROR");
         goto cleanup;
     }
@@ -491,8 +489,8 @@ int main(int argc, char *argv[]) {
         } else {
             fprintf(stderr, "GPT partition NOT specified. Attempting GPT embedding.\n");
 
-            ssize_t max_partition_entry_used = -1;
-            for (ssize_t i = 0; i < (ssize_t)gpt_header.number_of_partition_entries; i++) {
+            int64_t max_partition_entry_used = -1;
+            for (int64_t i = 0; i < (int64_t)gpt_header.number_of_partition_entries; i++) {
                 struct gpt_entry gpt_entry;
                 device_read(&gpt_entry,
                     (gpt_header.partition_entry_lba * lb_size)
@@ -520,7 +518,7 @@ int main(int argc, char *argv[]) {
             size_t new_partition_entry_count =
                 new_partition_array_lba_size * partition_entries_per_lb;
 
-            if ((ssize_t)new_partition_entry_count <= max_partition_entry_used) {
+            if ((int64_t)new_partition_entry_count <= max_partition_entry_used) {
                 fprintf(stderr, "ERROR: Cannot embed because there are too many used partition entries.\n");
                 goto cleanup;
             }
@@ -561,7 +559,7 @@ int main(int argc, char *argv[]) {
             gpt_header.partition_entry_array_crc32 = crc32_partition_array;
             gpt_header.number_of_partition_entries = new_partition_entry_count;
             gpt_header.crc32 = 0;
-            gpt_header.crc32 = crc32(&gpt_header, sizeof(struct gpt_table_header));
+            gpt_header.crc32 = crc32(&gpt_header, 92);
             device_write(&gpt_header,
                          lb_size,
                          sizeof(struct gpt_table_header));
@@ -570,8 +568,7 @@ int main(int argc, char *argv[]) {
             secondary_gpt_header.number_of_partition_entries =
                 new_partition_entry_count;
             secondary_gpt_header.crc32 = 0;
-            secondary_gpt_header.crc32 =
-                crc32(&secondary_gpt_header, sizeof(struct gpt_table_header));
+            secondary_gpt_header.crc32 = crc32(&secondary_gpt_header, 92);
             device_write(&secondary_gpt_header,
                          lb_size * gpt_header.alternate_lba,
                          sizeof(struct gpt_table_header));
@@ -623,8 +620,8 @@ int main(int argc, char *argv[]) {
 cleanup:
     if (cache)
         free(cache);
-    if (device != -1)
-        close(device);
+    if (device != NULL)
+        fclose(device);
 
     return ok;
 }

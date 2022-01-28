@@ -11,11 +11,6 @@ cd "$srcdir"
 
 [ -d stivale ] || git clone https://github.com/stivale/stivale.git
 [ -d reduced-gnu-efi ] || git clone https://github.com/limine-bootloader/reduced-gnu-efi.git
-[ -d incbin ] || (
-    git clone https://github.com/graphitemaster/incbin.git
-    cd incbin
-    git checkout 6e576cae5ab5810f25e2631f2e0b80cbe7dc8cbf
-)
 
 automake --add-missing --copy || true
 autoconf

@@ -463,12 +463,14 @@ refresh:
             return NULL;
         default:
             if (strlen(buffer) < EDITOR_MAX_BUFFER_SIZE - 1) {
-                for (size_t i = strlen(buffer); ; i--) {
-                    buffer[i+1] = buffer[i];
-                    if (i == cursor_offset)
-                        break;
+                if (isprint(c) || c == '\n') {
+                    for (size_t i = strlen(buffer); ; i--) {
+                        buffer[i+1] = buffer[i];
+                        if (i == cursor_offset)
+                            break;
+                    }
+                    buffer[cursor_offset++] = c;
                 }
-                buffer[cursor_offset++] = c;
             } else {
                 display_overflow_error = true;
             }

@@ -317,7 +317,7 @@ void readline(const char *orig_str, char *buf, size_t limit) {
                 term_write((uintptr_t)"\n", 1);
                 goto out;
             default: {
-                if (strlen(buf) < limit - 1) {
+                if (strlen(buf) < limit - 1 && isprint(c)) {
                     for (size_t j = strlen(buf); ; j--) {
                         buf[j+1] = buf[j];
                         if (j == i)

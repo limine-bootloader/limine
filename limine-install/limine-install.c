@@ -7,6 +7,8 @@
 #include <inttypes.h>
 #include <limits.h>
 
+#include "limine-hdd.h"
+
 static int set_pos(FILE *stream, uint64_t pos) {
     if (sizeof(long) >= 8) {
         return fseek(stream, (long)pos, SEEK_SET);
@@ -271,17 +273,11 @@ static bool _device_write(const void *_buffer, uint64_t loc, size_t count) {
             goto cleanup;                       \
     } while (0)
 
-/* dummy incbin call so incbin generates the header
-INCBIN(limine_hdd_bin, "limine-hdd.bin");
-*/
-
-#include "limine-hdd.h"
-
 int main(int argc, char *argv[]) {
     int      ok = 1;
     int      force_mbr = 0;
     uint8_t *bootloader_img = (uint8_t *)_binary_limine_hdd_bin_data;
-    size_t   bootloader_file_size = (size_t)_binary_limine_hdd_bin_size;
+    size_t   bootloader_file_size = sizeof(_binary_limine_hdd_bin_data);
     uint8_t  orig_mbr[70], timestamp[6];
 
     if (argc < 2) {

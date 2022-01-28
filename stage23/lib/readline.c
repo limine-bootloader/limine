@@ -272,6 +272,7 @@ void readline(const char *orig_str, char *buf, size_t limit) {
     term_autoflush = false;
 
     size_t orig_str_len = strlen(orig_str);
+    memset(buf, 0, limit);
     memmove(buf, orig_str, orig_str_len);
     buf[orig_str_len] = 0;
 

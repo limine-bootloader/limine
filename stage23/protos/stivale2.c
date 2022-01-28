@@ -243,7 +243,13 @@ failed_to_load_header_section:
                 panic(true, "stivale2: Requested HHDM slide alignment is not a multiple of 2MiB");
             }
 
-            direct_map_offset += (rand64() & ~(slt->alignment - 1)) & 0xffffffffff;
+            // XXX: Assert that slt->alignment is not larger than 1GiB and ignore the value altogether.
+            //      This is required for 1GiB pages.
+            if (((uint64_t)0x40000000 % slt->alignment) != 0) {
+                panic(true, "stivale2: 1 GiB is not a multiple of HHDM slide alignment");
+            }
+
+            direct_map_offset += (rand64() & ~((uint64_t)0x40000000 - 1)) & 0xfffffffffff;
         }
     }
 

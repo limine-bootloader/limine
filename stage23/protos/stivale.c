@@ -427,7 +427,7 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
     //
     //     start = 0x200000
     //     end   = 0x40000000
-    //     
+    //
     //     pages_required = (end - start) / (4096 * 512 * 512)
     //
     // So we map 2MiB to 1GiB with 2MiB pages and then map the rest
@@ -460,14 +460,14 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
         if (base >= top)
             continue;
 
-        uint64_t aligned_base   = ALIGN_DOWN(base, 0x200000);
-        uint64_t aligned_top    = ALIGN_UP(top, 0x200000);
+        uint64_t aligned_base   = ALIGN_DOWN(base, 0x40000000);
+        uint64_t aligned_top    = ALIGN_UP(top, 0x40000000);
         uint64_t aligned_length = aligned_top - aligned_base;
 
-        for (uint64_t j = 0; j < aligned_length; j += 0x200000) {
+        for (uint64_t j = 0; j < aligned_length; j += 0x40000000) {
             uint64_t page = aligned_base + j;
-            map_page(pagemap, page, page, 0x03, Size2MiB);
-            map_page(pagemap, direct_map_offset + page, page, 0x03, Size2MiB);
+            map_page(pagemap, page, page, 0x03, Size1GiB);
+            map_page(pagemap, direct_map_offset + page, page, 0x03, Size1GiB);
         }
     }
 

@@ -170,8 +170,10 @@ static bool ntfs_get_file_record_attr(uint8_t* file_record, uint32_t attr_type, 
 
     while (true) {
         // TODO: don't check for the min size, but for the actual size...
-        if (cur_attr_ptr + sizeof(struct file_record_attr_header) > file_record + MIN_FILE_RECORD_SIZE)
-            panic(false, "NTFS: File record attribute is outside of file record");
+        if (cur_attr_ptr + sizeof(struct file_record_attr_header) > file_record + MIN_FILE_RECORD_SIZE) {
+            print("NTFS: File record attribute is outside of file record\n");
+            return false;
+        }
 
         struct file_record_attr_header *cur_attr = (struct file_record_attr_header *)cur_attr_ptr;
 
@@ -184,8 +186,10 @@ static bool ntfs_get_file_record_attr(uint8_t* file_record, uint32_t attr_type, 
         if (cur_attr->type > attr_type || cur_attr->type == 0xFF)
             return false;
 
-        if (cur_attr->length == 0)
-            panic(false, "NTFS: File record attribute has zero length");
+        if (cur_attr->length == 0) {
+            print("NTFS: File record attribute has zero length\n");
+            return false;
+        }
 
         cur_attr_ptr += cur_attr->length;
     }
@@ -285,14 +289,18 @@ static bool ntfs_get_file_record(struct ntfs_file_handle *handle, uint64_t mft_r
     uint64_t offset = sector * handle->bpb.bytes_per_sector;
 
 
-    if(!volume_read(handle->part, file_record_buffer, offset, handle->file_record_size))
-        panic(false, "NTFS: Failed to read file record from mft");
+    if(!volume_read(handle->part, file_record_buffer, offset, handle->file_record_size)) {
+        print("NTFS: Failed to read file record from mft\n");
+        return false;
+    }
 
     // make sure this is a valid file record
     struct mft_file_record *fr = (struct mft_file_record *)file_record_buffer;
-    if (strncmp(fr->name, "FILE", SIZEOF_ARRAY(fr->name)))
-        panic(false, "NTFS: File record has invalid signature (got %c%c%c%c, should be FILE)!",
+    if (strncmp(fr->name, "FILE", SIZEOF_ARRAY(fr->name))) {
+        print("NTFS: File record has invalid signature (got %c%c%c%c, should be FILE)!\n",
             fr->name[0], fr->name[1], fr->name[2], fr->name[3]);
+        return false;
+    }
 
     // we good!
     return true;
@@ -315,8 +323,10 @@ static bool ntfs_read_directory(struct ntfs_file_handle *handle, uint64_t mft_re
         struct file_record_attr_header_res *index_root_header = (struct file_record_attr_header_res *)index_root_ptr;
         struct file_record_attr_index_root *index_root = (struct file_record_attr_index_root *)(index_root_ptr + index_root_header->info_offset);
         uint8_t *index_root_data = (uint8_t *)index_root + index_root->offset + offsetof(struct file_record_attr_index_root, offset);
-        if (index_root->total_size > sizeof(handle->resident_index))
-            panic(false, "NTFS: Resident index is too big!");
+        if (index_root->total_size > sizeof(handle->resident_index)) {
+            print("NTFS: Resident index is too big!\n");
+            return false;
+        }
         handle->resident_index_size = index_root->total_size;
         memcpy(handle->resident_index, index_root_data, index_root->total_size);
     } else {
@@ -332,8 +342,10 @@ static bool ntfs_read_directory(struct ntfs_file_handle *handle, uint64_t mft_re
     if (ntfs_get_file_record_attr(file_record, FR_ATTRIBUTE_INDEX_ALLOC, &index_alloc_ptr)) {
         struct file_record_attr_header_non_res *index_alloc = (struct file_record_attr_header_non_res *)index_alloc_ptr;
         uint8_t *runlist_ptr = index_alloc_ptr + index_alloc->run_offset;
-        if ((uintptr_t)runlist_ptr - (uintptr_t)file_record + 128u > handle->file_record_size)
-            panic(false, "NTFS: runlist is outside of file record!");
+        if ((uintptr_t)runlist_ptr - (uintptr_t)file_record + 128u > handle->file_record_size) {
+            print("NTFS: runlist is outside of file record!\n");
+            return false;
+        }
         memcpy(handle->run_list, runlist_ptr, sizeof(handle->run_list));
 
         // calculate the directory size by just going through the runlist
@@ -365,8 +377,10 @@ static bool ntfs_read_directory(struct ntfs_file_handle *handle, uint64_t mft_re
         dir_buffer_size = dir_size;
 
         // read the directory
-        if (ntfs_read(handle, dir_buffer, 0, dir_size))
-            panic(false, "NTFS: EOF before reading directory fully...");
+        if (ntfs_read(handle, dir_buffer, 0, dir_size)) {
+            print("NTFS: EOF before reading directory fully...\n");
+            return false;
+        }
     } else {
         // if no runlist then empty the runlist
         memset(handle->run_list, 0, sizeof(handle->run_list));
@@ -378,33 +392,45 @@ static bool ntfs_read_directory(struct ntfs_file_handle *handle, uint64_t mft_re
 /**
  * Prepare for reading a file by reading the root directory into the file handle
  */
-static void ntfs_read_root(struct ntfs_file_handle *handle) {
+static bool ntfs_read_root(struct ntfs_file_handle *handle) {
     // calculate the offset for the mft
     handle->mft_offset = (uint64_t)handle->bpb.mft_cluster * (uint64_t)handle->bpb.sectors_per_cluster * (uint64_t)handle->bpb.bytes_per_sector;
 
     // read the mft file record, this should be the size of a sector
     uint8_t file_record_buffer[MIN_FILE_RECORD_SIZE];
-    if (!volume_read(handle->part, file_record_buffer, handle->mft_offset, sizeof(file_record_buffer)))
-        panic(false, "NTFS: Failed to read MFT file record");
+    if (!volume_read(handle->part, file_record_buffer, handle->mft_offset, sizeof(file_record_buffer))) {
+        print("NTFS: Failed to read MFT file record\n");
+        return false;
+    }
 
     // get the file attribute
     uint8_t *attr_ptr = NULL;
-    if (!ntfs_get_file_record_attr(file_record_buffer, FR_ATTRIBUTE_DATA, &attr_ptr))
-        panic(false, "NTFS: MFT file record missing DATA attribute");
+    if (!ntfs_get_file_record_attr(file_record_buffer, FR_ATTRIBUTE_DATA, &attr_ptr)) {
+        print("NTFS: MFT file record missing DATA attribute\n");
+        return false;
+    }
     struct file_record_attr_header_non_res *attr = (struct file_record_attr_header_non_res *)attr_ptr;
 
     // verify the attr and run list are in the buffer
-    if ((uint8_t *)attr + sizeof(*attr) > file_record_buffer + sizeof(file_record_buffer))
-        panic(false, "NTFS: MFT file record attribute is outside of file record");
-    if ((uint8_t *)attr + attr->run_offset + 256 > file_record_buffer + sizeof(file_record_buffer))
-        panic(false, "NTFS: MFT Run list is outside of file record");
+    if ((uint8_t *)attr + sizeof(*attr) > file_record_buffer + sizeof(file_record_buffer)) {
+        print("NTFS: MFT file record attribute is outside of file record\n");
+        return false;
+    }
+    if ((uint8_t *)attr + attr->run_offset + 256 > file_record_buffer + sizeof(file_record_buffer)) {
+        print("NTFS: MFT Run list is outside of file record\n");
+        return false;
+    }
 
     // save the run list
     memcpy(handle->mft_run_list, (uint8_t *)attr + attr->run_offset, sizeof(handle->mft_run_list));
 
     // read the root directory record, which has the number 5
-    if (!ntfs_read_directory(handle, 5, file_record_buffer))
-        panic(false, "NTFS: Missing root directory file record!");
+    if (!ntfs_read_directory(handle, 5, file_record_buffer)) {
+        print("NTFS: Missing root directory file record!\n");
+        return false;
+    }
+
+    return true;
 }
 
 /**
@@ -424,12 +450,16 @@ static bool ntfs_iterate_index_entries(struct ntfs_file_handle *handle, uint8_t 
             // invalid names for whatever reason that I can not understand, so
             // just always take it from the mft file record
             uint8_t file_record_buffer[MIN_FILE_RECORD_SIZE];
-            if (!ntfs_get_file_record(handle, entry->mft_record, file_record_buffer))
-                panic(false, "NTFS: Failed to get file record");
+            if (!ntfs_get_file_record(handle, entry->mft_record, file_record_buffer)) {
+                print("NTFS: Failed to get file record\n");
+                return false;
+            }
 
             uint8_t *name_attr = NULL;
-            if (!ntfs_get_file_record_attr(file_record_buffer, FR_ATTRIBUTE_NAME, &name_attr))
-                panic(false, "NTFS: File record missing name attribute");
+            if (!ntfs_get_file_record_attr(file_record_buffer, FR_ATTRIBUTE_NAME, &name_attr)) {
+                print("NTFS: File record missing name attribute\n");
+                return false;
+            }
 
             // get the offset to the actual info
             struct file_record_attr_header_res *header = (struct file_record_attr_header_res *)name_attr;
@@ -481,8 +511,10 @@ static bool ntfs_find_file_in_directory(struct ntfs_file_handle *handle, const c
     while (dir_size) {
         // check if the dir pointer is still in the buffer, if not then we could
         // not find the file...
-        if (dir_ptr + sizeof(struct index_record) > dir_buffer + dir_buffer_size)
-            panic(false, "NTFS: Tried to read index record outside of directory");
+        if (dir_ptr + sizeof(struct index_record) > dir_buffer + dir_buffer_size) {
+            print("NTFS: Tried to read index record outside of directory\n");
+            return false;
+        }
 
         // get the index and check it, if it is not valid just return
         // we did not find the file
@@ -519,8 +551,10 @@ bool ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *pa
     ret->part = part;
 
     // start by reading the bpb so we can access it later on
-    if (!volume_read(part, &ret->bpb, 0, sizeof(ret->bpb)))
-        panic(false, "NTFS: Failed to read the BPB");
+    if (!volume_read(part, &ret->bpb, 0, sizeof(ret->bpb))) {
+        print("NTFS: Failed to read the BPB\n");
+        return false;
+    }
 
     // in NTFS sector size can be 512 to 4096 bytes, file records are
     // at least 1024 bytes, in here calculate the sectors per file record
@@ -534,12 +568,16 @@ bool ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *pa
         ret->sectors_per_file_record = 1;
         ret->file_record_size = ret->bpb.bytes_per_sector;
     }
-    if (ret->file_record_size != MIN_FILE_RECORD_SIZE)
-        panic(false, "NTFS: TODO: support file record size which is not 1024 bytes");
+    if (ret->file_record_size != MIN_FILE_RECORD_SIZE) {
+        print("NTFS: TODO: support file record size which is not 1024 bytes\n");
+        return false;
+    }
 
     // now prepare the root directory so we can search for
     // the rest of the stuff
-    ntfs_read_root(ret);
+    if (!ntfs_read_root(ret)) {
+        return false;
+    }
 
     // iterate the directories to find the entry
     const char* current_path = path;
@@ -564,15 +602,19 @@ bool ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *pa
             ret->size_bytes = entry->real_size;
 
             // get its runlist...
-            if (!ntfs_get_file_record(ret, entry->mft_record, file_record_buffer))
-                panic(false, "NTFS: Failed to get file record of file");
+            if (!ntfs_get_file_record(ret, entry->mft_record, file_record_buffer)) {
+                print("NTFS: Failed to get file record of file\n");
+                return false;
+            }
 
             // get the file attribute
             uint8_t *attr_ptr = NULL;
-            if (!ntfs_get_file_record_attr(file_record_buffer, FR_ATTRIBUTE_DATA, &attr_ptr))
-                panic(false, "NTFS: File record missing DATA attribute");
+            if (!ntfs_get_file_record_attr(file_record_buffer, FR_ATTRIBUTE_DATA, &attr_ptr)) {
+                print("NTFS: File record missing DATA attribute\n");
+                return false;
+            }
             struct file_record_attr_header *attr_hdr = (struct file_record_attr_header *)attr_ptr;
-            
+
             if (attr_hdr->non_res_flag) {
                 // this is non-resident data
                 struct file_record_attr_header_non_res *attr = (struct file_record_attr_header_non_res *)attr_ptr;
@@ -581,10 +623,14 @@ bool ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *pa
                 ret->resident_index_size = 0;
 
                 // verify the attr and run list are in the buffer
-                if ((uint8_t *)attr + sizeof(*attr) > file_record_buffer + sizeof(file_record_buffer))
-                    panic(false, "NTFS: File record attribute is outside of file record");
-                if ((uint8_t *)attr + attr->run_offset + 256 > file_record_buffer + sizeof(file_record_buffer))
-                    panic(false, "NTFS: Run list is outside of file record");
+                if ((uint8_t *)attr + sizeof(*attr) > file_record_buffer + sizeof(file_record_buffer)) {
+                    print("NTFS: File record attribute is outside of file record\n");
+                    return false;
+                }
+                if ((uint8_t *)attr + attr->run_offset + 256 > file_record_buffer + sizeof(file_record_buffer)) {
+                    print("NTFS: Run list is outside of file record\n");
+                    return false;
+                }
 
                 // save the run list
                 memcpy(ret->run_list, (uint8_t *)attr + attr->run_offset, sizeof(ret->run_list));
@@ -592,8 +638,10 @@ bool ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *pa
                 // this is resident data
                 struct file_record_attr_header_res *attr = (struct file_record_attr_header_res *)attr_ptr;
 
-                if (attr->info_length > sizeof(ret->resident_data))
-                    panic(false, "NTFS: Resident data too big");
+                if (attr->info_length > sizeof(ret->resident_data)) {
+                    print("NTFS: Resident data too big\n");
+                    return false;
+                }
 
                 ret->resident_data_size = attr->info_length;
                 memcpy(ret->resident_data, attr + 1, attr->info_length);
@@ -603,8 +651,10 @@ bool ntfs_open(struct ntfs_file_handle *ret, struct volume *part, const char *pa
 
         } else {
             // read the directory
-            if (!ntfs_read_directory(ret, entry->mft_record, file_record_buffer))
-                panic(false, "NTFS: Failed to read directory");
+            if (!ntfs_read_directory(ret, entry->mft_record, file_record_buffer)) {
+                print("NTFS: Failed to read directory\n");
+                return false;
+            }
 
             // next path element
             current_path += filename_len;
@@ -624,15 +674,15 @@ int ntfs_read(struct ntfs_file_handle *file, void *buf, uint64_t loc, uint64_t c
         // check bounds
         if (loc > file->resident_data_size)
             return 0;
-        
-        // truncate the size 
+
+        // truncate the size
         if (file->resident_data_size - loc < count) {
             count = file->resident_data_size - loc;
         }
 
-        // copy it 
+        // copy it
         memcpy(buf, &file->resident_data[loc], count);
-        
+
         return count;
     }
 

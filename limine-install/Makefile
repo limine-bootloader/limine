@@ -4,7 +4,7 @@ INSTALL ?= ./install-sh
 PREFIX ?= /usr/local
 DESTDIR ?=
 
-CFLAGS ?= -O2 -pipe -Wall -Wextra
+CFLAGS ?= -g -O2 -pipe -Wall -Wextra
 
 .PHONY: all
 all: limine-install

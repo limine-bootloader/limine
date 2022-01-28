@@ -209,7 +209,7 @@ $(call MKESCAPE,$(BINDIR))/limine-hdd.h: $(call MKESCAPE,$(BUILDDIR))/hgen $(cal
 .PHONY: limine-install
 limine-install:
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	cp '$(call SHESCAPE,$(SRCDIR))/limine-install/'* '$(call SHESCAPE,$(SRCDIR))/limine-install/.gitignore' '$(call SHESCAPE,$(BINDIR))/'
+	cp '$(call SHESCAPE,$(SRCDIR))/limine-install/Makefile' '$(call SHESCAPE,$(SRCDIR))/limine-install/limine-install.c' '$(call SHESCAPE,$(SRCDIR))/limine-install/.gitignore' '$(call SHESCAPE,$(BINDIR))/'
 	$(MAKE) limine-hdd.h
 	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))'
 
@@ -308,6 +308,7 @@ dist:
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/autom4te.cache"
 	echo "$(LIMINE_VERSION)" > '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/version"
 	cd '$(call SHESCAPE,$(BUILDDIR))' && tar -Jcf "limine-$(LIMINE_VERSION).tar.xz" "limine-$(LIMINE_VERSION)"
+	cd '$(call SHESCAPE,$(BUILDDIR))' && tar -zcf "limine-$(LIMINE_VERSION).tar.gz" "limine-$(LIMINE_VERSION)"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"
 
 .PHONY: distclean

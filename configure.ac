@@ -4,6 +4,18 @@ AC_PREREQ(2.69)
 
 AC_SUBST(limine_version, m4_esyscmd([./version.sh]))
 
+test "x$CFLAGS" = "x" && CFLAGS='-g -O2 -pipe -Wall -Wextra'
+
+werror_state="no"
+AC_ARG_ENABLE([werror],
+    AS_HELP_STRING([--enable-werror], [treat warnings as errors]),
+    werror_state="$enableval")
+
+if test "$werror_state" = "yes"; then
+    AC_SUBST(werror, [-Werror])
+    CFLAGS="$CFLAGS -Werror"
+fi
+
 AC_PROG_CC
 AC_PROG_INSTALL
 
@@ -36,15 +48,6 @@ test "x$LIMINE_OBJDUMP" = "x" && LIMINE_OBJDUMP='$(TOOLCHAIN)-objdump'
 
 AC_ARG_VAR(LIMINE_READELF, [Readelf command for Limine [$(TOOLCHAIN)-readelf]])
 test "x$LIMINE_READELF" = "x" && LIMINE_READELF='$(TOOLCHAIN)-readelf'
-
-werror_state="no"
-AC_ARG_ENABLE([werror],
-    AS_HELP_STRING([--enable-werror], [treat warnings as errors]),
-    werror_state="$enableval")
-
-if test "$werror_state" = "yes"; then
-    AC_SUBST(werror, [-Werror])
-fi
 
 AC_PREFIX_DEFAULT(/usr/local)
 

@@ -107,6 +107,6 @@ jobs:
         with:
           body_path: rel_notes.txt
           files: |
-            limine-*.tar.xz
+            limine-*.tar.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

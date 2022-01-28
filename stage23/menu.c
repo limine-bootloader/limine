@@ -847,7 +847,8 @@ timeout_aborted:
                     reset_term();
                 }
                 boot(selected_menu_entry->body);
-            case 'e': {
+            case 'e':
+            case 'E': {
                 if (editor_enabled) {
                     if (selected_menu_entry->sub != NULL)
                         goto refresh;
@@ -860,7 +861,8 @@ timeout_aborted:
                 }
                 break;
             }
-            case 'c': {
+            case 'c':
+            case 'C': {
                 reset_term();
                 console();
                 goto refresh;

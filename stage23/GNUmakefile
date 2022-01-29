@@ -364,31 +364,31 @@ endif
 ifeq ($(TARGET), bios)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm32
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Werror -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g $(WERROR) -f elf32 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asmb
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Werror -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g $(WERROR) -f elf32 -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET), uefi64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm64
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Werror -f elf64 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g $(WERROR) -f elf64 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm64u
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Werror -f elf64 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g $(WERROR) -f elf64 -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET), uefi32)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm32
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Werror -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g $(WERROR) -f elf32 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm32u
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Werror -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g $(WERROR) -f elf32 -o '$(call SHESCAPE,$@)'
 endif
 
 clean:

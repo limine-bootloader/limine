@@ -30,6 +30,8 @@ CC := @CC@
 endif
 export CC
 
+HOST_CC ?= @HOST_CC@
+
 INSTALL ?= @INSTALL@
 export INSTALL
 
@@ -53,10 +55,9 @@ LIMINE_READELF ?= @LIMINE_READELF@
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_CC) ; ), )
 override LIMINE_CC := $(CC)
 endif
+
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_LD) ; ), )
 override LIMINE_LD := gld
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_LD) ; ), )
-override LIMINE_LD := ld.bfd
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_LD) ; ), )
 override LIMINE_LD := /usr/local/bin/ld
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_LD) ; ), )
@@ -64,7 +65,7 @@ override LIMINE_LD := ld
 endif
 endif
 endif
-endif
+
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AR) ; ), )
 override LIMINE_AR := gar
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AR) ; ), )
@@ -74,6 +75,7 @@ override LIMINE_AR := ar
 endif
 endif
 endif
+
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AS) ; ), )
 override LIMINE_AS := gas
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AS) ; ), )
@@ -83,6 +85,7 @@ override LIMINE_AS := as
 endif
 endif
 endif
+
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJCOPY) ; ), )
 override LIMINE_OBJCOPY := gobjcopy
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJCOPY) ; ), )
@@ -92,6 +95,7 @@ override LIMINE_OBJCOPY := objcopy
 endif
 endif
 endif
+
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJDUMP) ; ), )
 override LIMINE_OBJDUMP := gobjdump
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJDUMP) ; ), )
@@ -101,6 +105,7 @@ override LIMINE_OBJDUMP := objdump
 endif
 endif
 endif
+
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_READELF) ; ), )
 override LIMINE_READELF := greadelf
 ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_READELF) ; ), )
@@ -200,7 +205,7 @@ all: limine-uefi limine-bios
 
 $(call MKESCAPE,$(BUILDDIR))/hgen: $(call MKESCAPE,$(SRCDIR))/limine-install/hgen.c
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
-	$(CC) $(CFLAGS) -std=c11 '$(call SHESCAPE,$(SRCDIR))/limine-install/hgen.c' -o '$(call SHESCAPE,$(BUILDDIR))/hgen'
+	$(HOST_CC) $(CFLAGS) -std=c11 '$(call SHESCAPE,$(SRCDIR))/limine-install/hgen.c' -o '$(call SHESCAPE,$(BUILDDIR))/hgen'
 
 .PHONY: limine-hdd.h
 limine-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-hdd.h

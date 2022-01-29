@@ -87,19 +87,20 @@ void chainload(char *config) {
     int drive; {
         char *drive_config = config_get_value(config, 0, "DRIVE");
         if (drive_config == NULL) {
-            panic(true, "chainload: DRIVE not specified");
+            drive = boot_volume->index;
+        } else {
+            val = strtoui(drive_config, NULL, 10);
+            if (val < 1 || val > 256) {
+                panic(true, "chainload: BIOS drive number outside range 1-256");
+            }
+            drive = val;
         }
-        val = strtoui(drive_config, NULL, 10);
-        if (val < 1 || val > 256) {
-            panic(true, "chainload: BIOS drive number outside range 1-256");
-        }
-        drive = val;
     }
+
+    struct volume *p = volume_get_by_coord(false, drive, part);
 
     size_t rows, cols;
     init_vga_textmode(&rows, &cols, false);
-
-    struct volume *p = volume_get_by_coord(false, drive, part);
 
     volume_read(p, (void *)0x7c00, 0, 512);
 

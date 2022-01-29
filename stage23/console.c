@@ -35,7 +35,7 @@ void console(void) {
         } else if (strcmp(prompt, "exit") == 0) {
             break;
         } else if (strcmp(prompt, "clear") == 0) {
-            reset_term();
+            print("\e[2J\e[H");
         } else if (strcmp(prompt, "editor") == 0) {
             char *new_entry = config_entry_editor("New Entry", "");
             if (new_entry != NULL) {

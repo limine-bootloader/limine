@@ -2,6 +2,10 @@
 #define __LIB__LIBC_H__
 
 #include <stddef.h>
+#include <stdbool.h>
+
+bool isprint(int c);
+bool isspace(int c);
 
 int toupper(int c);
 int tolower(int c);

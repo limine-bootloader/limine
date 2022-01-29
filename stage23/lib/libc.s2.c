@@ -4,6 +4,14 @@
 #include <stdbool.h>
 #include <lib/blib.h>
 
+bool isprint(int c) {
+    return c >= ' ' && c <= '~';
+}
+
+bool isspace(int c) {
+    return (c >= '\t' && c <= 0xD) || c == ' ';
+}
+
 int toupper(int c) {
     if (c >= 'a' && c <= 'z') {
         return c - 0x20;

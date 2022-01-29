@@ -123,8 +123,8 @@ Some keys take *URIs* as values; these are described in the next section.
   * `KASLR` - For relocatable kernels, if set to `no`, disable kernel address space layout randomisation. KASLR is enabled by default.
   * `TEXTMODE` - If set to `yes`, prefer text mode if the kernel has no video mode requirements. (Only for stivale2)
 * Chainload protocol on BIOS:
-  * `DRIVE` - The 1-based BIOS drive to chainload.
-  * `PARTITION` - The 1-based BIOS partition to chainload, if omitted, chainload drive.
+  * `DRIVE` - The 1-based BIOS drive to chainload, if omitted, assume boot drive.
+  * `PARTITION` - The 1-based BIOS partition to chainload, if omitted, chainload drive (MBR).
 * Chainload protocol on UEFI:
   * `IMAGE_PATH` - URI of the EFI application to chainload.
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.

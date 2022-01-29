@@ -19,6 +19,9 @@ fi
 AC_PROG_CC
 AC_PROG_INSTALL
 
+AC_ARG_VAR(HOST_CC, [C compiler for the build host [$(CC)]])
+test "x$HOST_CC" = "x" && HOST_CC='$(CC)'
+
 AC_ARG_VAR(TOOLCHAIN, [Alternative toolchain prefix [limine]])
 test "x$TOOLCHAIN" = "x" && TOOLCHAIN='limine'
 

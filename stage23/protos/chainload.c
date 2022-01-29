@@ -19,7 +19,7 @@
 
 #if bios == 1
 
-__attribute__((section(".realmode")))
+__attribute__((noinline, section(".realmode")))
 static void spinup(uint8_t drive) {
     struct idtr real_mode_idt;
     real_mode_idt.limit = 0x3ff;

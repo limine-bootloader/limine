@@ -89,7 +89,7 @@ Some keys take *URIs* as values; these are described in the next section.
 * `EDITOR_HIGHLIGHTING` - If set to `no`, syntax highlighting in the editor will be disabled. Defaults to `yes`.
 * `EDITOR_VALIDATION` - If set to `no`, the editor will not alert you about invalid keys / syntax errors. Defaults to `yes`.
 * `VERBOSE` - If set to `yes`, print additional information during boot. Defaults to not verbose.
-* `RANDOMISE_MEMORY` - If set to `yes`, randomise the contents of RAM at bootup in order to find bugs related to non zeroed memory or for security reasons. This option will slow down boot time significantly.
+* `RANDOMISE_MEMORY` - If set to `yes`, randomise the contents of RAM at bootup in order to find bugs related to non zeroed memory or for security reasons. This option will slow down boot time significantly. For the BIOS port of Limine, this will only randomise memory below 4GiB.
 * `RANDOMIZE_MEMORY` - Alias of `RANDOMISE_MEMORY`.
 
 *Locally assignable (non protocol specific)* keys are:

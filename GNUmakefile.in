@@ -31,6 +31,7 @@ endif
 export CC
 
 HOST_CC ?= @HOST_CC@
+export HOST_CC
 
 INSTALL ?= @INSTALL@
 export INSTALL
@@ -39,164 +40,29 @@ CFLAGS ?= @CFLAGS@
 export CFLAGS
 
 LIMINE_CFLAGS ?= @LIMINE_CFLAGS@
-LIMINE_LDFLAGS ?= @LIMINE_LDFLAGS@
 export LIMINE_CFLAGS
+LIMINE_LDFLAGS ?= @LIMINE_LDFLAGS@
 export LIMINE_LDFLAGS
 
 TOOLCHAIN ?= @TOOLCHAIN@
+export TOOLCHAIN
 LIMINE_CC ?= @LIMINE_CC@
-LIMINE_LD ?= @LIMINE_LD@
-LIMINE_AR ?= @LIMINE_AR@
-LIMINE_AS ?= @LIMINE_AS@
-LIMINE_OBJCOPY ?= @LIMINE_OBJCOPY@
-LIMINE_OBJDUMP ?= @LIMINE_OBJDUMP@
-LIMINE_READELF ?= @LIMINE_READELF@
-
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_CC) ; ), )
-override LIMINE_CC := $(CC)
-endif
-
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_LD) ; ), )
-override LIMINE_LD := gld
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_LD) ; ), )
-override LIMINE_LD := /usr/local/bin/ld
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_LD) ; ), )
-override LIMINE_LD := ld
-endif
-endif
-endif
-
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AR) ; ), )
-override LIMINE_AR := gar
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AR) ; ), )
-override LIMINE_AR := /usr/local/bin/ar
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AR) ; ), )
-override LIMINE_AR := ar
-endif
-endif
-endif
-
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AS) ; ), )
-override LIMINE_AS := gas
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AS) ; ), )
-override LIMINE_AS := /usr/local/bin/as
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_AS) ; ), )
-override LIMINE_AS := as
-endif
-endif
-endif
-
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJCOPY) ; ), )
-override LIMINE_OBJCOPY := gobjcopy
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJCOPY) ; ), )
-override LIMINE_OBJCOPY := /usr/local/bin/objcopy
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJCOPY) ; ), )
-override LIMINE_OBJCOPY := objcopy
-endif
-endif
-endif
-
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJDUMP) ; ), )
-override LIMINE_OBJDUMP := gobjdump
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJDUMP) ; ), )
-override LIMINE_OBJDUMP := /usr/local/bin/objdump
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_OBJDUMP) ; ), )
-override LIMINE_OBJDUMP := objdump
-endif
-endif
-endif
-
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_READELF) ; ), )
-override LIMINE_READELF := greadelf
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_READELF) ; ), )
-override LIMINE_READELF := /usr/local/bin/readelf
-ifeq ($(shell PATH='$(call SHESCAPE,$(PATH))' command -v $(LIMINE_READELF) ; ), )
-override LIMINE_READELF := readelf
-endif
-endif
-endif
-
 export LIMINE_CC
+LIMINE_LD ?= @LIMINE_LD@
 export LIMINE_LD
+LIMINE_AR ?= @LIMINE_AR@
 export LIMINE_AR
+LIMINE_AS ?= @LIMINE_AS@
 export LIMINE_AS
+LIMINE_OBJCOPY ?= @LIMINE_OBJCOPY@
 export LIMINE_OBJCOPY
+LIMINE_OBJDUMP ?= @LIMINE_OBJDUMP@
 export LIMINE_OBJDUMP
+LIMINE_READELF ?= @LIMINE_READELF@
 export LIMINE_READELF
 
 override USING_CLANG := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_CC) --version | grep clang >/dev/null && echo 1)
 export USING_CLANG
-
-ifeq ($(USING_CLANG), 1)
-override ORIG_LIMINE_CC := $(LIMINE_CC)
-override LIMINE_CC += --target=x86_64-elf
-endif
-
-override CC_MACHINE := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_CC) -dumpmachine | dd bs=6 count=1 2>/dev/null)
-
-ifneq ($(MAKECMDGOALS), clean)
-ifneq ($(MAKECMDGOALS), distclean)
-ifneq ($(MAKECMDGOALS), maintainer-clean)
-ifneq ($(MAKECMDGOALS), uninstall)
-ifneq ($(MAKECMDGOALS), dist)
-ifneq ($(MAKECMDGOALS), limine-install)
-ifneq ($(MAKECMDGOALS), limine-hdd.h)
-ifneq ($(MAKECMDGOALS), limine-eltorito-efi)
-ifneq ($(MAKECMDGOALS), install)
-ifneq ($(MAKECMDGOALS), install-data)
-ifneq ($(MAKECMDGOALS), install-strip)
-
-override USING_GNU_LD := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_LD) --version | grep 'GNU Binutils' >/dev/null && echo 1)
-ifneq ($(USING_GNU_LD), 1)
-$(error The specified LIMINE_LD linker ($(LIMINE_LD)) is not the GNU linker)
-endif
-
-override USING_GNU_AR := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_AR) --version | grep 'GNU Binutils' >/dev/null && echo 1)
-ifneq ($(USING_GNU_AR), 1)
-$(error The specified LIMINE_AR archiver ($(LIMINE_AR)) is not the GNU archiver)
-endif
-
-override USING_GNU_AS := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_AS) --version | grep 'GNU Binutils' >/dev/null && echo 1)
-ifneq ($(USING_GNU_AS), 1)
-$(error The specified LIMINE_AS assembler ($(LIMINE_AS)) is not the GNU assembler)
-endif
-
-override USING_GNU_OBJCOPY := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_OBJCOPY) --version | grep 'GNU Binutils' >/dev/null && echo 1)
-ifneq ($(USING_GNU_OBJCOPY), 1)
-$(error The specified LIMINE_OBJCOPY ($(LIMINE_OBJCOPY)) is not GNU objcopy)
-endif
-
-override USING_GNU_OBJDUMP := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_OBJDUMP) --version | grep 'GNU Binutils' >/dev/null && echo 1)
-ifneq ($(USING_GNU_OBJDUMP), 1)
-$(error The specified LIMINE_OBJDUMP ($(LIMINE_OBJDUMP)) is not GNU objdump)
-endif
-
-override USING_GNU_READELF := $(shell PATH='$(call SHESCAPE,$(PATH))' $(LIMINE_READELF) --version | grep 'GNU Binutils' >/dev/null && echo 1)
-ifneq ($(USING_GNU_READELF), 1)
-$(error The specified LIMINE_READELF ($(LIMINE_READELF)) is not GNU readelf)
-endif
-
-ifneq ($(CC_MACHINE), x86_64)
-ifneq ($(CC_MACHINE), amd64-)
-$(error No suitable x86_64 C compiler found, please install an x86_64 C toolchain or run "./make_toolchain.sh")
-endif
-endif
-
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-
-ifeq ($(USING_CLANG), 1)
-override LIMINE_CC := $(ORIG_LIMINE_CC)
-endif
 
 override STAGE1_FILES := $(shell find '$(call SHESCAPE,$(SRCDIR))/stage1' -type f -name '*.asm')
 
@@ -308,7 +174,6 @@ dist:
 	cp -r '$(call SHESCAPE,$(SRCDIR))'/.git '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"/
 	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && git checkout .
 	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && NOCONFIGURE=yes ./autogen.sh
-	cp '$(call SHESCAPE,$(SRCDIR))'/install-sh '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"/
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/reduced-gnu-efi/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/stivale/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/.git"
@@ -324,7 +189,7 @@ distclean: clean
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf stivale reduced-gnu-efi configure install-sh *'~' autom4te.cache *.tar.xz *.tar.gz
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf stivale reduced-gnu-efi configure build-aux *'~' autom4te.cache *.tar.xz *.tar.gz
 
 .PHONY: stage23-uefi64
 stage23-uefi64: $(call MKESCAPE,$(SRCDIR))/stivale

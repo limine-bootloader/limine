@@ -23,7 +23,8 @@ stivale
 test_image
 !stage23/font.bin
 configure
-install-sh
+configure.ac.save
+build-aux
 *~
 config.status
 config.log

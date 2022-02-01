@@ -1,10 +1,10 @@
 PREFIX ?= @prefix@
 DESTDIR ?=
 
-BUILDDIR ?= @abs_builddir@
+override BUILDDIR := @abs_builddir@
 override BINDIR := $(BUILDDIR)/bin
 
-SRCDIR ?= @abs_srcdir@
+override SRCDIR := @abs_srcdir@
 
 override SPACE := $(subst ,, )
 override COMMA := ,
@@ -13,7 +13,7 @@ MKESCAPE = $(subst $(SPACE),\ ,$(1))
 SHESCAPE = $(subst ','\'',$(1))
 NASMESCAPE = $(subst ','"'$(COMMA) \"'\"$(COMMA) '"',$(1))
 
-override PATH := $(BUILDDIR)/toolchain/bin:$(PATH)
+override PATH := $(BUILDDIR)/toolchain/bin:/usr/local/bin:$(PATH)
 export PATH
 
 override LIMINE_VERSION := @limine_version@
@@ -35,6 +35,15 @@ export HOST_CC
 
 INSTALL ?= @INSTALL@
 export INSTALL
+
+GREP ?= @GREP@
+export GREP
+
+SED ?= @SED@
+export SED
+
+AWK ?= @AWK@
+export AWK
 
 CFLAGS ?= @CFLAGS@
 export CFLAGS

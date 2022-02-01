@@ -73,7 +73,7 @@ This step can take a long time, but it will ensure that the toolchain will work
 with Limine. If on an x86_64 host, with GCC or Clang installed, it is possible
 that the host toolchain will suffice. You can skip to the next paragraph in order
 to use the system's toolchain instead. If that fails, you can still come back here
-later.
+later (remember to re-run `./configure` after building the toolchain).
 
 The toolchain's build process depends on the following packages: `GNU make`, `GNU tar`,
 `curl`, `gzip`, `bzip2`, `gcc/clang`, `g++/clang++`.
@@ -86,7 +86,7 @@ Building the toolchain can be accomplished by running:
 ### Prerequisites
 
 In order to build Limine, the following packages have to be installed:
-`GNU make`, `nasm`, `mtools` (optional, necessary to build
+`GNU make`, `gzip`, `nasm`, `mtools` (optional, necessary to build
 `limine-eltorito-efi.bin`).
 Furthermore, either the toolchain must have been built in the previous
 paragraph, or `gcc` or `llvm/clang` must also be installed, alongside

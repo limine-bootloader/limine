@@ -54,6 +54,10 @@ test "x$TOOLCHAIN" = "x" && TOOLCHAIN='limine'
 
 AC_ARG_VAR(LIMINE_CC, [C compiler command for Limine [default: $TOOLCHAIN-gcc]])
 
+AC_DEFUN([CC_ERROR_MSG], [
+    AC_MSG_ERROR([no suitable LIMINE_CC found, run $srcdir/make_toolchain.sh or install x86_64 GCC/Clang])
+])
+
 if ! test "x$LIMINE_CC" = "x"; then
     AC_CHECK_PROG([LIMINE_CC_0], [$LIMINE_CC], [yes])
     if ! test "x$LIMINE_CC_0" = "xyes"; then
@@ -66,15 +70,31 @@ else
         LIMINE_CC="$CC"
         AC_CHECK_PROG([LIMINE_CC_2], [$LIMINE_CC], [yes])
         if ! test "x$LIMINE_CC_2" = "xyes"; then
-            AC_MSG_ERROR([no suitable LIMINE_CC found, run $srcdir/make_toolchain.sh or install x86_64 GCC/Clang])
+            CC_ERROR_MSG
         fi
     fi
+fi
+
+if ! $LIMINE_CC --version >/dev/null 2>&1; then
+    CC_ERROR_MSG
+fi
+
+if $LIMINE_CC --version | grep clang >/dev/null 2>&1; then
+    AC_SUBST(using_clang, 1)
+elif $LIMINE_CC --version | grep 'Free Software Foundation' >/dev/null 2>&1; then
+    AC_SUBST(using_clang, 0)
+else
+    CC_ERROR_MSG
+fi
+
+if ! $LIMINE_CC -dumpmachine >/dev/null 2>&1; then
+    CC_ERROR_MSG
 fi
 
 CC_MACHINE="$($LIMINE_CC -dumpmachine | dd bs=6 count=1 2>/dev/null)"
 if ! test "x$CC_MACHINE" = "xx86_64"; then
     if ! test "x$CC_MACHINE" = "xamd64-"; then
-        AC_MSG_ERROR([no suitable LIMINE_CC found, run $srcdir/make_toolchain.sh or install x86_64 GCC/Clang])
+        CC_ERROR_MSG
     fi
 fi
 
@@ -83,19 +103,19 @@ AC_DEFUN([GET_BINUTILS_PROG], [
 
     if ! test "x$LIMINE_$1" = "x"; then
         AC_CHECK_PROG([LIMINE_$1_0], [$LIMINE_$1], [yes])
-        if ! test "x$LIMINE_$1_0" = "xyes" || ! $LIMINE_$1 --version | grep 'GNU Binutils' >/dev/null; then
+        if ! test "x$LIMINE_$1_0" = "xyes" || ! $LIMINE_$1 --version | grep 'GNU Binutils' >/dev/null 2>&1; then
             AC_MSG_ERROR([LIMINE_$1 ($LIMINE_$1) is not a suitable $3])
         fi
     else
         LIMINE_$1="$TOOLCHAIN-$2"
         AC_CHECK_PROG([LIMINE_$1_1], [$LIMINE_$1], [yes])
-        if ! test "x$LIMINE_$1_1" = "xyes" || ! $LIMINE_$1 --version | grep 'GNU Binutils' >/dev/null; then
+        if ! test "x$LIMINE_$1_1" = "xyes" || ! $LIMINE_$1 --version | grep 'GNU Binutils' >/dev/null 2>&1; then
             LIMINE_$1='g$2'
             AC_CHECK_PROG([LIMINE_$1_2], [$LIMINE_$1], [yes])
-            if ! test "x$LIMINE_$1_2" = "xyes" || ! $LIMINE_$1 --version | grep 'GNU Binutils' >/dev/null; then
+            if ! test "x$LIMINE_$1_2" = "xyes" || ! $LIMINE_$1 --version | grep 'GNU Binutils' >/dev/null 2>&1; then
                 LIMINE_$1='$2'
                 AC_CHECK_PROG([LIMINE_$1_3], [$LIMINE_$1], [yes])
-                if ! test "x$LIMINE_$1_3" = "xyes" || ! $LIMINE_$1 --version | grep 'GNU Binutils' >/dev/null; then
+                if ! test "x$LIMINE_$1_3" = "xyes" || ! $LIMINE_$1 --version | grep 'GNU Binutils' >/dev/null 2>&1; then
                     AC_MSG_ERROR([no suitable LIMINE_$1 found, run $srcdir/make_toolchain.sh or install GNU binutils])
                 fi
             fi
@@ -103,12 +123,12 @@ AC_DEFUN([GET_BINUTILS_PROG], [
     fi
 ])
 
-GET_BINUTILS_PROG(LD, ld, Linker)
-GET_BINUTILS_PROG(AR, ar, Archiver)
-GET_BINUTILS_PROG(AS, as, Assembler)
-GET_BINUTILS_PROG(OBJCOPY, objcopy, Objcopy)
-GET_BINUTILS_PROG(OBJDUMP, objdump, Objdump)
-GET_BINUTILS_PROG(READELF, readelf, Readelf)
+GET_BINUTILS_PROG(LD, ld, linker)
+GET_BINUTILS_PROG(AR, ar, archiver)
+GET_BINUTILS_PROG(AS, as, assembler)
+GET_BINUTILS_PROG(OBJCOPY, objcopy, objcopy)
+GET_BINUTILS_PROG(OBJDUMP, objdump, objdump)
+GET_BINUTILS_PROG(READELF, readelf, readelf)
 
 AC_ARG_VAR(LIMINE_CFLAGS, [C flags for Limine [default: -O3 -pipe -Wall -Wextra]])
 test "x$LIMINE_CFLAGS" = "x" && LIMINE_CFLAGS='-O3 -pipe -Wall -Wextra'

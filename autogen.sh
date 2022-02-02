@@ -9,15 +9,13 @@ test -z "$srcdir" && srcdir=.
 
 cd "$srcdir"
 
-build_aux="build-aux"
-
 [ -d stivale ] || git clone https://github.com/stivale/stivale.git
 [ -d reduced-gnu-efi ] || git clone https://github.com/limine-bootloader/reduced-gnu-efi.git
 
 automake_libdir="$(automake --print-libdir)"
 
 mkdir -p build-aux
-cp "${automake_libdir}/install-sh" "${build_aux}"
+cp "${automake_libdir}/install-sh" build-aux
 
 autoconf
 

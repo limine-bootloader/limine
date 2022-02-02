@@ -73,7 +73,7 @@ This step can take a long time, but it will ensure that the toolchain will work
 with Limine. If on an x86_64 host, with GCC or Clang installed, it is possible
 that the host toolchain will suffice. You can skip to the next paragraph in order
 to use the system's toolchain instead. If that fails, you can still come back here
-later (remember to re-run `./configure` after building the toolchain).
+later (remember to `make clean` and re-run `./configure` after building the toolchain).
 
 The toolchain's build process depends on the following packages: `GNU make`, `GNU tar`,
 `curl`, `gzip`, `bzip2`, `gcc/clang`, `g++/clang++`.

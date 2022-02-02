@@ -1,7 +1,7 @@
 /* The following code originates from gnu-efi */
 
-OUTPUT_FORMAT("elf64-x86-64", "elf64-x86-64", "elf64-x86-64")
-OUTPUT_ARCH(i386:x86-64)
+OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
+OUTPUT_ARCH(i386)
 ENTRY(_start)
 SECTIONS
 {
@@ -10,11 +10,6 @@ SECTIONS
   /* .hash and/or .gnu.hash MUST come first! */
   .hash : { *(.hash) }
   .gnu.hash : { *(.gnu.hash) }
-  . = ALIGN(4096);
-  .eh_frame :
-  {
-    *(.eh_frame)
-  }
   . = ALIGN(4096);
   .text :
   {
@@ -27,21 +22,32 @@ SECTIONS
   _etext = .;
   _text_size = . - _text;
   . = ALIGN(4096);
-  .reloc :
+  .sdata :
   {
-   *(.reloc)
+   _data = .;
+   *(.got.plt)
+   *(.got)
+   *(.srodata)
+   *(.sdata)
+   *(.sbss)
+   *(.scommon)
   }
   . = ALIGN(4096);
   .data :
   {
-   _data = .;
    *(.rodata*)
    *(.got.plt)
    *(.got)
+#ifdef LINKER_NOMAP
+   full_map = .;
+#else
    *(.full_map)
+#endif
    *(.no_unwind)
    data_begin = .;
-   *(.data*)
+   *(.data)
+   *(.data1)
+   *(.data.*)
    *(.sdata)
    /* the EFI loader doesn't seem to like a .bss section, so we stick
       it all into .data: */
@@ -51,10 +57,23 @@ SECTIONS
    *(.bss)
    *(COMMON)
    data_end = .;
-   *(.rel.local)
   }
   .note.gnu.build-id : { *(.note.gnu.build-id) }
 
+  . = ALIGN(4096);
+  .dynamic  : { *(.dynamic) }
+  . = ALIGN(4096);
+  .rel :
+  {
+    *(.rel.data)
+    *(.rel.data.*)
+    *(.rel.got)
+    *(.rel.stab)
+    *(.data.rel.ro.local)
+    *(.data.rel.local)
+    *(.data.rel.ro)
+    *(.data.rel*)
+  }
   _edata = .;
   _data_size = . - _etext;
 
@@ -69,22 +88,18 @@ SECTIONS
   _sbat_size = . - _sbat;
 
   . = ALIGN(4096);
-  .dynamic  : { *(.dynamic) }
-  . = ALIGN(4096);
-  .rela :
+  .reloc :		/* This is the PECOFF .reloc section! */
   {
-    *(.rela.data*)
-    *(.rela.got)
-    *(.rela.stab)
+    *(.reloc)
   }
   . = ALIGN(4096);
   .dynsym   : { *(.dynsym) }
   . = ALIGN(4096);
   .dynstr   : { *(.dynstr) }
   . = ALIGN(4096);
-  .ignored.reloc :
+  /DISCARD/ :
   {
-    *(.rela.reloc)
+    *(.rel.reloc)
     *(.eh_frame)
     *(.note.GNU-stack)
   }

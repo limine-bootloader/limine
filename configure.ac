@@ -79,9 +79,9 @@ if ! $LIMINE_CC --version >/dev/null 2>&1; then
     CC_ERROR_MSG
 fi
 
-if $LIMINE_CC --version | grep clang >/dev/null 2>&1; then
+if $LIMINE_CC --version | $GREP clang >/dev/null 2>&1; then
     AC_SUBST(using_clang, 1)
-elif $LIMINE_CC --version | grep 'Free Software Foundation' >/dev/null 2>&1; then
+elif $LIMINE_CC --version | $GREP 'Free Software Foundation' >/dev/null 2>&1; then
     AC_SUBST(using_clang, 0)
 else
     CC_ERROR_MSG
@@ -103,19 +103,19 @@ AC_DEFUN([GET_BINUTILS_PROG], [
 
     if ! test "x$LIMINE_$1" = "x"; then
         AC_CHECK_PROG([LIMINE_$1_0], [$LIMINE_$1], [yes])
-        if ! test "x$LIMINE_$1_0" = "xyes" || ! $LIMINE_$1 --version | grep 'Free Software Foundation' >/dev/null 2>&1; then
+        if ! test "x$LIMINE_$1_0" = "xyes" || ! $LIMINE_$1 --version | $GREP 'Free Software Foundation' >/dev/null 2>&1; then
             AC_MSG_ERROR([LIMINE_$1 ($LIMINE_$1) is not a suitable $3])
         fi
     else
         LIMINE_$1="$TOOLCHAIN-$2"
         AC_CHECK_PROG([LIMINE_$1_1], [$LIMINE_$1], [yes])
-        if ! test "x$LIMINE_$1_1" = "xyes" || ! $LIMINE_$1 --version | grep 'Free Software Foundation' >/dev/null 2>&1; then
+        if ! test "x$LIMINE_$1_1" = "xyes" || ! $LIMINE_$1 --version | $GREP 'Free Software Foundation' >/dev/null 2>&1; then
             LIMINE_$1='g$2'
             AC_CHECK_PROG([LIMINE_$1_2], [$LIMINE_$1], [yes])
-            if ! test "x$LIMINE_$1_2" = "xyes" || ! $LIMINE_$1 --version | grep 'Free Software Foundation' >/dev/null 2>&1; then
+            if ! test "x$LIMINE_$1_2" = "xyes" || ! $LIMINE_$1 --version | $GREP 'Free Software Foundation' >/dev/null 2>&1; then
                 LIMINE_$1='$2'
                 AC_CHECK_PROG([LIMINE_$1_3], [$LIMINE_$1], [yes])
-                if ! test "x$LIMINE_$1_3" = "xyes" || ! $LIMINE_$1 --version | grep 'Free Software Foundation' >/dev/null 2>&1; then
+                if ! test "x$LIMINE_$1_3" = "xyes" || ! $LIMINE_$1 --version | $GREP 'Free Software Foundation' >/dev/null 2>&1; then
                     AC_MSG_ERROR([no suitable LIMINE_$1 found, run $srcdir/make_toolchain.sh or install GNU binutils])
                 fi
             fi

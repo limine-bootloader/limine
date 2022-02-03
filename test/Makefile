@@ -49,12 +49,12 @@ test.elf: stivale.o stivale2.o e9print.o memory.o
 	$(LD) $^ $(LDFLAGS) $(INTERNALLDFLAGS) -o $@
 
 multiboot2.elf: multiboot2_trampoline.o
-	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -I../stage23/protos -m32 -c multiboot2.c -o multiboot2.o
+	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -I../common/protos -m32 -c multiboot2.c -o multiboot2.o
 	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -m32 -c e9print.c -o e9print.o
 	$(LD) $^ multiboot2.o e9print.o $(LDFLAGS) $(INTERNAL_LD_FLAGS_MULTIBOOT2) -m elf_i386 -o $@
 
 multiboot.elf: multiboot_trampoline.o
-	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -I../stage23/protos -m32 -c multiboot.c -o multiboot.o
+	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -I../common/protos -m32 -c multiboot.c -o multiboot.o
 	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -m32 -c e9print.c -o e9print.o
 	$(LD) $^ multiboot.o e9print.o $(LDFLAGS) $(INTERNAL_LD_FLAGS_MULTIBOOT1) -m elf_i386 -o $@
 

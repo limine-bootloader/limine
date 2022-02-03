@@ -125,16 +125,16 @@ uninstall:
 	rm -f '$(DESTDIR)$(PREFIX)/bin/limine-install'
 	rm -f '$(DESTDIR)$(PREFIX)/share/limine'
 
-$(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/stage23-bios/stage2.bin.gz
+$(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/common-bios/stage2.bin.gz
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm @werror@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm @werror@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/pxe' && nasm bootsect.asm @werror@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin'
-	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-bios/limine.sys' '$(call SHESCAPE,$(BINDIR))/'
+	cp '$(call SHESCAPE,$(BUILDDIR))/common-bios/limine.sys' '$(call SHESCAPE,$(BINDIR))/'
 	touch '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 
 .PHONY: limine-bios
-limine-bios: stage23-bios decompressor
+limine-bios: common-bios decompressor
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 	$(MAKE) limine-install
 
@@ -145,10 +145,10 @@ limine-eltorito-efi:
 	( mformat -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' -f 1440 :: && \
 	  mmd -D s -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' ::/EFI && \
 	  mmd -D s -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' ::/EFI/BOOT && \
-	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi64/BOOTX64.EFI' ] && \
-	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi64/BOOTX64.EFI' ::/EFI/BOOT ) || true ) && \
-	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32/BOOTIA32.EFI' ] && \
-	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32/BOOTIA32.EFI' ::/EFI/BOOT ) || true ) \
+	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/common-uefi64/BOOTX64.EFI' ] && \
+	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/common-uefi64/BOOTX64.EFI' ::/EFI/BOOT ) || true ) && \
+	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/common-uefi32/BOOTIA32.EFI' ] && \
+	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/common-uefi32/BOOTIA32.EFI' ::/EFI/BOOT ) || true ) \
 	) || rm -f '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin'
 
 .PHONY: limine-uefi
@@ -157,24 +157,24 @@ limine-uefi: limine-uefi32 limine-uefi64
 
 .PHONY: limine-uefi64
 limine-uefi64: $(call MKESCAPE,$(SRCDIR))/reduced-gnu-efi
-	$(MAKE) stage23-uefi64
+	$(MAKE) common-uefi64
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi64/BOOTX64.EFI' '$(call SHESCAPE,$(BINDIR))/'
+	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi64/BOOTX64.EFI' '$(call SHESCAPE,$(BINDIR))/'
 
 .PHONY: limine-uefi32
 limine-uefi32: $(call MKESCAPE,$(SRCDIR))/reduced-gnu-efi
-	$(MAKE) stage23-uefi32
+	$(MAKE) common-uefi32
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	cp '$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32/BOOTIA32.EFI' '$(call SHESCAPE,$(BINDIR))/'
+	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi32/BOOTIA32.EFI' '$(call SHESCAPE,$(BINDIR))/'
 
 .PHONY: limine-bios-clean
-limine-bios-clean: stage23-bios-clean decompressor-clean
+limine-bios-clean: common-bios-clean decompressor-clean
 
 .PHONY: limine-uefi64-clean
-limine-uefi64-clean: stage23-uefi64-clean
+limine-uefi64-clean: common-uefi64-clean
 
 .PHONY: limine-uefi32-clean
-limine-uefi32-clean: stage23-uefi32-clean
+limine-uefi32-clean: common-uefi32-clean
 
 .PHONY: dist
 dist:
@@ -200,29 +200,29 @@ distclean: clean
 maintainer-clean: distclean
 	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf stivale reduced-gnu-efi configure build-aux *'~' autom4te.cache *.tar.xz *.tar.gz
 
-.PHONY: stage23-uefi64
-stage23-uefi64: $(call MKESCAPE,$(SRCDIR))/stivale
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/stage23' all TARGET=uefi64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi64'
+.PHONY: common-uefi64
+common-uefi64: $(call MKESCAPE,$(SRCDIR))/stivale
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all TARGET=uefi64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi64'
 
-.PHONY: stage23-uefi64-clean
-stage23-uefi64-clean:
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/stage23' clean TARGET=uefi64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi64'
+.PHONY: common-uefi64-clean
+common-uefi64-clean:
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' clean TARGET=uefi64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi64'
 
-.PHONY: stage23-uefi32
-stage23-uefi32: $(call MKESCAPE,$(SRCDIR))/stivale
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/stage23' all TARGET=uefi32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32'
+.PHONY: common-uefi32
+common-uefi32: $(call MKESCAPE,$(SRCDIR))/stivale
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all TARGET=uefi32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi32'
 
-.PHONY: stage23-uefi32-clean
-stage23-uefi32-clean:
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/stage23' clean TARGET=uefi32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-uefi32'
+.PHONY: common-uefi32-clean
+common-uefi32-clean:
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' clean TARGET=uefi32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi32'
 
-.PHONY: stage23-bios
-stage23-bios: $(call MKESCAPE,$(SRCDIR))/stivale
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/stage23' all TARGET=bios BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-bios'
+.PHONY: common-bios
+common-bios: $(call MKESCAPE,$(SRCDIR))/stivale
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all TARGET=bios BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-bios'
 
-.PHONY: stage23-bios-clean
-stage23-bios-clean:
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/stage23' clean TARGET=bios BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/stage23-bios'
+.PHONY: common-bios-clean
+common-bios-clean:
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' clean TARGET=bios BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-bios'
 
 .PHONY: decompressor
 decompressor:

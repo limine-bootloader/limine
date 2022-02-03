@@ -16,12 +16,6 @@ NASMESCAPE = $(subst ','"'$(COMMA) \"'\"$(COMMA) '"',$(1))
 override PATH := $(BUILDDIR)/toolchain/bin:/usr/local/bin:$(PATH)
 export PATH
 
-override LIMINE_VERSION := @limine_version@
-export LIMINE_VERSION
-
-override LIMINE_COPYRIGHT := $(shell grep Copyright '$(call SHESCAPE,$(SRCDIR))/LICENSE.md')
-export LIMINE_COPYRIGHT
-
 WERROR ?= @werror@
 export WERROR
 
@@ -72,6 +66,12 @@ export LIMINE_READELF
 
 override USING_CLANG := @using_clang@
 export USING_CLANG
+
+override LIMINE_VERSION := @limine_version@
+export LIMINE_VERSION
+
+override LIMINE_COPYRIGHT := $(shell $(GREP) Copyright '$(call SHESCAPE,$(SRCDIR))/LICENSE.md')
+export LIMINE_COPYRIGHT
 
 override STAGE1_FILES := $(shell find '$(call SHESCAPE,$(SRCDIR))/stage1' -type f -name '*.asm')
 

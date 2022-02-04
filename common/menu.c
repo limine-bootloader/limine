@@ -821,6 +821,17 @@ refresh:
         c = getchar();
 timeout_aborted:
         switch (c) {
+            case '1': case '2': case '3': case '4': case '5':
+            case '6': case '7': case '8': case '9': {
+                int ent = (c - '0') - 1;
+                if (ent < (int)max_entries) {
+                    selected_entry = ent;
+                    print_tree(NULL, 0, 0, selected_entry, menu_tree,
+                               &selected_menu_entry);
+                    goto autoboot;
+                }
+                goto refresh;
+            }
             case GETCHAR_CURSOR_UP:
                 if (selected_entry == 0)
                     selected_entry = max_entries - 1;

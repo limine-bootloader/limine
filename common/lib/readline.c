@@ -70,6 +70,8 @@ int getchar_internal(uint8_t scancode, uint8_t ascii, uint32_t shift_state) {
 
     if (shift_state & (GETCHAR_LCTRL | GETCHAR_RCTRL)) {
         switch (ascii) {
+        case 'a': return GETCHAR_HOME;
+        case 'e': return GETCHAR_END;
         case 'p': return GETCHAR_CURSOR_UP;
         case 'n': return GETCHAR_CURSOR_DOWN;
         case 'b': return GETCHAR_CURSOR_LEFT;

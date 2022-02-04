@@ -832,6 +832,12 @@ timeout_aborted:
                 }
                 goto refresh;
             }
+            case GETCHAR_HOME:
+                selected_entry = 0;
+                goto refresh;
+            case GETCHAR_END:
+                selected_entry = max_entries - 1;
+                goto refresh;
             case GETCHAR_CURSOR_UP:
                 if (selected_entry == 0)
                     selected_entry = max_entries - 1;

@@ -189,7 +189,7 @@ char *config_entry_editor(const char *title, const char *orig_entry) {
 
     enable_cursor();
 
-    clear(true);
+    print("\e[2J\e[H");
 
     size_t cursor_offset  = 0;
     size_t entry_size     = strlen(orig_entry);
@@ -224,25 +224,25 @@ char *config_entry_editor(const char *title, const char *orig_entry) {
 refresh:
     invalid_syntax = false;
 
-    clear(true);
+    print("\e[2J\e[H");
     disable_cursor();
     {
         size_t x, y;
         print("\n");
         get_cursor_pos(&x, &y);
-        set_cursor_pos(term_cols / 2 - DIV_ROUNDUP(strlen(menu_branding), 2), y);
+        set_cursor_pos_helper(term_cols / 2 - DIV_ROUNDUP(strlen(menu_branding), 2), y);
         print("\e[3%sm%s\e[37m", menu_branding_colour, menu_branding);
         print("\n\n");
     }
 
-    print("    \e[32mESC\e[0m Discard and Exit    \e[32mF10\e[0m Boot\n");
+    print("    \e[32mESC\e[0m Discard and Exit    \e[32mF10\e[0m Boot\n\n");
 
-    print("\n\xda");
+    print(serial ? "/" : "\xda");
     for (size_t i = 0; i < term_cols - 2; i++) {
         switch (i) {
             case 1: case 2: case 3:
                 if (window_offset > 0) {
-                    print("\x18");
+                    print(serial ? "^" : "\x18");
                     break;
                 }
                 // FALLTHRU
@@ -252,12 +252,17 @@ refresh:
                     print("%s", title);
                     i += title_length - 1;
                 } else {
-                    print("\xc4");
+                    print(serial ? "-" : "\xc4");
                 }
             }
         }
     }
-    print("\xbf\xb3");
+    size_t tmpx, tmpy;
+
+    get_cursor_pos(&tmpx, &tmpy);
+    print(serial ? "\\" : "\xbf");
+    set_cursor_pos_helper(0, tmpy + 1);
+    print(serial ? "|" : "\xb3");
 
     size_t cursor_x, cursor_y;
     size_t current_line = 0, line_offset = 0, window_size = _window_size;
@@ -276,11 +281,18 @@ refresh:
                 cursor_y = y;
                 printed_cursor = true;
             }
-            set_cursor_pos(term_cols - 1, y);
-            if (current_line == window_offset + window_size - 1)
-                print("\xb3\xc0");
-            else
-                print("\xb3\xb3");
+            set_cursor_pos_helper(term_cols - 1, y);
+            if (current_line == window_offset + window_size - 1) {
+                get_cursor_pos(&tmpx, &tmpy);
+                print(serial ? "|" : "\xb3");
+                set_cursor_pos_helper(0, tmpy + 1);
+                print(serial ? "\\" : "\xc0");
+            } else {
+                get_cursor_pos(&tmpx, &tmpy);
+                print(serial ? "|" : "\xb3");
+                set_cursor_pos_helper(0, tmpy + 1);
+                print(serial ? "|" : "\xb3");
+            }
             line_offset = 0;
             token_type = validate_line(buffer + i + 1);
             current_line++;
@@ -305,10 +317,15 @@ refresh:
                 printed_early = true;
                 size_t x, y;
                 get_cursor_pos(&x, &y);
-                if (y == term_rows - 3)
-                    print("\x1a\xc0");
-                else
-                    print("\x1a\x1b\x1b");
+                if (y == term_rows - 3) {
+                    print(serial ? ">" : "\x1a");
+                    set_cursor_pos_helper(0, y + 1);
+                    print(serial ? "\\" : "\xc0");
+                } else {
+                    print(serial ? ">" : "\x1a");
+                    set_cursor_pos_helper(0, y + 1);
+                    print(serial ? "<" : "\x1b\x1b");
+                }
             }
             window_size--;
         }
@@ -365,7 +382,7 @@ refresh:
     if (validation_enabled) {
         size_t x, y;
         get_cursor_pos(&x, &y);
-        set_cursor_pos(0, term_rows-1);
+        set_cursor_pos_helper(0, term_rows-1);
         scroll_disable();
         if (invalid_syntax) {
             print("\e[31mConfiguration is INVALID.\e[0m");
@@ -373,34 +390,40 @@ refresh:
             print("\e[32mConfiguration is valid.\e[0m");
         }
         scroll_enable();
-        set_cursor_pos(x, y);
+        set_cursor_pos_helper(x, y);
     }
 
     if (current_line - window_offset < window_size) {
         size_t x, y;
         for (size_t i = 0; i < (window_size - (current_line - window_offset)) - 1; i++) {
             get_cursor_pos(&x, &y);
-            set_cursor_pos(term_cols - 1, y);
-            print("\xb3\xb3");
+            set_cursor_pos_helper(term_cols - 1, y);
+            print(serial ? "|" : "\xb3");
+            set_cursor_pos_helper(0, y + 1);
+            print(serial ? "|" : "\xb3");
         }
         get_cursor_pos(&x, &y);
-        set_cursor_pos(term_cols - 1, y);
-        print("\xb3\xc0");
+        set_cursor_pos_helper(term_cols - 1, y);
+        print(serial ? "|" : "\xb3");
+        set_cursor_pos_helper(0, y + 1);
+        print(serial ? "\\" : "\xc0");
     }
 
     for (size_t i = 0; i < term_cols - 2; i++) {
         switch (i) {
             case 1: case 2: case 3:
                 if (current_line - window_offset >= window_size) {
-                    print("\x19");
+                    print(serial ? "v" : "\x19");
                     break;
                 }
                 // FALLTHRU
             default:
-                print("\xc4");
+                print(serial ? "-" : "\xc4");
         }
     }
-    print("\xd9");
+    get_cursor_pos(&tmpx, &tmpy);
+    print(serial ? "/" : "\xd9");
+    set_cursor_pos_helper(0, tmpy + 1);
 
     if (display_overflow_error) {
         scroll_disable();
@@ -410,7 +433,7 @@ refresh:
     }
 
     // Hack to redraw the cursor
-    set_cursor_pos(cursor_x, cursor_y);
+    set_cursor_pos_helper(cursor_x, cursor_y);
     enable_cursor();
 
     term_double_buffer_flush();
@@ -500,21 +523,21 @@ static size_t print_tree(const char *shift, size_t level, size_t base_index, siz
                 for (size_t j = 0; j < i; j++)
                     actual_parent = actual_parent->parent;
                 if (actual_parent->next != NULL) {
-                    if (!no_print) print(" \xb3");
+                    if (!no_print) print(serial ? " |" : " \xb3");
                 } else {
                     if (!no_print) print("  ");
                 }
             }
             if (current_entry->next == NULL) {
-                if (!no_print) print(" \xc0");
+                if (!no_print) print(serial ? " `" : " \xc0");
             } else {
-                if (!no_print) print(" \xc3");
+                if (!no_print) print(serial ? " |" : " \xc3");
             }
         }
         if (current_entry->sub) {
             if (!no_print) print(current_entry->expanded ? "[-]" : "[+]");
         } else if (level) {
-            if (!no_print) print("\xc4> ");
+            if (!no_print) print(serial ? "-> " : "\xc4> ");
         } else {
             if (!no_print) print("   ");
         }
@@ -638,6 +661,9 @@ static noreturn void _menu(bool timeout_enabled) {
     char *verbose_str = config_get_value(NULL, 0, "VERBOSE");
     verbose = verbose_str != NULL && strcmp(verbose_str, "yes") == 0;
 
+    char *serial_str = config_get_value(NULL, 0, "SERIAL");
+    serial = serial_str != NULL && strcmp(serial_str, "yes") == 0;
+
     menu_branding = config_get_value(NULL, 0, "MENU_BRANDING");
     if (menu_branding == NULL)
         menu_branding = "Limine " LIMINE_VERSION;
@@ -715,12 +741,12 @@ refresh:
 
     disable_cursor();
 
-    clear(true);
+    print("\e[2J\e[H");
     {
         size_t x, y;
         print("\n");
         get_cursor_pos(&x, &y);
-        set_cursor_pos(term_cols / 2 - DIV_ROUNDUP(strlen(menu_branding), 2), y);
+        set_cursor_pos_helper(term_cols / 2 - DIV_ROUNDUP(strlen(menu_branding), 2), y);
         print("\e[3%sm%s\e[37m", menu_branding_colour, menu_branding);
         print("\n\n\n\n");
     }
@@ -740,44 +766,45 @@ refresh:
         size_t x, y;
         get_cursor_pos(&x, &y);
 
-        print("\xda");
+        print(serial ? "/" : "\xda");
         for (size_t i = 0; i < term_cols - 2; i++) {
-            print("\xc4");
+            print(serial ? "-" : "\xc4");
         }
-        print("\xbf");
+        print(serial ? "\\" : "\xbf");
 
         for (size_t i = y + 1; i < term_rows - 2; i++) {
-            set_cursor_pos(0, i);
-            print("\xb3");
-            set_cursor_pos(term_cols - 1, i);
-            print("\xb3");
+            set_cursor_pos_helper(0, i);
+            print(serial ? "|" : "\xb3");
+            set_cursor_pos_helper(term_cols - 1, i);
+            print(serial ? "|" : "\xb3");
         }
+        set_cursor_pos_helper(0, term_rows - 2);
 
-        print("\xc0");
+        print(serial ? "\\" : "\xc0");
         for (size_t i = 0; i < term_cols - 2; i++) {
-            print("\xc4");
+            print(serial ? "-" : "\xc4");
         }
-        print("\xd9");
+        print(serial ? "/" : "\xd9");
 
-        set_cursor_pos(x, y + 2);
+        set_cursor_pos_helper(x, y + 2);
     }
 
-    size_t max_entries = print_tree("\xb3   ", 0, 0, selected_entry, menu_tree,
+    size_t max_entries = print_tree(serial ? "|   " : "\xb3   ", 0, 0, selected_entry, menu_tree,
                                  &selected_menu_entry);
 
     {
         size_t x, y;
         get_cursor_pos(&x, &y);
-        set_cursor_pos(0, 3);
+        set_cursor_pos_helper(0, 3);
         if (editor_enabled && selected_menu_entry->sub == NULL) {
             print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m Boot    \e[32mE\e[0m Edit");
         } else {
             print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m %s",
                   selected_menu_entry->expanded ? "Collapse" : "Expand");
         }
-        set_cursor_pos(term_cols - 12, 3);
+        set_cursor_pos_helper(term_cols - 12, 3);
         print("\e[32mC\e[0m Console");
-        set_cursor_pos(x, y);
+        set_cursor_pos_helper(x, y);
     }
 
     if (selected_menu_entry->sub != NULL)
@@ -788,7 +815,7 @@ refresh:
     if (skip_timeout == false) {
         print("\n\n");
         for (size_t i = timeout; i; i--) {
-            set_cursor_pos(0, term_rows - 1);
+            set_cursor_pos_helper(0, term_rows - 1);
             scroll_disable();
             print("\e[2K\e[32mBooting automatically in \e[92m%u\e[32m, press any key to stop the countdown...\e[0m", i);
             scroll_enable();
@@ -808,7 +835,7 @@ refresh:
         goto autoboot;
     }
 
-    set_cursor_pos(0, term_rows - 1);
+    set_cursor_pos_helper(0, term_rows - 1);
     if (selected_menu_entry->comment != NULL) {
         scroll_disable();
         print("\e[36m%s\e[0m", selected_menu_entry->comment);

@@ -11,6 +11,7 @@
 #include <mm/pmm.h>
 
 extern void reset_term(void);
+extern void set_cursor_pos_helper(size_t x, size_t y);
 
 bool early_term = false;
 
@@ -36,6 +37,11 @@ void term_vbe(size_t width, size_t height) {
         term_textmode();
 #endif
         return;
+    }
+
+    if (serial) {
+        term_cols = 80;
+        term_rows = 24;
     }
 
     term_reinit();
@@ -138,8 +144,8 @@ void term_notready(void) {
     term_context_restore = notready_uint64_t;
     term_full_refresh = notready_void;
 
-    term_rows = 100;
-    term_cols = 100;
+    term_cols = 80;
+    term_rows = 24;
 }
 
 #if bios == 1
@@ -350,6 +356,11 @@ void term_textmode(void) {
     }
 
     init_vga_textmode(&term_rows, &term_cols, true);
+
+    if (serial) {
+        term_cols = 80;
+        term_rows = 24;
+    }
 
     term_reinit();
 

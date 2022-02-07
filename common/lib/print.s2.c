@@ -140,6 +140,11 @@ void print(const char *fmt, ...) {
 
 static char print_buf[PRINT_BUF_MAX];
 
+static void serial_out(uint8_t b) {
+    while ((inb(0x3f8 + 5) & 0x20) == 0);
+    outb(0x3f8, b);
+}
+
 void vprint(const char *fmt, va_list args) {
     static bool com_initialised = false;
 
@@ -227,13 +232,20 @@ out:
         if (E9_OUTPUT) {
             outb(0xe9, print_buf[i]);
         }
-        if (COM_OUTPUT) {
-            if (print_buf[i] == '\n') {
-                while ((inb(0x3f8 + 5) & 0x20) == 0);
-                outb(0x3f8, '\r');
+        if (serial || COM_OUTPUT) {
+            switch (print_buf[i]) {
+                case '\n':
+                    serial_out('\r');
+                    serial_out('\n');
+                    continue;
+                case '\e':
+                    serial_out('\e');
+                    continue;
             }
-            while ((inb(0x3f8 + 5) & 0x20) == 0);
-            outb(0x3f8, print_buf[i]);
+            if (!isprint(print_buf[i])) {
+                continue;
+            }
+            serial_out(print_buf[i]);
         }
     }
 }

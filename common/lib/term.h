@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <lib/image.h>
+#include <lib/print.h>
 
 #define TERM_TABSIZE (8)
 #define MAX_ESC_VALUES (16)
@@ -109,8 +110,12 @@ extern bool term_autoflush;
 inline void reset_term(void) {
     term_autoflush = true;
     enable_cursor();
-    clear(true);
+    print("\e[2J\e[H");
     term_double_buffer_flush();
+}
+
+inline void set_cursor_pos_helper(size_t x, size_t y) {
+    print("\e[%u;%uH", (int)y + 1, (int)x + 1);
 }
 
 #endif

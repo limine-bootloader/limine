@@ -239,9 +239,9 @@ static void reprint_string(int x, int y, const char *s) {
     size_t orig_x, orig_y;
     disable_cursor();
     get_cursor_pos(&orig_x, &orig_y);
-    set_cursor_pos(x, y);
-    term_write((uintptr_t)s, strlen(s));
-    set_cursor_pos(orig_x, orig_y);
+    set_cursor_pos_helper(x, y);
+    print("%s", s);
+    set_cursor_pos_helper(orig_x, orig_y);
     enable_cursor();
 }
 
@@ -254,7 +254,7 @@ static void cursor_back(void) {
         y--;
         x = term_cols - 1;
     }
-    set_cursor_pos(x, y);
+    set_cursor_pos_helper(x, y);
 }
 
 static void cursor_fwd(void) {
@@ -266,7 +266,7 @@ static void cursor_fwd(void) {
         y++;
         x = 0;
     }
-    set_cursor_pos(x, y);
+    set_cursor_pos_helper(x, y);
 }
 
 void readline(const char *orig_str, char *buf, size_t limit) {
@@ -280,7 +280,7 @@ void readline(const char *orig_str, char *buf, size_t limit) {
     size_t orig_x, orig_y;
     get_cursor_pos(&orig_x, &orig_y);
 
-    term_write((uintptr_t)orig_str, orig_str_len);
+    print("%s", orig_str);
 
     for (size_t i = orig_str_len; ; ) {
         term_double_buffer_flush();
@@ -319,7 +319,7 @@ void readline(const char *orig_str, char *buf, size_t limit) {
                 }
                 continue;
             case '\n':
-                term_write((uintptr_t)"\n", 1);
+                print("\n");
                 goto out;
             case GETCHAR_END:
                 for (size_t j = 0; j < strlen(buf) - i; j++) {

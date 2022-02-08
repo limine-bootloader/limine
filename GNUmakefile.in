@@ -16,6 +16,8 @@ NASMESCAPE = $(subst ','"'$(COMMA) \"'\"$(COMMA) '"',$(1))
 override PATH := $(BUILDDIR)/toolchain/bin:/usr/local/bin:$(PATH)
 export PATH
 
+override BUILD_ELTORITO_EFI := @build_eltorito_efi@
+
 WERROR ?= @werror@
 export WERROR
 
@@ -140,6 +142,7 @@ limine-bios: common-bios decompressor
 
 .PHONY: limine-eltorito-efi
 limine-eltorito-efi:
+ifeq ($(BUILD_ELTORITO_EFI), yes)
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	dd if=/dev/zero of='$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' bs=512 count=2880 2>/dev/null
 	( mformat -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' -f 1440 :: && \
@@ -150,6 +153,7 @@ limine-eltorito-efi:
 	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/common-uefi32/BOOTIA32.EFI' ] && \
 	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/common-uefi32/BOOTIA32.EFI' ::/EFI/BOOT ) || true ) \
 	) || rm -f '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin'
+endif
 
 .PHONY: limine-uefi
 limine-uefi: limine-uefi32 limine-uefi64

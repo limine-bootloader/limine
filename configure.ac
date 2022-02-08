@@ -41,19 +41,24 @@ if ! test "x$GZIP_FOUND" = "xyes"; then
     AC_MSG_ERROR([gzip not found, please install gzip before configuring])
 fi
 
-BUILD_ELTORITO_EFI="yes"
+BUILD_ELTORITO_EFI="default"
 
 AC_ARG_ENABLE([eltorito-efi],
     AS_HELP_STRING([--disable-eltorito-efi], [disable limine-eltorito-efi.bin build]),
     BUILD_ELTORITO_EFI="$enableval")
 
-AC_CHECK_PROG([MTOOLS_FOUND], [mcopy], [yes])
-if ! test "x$MTOOLS_FOUND" = "xyes"; then
-    AC_MSG_WARN([mtools not found, install mtools to build limine-eltorito-efi.bin])
-    BUILD_ELTORITO_EFI="no"
+if ! test "x$BUILD_ELTORITO_EFI" = "xno"; then
+    AC_CHECK_PROG([MTOOLS_FOUND], [mcopy], [yes])
+    if ! test "x$MTOOLS_FOUND" = "xyes"; then
+        if test "x$BUILD_ELTORITO_EFI" = "xyes"; then
+            AC_MSG_ERROR([mtools not found, install mtools to build limine-eltorito-efi.bin])
+        fi
+        AC_MSG_WARN([mtools not found, install mtools to build limine-eltorito-efi.bin])
+        BUILD_ELTORITO_EFI="no"
+    fi
 fi
 
-if test "$BUILD_ELTORITO_EFI" = "yes"; then
+if ! test "x$BUILD_ELTORITO_EFI" = "xno"; then
     AC_SUBST(build_eltorito_efi, [yes])
 fi
 

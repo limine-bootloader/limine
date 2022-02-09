@@ -70,9 +70,9 @@ static bool stage3_init(struct volume *part) {
 }
 
 enum {
-    BOOTED_FROM_HDD,
-    BOOTED_FROM_PXE,
-    BOOTED_FROM_CD
+    BOOTED_FROM_HDD = 0,
+    BOOTED_FROM_PXE = 1,
+    BOOTED_FROM_CD = 2
 };
 
 noreturn void entry(uint8_t boot_drive, int boot_from) {
@@ -99,6 +99,10 @@ noreturn void entry(uint8_t boot_drive, int boot_from) {
     } else if (boot_from == BOOTED_FROM_PXE) {
         pxe_init();
         boot_volume = pxe_bind_volume();
+    }
+
+    if (boot_volume == NULL) {
+        panic(false, "Could not determine boot drive\n");
     }
 
     volume_iterate_parts(boot_volume,

@@ -151,7 +151,7 @@ void disk_create_index(void) {
         if (r.eflags & EFLAGS_CF)
             continue;
 
-        if (drive_params.lba_count == 0 || drive_params.bytes_per_sect == 0)
+        if (drive_params.bytes_per_sect == 0)
             continue;
 
         struct volume *block = ext_mem_alloc(sizeof(struct volume));

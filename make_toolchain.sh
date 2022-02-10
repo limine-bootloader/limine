@@ -8,7 +8,7 @@ test -z "$srcdir" && srcdir=.
 cd "$srcdir"
 
 TARGET=x86_64-elf
-BINUTILSVERSION=2.37
+BINUTILSVERSION=2.38
 GCCVERSION=11.2.0
 
 if command -v gmake; then

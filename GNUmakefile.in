@@ -26,9 +26,6 @@ CC := @CC@
 endif
 export CC
 
-HOST_CC ?= @HOST_CC@
-export HOST_CC
-
 INSTALL ?= @INSTALL@
 export INSTALL
 
@@ -80,15 +77,11 @@ override STAGE1_FILES := $(shell find '$(call SHESCAPE,$(SRCDIR))/stage1' -type 
 .PHONY: all
 all: limine-uefi limine-bios
 
-$(call MKESCAPE,$(BUILDDIR))/hgen: $(call MKESCAPE,$(SRCDIR))/limine-install/hgen.c
-	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
-	$(HOST_CC) $(CFLAGS) -std=c11 '$(call SHESCAPE,$(SRCDIR))/limine-install/hgen.c' -o '$(call SHESCAPE,$(BUILDDIR))/hgen'
-
 .PHONY: limine-hdd.h
 limine-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-hdd.h
 
-$(call MKESCAPE,$(BINDIR))/limine-hdd.h: $(call MKESCAPE,$(BUILDDIR))/hgen $(call MKESCAPE,$(BINDIR))/limine-hdd.bin
-	cd '$(call SHESCAPE,$(BINDIR))' && '$(call SHESCAPE,$(BUILDDIR))/hgen' >limine-hdd.h
+$(call MKESCAPE,$(BINDIR))/limine-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-hdd.bin
+	cd '$(call SHESCAPE,$(BINDIR))' && '$(call SHESCAPE,$(SRCDIR))/limine-install/hgen.sh' >limine-hdd.h
 
 .PHONY: limine-install
 limine-install:
@@ -99,7 +92,7 @@ limine-install:
 
 .PHONY: clean
 clean: limine-bios-clean limine-uefi32-clean limine-uefi64-clean
-	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp' '$(call SHESCAPE,$(BUILDDIR))/hgen'
+	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 
 .PHONY: install-data
 install-data:

@@ -62,9 +62,6 @@ if ! test "x$BUILD_ELTORITO_EFI" = "xno"; then
     AC_SUBST(build_eltorito_efi, [yes])
 fi
 
-AC_ARG_VAR(HOST_CC, [C compiler for the build host [default: $CC]])
-test "x$HOST_CC" = "x" && HOST_CC="$CC"
-
 AC_ARG_VAR(TOOLCHAIN, [Alternative toolchain prefix [default: limine]])
 test "x$TOOLCHAIN" = "x" && TOOLCHAIN='limine'
 

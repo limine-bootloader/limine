@@ -4,8 +4,9 @@ AC_PREREQ(2.69)
 
 AC_CONFIG_AUX_DIR([build-aux])
 
-TOOLCHAIN_DIR="$(pwd -P)/toolchain/bin"
-PATH="$TOOLCHAIN_DIR$PATH_SEPARATOR/usr/local/bin$PATH_SEPARATOR$PATH"
+SOURCE_DIR="$(cd "$srcdir" && pwd -P)"
+BUILD_DIR="$(pwd -P)"
+PATH="$BUILD_DIR/toolchain/bin$PATH_SEPARATOR$SOURCE_DIR/toolchain/bin$PATH_SEPARATOR/usr/local/bin$PATH_SEPARATOR$PATH"
 export PATH
 
 test "x$CFLAGS" = "x" && CFLAGS='-g -O2 -pipe -Wall -Wextra'

@@ -13,7 +13,7 @@ MKESCAPE = $(subst $(SPACE),\ ,$(1))
 SHESCAPE = $(subst ','\'',$(1))
 NASMESCAPE = $(subst ','"'$(COMMA) \"'\"$(COMMA) '"',$(1))
 
-override PATH := $(BUILDDIR)/toolchain/bin:/usr/local/bin:$(PATH)
+override PATH := $(SRCDIR)/toolchain/bin:$(BUILDDIR)/toolchain/bin:/usr/local/bin:$(PATH)
 export PATH
 
 override BUILD_ELTORITO_EFI := @build_eltorito_efi@

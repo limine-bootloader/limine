@@ -1,10 +1,10 @@
 PREFIX ?= @prefix@
 DESTDIR ?=
 
-override BUILDDIR := @abs_builddir@
+override BUILDDIR := @BUILDDIR@
 override BINDIR := $(BUILDDIR)/bin
 
-override SRCDIR := @abs_srcdir@
+override SRCDIR := @SRCDIR@
 
 override SPACE := $(subst ,, )
 override COMMA := ,
@@ -13,12 +13,12 @@ MKESCAPE = $(subst $(SPACE),\ ,$(1))
 SHESCAPE = $(subst ','\'',$(1))
 NASMESCAPE = $(subst ','"'$(COMMA) \"'\"$(COMMA) '"',$(1))
 
-override PATH := $(BUILDDIR)/toolchain/bin:$(SRCDIR)/toolchain/bin:/usr/local/bin:$(PATH)
+override PATH := @PATH@
 export PATH
 
-override BUILD_ELTORITO_EFI := @build_eltorito_efi@
+override BUILD_ELTORITO_EFI := @BUILD_ELTORITO_EFI@
 
-WERROR ?= @werror@
+WERROR ?= @WERROR@
 export WERROR
 
 ifeq ($(origin CC), default)
@@ -63,10 +63,10 @@ export LIMINE_OBJDUMP
 LIMINE_READELF ?= @LIMINE_READELF@
 export LIMINE_READELF
 
-override USING_CLANG := @using_clang@
+override USING_CLANG := @USING_CLANG@
 export USING_CLANG
 
-override LIMINE_VERSION := @limine_version@
+override LIMINE_VERSION := @PACKAGE_VERSION@
 export LIMINE_VERSION
 
 override LIMINE_COPYRIGHT := $(shell $(GREP) Copyright '$(call SHESCAPE,$(SRCDIR))/LICENSE.md')
@@ -122,9 +122,9 @@ uninstall:
 
 $(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/common-bios/stage2.bin.gz
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm @werror@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
-	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm @werror@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
-	cd '$(call SHESCAPE,$(SRCDIR))/stage1/pxe' && nasm bootsect.asm @werror@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin'
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm @WERROR@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm @WERROR@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/pxe' && nasm bootsect.asm @WERROR@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin'
 	cp '$(call SHESCAPE,$(BUILDDIR))/common-bios/limine.sys' '$(call SHESCAPE,$(BINDIR))/'
 	touch '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 
@@ -135,7 +135,7 @@ limine-bios: common-bios decompressor
 
 .PHONY: limine-eltorito-efi
 limine-eltorito-efi:
-ifeq ($(BUILD_ELTORITO_EFI), yes)
+ifneq ($(BUILD_ELTORITO_EFI), no)
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	dd if=/dev/zero of='$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' bs=512 count=2880 2>/dev/null
 	( mformat -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' -f 1440 :: && \

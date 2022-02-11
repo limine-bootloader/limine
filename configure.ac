@@ -1,13 +1,17 @@
-AC_INIT([Limine], m4_esyscmd([./version.sh]), [https://github.com/limine-bootloader/limine/issues], [limine])
+AC_INIT([Limine], m4_esyscmd([./version.sh]), [https://github.com/limine-bootloader/limine/issues], [limine], [https://limine-bootloader.org/])
 
 AC_PREREQ(2.69)
 
 AC_CONFIG_AUX_DIR([build-aux])
 
-SOURCE_DIR="$(cd "$srcdir" && pwd -P)"
-BUILD_DIR="$(pwd -P)"
-PATH="$BUILD_DIR/toolchain/bin$PATH_SEPARATOR$SOURCE_DIR/toolchain/bin$PATH_SEPARATOR/usr/local/bin$PATH_SEPARATOR$PATH"
+SRCDIR="$(cd "$srcdir" && pwd -P)"
+BUILDDIR="$(pwd -P)"
+PATH="$BUILDDIR/toolchain/bin$PATH_SEPARATOR$SRCDIR/toolchain/bin$PATH_SEPARATOR/usr/local/bin$PATH_SEPARATOR$PATH"
 export PATH
+
+AC_SUBST(SRCDIR, [$SRCDIR])
+AC_SUBST(BUILDDIR, [$BUILDDIR])
+AC_SUBST(PATH, [$PATH])
 
 test "x$CFLAGS" = "x" && CFLAGS='-g -O2 -pipe -Wall -Wextra'
 AC_PROG_CC
@@ -18,7 +22,7 @@ AC_ARG_ENABLE([werror],
     werror_state="$enableval")
 
 if test "$werror_state" = "yes"; then
-    AC_SUBST(werror, [-Werror])
+    AC_SUBST(WERROR, [-Werror])
     CFLAGS="$CFLAGS -Werror"
 fi
 
@@ -59,9 +63,7 @@ if ! test "x$BUILD_ELTORITO_EFI" = "xno"; then
     fi
 fi
 
-if ! test "x$BUILD_ELTORITO_EFI" = "xno"; then
-    AC_SUBST(build_eltorito_efi, [yes])
-fi
+AC_SUBST(BUILD_ELTORITO_EFI, [$BUILD_ELTORITO_EFI])
 
 AC_ARG_VAR(TOOLCHAIN, [Alternative toolchain prefix [default: limine]])
 test "x$TOOLCHAIN" = "x" && TOOLCHAIN='limine'
@@ -94,9 +96,9 @@ if ! $LIMINE_CC --version >/dev/null 2>&1; then
 fi
 
 if $LIMINE_CC --version | $GREP clang >/dev/null 2>&1; then
-    AC_SUBST(using_clang, 1)
+    AC_SUBST(USING_CLANG, 1)
 elif $LIMINE_CC --version | $GREP 'Free Software Foundation' >/dev/null 2>&1; then
-    AC_SUBST(using_clang, 0)
+    AC_SUBST(USING_CLANG, 0)
 else
     CC_ERROR_MSG
 fi
@@ -149,8 +151,6 @@ test "x$LIMINE_CFLAGS" = "x" && LIMINE_CFLAGS='-O3 -pipe -Wall -Wextra'
 
 AC_ARG_VAR(LIMINE_LDFLAGS, [Linker flags for Limine [default: ]])
 test "x$LIMINE_LDFLAGS" = "x" && LIMINE_LDFLAGS=' '
-
-AC_SUBST(limine_version, m4_esyscmd([./version.sh]))
 
 AC_PREFIX_DEFAULT(/usr/local)
 

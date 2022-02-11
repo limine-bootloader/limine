@@ -112,7 +112,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Retrieve SSH key
-        run: 'echo "$ssh_key" > ssh_key'
+        run: 'echo "$ssh_key" > ssh_key && chmod 600 ssh_key'
         env:
           ssh_key: ${{ secrets.SSH_KEY }}
 

@@ -2,7 +2,6 @@ CC ?= cc
 INSTALL ?= ./install-sh
 
 PREFIX ?= /usr/local
-DESTDIR ?=
 
 CFLAGS ?= -g -O2 -pipe -Wall -Wextra
 
@@ -35,4 +34,4 @@ clean:
 	rm -f limine-install limine-install.exe
 
 limine-install: limine-install.c
-	$(CC) $(CFLAGS) -std=c11 limine-install.c -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) -std=c11 limine-install.c -o $@

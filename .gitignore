@@ -2,6 +2,7 @@
 /build
 /toolchain
 /reduced-gnu-efi
+/freestanding_headers
 /ovmf*
 *.o
 *.d

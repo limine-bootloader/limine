@@ -63,7 +63,7 @@ override INTERNAL_CFLAGS := \
 	-DLIMINE_COPYRIGHT='"$(LIMINE_COPYRIGHT)"' \
 	-DCOM_OUTPUT=$(COM_OUTPUT) \
 	-DE9_OUTPUT=$(E9_OUTPUT) \
-	-I../stdinc \
+	-I../freestanding_headers \
 	-I. \
 	-I../stivale \
 	-I'$(call SHESCAPE,$(BUILDDIR))/tinf'

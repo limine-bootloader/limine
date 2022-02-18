@@ -31,6 +31,8 @@ override INTERNAL_CFLAGS := \
 	-fomit-frame-pointer \
 	-nostdinc \
 	-Wno-address-of-packed-member \
+	-Wshadow \
+	-Wvla \
 	-mno-80387 \
 	-mno-mmx \
 	-mno-3dnow \

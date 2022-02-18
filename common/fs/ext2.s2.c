@@ -271,13 +271,16 @@ next:
                    &current_inode, fd, alloc_map);
 
         // name read
-        char name[dir->name_len + 1];
+        char *name = ext_mem_alloc(dir->name_len + 1);
 
         memset(name, 0, dir->name_len + 1);
         inode_read(name, i + sizeof(struct ext2_dir_entry), dir->name_len,
                    &current_inode, fd, alloc_map);
 
-        if (!strcmp(token, name)) {
+        int test = strcmp(token, name);
+        pmm_free(name, dir->name_len + 1);
+
+        if (test == 0) {
             if (escape) {
                 ret = true;
                 goto out;

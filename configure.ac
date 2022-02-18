@@ -46,6 +46,86 @@ if ! test "x$GZIP_FOUND" = "xyes"; then
     AC_MSG_ERROR([gzip not found, please install gzip before configuring])
 fi
 
+BUILD_BIOS="default"
+
+AC_ARG_ENABLE([bios],
+    AS_HELP_STRING([--disable-bios], [disable building the BIOS port]),
+    BUILD_BIOS="$enableval")
+
+if test "x$BUILD_BIOS" = "xno"; then
+    BUILD_BIOS=""
+else
+    BUILD_BIOS="limine-bios"
+fi
+
+AC_SUBST(BUILD_BIOS, [$BUILD_BIOS])
+
+BUILD_LIMINE_INSTALL="default"
+
+AC_ARG_ENABLE([limine-install],
+    AS_HELP_STRING([--disable-limine-install], [disable building limine-install]),
+    BUILD_LIMINE_INSTALL="$enableval")
+
+AC_SUBST(BUILD_LIMINE_INSTALL, [$BUILD_LIMINE_INSTALL])
+
+BUILD_CD="default"
+
+AC_ARG_ENABLE([bios-cd],
+    AS_HELP_STRING([--disable-bios-cd], [disable building the BIOS CD image]),
+    BUILD_CD="$enableval")
+
+AC_SUBST(BUILD_CD, [$BUILD_CD])
+
+BUILD_PXE="default"
+
+AC_ARG_ENABLE([bios-pxe],
+    AS_HELP_STRING([--disable-bios-pxe], [disable building the BIOS PXE image]),
+    BUILD_PXE="$enableval")
+
+AC_SUBST(BUILD_PXE, [$BUILD_PXE])
+
+BUILD_UEFI="default"
+
+AC_ARG_ENABLE([uefi],
+    AS_HELP_STRING([--disable-uefi], [disable building both UEFI ports]),
+    BUILD_UEFI="$enableval")
+
+if test "x$BUILD_UEFI" = "xno"; then
+    BUILD_UEFI=""
+else
+    BUILD_UEFI="limine-uefi"
+fi
+
+AC_SUBST(BUILD_UEFI, [$BUILD_UEFI])
+
+BUILD_UEFI32="default"
+
+AC_ARG_ENABLE([uefi32],
+    AS_HELP_STRING([--disable-uefi32], [disable building the 32-bit UEFI port]),
+    BUILD_UEFI32="$enableval")
+
+if test "x$BUILD_UEFI32" = "xno"; then
+    BUILD_UEFI32=""
+else
+    BUILD_UEFI32="limine-uefi32"
+fi
+
+AC_SUBST(BUILD_UEFI32, [$BUILD_UEFI32])
+
+BUILD_UEFI64="default"
+
+AC_ARG_ENABLE([uefi64],
+    AS_HELP_STRING([--disable-uefi64], [disable building the 64-bit UEFI port]),
+    BUILD_UEFI64="$enableval")
+
+if test "x$BUILD_UEFI64" = "xno"; then
+    BUILD_UEFI64=""
+else
+    BUILD_UEFI64="limine-uefi64"
+fi
+
+AC_SUBST(BUILD_UEFI64, [$BUILD_UEFI64])
+
 BUILD_ELTORITO_EFI="default"
 
 AC_ARG_ENABLE([eltorito-efi],

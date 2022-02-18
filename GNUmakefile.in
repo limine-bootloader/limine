@@ -17,6 +17,9 @@ override PATH := @PATH@
 export PATH
 
 override BUILD_ELTORITO_EFI := @BUILD_ELTORITO_EFI@
+override BUILD_PXE := @BUILD_PXE@
+override BUILD_CD := @BUILD_CD@
+override BUILD_LIMINE_INSTALL := @BUILD_LIMINE_INSTALL@
 
 WERROR ?= @WERROR@
 export WERROR
@@ -77,7 +80,7 @@ export LIMINE_COPYRIGHT
 override STAGE1_FILES := $(shell find '$(call SHESCAPE,$(SRCDIR))/stage1' -type f -name '*.asm')
 
 .PHONY: all
-all: limine-uefi limine-bios
+all: @BUILD_UEFI@ @BUILD_BIOS@
 
 .PHONY: limine-hdd.h
 limine-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-hdd.h
@@ -125,15 +128,21 @@ uninstall:
 $(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/common-bios/stage2.bin.gz
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm @WERROR@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
+ifneq ($(BUILD_CD), no)
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm @WERROR@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
+endif
+ifneq ($(BUILD_PXE), no)
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/pxe' && nasm bootsect.asm @WERROR@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin'
+endif
 	cp '$(call SHESCAPE,$(BUILDDIR))/common-bios/limine.sys' '$(call SHESCAPE,$(BINDIR))/'
 	touch '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 
 .PHONY: limine-bios
 limine-bios: common-bios decompressor
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
+ifneq ($(BUILD_LIMINE_INSTALL), no)
 	$(MAKE) limine-install
+endif
 
 .PHONY: limine-eltorito-efi
 limine-eltorito-efi:
@@ -151,7 +160,7 @@ ifneq ($(BUILD_ELTORITO_EFI), no)
 endif
 
 .PHONY: limine-uefi
-limine-uefi: limine-uefi32 limine-uefi64
+limine-uefi: @BUILD_UEFI32@ @BUILD_UEFI64@
 	$(MAKE) limine-eltorito-efi
 
 .PHONY: limine-uefi64

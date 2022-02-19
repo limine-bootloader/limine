@@ -64,9 +64,13 @@ _pit_sleep_and_quit_on_keypress:
 
     sti
 
+    mov byte [.mods], 0
+    mov byte [.ascii], 0
+    mov byte [.scan], 0
+
   .loop:
     cmp dword [int_08_ticks_counter], edx
-    je .timeout
+    je .done
 
     push ecx
     push edx
@@ -81,10 +85,17 @@ _pit_sleep_and_quit_on_keypress:
     ; on keypress
     xor ax, ax
     int 0x16
-    jmp .done
+    mov byte [.ascii], al
+    mov byte [.scan], ah
 
-  .timeout:
-    xor eax, eax
+    mov ax, 0x0200
+    int 0x16
+    test al, 0x04
+    jz .done
+
+    ; ctrl handling
+    mov byte [.mods], 0x04
+    add byte [.ascii], 0x60
 
   .done:
     cli
@@ -119,22 +130,26 @@ _pit_sleep_and_quit_on_keypress:
     mov edx, dword [int_08_callback]
     mov dword [0x08*4], edx
 
-    test eax, eax
-    jz .out
+    cmp byte [.ascii], 0
+    je .fail
 
-    xor edx, edx
-    mov dl, ah
-    xor ah, ah
-    push eax
-    push edx
+    push dword [.mods]
+    push dword [.ascii]
+    push dword [.scan]
     call getchar_internal
-    pop edx
-    pop edx
+    add esp, 3*4
 
-  .out:
+    ret
+
+  .fail:
+    xor eax, eax
     ret
 
   .gdt:      dq 0
   .idt:      dq 0
   .rm_idt:   dw 0x3ff
              dd 0
+
+  .mods:  dd 0
+  .ascii: dd 0
+  .scan:  dd 0

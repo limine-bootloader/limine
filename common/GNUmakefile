@@ -60,8 +60,6 @@ override INTERNAL_CFLAGS := \
 	-mno-sse \
 	-mno-sse2 \
 	-MMD \
-	-DLIMINE_VERSION='"$(LIMINE_VERSION)"' \
-	-DLIMINE_COPYRIGHT='"$(LIMINE_COPYRIGHT)"' \
 	-DCOM_OUTPUT=$(COM_OUTPUT) \
 	-DE9_OUTPUT=$(E9_OUTPUT) \
 	-I../freestanding_headers \

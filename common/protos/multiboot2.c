@@ -1,6 +1,7 @@
 #include <protos/multiboot2.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <config.h>
 #include <lib/libc.h>
 #include <lib/elf.h>
 #include <lib/blib.h>

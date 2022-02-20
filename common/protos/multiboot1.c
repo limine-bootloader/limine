@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdnoreturn.h>
+#include <config.h>
 #include <protos/multiboot1.h>
 #include <lib/libc.h>
 #include <lib/elf.h>

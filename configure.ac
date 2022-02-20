@@ -232,7 +232,10 @@ test "x$LIMINE_CFLAGS" = "x" && LIMINE_CFLAGS='-O3 -pipe -Wall -Wextra'
 AC_ARG_VAR(LIMINE_LDFLAGS, [Linker flags for Limine [default: ]])
 test "x$LIMINE_LDFLAGS" = "x" && LIMINE_LDFLAGS=' '
 
+LIMINE_COPYRIGHT=$($GREP Copyright "$SRCDIR/LICENSE.md")
+AC_SUBST(LIMINE_COPYRIGHT, [$LIMINE_COPYRIGHT])
+
 AC_PREFIX_DEFAULT(/usr/local)
 
-AC_CONFIG_FILES(GNUmakefile)
+AC_CONFIG_FILES(GNUmakefile common/config.h)
 AC_OUTPUT

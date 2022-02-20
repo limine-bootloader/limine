@@ -31,6 +31,7 @@
 /config.log
 /autom4te.cache
 /GNUmakefile
+/common/config.h
 /common-bios
 /common-uefi32
 /common-uefi64

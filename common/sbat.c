@@ -1,5 +1,7 @@
 #if uefi == 1
 
+#include <config.h>
+
 asm (
     ".section .sbat\n\t"
     ".ascii \"sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md\\n\"\n\t"

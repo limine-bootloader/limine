@@ -130,7 +130,7 @@ _pit_sleep_and_quit_on_keypress:
     mov edx, dword [int_08_callback]
     mov dword [0x08*4], edx
 
-    cmp byte [.ascii], 0
+    cmp byte [.scan], 0
     je .fail
 
     push dword [.mods]

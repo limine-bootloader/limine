@@ -63,6 +63,7 @@ override INTERNAL_CFLAGS := \
 	-DCOM_OUTPUT=$(COM_OUTPUT) \
 	-DE9_OUTPUT=$(E9_OUTPUT) \
 	-I../freestanding_headers \
+	-I'$(call SHESCAPE,$(BUILDDIR))/..' \
 	-I. \
 	-I../stivale \
 	-I'$(call SHESCAPE,$(BUILDDIR))/tinf'

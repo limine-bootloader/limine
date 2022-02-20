@@ -197,7 +197,7 @@ dist:
 
 .PHONY: distclean
 distclean: clean
-	rm -rf toolchain ovmf* config.log config.status GNUmakefile
+	rm -rf toolchain ovmf* config.log config.status GNUmakefile common/config.h
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean

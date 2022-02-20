@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdnoreturn.h>
+#include <config.h>
 #include <menu.h>
 #include <lib/print.h>
 #include <lib/blib.h>

@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <config.h>
 #include <protos/stivale.h>
 #include <protos/stivale2.h>
 #include <lib/elf.h>

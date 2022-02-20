@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
+#include <config.h>
 #include <console.h>
 #include <menu.h>
 #include <mm/pmm.h>

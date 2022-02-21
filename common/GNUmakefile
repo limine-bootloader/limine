@@ -47,6 +47,7 @@ override INTERNAL_CFLAGS := \
 	-std=gnu11 \
 	-ffreestanding \
 	-fno-stack-protector \
+	-fno-stack-check \
 	-fno-omit-frame-pointer \
 	-fno-strict-aliasing \
 	-fno-lto \
@@ -290,14 +291,12 @@ $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a: reduced-gnu-efi
 
 .PHONY: reduced-gnu-efi
 reduced-gnu-efi: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
-	unset ARFLAGS; unset ASFLAGS; unset LDFLAGS; unset CFLAGS; unset CPPFLAGS; \
+	unset ARFLAGS; unset CPPFLAGS; \
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi' \
-		HOSTCC="$(CC)" \
 		CC="$(LIMINE_CC) -m64 -march=x86-64 -mtune=generic" \
-		LD="$(LIMINE_LD)" \
+		CFLAGS='-nostdinc' \
+		INCDIR='-I$(call SHESCAPE,$(SRCDIR))/../freestanding_headers' \
 		AR="$(LIMINE_AR)" \
-		AS="$(LIMINE_AS)" \
-		OBJCOPY="$(LIMINE_OBJCOPY)" \
 		ARCH=x86_64
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi64.ld.in
@@ -339,14 +338,12 @@ $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a: reduced-gnu-efi
 
 .PHONY: reduced-gnu-efi
 reduced-gnu-efi: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
-	unset ARFLAGS; unset ASFLAGS; unset LDFLAGS; unset CFLAGS; unset CPPFLAGS; \
+	unset ARFLAGS; unset CPPFLAGS; \
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi' \
-		HOSTCC="$(CC)" \
 		CC="$(LIMINE_CC) -m32 -march=i686 -mtune=generic" \
-		LD="$(LIMINE_LD)" \
+		CFLAGS='-nostdinc' \
+		INCDIR='-I$(call SHESCAPE,$(SRCDIR))/../freestanding_headers' \
 		AR="$(LIMINE_AR)" \
-		AS="$(LIMINE_AS)" \
-		OBJCOPY="$(LIMINE_OBJCOPY)" \
 		ARCH=ia32
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi32.ld.in

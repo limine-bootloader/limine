@@ -10,6 +10,7 @@ cd "$srcdir"
 TARGET=x86_64-elf
 BINUTILSVERSION=2.38
 GCCVERSION=11.2.0
+NASMVERSION=2.15.05
 
 if command -v gmake; then
     export MAKE=gmake
@@ -48,6 +49,9 @@ fi
 if [ ! -f gcc-$GCCVERSION.tar.gz ]; then
     curl -o gcc-$GCCVERSION.tar.gz https://ftp.gnu.org/gnu/gcc/gcc-$GCCVERSION/gcc-$GCCVERSION.tar.gz
 fi
+if [ ! -f nasm-$NASMVERSION.tar.gz ]; then
+    curl -o nasm-$NASMVERSION.tar.gz https://www.nasm.us/pub/nasm/releasebuilds/$NASMVERSION/nasm-$NASMVERSION.tar.gz
+fi
 
 rm -rf build
 mkdir build
@@ -55,6 +59,7 @@ cd build
 
 $TAR -zxf ../binutils-$BINUTILSVERSION.tar.gz
 $TAR -zxf ../gcc-$GCCVERSION.tar.gz
+$TAR -zxf ../nasm-$NASMVERSION.tar.gz
 
 mkdir build-binutils
 cd build-binutils
@@ -76,4 +81,11 @@ $MAKE all-gcc
 $MAKE all-target-libgcc
 $MAKE install-gcc
 $MAKE install-target-libgcc
+cd ..
+
+mkdir build-nasm
+cd build-nasm
+../nasm-$NASMVERSION/configure --prefix="$PREFIX"
+MAKEFLAGS="" $MAKE
+MAKEFLAGS="" $MAKE install
 cd ..

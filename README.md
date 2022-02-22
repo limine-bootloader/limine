@@ -46,9 +46,9 @@ For example, to clone the latest binary release of the `v2.x` branch one can do
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v2.0-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example v2.78.2)
+or, to clone a specific binary point release (for example v2.85.4)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v2.78.2-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v2.85.4-binary --depth=1
 ```
 
 Additionally, the absolute latest Limine binary release can be obtained by
@@ -75,7 +75,7 @@ that the host toolchain will suffice. You can skip to the next paragraph in orde
 to use the system's toolchain instead. If that fails, you can still come back here
 later (remember to `make clean` and re-run `./configure` after building the toolchain).
 
-The toolchain's build process depends on the following packages: `GNU make`, `GNU tar`,
+The toolchain's build process depends on the following packages: `GNU make`, `GNU tar`, `texinfo`,
 `curl`, `gzip`, `bzip2`, `gcc/clang`, `g++/clang++`.
 
 Building the toolchain can be accomplished by running:
@@ -97,7 +97,7 @@ paragraph, or `gcc` or `llvm/clang` must also be installed, alongside
 If using a release tarball (recommended, see https://github.com/limine-bootloader/limine/releases),
 run `./configure` directly.
 
-If checking out from the repository, run `./autogen.sh` first (GNU autoconf and GNU automake required).
+If checking out from the repository, run `./autogen.sh` first (`GNU autoconf` and `GNU automake` required).
 
 Both `./autogen.sh` and `./configure` take arguments and environment variables;
 for more information on these, run `./configure --help`.

@@ -189,17 +189,24 @@ bool efi_exit_boot_services(void) {
     if (status)
         goto fail;
 
+    size_t retries = 0;
+
+retry:
     status = gBS->GetMemoryMap(&efi_mmap_size, efi_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
     if (status)
         goto fail;
 
     // Be gone, UEFI!
     status = gBS->ExitBootServices(efi_image_handle, mmap_key);
+    if (status) {
+        if (retries == 128) {
+            goto fail;
+        }
+        retries++;
+        goto retry;
+    }
 
     asm volatile ("cli" ::: "memory");
-
-    if (status)
-        goto fail;
 
     pmm_reclaim_uefi_mem();
 

@@ -40,8 +40,8 @@ void term_vbe(size_t width, size_t height) {
     }
 
     if (serial) {
-        term_cols = 80;
-        term_rows = 24;
+        term_cols = term_cols > 80 ? 80 : term_cols;
+        term_rows = term_rows > 24 ? 24 : term_rows;
     }
 
     term_reinit();
@@ -358,8 +358,8 @@ void term_textmode(void) {
     init_vga_textmode(&term_rows, &term_cols, true);
 
     if (serial) {
-        term_cols = 80;
-        term_rows = 24;
+        term_cols = term_cols > 80 ? 80 : term_cols;
+        term_rows = term_rows > 24 ? 24 : term_rows;
     }
 
     term_reinit();

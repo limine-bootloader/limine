@@ -152,8 +152,10 @@ bool init_gop(struct fb_info *ret,
         panic(false, "gop: Initialisation failed");
     }
 
-    if (preset_mode == INVALID_PRESET_MODE)
+    if (preset_mode == INVALID_PRESET_MODE) {
         preset_mode = gop->Mode->Mode;
+        current_video_mode = preset_mode;
+    }
 
     struct resolution fallback_resolutions[] = {
         { 0,    0,   0  },   // Overridden by preset mode

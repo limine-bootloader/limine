@@ -9,6 +9,7 @@
 #include <lib/real.h>
 #endif
 #include <sys/cpu.h>
+#include <drivers/serial.h>
 
 #if bios == 1
 static void s2_print(const char *s, size_t len) {
@@ -140,27 +141,7 @@ void print(const char *fmt, ...) {
 
 static char print_buf[PRINT_BUF_MAX];
 
-static void serial_out(uint8_t b) {
-    while ((inb(0x3f8 + 5) & 0x20) == 0);
-    outb(0x3f8, b);
-}
-
 void vprint(const char *fmt, va_list args) {
-    static bool com_initialised = false;
-
-    if (COM_OUTPUT && !com_initialised) {
-        // Init com1
-        outb(0x3F8 + 1, 0x00);
-        outb(0x3F8 + 3, 0x80);
-        outb(0x3F8 + 0, 0x0c); // 9600 baud
-        outb(0x3F8 + 1, 0x00);
-        outb(0x3F8 + 3, 0x03);
-        outb(0x3F8 + 2, 0xc7);
-        outb(0x3F8 + 4, 0x0b);
-
-        com_initialised = true;
-    }
-
     size_t print_buf_i = 0;
 
     for (;;) {

@@ -10,6 +10,8 @@
 #elif uefi == 1
 #  include <efi.h>
 #endif
+#include <drivers/serial.h>
+#include <sys/cpu.h>
 
 int getchar_internal(uint8_t scancode, uint8_t ascii, uint32_t shift_state) {
     switch (scancode) {
@@ -89,89 +91,171 @@ int getchar_internal(uint8_t scancode, uint8_t ascii, uint32_t shift_state) {
 
 #if bios == 1
 int getchar(void) {
-    uint8_t scancode = 0;
-    uint8_t ascii = 0;
-    uint32_t mods = 0;
-again:;
-    struct rm_regs r = {0};
-    rm_int(0x16, &r, &r);
-    scancode = (r.eax >> 8) & 0xff;
-    ascii = r.eax & 0xff;
-
-    r = (struct rm_regs){ 0 };
-    r.eax = 0x0200; // GET SHIFT FLAGS
-    rm_int(0x16, &r, &r);
-
-    if (r.eax & GETCHAR_LCTRL) {
-        /* the bios subtracts 0x60 from ascii if ctrl is pressed */
-        mods = GETCHAR_LCTRL;
-        ascii += 0x60;
+    for (;;) {
+        int ret = pit_sleep_and_quit_on_keypress(65535);
+        if (ret != 0) {
+            return ret;
+        }
     }
-
-    int ret = getchar_internal(scancode, ascii, mods);
-    if (ret == -1)
-        goto again;
-    return ret;
 }
 
 int _pit_sleep_and_quit_on_keypress(uint32_t ticks);
 
+static int input_sequence(void) {
+    int val = 0;
+
+    for (;;) {
+        int ret = -1;
+        size_t retries = 0;
+
+        while (ret == -1 && retries < 1000000) {
+            ret = serial_in();
+            retries++;
+        }
+        if (ret == -1) {
+            return 0;
+        }
+
+        switch (ret) {
+            case 'A':
+                return GETCHAR_CURSOR_UP;
+            case 'B':
+                return GETCHAR_CURSOR_DOWN;
+            case 'C':
+                return GETCHAR_CURSOR_RIGHT;
+            case 'D':
+                return GETCHAR_CURSOR_LEFT;
+            case 'F':
+                return GETCHAR_END;
+            case 'H':
+                return GETCHAR_HOME;
+        }
+
+        if (ret > '9' || ret < '0') {
+            break;
+        }
+
+        val *= 10;
+        val += ret - '0';
+    }
+
+    switch (val) {
+        case 3:
+            return GETCHAR_DELETE;
+        case 5:
+            return GETCHAR_PGUP;
+        case 6:
+            return GETCHAR_PGDOWN;
+        case 21:
+            return GETCHAR_F10;
+    }
+
+    return 0;
+}
+
 int pit_sleep_and_quit_on_keypress(int seconds) {
-    return _pit_sleep_and_quit_on_keypress(seconds * 18);
+    for (int i = 0; i < seconds * 18; i++) {
+        int ret = _pit_sleep_and_quit_on_keypress(1);
+
+        if (ret != 0) {
+            return ret;
+        }
+
+        if (!serial) {
+            continue;
+        }
+
+        ret = serial_in();
+
+        if (ret != -1) {
+again:
+            switch (ret) {
+                case '\r':
+                    return '\n';
+                case 0x1b:
+                    delay(10000);
+                    ret = serial_in();
+                    if (ret == -1) {
+                        return GETCHAR_ESCAPE;
+                    }
+                    if (ret == '[') {
+                        return input_sequence();
+                    }
+                    goto again;
+            }
+
+            return ret;
+        }
+    }
+
+    return 0;
 }
 #endif
 
 #if uefi == 1
-int getchar(void) {
+static int input_sequence(bool ext,
+                   EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *exproto,
+                   EFI_SIMPLE_TEXT_IN_PROTOCOL *sproto) {
+    EFI_STATUS status;
     EFI_KEY_DATA kd;
 
-    UINTN which;
+    int val = 0;
 
-    EFI_EVENT events[1];
-
-    EFI_GUID exproto_guid = EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL_GUID;
-    EFI_GUID sproto_guid = EFI_SIMPLE_TEXT_INPUT_PROTOCOL_GUID;
-    EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *exproto = NULL;
-    EFI_SIMPLE_TEXT_IN_PROTOCOL *sproto = NULL;
-
-    if (gBS->HandleProtocol(gST->ConsoleInHandle, &exproto_guid, (void **)&exproto) != EFI_SUCCESS) {
-        if (gBS->HandleProtocol(gST->ConsoleInHandle, &sproto_guid, (void **)&sproto) != EFI_SUCCESS) {
-            panic(false, "Your input device doesn't have an input protocol!");
+    for (;;) {
+        if (ext == false) {
+            status = sproto->ReadKeyStroke(sproto, &kd.Key);
+        } else {
+            status = exproto->ReadKeyStrokeEx(exproto, &kd);
         }
 
-        events[0] = sproto->WaitForKey;
-    } else {
-        events[0] = exproto->WaitForKeyEx;
+        if (status != EFI_SUCCESS) {
+            return 0;
+        }
+
+        switch (kd.Key.UnicodeChar) {
+            case 'A':
+                return GETCHAR_CURSOR_UP;
+            case 'B':
+                return GETCHAR_CURSOR_DOWN;
+            case 'C':
+                return GETCHAR_CURSOR_RIGHT;
+            case 'D':
+                return GETCHAR_CURSOR_LEFT;
+            case 'F':
+                return GETCHAR_END;
+            case 'H':
+                return GETCHAR_HOME;
+        }
+
+        if (kd.Key.UnicodeChar > '9' || kd.Key.UnicodeChar < '0') {
+            break;
+        }
+
+        val *= 10;
+        val += kd.Key.UnicodeChar - '0';
     }
 
-again:
-    memset(&kd, 0, sizeof(EFI_KEY_DATA));
-
-    gBS->WaitForEvent(1, events, &which);
-
-    EFI_STATUS status;
-    if (events[0] == sproto->WaitForKey) {
-        status = sproto->ReadKeyStroke(sproto, &kd.Key);
-    } else {
-        status = exproto->ReadKeyStrokeEx(exproto, &kd);
+    switch (val) {
+        case 3:
+            return GETCHAR_DELETE;
+        case 5:
+            return GETCHAR_PGUP;
+        case 6:
+            return GETCHAR_PGDOWN;
+        case 21:
+            return GETCHAR_F10;
     }
 
-    if (status != EFI_SUCCESS) {
-        goto again;
+    return 0;
+}
+
+int getchar(void) {
+    for (;;) {
+        int ret = pit_sleep_and_quit_on_keypress(65535);
+        if (ret != 0) {
+            return ret;
+        }
     }
-
-    if ((kd.KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID) == 0) {
-        kd.KeyState.KeyShiftState = 0;
-    }
-
-    int ret = getchar_internal(kd.Key.ScanCode, kd.Key.UnicodeChar,
-                               kd.KeyState.KeyShiftState);
-
-    if (ret == -1) {
-        goto again;
-    }
-
-    return ret;
 }
 
 int pit_sleep_and_quit_on_keypress(int seconds) {
@@ -222,6 +306,32 @@ again:
 
     if ((kd.KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID) == 0) {
         kd.KeyState.KeyShiftState = 0;
+    }
+
+    if (kd.Key.ScanCode == SCAN_ESC) {
+        gBS->CreateEvent(EVT_TIMER, TPL_CALLBACK, NULL, NULL, &events[1]);
+
+        gBS->SetTimer(events[1], TimerRelative, 100000);
+
+        gBS->WaitForEvent(2, events, &which);
+
+        if (which == 1) {
+            return GETCHAR_ESCAPE;
+        }
+
+        if (events[0] == sproto->WaitForKey) {
+            status = sproto->ReadKeyStroke(sproto, &kd.Key);
+        } else {
+            status = exproto->ReadKeyStrokeEx(exproto, &kd);
+        }
+
+        if (status != EFI_SUCCESS) {
+            goto again;
+        }
+
+        if (kd.Key.UnicodeChar == '[') {
+            return input_sequence(events[0] == exproto->WaitForKeyEx, exproto, sproto);
+        }
     }
 
     int ret = getchar_internal(kd.Key.ScanCode, kd.Key.UnicodeChar,

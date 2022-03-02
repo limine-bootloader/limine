@@ -545,9 +545,9 @@ static size_t print_tree(const char *shift, size_t level, size_t base_index, siz
         }
         if (base_index + max_entries == selected_entry) {
             *selected_menu_entry = current_entry;
-            if (!no_print) print("\e[47m\e[30m");
+            if (!no_print) print("\e[7m");
         }
-        if (!no_print) print(" %s \e[0m\n", current_entry->name);
+        if (!no_print) print(" %s \e[27m\n", current_entry->name);
         if (current_entry->sub && current_entry->expanded) {
             max_entries += print_tree(shift, level + 1, base_index + max_entries + 1,
                                       selected_entry,

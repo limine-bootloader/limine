@@ -87,6 +87,7 @@ static const char *VALID_KEYS[] = {
     "QUIET",
     "DEFAULT_ENTRY",
     "GRAPHICS",
+    "SERIAL",
     "MENU_RESOLUTION",
     "MENU_BRANDING",
     "MENU_BRANDING_COLOUR",

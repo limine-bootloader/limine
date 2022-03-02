@@ -17,7 +17,7 @@ Like Limine and want to support it? Donate Bitcoin to
 [Photo by Chris Kane from Pexels](https://www.pexels.com/photo/reflection-of-building-on-body-of-water-at-daytime-166360/)
 
 ### Supported boot protocols
-* stivale and stivale2 (Limine's native boot protocols, see [their specifications](https://github.com/stivale/stivale) for details)
+* stivale and stivale2 (Limine's native boot protocols, see [their specifications](https://github.com/stivale) for details)
 * Linux
 * Multiboot 1
 * Multiboot 2
@@ -35,6 +35,10 @@ Like Limine and want to support it? Donate Bitcoin to
 * GPT
 * Unpartitioned media
 
+### Minimum system requirements
+While Limine is made with modern, 64-bit, PCs in mind, it supports 32-bit
+ones as well, starting with PCs with Pentium Pro class CPUs.
+
 ## Binary releases
 
 For convenience, for point releases, binaries are distributed. These binaries
@@ -46,9 +50,9 @@ For example, to clone the latest binary release of the `v2.x` branch one can do
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v2.0-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example v2.85.4)
+or, to clone a specific binary point release (for example v2.86)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v2.85.4-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v2.86-binary --depth=1
 ```
 
 Additionally, the absolute latest Limine binary release can be obtained by
@@ -75,8 +79,8 @@ that the host toolchain will suffice. You can skip to the next paragraph in orde
 to use the system's toolchain instead. If that fails, you can still come back here
 later (remember to `make clean` and re-run `./configure` after building the toolchain).
 
-The toolchain's build process depends on the following packages: `GNU make`, `GNU tar`, `texinfo`,
-`curl`, `gzip`, `bzip2`, `gcc/clang`, `g++/clang++`.
+The toolchain's build process depends on the following packages: `GNU make`,
+`GNU tar`, `texinfo`, `curl`, `gzip`, `bzip2`, `gcc/clang`, `g++/clang++`.
 
 Building the toolchain can be accomplished by running:
 ```bash
@@ -85,12 +89,13 @@ Building the toolchain can be accomplished by running:
 
 ### Prerequisites
 
-In order to build Limine, the following packages have to be installed:
-`GNU make`, `gzip`, `nasm`, `mtools` (optional, necessary to build
-`limine-eltorito-efi.bin`).
+In order to build Limine, the following programs have to be installed:
+`GNU make`, `grep`, `sed`, `find`, `awk`, `gzip`, `nasm`, `mtools`
+(optional, necessary to build `limine-eltorito-efi.bin`).
 Furthermore, either the toolchain must have been built in the previous
 paragraph, or `gcc` or `llvm/clang` must also be installed, alongside
-`GNU binutils`.
+`GNU binutils`. `nasm` is optional if the toolchain was built in the previous
+paragraph as it is built as part of it.
 
 ### Configure
 

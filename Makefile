@@ -34,4 +34,4 @@ clean:
 	rm -f limine-install limine-install.exe
 
 limine-install: limine-install.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -std=c11 limine-install.c -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) -std=c99 limine-install.c -o $@

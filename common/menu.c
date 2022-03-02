@@ -665,6 +665,11 @@ static noreturn void _menu(bool timeout_enabled) {
     char *serial_str = config_get_value(NULL, 0, "SERIAL");
     serial = serial_str != NULL && strcmp(serial_str, "yes") == 0;
 
+    char *editor_enabled_str = config_get_value(NULL, 0, "EDITOR_ENABLED");
+    if (editor_enabled_str != NULL) {
+        editor_enabled = strcmp(editor_enabled_str, "yes") == 0;
+    }
+
     menu_branding = config_get_value(NULL, 0, "MENU_BRANDING");
     if (menu_branding == NULL)
         menu_branding = "Limine " LIMINE_VERSION;
@@ -698,10 +703,6 @@ static noreturn void _menu(bool timeout_enabled) {
     if (!timeout_enabled) {
         skip_timeout = true;
     }
-
-    bool editor_enabled = true;
-    char *editor_enabled_config = config_get_value(NULL, 0, "EDITOR_ENABLED");
-    if (!strcmp(editor_enabled_config, "no")) editor_enabled = false;
 
     if (!skip_timeout && !timeout) {
         // Use print tree to load up selected_menu_entry and determine if the

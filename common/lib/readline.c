@@ -13,6 +13,15 @@
 #include <drivers/serial.h>
 #include <sys/cpu.h>
 
+int getchar(void) {
+    for (;;) {
+        int ret = pit_sleep_and_quit_on_keypress(65535);
+        if (ret != 0) {
+            return ret;
+        }
+    }
+}
+
 int getchar_internal(uint8_t scancode, uint8_t ascii, uint32_t shift_state) {
     switch (scancode) {
 #if bios == 1
@@ -90,15 +99,6 @@ int getchar_internal(uint8_t scancode, uint8_t ascii, uint32_t shift_state) {
 }
 
 #if bios == 1
-int getchar(void) {
-    for (;;) {
-        int ret = pit_sleep_and_quit_on_keypress(65535);
-        if (ret != 0) {
-            return ret;
-        }
-    }
-}
-
 int _pit_sleep_and_quit_on_keypress(uint32_t ticks);
 
 static int input_sequence(void) {
@@ -154,15 +154,15 @@ static int input_sequence(void) {
 }
 
 int pit_sleep_and_quit_on_keypress(int seconds) {
+    if (!serial) {
+        return _pit_sleep_and_quit_on_keypress(seconds * 18);
+    }
+
     for (int i = 0; i < seconds * 18; i++) {
         int ret = _pit_sleep_and_quit_on_keypress(1);
 
         if (ret != 0) {
             return ret;
-        }
-
-        if (!serial) {
-            continue;
         }
 
         ret = serial_in();
@@ -247,15 +247,6 @@ static int input_sequence(bool ext,
     }
 
     return 0;
-}
-
-int getchar(void) {
-    for (;;) {
-        int ret = pit_sleep_and_quit_on_keypress(65535);
-        if (ret != 0) {
-            return ret;
-        }
-    }
 }
 
 int pit_sleep_and_quit_on_keypress(int seconds) {

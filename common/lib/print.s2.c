@@ -213,7 +213,7 @@ out:
         if (E9_OUTPUT) {
             outb(0xe9, print_buf[i]);
         }
-        if (serial || COM_OUTPUT) {
+        if ((term_backend != NOT_READY && serial) || COM_OUTPUT) {
             switch (print_buf[i]) {
                 case '\n':
                     serial_out('\r');

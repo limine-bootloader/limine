@@ -527,6 +527,7 @@ failed_to_load_header_section:
 
     if (bits == 64 && terminal_hdr_tag != NULL) {
         quiet = false;
+        serial = false;
 
         if (bios &&
           ((avtag == NULL && hdrtag == NULL) || (avtag != NULL && preference == 1))) {

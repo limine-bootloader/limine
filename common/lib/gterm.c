@@ -592,13 +592,16 @@ void gterm_putchar(uint8_t c) {
     }
 }
 
+static bool last_serial = false;
+
 bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     if (current_video_mode >= 0
      && fbinfo.default_res == true
      && width == 0
      && height == 0
      && fbinfo.framebuffer_bpp == 32
-     && !early_term) {
+     && !early_term
+     && serial == last_serial) {
         *_rows = rows;
         *_cols = cols;
         gterm_clear(true);
@@ -609,7 +612,8 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
      && fbinfo.framebuffer_width == width
      && fbinfo.framebuffer_height == height
      && fbinfo.framebuffer_bpp == 32
-     && !early_term) {
+     && !early_term
+     && serial == last_serial) {
         *_rows = rows;
         *_cols = cols;
         gterm_clear(true);
@@ -621,6 +625,8 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     // We force bpp to 32
     if (!fb_init(&fbinfo, width, height, 32))
         return false;
+
+    last_serial = serial;
 
     cursor_status = true;
     scroll_enabled = true;

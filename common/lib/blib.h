@@ -33,7 +33,7 @@ extern struct volume *boot_volume;
 extern bool stage3_loaded;
 #endif
 
-extern bool verbose, quiet, serial;
+extern bool verbose, quiet, serial, editor_enabled;
 
 bool parse_resolution(size_t *width, size_t *height, size_t *bpp, const char *buf);
 

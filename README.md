@@ -50,7 +50,7 @@ For example, to clone the latest binary release of the `v2.x` branch one can do
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v2.0-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example v2.86)
+or, to clone a specific binary point release (for example `v2.86`)
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v2.86-binary --depth=1
 ```
@@ -118,7 +118,7 @@ To build Limine, run:
 make    # (or gmake where applicable)
 ```
 
-The generated bootloader files are going to be in `$BUILDDIR/bin`.
+The generated bootloader files are going to be in `bin`.
 
 ## Installing Limine binaries
 

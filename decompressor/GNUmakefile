@@ -24,6 +24,7 @@ override INTERNAL_CFLAGS := \
 	-std=gnu11 \
 	-ffreestanding \
 	-fno-stack-protector \
+	-fno-stack-check \
 	-fno-strict-aliasing \
 	-fno-lto \
 	-fno-pic \

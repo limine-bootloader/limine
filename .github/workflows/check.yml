@@ -12,7 +12,10 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install git build-essential autoconf automake nasm curl mtools -y
+        run: sudo apt-get update && sudo apt-get install git build-essential autoconf automake nasm curl mtools clang -y
 
-      - name: Build the bootloader
-        run: ./autogen.sh --enable-werror && make all
+      - name: Build the bootloader (gcc)
+        run: ./autogen.sh CC=gcc --enable-werror && make all && make maintainer-clean
+
+      - name: Build the bootloader (clang)
+        run: ./autogen.sh CC=clang --enable-werror && make all && make maintainer-clean

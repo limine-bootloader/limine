@@ -229,7 +229,7 @@ $(call MKESCAPE,$(BUILDDIR))/limine.sys: $(call MKESCAPE,$(BUILDDIR))/limine.elf
 
 $(call MKESCAPE,$(BUILDDIR))/linker_stage2only.ld: linker_bios.ld.in
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
-	$(LIMINE_CC) -x c -E -P -DLINKER_STAGE2ONLY linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_stage2only.ld'
+	$(LIMINE_CC) -x c -E -P -undef -DLINKER_STAGE2ONLY linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_stage2only.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_stage2only.elf: $(OBJ)
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_stage2only.ld'
@@ -239,7 +239,7 @@ $(call MKESCAPE,$(BUILDDIR))/limine_stage2only.elf: $(OBJ)
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_bios.ld.in
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
-	$(LIMINE_CC) -x c -E -P -DLINKER_NOMAP linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+	$(LIMINE_CC) -x c -E -P -undef -DLINKER_NOMAP linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/stage2.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
@@ -247,7 +247,7 @@ $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(OBJ) $(call MKESCAPE,$(BUILDDIR
 
 $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_bios.ld.in
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
-	$(LIMINE_CC) -x c -E -P linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+	$(LIMINE_CC) -x c -E -P -undef linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/stage2.map.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
@@ -262,7 +262,7 @@ $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tin
 
 $(call MKESCAPE,$(BUILDDIR))/linker_dbg.ld: linker_bios.ld.in
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
-	$(LIMINE_CC) -x c -E -P -DLINKER_DBG linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_dbg.ld'
+	$(LIMINE_CC) -x c -E -P -undef -DLINKER_DBG linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_dbg.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_dbg.elf: $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/stage2.map.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_dbg.ld'
@@ -301,7 +301,7 @@ reduced-gnu-efi: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi64.ld.in
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
-	$(LIMINE_CC) -x c -E -P -DLINKER_NOMAP linker_uefi64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+	$(LIMINE_CC) -x c -E -P -undef -DLINKER_NOMAP linker_uefi64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
@@ -311,7 +311,7 @@ $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/redu
 
 $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi64.ld.in
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
-	$(LIMINE_CC) -x c -E -P linker_uefi64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+	$(LIMINE_CC) -x c -E -P -undef linker_uefi64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
@@ -348,7 +348,7 @@ reduced-gnu-efi: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi32.ld.in
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
-	$(LIMINE_CC) -x c -E -P -DLINKER_NOMAP linker_uefi32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+	$(LIMINE_CC) -x c -E -P -undef -DLINKER_NOMAP linker_uefi32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
@@ -358,7 +358,7 @@ $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/redu
 
 $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi32.ld.in
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
-	$(LIMINE_CC) -x c -E -P linker_uefi32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+	$(LIMINE_CC) -x c -E -P -undef linker_uefi32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'

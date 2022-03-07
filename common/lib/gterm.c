@@ -263,7 +263,12 @@ static void loop_internal(size_t xstart, size_t xend, size_t ystart, size_t yend
 
 static void gterm_generate_canvas(void) {
     if (background) {
-        size_t margin_no_gradient = margin - margin_gradient;
+        int64_t margin_no_gradient = (int64_t)margin - margin_gradient;
+
+        if (margin_no_gradient < 0) {
+            margin_no_gradient = 0;
+        }
+
         size_t scan_stop_x = gterm_width - margin_no_gradient;
         size_t scan_stop_y = gterm_height - margin_no_gradient;
 

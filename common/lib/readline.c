@@ -182,6 +182,8 @@ again:
                         return input_sequence();
                     }
                     goto again;
+                case 0x7f:
+                    return '\b';
             }
 
             return ret;
@@ -297,6 +299,10 @@ again:
 
     if ((kd.KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID) == 0) {
         kd.KeyState.KeyShiftState = 0;
+    }
+
+    if (kd.Key.ScanCode == 0x08) {
+        return '\b';
     }
 
     if (kd.Key.ScanCode == SCAN_ESC) {

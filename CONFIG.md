@@ -61,7 +61,7 @@ Some keys take *URIs* as values; these are described in the next section.
 * `QUIET` - If set to `yes`, enable quiet mode, where all screen output except panics and important warnings is suppressed. If `TIMEOUT` is not 0, the `TIMEOUT` still occurs, and pressing any key during the timeout will reveal the menu and disable quiet mode.
 * `SERIAL` - If set to `yes`, enable serial I/O for the bootloader.
 * `DEFAULT_ENTRY` - 1-based entry index of the entry which will be automatically selected at startup. If unspecified, it is `1`.
-* `GRAPHICS` - If set to `yes`, use a graphical framebuffer for the boot menu, else use text mode. Ignored with Limine UEFI, forced to `yes`.
+* `GRAPHICS` - If set to `no`, force CGA text mode for the boot menu, else use a video mode. Ignored with Limine UEFI.
 * `MENU_RESOLUTION` - Specify screen resolution to be used by the Limine menu in the form `<width>x<height>`. This will *only* affect the menu, not any booted OS. If not specified, Limine will pick a resolution automatically. If the resolution is not available, Limine will pick another one automatically. Ignored if `GRAPHICS` is not `yes`.
 * `MENU_BRANDING` - A string that will be displayed on top of the Limine menu.
 * `MENU_BRANDING_COLOUR` - A value between 0 and 7 specifying the colour of the branding string. Default is cyan (6).

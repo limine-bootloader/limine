@@ -601,6 +601,9 @@ static bool last_serial = false;
 
 bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     if (current_video_mode >= 0
+#if bios == 1
+     && current_video_mode != 0x03
+#endif
      && fbinfo.default_res == true
      && width == 0
      && height == 0
@@ -614,6 +617,9 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     }
 
     if (current_video_mode >= 0
+#if bios == 1
+     && current_video_mode != 0x03
+#endif
      && fbinfo.framebuffer_width == width
      && fbinfo.framebuffer_height == height
      && fbinfo.framebuffer_bpp == 32
@@ -716,6 +722,21 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     text_fg = default_fg;
     text_bg = 0xffffffff;
 
+    background = NULL;
+    char *background_path = config_get_value(NULL, 0, "BACKGROUND_PATH");
+    if (background_path != NULL) {
+        struct file_handle *bg_file;
+        if ((bg_file = uri_open(background_path)) != NULL) {
+            background = image_open(bg_file);
+            fclose(bg_file);
+        }
+    }
+
+    if (background == NULL) {
+        margin = 0;
+        margin_gradient = 0;
+    }
+
     char *theme_margin = config_get_value(NULL, 0, "THEME_MARGIN");
     if (theme_margin != NULL) {
         margin = strtoui(theme_margin, NULL, 10);
@@ -724,15 +745,6 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     char *theme_margin_gradient = config_get_value(NULL, 0, "THEME_MARGIN_GRADIENT");
     if (theme_margin_gradient != NULL) {
         margin_gradient = strtoui(theme_margin_gradient, NULL, 10);
-    }
-
-    char *background_path = config_get_value(NULL, 0, "BACKGROUND_PATH");
-    if (background_path != NULL) {
-        struct file_handle *bg_file;
-        if ((bg_file = uri_open(background_path)) != NULL) {
-            background = image_open(bg_file);
-            fclose(bg_file);
-        }
     }
 
     if (background != NULL) {

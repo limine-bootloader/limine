@@ -162,12 +162,12 @@ void text_full_refresh(void) {
 }
 
 void init_vga_textmode(size_t *_rows, size_t *_cols, bool managed) {
-    if (current_video_mode != -1) {
+    if (current_video_mode != 0x3) {
         struct rm_regs r = {0};
         r.eax = 0x0003;
         rm_int(0x10, &r, &r);
 
-        current_video_mode = -1;
+        current_video_mode = 0x3;
     }
 
     if (back_buffer == NULL) {

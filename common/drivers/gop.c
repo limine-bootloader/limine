@@ -104,7 +104,7 @@ static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, in
         status = gop->SetMode(gop, mode);
 
         if (status) {
-            current_video_mode = -2;
+            current_video_mode = -1;
             printv("gop: Failed to set video mode %x, moving on...\n", mode);
             return false;
         }

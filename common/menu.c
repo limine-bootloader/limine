@@ -725,7 +725,7 @@ static noreturn void _menu(bool timeout_enabled) {
 #endif
 
 reterm:
-    if (graphics != NULL && !strcmp(graphics, "yes")) {
+    if (graphics == NULL || strcmp(graphics, "no") == 1) {
         size_t req_width = 0, req_height = 0, req_bpp = 0;
 
         char *menu_resolution = config_get_value(NULL, 0, "MENU_RESOLUTION");
@@ -887,10 +887,11 @@ timeout_aborted:
                     goto refresh;
                 }
                 if (term_backend == NOT_READY) {
-#if bios == 1
-                    term_textmode();
-#elif uefi == 1
                     term_vbe(0, 0);
+#if bios == 1
+                    if (term_backend == NOT_READY) {
+                        term_textmode();
+                    }
 #endif
                 } else {
                     reset_term();

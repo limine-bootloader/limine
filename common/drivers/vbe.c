@@ -189,7 +189,7 @@ retry:
             if (vid_modes[i] == current_video_mode) {
                 printv("vbe: Mode was already set, perfect!\n");
             } else if (set_vbe_mode(vid_modes[i]) == 0x01) {
-                current_video_mode = -2;
+                current_video_mode = -1;
                 printv("vbe: Failed to set video mode %x, moving on...\n", vid_modes[i]);
                 continue;
             }

@@ -28,8 +28,10 @@ static uint64_t get_unix_epoch(uint8_t seconds, uint8_t minutes, uint8_t  hours,
 
 #if bios == 1
 uint64_t time(void) {
-    struct rm_regs r = {0};
+    struct rm_regs r;
 
+again:
+    r = (struct rm_regs){0};
     r.eax = 0x0400;
     rm_int(0x1a, &r, &r);
 
@@ -38,12 +40,21 @@ uint64_t time(void) {
     uint16_t year   = bcd_to_int( r.ecx & 0x00ff) +
     /* century */     bcd_to_int((r.ecx & 0xff00) >> 8) * 100;
 
+    r = (struct rm_regs){0};
     r.eax = 0x0200;
     rm_int(0x1a, &r, &r);
 
     uint8_t second  = bcd_to_int((r.edx & 0xff00) >> 8);
     uint8_t minute  = bcd_to_int( r.ecx & 0x00ff);
     uint8_t hour    = bcd_to_int((r.ecx & 0xff00) >> 8);
+
+    // Check RTC day wraparound
+    r = (struct rm_regs){0};
+    r.eax = 0x0400;
+    rm_int(0x1a, &r, &r);
+    if (bcd_to_int(r.edx & 0x00ff) != day) {
+        goto again;
+    }
 
     return get_unix_epoch(second, minute, hour, day, month, year);
 }

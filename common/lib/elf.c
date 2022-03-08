@@ -9,8 +9,15 @@
 #include <fs/file.h>
 
 #define PT_LOAD     0x00000001
+#define PT_DYNAMIC  0x00000002
 #define PT_INTERP   0x00000003
 #define PT_PHDR     0x00000006
+
+#define DT_NULL     0x00000000
+#define DT_NEEDED   0x00000001
+#define DT_RELA     0x00000007
+#define DT_RELASZ   0x00000008
+#define DT_RELAENT  0x00000009
 
 #define ABI_SYSV    0x00
 #define ARCH_X86_64 0x3e
@@ -25,7 +32,6 @@
 #define EI_DATA     5
 #define EI_VERSION  6
 #define EI_OSABI    7
-
 
 struct elf32_hdr {
     uint8_t  ident[16];
@@ -86,6 +92,11 @@ struct elf64_rela {
     uint64_t r_addend;
 };
 
+struct elf64_dyn {
+    uint64_t d_tag;
+    uint64_t d_un;
+};
+
 int elf_bits(uint8_t *elf) {
     struct elf64_hdr hdr;
     memcpy(&hdr, elf + (0), 20);
@@ -106,46 +117,75 @@ int elf_bits(uint8_t *elf) {
 }
 
 static bool elf64_is_relocatable(uint8_t *elf, struct elf64_hdr *hdr) {
-    // Find RELA sections
-    for (uint16_t i = 0; i < hdr->sh_num; i++) {
-        struct elf64_shdr section;
-        memcpy(&section, elf + (hdr->shoff + i * sizeof(struct elf64_shdr)),
-                    sizeof(struct elf64_shdr));
+    // Find DYN segment
+    for (uint16_t i = 0; i < hdr->ph_num; i++) {
+        struct elf64_phdr phdr;
+        memcpy(&phdr, elf + (hdr->phoff + i * sizeof(struct elf64_phdr)),
+               sizeof(struct elf64_phdr));
 
-        if (section.sh_type != SHT_RELA)
-            continue;
-
-        if (section.sh_entsize != sizeof(struct elf64_rela)) {
-            print("elf: Unknown sh_entsize for RELA section!\n");
-            continue;
-        }
-
-        return true;
-
+        if (phdr.p_type == PT_DYNAMIC)
+            return true;
     }
 
     return false;
 }
 
 static int elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *buffer, uint64_t vaddr, size_t size, uint64_t slide) {
-    // Find RELA sections
-    for (uint16_t i = 0; i < hdr->sh_num; i++) {
-        struct elf64_shdr section;
-        memcpy(&section, elf + (hdr->shoff + i * sizeof(struct elf64_shdr)),
-                    sizeof(struct elf64_shdr));
+    // Find DYN segment
+    for (uint16_t i = 0; i < hdr->ph_num; i++) {
+        struct elf64_phdr phdr;
+        memcpy(&phdr, elf + (hdr->phoff + i * sizeof(struct elf64_phdr)),
+               sizeof(struct elf64_phdr));
 
-        if (section.sh_type != SHT_RELA)
+        if (phdr.p_type != PT_DYNAMIC)
             continue;
 
-        if (section.sh_entsize != sizeof(struct elf64_rela)) {
+        uint64_t rela_offset = 0;
+        uint64_t rela_size = 0;
+        uint64_t rela_ent = 0;
+        for (uint16_t j = 0; j < phdr.p_filesz / sizeof(struct elf64_dyn); j++) {
+            struct elf64_dyn dyn;
+            memcpy(&dyn, elf + (phdr.p_offset + j * sizeof(struct elf64_dyn)),
+                   sizeof(struct elf64_dyn));
+
+            switch (dyn.d_tag) {
+                case DT_RELA:
+                    rela_offset = dyn.d_un;
+                    break;
+                case DT_RELAENT:
+                    rela_ent = dyn.d_un;
+                    break;
+                case DT_RELASZ:
+                    rela_size = dyn.d_un;
+                    break;
+            }
+        }
+
+        if (rela_offset == 0) {
+            break;
+        }
+
+        if (rela_ent != sizeof(struct elf64_rela)) {
             print("elf: Unknown sh_entsize for RELA section!\n");
             return 1;
         }
 
+        for (uint16_t j = 0; j < hdr->ph_num; j++) {
+            struct elf64_phdr _phdr;
+            memcpy(&_phdr, elf + (hdr->phoff + j * sizeof(struct elf64_phdr)),
+                   sizeof(struct elf64_phdr));
+
+            if (_phdr.p_vaddr <= rela_offset && _phdr.p_vaddr + _phdr.p_filesz > rela_offset) {
+                rela_offset -= _phdr.p_vaddr;
+                rela_offset += _phdr.p_offset;
+                break;
+            }
+        }
+
         // This is a RELA header, get and apply all relocations
-        for (uint64_t offset = 0; offset < section.sh_size; offset += section.sh_entsize) {
+        for (uint64_t offset = 0; offset < rela_size; offset += rela_ent) {
             struct elf64_rela relocation;
-            memcpy(&relocation, elf + (section.sh_offset + offset), sizeof(relocation));
+            memcpy(&relocation, elf + (rela_offset + offset), sizeof(struct elf64_rela));
 
             switch (relocation.r_info) {
                 case R_X86_64_RELATIVE: {
@@ -169,6 +209,8 @@ static int elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *bu
                     return 1;
             }
         }
+
+        break;
     }
 
     return 0;

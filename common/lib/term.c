@@ -25,7 +25,9 @@ void term_deinit(void) {
 }
 
 void term_vbe(size_t width, size_t height) {
-    term_notready();
+    if (term_backend != VBE) {
+        term_deinit();
+    }
 
     if (quiet || allocations_disallowed) {
         return;
@@ -349,7 +351,7 @@ void term_reinit(void) {
 
 #if bios == 1
 void term_textmode(void) {
-    term_notready();
+    term_deinit();
 
     if (quiet || allocations_disallowed) {
         return;

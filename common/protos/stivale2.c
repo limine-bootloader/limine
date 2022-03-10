@@ -594,6 +594,8 @@ failed_to_load_header_section:
         fb = &_fb;
     }
 
+    term_deinit();
+
     if (hdrtag != NULL || (avtag != NULL && uefi) || (avtag != NULL && preference == 0)) {
         term_deinit();
 

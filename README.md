@@ -14,7 +14,7 @@ Like Limine and want to support it? Donate Bitcoin to
 
 ![Reference screenshot](/screenshot.png?raw=true "Reference screenshot")
 
-[Photo by Chris Kane from Pexels](https://www.pexels.com/photo/reflection-of-building-on-body-of-water-at-daytime-166360/)
+[Photo by Martin Damboldt from Pexels](https://www.pexels.com/photo/gray-bridge-and-trees-814499/)
 
 ### Supported boot protocols
 * stivale and stivale2 (Limine's native boot protocols, see [their specifications](https://github.com/stivale) for details)
@@ -50,9 +50,9 @@ For example, to clone the latest binary release of the `v2.x` branch one can do
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v2.0-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example `v2.86`)
+or, to clone a specific binary point release (for example `v2.88`)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v2.86-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v2.88-binary --depth=1
 ```
 
 Additionally, the absolute latest Limine binary release can be obtained by

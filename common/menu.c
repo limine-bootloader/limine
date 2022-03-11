@@ -805,7 +805,7 @@ refresh:
             print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m %s",
                   selected_menu_entry->expanded ? "Collapse" : "Expand");
         }
-        set_cursor_pos_helper(term_cols - 12, 3);
+        set_cursor_pos_helper(term_cols - 13, 3);
         print("\e[32mC\e[0m Console");
         set_cursor_pos_helper(x, y);
     }

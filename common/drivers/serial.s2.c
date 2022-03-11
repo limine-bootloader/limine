@@ -34,6 +34,7 @@ static void serial_initialise(void) {
 
 #if bios == 1
     // Init com1
+    outb(0x3f8 + 3, 0x00);
     outb(0x3f8 + 1, 0x00);
     outb(0x3f8 + 3, 0x80);
     outb(0x3f8 + 0, 0x0c); // 9600 baud

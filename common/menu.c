@@ -21,6 +21,7 @@
 #include <protos/chainload.h>
 #include <protos/multiboot1.h>
 #include <protos/multiboot2.h>
+#include <protos/limine.h>
 
 static char *menu_branding = NULL;
 static char *menu_branding_colour = NULL;
@@ -948,6 +949,8 @@ autodetect:
         ret = stivale_load(config, cmdline);
     } else if (!strcmp(proto, "stivale2")) {
         ret = stivale2_load(config, cmdline);
+    } else if (!strcmp(proto, "limine")) {
+        ret = limine_load(config, cmdline);
     } else if (!strcmp(proto, "linux")) {
         ret = linux_load(config, cmdline);
     } else if (!strcmp(proto, "multiboot1") || !strcmp(proto, "multiboot")) {

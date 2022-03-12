@@ -31,6 +31,7 @@ INTERNAL_LD_FLAGS_MULTIBOOT1 := \
 INTERNALCFLAGS  :=       \
 	-I../stivale         \
 	-I.                  \
+	-I../common          \
 	-std=gnu11           \
 	-ffreestanding       \
 	-fno-stack-protector \
@@ -45,7 +46,7 @@ INTERNALCFLAGS  :=       \
 
 all: test.elf multiboot2.elf multiboot.elf
 
-test.elf: stivale.o stivale2.o e9print.o memory.o
+test.elf: stivale.o stivale2.o limine.o e9print.o memory.o
 	$(LD) $^ $(LDFLAGS) $(INTERNALLDFLAGS) -o $@
 
 multiboot2.elf: multiboot2_trampoline.o

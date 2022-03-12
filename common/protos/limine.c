@@ -234,9 +234,54 @@ FEAT_END
 
     // Memmap
 FEAT_START
+    struct feature memmap_feat = get_feature(LIMINE_MEMMAP_REQUEST);
+    struct limine_memmap_response *memmap_response;
+
+    if (memmap_feat.found == true) {
+        memmap_response = ext_mem_alloc(sizeof(struct limine_memmap_response));
+    }
+
     size_t mmap_entries;
     struct e820_entry_t *mmap = get_memmap(&mmap_entries);
-    (void)mmap;
+
+    if (memmap_feat.found == false) {
+        break; // next feature
+    }
+
+    for (size_t i = 0; i < mmap_entries; i++) {
+        switch (mmap[i].type) {
+            case MEMMAP_USABLE:
+                mmap[i].type = LIMINE_MEMMAP_USABLE;
+                break;
+            case MEMMAP_ACPI_RECLAIMABLE:
+                mmap[i].type = LIMINE_MEMMAP_ACPI_RECLAIMABLE;
+                break;
+            case MEMMAP_ACPI_NVS:
+                mmap[i].type = LIMINE_MEMMAP_ACPI_NVS;
+                break;
+            case MEMMAP_BAD_MEMORY:
+                mmap[i].type = LIMINE_MEMMAP_BAD_MEMORY;
+                break;
+            case MEMMAP_BOOTLOADER_RECLAIMABLE:
+                mmap[i].type = LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE;
+                break;
+            case MEMMAP_KERNEL_AND_MODULES:
+                mmap[i].type = LIMINE_MEMMAP_KERNEL_AND_MODULES;
+                break;
+            case MEMMAP_FRAMEBUFFER:
+                mmap[i].type = LIMINE_MEMMAP_FRAMEBUFFER;
+                break;
+            default:
+            case MEMMAP_RESERVED:
+                mmap[i].type = LIMINE_MEMMAP_RESERVED;
+                break;
+        }
+    }
+
+    memmap_response->entries_count = mmap_entries;
+    memmap_response->entries = reported_addr(mmap);
+
+    features_orig[memmap_feat.index] = reported_addr(memmap_response);
 FEAT_END
 
     // Final wrap-up

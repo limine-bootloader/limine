@@ -3,30 +3,33 @@
 #include <limine.h>
 #include <e9print.h>
 
-static struct limine_framebuffer_request framebuffer_request = {
-    .id = LIMINE_FRAMEBUFFER_REQUEST,
-
-    .flags = LIMINE_FRAMEBUFFER_PREFER_LFB | LIMINE_FRAMEBUFFER_ENFORCE_PREFER,
-
-    .height = 0, .width = 0, .bpp = 0
-};
-
-static void *features_array[] = {
-    LIMINE_BOOT_INFO_REQUEST,
-    &framebuffer_request,
-    LIMINE_MEMMAP_REQUEST,
-    LIMINE_5_LEVEL_PAGING_REQUEST,
-    LIMINE_PMR_REQUEST
-};
-
 static void limine_main(void);
 
-__attribute__((used, aligned(16)))
-static struct limine_header limine_header = {
-    .magic = LIMINE_MAGIC,
-    .entry = limine_main,
-    .features_count = sizeof(features_array) / sizeof(void *),
-    .features = features_array
+__attribute__((used))
+static struct limine_framebuffer_request framebuffer_request = {
+    .id = LIMINE_FRAMEBUFFER_REQUEST,
+    .flags = LIMINE_FRAMEBUFFER_PREFER_LFB | LIMINE_FRAMEBUFFER_ENFORCE_PREFER,
+    .response = NULL
+};
+
+__attribute__((used))
+static struct limine_entry_point_request entry_point_request = {
+    .id = LIMINE_ENTRY_POINT_REQUEST,
+    .flags = 0, .response = NULL,
+
+    .entry = limine_main
+};
+
+__attribute__((used))
+static struct limine_boot_info_request boot_info_request = {
+    .id = LIMINE_BOOT_INFO_REQUEST,
+    .flags = 0, .response = NULL
+};
+
+__attribute__((used))
+static struct limine_memmap_request memmap_request = {
+    .id = LIMINE_MEMMAP_REQUEST,
+    .flags = 0, .response = NULL
 };
 
 static char *get_memmap_type(uint64_t type) {
@@ -59,21 +62,21 @@ static void limine_main(void) {
     e9_printf("We're alive");
 
 FEAT_START
-    if (features_array[0] == NULL) {
+    if (boot_info_request.response == NULL) {
         e9_printf("Boot info not passed");
         break;
     }
-    struct limine_boot_info_response *boot_info_response = features_array[0];
+    struct limine_boot_info_response *boot_info_response = boot_info_request.response;
     e9_printf("Boot info response:");
     e9_printf("Bootloader name: %s", boot_info_response->loader);
 FEAT_END
 
 FEAT_START
-    if (features_array[2] == NULL) {
+    if (memmap_request.response == NULL) {
         e9_printf("Memory map not passed");
         break;
     }
-    struct limine_memmap_response *memmap_response = features_array[2];
+    struct limine_memmap_response *memmap_response = memmap_request.response;
     e9_printf("%d memory map entries", memmap_response->entries_count);
     for (size_t i = 0; i < memmap_response->entries_count; i++) {
         struct limine_memmap_entry *e = &memmap_response->entries[i];

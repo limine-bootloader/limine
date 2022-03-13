@@ -32,49 +32,40 @@
 #include <protos/limine.h>
 #include <limine.h>
 
-static uint64_t features_count, physical_base, virtual_base, slide, direct_map_offset;
-static uint64_t *features, *features_orig;
+#define MAX_REQUESTS 128
+
+static uint64_t physical_base, virtual_base, slide, direct_map_offset;
+static size_t requests_count;
+static void *requests[MAX_REQUESTS];
 
 static uint64_t reported_addr(void *addr) {
     return (uint64_t)(uintptr_t)addr + direct_map_offset;
 }
 
+/*
 static uintptr_t get_phys_addr(uint64_t addr) {
     return physical_base + (addr - virtual_base);
 }
+*/
 
-struct feature {
-    bool found;
-    size_t index;
-    void *request;
-};
+static void *_get_request(uint64_t id[4]) {
+    for (size_t i = 0; i < requests_count; i++) {
+        uint64_t *p = requests[i];
 
-static struct feature get_feature(uint64_t id) {
-    for (size_t i = 0; i < features_count; i++) {
-        if (features[i] < 0xffffffff80000000 && features[i] == id) {
-            return (struct feature){
-                .found = true,
-                .index = i,
-                .request = NULL
-            };
-        } else {
-            uint64_t *id_ptr = (void *)get_phys_addr(features[i] + slide);
-            if (*id_ptr == id) {
-                return (struct feature){
-                    .found = true,
-                    .index = i,
-                    .request = (void *)id_ptr
-                };
-            }
+        if (p[2] != id[2]) {
+            continue;
         }
+        if (p[3] != id[3]) {
+            continue;
+        }
+
+        return p;
     }
 
-    return (struct feature){
-        .found = false,
-        .index = 0,
-        .request = NULL
-    };
+    return NULL;
 }
+
+#define get_request(REQ) _get_request((uint64_t[4])REQ)
 
 #define FEAT_START do {
 #define FEAT_END } while (0);
@@ -88,8 +79,6 @@ bool limine_load(char *config, char *cmdline) {
     if (kernel_path == NULL)
         panic(true, "limine: KERNEL_PATH not specified");
 
-    print("limine: Loading kernel `%s`...\n", kernel_path);
-
     struct file_handle *kernel_file;
     if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic(true, "limine: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
@@ -102,26 +91,6 @@ bool limine_load(char *config, char *cmdline) {
 
     fclose(kernel_file);
 
-    // Search for header
-    struct limine_header *limine_header = NULL;
-    uint64_t limine_magic[2] = LIMINE_MAGIC;
-    for (size_t i = 0; i < kernel_file_size; i += 16) {
-        if (memcmp(kernel + i, limine_magic, 16) == 0) {
-            limine_header = (void *)(kernel + i);
-        }
-    }
-
-    if (limine_header == NULL) {
-        panic(true, "limine: Magic number not found");
-    }
-
-    printv("limine: Header found at %p\n", (size_t)limine_header - (size_t)kernel);
-
-    // Check if 64 bit CPU
-    if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
-        panic(true, "limine: This CPU does not support 64-bit mode.");
-    }
-
     char *kaslr_s = config_get_value(config, 0, "KASLR");
     bool kaslr = true;
     if (kaslr_s != NULL && strcmp(kaslr_s, "no") == 0)
@@ -130,9 +99,11 @@ bool limine_load(char *config, char *cmdline) {
     int bits = elf_bits(kernel);
 
     if (bits == -1 || bits == 32) {
-        panic(true, "limine: Kernel in unrecognised format");
+        printv("limine: Kernel in unrecognised format");
+        return false;
     }
 
+    // ELF loading
     uint64_t entry_point = 0;
     struct elf_range *ranges;
     uint64_t ranges_count;
@@ -141,32 +112,45 @@ bool limine_load(char *config, char *cmdline) {
                    MEMMAP_KERNEL_AND_MODULES, kaslr, false,
                    &ranges, &ranges_count,
                    true, &physical_base, &virtual_base)) {
-        panic(true, "limine: ELF64 load failure");
+        return false;
     }
 
-    if (limine_header->entry != 0) {
-        entry_point = limine_header->entry + slide;
+    // Load requests
+    requests_count = 0;
+    uint64_t common_magic[2] = { LIMINE_COMMON_MAGIC };
+    for (size_t i = 0; i < ALIGN_DOWN(kernel_file_size, 8); i += 8) {
+        uint64_t *p = (void *)(uintptr_t)physical_base + i;
+
+        if (p[0] != common_magic[0]) {
+            continue;
+        }
+        if (p[1] != common_magic[1]) {
+            continue;
+        }
+
+        if (requests_count == MAX_REQUESTS) {
+            panic(true, "limine: Maximum requests exceeded");
+        }
+
+        requests[requests_count++] = p;
     }
 
-    printv("limine: Physical base: %X\n", physical_base);
-    printv("limine: Virtual base:  %X\n", virtual_base);
-    printv("limine: Slide:         %X\n", slide);
-    printv("limine: Entry point:   %X\n", entry_point);
-
-    // Prepare features
-
-    features_count = limine_header->features_count;
-    features_orig = (void *)get_phys_addr(limine_header->features + slide);
-
-    features = ext_mem_alloc(features_count * sizeof(uint64_t));
-    memcpy(features, features_orig, features_count * sizeof(uint64_t));
-
-    for (size_t i = 0; i < features_count; i++) {
-        features_orig[i] = 0;
+    if (requests_count == 0) {
+        return false;
     }
 
-    printv("limine: Features count: %U\n", features_count);
-    printv("limine: Features list at %X (%p)\n", limine_header->features, features_orig);
+    // Check if 64 bit CPU
+    if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
+        panic(true, "limine: This CPU does not support 64-bit mode.");
+    }
+
+    print("limine: Loading kernel `%s`...\n", kernel_path);
+
+    printv("limine: Physical base:   %X\n", physical_base);
+    printv("limine: Virtual base:    %X\n", virtual_base);
+    printv("limine: Slide:           %X\n", slide);
+    printv("limine: ELF entry point: %X\n", entry_point);
+    printv("limine: Requests count:  %u\n", requests_count);
 
     // 5 level paging feature & HHDM slide
     bool want_5lv;
@@ -178,8 +162,8 @@ FEAT_START
         level5pg = true;
     }
 
-    struct feature lv5pg_feat = get_feature(LIMINE_5_LEVEL_PAGING_REQUEST);
-    want_5lv = lv5pg_feat.found && level5pg;
+    struct limine_5_level_paging_request *lv5pg_request = get_request(LIMINE_5_LEVEL_PAGING_REQUEST);
+    want_5lv = lv5pg_request != NULL && level5pg;
 
     direct_map_offset = want_5lv ? 0xff00000000000000 : 0xffff800000000000;
 
@@ -189,14 +173,31 @@ FEAT_START
 
     if (want_5lv) {
         void *lv5pg_response = ext_mem_alloc(sizeof(struct limine_5_level_paging_response));
-        features_orig[lv5pg_feat.index] = reported_addr(lv5pg_response);
+        lv5pg_request->response = reported_addr(lv5pg_response);
     }
+FEAT_END
+
+    // Entry point feature
+FEAT_START
+    struct limine_entry_point_request *entrypoint_request = get_request(LIMINE_ENTRY_POINT_REQUEST);
+    if (entrypoint_request == NULL) {
+        break;
+    }
+
+    entry_point = entrypoint_request->entry;
+
+    print("limine: Entry point at %X\n", entry_point);
+
+    struct limine_entry_point_response *entrypoint_response =
+        ext_mem_alloc(sizeof(struct limine_entry_point_response));
+
+    entrypoint_request->response = reported_addr(entrypoint_response);
 FEAT_END
 
     // Boot info feature
 FEAT_START
-    struct feature boot_info_feat = get_feature(LIMINE_BOOT_INFO_REQUEST);
-    if (boot_info_feat.found == false) {
+    struct limine_boot_info_request *boot_info_request = get_request(LIMINE_BOOT_INFO_REQUEST);
+    if (boot_info_request == NULL) {
         break; // next feature
     }
 
@@ -205,7 +206,7 @@ FEAT_START
 
     boot_info_response->loader = reported_addr("Limine " LIMINE_VERSION);
 
-    features_orig[boot_info_feat.index] = reported_addr(boot_info_response);
+    boot_info_request->response = reported_addr(boot_info_response);
 FEAT_END
 
     // Framebuffer feature
@@ -234,17 +235,17 @@ FEAT_END
 
     // Memmap
 FEAT_START
-    struct feature memmap_feat = get_feature(LIMINE_MEMMAP_REQUEST);
+    struct limine_memmap_request *memmap_request = get_request(LIMINE_MEMMAP_REQUEST);
     struct limine_memmap_response *memmap_response;
 
-    if (memmap_feat.found == true) {
+    if (memmap_request != NULL) {
         memmap_response = ext_mem_alloc(sizeof(struct limine_memmap_response));
     }
 
     size_t mmap_entries;
     struct e820_entry_t *mmap = get_memmap(&mmap_entries);
 
-    if (memmap_feat.found == false) {
+    if (memmap_request == NULL) {
         break; // next feature
     }
 
@@ -281,7 +282,7 @@ FEAT_START
     memmap_response->entries_count = mmap_entries;
     memmap_response->entries = reported_addr(mmap);
 
-    features_orig[memmap_feat.index] = reported_addr(memmap_response);
+    memmap_request->response = reported_addr(memmap_response);
 FEAT_END
 
     // Final wrap-up

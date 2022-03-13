@@ -162,6 +162,10 @@ bool stivale2_load(char *config, char *cmdline) {
                 level5pg = true;
             }
 
+            if (loaded_by_anchor && (stivale2_hdr.flags & (1 << 2))) {
+                panic(true, "stivale2: PMRs are not supported for anchored kernels");
+            }
+
             if (!loaded_by_anchor) {
                 ret = elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
                                          sizeof(struct stivale2_header), 0);
@@ -172,8 +176,6 @@ bool stivale2_load(char *config, char *cmdline) {
                 if ((stivale2_hdr.flags & (1 << 2))) {
                     if (bits == 32) {
                         panic(true, "stivale2: PMRs are not supported for 32-bit kernels");
-                    } else if (loaded_by_anchor) {
-                        panic(true, "stivale2: PMRs are not supported for anchored kernels");
                     }
                     want_pmrs = true;
                 }

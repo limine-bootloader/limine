@@ -117,6 +117,10 @@ int elf_bits(uint8_t *elf) {
 }
 
 static bool elf64_is_relocatable(uint8_t *elf, struct elf64_hdr *hdr) {
+    if (hdr->phdr_size < sizeof(struct elf64_phdr)) {
+        panic(true, "elf: phdr_size < sizeof(struct elf64_phdr)");
+    }
+
     // Find DYN segment
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr phdr;
@@ -131,6 +135,10 @@ static bool elf64_is_relocatable(uint8_t *elf, struct elf64_hdr *hdr) {
 }
 
 static int elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *buffer, uint64_t vaddr, size_t size, uint64_t slide) {
+    if (hdr->phdr_size < sizeof(struct elf64_phdr)) {
+        panic(true, "elf: phdr_size < sizeof(struct elf64_phdr)");
+    }
+
     // Find DYN segment
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr phdr;
@@ -235,9 +243,13 @@ int elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
         return 1;
     }
 
+    if (hdr.shdr_size < sizeof(struct elf64_shdr)) {
+        panic(true, "elf: shdr_size < sizeof(struct elf64_shdr)");
+    }
+
     struct elf64_shdr shstrtab;
     memcpy(&shstrtab, elf + (hdr.shoff + hdr.shstrndx * hdr.shdr_size),
-            sizeof(struct elf64_shdr));
+           sizeof(struct elf64_shdr));
 
     char *names = ext_mem_alloc(shstrtab.sh_size);
     memcpy(names, elf + (shstrtab.sh_offset), shstrtab.sh_size);
@@ -329,6 +341,10 @@ int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
         return 1;
     }
 
+    if (hdr.shdr_size < sizeof(struct elf32_shdr)) {
+        panic(true, "elf: shdr_size < sizeof(struct elf32_shdr)");
+    }
+
     struct elf32_shdr shstrtab;
     memcpy(&shstrtab, elf + (hdr.shoff + hdr.shstrndx * hdr.shdr_size),
            sizeof(struct elf32_shdr));
@@ -372,6 +388,10 @@ static uint64_t elf64_max_align(uint8_t *elf) {
     struct elf64_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
+    if (hdr.phdr_size < sizeof(struct elf64_phdr)) {
+        panic(true, "elf: phdr_size < sizeof(struct elf64_phdr)");
+    }
+
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf64_phdr phdr;
         memcpy(&phdr, elf + (hdr.phoff + i * hdr.phdr_size),
@@ -397,6 +417,10 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
     uint64_t ranges_count = 0;
+
+    if (hdr.phdr_size < sizeof(struct elf64_phdr)) {
+        panic(true, "elf: phdr_size < sizeof(struct elf64_phdr)");
+    }
 
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf64_phdr phdr;
@@ -483,6 +507,10 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
     uint64_t max_align = elf64_max_align(elf);
 
     uint64_t image_size = 0;
+
+    if (hdr.phdr_size < sizeof(struct elf64_phdr)) {
+        panic(true, "elf: phdr_size < sizeof(struct elf64_phdr)");
+    }
 
     if (fully_virtual) {
         simulation = false;
@@ -686,6 +714,10 @@ int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t allo
     if (top)
         *top = 0;
 
+    if (hdr.phdr_size < sizeof(struct elf32_phdr)) {
+        panic(true, "elf: phdr_size < sizeof(struct elf32_phdr)");
+    }
+
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf32_phdr phdr;
         memcpy(&phdr, elf + (hdr.phoff + i * hdr.phdr_size),
@@ -693,6 +725,11 @@ int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t allo
 
         if (phdr.p_type != PT_LOAD)
             continue;
+
+        // Sanity checks
+        if (phdr.p_filesz > phdr.p_memsz) {
+            panic(true, "elf: p_filesz > p_memsz");
+        }
 
         if (top) {
             uint32_t this_top = phdr.p_paddr + phdr.p_memsz;

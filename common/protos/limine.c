@@ -132,6 +132,11 @@ bool limine_load(char *config, char *cmdline) {
             panic(true, "limine: Maximum requests exceeded");
         }
 
+        // Check for a conflict
+        if (_get_request(p) != NULL) {
+            panic(true, "limine: Conflict detected for request ID %X %X", p[2], p[3]);
+        }
+
         requests[requests_count++] = p;
     }
 

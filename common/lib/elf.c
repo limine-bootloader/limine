@@ -120,7 +120,7 @@ static bool elf64_is_relocatable(uint8_t *elf, struct elf64_hdr *hdr) {
     // Find DYN segment
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr phdr;
-        memcpy(&phdr, elf + (hdr->phoff + i * sizeof(struct elf64_phdr)),
+        memcpy(&phdr, elf + (hdr->phoff + i * hdr->phdr_size),
                sizeof(struct elf64_phdr));
 
         if (phdr.p_type == PT_DYNAMIC)
@@ -134,7 +134,7 @@ static int elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *bu
     // Find DYN segment
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr phdr;
-        memcpy(&phdr, elf + (hdr->phoff + i * sizeof(struct elf64_phdr)),
+        memcpy(&phdr, elf + (hdr->phoff + i * hdr->phdr_size),
                sizeof(struct elf64_phdr));
 
         if (phdr.p_type != PT_DYNAMIC)
@@ -172,7 +172,7 @@ static int elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *bu
 
         for (uint16_t j = 0; j < hdr->ph_num; j++) {
             struct elf64_phdr _phdr;
-            memcpy(&_phdr, elf + (hdr->phoff + j * sizeof(struct elf64_phdr)),
+            memcpy(&_phdr, elf + (hdr->phoff + j * hdr->phdr_size),
                    sizeof(struct elf64_phdr));
 
             if (_phdr.p_vaddr <= rela_offset && _phdr.p_vaddr + _phdr.p_filesz > rela_offset) {
@@ -236,7 +236,7 @@ int elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
     }
 
     struct elf64_shdr shstrtab;
-    memcpy(&shstrtab, elf + (hdr.shoff + hdr.shstrndx * sizeof(struct elf64_shdr)),
+    memcpy(&shstrtab, elf + (hdr.shoff + hdr.shstrndx * hdr.shdr_size),
             sizeof(struct elf64_shdr));
 
     char *names = ext_mem_alloc(shstrtab.sh_size);
@@ -246,8 +246,8 @@ int elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
 
     for (uint16_t i = 0; i < hdr.sh_num; i++) {
         struct elf64_shdr section;
-        memcpy(&section, elf + (hdr.shoff + i * sizeof(struct elf64_shdr)),
-                   sizeof(struct elf64_shdr));
+        memcpy(&section, elf + (hdr.shoff + i * hdr.shdr_size),
+               sizeof(struct elf64_shdr));
 
         if (!strcmp(&names[section.sh_name], name)) {
             if (section.sh_size > limit) {
@@ -330,8 +330,8 @@ int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
     }
 
     struct elf32_shdr shstrtab;
-    memcpy(&shstrtab, elf + (hdr.shoff + hdr.shstrndx * sizeof(struct elf32_shdr)),
-            sizeof(struct elf32_shdr));
+    memcpy(&shstrtab, elf + (hdr.shoff + hdr.shstrndx * hdr.shdr_size),
+           sizeof(struct elf32_shdr));
 
     char *names = ext_mem_alloc(shstrtab.sh_size);
     memcpy(names, elf + (shstrtab.sh_offset), shstrtab.sh_size);
@@ -340,8 +340,8 @@ int elf32_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
 
     for (uint16_t i = 0; i < hdr.sh_num; i++) {
         struct elf32_shdr section;
-        memcpy(&section, elf + (hdr.shoff + i * sizeof(struct elf32_shdr)),
-                   sizeof(struct elf32_shdr));
+        memcpy(&section, elf + (hdr.shoff + i * hdr.shdr_size),
+               sizeof(struct elf32_shdr));
 
         if (!strcmp(&names[section.sh_name], name)) {
             if (section.sh_size > limit) {
@@ -374,8 +374,8 @@ static uint64_t elf64_max_align(uint8_t *elf) {
 
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf64_phdr phdr;
-        memcpy(&phdr, elf + (hdr.phoff + i * sizeof(struct elf64_phdr)),
-                   sizeof(struct elf64_phdr));
+        memcpy(&phdr, elf + (hdr.phoff + i * hdr.phdr_size),
+               sizeof(struct elf64_phdr));
 
         if (phdr.p_type != PT_LOAD)
             continue;
@@ -400,8 +400,8 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
 
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf64_phdr phdr;
-        memcpy(&phdr, elf + (hdr.phoff + i * sizeof(struct elf64_phdr)),
-                   sizeof(struct elf64_phdr));
+        memcpy(&phdr, elf + (hdr.phoff + i * hdr.phdr_size),
+               sizeof(struct elf64_phdr));
 
         if (phdr.p_type != PT_LOAD)
             continue;
@@ -422,8 +422,8 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
     size_t r = 0;
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf64_phdr phdr;
-        memcpy(&phdr, elf + (hdr.phoff + i * sizeof(struct elf64_phdr)),
-                   sizeof(struct elf64_phdr));
+        memcpy(&phdr, elf + (hdr.phoff + i * hdr.phdr_size),
+               sizeof(struct elf64_phdr));
 
         if (phdr.p_type != PT_LOAD)
             continue;
@@ -491,8 +491,8 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
         uint64_t max_vaddr = 0;
         for (uint16_t i = 0; i < hdr.ph_num; i++) {
             struct elf64_phdr phdr;
-            memcpy(&phdr, elf + (hdr.phoff + i * sizeof(struct elf64_phdr)),
-                       sizeof(struct elf64_phdr));
+            memcpy(&phdr, elf + (hdr.phoff + i * hdr.phdr_size),
+                   sizeof(struct elf64_phdr));
 
             if (phdr.p_type != PT_LOAD) {
                 continue;
@@ -549,11 +549,16 @@ final:
 
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf64_phdr phdr;
-        memcpy(&phdr, elf + (hdr.phoff + i * sizeof(struct elf64_phdr)),
-                   sizeof(struct elf64_phdr));
+        memcpy(&phdr, elf + (hdr.phoff + i * hdr.phdr_size),
+               sizeof(struct elf64_phdr));
 
         if (phdr.p_type != PT_LOAD)
             continue;
+
+        // Sanity checks
+        if (phdr.p_filesz > phdr.p_memsz) {
+            panic(true, "elf: p_filesz > p_memsz");
+        }
 
         uint64_t load_addr = 0;
 
@@ -601,13 +606,17 @@ final:
         if (!fully_virtual &&
             ((higher_half == true && this_top > 0x80000000)
           || !memmap_alloc_range((size_t)mem_base, (size_t)mem_size, alloc_type, true, false, simulation, false))) {
-            if (++try_count == max_simulated_tries || simulation == false) {
+            if (simulation == false || ++try_count == max_simulated_tries) {
                 panic(true, "elf: Failed to allocate necessary memory range (%X-%X)", mem_base, mem_base + mem_size);
             }
             if (!kaslr) {
                 slide += max_align;
             }
             goto again;
+        }
+
+        if (simulation) {
+            continue;
         }
 
         memcpy((void *)(uintptr_t)load_addr, elf + (phdr.p_offset), phdr.p_filesz);
@@ -679,8 +688,8 @@ int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t allo
 
     for (uint16_t i = 0; i < hdr.ph_num; i++) {
         struct elf32_phdr phdr;
-        memcpy(&phdr, elf + (hdr.phoff + i * sizeof(struct elf32_phdr)),
-                   sizeof(struct elf32_phdr));
+        memcpy(&phdr, elf + (hdr.phoff + i * hdr.phdr_size),
+               sizeof(struct elf32_phdr));
 
         if (phdr.p_type != PT_LOAD)
             continue;

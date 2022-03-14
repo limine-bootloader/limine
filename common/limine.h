@@ -30,13 +30,30 @@ struct limine_boot_info_request {
 
 #define LIMINE_FRAMEBUFFER_REQUEST { LIMINE_COMMON_MAGIC, 0xcbfe81d7dd2d1977, 0x063150319ebc9b71 }
 
-struct limine_framebuffer_response {
-    uint64_t flags;
+#define LIMINE_FRAMEBUFFER_RGB 1
+
+struct limine_framebuffer {
+    LIMINE_PTR(void *) address;
+    uint16_t width;
+    uint16_t height;
+    uint16_t pitch;
+    uint16_t bpp;
+    uint8_t memory_model;
+    uint8_t red_mask_size;
+    uint8_t red_mask_shift;
+    uint8_t green_mask_size;
+    uint8_t green_mask_shift;
+    uint8_t blue_mask_size;
+    uint8_t blue_mask_shift;
+    uint8_t unused;
 };
 
-#define LIMINE_FRAMEBUFFER_PREFER_LFB 0
-#define LIMINE_FRAMEBUFFER_PREFER_TEXT 1
-#define LIMINE_FRAMEBUFFER_ENFORCE_PREFER (1 << 8)
+struct limine_framebuffer_response {
+    uint64_t flags;
+
+    uint64_t fbs_count;
+    LIMINE_PTR(struct limine_framebuffer *) fbs;
+};
 
 struct limine_framebuffer_request {
     uint64_t id[4];

@@ -8,8 +8,7 @@ static void limine_main(void);
 __attribute__((used))
 static struct limine_framebuffer_request framebuffer_request = {
     .id = LIMINE_FRAMEBUFFER_REQUEST,
-    .flags = LIMINE_FRAMEBUFFER_PREFER_LFB | LIMINE_FRAMEBUFFER_ENFORCE_PREFER,
-    .response = NULL
+    .flags = 0, .response = NULL
 };
 
 __attribute__((used))
@@ -81,6 +80,30 @@ FEAT_START
     for (size_t i = 0; i < memmap_response->entries_count; i++) {
         struct limine_memmap_entry *e = &memmap_response->entries[i];
         e9_printf("%x->%x %s", e->base, e->base + e->length, get_memmap_type(e->type));
+    }
+FEAT_END
+
+FEAT_START
+    if (framebuffer_request.response == NULL) {
+        e9_printf("Framebuffer not passed");
+        break;
+    }
+    struct limine_framebuffer_response *fb_response = framebuffer_request.response;
+    e9_printf("%d framebuffer(s)", fb_response->fbs_count);
+    for (size_t i = 0; i < fb_response->fbs_count; i++) {
+        struct limine_framebuffer *fb = &fb_response->fbs[i];
+        e9_printf("Address: %x", fb->address);
+        e9_printf("Width: %d", fb->width);
+        e9_printf("Height: %d", fb->height);
+        e9_printf("Pitch: %d", fb->pitch);
+        e9_printf("BPP: %d", fb->bpp);
+        e9_printf("Memory model: %d", fb->memory_model);
+        e9_printf("Red mask size: %d", fb->red_mask_size);
+        e9_printf("Red mask shift: %d", fb->red_mask_shift);
+        e9_printf("Green mask size: %d", fb->green_mask_size);
+        e9_printf("Green mask shift: %d", fb->green_mask_shift);
+        e9_printf("Blue mask size: %d", fb->blue_mask_size);
+        e9_printf("Blue mask shift: %d", fb->blue_mask_shift);
     }
 FEAT_END
 

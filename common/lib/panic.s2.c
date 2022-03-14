@@ -21,23 +21,25 @@ noreturn void panic(bool allow_menu, const char *fmt, ...) {
 
     quiet = false;
 
-    if (
-#if bios == 1
-      stage3_loaded == true &&
-#endif
-      term_backend == NOT_READY) {
-#if bios == 1
-        term_textmode();
-#elif uefi == 1
-        term_vbe(0, 0);
-#endif
+    static bool is_nested = false;
+
+    if (is_nested) {
+        goto nested;
     }
+
+    is_nested = true;
 
     if (
 #if bios == 1
       stage3_loaded == true &&
 #endif
       term_backend == NOT_READY) {
+        early_term = true;
+        term_vbe(0, 0);
+    }
+
+nested:
+    if (term_backend == NOT_READY) {
         term_fallback();
     }
 

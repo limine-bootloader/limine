@@ -61,6 +61,7 @@ struct limine_framebuffer {
     uint8_t blue_mask_size;
     uint8_t blue_mask_shift;
     uint8_t unused;
+    uint8_t reserved[256];
 };
 
 struct limine_framebuffer_response {
@@ -107,6 +108,7 @@ struct limine_memmap_entry {
     uint64_t base;
     uint64_t length;
     uint64_t type;
+    uint8_t reserved[256];
 };
 
 struct limine_memmap_response {

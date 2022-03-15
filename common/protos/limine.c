@@ -33,6 +33,7 @@
 #include <limine.h>
 
 #define MAX_REQUESTS 128
+#define MAX_MEMMAP 256
 
 static uint64_t physical_base, virtual_base, slide, direct_map_offset;
 static size_t requests_count;
@@ -299,9 +300,11 @@ FEAT_END
 FEAT_START
     struct limine_memmap_request *memmap_request = get_request(LIMINE_MEMMAP_REQUEST);
     struct limine_memmap_response *memmap_response;
+    struct limine_memmap_entry *_memmap;
 
     if (memmap_request != NULL) {
         memmap_response = ext_mem_alloc(sizeof(struct limine_memmap_response));
+        _memmap = ext_mem_alloc(sizeof(struct limine_memmap_entry) * MAX_MEMMAP);
     }
 
     size_t mmap_entries;
@@ -311,38 +314,45 @@ FEAT_START
         break; // next feature
     }
 
+    if (mmap_entries > MAX_MEMMAP) {
+        panic(false, "limine: Too many memmap entries");
+    }
+
     for (size_t i = 0; i < mmap_entries; i++) {
+        _memmap[i].base = mmap[i].base;
+        _memmap[i].length = mmap[i].length;
+
         switch (mmap[i].type) {
             case MEMMAP_USABLE:
-                mmap[i].type = LIMINE_MEMMAP_USABLE;
+                _memmap[i].type = LIMINE_MEMMAP_USABLE;
                 break;
             case MEMMAP_ACPI_RECLAIMABLE:
-                mmap[i].type = LIMINE_MEMMAP_ACPI_RECLAIMABLE;
+                _memmap[i].type = LIMINE_MEMMAP_ACPI_RECLAIMABLE;
                 break;
             case MEMMAP_ACPI_NVS:
-                mmap[i].type = LIMINE_MEMMAP_ACPI_NVS;
+                _memmap[i].type = LIMINE_MEMMAP_ACPI_NVS;
                 break;
             case MEMMAP_BAD_MEMORY:
-                mmap[i].type = LIMINE_MEMMAP_BAD_MEMORY;
+                _memmap[i].type = LIMINE_MEMMAP_BAD_MEMORY;
                 break;
             case MEMMAP_BOOTLOADER_RECLAIMABLE:
-                mmap[i].type = LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE;
+                _memmap[i].type = LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE;
                 break;
             case MEMMAP_KERNEL_AND_MODULES:
-                mmap[i].type = LIMINE_MEMMAP_KERNEL_AND_MODULES;
+                _memmap[i].type = LIMINE_MEMMAP_KERNEL_AND_MODULES;
                 break;
             case MEMMAP_FRAMEBUFFER:
-                mmap[i].type = LIMINE_MEMMAP_FRAMEBUFFER;
+                _memmap[i].type = LIMINE_MEMMAP_FRAMEBUFFER;
                 break;
             default:
             case MEMMAP_RESERVED:
-                mmap[i].type = LIMINE_MEMMAP_RESERVED;
+                _memmap[i].type = LIMINE_MEMMAP_RESERVED;
                 break;
         }
     }
 
     memmap_response->entries_count = mmap_entries;
-    memmap_response->entries = reported_addr(mmap);
+    memmap_response->entries = reported_addr(_memmap);
 
     memmap_request->response = reported_addr(memmap_response);
 FEAT_END

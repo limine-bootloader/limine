@@ -20,6 +20,12 @@ static struct limine_entry_point_request entry_point_request = {
 };
 
 __attribute__((used))
+static struct limine_cmdline_request cmdline_request = {
+    .id = LIMINE_CMDLINE_REQUEST,
+    .flags = 0, .response = NULL
+};
+
+__attribute__((used))
 static struct limine_boot_info_request boot_info_request = {
     .id = LIMINE_BOOT_INFO_REQUEST,
     .flags = 0, .response = NULL
@@ -68,6 +74,15 @@ FEAT_START
     struct limine_boot_info_response *boot_info_response = boot_info_request.response;
     e9_printf("Boot info response:");
     e9_printf("Bootloader name: %s", boot_info_response->loader);
+FEAT_END
+
+FEAT_START
+    if (cmdline_request.response == NULL) {
+        e9_printf("Command line not passed");
+        break;
+    }
+    struct limine_cmdline_response *cmdline_response = cmdline_request.response;
+    e9_printf("Command line: %s", cmdline_response->cmdline);
 FEAT_END
 
 FEAT_START

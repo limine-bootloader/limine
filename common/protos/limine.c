@@ -214,6 +214,21 @@ FEAT_START
     boot_info_request->response = reported_addr(boot_info_response);
 FEAT_END
 
+    // Command line
+FEAT_START
+    struct limine_cmdline_request *cmdline_request = get_request(LIMINE_CMDLINE_REQUEST);
+    if (cmdline_request == NULL) {
+        break; // next feature
+    }
+
+    struct limine_cmdline_response *cmdline_response =
+        ext_mem_alloc(sizeof(struct limine_cmdline_response));
+
+    cmdline_response->cmdline = reported_addr(cmdline);
+
+    cmdline_request->response = reported_addr(cmdline_response);
+FEAT_END
+
     // Framebuffer feature
 FEAT_START
     term_deinit();

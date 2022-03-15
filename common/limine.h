@@ -26,6 +26,21 @@ struct limine_boot_info_request {
     LIMINE_PTR(struct limine_boot_info_response *) response;
 };
 
+// Command line
+
+#define LIMINE_CMDLINE_REQUEST { LIMINE_COMMON_MAGIC, 0x859894000fc0b7d3, 0xaab4ab57e5c3e348 }
+
+struct limine_cmdline_response {
+    uint64_t flags;
+    LIMINE_PTR(char *) cmdline;
+};
+
+struct limine_cmdline_request {
+    uint64_t id[4];
+    uint64_t flags;
+    LIMINE_PTR(struct limine_cmdline_response *) response;
+};
+
 // Framebuffer
 
 #define LIMINE_FRAMEBUFFER_REQUEST { LIMINE_COMMON_MAGIC, 0xcbfe81d7dd2d1977, 0x063150319ebc9b71 }

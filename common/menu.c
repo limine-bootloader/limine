@@ -127,6 +127,7 @@ static const char *VALID_KEYS[] = {
     "INITRD_PATH",
     "MODULE_PATH",
     "MODULE_STRING",
+    "MODULE_CMDLINE",
     "RESOLUTION",
     "TEXTMODE",
     "KASLR",

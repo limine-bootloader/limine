@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+// Misc
+
 #ifdef LIMINE_NO_POINTERS
 #  define LIMINE_PTR(TYPE) uint64_t
 #else
@@ -10,6 +12,21 @@
 #endif
 
 #define LIMINE_COMMON_MAGIC 0xc7b1dd30df4c8b88, 0x0a82e883a194f07b
+
+struct limine_uuid {
+    uint32_t a;
+    uint16_t b;
+    uint16_t c;
+    uint8_t d[8];
+};
+
+struct limine_file_location {
+    uint64_t partition_index;
+    uint32_t mbr_disk_id;
+    struct limine_uuid gpt_disk_uuid;
+    struct limine_uuid gpt_part_uuid;
+    struct limine_uuid part_uuid;
+};
 
 // Boot info
 
@@ -138,6 +155,32 @@ struct limine_entry_point_request {
     LIMINE_PTR(struct limine_entry_point_response *) response;
 
     LIMINE_PTR(void *) entry;
+};
+
+// Module
+
+#define LIMINE_MODULE_REQUEST { LIMINE_COMMON_MAGIC, 0x3e7e279702be32af, 0xca1c4f3bd1280cee }
+
+struct limine_module {
+    uint64_t base;
+    uint64_t length;
+    LIMINE_PTR(char *) path;
+    LIMINE_PTR(char *) cmdline;
+    LIMINE_PTR(struct limine_file_location *) file_location;
+    uint8_t reserved[256];
+};
+
+struct limine_module_response {
+    uint64_t flags;
+
+    uint64_t modules_count;
+    LIMINE_PTR(struct limine_module *) modules;
+};
+
+struct limine_module_request {
+    uint64_t id[4];
+    uint64_t flags;
+    LIMINE_PTR(struct limine_module_response *) response;
 };
 
 #endif

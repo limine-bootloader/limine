@@ -39,6 +39,29 @@ static uint64_t physical_base, virtual_base, slide, direct_map_offset;
 static size_t requests_count;
 static void *requests[MAX_REQUESTS];
 
+static struct limine_file_location get_file_loc(struct volume *vol) {
+    struct limine_file_location ret = {0};
+
+    ret.partition_index = vol->partition;
+
+    ret.mbr_disk_id = mbr_get_id(vol);
+
+    if (vol->guid_valid) {
+        memcpy(&ret.part_uuid, &vol->guid, sizeof(struct limine_uuid));
+    }
+
+    if (vol->part_guid_valid) {
+        memcpy(&ret.gpt_part_uuid, &vol->part_guid, sizeof(struct limine_uuid));
+    }
+
+    struct guid gpt_disk_uuid;
+    if (gpt_get_guid(&gpt_disk_uuid, vol->backing_dev ?: vol) == true) {
+        memcpy(&ret.gpt_disk_uuid, &gpt_disk_uuid, sizeof(struct limine_uuid));
+    }
+
+    return ret;
+}
+
 static uint64_t reported_addr(void *addr) {
     return (uint64_t)(uintptr_t)addr + direct_map_offset;
 }
@@ -228,6 +251,63 @@ FEAT_START
     cmdline_response->cmdline = reported_addr(cmdline);
 
     cmdline_request->response = reported_addr(cmdline_response);
+FEAT_END
+
+    // Modules
+FEAT_START
+    struct limine_module_request *module_request = get_request(LIMINE_MODULE_REQUEST);
+    if (module_request == NULL) {
+        break; // next feature
+    }
+
+    size_t module_count;
+    for (module_count = 0; ; module_count++) {
+        char *module_file = config_get_value(config, module_count, "MODULE_PATH");
+        if (module_file == NULL)
+            break;
+    }
+
+    struct limine_module_response *module_response =
+        ext_mem_alloc(sizeof(struct limine_module_response));
+
+    struct limine_module *modules = ext_mem_alloc(module_count * sizeof(struct limine_module));
+
+    for (size_t i = 0; i < module_count; i++) {
+        struct conf_tuple conf_tuple =
+                config_get_tuple(config, i, "MODULE_PATH", "MODULE_CMDLINE");
+
+        char *module_path = conf_tuple.value1;
+        char *module_cmdline = conf_tuple.value2;
+
+        struct limine_module *m = &modules[i];
+
+        if (module_cmdline == NULL) {
+            module_cmdline = "";
+        }
+
+        print("limine: Loading module `%s`...\n", module_path);
+
+        struct file_handle *f;
+        if ((f = uri_open(module_path)) == NULL)
+            panic(true, "limine: Failed to open module with path `%s`. Is the path correct?", module_path);
+
+        m->base = reported_addr(freadall(f, MEMMAP_KERNEL_AND_MODULES));
+        m->length = f->size;
+        m->path = reported_addr(module_path);
+        m->cmdline = reported_addr(module_cmdline);
+
+        struct limine_file_location *l = ext_mem_alloc(sizeof(struct limine_file_location));
+        *l = get_file_loc(f->vol);
+
+        m->file_location = reported_addr(l);
+
+        fclose(f);
+    }
+
+    module_response->modules_count = module_count;
+    module_response->modules = reported_addr(modules);
+
+    module_request->response = reported_addr(module_response);
 FEAT_END
 
     // Framebuffer feature

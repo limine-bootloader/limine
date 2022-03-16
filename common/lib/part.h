@@ -56,6 +56,7 @@ extern struct volume **volume_index;
 extern size_t volume_index_i;
 
 bool gpt_get_guid(struct guid *guid, struct volume *volume);
+uint32_t mbr_get_id(struct volume *volume);
 
 int part_get(struct volume *part, struct volume *volume, int partition);
 

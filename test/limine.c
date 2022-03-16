@@ -37,6 +37,12 @@ static struct limine_memmap_request memmap_request = {
     .flags = 0, .response = NULL
 };
 
+__attribute__((used))
+static struct limine_module_request module_request = {
+    .id = LIMINE_MODULE_REQUEST,
+    .flags = 0, .response = NULL
+};
+
 static char *get_memmap_type(uint64_t type) {
     switch (type) {
         case LIMINE_MEMMAP_USABLE:
@@ -58,6 +64,26 @@ static char *get_memmap_type(uint64_t type) {
         default:
             return "???";
     }
+}
+
+static void print_file_loc(struct limine_file_location *file_location) {
+    e9_printf("Loc->PartIndex: %d", file_location->partition_index);
+    e9_printf("Loc->MBRDiskId: %x", file_location->mbr_disk_id);
+    e9_printf("Loc->GPTDiskUUID: %x-%x-%x-%x",
+              file_location->gpt_disk_uuid.a,
+              file_location->gpt_disk_uuid.b,
+              file_location->gpt_disk_uuid.c,
+              *(uint64_t *)file_location->gpt_disk_uuid.d);
+    e9_printf("Loc->GPTPartUUID: %x-%x-%x-%x",
+              file_location->gpt_part_uuid.a,
+              file_location->gpt_part_uuid.b,
+              file_location->gpt_part_uuid.c,
+              *(uint64_t *)file_location->gpt_part_uuid.d);
+    e9_printf("Loc->PartUUID: %x-%x-%x-%x",
+              file_location->part_uuid.a,
+              file_location->part_uuid.b,
+              file_location->part_uuid.c,
+              *(uint64_t *)file_location->part_uuid.d);
 }
 
 #define FEAT_START do {
@@ -119,6 +145,25 @@ FEAT_START
         e9_printf("Green mask shift: %d", fb->green_mask_shift);
         e9_printf("Blue mask size: %d", fb->blue_mask_size);
         e9_printf("Blue mask shift: %d", fb->blue_mask_shift);
+    }
+FEAT_END
+
+FEAT_START
+    if (module_request.response == NULL) {
+        e9_printf("Modules not passed");
+        break;
+    }
+    struct limine_module_response *module_response = module_request.response;
+    e9_printf("%d module(s)", module_response->modules_count);
+    for (size_t i = 0; i < module_response->modules_count; i++) {
+        struct limine_module *m = &module_response->modules[i];
+
+        e9_printf("Base: %x", m->base);
+        e9_printf("Length: %x", m->length);
+        e9_printf("Path: %s", m->path);
+        e9_printf("Cmdline: %s", m->cmdline);
+
+        print_file_loc(m->file_location);
     }
 FEAT_END
 

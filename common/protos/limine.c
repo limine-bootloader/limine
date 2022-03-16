@@ -111,7 +111,7 @@ bool limine_load(char *config, char *cmdline) {
 
     size_t kernel_file_size = kernel_file->size;
 
-    //struct volume *kernel_volume = kernel_file->vol;
+    struct volume *kernel_volume = kernel_file->vol;
 
     fclose(kernel_file);
 
@@ -238,21 +238,6 @@ FEAT_START
     boot_info_request->response = reported_addr(boot_info_response);
 FEAT_END
 
-    // Command line
-FEAT_START
-    struct limine_cmdline_request *cmdline_request = get_request(LIMINE_CMDLINE_REQUEST);
-    if (cmdline_request == NULL) {
-        break; // next feature
-    }
-
-    struct limine_cmdline_response *cmdline_response =
-        ext_mem_alloc(sizeof(struct limine_cmdline_response));
-
-    cmdline_response->cmdline = reported_addr(cmdline);
-
-    cmdline_request->response = reported_addr(cmdline_response);
-FEAT_END
-
     // Modules
 FEAT_START
     struct limine_module_request *module_request = get_request(LIMINE_MODULE_REQUEST);
@@ -267,14 +252,28 @@ FEAT_START
             break;
     }
 
+    // Module 0 is always the kernel
+    module_count++;
+
     struct limine_module_response *module_response =
         ext_mem_alloc(sizeof(struct limine_module_response));
 
     struct limine_module *modules = ext_mem_alloc(module_count * sizeof(struct limine_module));
 
-    for (size_t i = 0; i < module_count; i++) {
+    modules[0].base = reported_addr(kernel);
+    modules[0].length = kernel_file_size;
+    modules[0].path = reported_addr(kernel_path);
+    modules[0].cmdline = reported_addr(cmdline);
+
+    struct limine_file_location *kl = ext_mem_alloc(sizeof(struct limine_file_location));
+    *kl = get_file_loc(kernel_volume);
+
+    modules[0].file_location = reported_addr(kl);
+
+    for (size_t i = 1; i < module_count; i++) {
         struct conf_tuple conf_tuple =
-                config_get_tuple(config, i, "MODULE_PATH", "MODULE_CMDLINE");
+                config_get_tuple(config, i - 1,
+                                 "MODULE_PATH", "MODULE_CMDLINE");
 
         char *module_path = conf_tuple.value1;
         char *module_cmdline = conf_tuple.value2;

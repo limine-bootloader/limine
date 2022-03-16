@@ -375,6 +375,10 @@ FEAT_END
     pagemap = stivale_build_pagemap(want_5lv, true, ranges, ranges_count, true,
                                     physical_base, virtual_base, direct_map_offset);
 
+#if uefi == 1
+    efi_exit_boot_services();
+#endif
+
     // Memmap
 FEAT_START
     struct limine_memmap_request *memmap_request = get_request(LIMINE_MEMMAP_REQUEST);
@@ -435,11 +439,6 @@ FEAT_START
 
     memmap_request->response = reported_addr(memmap_response);
 FEAT_END
-
-    // Final wrap-up
-#if uefi == 1
-    efi_exit_boot_services();
-#endif
 
     stivale_spinup(64, want_5lv, &pagemap, entry_point, 0,
                    reported_addr(stack), true, (uintptr_t)local_gdt);

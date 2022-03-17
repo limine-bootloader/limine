@@ -1,5 +1,5 @@
 CC              = cc
-CFLAGS          = -O2 -g
+CFLAGS          = -O2 -g -Wall -Wextra -Wpedantic
 LDFLAGS         =
 LD              = ld
 QEMU            = qemu-system-x86_64
@@ -32,7 +32,7 @@ INTERNALCFLAGS  :=       \
 	-I../stivale         \
 	-I.                  \
 	-I../common          \
-	-std=gnu11           \
+	-std=c11             \
 	-ffreestanding       \
 	-fno-stack-protector \
 	-fpie                \

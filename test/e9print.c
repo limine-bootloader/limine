@@ -8,7 +8,7 @@ static const char CONVERSION_TABLE[] = "0123456789abcdef";
 void e9_putc(char c) {
     if (stivale2_print != NULL)
         stivale2_print(&c, 1);
-    asm volatile ("outb %0, %1" :: "a" (c), "Nd" (0xe9) : "memory");
+    __asm__ __volatile__ ("outb %0, %1" :: "a" (c), "Nd" (0xe9) : "memory");
 }
 
 void e9_print(const char *msg) {

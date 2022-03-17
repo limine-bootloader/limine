@@ -5,46 +5,39 @@
 
 static void limine_main(void);
 
-__attribute__((used))
-static struct limine_framebuffer_request framebuffer_request = {
-    .id = LIMINE_FRAMEBUFFER_REQUEST,
-    .flags = 0, .response = NULL
-};
-
-__attribute__((used))
-static struct limine_entry_point_request entry_point_request = {
+struct limine_entry_point_request entry_point_request = {
     .id = LIMINE_ENTRY_POINT_REQUEST,
     .flags = 0, .response = NULL,
 
     .entry = limine_main
 };
 
-__attribute__((used))
-static struct limine_boot_info_request boot_info_request = {
+struct limine_framebuffer_request framebuffer_request = {
+    .id = LIMINE_FRAMEBUFFER_REQUEST,
+    .flags = 0, .response = NULL
+};
+
+struct limine_boot_info_request boot_info_request = {
     .id = LIMINE_BOOT_INFO_REQUEST,
     .flags = 0, .response = NULL
 };
 
-__attribute__((used))
-static struct limine_memmap_request memmap_request = {
+struct limine_memmap_request memmap_request = {
     .id = LIMINE_MEMMAP_REQUEST,
     .flags = 0, .response = NULL
 };
 
-__attribute__((used))
-static struct limine_module_request module_request = {
+struct limine_module_request module_request = {
     .id = LIMINE_MODULE_REQUEST,
     .flags = 0, .response = NULL
 };
 
-__attribute__((used))
-static struct limine_rsdp_request rsdp_request = {
+struct limine_rsdp_request rsdp_request = {
     .id = LIMINE_RSDP_REQUEST,
     .flags = 0, .response = NULL
 };
 
-__attribute__((used))
-static struct limine_smbios_request smbios_request = {
+struct limine_smbios_request smbios_request = {
     .id = LIMINE_SMBIOS_REQUEST,
     .flags = 0, .response = NULL
 };

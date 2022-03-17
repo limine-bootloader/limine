@@ -58,7 +58,7 @@ static volatile int cpu_up = 0;
 static void ap_entry(struct stivale2_smp_info *s) {
     e9_printf("            AP %d started", s->lapic_id);
     cpu_up = 1;
-    for (;;) asm("hlt");
+    for (;;) __asm__("hlt");
 }
 
 static void print_guid(struct stivale2_guid guid) {
@@ -277,5 +277,5 @@ void stivale2_main(struct stivale2_struct *info) {
     }
 
     // Enter our sublime pale slumber.
-    for (;;) asm("hlt");
+    for (;;) __asm__("hlt");
 }

@@ -39,8 +39,16 @@ static uint64_t physical_base, virtual_base, slide, direct_map_offset;
 static size_t requests_count;
 static void *requests[MAX_REQUESTS];
 
-static struct limine_file_location get_file_loc(struct volume *vol) {
+static struct limine_file_location get_file_loc(struct file_handle *file) {
     struct limine_file_location ret = {0};
+
+    if (file->pxe) {
+        ret.pxe_ip = file->pxe_ip;
+        ret.pxe_port = file->pxe_port;
+        return ret;
+    }
+
+    struct volume *vol = file->vol;
 
     ret.partition_index = vol->partition;
 
@@ -111,7 +119,8 @@ bool limine_load(char *config, char *cmdline) {
 
     size_t kernel_file_size = kernel_file->size;
 
-    struct volume *kernel_volume = kernel_file->vol;
+    struct limine_file_location *kl = ext_mem_alloc(sizeof(struct limine_file_location));
+    *kl = get_file_loc(kernel_file);
 
     fclose(kernel_file);
 
@@ -234,6 +243,7 @@ FEAT_START
         ext_mem_alloc(sizeof(struct limine_boot_info_response));
 
     boot_info_response->loader = reported_addr("Limine " LIMINE_VERSION);
+    boot_info_response->hhdm = direct_map_offset;
 
     boot_info_request->response = reported_addr(boot_info_response);
 FEAT_END
@@ -306,9 +316,6 @@ FEAT_START
     modules[0].path = reported_addr(kernel_path);
     modules[0].cmdline = reported_addr(cmdline);
 
-    struct limine_file_location *kl = ext_mem_alloc(sizeof(struct limine_file_location));
-    *kl = get_file_loc(kernel_volume);
-
     modules[0].file_location = reported_addr(kl);
 
     for (size_t i = 1; i < module_count; i++) {
@@ -337,7 +344,7 @@ FEAT_START
         m->cmdline = reported_addr(module_cmdline);
 
         struct limine_file_location *l = ext_mem_alloc(sizeof(struct limine_file_location));
-        *l = get_file_loc(f->vol);
+        *l = get_file_loc(f);
 
         m->file_location = reported_addr(l);
 

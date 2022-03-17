@@ -45,6 +45,10 @@ bool tftp_open(struct file_handle *handle, uint32_t server_ip, uint16_t server_p
     handle->size = fsize.file_size;
     handle->is_memfile = true;
 
+    handle->pxe = true;
+    handle->pxe_ip = server_ip;
+    handle->pxe_port = server_port;
+
     struct pxenv_open open = {
         .status = 0,
         .sip = server_ip,

@@ -67,6 +67,12 @@ static char *get_memmap_type(uint64_t type) {
 
 static void print_file_loc(struct limine_file_location *file_location) {
     e9_printf("Loc->PartIndex: %d", file_location->partition_index);
+    e9_printf("Loc->PXEIP: %d.%d.%d.%d",
+              (file_location->pxe_ip & (0xff << 0)) >> 0,
+              (file_location->pxe_ip & (0xff << 8)) >> 8,
+              (file_location->pxe_ip & (0xff << 16)) >> 16,
+              (file_location->pxe_ip & (0xff << 24)) >> 24);
+    e9_printf("Loc->PXEPort: %d", file_location->pxe_port);
     e9_printf("Loc->MBRDiskId: %x", file_location->mbr_disk_id);
     e9_printf("Loc->GPTDiskUUID: %x-%x-%x-%x",
               file_location->gpt_disk_uuid.a,
@@ -88,8 +94,14 @@ static void print_file_loc(struct limine_file_location *file_location) {
 #define FEAT_START do {
 #define FEAT_END } while (0);
 
+extern char kernel_start[];
+
 static void limine_main(void) {
-    e9_printf("We're alive");
+    e9_printf("\nWe're alive");
+
+    uint64_t kernel_slide = (uint64_t)kernel_start - 0xffffffff80000000;
+
+    e9_printf("Kernel slide: %x", kernel_slide);
 
 FEAT_START
     if (boot_info_request.response == NULL) {
@@ -99,6 +111,7 @@ FEAT_START
     struct limine_boot_info_response *boot_info_response = boot_info_request.response;
     e9_printf("Boot info response:");
     e9_printf("Bootloader name: %s", boot_info_response->loader);
+    e9_printf("Higher half direct map: %x", boot_info_response->hhdm);
 FEAT_END
 
 FEAT_START

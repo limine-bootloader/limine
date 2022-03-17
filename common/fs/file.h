@@ -22,6 +22,9 @@ struct file_handle {
 #if uefi == 1
     EFI_HANDLE efi_part_handle;
 #endif
+    bool pxe;
+    uint32_t pxe_ip;
+    uint16_t pxe_port;
 };
 
 struct file_handle *fopen(struct volume *part, const char *filename);

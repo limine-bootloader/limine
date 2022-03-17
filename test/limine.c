@@ -43,6 +43,12 @@ static struct limine_rsdp_request rsdp_request = {
     .flags = 0, .response = NULL
 };
 
+__attribute__((used))
+static struct limine_smbios_request smbios_request = {
+    .id = LIMINE_SMBIOS_REQUEST,
+    .flags = 0, .response = NULL
+};
+
 static char *get_memmap_type(uint64_t type) {
     switch (type) {
         case LIMINE_MEMMAP_USABLE:
@@ -165,6 +171,16 @@ FEAT_START
     }
     struct limine_rsdp_response *rsdp_response = rsdp_request.response;
     e9_printf("RSDP at: %x", rsdp_response->address);
+FEAT_END
+
+FEAT_START
+    if (smbios_request.response == NULL) {
+        e9_printf("SMBIOS not passed");
+        break;
+    }
+    struct limine_smbios_response *smbios_response = smbios_request.response;
+    e9_printf("SMBIOS 32-bit entry at: %x", smbios_response->entry_32);
+    e9_printf("SMBIOS 64-bit entry at: %x", smbios_response->entry_64);
 FEAT_END
 
     for (;;);

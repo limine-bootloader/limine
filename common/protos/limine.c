@@ -256,6 +256,29 @@ FEAT_START
     rsdp_request->response = reported_addr(rsdp_response);
 FEAT_END
 
+    // SMBIOS feature
+FEAT_START
+    struct limine_smbios_request *smbios_request = get_request(LIMINE_SMBIOS_REQUEST);
+    if (smbios_request == NULL) {
+        break; // next feature
+    }
+
+    struct limine_smbios_response *smbios_response =
+        ext_mem_alloc(sizeof(struct limine_smbios_response));
+
+    void *smbios_entry_32 = NULL, *smbios_entry_64 = NULL;
+    acpi_get_smbios(&smbios_entry_32, &smbios_entry_64);
+
+    if (smbios_entry_32) {
+        smbios_response->entry_32 = reported_addr(smbios_entry_32);
+    }
+    if (smbios_entry_64) {
+        smbios_response->entry_64 = reported_addr(smbios_entry_64);
+    }
+
+    smbios_request->response = reported_addr(smbios_response);
+FEAT_END
+
     // Modules
 FEAT_START
     struct limine_module_request *module_request = get_request(LIMINE_MODULE_REQUEST);

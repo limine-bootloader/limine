@@ -184,4 +184,21 @@ struct limine_rsdp_request {
     LIMINE_PTR(struct limine_rsdp_response *) response;
 };
 
+// SMBIOS
+
+#define LIMINE_SMBIOS_REQUEST { LIMINE_COMMON_MAGIC, 0x9e9046f11e095391, 0xaa4a520fefbde5ee }
+
+struct limine_smbios_response {
+    uint64_t flags;
+
+    LIMINE_PTR(void *) entry_32;
+    LIMINE_PTR(void *) entry_64;
+};
+
+struct limine_smbios_request {
+    uint64_t id[4];
+    uint64_t flags;
+    LIMINE_PTR(struct limine_smbios_response *) response;
+};
+
 #endif

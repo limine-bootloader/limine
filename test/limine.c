@@ -37,6 +37,12 @@ static struct limine_module_request module_request = {
     .flags = 0, .response = NULL
 };
 
+__attribute__((used))
+static struct limine_rsdp_request rsdp_request = {
+    .id = LIMINE_RSDP_REQUEST,
+    .flags = 0, .response = NULL
+};
+
 static char *get_memmap_type(uint64_t type) {
     switch (type) {
         case LIMINE_MEMMAP_USABLE:
@@ -150,6 +156,15 @@ FEAT_START
 
         print_file_loc(m->file_location);
     }
+FEAT_END
+
+FEAT_START
+    if (rsdp_request.response == NULL) {
+        e9_printf("RSDP not passed");
+        break;
+    }
+    struct limine_rsdp_response *rsdp_response = rsdp_request.response;
+    e9_printf("RSDP at: %x", rsdp_response->address);
 FEAT_END
 
     for (;;);

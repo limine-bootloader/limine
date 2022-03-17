@@ -238,6 +238,24 @@ FEAT_START
     boot_info_request->response = reported_addr(boot_info_response);
 FEAT_END
 
+    // RSDP feature
+FEAT_START
+    struct limine_rsdp_request *rsdp_request = get_request(LIMINE_RSDP_REQUEST);
+    if (rsdp_request == NULL) {
+        break; // next feature
+    }
+
+    struct limine_rsdp_response *rsdp_response =
+        ext_mem_alloc(sizeof(struct limine_rsdp_response));
+
+    void *rsdp = acpi_get_rsdp();
+    if (rsdp) {
+        rsdp_response->address = reported_addr(rsdp);
+    }
+
+    rsdp_request->response = reported_addr(rsdp_response);
+FEAT_END
+
     // Modules
 FEAT_START
     struct limine_module_request *module_request = get_request(LIMINE_MODULE_REQUEST);

@@ -168,4 +168,20 @@ struct limine_module_request {
     LIMINE_PTR(struct limine_module_response *) response;
 };
 
+// RSDP
+
+#define LIMINE_RSDP_REQUEST { LIMINE_COMMON_MAGIC, 0xc5e77b6b397e7b43, 0x27637845accdcf3c }
+
+struct limine_rsdp_response {
+    uint64_t flags;
+
+    LIMINE_PTR(void *) address;
+};
+
+struct limine_rsdp_request {
+    uint64_t id[4];
+    uint64_t flags;
+    LIMINE_PTR(struct limine_rsdp_response *) response;
+};
+
 #endif

@@ -116,8 +116,7 @@ struct limine_5_level_paging_request {
 struct limine_smp_info {
     uint32_t processor_id;
     uint32_t lapic_id;
-    uint64_t reserved;
-    LIMINE_PTR(void *) goto_address;
+    uint64_t reserved[2];
     uint64_t extra_argument;
 };
 
@@ -126,8 +125,11 @@ struct limine_smp_response {
 
     uint32_t bsp_lapic_id;
     uint32_t unused;
-    uint64_t cpus_count;
-    LIMINE_PTR(struct limine_smp_info *) cpus;
+    uint64_t cpu_count;
+    LIMINE_PTR(uint32_t *) cpu_processor_id;
+    LIMINE_PTR(uint32_t *) cpu_lapic_id;
+    LIMINE_PTR(LIMINE_PTR(LIMINE_PTR(void *) *) *) cpu_goto_address;
+    LIMINE_PTR(LIMINE_PTR(LIMINE_PTR(void *) *) *) cpu_extra_argument;
 };
 
 struct limine_smp_request {

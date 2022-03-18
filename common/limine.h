@@ -32,18 +32,33 @@ struct limine_file_location {
 
 // Boot info
 
-#define LIMINE_BOOT_INFO_REQUEST { LIMINE_COMMON_MAGIC, 0xf55038d8e2a1202f, 0x279426fcf5f59740 }
+#define LIMINE_BOOTLOADER_INFO_REQUEST { LIMINE_COMMON_MAGIC, 0xf55038d8e2a1202f, 0x279426fcf5f59740 }
 
-struct limine_boot_info_response {
+struct limine_bootloader_info_response {
     uint64_t flags;
-    LIMINE_PTR(char *) loader;
-    LIMINE_PTR(void *) hhdm;
+    LIMINE_PTR(char *) name;
+    LIMINE_PTR(char *) version;
 };
 
-struct limine_boot_info_request {
+struct limine_bootloader_info_request {
     uint64_t id[4];
     uint64_t flags;
-    LIMINE_PTR(struct limine_boot_info_response *) response;
+    LIMINE_PTR(struct limine_bootloader_info_response *) response;
+};
+
+// HHDM
+
+#define LIMINE_HHDM_REQUEST { LIMINE_COMMON_MAGIC, 0x48dcf1cb8ad2b852, 0x63984e959a98244b }
+
+struct limine_hhdm_response {
+    uint64_t flags;
+    uint64_t address;
+};
+
+struct limine_hhdm_request {
+    uint64_t id[4];
+    uint64_t flags;
+    LIMINE_PTR(struct limine_hhdm_response *) response;
 };
 
 // Framebuffer

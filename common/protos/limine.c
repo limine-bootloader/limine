@@ -232,20 +232,35 @@ FEAT_START
     entrypoint_request->response = reported_addr(entrypoint_response);
 FEAT_END
 
-    // Boot info feature
+    // Bootloader info feature
 FEAT_START
-    struct limine_boot_info_request *boot_info_request = get_request(LIMINE_BOOT_INFO_REQUEST);
-    if (boot_info_request == NULL) {
+    struct limine_bootloader_info_request *bootloader_info_request = get_request(LIMINE_BOOTLOADER_INFO_REQUEST);
+    if (bootloader_info_request == NULL) {
         break; // next feature
     }
 
-    struct limine_boot_info_response *boot_info_response =
-        ext_mem_alloc(sizeof(struct limine_boot_info_response));
+    struct limine_bootloader_info_response *bootloader_info_response =
+        ext_mem_alloc(sizeof(struct limine_bootloader_info_response));
 
-    boot_info_response->loader = reported_addr("Limine " LIMINE_VERSION);
-    boot_info_response->hhdm = direct_map_offset;
+    bootloader_info_response->name = reported_addr("Limine");
+    bootloader_info_response->version = reported_addr(LIMINE_VERSION);
 
-    boot_info_request->response = reported_addr(boot_info_response);
+    bootloader_info_request->response = reported_addr(bootloader_info_response);
+FEAT_END
+
+    // HHDM feature
+FEAT_START
+    struct limine_hhdm_request *hhdm_request = get_request(LIMINE_HHDM_REQUEST);
+    if (hhdm_request == NULL) {
+        break; // next feature
+    }
+
+    struct limine_hhdm_response *hhdm_response =
+        ext_mem_alloc(sizeof(struct limine_hhdm_response));
+
+    hhdm_response->address = direct_map_offset;
+
+    hhdm_request->response = reported_addr(hhdm_response);
 FEAT_END
 
     // RSDP feature

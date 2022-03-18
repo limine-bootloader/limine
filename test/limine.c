@@ -17,8 +17,13 @@ struct limine_framebuffer_request framebuffer_request = {
     .flags = 0, .response = NULL
 };
 
-struct limine_boot_info_request boot_info_request = {
-    .id = LIMINE_BOOT_INFO_REQUEST,
+struct limine_bootloader_info_request bootloader_info_request = {
+    .id = LIMINE_BOOTLOADER_INFO_REQUEST,
+    .flags = 0, .response = NULL
+};
+
+struct limine_hhdm_request hhdm_request = {
+    .id = LIMINE_HHDM_REQUEST,
     .flags = 0, .response = NULL
 };
 
@@ -109,14 +114,24 @@ static void limine_main(void) {
     e9_printf("Kernel slide: %x", kernel_slide);
 
 FEAT_START
-    if (boot_info_request.response == NULL) {
-        e9_printf("Boot info not passed");
+    if (bootloader_info_request.response == NULL) {
+        e9_printf("Bootloader info not passed");
         break;
     }
-    struct limine_boot_info_response *boot_info_response = boot_info_request.response;
-    e9_printf("Boot info response:");
-    e9_printf("Bootloader name: %s", boot_info_response->loader);
-    e9_printf("Higher half direct map: %x", boot_info_response->hhdm);
+    e9_printf("");
+    struct limine_bootloader_info_response *bootloader_info_response = bootloader_info_request.response;
+    e9_printf("Bootloader name: %s", bootloader_info_response->name);
+    e9_printf("Bootloader version: %s", bootloader_info_response->version);
+FEAT_END
+
+FEAT_START
+    if (hhdm_request.response == NULL) {
+        e9_printf("HHDM not passed");
+        break;
+    }
+    e9_printf("");
+    struct limine_hhdm_response *hhdm_response = hhdm_request.response;
+    e9_printf("Higher half direct map at: %x", hhdm_response->address);
 FEAT_END
 
 FEAT_START
@@ -124,6 +139,7 @@ FEAT_START
         e9_printf("Memory map not passed");
         break;
     }
+    e9_printf("");
     struct limine_memmap_response *memmap_response = memmap_request.response;
     e9_printf("%d memory map entries", memmap_response->entries_count);
     for (size_t i = 0; i < memmap_response->entries_count; i++) {
@@ -137,6 +153,7 @@ FEAT_START
         e9_printf("Framebuffer not passed");
         break;
     }
+    e9_printf("");
     struct limine_framebuffer_response *fb_response = framebuffer_request.response;
     e9_printf("%d framebuffer(s)", fb_response->fbs_count);
     for (size_t i = 0; i < fb_response->fbs_count; i++) {
@@ -163,6 +180,7 @@ FEAT_START
         e9_printf("Modules not passed");
         break;
     }
+    e9_printf("");
     struct limine_module_response *module_response = module_request.response;
     e9_printf("%d module(s)", module_response->modules_count);
     for (size_t i = 0; i < module_response->modules_count; i++) {
@@ -182,6 +200,7 @@ FEAT_START
         e9_printf("RSDP not passed");
         break;
     }
+    e9_printf("");
     struct limine_rsdp_response *rsdp_response = rsdp_request.response;
     e9_printf("RSDP at: %x", rsdp_response->address);
 FEAT_END
@@ -191,6 +210,7 @@ FEAT_START
         e9_printf("SMBIOS not passed");
         break;
     }
+    e9_printf("");
     struct limine_smbios_response *smbios_response = smbios_request.response;
     e9_printf("SMBIOS 32-bit entry at: %x", smbios_response->entry_32);
     e9_printf("SMBIOS 64-bit entry at: %x", smbios_response->entry_64);
@@ -201,8 +221,8 @@ FEAT_START
         e9_printf("SMP info not passed");
         break;
     }
-    struct limine_smp_response *smp_response = _smp_request.response;
     e9_printf("");
+    struct limine_smp_response *smp_response = _smp_request.response;
     e9_printf("Flags: %x", smp_response->flags);
     e9_printf("BSP LAPIC ID: %x", smp_response->bsp_lapic_id);
     e9_printf("CPUs count: %d", smp_response->cpus_count);

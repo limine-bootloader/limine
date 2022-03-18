@@ -427,6 +427,42 @@ FEAT_END
     efi_exit_boot_services();
 #endif
 
+    // SMP
+FEAT_START
+    struct limine_smp_request *smp_request = get_request(LIMINE_SMP_REQUEST);
+    if (smp_request == NULL) {
+        break; // next feature
+    }
+
+    struct limine_smp_info *smp_array;
+    struct smp_information *smp_info;
+    size_t cpu_count;
+    uint32_t bsp_lapic_id;
+    smp_info = init_smp(0, (void **)&smp_array,
+                        &cpu_count, &bsp_lapic_id,
+                        true, want_5lv,
+                        pagemap, smp_request->flags & LIMINE_SMP_X2APIC, true);
+
+    if (smp_info == NULL) {
+        break;
+    }
+
+    for (size_t i = 0; i < cpu_count; i++) {
+        void *cpu_stack = ext_mem_alloc(8192) + 8192;
+        smp_info[i].stack_addr = reported_addr(cpu_stack + 8192);
+    }
+
+    struct limine_smp_response *smp_response =
+        ext_mem_alloc(sizeof(struct limine_smp_response));
+
+    smp_response->flags |= (smp_request->flags & LIMINE_SMP_X2APIC) && x2apic_check();
+    smp_response->bsp_lapic_id = bsp_lapic_id;
+    smp_response->cpus_count = cpu_count;
+    smp_response->cpus = reported_addr(smp_array);
+
+    smp_request->response = reported_addr(smp_response);
+FEAT_END
+
     // Memmap
 FEAT_START
     struct limine_memmap_request *memmap_request = get_request(LIMINE_MEMMAP_REQUEST);

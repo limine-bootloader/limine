@@ -96,6 +96,35 @@ struct limine_5_level_paging_request {
     LIMINE_PTR(struct limine_5_level_paging_response *) response;
 };
 
+// SMP
+
+#define LIMINE_SMP_REQUEST { LIMINE_COMMON_MAGIC, 0x95a67b819a1b857e, 0xa0b61b723b6a73e0 }
+
+#define LIMINE_SMP_X2APIC (1 << 0)
+
+struct limine_smp_info {
+    uint32_t processor_id;
+    uint32_t lapic_id;
+    uint64_t reserved;
+    LIMINE_PTR(void *) goto_address;
+    uint64_t extra_argument;
+};
+
+struct limine_smp_response {
+    uint64_t flags;
+
+    uint32_t bsp_lapic_id;
+    uint32_t unused;
+    uint64_t cpus_count;
+    LIMINE_PTR(struct limine_smp_info *) cpus;
+};
+
+struct limine_smp_request {
+    uint64_t id[4];
+    uint64_t flags;
+    LIMINE_PTR(struct limine_smp_response *) response;
+};
+
 // Memory map
 
 #define LIMINE_MEMMAP_REQUEST { LIMINE_COMMON_MAGIC, 0x67cf3d9d378a806f, 0xe304acdfc50c3c62 }

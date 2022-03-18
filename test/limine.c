@@ -42,6 +42,11 @@ struct limine_smbios_request smbios_request = {
     .flags = 0, .response = NULL
 };
 
+struct limine_smp_request _smp_request = {
+    .id = LIMINE_SMP_REQUEST,
+    .flags = 0, .response = NULL
+};
+
 static char *get_memmap_type(uint64_t type) {
     switch (type) {
         case LIMINE_MEMMAP_USABLE:
@@ -187,6 +192,23 @@ FEAT_START
     struct limine_smbios_response *smbios_response = smbios_request.response;
     e9_printf("SMBIOS 32-bit entry at: %x", smbios_response->entry_32);
     e9_printf("SMBIOS 64-bit entry at: %x", smbios_response->entry_64);
+FEAT_END
+
+FEAT_START
+    if (_smp_request.response == NULL) {
+        e9_printf("SMP info not passed");
+        break;
+    }
+    struct limine_smp_response *smp_response = _smp_request.response;
+    e9_printf("");
+    e9_printf("Flags: %x", smp_response->flags);
+    e9_printf("BSP LAPIC ID: %x", smp_response->bsp_lapic_id);
+    e9_printf("CPUs count: %d", smp_response->cpus_count);
+    for (size_t i = 0; i < smp_response->cpus_count; i++) {
+        struct limine_smp_info *cpu = &smp_response->cpus[i];
+        e9_printf("Processor ID: %x", cpu->processor_id);
+        e9_printf("LAPIC ID: %x", cpu->lapic_id);
+    }
 FEAT_END
 
     for (;;);

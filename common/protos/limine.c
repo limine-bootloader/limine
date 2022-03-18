@@ -391,6 +391,12 @@ FEAT_START
     framebuffer_response->fbs = reported_addr(fbp);
     framebuffer_response->fbs_count = 1;
 
+    struct edid_info_struct *edid_info = get_edid_info();
+    if (edid_info != NULL) {
+        fbp->edid_size = sizeof(struct edid_info_struct);
+        fbp->edid = reported_addr(edid_info);
+    }
+
     fbp->memory_model     = LIMINE_FRAMEBUFFER_RGB;
     fbp->address          = reported_addr((void *)(uintptr_t)fb.framebuffer_addr);
     fbp->width            = fb.framebuffer_width;

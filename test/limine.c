@@ -153,6 +153,8 @@ FEAT_START
         e9_printf("Green mask shift: %d", fb->green_mask_shift);
         e9_printf("Blue mask size: %d", fb->blue_mask_size);
         e9_printf("Blue mask shift: %d", fb->blue_mask_shift);
+        e9_printf("EDID size: %d", fb->edid_size);
+        e9_printf("EDID at: %x", fb->edid);
     }
 FEAT_END
 

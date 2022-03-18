@@ -66,6 +66,8 @@ struct limine_framebuffer {
     uint8_t blue_mask_size;
     uint8_t blue_mask_shift;
     uint8_t unused;
+    uint64_t edid_size;
+    LIMINE_PTR(void *) edid;
     uint8_t reserved[256];
 };
 

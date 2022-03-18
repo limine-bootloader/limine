@@ -22,6 +22,7 @@ struct smp_information *init_smp(size_t    header_hack_size,
                                  bool      lv5,
                                  pagemap_t pagemap,
                                  bool      x2apic,
-                                 bool      nx);
+                                 bool      nx,
+                                 uint64_t  hhdm);
 
 #endif

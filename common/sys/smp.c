@@ -48,12 +48,13 @@ struct trampoline_passed_info {
     uint32_t smp_tpl_pagemap;
     uint32_t smp_tpl_info_struct;
     struct gdtr smp_tpl_gdt;
+    uint64_t smp_tpl_hhdm;
 } __attribute__((packed));
 
 static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
                          struct smp_information *info_struct,
                          bool longmode, bool lv5, uint32_t pagemap,
-                         bool x2apic, bool nx) {
+                         bool x2apic, bool nx, uint64_t hhdm) {
     size_t trampoline_size = (size_t)_binary_smp_trampoline_bin_end
                            - (size_t)_binary_smp_trampoline_bin_start;
 
@@ -80,6 +81,7 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
                         | (uint32_t)longmode;
     passed_info->smp_tpl_gdt         = *gdtr;
     passed_info->smp_tpl_booted_flag = 0;
+    passed_info->smp_tpl_hhdm = hhdm;
 
     asm volatile ("" ::: "memory");
 
@@ -119,7 +121,8 @@ struct smp_information *init_smp(size_t    header_hack_size,
                                  bool      lv5,
                                  pagemap_t pagemap,
                                  bool      x2apic,
-                                 bool      nx) {
+                                 bool      nx,
+                                 uint64_t  hhdm) {
     if (!lapic_check())
         return NULL;
 
@@ -224,7 +227,7 @@ struct smp_information *init_smp(size_t    header_hack_size,
                 // Try to start the AP
                 if (!smp_start_ap(lapic->lapic_id, &gdtr, info_struct,
                                   longmode, lv5, (uintptr_t)pagemap.top_level,
-                                  x2apic, nx)) {
+                                  x2apic, nx, hhdm)) {
                     print("smp: FAILED to bring-up AP\n");
                     continue;
                 }
@@ -261,7 +264,7 @@ struct smp_information *init_smp(size_t    header_hack_size,
                 // Try to start the AP
                 if (!smp_start_ap(x2lapic->x2apic_id, &gdtr, info_struct,
                                   longmode, lv5, (uintptr_t)pagemap.top_level,
-                                  true, nx)) {
+                                  true, nx, hhdm)) {
                     print("smp: FAILED to bring-up AP\n");
                     continue;
                 }

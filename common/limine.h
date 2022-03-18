@@ -151,18 +151,13 @@ struct limine_smp_request {
 #define LIMINE_MEMMAP_KERNEL_AND_MODULES     6
 #define LIMINE_MEMMAP_FRAMEBUFFER            7
 
-struct limine_memmap_entry {
-    uint64_t base;
-    uint64_t length;
-    uint64_t type;
-    uint8_t reserved[256];
-};
-
 struct limine_memmap_response {
     uint64_t flags;
 
-    uint64_t entries_count;
-    LIMINE_PTR(struct limine_memmap_entry *) entries;
+    uint64_t entry_count;
+    LIMINE_PTR(uint64_t *) entry_base;
+    LIMINE_PTR(uint64_t *) entry_length;
+    LIMINE_PTR(uint32_t *) entry_type;
 };
 
 struct limine_memmap_request {

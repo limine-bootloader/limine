@@ -441,7 +441,8 @@ FEAT_START
     smp_info = init_smp(0, (void **)&smp_array,
                         &cpu_count, &bsp_lapic_id,
                         true, want_5lv,
-                        pagemap, smp_request->flags & LIMINE_SMP_X2APIC, true);
+                        pagemap, smp_request->flags & LIMINE_SMP_X2APIC, true,
+                        direct_map_offset);
 
     if (smp_info == NULL) {
         break;

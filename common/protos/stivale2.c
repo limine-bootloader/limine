@@ -763,7 +763,8 @@ have_tm_tag:;
         smp_info = init_smp(sizeof(struct stivale2_struct_tag_smp), (void **)&tag,
                             &cpu_count, &bsp_lapic_id,
                             bits == 64, want_5lv,
-                            pagemap, smp_hdr_tag->flags & 1, want_pmrs);
+                            pagemap, smp_hdr_tag->flags & 1, want_pmrs,
+                            stivale2_hdr.flags & (1 << 1) ? direct_map_offset : 0);
 
         if (smp_info != NULL) {
             tag->tag.identifier = STIVALE2_STRUCT_TAG_SMP_ID;

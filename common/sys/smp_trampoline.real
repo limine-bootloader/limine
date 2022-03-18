@@ -101,7 +101,13 @@ smp_trampoline:
     wrmsr
 
   .nonx:
-    jmp parking64
+    mov rax, qword [rbx + passed_info.hhdm]
+    add qword [rbx + passed_info.gdtr + 2], rax
+    lgdt [rbx + passed_info.gdtr]
+
+    lea rax, [rax + rbx + parking64]
+
+    jmp rax
 
 bits 32
 parking32:
@@ -182,4 +188,6 @@ passed_info:
     .smp_info_struct dd 0
     .gdtr:
         dw 0
+        dq 0
+    .hhdm:
         dq 0

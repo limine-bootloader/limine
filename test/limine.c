@@ -155,23 +155,22 @@ FEAT_START
     }
     e9_printf("");
     struct limine_framebuffer_response *fb_response = framebuffer_request.response;
-    e9_printf("%d framebuffer(s)", fb_response->fbs_count);
-    for (size_t i = 0; i < fb_response->fbs_count; i++) {
-        struct limine_framebuffer *fb = &fb_response->fbs[i];
-        e9_printf("Address: %x", fb->address);
-        e9_printf("Width: %d", fb->width);
-        e9_printf("Height: %d", fb->height);
-        e9_printf("Pitch: %d", fb->pitch);
-        e9_printf("BPP: %d", fb->bpp);
-        e9_printf("Memory model: %d", fb->memory_model);
-        e9_printf("Red mask size: %d", fb->red_mask_size);
-        e9_printf("Red mask shift: %d", fb->red_mask_shift);
-        e9_printf("Green mask size: %d", fb->green_mask_size);
-        e9_printf("Green mask shift: %d", fb->green_mask_shift);
-        e9_printf("Blue mask size: %d", fb->blue_mask_size);
-        e9_printf("Blue mask shift: %d", fb->blue_mask_shift);
-        e9_printf("EDID size: %d", fb->edid_size);
-        e9_printf("EDID at: %x", fb->edid);
+    e9_printf("%d framebuffer(s)", fb_response->fb_count);
+    for (size_t i = 0; i < fb_response->fb_count; i++) {
+        e9_printf("Address: %x", fb_response->fb_address[i]);
+        e9_printf("Width: %d", fb_response->fb_width[i]);
+        e9_printf("Height: %d", fb_response->fb_height[i]);
+        e9_printf("Pitch: %d", fb_response->fb_pitch[i]);
+        e9_printf("BPP: %d", fb_response->fb_bpp[i]);
+        e9_printf("Memory model: %d", fb_response->fb_memory_model[i]);
+        e9_printf("Red mask size: %d", fb_response->fb_red_mask_size[i]);
+        e9_printf("Red mask shift: %d", fb_response->fb_red_mask_shift[i]);
+        e9_printf("Green mask size: %d", fb_response->fb_green_mask_size[i]);
+        e9_printf("Green mask shift: %d", fb_response->fb_green_mask_shift[i]);
+        e9_printf("Blue mask size: %d", fb_response->fb_blue_mask_size[i]);
+        e9_printf("Blue mask shift: %d", fb_response->fb_blue_mask_shift[i]);
+        e9_printf("EDID size: %d", fb_response->fb_edid_size[i]);
+        e9_printf("EDID at: %x", fb_response->fb_edid[i]);
     }
 FEAT_END
 

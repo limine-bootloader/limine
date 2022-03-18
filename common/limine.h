@@ -67,30 +67,24 @@ struct limine_hhdm_request {
 
 #define LIMINE_FRAMEBUFFER_RGB 1
 
-struct limine_framebuffer {
-    LIMINE_PTR(void *) address;
-    uint16_t width;
-    uint16_t height;
-    uint16_t pitch;
-    uint16_t bpp;
-    uint8_t memory_model;
-    uint8_t red_mask_size;
-    uint8_t red_mask_shift;
-    uint8_t green_mask_size;
-    uint8_t green_mask_shift;
-    uint8_t blue_mask_size;
-    uint8_t blue_mask_shift;
-    uint8_t unused;
-    uint64_t edid_size;
-    LIMINE_PTR(void *) edid;
-    uint8_t reserved[256];
-};
-
 struct limine_framebuffer_response {
     uint64_t flags;
 
-    uint64_t fbs_count;
-    LIMINE_PTR(struct limine_framebuffer *) fbs;
+    uint64_t fb_count;
+    LIMINE_PTR(LIMINE_PTR(void *) *) fb_address;
+    LIMINE_PTR(uint16_t *) fb_width;
+    LIMINE_PTR(uint16_t *) fb_height;
+    LIMINE_PTR(uint16_t *) fb_pitch;
+    LIMINE_PTR(uint16_t *) fb_bpp;
+    LIMINE_PTR(uint8_t *) fb_memory_model;
+    LIMINE_PTR(uint8_t *) fb_red_mask_size;
+    LIMINE_PTR(uint8_t *) fb_red_mask_shift;
+    LIMINE_PTR(uint8_t *) fb_green_mask_size;
+    LIMINE_PTR(uint8_t *) fb_green_mask_shift;
+    LIMINE_PTR(uint8_t *) fb_blue_mask_size;
+    LIMINE_PTR(uint8_t *) fb_blue_mask_shift;
+    LIMINE_PTR(uint64_t *) fb_edid_size;
+    LIMINE_PTR(LIMINE_PTR(void *) *) fb_edid;
 };
 
 struct limine_framebuffer_request {

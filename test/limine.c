@@ -7,49 +7,49 @@ static void limine_main(void);
 
 struct limine_entry_point_request entry_point_request = {
     .id = LIMINE_ENTRY_POINT_REQUEST,
-    .flags = 0, .response = NULL,
+    .revision = 0, .response = NULL,
 
     .entry = limine_main
 };
 
 struct limine_framebuffer_request framebuffer_request = {
     .id = LIMINE_FRAMEBUFFER_REQUEST,
-    .flags = 0, .response = NULL
+    .revision = 0, .response = NULL
 };
 
 struct limine_bootloader_info_request bootloader_info_request = {
     .id = LIMINE_BOOTLOADER_INFO_REQUEST,
-    .flags = 0, .response = NULL
+    .revision = 0, .response = NULL
 };
 
 struct limine_hhdm_request hhdm_request = {
     .id = LIMINE_HHDM_REQUEST,
-    .flags = 0, .response = NULL
+    .revision = 0, .response = NULL
 };
 
 struct limine_memmap_request memmap_request = {
     .id = LIMINE_MEMMAP_REQUEST,
-    .flags = 0, .response = NULL
+    .revision = 0, .response = NULL
 };
 
 struct limine_module_request module_request = {
     .id = LIMINE_MODULE_REQUEST,
-    .flags = 0, .response = NULL
+    .revision = 0, .response = NULL
 };
 
 struct limine_rsdp_request rsdp_request = {
     .id = LIMINE_RSDP_REQUEST,
-    .flags = 0, .response = NULL
+    .revision = 0, .response = NULL
 };
 
 struct limine_smbios_request smbios_request = {
     .id = LIMINE_SMBIOS_REQUEST,
-    .flags = 0, .response = NULL
+    .revision = 0, .response = NULL
 };
 
 struct limine_smp_request _smp_request = {
     .id = LIMINE_SMP_REQUEST,
-    .flags = 0, .response = NULL
+    .revision = 0, .response = NULL
 };
 
 static char *get_memmap_type(uint64_t type) {

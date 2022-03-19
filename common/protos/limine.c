@@ -348,7 +348,7 @@ FEAT_START
             m_cmdline = "";
         }
 
-        print("limine: Loading module `%s`...\n", module_path);
+        print("limine: Loading module `%s`...\n", m_path);
 
         struct file_handle *f;
         if ((f = uri_open(m_path)) == NULL)

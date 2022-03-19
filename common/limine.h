@@ -35,14 +35,14 @@ struct limine_file_location {
 #define LIMINE_BOOTLOADER_INFO_REQUEST { LIMINE_COMMON_MAGIC, 0xf55038d8e2a1202f, 0x279426fcf5f59740 }
 
 struct limine_bootloader_info_response {
-    uint64_t flags;
+    uint64_t revision;
     LIMINE_PTR(char *) name;
     LIMINE_PTR(char *) version;
 };
 
 struct limine_bootloader_info_request {
     uint64_t id[4];
-    uint64_t flags;
+    uint64_t revision;
     LIMINE_PTR(struct limine_bootloader_info_response *) response;
 };
 
@@ -51,13 +51,13 @@ struct limine_bootloader_info_request {
 #define LIMINE_HHDM_REQUEST { LIMINE_COMMON_MAGIC, 0x48dcf1cb8ad2b852, 0x63984e959a98244b }
 
 struct limine_hhdm_response {
-    uint64_t flags;
+    uint64_t revision;
     uint64_t address;
 };
 
 struct limine_hhdm_request {
     uint64_t id[4];
-    uint64_t flags;
+    uint64_t revision;
     LIMINE_PTR(struct limine_hhdm_response *) response;
 };
 
@@ -68,7 +68,7 @@ struct limine_hhdm_request {
 #define LIMINE_FRAMEBUFFER_RGB 1
 
 struct limine_framebuffer_response {
-    uint64_t flags;
+    uint64_t revision;
 
     uint64_t fb_count;
     LIMINE_PTR(LIMINE_PTR(void *) *) fb_address;
@@ -89,7 +89,7 @@ struct limine_framebuffer_response {
 
 struct limine_framebuffer_request {
     uint64_t id[4];
-    uint64_t flags;
+    uint64_t revision;
     LIMINE_PTR(struct limine_framebuffer_response *) response;
 };
 
@@ -98,12 +98,12 @@ struct limine_framebuffer_request {
 #define LIMINE_5_LEVEL_PAGING_REQUEST { LIMINE_COMMON_MAGIC, 0x94469551da9b3192, 0xebe5e86db7382888 }
 
 struct limine_5_level_paging_response {
-    uint64_t flags;
+    uint64_t revision;
 };
 
 struct limine_5_level_paging_request {
     uint64_t id[4];
-    uint64_t flags;
+    uint64_t revision;
     LIMINE_PTR(struct limine_5_level_paging_response *) response;
 };
 
@@ -121,10 +121,10 @@ struct limine_smp_info {
 };
 
 struct limine_smp_response {
-    uint64_t flags;
+    uint64_t revision;
 
+    uint32_t flags;
     uint32_t bsp_lapic_id;
-    uint32_t unused;
     uint64_t cpu_count;
     LIMINE_PTR(uint32_t *) cpu_processor_id;
     LIMINE_PTR(uint32_t *) cpu_lapic_id;
@@ -134,8 +134,9 @@ struct limine_smp_response {
 
 struct limine_smp_request {
     uint64_t id[4];
-    uint64_t flags;
+    uint64_t revision;
     LIMINE_PTR(struct limine_smp_response *) response;
+    uint64_t flags;
 };
 
 // Memory map
@@ -152,7 +153,7 @@ struct limine_smp_request {
 #define LIMINE_MEMMAP_FRAMEBUFFER            7
 
 struct limine_memmap_response {
-    uint64_t flags;
+    uint64_t revision;
 
     uint64_t entry_count;
     LIMINE_PTR(uint64_t *) entry_base;
@@ -162,7 +163,7 @@ struct limine_memmap_response {
 
 struct limine_memmap_request {
     uint64_t id[4];
-    uint64_t flags;
+    uint64_t revision;
     LIMINE_PTR(struct limine_memmap_response *) response;
 };
 
@@ -171,12 +172,12 @@ struct limine_memmap_request {
 #define LIMINE_ENTRY_POINT_REQUEST { LIMINE_COMMON_MAGIC, 0x13d86c035a1cd3e1, 0x2b0caa89d8f3026a }
 
 struct limine_entry_point_response {
-    uint64_t flags;
+    uint64_t revision;
 };
 
 struct limine_entry_point_request {
     uint64_t id[4];
-    uint64_t flags;
+    uint64_t revision;
     LIMINE_PTR(struct limine_entry_point_response *) response;
 
     LIMINE_PTR(void *) entry;
@@ -187,7 +188,7 @@ struct limine_entry_point_request {
 #define LIMINE_MODULE_REQUEST { LIMINE_COMMON_MAGIC, 0x3e7e279702be32af, 0xca1c4f3bd1280cee }
 
 struct limine_module_response {
-    uint64_t flags;
+    uint64_t revision;
 
     uint64_t module_count;
     LIMINE_PTR(uint64_t *) module_base;
@@ -199,7 +200,7 @@ struct limine_module_response {
 
 struct limine_module_request {
     uint64_t id[4];
-    uint64_t flags;
+    uint64_t revision;
     LIMINE_PTR(struct limine_module_response *) response;
 };
 
@@ -208,14 +209,14 @@ struct limine_module_request {
 #define LIMINE_RSDP_REQUEST { LIMINE_COMMON_MAGIC, 0xc5e77b6b397e7b43, 0x27637845accdcf3c }
 
 struct limine_rsdp_response {
-    uint64_t flags;
+    uint64_t revision;
 
     LIMINE_PTR(void *) address;
 };
 
 struct limine_rsdp_request {
     uint64_t id[4];
-    uint64_t flags;
+    uint64_t revision;
     LIMINE_PTR(struct limine_rsdp_response *) response;
 };
 
@@ -224,7 +225,7 @@ struct limine_rsdp_request {
 #define LIMINE_SMBIOS_REQUEST { LIMINE_COMMON_MAGIC, 0x9e9046f11e095391, 0xaa4a520fefbde5ee }
 
 struct limine_smbios_response {
-    uint64_t flags;
+    uint64_t revision;
 
     LIMINE_PTR(void *) entry_32;
     LIMINE_PTR(void *) entry_64;
@@ -232,7 +233,7 @@ struct limine_smbios_response {
 
 struct limine_smbios_request {
     uint64_t id[4];
-    uint64_t flags;
+    uint64_t revision;
     LIMINE_PTR(struct limine_smbios_response *) response;
 };
 

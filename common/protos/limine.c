@@ -246,6 +246,22 @@ FEAT_START
     bootloader_info_request->response = reported_addr(bootloader_info_response);
 FEAT_END
 
+    // Kernel address feature
+FEAT_START
+    struct limine_kernel_address_request *kernel_address_request = get_request(LIMINE_KERNEL_ADDRESS_REQUEST);
+    if (kernel_address_request == NULL) {
+        break; // next feature
+    }
+
+    struct limine_kernel_address_response *kernel_address_response =
+        ext_mem_alloc(sizeof(struct limine_kernel_address_response));
+
+    kernel_address_response->physical_base = physical_base;
+    kernel_address_response->virtual_base = virtual_base;
+
+    kernel_address_request->response = reported_addr(kernel_address_response);
+FEAT_END
+
     // HHDM feature
 FEAT_START
     struct limine_hhdm_request *hhdm_request = get_request(LIMINE_HHDM_REQUEST);

@@ -269,4 +269,21 @@ struct limine_boot_time_request {
     LIMINE_PTR(struct limine_boot_time_response *) response;
 };
 
+// Kernel address
+
+#define LIMINE_KERNEL_ADDRESS_REQUEST { LIMINE_COMMON_MAGIC, 0x71ba76863cc55f63, 0xb2644a48c516a487 }
+
+struct limine_kernel_address_response {
+    uint64_t revision;
+
+    uint64_t physical_base;
+    uint64_t virtual_base;
+};
+
+struct limine_kernel_address_request {
+    uint64_t id[4];
+    uint64_t revision;
+    LIMINE_PTR(struct limine_kernel_address_response *) response;
+};
+
 #endif

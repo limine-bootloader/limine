@@ -57,6 +57,11 @@ struct limine_boot_time_request boot_time_request = {
     .revision = 0, .response = NULL
 };
 
+struct limine_kernel_address_request kernel_address_request = {
+    .id = LIMINE_KERNEL_ADDRESS_REQUEST,
+    .revision = 0, .response = NULL
+};
+
 struct limine_smp_request _smp_request = {
     .id = LIMINE_SMP_REQUEST,
     .revision = 0, .response = NULL
@@ -122,6 +127,17 @@ static void limine_main(void) {
     uint64_t kernel_slide = (uint64_t)kernel_start - 0xffffffff80000000;
 
     e9_printf("Kernel slide: %x", kernel_slide);
+
+FEAT_START
+    e9_printf("");
+    if (kernel_address_request.response == NULL) {
+        e9_printf("Kernel address not passed");
+        break;
+    }
+    struct limine_kernel_address_response *ka_response = kernel_address_request.response;
+    e9_printf("Physical base: %x", ka_response->physical_base);
+    e9_printf("Virtual base: %x", ka_response->virtual_base);
+FEAT_END
 
 FEAT_START
     e9_printf("");

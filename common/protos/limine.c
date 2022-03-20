@@ -379,7 +379,7 @@ FEAT_START
             module_cmdline = "";
         }
 
-        print("limine: Loading module `%s`...\n", m_path);
+        print("limine: Loading module `%s`...\n", module_path);
 
         struct file_handle *f;
         if ((f = uri_open(module_path)) == NULL)

@@ -167,11 +167,10 @@ FEAT_START
         break;
     }
     struct limine_memmap_response *memmap_response = memmap_request.response;
-    e9_printf("%d memory map entries", memmap_response->entry_count);
-    for (size_t i = 0; i < memmap_response->entry_count; i++) {
-        e9_printf("%x->%x %s", memmap_response->entry_base[i],
-                  memmap_response->entry_base[i] + memmap_response->entry_length[i],
-                  get_memmap_type(memmap_response->entry_type[i]));
+    e9_printf("%d memory map entries", memmap_response->entries_count);
+    for (size_t i = 0; i < memmap_response->entries_count; i++) {
+        struct limine_memmap_entry *e = &memmap_response->entries[i];
+        e9_printf("%x->%x %s", e->base, e->base + e->length, get_memmap_type(e->type));
     }
 FEAT_END
 

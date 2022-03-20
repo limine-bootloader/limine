@@ -356,55 +356,50 @@ FEAT_START
     struct limine_module_response *module_response =
         ext_mem_alloc(sizeof(struct limine_module_response));
 
-    uint64_t *module_base = ext_mem_alloc(sizeof(uint64_t) * module_count);
-    uint64_t *module_length = ext_mem_alloc(sizeof(uint64_t) * module_count);
-    uint64_t *module_path = ext_mem_alloc(sizeof(uint64_t) * module_count);
-    uint64_t *module_cmdline = ext_mem_alloc(sizeof(uint64_t) * module_count);
-    uint64_t *module_file_location = ext_mem_alloc(sizeof(uint64_t) * module_count);
+    struct limine_module *modules = ext_mem_alloc(module_count * sizeof(struct limine_module));
 
-    module_base[0] = reported_addr(kernel);
-    module_length[0] = kernel_file_size;
-    module_path[0] = reported_addr(kernel_path);
-    module_cmdline[0] = reported_addr(cmdline);
-    module_file_location[0] = reported_addr(kl);
+    modules[0].base = reported_addr(kernel);
+    modules[0].length = kernel_file_size;
+    modules[0].path = reported_addr(kernel_path);
+    modules[0].cmdline = reported_addr(cmdline);
+
+    modules[0].file_location = reported_addr(kl);
 
     for (size_t i = 1; i < module_count; i++) {
         struct conf_tuple conf_tuple =
                 config_get_tuple(config, i - 1,
                                  "MODULE_PATH", "MODULE_CMDLINE");
 
-        char *m_path = conf_tuple.value1;
-        char *m_cmdline = conf_tuple.value2;
+        char *module_path = conf_tuple.value1;
+        char *module_cmdline = conf_tuple.value2;
 
-        if (m_cmdline == NULL) {
-            m_cmdline = "";
+        struct limine_module *m = &modules[i];
+
+        if (module_cmdline == NULL) {
+            module_cmdline = "";
         }
 
         print("limine: Loading module `%s`...\n", m_path);
 
         struct file_handle *f;
-        if ((f = uri_open(m_path)) == NULL)
+        if ((f = uri_open(module_path)) == NULL)
             panic(true, "limine: Failed to open module with path `%s`. Is the path correct?", module_path);
 
-        module_base[i] = reported_addr(freadall(f, MEMMAP_KERNEL_AND_MODULES));
-        module_length[i] = f->size;
-        module_path[i] = reported_addr(m_path);
-        module_cmdline[i] = reported_addr(m_cmdline);
+        m->base = reported_addr(freadall(f, MEMMAP_KERNEL_AND_MODULES));
+        m->length = f->size;
+        m->path = reported_addr(module_path);
+        m->cmdline = reported_addr(module_cmdline);
 
         struct limine_file_location *l = ext_mem_alloc(sizeof(struct limine_file_location));
         *l = get_file_loc(f);
 
-        module_file_location[i] = reported_addr(l);
+        m->file_location = reported_addr(l);
 
         fclose(f);
     }
 
-    module_response->module_count = module_count;
-    module_response->module_base = reported_addr(module_base);
-    module_response->module_length = reported_addr(module_length);
-    module_response->module_path = reported_addr(module_path);
-    module_response->module_cmdline = reported_addr(module_cmdline);
-    module_response->module_file_location = reported_addr(module_file_location);
+    module_response->modules_count = module_count;
+    module_response->modules = reported_addr(modules);
 
     module_request->response = reported_addr(module_response);
 FEAT_END

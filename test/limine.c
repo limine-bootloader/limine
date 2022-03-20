@@ -208,14 +208,16 @@ FEAT_START
         break;
     }
     struct limine_module_response *module_response = module_request.response;
-    e9_printf("%d module(s)", module_response->module_count);
-    for (size_t i = 0; i < module_response->module_count; i++) {
-        e9_printf("Base: %x", module_response->module_base[i]);
-        e9_printf("Length: %x", module_response->module_length[i]);
-        e9_printf("Path: %s", module_response->module_path[i]);
-        e9_printf("Cmdline: %s", module_response->module_cmdline[i]);
+    e9_printf("%d module(s)", module_response->modules_count);
+    for (size_t i = 0; i < module_response->modules_count; i++) {
+        struct limine_module *m = &module_response->modules[i];
 
-        print_file_loc(module_response->module_file_location[i]);
+        e9_printf("Base: %x", m->base);
+        e9_printf("Length: %x", m->length);
+        e9_printf("Path: %s", m->path);
+        e9_printf("Cmdline: %s", m->cmdline);
+
+        print_file_loc(m->file_location);
     }
 FEAT_END
 

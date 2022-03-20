@@ -196,15 +196,20 @@ struct limine_entry_point_request {
 
 #define LIMINE_MODULE_REQUEST { LIMINE_COMMON_MAGIC, 0x3e7e279702be32af, 0xca1c4f3bd1280cee }
 
+struct limine_module {
+    uint64_t base;
+    uint64_t length;
+    LIMINE_PTR(char *) path;
+    LIMINE_PTR(char *) cmdline;
+    LIMINE_PTR(struct limine_file_location *) file_location;
+    uint8_t reserved[256];
+};
+
 struct limine_module_response {
     uint64_t revision;
 
-    uint64_t module_count;
-    LIMINE_PTR(uint64_t *) module_base;
-    LIMINE_PTR(uint64_t *) module_length;
-    LIMINE_PTR(LIMINE_PTR(char *) *) module_path;
-    LIMINE_PTR(LIMINE_PTR(char *) *) module_cmdline;
-    LIMINE_PTR(LIMINE_PTR(struct limine_file_location *) *) module_file_location;
+    uint64_t modules_count;
+    LIMINE_PTR(struct limine_module *) modules;
 };
 
 struct limine_module_request {

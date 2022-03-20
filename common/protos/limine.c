@@ -403,7 +403,7 @@ FEAT_START
         modules_list[i] = reported_addr(&modules[i]);
     }
 
-    module_response->modules_count = module_count;
+    module_response->module_count = module_count;
     module_response->modules = reported_addr(modules_list);
 
     module_request->response = reported_addr(module_response);
@@ -463,8 +463,8 @@ FEAT_START
     uint64_t *fb_list = ext_mem_alloc(1 * sizeof(uint64_t));
     fb_list[0] = reported_addr(fbp);
 
-    framebuffer_response->fbs_count = 1;
-    framebuffer_response->fbs = reported_addr(fb_list);
+    framebuffer_response->framebuffer_count = 1;
+    framebuffer_response->framebuffers = reported_addr(fb_list);
 
     framebuffer_request->response = reported_addr(framebuffer_response);
 FEAT_END
@@ -541,7 +541,7 @@ FEAT_START
         smp_list[i] = reported_addr(&smp_array[i]);
     }
 
-    smp_response->cpus_count = cpu_count;
+    smp_response->cpu_count = cpu_count;
     smp_response->cpus = reported_addr(smp_list);
 
     smp_request->response = reported_addr(smp_response);
@@ -608,7 +608,7 @@ FEAT_START
         memmap_list[i] = reported_addr(&_memmap[i]);
     }
 
-    memmap_response->entries_count = mmap_entries;
+    memmap_response->entry_count = mmap_entries;
     memmap_response->entries = reported_addr(memmap_list);
 
     memmap_request->response = reported_addr(memmap_response);

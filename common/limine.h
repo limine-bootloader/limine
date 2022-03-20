@@ -21,6 +21,7 @@ struct limine_uuid {
 };
 
 struct limine_file_location {
+    uint64_t revision;
     uint64_t partition_index;
     uint32_t pxe_ip;
     uint32_t pxe_port;
@@ -87,9 +88,8 @@ struct limine_framebuffer {
 
 struct limine_framebuffer_response {
     uint64_t revision;
-
-    uint64_t fbs_count;
-    LIMINE_PTR(LIMINE_PTR(struct limine_framebuffer *) *) fbs;
+    uint64_t framebuffer_count;
+    LIMINE_PTR(struct limine_framebuffer **) framebuffers;
 };
 
 struct limine_framebuffer_request {
@@ -128,11 +128,10 @@ struct limine_smp_info {
 
 struct limine_smp_response {
     uint64_t revision;
-
     uint32_t flags;
     uint32_t bsp_lapic_id;
-    uint64_t cpus_count;
-    LIMINE_PTR(LIMINE_PTR(struct limine_smp_info *) *) cpus;
+    uint64_t cpu_count;
+    LIMINE_PTR(struct limine_smp_info **) cpus;
 };
 
 struct limine_smp_request {
@@ -163,9 +162,8 @@ struct limine_memmap_entry {
 
 struct limine_memmap_response {
     uint64_t revision;
-
-    uint64_t entries_count;
-    LIMINE_PTR(LIMINE_PTR(struct limine_memmap_entry *) *) entries;
+    uint64_t entry_count;
+    LIMINE_PTR(struct limine_memmap_entry **) entries;
 };
 
 struct limine_memmap_request {
@@ -186,7 +184,6 @@ struct limine_entry_point_request {
     uint64_t id[4];
     uint64_t revision;
     LIMINE_PTR(struct limine_entry_point_response *) response;
-
     LIMINE_PTR(void *) entry;
 };
 
@@ -204,9 +201,8 @@ struct limine_module {
 
 struct limine_module_response {
     uint64_t revision;
-
-    uint64_t modules_count;
-    LIMINE_PTR(LIMINE_PTR(struct limine_module *) *) modules;
+    uint64_t module_count;
+    LIMINE_PTR(struct limine_module **) modules;
 };
 
 struct limine_module_request {
@@ -221,7 +217,6 @@ struct limine_module_request {
 
 struct limine_rsdp_response {
     uint64_t revision;
-
     LIMINE_PTR(void *) address;
 };
 
@@ -237,7 +232,6 @@ struct limine_rsdp_request {
 
 struct limine_smbios_response {
     uint64_t revision;
-
     LIMINE_PTR(void *) entry_32;
     LIMINE_PTR(void *) entry_64;
 };
@@ -254,7 +248,6 @@ struct limine_smbios_request {
 
 struct limine_efi_system_table_response {
     uint64_t revision;
-
     LIMINE_PTR(void *) address;
 };
 
@@ -270,7 +263,6 @@ struct limine_efi_system_table_request {
 
 struct limine_boot_time_response {
     uint64_t revision;
-
     int64_t boot_time;
 };
 
@@ -286,7 +278,6 @@ struct limine_boot_time_request {
 
 struct limine_kernel_address_response {
     uint64_t revision;
-
     uint64_t physical_base;
     uint64_t virtual_base;
 };

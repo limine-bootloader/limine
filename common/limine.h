@@ -253,4 +253,20 @@ struct limine_efi_system_table_request {
     LIMINE_PTR(struct limine_efi_system_table_response *) response;
 };
 
+// Boot time
+
+#define LIMINE_BOOT_TIME_REQUEST { LIMINE_COMMON_MAGIC, 0x502746e184c088aa, 0xfbc5ec83e6327893 }
+
+struct limine_boot_time_response {
+    uint64_t revision;
+
+    int64_t boot_time;
+};
+
+struct limine_boot_time_request {
+    uint64_t id[4];
+    uint64_t revision;
+    LIMINE_PTR(struct limine_boot_time_response *) response;
+};
+
 #endif

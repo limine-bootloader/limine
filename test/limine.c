@@ -52,6 +52,11 @@ struct limine_efi_system_table_request est_request = {
     .revision = 0, .response = NULL
 };
 
+struct limine_boot_time_request boot_time_request = {
+    .id = LIMINE_BOOT_TIME_REQUEST,
+    .revision = 0, .response = NULL
+};
+
 struct limine_smp_request _smp_request = {
     .id = LIMINE_SMP_REQUEST,
     .revision = 0, .response = NULL
@@ -227,6 +232,16 @@ FEAT_START
     }
     struct limine_efi_system_table_response *est_response = est_request.response;
     e9_printf("EFI system table at: %x", est_response->address);
+FEAT_END
+
+FEAT_START
+    e9_printf("");
+    if (boot_time_request.response == NULL) {
+        e9_printf("Boot time not passed");
+        break;
+    }
+    struct limine_boot_time_response *boot_time_response = boot_time_request.response;
+    e9_printf("Kernel boot time: %d", boot_time_response->boot_time);
 FEAT_END
 
 FEAT_START

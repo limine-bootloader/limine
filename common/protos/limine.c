@@ -477,6 +477,21 @@ FEAT_START
     framebuffer_request->response = reported_addr(framebuffer_response);
 FEAT_END
 
+    // Boot time feature
+FEAT_START
+    struct limine_boot_time_request *boot_time_request = get_request(LIMINE_BOOT_TIME_REQUEST);
+    if (boot_time_request == NULL) {
+        break; // next feature
+    }
+
+    struct limine_boot_time_response *boot_time_response =
+        ext_mem_alloc(sizeof(struct limine_boot_time_response));
+
+    boot_time_response->boot_time = time();
+
+    boot_time_request->response = reported_addr(boot_time_response);
+FEAT_END
+
     // Wrap-up stuff before memmap close
     struct gdtr *local_gdt = ext_mem_alloc(sizeof(struct gdtr));
     local_gdt->limit = gdt.limit;

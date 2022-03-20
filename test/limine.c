@@ -270,10 +270,11 @@ FEAT_START
     struct limine_smp_response *smp_response = _smp_request.response;
     e9_printf("Flags: %x", smp_response->flags);
     e9_printf("BSP LAPIC ID: %x", smp_response->bsp_lapic_id);
-    e9_printf("CPU count: %d", smp_response->cpu_count);
-    for (size_t i = 0; i < smp_response->cpu_count; i++) {
-        e9_printf("Processor ID: %x", smp_response->cpu_processor_id[i]);
-        e9_printf("LAPIC ID: %x", smp_response->cpu_lapic_id[i]);
+    e9_printf("CPUs count: %d", smp_response->cpus_count);
+    for (size_t i = 0; i < smp_response->cpus_count; i++) {
+        struct limine_smp_info *cpu = &smp_response->cpus[i];
+        e9_printf("Processor ID: %x", cpu->processor_id);
+        e9_printf("LAPIC ID: %x", cpu->lapic_id);
     }
 FEAT_END
 

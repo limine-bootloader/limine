@@ -507,10 +507,11 @@ FEAT_START
         break; // next feature
     }
 
+    struct limine_smp_info *smp_array;
     struct smp_information *smp_info;
     size_t cpu_count;
     uint32_t bsp_lapic_id;
-    smp_info = init_smp(0, (void **)&smp_info,
+    smp_info = init_smp(0, (void **)&smp_array,
                         &cpu_count, &bsp_lapic_id,
                         true, want_5lv,
                         pagemap, smp_request->flags & LIMINE_SMP_X2APIC, true,
@@ -530,24 +531,8 @@ FEAT_START
 
     smp_response->flags |= (smp_request->flags & LIMINE_SMP_X2APIC) && x2apic_check();
     smp_response->bsp_lapic_id = bsp_lapic_id;
-    smp_response->cpu_count = cpu_count;
-
-    uint32_t *cpu_processor_id = ext_mem_alloc(sizeof(uint32_t) * cpu_count);
-    uint32_t *cpu_lapic_id = ext_mem_alloc(sizeof(uint32_t) * cpu_count);
-    uint64_t *cpu_goto_address = ext_mem_alloc(sizeof(uint64_t) * cpu_count);
-    uint64_t *cpu_extra_argument = ext_mem_alloc(sizeof(uint64_t) * cpu_count);
-
-    for (size_t i = 0; i < cpu_count; i++) {
-        cpu_processor_id[i] = smp_info[i].acpi_processor_uid;
-        cpu_lapic_id[i] = smp_info[i].lapic_id;
-        cpu_goto_address[i] = reported_addr(&smp_info[i].goto_address);
-        cpu_extra_argument[i] = reported_addr(&smp_info[i].extra_argument);
-    }
-
-    smp_response->cpu_processor_id = reported_addr(cpu_processor_id);
-    smp_response->cpu_lapic_id = reported_addr(cpu_lapic_id);
-    smp_response->cpu_goto_address = reported_addr(cpu_goto_address);
-    smp_response->cpu_extra_argument = reported_addr(cpu_extra_argument);
+    smp_response->cpus_count = cpu_count;
+    smp_response->cpus = reported_addr(smp_array);
 
     smp_request->response = reported_addr(smp_response);
 FEAT_END

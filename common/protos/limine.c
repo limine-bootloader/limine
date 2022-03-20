@@ -103,8 +103,6 @@ static void *_get_request(uint64_t id[4]) {
 #define FEAT_END } while (0);
 
 bool limine_load(char *config, char *cmdline) {
-    (void)cmdline;
-
     uint32_t eax, ebx, ecx, edx;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
@@ -303,6 +301,24 @@ FEAT_START
 
     smbios_request->response = reported_addr(smbios_response);
 FEAT_END
+
+
+#if uefi == 1
+    // EFI system table feature
+FEAT_START
+    struct limine_efi_system_table_request *est_request = get_request(LIMINE_EFI_SYSTEM_TABLE_REQUEST);
+    if (est_request == NULL) {
+        break; // next feature
+    }
+
+    struct limine_efi_system_table_response *est_response =
+        ext_mem_alloc(sizeof(struct limine_efi_system_table_response));
+
+    est_response->address = reported_addr(gST);
+
+    est_request->response = reported_addr(est_response);
+FEAT_END
+#endif
 
     // Modules
 FEAT_START

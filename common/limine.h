@@ -237,4 +237,20 @@ struct limine_smbios_request {
     LIMINE_PTR(struct limine_smbios_response *) response;
 };
 
+// EFI system table
+
+#define LIMINE_EFI_SYSTEM_TABLE_REQUEST { LIMINE_COMMON_MAGIC, 0x5ceba5163eaaf6d6, 0x0a6981610cf65fcc }
+
+struct limine_efi_system_table_response {
+    uint64_t revision;
+
+    LIMINE_PTR(void *) address;
+};
+
+struct limine_efi_system_table_request {
+    uint64_t id[4];
+    uint64_t revision;
+    LIMINE_PTR(struct limine_efi_system_table_response *) response;
+};
+
 #endif

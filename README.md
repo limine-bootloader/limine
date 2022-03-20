@@ -61,9 +61,9 @@ fetching the `latest-binary` branch:
 git clone https://github.com/limine-bootloader/limine.git --branch=latest-binary --depth=1
 ```
 
-`limine-install` binaries are provided for Linux and Windows.
+`limine-s2deploy` binaries are provided for Linux and Windows.
 
-In case one wants to rebuild `limine-install`, simply run `make` in the binary
+In case one wants to rebuild `limine-s2deploy`, simply run `make` in the binary
 release directory.
 
 ## Building the bootloader
@@ -146,10 +146,10 @@ with a supported file system (the ESP partition is recommended).
 
 ### BIOS/MBR
 In order to install Limine on a MBR device (which can just be a raw image file),
-run `limine-install` as such:
+run `limine-s2deploy` as such:
 
 ```bash
-limine-install <path to device/image>
+limine-s2deploy <path to device/image>
 ```
 
 The boot device must to contain the `limine.sys` and `limine.cfg` files in
@@ -160,18 +160,18 @@ with a supported file system.
 If using a GPT formatted device, there are 2 options one can follow for
 installation:
 * Specifying a dedicated stage 2 partition.
-* Letting `limine-install` attempt to embed stage 2 within GPT structures.
+* Letting `limine-s2deploy` attempt to embed stage 2 within GPT structures.
 
 In case one wants to specify a stage 2 partition, create a partition on the GPT
 device of at least 32KiB in size, and pass the 1-based number of the partition
-to `limine-install` as a second argument; such as:
+to `limine-s2deploy` as a second argument; such as:
 
 ```bash
-limine-install <path to device/image> <1-based stage 2 partition number>
+limine-s2deploy <path to device/image> <1-based stage 2 partition number>
 ```
 
-In case one wants to let `limine-install` embed stage 2 within GPT's structures,
-simply omit the partition number, and invoke `limine-install` the same as one
+In case one wants to let `limine-s2deploy` embed stage 2 within GPT's structures,
+simply omit the partition number, and invoke `limine-s2deploy` the same as one
 would do for an MBR partitioned device.
 
 The boot device must to contain the `limine.sys` and `limine.cfg` files in
@@ -198,9 +198,9 @@ xorriso -as mkisofs -b <relative path of limine-cd.bin> \
 
 *Note: `xorriso` is required.*
 
-And do not forget to also run `limine-install` on the generated image:
+And do not forget to also run `limine-s2deploy` on the generated image:
 ```
-limine-install image.iso
+limine-s2deploy image.iso
 ```
 
 `<relative path of limine-cd.bin>` is the relative path of

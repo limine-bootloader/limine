@@ -6,7 +6,7 @@ PREFIX ?= /usr/local
 CFLAGS ?= -g -O2 -pipe -Wall -Wextra
 
 .PHONY: all
-all: limine-install
+all: limine-s2deploy
 
 .PHONY: install-data
 install-data: all
@@ -22,16 +22,16 @@ install-data: all
 .PHONY: install
 install: install-data
 	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/bin'
-	$(INSTALL) limine-install '$(DESTDIR)$(PREFIX)/bin/'
+	$(INSTALL) limine-s2deploy '$(DESTDIR)$(PREFIX)/bin/'
 
 .PHONY: install-strip
 install-strip: install-data
 	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/bin'
-	$(INSTALL) -s limine-install '$(DESTDIR)$(PREFIX)/bin/'
+	$(INSTALL) -s limine-s2deploy '$(DESTDIR)$(PREFIX)/bin/'
 
 .PHONY: clean
 clean:
-	rm -f limine-install limine-install.exe
+	rm -f limine-s2deploy limine-s2deploy.exe
 
-limine-install: limine-install.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -std=c99 limine-install.c -o $@
+limine-s2deploy: limine-s2deploy.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -std=c99 limine-s2deploy.c -o $@

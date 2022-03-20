@@ -40,35 +40,35 @@ jobs:
       - name: Build the bootloader
         run: make -C build
 
-      - name: Clean limine-install
-        run: rm build/bin/limine-install
+      - name: Clean limine-s2deploy
+        run: rm build/bin/limine-s2deploy
 
-      - name: Build limine-install-linux-x86_64
-        run: make -C build CFLAGS="-O2 -pipe -static" limine-install
+      - name: Build limine-s2deploy-linux-x86_64
+        run: make -C build CFLAGS="-O2 -pipe -static" limine-s2deploy
 
-      - name: Strip limine-install-linux-x86_64
-        run: strip build/bin/limine-install
+      - name: Strip limine-s2deploy-linux-x86_64
+        run: strip build/bin/limine-s2deploy
 
-      - name: Rename limine-install-linux-x86_64
-        run: mv build/bin/limine-install build/bin/limine-install-linux-x86_64
+      - name: Rename limine-s2deploy-linux-x86_64
+        run: mv build/bin/limine-s2deploy build/bin/limine-s2deploy-linux-x86_64
 
-      - name: Build limine-install-linux-x86_32
-        run: make -C build CC="gcc -m32" CFLAGS="-O2 -pipe -static" limine-install
+      - name: Build limine-s2deploy-linux-x86_32
+        run: make -C build CC="gcc -m32" CFLAGS="-O2 -pipe -static" limine-s2deploy
 
-      - name: Strip limine-install-linux-x86_32
-        run: strip build/bin/limine-install
+      - name: Strip limine-s2deploy-linux-x86_32
+        run: strip build/bin/limine-s2deploy
 
-      - name: Rename limine-install-linux-x86_32
-        run: mv build/bin/limine-install build/bin/limine-install-linux-x86_32
+      - name: Rename limine-s2deploy-linux-x86_32
+        run: mv build/bin/limine-s2deploy build/bin/limine-s2deploy-linux-x86_32
 
-      - name: Build limine-install-win32
-        run: make -C build CC="i686-w64-mingw32-gcc" CFLAGS="-O2 -pipe" limine-install
+      - name: Build limine-s2deploy-win32
+        run: make -C build CC="i686-w64-mingw32-gcc" CFLAGS="-O2 -pipe" limine-s2deploy
 
-      - name: Strip limine-install-win32
-        run: i686-w64-mingw32-strip build/bin/limine-install.exe
+      - name: Strip limine-s2deploy-win32
+        run: i686-w64-mingw32-strip build/bin/limine-s2deploy.exe
 
-      - name: Rename limine-install-win32
-        run: mv build/bin/limine-install.exe build/bin/limine-install-win32.exe
+      - name: Rename limine-s2deploy-win32
+        run: mv build/bin/limine-s2deploy.exe build/bin/limine-s2deploy-win32.exe
 
       - name: Copy LICENSE to bin
         run: cp LICENSE.md build/bin/

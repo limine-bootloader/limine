@@ -439,56 +439,28 @@ FEAT_START
         ext_mem_alloc(sizeof(struct limine_framebuffer_response));
 
     // For now we only support 1 framebuffer
-    size_t fb_count = 1;
-    uint64_t *fb_address = ext_mem_alloc(sizeof(uint64_t) * fb_count);
-    uint16_t *fb_width = ext_mem_alloc(sizeof(uint16_t) * fb_count);
-    uint16_t *fb_height = ext_mem_alloc(sizeof(uint16_t) * fb_count);
-    uint16_t *fb_pitch = ext_mem_alloc(sizeof(uint16_t) * fb_count);
-    uint16_t *fb_bpp = ext_mem_alloc(sizeof(uint16_t) * fb_count);
-    uint8_t *fb_memory_model = ext_mem_alloc(sizeof(uint8_t) * fb_count);
-    uint8_t *fb_red_mask_size = ext_mem_alloc(sizeof(uint8_t) * fb_count);
-    uint8_t *fb_red_mask_shift = ext_mem_alloc(sizeof(uint8_t) * fb_count);
-    uint8_t *fb_green_mask_size = ext_mem_alloc(sizeof(uint8_t) * fb_count);
-    uint8_t *fb_green_mask_shift = ext_mem_alloc(sizeof(uint8_t) * fb_count);
-    uint8_t *fb_blue_mask_size = ext_mem_alloc(sizeof(uint8_t) * fb_count);
-    uint8_t *fb_blue_mask_shift = ext_mem_alloc(sizeof(uint8_t) * fb_count);
-    uint64_t *fb_edid_size = ext_mem_alloc(sizeof(uint64_t) * fb_count);
-    uint64_t *fb_edid = ext_mem_alloc(sizeof(uint64_t) * fb_count);
-
-    framebuffer_response->fb_count = fb_count;
-    framebuffer_response->fb_address = reported_addr(fb_address);
-    framebuffer_response->fb_width = reported_addr(fb_width);
-    framebuffer_response->fb_height = reported_addr(fb_height);
-    framebuffer_response->fb_pitch = reported_addr(fb_pitch);
-    framebuffer_response->fb_bpp = reported_addr(fb_bpp);
-    framebuffer_response->fb_memory_model = reported_addr(fb_memory_model);
-    framebuffer_response->fb_red_mask_size = reported_addr(fb_red_mask_size);
-    framebuffer_response->fb_red_mask_shift = reported_addr(fb_red_mask_shift);
-    framebuffer_response->fb_green_mask_size = reported_addr(fb_green_mask_size);
-    framebuffer_response->fb_green_mask_shift = reported_addr(fb_green_mask_shift);
-    framebuffer_response->fb_blue_mask_size = reported_addr(fb_blue_mask_size);
-    framebuffer_response->fb_blue_mask_shift = reported_addr(fb_blue_mask_shift);
-    framebuffer_response->fb_edid_size = reported_addr(fb_edid_size);
-    framebuffer_response->fb_edid = reported_addr(fb_edid);
+    struct limine_framebuffer *fbp = ext_mem_alloc(sizeof(struct limine_framebuffer));
+    framebuffer_response->fbs = reported_addr(fbp);
+    framebuffer_response->fbs_count = 1;
 
     struct edid_info_struct *edid_info = get_edid_info();
     if (edid_info != NULL) {
-        *fb_edid_size = sizeof(struct edid_info_struct);
-        *fb_edid = reported_addr(edid_info);
+        fbp->edid_size = sizeof(struct edid_info_struct);
+        fbp->edid = reported_addr(edid_info);
     }
 
-    *fb_memory_model     = LIMINE_FRAMEBUFFER_RGB;
-    *fb_address          = reported_addr((void *)(uintptr_t)fb.framebuffer_addr);
-    *fb_width            = fb.framebuffer_width;
-    *fb_height           = fb.framebuffer_height;
-    *fb_bpp              = fb.framebuffer_bpp;
-    *fb_pitch            = fb.framebuffer_pitch;
-    *fb_red_mask_size    = fb.red_mask_size;
-    *fb_red_mask_shift   = fb.red_mask_shift;
-    *fb_green_mask_size  = fb.green_mask_size;
-    *fb_green_mask_shift = fb.green_mask_shift;
-    *fb_blue_mask_size   = fb.blue_mask_size;
-    *fb_blue_mask_shift  = fb.blue_mask_shift;
+    fbp->memory_model     = LIMINE_FRAMEBUFFER_RGB;
+    fbp->address          = reported_addr((void *)(uintptr_t)fb.framebuffer_addr);
+    fbp->width            = fb.framebuffer_width;
+    fbp->height           = fb.framebuffer_height;
+    fbp->bpp              = fb.framebuffer_bpp;
+    fbp->pitch            = fb.framebuffer_pitch;
+    fbp->red_mask_size    = fb.red_mask_size;
+    fbp->red_mask_shift   = fb.red_mask_shift;
+    fbp->green_mask_size  = fb.green_mask_size;
+    fbp->green_mask_shift = fb.green_mask_shift;
+    fbp->blue_mask_size   = fb.blue_mask_size;
+    fbp->blue_mask_shift  = fb.blue_mask_shift;
 
     framebuffer_request->response = reported_addr(framebuffer_response);
 FEAT_END

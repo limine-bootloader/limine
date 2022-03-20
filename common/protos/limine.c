@@ -398,8 +398,13 @@ FEAT_START
         fclose(f);
     }
 
+    uint64_t *modules_list = ext_mem_alloc(module_count * sizeof(uint64_t));
+    for (size_t i = 0; i < module_count; i++) {
+        modules_list[i] = reported_addr(&modules[i]);
+    }
+
     module_response->modules_count = module_count;
-    module_response->modules = reported_addr(modules);
+    module_response->modules = reported_addr(modules_list);
 
     module_request->response = reported_addr(module_response);
 FEAT_END
@@ -435,8 +440,6 @@ FEAT_START
 
     // For now we only support 1 framebuffer
     struct limine_framebuffer *fbp = ext_mem_alloc(sizeof(struct limine_framebuffer));
-    framebuffer_response->fbs = reported_addr(fbp);
-    framebuffer_response->fbs_count = 1;
 
     struct edid_info_struct *edid_info = get_edid_info();
     if (edid_info != NULL) {
@@ -456,6 +459,12 @@ FEAT_START
     fbp->green_mask_shift = fb.green_mask_shift;
     fbp->blue_mask_size   = fb.blue_mask_size;
     fbp->blue_mask_shift  = fb.blue_mask_shift;
+
+    uint64_t *fb_list = ext_mem_alloc(1 * sizeof(uint64_t));
+    fb_list[0] = reported_addr(fbp);
+
+    framebuffer_response->fbs_count = 1;
+    framebuffer_response->fbs = reported_addr(fb_list);
 
     framebuffer_request->response = reported_addr(framebuffer_response);
 FEAT_END
@@ -526,8 +535,14 @@ FEAT_START
 
     smp_response->flags |= (smp_request->flags & LIMINE_SMP_X2APIC) && x2apic_check();
     smp_response->bsp_lapic_id = bsp_lapic_id;
+
+    uint64_t *smp_list = ext_mem_alloc(cpu_count * sizeof(uint64_t));
+    for (size_t i = 0; i < cpu_count; i++) {
+        smp_list[i] = reported_addr(&smp_array[i]);
+    }
+
     smp_response->cpus_count = cpu_count;
-    smp_response->cpus = reported_addr(smp_array);
+    smp_response->cpus = reported_addr(smp_list);
 
     smp_request->response = reported_addr(smp_response);
 FEAT_END
@@ -537,10 +552,12 @@ FEAT_START
     struct limine_memmap_request *memmap_request = get_request(LIMINE_MEMMAP_REQUEST);
     struct limine_memmap_response *memmap_response;
     struct limine_memmap_entry *_memmap;
+    uint64_t *memmap_list;
 
     if (memmap_request != NULL) {
         memmap_response = ext_mem_alloc(sizeof(struct limine_memmap_response));
         _memmap = ext_mem_alloc(sizeof(struct limine_memmap_entry) * MAX_MEMMAP);
+        memmap_list = ext_mem_alloc(MAX_MEMMAP * sizeof(uint64_t));
     }
 
     size_t mmap_entries;
@@ -587,8 +604,12 @@ FEAT_START
         }
     }
 
+    for (size_t i = 0; i < mmap_entries; i++) {
+        memmap_list[i] = reported_addr(&_memmap[i]);
+    }
+
     memmap_response->entries_count = mmap_entries;
-    memmap_response->entries = reported_addr(_memmap);
+    memmap_response->entries = reported_addr(memmap_list);
 
     memmap_request->response = reported_addr(memmap_response);
 FEAT_END

@@ -83,14 +83,13 @@ struct limine_framebuffer {
     uint8_t unused;
     uint64_t edid_size;
     LIMINE_PTR(void *) edid;
-    uint8_t reserved[256];
 };
 
 struct limine_framebuffer_response {
     uint64_t revision;
 
     uint64_t fbs_count;
-    LIMINE_PTR(struct limine_framebuffer *) fbs;
+    LIMINE_PTR(LIMINE_PTR(struct limine_framebuffer *) *) fbs;
 };
 
 struct limine_framebuffer_request {
@@ -133,7 +132,7 @@ struct limine_smp_response {
     uint32_t flags;
     uint32_t bsp_lapic_id;
     uint64_t cpus_count;
-    LIMINE_PTR(struct limine_smp_info *) cpus;
+    LIMINE_PTR(LIMINE_PTR(struct limine_smp_info *) *) cpus;
 };
 
 struct limine_smp_request {
@@ -160,14 +159,13 @@ struct limine_memmap_entry {
     uint64_t base;
     uint64_t length;
     uint64_t type;
-    uint8_t reserved[256];
 };
 
 struct limine_memmap_response {
     uint64_t revision;
 
     uint64_t entries_count;
-    LIMINE_PTR(struct limine_memmap_entry *) entries;
+    LIMINE_PTR(LIMINE_PTR(struct limine_memmap_entry *) *) entries;
 };
 
 struct limine_memmap_request {
@@ -202,14 +200,13 @@ struct limine_module {
     LIMINE_PTR(char *) path;
     LIMINE_PTR(char *) cmdline;
     LIMINE_PTR(struct limine_file_location *) file_location;
-    uint8_t reserved[256];
 };
 
 struct limine_module_response {
     uint64_t revision;
 
     uint64_t modules_count;
-    LIMINE_PTR(struct limine_module *) modules;
+    LIMINE_PTR(LIMINE_PTR(struct limine_module *) *) modules;
 };
 
 struct limine_module_request {

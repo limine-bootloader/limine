@@ -169,7 +169,7 @@ FEAT_START
     struct limine_memmap_response *memmap_response = memmap_request.response;
     e9_printf("%d memory map entries", memmap_response->entries_count);
     for (size_t i = 0; i < memmap_response->entries_count; i++) {
-        struct limine_memmap_entry *e = &memmap_response->entries[i];
+        struct limine_memmap_entry *e = memmap_response->entries[i];
         e9_printf("%x->%x %s", e->base, e->base + e->length, get_memmap_type(e->type));
     }
 FEAT_END
@@ -183,7 +183,7 @@ FEAT_START
     struct limine_framebuffer_response *fb_response = framebuffer_request.response;
     e9_printf("%d framebuffer(s)", fb_response->fbs_count);
     for (size_t i = 0; i < fb_response->fbs_count; i++) {
-        struct limine_framebuffer *fb = &fb_response->fbs[i];
+        struct limine_framebuffer *fb = fb_response->fbs[i];
         e9_printf("Address: %x", fb->address);
         e9_printf("Width: %d", fb->width);
         e9_printf("Height: %d", fb->height);
@@ -210,7 +210,7 @@ FEAT_START
     struct limine_module_response *module_response = module_request.response;
     e9_printf("%d module(s)", module_response->modules_count);
     for (size_t i = 0; i < module_response->modules_count; i++) {
-        struct limine_module *m = &module_response->modules[i];
+        struct limine_module *m = module_response->modules[i];
 
         e9_printf("Base: %x", m->base);
         e9_printf("Length: %x", m->length);
@@ -273,7 +273,7 @@ FEAT_START
     e9_printf("BSP LAPIC ID: %x", smp_response->bsp_lapic_id);
     e9_printf("CPUs count: %d", smp_response->cpus_count);
     for (size_t i = 0; i < smp_response->cpus_count; i++) {
-        struct limine_smp_info *cpu = &smp_response->cpus[i];
+        struct limine_smp_info *cpu = smp_response->cpus[i];
         e9_printf("Processor ID: %x", cpu->processor_id);
         e9_printf("LAPIC ID: %x", cpu->lapic_id);
     }

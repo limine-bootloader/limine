@@ -147,12 +147,18 @@ struct macro {
 static struct macro *macros = NULL;
 
 int init_config(size_t config_size) {
-    // remove windows carriage returns, if any
+    // remove windows carriage returns and spaces at the start of lines, if any
     for (size_t i = 0; i < config_size; i++) {
-        if (config_addr[i] == '\r') {
-            for (size_t j = i; j < config_size - 1; j++)
-                config_addr[j] = config_addr[j+1];
-            config_size--;
+        size_t skip = 0;
+        while ((config_addr[i + skip] == '\r')
+            || ((!i || config_addr[i - 1] == '\n')
+             && (config_addr[i + skip] == ' ' || config_addr[i + skip] == '\t'))) {
+            skip++;
+        }
+        if (skip) {
+            for (size_t j = i; j < config_size - skip; j++)
+                config_addr[j] = config_addr[j + skip];
+            config_size -= skip;
         }
     }
 

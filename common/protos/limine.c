@@ -102,6 +102,13 @@ static void *_get_request(uint64_t id[4]) {
 #define FEAT_START do {
 #define FEAT_END } while (0);
 
+#if defined (__i386__)
+extern symbol stivale2_term_write_entry;
+extern void *stivale2_rt_stack;
+extern uint64_t stivale2_term_callback_ptr;
+void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t);
+#endif
+
 bool limine_load(char *config, char *cmdline) {
     uint32_t eax, ebx, ecx, edx;
 
@@ -409,10 +416,6 @@ FEAT_START
     module_request->response = reported_addr(module_response);
 FEAT_END
 
-    // Framebuffer feature
-FEAT_START
-    term_deinit();
-
     size_t req_width = 0, req_height = 0, req_bpp = 0;
 
     char *resolution = config_get_value(config, 0, "RESOLUTION");
@@ -422,10 +425,61 @@ FEAT_START
 
     struct fb_info fb;
 
+    // Terminal feature
+FEAT_START
+    struct limine_terminal_request *terminal_request = get_request(LIMINE_TERMINAL_REQUEST);
+    if (terminal_request == NULL) {
+        break; // next feature
+    }
+
+    struct limine_terminal_response *terminal_response =
+        ext_mem_alloc(sizeof(struct limine_terminal_response));
+
+    quiet = false;
+    serial = false;
+
+    term_vbe(req_width, req_height);
+
+    if (current_video_mode < 0) {
+        panic(true, "limine: Failed to initialise terminal");
+    }
+
+    fb = fbinfo;
+
+#if defined (__i386__)
+    term_callback = stivale2_term_callback;
+    stivale2_term_callback_ptr = terminal_request->callback;
+#elif defined (__x86_64__)
+    term_callback = (void *)terminal_request->callback;
+#endif
+
+#if defined (__i386__)
+    if (stivale2_rt_stack == NULL) {
+        stivale2_rt_stack = ext_mem_alloc(8192);
+    }
+
+    terminal_response->write = (uintptr_t)(void *)stivale2_term_write_entry;
+#elif defined (__x86_64__)
+    terminal_response->write = (uintptr_t)term_write;
+#endif
+
+    terminal_response->columns = term_cols;
+    terminal_response->rows = term_rows;
+
+    terminal_request->response = reported_addr(terminal_response);
+
+    goto skip_fb_init;
+FEAT_END
+
+    // Framebuffer feature
+FEAT_START
+    term_deinit();
+
     if (!fb_init(&fb, req_width, req_height, req_bpp)) {
         panic(true, "limine: Could not acquire framebuffer");
     }
 
+skip_fb_init:;
     struct limine_framebuffer_request *framebuffer_request = get_request(LIMINE_FRAMEBUFFER_REQUEST);
     if (framebuffer_request == NULL) {
         break; // next feature
@@ -613,6 +667,11 @@ FEAT_START
 
     memmap_request->response = reported_addr(memmap_response);
 FEAT_END
+
+    // Clear terminal for kernels that will use the stivale2 terminal
+    term_write((uint64_t)(uintptr_t)("\e[2J\e[H"), 7);
+
+    term_runtime = true;
 
     stivale_spinup(64, want_5lv, &pagemap, entry_point, 0,
                    reported_addr(stack), true, (uintptr_t)local_gdt);

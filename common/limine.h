@@ -98,6 +98,27 @@ struct limine_framebuffer_request {
     LIMINE_PTR(struct limine_framebuffer_response *) response;
 };
 
+// Terminal
+
+#define LIMINE_TERMINAL_REQUEST { LIMINE_COMMON_MAGIC, 0x0785a0aea5d0750f, 0x1c1936fee0d6cf6e }
+
+typedef void (*limine_terminal_write)(const char *, uint64_t);
+typedef void (*limine_terminal_callback)(uint64_t, uint64_t, uint64_t, uint64_t);
+
+struct limine_terminal_response {
+    uint64_t revision;
+    uint32_t columns;
+    uint32_t rows;
+    LIMINE_PTR(limine_terminal_write) write;
+};
+
+struct limine_terminal_request {
+    uint64_t id[4];
+    uint64_t revision;
+    LIMINE_PTR(struct limine_terminal_response *) response;
+    LIMINE_PTR(limine_terminal_callback) callback;
+};
+
 // 5-level paging
 
 #define LIMINE_5_LEVEL_PAGING_REQUEST { LIMINE_COMMON_MAGIC, 0x94469551da9b3192, 0xebe5e86db7382888 }

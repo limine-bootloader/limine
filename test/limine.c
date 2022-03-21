@@ -67,6 +67,11 @@ struct limine_smp_request _smp_request = {
     .revision = 0, .response = NULL
 };
 
+struct limine_terminal_request _terminal_request = {
+    .id = LIMINE_TERMINAL_REQUEST,
+    .revision = 0, .response = NULL
+};
+
 static char *get_memmap_type(uint64_t type) {
     switch (type) {
         case LIMINE_MEMMAP_USABLE:
@@ -123,6 +128,10 @@ static void print_file_loc(struct limine_file_location *file_location) {
 extern char kernel_start[];
 
 static void limine_main(void) {
+    if (_terminal_request.response) {
+        stivale2_print = _terminal_request.response->write;
+    }
+
     e9_printf("\nWe're alive");
 
     uint64_t kernel_slide = (uint64_t)kernel_start - 0xffffffff80000000;
@@ -289,6 +298,19 @@ FEAT_START
         e9_printf("Processor ID: %x", cpu->processor_id);
         e9_printf("LAPIC ID: %x", cpu->lapic_id);
     }
+FEAT_END
+
+FEAT_START
+    e9_printf("");
+    if (_terminal_request.response == NULL) {
+        e9_printf("Terminal not passed");
+        break;
+    }
+    struct limine_terminal_response *term_response = _terminal_request.response;
+    e9_printf("Terminal feature, revision %d", term_response->revision);
+    e9_printf("Columns: %d", term_response->columns);
+    e9_printf("Rows: %d", term_response->rows);
+    e9_printf("Write function at: %x", term_response->write);
 FEAT_END
 
     for (;;);

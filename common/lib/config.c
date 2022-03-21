@@ -151,7 +151,8 @@ int init_config(size_t config_size) {
     for (size_t i = 0; i < config_size; i++) {
         size_t skip = 0;
         while ((config_addr[i + skip] == '\r')
-            || (i && config_addr[i - 1] == '\n' && config_addr[i + skip] == ' ')) {
+            || ((!i || config_addr[i - 1] == '\n')
+             && config_addr[i + skip] == ' ')) {
             skip++;
         }
         if (skip) {

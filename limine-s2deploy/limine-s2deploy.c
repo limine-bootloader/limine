@@ -1,3 +1,8 @@
+#undef IS_WINDOWS
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+#define IS_WINDOWS 1
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -282,6 +287,9 @@ int main(int argc, char *argv[]) {
 
     if (argc < 2) {
         printf("Usage: %s <device> [GPT partition index]\n", argv[0]);
+#ifdef IS_WINDOWS
+        system("pause");
+#endif
         goto cleanup;
     }
 
@@ -311,7 +319,7 @@ int main(int argc, char *argv[]) {
             lb_size = lb_guesses[i];
             if (!force_mbr) {
                 gpt = 1;
-                fprintf(stderr, "Installing to GPT. Logical block size of %" PRIu64 " bytes.\n",
+                fprintf(stderr, "Deploying to GPT. Logical block size of %" PRIu64 " bytes.\n",
                         lb_guesses[i]);
             } else {
                 memset(&gpt_header, 0, sizeof(struct gpt_table_header));
@@ -480,7 +488,7 @@ int main(int argc, char *argv[]) {
                 goto cleanup;
             }
 
-            fprintf(stderr, "GPT partition specified. Installing there instead of embedding.\n");
+            fprintf(stderr, "GPT partition specified. Deploying there instead of embedding.\n");
 
             stage2_loc_a = gpt_entry.starting_lba * lb_size;
             stage2_loc_b = stage2_loc_a + stage2_size_a;
@@ -574,7 +582,7 @@ int main(int argc, char *argv[]) {
                          sizeof(struct gpt_table_header));
         }
     } else {
-        fprintf(stderr, "Installing to MBR.\n");
+        fprintf(stderr, "Deploying to MBR.\n");
     }
 
     fprintf(stderr, "Stage 2 to be located at 0x%" PRIx64 " and 0x%" PRIx64 ".\n",
@@ -613,7 +621,7 @@ int main(int argc, char *argv[]) {
                     "          the root or /boot directories of one of the partitions\n"
                     "          on the device, or boot will fail!\n");
 
-    fprintf(stderr, "Limine installed successfully!\n");
+    fprintf(stderr, "Limine Stage 2 deployed successfully!\n");
 
     ok = 0;
 

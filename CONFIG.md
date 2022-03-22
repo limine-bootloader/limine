@@ -62,12 +62,18 @@ Some keys take *URIs* as values; these are described in the next section.
 * `SERIAL` - If set to `yes`, enable serial I/O for the bootloader.
 * `DEFAULT_ENTRY` - 1-based entry index of the entry which will be automatically selected at startup. If unspecified, it is `1`.
 * `GRAPHICS` - If set to `no`, force CGA text mode for the boot menu, else use a video mode. Ignored with Limine UEFI.
-* `MENU_RESOLUTION` - Specify screen resolution to be used by the Limine menu in the form `<width>x<height>`. This will *only* affect the menu, not any booted OS. If not specified, Limine will pick a resolution automatically. If the resolution is not available, Limine will pick another one automatically. Ignored if `GRAPHICS` is not `yes`.
-* `MENU_BRANDING` - A string that will be displayed on top of the Limine menu.
-* `MENU_BRANDING_COLOUR` - A value between 0 and 7 specifying the colour of the branding string. Default is cyan (6).
-* `MENU_BRANDING_COLOR` - Alias of `MENU_BRANDING_COLOUR`.
+* `VERBOSE` - If set to `yes`, print additional information during boot. Defaults to not verbose.
+* `RANDOMISE_MEMORY` - If set to `yes`, randomise the contents of RAM at bootup in order to find bugs related to non zeroed memory or for security reasons. This option will slow down boot time significantly. For the BIOS port of Limine, this will only randomise memory below 4GiB.
+* `RANDOMIZE_MEMORY` - Alias of `RANDOMISE_MEMORY`.
 
-The following options control Limine's graphical terminal. They are ignored if using text mode.
+Limine interface control options.
+
+* `INTERFACE_RESOLUTION` - Specify screen resolution to be used by the Limine interface (menu, editor, console...) in the form `<width>x<height>`. This will *only* affect the Limine interface, not any booted OS. If not specified, Limine will pick a resolution automatically. If the resolution is not available, Limine will pick another one automatically. Ignored if using text mode.
+* `INTERFACE_BRANDING` - A string that will be displayed on top of the Limine interface.
+* `INTERFACE_BRANDING_COLOUR` - A value between 0 and 7 specifying the colour of the branding string. Default is cyan (6).
+* `INTERFACE_BRANDING_COLOR` - Alias of `INTERFACE_BRANDING_COLOUR`.
+
+Limine graphical terminal control options. They are ignored if using text mode.
 
 * `TERM_FONT` - URI path to a font file to be used instead of the default one for the menu and terminal. The font file must be a code page 437 character set comprised of 256 consecutive glyph bitmaps. Each glyph's bitmap must be expressed left to right (1 byte per row), and top to bottom (16 bytes per whole glyph by default; see `TERM_FONT_SIZE`). See e.g. the [VGA text mode font collection](https://github.com/viler-int10h/vga-text-mode-fonts) for fonts.
 * `TERM_FONT_SIZE` - The size of the font in dots, which must correspond to the font file or the display will be garbled. Note that glyphs are always one byte wide, and columns over 8 are empty. Many fonts may be used in both 8- and 9-dot wide variants. Defaults to `8x16`. Ignored if `TERM_FONT` not set or if the font fails to load.
@@ -83,16 +89,15 @@ The following options control Limine's graphical terminal. They are ignored if u
 * `TERM_WALLPAPER_STYLE` - The style which will be used to display the wallpaper image: `tiled`, `centered`, or `stretched`. Default is `stretched`.
 * `TERM_BACKDROP` - When the background style is `centered`, this specifies the colour of the backdrop for parts of the screen not covered by the background image, in RRGGBB format.
 
+Editor control options.
+
 * `EDITOR_ENABLED` - If set to `no`, the editor will not be accessible. Defaults to `yes`.
 * `EDITOR_HIGHLIGHTING` - If set to `no`, syntax highlighting in the editor will be disabled. Defaults to `yes`.
 * `EDITOR_VALIDATION` - If set to `no`, the editor will not alert you about invalid keys / syntax errors. Defaults to `yes`.
-* `VERBOSE` - If set to `yes`, print additional information during boot. Defaults to not verbose.
-* `RANDOMISE_MEMORY` - If set to `yes`, randomise the contents of RAM at bootup in order to find bugs related to non zeroed memory or for security reasons. This option will slow down boot time significantly. For the BIOS port of Limine, this will only randomise memory below 4GiB.
-* `RANDOMIZE_MEMORY` - Alias of `RANDOMISE_MEMORY`.
 
 *Locally assignable (non protocol specific)* keys are:
 * `COMMENT` - An optional comment string that will be displayed by the bootloader on the menu when an entry is selected.
-* `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `stivale`, `stivale2`, `chainload`, `multiboot` or `multiboot1` and `multiboot2`. If the protocol is omitted, Limine will try to autodetect it, following this list of protocols, in this order: `stivale2 -> stivale1 -> multiboot2 -> multiboot1 -> linux -> failure`.
+* `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `limine`, `stivale`, `stivale2`, `chainload`, `multiboot` or `multiboot1` and `multiboot2`. If the protocol is omitted, Limine will try to autodetect it, following this list of protocols, in this order: `stivale2 -> stivale1 -> multiboot2 -> multiboot1 -> limine -> linux -> failure`.
 * `CMDLINE` - The command line string to be passed to the kernel. Can be omitted.
 * `KERNEL_CMDLINE` - Alias of `CMDLINE`.
 
@@ -105,6 +110,24 @@ The following options control Limine's graphical terminal. They are ignored if u
   modules.
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
   * `TEXTMODE` - If set to `yes`, prefer text mode. (BIOS only)
+* Limine protocol:
+  * `KERNEL_PATH` - The URI path of the kernel.
+  * `MODULE_PATH` - The URI path to a module.
+  * `MODULE_CMDLINE` - A command line to be passed to a module.
+
+  **Note:** One can define these 2 last variable multiple times to specify multiple
+  modules.
+  The entries will be matched in order. E.g.: The 1st module path entry will be matched
+  to the 1st module string entry that appear, and so on.
+
+  * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
+  * `KASLR` - For relocatable kernels, if set to `no`, disable kernel address space layout randomisation. KASLR is enabled by default.
+* Chainload protocol on BIOS:
+  * `DRIVE` - The 1-based BIOS drive to chainload, if omitted, assume boot drive.
+  * `PARTITION` - The 1-based BIOS partition to chainload, if omitted, chainload drive (MBR).
+* Chainload protocol on UEFI:
+  * `IMAGE_PATH` - URI of the EFI application to chainload.
+  * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
 * stivale and stivale2 protocols:
   * `KERNEL_PATH` - The URI path of the kernel.
   * `MODULE_PATH` - The URI path to a module.

@@ -673,13 +673,13 @@ static noreturn void _menu(bool timeout_enabled) {
         editor_enabled = strcmp(editor_enabled_str, "yes") == 0;
     }
 
-    menu_branding = config_get_value(NULL, 0, "MENU_BRANDING");
+    menu_branding = config_get_value(NULL, 0, "INTERFACE_BRANDING");
     if (menu_branding == NULL)
         menu_branding = "Limine " LIMINE_VERSION;
 
-    menu_branding_colour = config_get_value(NULL, 0, "MENU_BRANDING_COLOUR");
+    menu_branding_colour = config_get_value(NULL, 0, "INTERFACE_BRANDING_COLOUR");
     if (menu_branding_colour == NULL)
-        menu_branding_colour = config_get_value(NULL, 0, "MENU_BRANDING_COLOR");
+        menu_branding_colour = config_get_value(NULL, 0, "INTERFACE_BRANDING_COLOR");
     if (menu_branding_colour == NULL)
         menu_branding_colour = "6";
 
@@ -730,7 +730,7 @@ reterm:
     if (graphics == NULL || strcmp(graphics, "no") == 1) {
         size_t req_width = 0, req_height = 0, req_bpp = 0;
 
-        char *menu_resolution = config_get_value(NULL, 0, "MENU_RESOLUTION");
+        char *menu_resolution = config_get_value(NULL, 0, "INTERFACE_RESOLUTION");
         if (menu_resolution != NULL)
             parse_resolution(&req_width, &req_height, &req_bpp, menu_resolution);
 
@@ -940,6 +940,7 @@ autodetect:
         stivale_load(config, cmdline);
         multiboot2_load(config, cmdline);
         multiboot1_load(config, cmdline);
+        limine_load(config, cmdline);
         linux_load(config, cmdline);
         panic(true, "Kernel protocol autodetection failed");
     }

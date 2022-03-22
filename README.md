@@ -2,9 +2,8 @@
 
 ### What is Limine?
 
-Limine is a modern, advanced x86/x86_64 BIOS/UEFI multiprotocol bootloader used
-as the reference implementation for the
-[stivale protocols](https://github.com/stivale/stivale).
+Limine is a modern, advanced x86/x86_64 BIOS/UEFI multiprotocol bootloader, used
+as the reference implementation for the [Limine boot protocol](/PROTOCOL.md).
 
 ### Support Limine
 Like Limine and want to support it? Donate Bitcoin to
@@ -17,8 +16,9 @@ Like Limine and want to support it? Donate Bitcoin to
 [Photo by Martin Damboldt from Pexels](https://www.pexels.com/photo/gray-bridge-and-trees-814499/)
 
 ### Supported boot protocols
-* stivale and stivale2 (Limine's native boot protocols, see [their specifications](https://github.com/stivale) for details)
 * Linux
+* [Limine](/PROTOCOL.md)
+* stivale and stivale2 (see [their specifications](https://github.com/stivale) for details)
 * Multiboot 1
 * Multiboot 2
 * Chainloading
@@ -46,13 +46,13 @@ are shipped in the `-binary` branches and tags of this repository
 (see [branches](https://github.com/limine-bootloader/limine/branches/all) and
 [tags](https://github.com/limine-bootloader/limine/tags)).
 
-For example, to clone the latest binary release of the `v2.x` branch one can do
+For example, to clone the latest binary release of the `v3.x` branch one can do
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v2.0-branch-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example `v2.88`)
+or, to clone a specific binary point release (for example `v3.0`)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v2.88-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-binary --depth=1
 ```
 
 Additionally, the absolute latest Limine binary release can be obtained by

@@ -23,8 +23,8 @@ struct limine_uuid {
 struct limine_file_location {
     uint64_t revision;
     uint64_t partition_index;
-    uint32_t pxe_ip;
-    uint32_t pxe_port;
+    uint32_t tftp_ip;
+    uint32_t tftp_port;
     uint32_t mbr_disk_id;
     struct limine_uuid gpt_disk_uuid;
     struct limine_uuid gpt_part_uuid;

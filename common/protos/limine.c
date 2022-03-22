@@ -43,8 +43,8 @@ static struct limine_file_location get_file_loc(struct file_handle *file) {
     struct limine_file_location ret = {0};
 
     if (file->pxe) {
-        ret.pxe_ip = file->pxe_ip;
-        ret.pxe_port = file->pxe_port;
+        ret.tftp_ip = file->pxe_ip;
+        ret.tftp_port = file->pxe_port;
         return ret;
     }
 

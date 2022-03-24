@@ -10,6 +10,11 @@ the Limine boot protocol is composed of. Other bootloaders may support extra
 unofficial features, but it is strongly recommended to avoid fragmentation
 and submit new features by opening a pull request to this repository.
 
+## General Notes
+
+All pointers are 64-bit wide. All pointers point to the object with the
+higher half direct map offset already added to them, unless otherwise noted.
+
 ## Features
 
 The protocol is centered around the concept of request/response - collectively
@@ -131,12 +136,12 @@ Legacy PIC and IO APIC IRQs are all masked.
 If booted by EFI/UEFI, boot services are exited.
 
 `rsp` is set to point to a stack, in bootloader-reserved memory, which is
-at least 8KiB (8192 bytes) in size. An invalid return address of 0 is pushed
+at least 16KiB (16384 bytes) in size. An invalid return address of 0 is pushed
 to the stack before jumping to the kernel.
 
 All other general purpose registers are set to 0.
 
-# Feature List
+## Feature List
 
 Request IDs are composed of 4 64-bit unsigned integers, but the first 2 are
 common to every request:
@@ -144,7 +149,7 @@ common to every request:
 #define LIMINE_COMMON_MAGIC 0xc7b1dd30df4c8b88, 0x0a82e883a194f07b
 ```
 
-## Bootloader Info Feature
+### Bootloader Info Feature
 
 ID:
 ```c
@@ -172,7 +177,7 @@ struct limine_bootloader_info_response {
 `name` and `version` are 0-terminated ASCII strings containing the name and
 version of the loading bootloader.
 
-## HHDM (Higher Half Direct Map) Feature
+### HHDM (Higher Half Direct Map) Feature
 
 ID:
 ```c
@@ -192,14 +197,14 @@ Response:
 ```c
 struct limine_hhdm_response {
     uint64_t revision;
-    uint64_t address;
+    uint64_t offset;
 };
 ```
 
-* `address` - the virtual address of the beginning of the higher half direct
-map.
+* `offset` - the virtual address offset of the beginning of the higher half
+direct map.
 
-## Framebuffer Feature
+### Framebuffer Feature
 
 ID:
 ```c
@@ -251,7 +256,7 @@ struct limine_framebuffer {
 };
 ```
 
-## 5-Level Paging Feature
+### 5-Level Paging Feature
 
 ID:
 ```c
@@ -276,9 +281,70 @@ struct limine_5_level_paging_response {
 
 Notes: The presence of this request will prompt the bootloader to turn on
 x86_64 5-level paging. It will not be turned on if this request is not present.
-If the response pointer is non-NULL, 5-level paging is engaged.
+If the response pointer is unchanged, 5-level paging is engaged.
 
-## Entry Point Feature
+### SMP (multiprocessor) Feature
+
+ID:
+```c
+#define LIMINE_SMP_REQUEST { LIMINE_COMMON_MAGIC, 0x95a67b819a1b857e, 0xa0b61b723b6a73e0 }
+```
+
+Request:
+```c
+struct limine_smp_request {
+    uint64_t id[4];
+    uint64_t revision;
+    struct limine_smp_response *response;
+    uint64_t flags;
+};
+```
+
+* `flags` - Bit 0: Enable X2APIC, if possible.
+
+Response:
+```c
+struct limine_smp_response {
+    uint64_t revision;
+    uint32_t flags;
+    uint32_t bsp_lapic_id;
+    uint64_t cpu_count;
+    struct limine_smp_info **cpus;
+};
+```
+
+* `flags` - Bit 0: X2APIC has been enabled.
+* `bsp_lapic_id` - The Local APIC ID of the bootstrap processor.
+* `cpu_count` - How many CPUs are present. It includes the bootstrap processor.
+* `cpus` - Pointer to an array of `cpu_count` pointers to
+`struct limine_smp_info` structures.
+
+Notes: The presence of this request will prompt the bootloader to bootstrap
+the secondary processors. This will not be done if this request is not present.
+
+```c
+typedef void (*limine_goto_address)(void);
+
+struct limine_smp_info {
+    uint32_t processor_id;
+    uint32_t lapic_id;
+    uint64_t reserved;
+    limine_goto_address goto_address;
+    uint64_t extra_argument;
+};
+```
+
+* `processor_id` - ACPI Processor UID as specified by the MADT
+* `lapic_id` - Local APIC ID of the processor as specified by the MADT
+* `goto_address` - An atomic write to this field causes the parked CPU to
+jump to the written address, on a 16KiB stack. A pointer to the
+`struct limine_smp_info` structure of the CPU is passed in `RDI`. Other than
+that, the CPU state will be the same as described for the bootstrap
+processor. This field is unused for the structure describing the bootstrap
+processor.
+* `extra_argument` - A free for use field.
+
+### Entry Point Feature
 
 ID:
 ```c
@@ -306,141 +372,7 @@ struct limine_entry_point_response {
 };
 ```
 
-## RSDP Feature
-
-ID:
-```c
-#define LIMINE_RSDP_REQUEST { LIMINE_COMMON_MAGIC, 0xc5e77b6b397e7b43, 0x27637845accdcf3c }
-```
-
-Request:
-```c
-struct limine_rsdp_request {
-    uint64_t id[4];
-    uint64_t revision;
-    struct limine_rsdp_response *response;
-};
-```
-
-Response:
-```c
-struct limine_rsdp_response {
-    uint64_t revision;
-    void *address;
-};
-```
-
-* `address` - Address of the RSDP table.
-
-## SMBIOS Feature
-
-ID:
-```c
-#define LIMINE_SMBIOS_REQUEST { LIMINE_COMMON_MAGIC, 0x9e9046f11e095391, 0xaa4a520fefbde5ee }
-```
-
-Request:
-```c
-struct limine_smbios_request {
-    uint64_t id[4];
-    uint64_t revision;
-    struct limine_smbios_response *response;
-};
-```
-
-Response:
-```c
-struct limine_smbios_response {
-    uint64_t revision;
-    void *entry_32;
-    void *entry_64;
-};
-```
-
-* `entry_32` - Address of the 32-bit SMBIOS entry point. NULL if not present.
-* `entry_64` - Address of the 64-bit SMBIOS entry point. NULL if not present.
-
-## EFI System Table Feature
-
-ID:
-```c
-#define LIMINE_EFI_SYSTEM_TABLE_REQUEST { LIMINE_COMMON_MAGIC, 0x5ceba5163eaaf6d6, 0x0a6981610cf65fcc }
-```
-
-Request:
-```c
-struct limine_efi_system_table_request {
-    uint64_t id[4];
-    uint64_t revision;
-    struct limine_efi_system_table_response *response;
-};
-```
-
-Response:
-```c
-struct limine_efi_system_table_response {
-    uint64_t revision;
-    void *address;
-};
-```
-
-* `address` - Address of EFI system table.
-
-## Boot Time Feature
-
-ID:
-```c
-#define LIMINE_BOOT_TIME_REQUEST { LIMINE_COMMON_MAGIC, 0x502746e184c088aa, 0xfbc5ec83e6327893 }
-```
-
-Request:
-```c
-struct limine_boot_time_request {
-    uint64_t id[4];
-    uint64_t revision;
-    struct limine_boot_time_response *response;
-};
-```
-
-Response:
-```c
-struct limine_boot_time_response {
-    uint64_t revision;
-    int64_t boot_time;
-};
-```
-
-* `boot_time` - The UNIX time on boot, in seconds, taken from the system RTC.
-
-## Kernel Address Feature
-
-ID:
-```c
-#define LIMINE_KERNEL_ADDRESS_REQUEST { LIMINE_COMMON_MAGIC, 0x71ba76863cc55f63, 0xb2644a48c516a487 }
-```
-
-Request:
-```c
-struct limine_kernel_address_request {
-    uint64_t id[4];
-    uint64_t revision;
-    struct limine_kernel_address_response *response;
-};
-```
-
-Response:
-```c
-struct limine_kernel_address_response {
-    uint64_t revision;
-    uint64_t physical_base;
-    uint64_t virtual_base;
-};
-```
-
-* `physical_base` - The physical base address of the kernel.
-* `virtual_base` - The virtual base address of the kernel.
-
-## Module Feature
+### Module Feature
 
 ID:
 ```c
@@ -471,7 +403,7 @@ struct limine_module_response {
 
 ```c
 struct limine_module {
-    uint64_t base;
+    void *base;
     uint64_t length;
     char *path;
     char *cmdline;
@@ -485,7 +417,7 @@ struct limine_module {
 * `cmdline` - A command line associated with the module.
 * `file_location` - A pointer to the file location structure for the module.
 
-### File Location Structure
+#### File Location Structure
 
 ```c
 struct limine_uuid {
@@ -507,6 +439,7 @@ struct limine_file_location {
 };
 ```
 
+* `revision` - Revision of the `struct limine_file_location` structure.
 * `partition_index` - 1-based partition index of the volume from which the
 module was loaded. If 0, it means invalid or unpartitioned.
 * `tftp_ip` - If non-0, this is the IP of the TFTP server the file was loaded from.
@@ -519,3 +452,137 @@ loaded from as reported in its GPT.
 was loaded from as reported in the GPT.
 * `part_uuid` - If non-0, this is the UUID of the filesystem of the partition
 the module was loaded from.
+
+### RSDP Feature
+
+ID:
+```c
+#define LIMINE_RSDP_REQUEST { LIMINE_COMMON_MAGIC, 0xc5e77b6b397e7b43, 0x27637845accdcf3c }
+```
+
+Request:
+```c
+struct limine_rsdp_request {
+    uint64_t id[4];
+    uint64_t revision;
+    struct limine_rsdp_response *response;
+};
+```
+
+Response:
+```c
+struct limine_rsdp_response {
+    uint64_t revision;
+    void *address;
+};
+```
+
+* `address` - Address of the RSDP table.
+
+### SMBIOS Feature
+
+ID:
+```c
+#define LIMINE_SMBIOS_REQUEST { LIMINE_COMMON_MAGIC, 0x9e9046f11e095391, 0xaa4a520fefbde5ee }
+```
+
+Request:
+```c
+struct limine_smbios_request {
+    uint64_t id[4];
+    uint64_t revision;
+    struct limine_smbios_response *response;
+};
+```
+
+Response:
+```c
+struct limine_smbios_response {
+    uint64_t revision;
+    void *entry_32;
+    void *entry_64;
+};
+```
+
+* `entry_32` - Address of the 32-bit SMBIOS entry point. NULL if not present.
+* `entry_64` - Address of the 64-bit SMBIOS entry point. NULL if not present.
+
+### EFI System Table Feature
+
+ID:
+```c
+#define LIMINE_EFI_SYSTEM_TABLE_REQUEST { LIMINE_COMMON_MAGIC, 0x5ceba5163eaaf6d6, 0x0a6981610cf65fcc }
+```
+
+Request:
+```c
+struct limine_efi_system_table_request {
+    uint64_t id[4];
+    uint64_t revision;
+    struct limine_efi_system_table_response *response;
+};
+```
+
+Response:
+```c
+struct limine_efi_system_table_response {
+    uint64_t revision;
+    void *address;
+};
+```
+
+* `address` - Address of EFI system table.
+
+### Boot Time Feature
+
+ID:
+```c
+#define LIMINE_BOOT_TIME_REQUEST { LIMINE_COMMON_MAGIC, 0x502746e184c088aa, 0xfbc5ec83e6327893 }
+```
+
+Request:
+```c
+struct limine_boot_time_request {
+    uint64_t id[4];
+    uint64_t revision;
+    struct limine_boot_time_response *response;
+};
+```
+
+Response:
+```c
+struct limine_boot_time_response {
+    uint64_t revision;
+    int64_t boot_time;
+};
+```
+
+* `boot_time` - The UNIX time on boot, in seconds, taken from the system RTC.
+
+### Kernel Address Feature
+
+ID:
+```c
+#define LIMINE_KERNEL_ADDRESS_REQUEST { LIMINE_COMMON_MAGIC, 0x71ba76863cc55f63, 0xb2644a48c516a487 }
+```
+
+Request:
+```c
+struct limine_kernel_address_request {
+    uint64_t id[4];
+    uint64_t revision;
+    struct limine_kernel_address_response *response;
+};
+```
+
+Response:
+```c
+struct limine_kernel_address_response {
+    uint64_t revision;
+    uint64_t physical_base;
+    uint64_t virtual_base;
+};
+```
+
+* `physical_base` - The physical base address of the kernel.
+* `virtual_base` - The virtual base address of the kernel.

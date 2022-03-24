@@ -170,7 +170,7 @@ FEAT_START
     }
     struct limine_hhdm_response *hhdm_response = hhdm_request.response;
     e9_printf("HHDM feature, revision %d", hhdm_response->revision);
-    e9_printf("Higher half direct map at: %x", hhdm_response->address);
+    e9_printf("Higher half direct map at: %x", hhdm_response->offset);
 FEAT_END
 
 FEAT_START

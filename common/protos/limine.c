@@ -279,7 +279,7 @@ FEAT_START
     struct limine_hhdm_response *hhdm_response =
         ext_mem_alloc(sizeof(struct limine_hhdm_response));
 
-    hhdm_response->address = direct_map_offset;
+    hhdm_response->offset = direct_map_offset;
 
     hhdm_request->response = reported_addr(hhdm_response);
 FEAT_END
@@ -455,7 +455,7 @@ FEAT_START
 
 #if defined (__i386__)
     if (stivale2_rt_stack == NULL) {
-        stivale2_rt_stack = ext_mem_alloc(8192);
+        stivale2_rt_stack = ext_mem_alloc(16384);
     }
 
     terminal_response->write = (uintptr_t)(void *)stivale2_term_write_entry;
@@ -548,7 +548,7 @@ FEAT_END
     local_gdt->ptr_hi = local_gdt_base >> 32;
 #endif
 
-    void *stack = ext_mem_alloc(8192) + 8192;
+    void *stack = ext_mem_alloc(16384) + 16384;
 
     pagemap_t pagemap = {0};
     pagemap = stivale_build_pagemap(want_5lv, true, ranges, ranges_count, true,
@@ -580,8 +580,8 @@ FEAT_START
     }
 
     for (size_t i = 0; i < cpu_count; i++) {
-        void *cpu_stack = ext_mem_alloc(8192) + 8192;
-        smp_info[i].stack_addr = reported_addr(cpu_stack + 8192);
+        void *cpu_stack = ext_mem_alloc(16384) + 16384;
+        smp_info[i].stack_addr = reported_addr(cpu_stack + 16384);
     }
 
     struct limine_smp_response *smp_response =

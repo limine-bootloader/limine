@@ -53,7 +53,7 @@ struct limine_bootloader_info_request {
 
 struct limine_hhdm_response {
     uint64_t revision;
-    uint64_t address;
+    uint64_t offset;
 };
 
 struct limine_hhdm_request {
@@ -139,11 +139,13 @@ struct limine_5_level_paging_request {
 
 #define LIMINE_SMP_X2APIC (1 << 0)
 
+typedef void (*limine_goto_address)(void);
+
 struct limine_smp_info {
     uint32_t processor_id;
     uint32_t lapic_id;
     uint64_t reserved;
-    LIMINE_PTR(void *) goto_address;
+    LIMINE_PTR(limine_goto_address) goto_address;
     uint64_t extra_argument;
 };
 
@@ -215,7 +217,7 @@ struct limine_entry_point_request {
 #define LIMINE_MODULE_REQUEST { LIMINE_COMMON_MAGIC, 0x3e7e279702be32af, 0xca1c4f3bd1280cee }
 
 struct limine_module {
-    uint64_t base;
+    LIMINE_PTR(void *) base;
     uint64_t length;
     LIMINE_PTR(char *) path;
     LIMINE_PTR(char *) cmdline;

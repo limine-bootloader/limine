@@ -32,6 +32,14 @@ struct file_handle *fopen(struct volume *part, const char *filename) {
 
     ret->vol = part;
 
+    if (strlen(filename) + 2 > PATH_MAX) {
+        panic(true, "fopen: Path too long");
+    }
+
+    ret->path[0] = '/';
+
+    strcpy(ret->path + 1, filename);
+
 #if bios == 1
     if (part->pxe) {
         if (!tftp_open(ret, 0, 69, filename)) {

@@ -502,6 +502,8 @@ struct limine_module_response {
 * `modules` - Pointer to an array of `module_count` pointers to
 `struct limine_module` structures.
 
+Note: The first module (module 0) is always the kernel file.
+
 ```c
 struct limine_module {
     void *base;
@@ -514,7 +516,7 @@ struct limine_module {
 
 * `base` - The address of the module.
 * `length` - The size of the module.
-* `path` - The bootloader-specific path of the module.
+* `path` - The path of the module within the volume, with a leading slash.
 * `cmdline` - A command line associated with the module.
 * `file_location` - A pointer to the file location structure for the module.
 

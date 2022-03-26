@@ -120,6 +120,9 @@ bool limine_load(char *config, char *cmdline) {
     if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic(true, "limine: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
+    char *kpath = ext_mem_alloc(strlen(kernel_file->path) + 1);
+    strcpy(kpath, kernel_file->path);
+
     uint8_t *kernel = freadall(kernel_file, MEMMAP_BOOTLOADER_RECLAIMABLE);
 
     size_t kernel_file_size = kernel_file->size;
@@ -369,7 +372,7 @@ FEAT_START
 
     modules[0].base = reported_addr(kernel);
     modules[0].length = kernel_file_size;
-    modules[0].path = reported_addr(kernel_path);
+    modules[0].path = reported_addr(kpath);
     modules[0].cmdline = reported_addr(cmdline);
 
     modules[0].file_location = reported_addr(kl);
@@ -396,7 +399,11 @@ FEAT_START
 
         m->base = reported_addr(freadall(f, MEMMAP_KERNEL_AND_MODULES));
         m->length = f->size;
-        m->path = reported_addr(module_path);
+
+        char *mpath = ext_mem_alloc(strlen(f->path) + 1);
+        strcpy(mpath, f->path);
+        m->path = reported_addr(mpath);
+
         m->cmdline = reported_addr(module_cmdline);
 
         struct limine_file_location *l = ext_mem_alloc(sizeof(struct limine_file_location));

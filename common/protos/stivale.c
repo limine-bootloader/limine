@@ -143,7 +143,7 @@ bool stivale_load(char *config, char *cmdline) {
             if (!loaded_by_anchor) {
                 if (elf64_load(kernel, &entry_point, NULL, &slide,
                                STIVALE_MMAP_KERNEL_AND_MODULES, kaslr, false,
-                               NULL, NULL, false, NULL, NULL))
+                               NULL, NULL, false, NULL, NULL, NULL))
                     panic(true, "stivale: ELF64 load failure");
 
                 ret = elf64_load_section(kernel, &stivale_hdr, ".stivalehdr",

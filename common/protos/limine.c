@@ -146,17 +146,19 @@ bool limine_load(char *config, char *cmdline) {
     struct elf_range *ranges;
     uint64_t ranges_count;
 
+    uint64_t image_size;
+
     if (elf64_load(kernel, &entry_point, NULL, &slide,
                    MEMMAP_KERNEL_AND_MODULES, kaslr, false,
                    &ranges, &ranges_count,
-                   true, &physical_base, &virtual_base)) {
+                   true, &physical_base, &virtual_base, &image_size)) {
         return false;
     }
 
     // Load requests
     requests_count = 0;
     uint64_t common_magic[2] = { LIMINE_COMMON_MAGIC };
-    for (size_t i = 0; i < ALIGN_DOWN(kernel_file_size, 8); i += 8) {
+    for (size_t i = 0; i < ALIGN_DOWN(image_size, 8); i += 8) {
         uint64_t *p = (void *)(uintptr_t)physical_base + i;
 
         if (p[0] != common_magic[0]) {

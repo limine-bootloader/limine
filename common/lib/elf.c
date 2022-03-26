@@ -479,7 +479,7 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
     *_ranges = ranges;
 }
 
-int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_slide, uint32_t alloc_type, bool kaslr, bool use_paddr, struct elf_range **ranges, uint64_t *ranges_count, bool fully_virtual, uint64_t *physical_base, uint64_t *virtual_base) {
+int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_slide, uint32_t alloc_type, bool kaslr, bool use_paddr, struct elf_range **ranges, uint64_t *ranges_count, bool fully_virtual, uint64_t *physical_base, uint64_t *virtual_base, uint64_t *_image_size) {
     struct elf64_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
@@ -548,6 +548,9 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
 
         *physical_base = (uintptr_t)ext_mem_alloc_type_aligned(image_size, alloc_type, max_align);
         *virtual_base = min_vaddr;
+        if (_image_size) {
+            *_image_size = image_size;
+        }
     }
 
     if (!elf64_is_relocatable(elf, &hdr)) {

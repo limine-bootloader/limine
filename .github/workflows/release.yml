@@ -25,9 +25,6 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install git build-essential autoconf automake nasm gcc-mingw-w64 curl mtools -y
 
-      - name: Install musl-gcc
-        run: curl -o musl-1.2.2.tar.gz https://musl.libc.org/releases/musl-1.2.2.tar.gz && tar -xf musl-1.2.2.tar.gz && cd musl-1.2.2 && ./configure --prefix=/usr/local && make && sudo make install
-
       - name: Build the toolchain
         run: ./make_toolchain.sh
 
@@ -46,23 +43,11 @@ jobs:
       - name: Clean limine-s2deploy
         run: rm build/bin/limine-s2deploy
 
-      - name: Build limine-s2deploy-linux-x86_64
-        run: make -C build CC="musl-gcc" CFLAGS="-O2 -pipe" LDFLAGS="-static" limine-s2deploy
-
-      - name: Strip limine-s2deploy-linux-x86_64
-        run: strip build/bin/limine-s2deploy
-
-      - name: Rename limine-s2deploy-linux-x86_64
-        run: mv build/bin/limine-s2deploy build/bin/limine-s2deploy-linux-x86_64
-
       - name: Build limine-s2deploy-win32
         run: make -C build CC="i686-w64-mingw32-gcc" CFLAGS="-O2 -pipe" limine-s2deploy
 
       - name: Strip limine-s2deploy-win32
         run: i686-w64-mingw32-strip build/bin/limine-s2deploy.exe
-
-      - name: Rename limine-s2deploy-win32
-        run: mv build/bin/limine-s2deploy.exe build/bin/limine-s2deploy-win32.exe
 
       - name: Copy LICENSE to bin
         run: cp LICENSE.md build/bin/

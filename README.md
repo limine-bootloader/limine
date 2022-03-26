@@ -61,9 +61,9 @@ fetching the `latest-binary` branch:
 git clone https://github.com/limine-bootloader/limine.git --branch=latest-binary --depth=1
 ```
 
-`limine-s2deploy` binaries are provided for Linux and Windows.
+`limine-s2deploy` binaries are provided for Windows.
 
-In case one wants to rebuild `limine-s2deploy`, simply run `make` in the binary
+In order to rebuild `limine-s2deploy`, simply run `make` in the binary
 release directory.
 
 ## Building the bootloader

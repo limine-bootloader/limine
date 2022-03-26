@@ -49,26 +49,25 @@ static struct limine_file get_file(struct file_handle *file, char *cmdline) {
     if (file->pxe) {
         ret.tftp_ip = file->pxe_ip;
         ret.tftp_port = file->pxe_port;
-        return ret;
-    }
+    } else {
+        struct volume *vol = file->vol;
 
-    struct volume *vol = file->vol;
+        ret.partition_index = vol->partition;
 
-    ret.partition_index = vol->partition;
+        ret.mbr_disk_id = mbr_get_id(vol);
 
-    ret.mbr_disk_id = mbr_get_id(vol);
+        if (vol->guid_valid) {
+            memcpy(&ret.part_uuid, &vol->guid, sizeof(struct limine_uuid));
+        }
 
-    if (vol->guid_valid) {
-        memcpy(&ret.part_uuid, &vol->guid, sizeof(struct limine_uuid));
-    }
+        if (vol->part_guid_valid) {
+            memcpy(&ret.gpt_part_uuid, &vol->part_guid, sizeof(struct limine_uuid));
+        }
 
-    if (vol->part_guid_valid) {
-        memcpy(&ret.gpt_part_uuid, &vol->part_guid, sizeof(struct limine_uuid));
-    }
-
-    struct guid gpt_disk_uuid;
-    if (gpt_get_guid(&gpt_disk_uuid, vol->backing_dev ?: vol) == true) {
-        memcpy(&ret.gpt_disk_uuid, &gpt_disk_uuid, sizeof(struct limine_uuid));
+        struct guid gpt_disk_uuid;
+        if (gpt_get_guid(&gpt_disk_uuid, vol->backing_dev ?: vol) == true) {
+            memcpy(&ret.gpt_disk_uuid, &gpt_disk_uuid, sizeof(struct limine_uuid));
+        }
     }
 
     char *path = ext_mem_alloc(strlen(file->path) + 1);
@@ -374,6 +373,10 @@ FEAT_START
             break;
     }
 
+    if (module_count == 0) {
+        break;
+    }
+
     struct limine_module_response *module_response =
         ext_mem_alloc(sizeof(struct limine_module_response));
 
@@ -453,7 +456,7 @@ FEAT_START
 
 #if defined (__i386__)
     if (stivale2_rt_stack == NULL) {
-        stivale2_rt_stack = ext_mem_alloc(16384);
+        stivale2_rt_stack = ext_mem_alloc(16384) + 16384;
     }
 
     terminal_response->write = (uintptr_t)(void *)stivale2_term_write_entry;

@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-// Misc
+/* Misc */
 
 #ifdef LIMINE_NO_POINTERS
 #  define LIMINE_PTR(TYPE) uint64_t
@@ -31,7 +31,7 @@ struct limine_file_location {
     struct limine_uuid part_uuid;
 };
 
-// Boot info
+/* Boot info */
 
 #define LIMINE_BOOTLOADER_INFO_REQUEST { LIMINE_COMMON_MAGIC, 0xf55038d8e2a1202f, 0x279426fcf5f59740 }
 
@@ -47,7 +47,7 @@ struct limine_bootloader_info_request {
     LIMINE_PTR(struct limine_bootloader_info_response *) response;
 };
 
-// HHDM
+/* HHDM */
 
 #define LIMINE_HHDM_REQUEST { LIMINE_COMMON_MAGIC, 0x48dcf1cb8ad2b852, 0x63984e959a98244b }
 
@@ -62,7 +62,7 @@ struct limine_hhdm_request {
     LIMINE_PTR(struct limine_hhdm_response *) response;
 };
 
-// Framebuffer
+/* Framebuffer */
 
 #define LIMINE_FRAMEBUFFER_REQUEST { LIMINE_COMMON_MAGIC, 0xcbfe81d7dd2d1977, 0x063150319ebc9b71 }
 
@@ -98,7 +98,7 @@ struct limine_framebuffer_request {
     LIMINE_PTR(struct limine_framebuffer_response *) response;
 };
 
-// Terminal
+/* Terminal */
 
 #define LIMINE_TERMINAL_REQUEST { LIMINE_COMMON_MAGIC, 0x0785a0aea5d0750f, 0x1c1936fee0d6cf6e }
 
@@ -119,7 +119,7 @@ struct limine_terminal_request {
     LIMINE_PTR(limine_terminal_callback) callback;
 };
 
-// 5-level paging
+/* 5-level paging */
 
 #define LIMINE_5_LEVEL_PAGING_REQUEST { LIMINE_COMMON_MAGIC, 0x94469551da9b3192, 0xebe5e86db7382888 }
 
@@ -133,7 +133,7 @@ struct limine_5_level_paging_request {
     LIMINE_PTR(struct limine_5_level_paging_response *) response;
 };
 
-// SMP
+/* SMP */
 
 #define LIMINE_SMP_REQUEST { LIMINE_COMMON_MAGIC, 0x95a67b819a1b857e, 0xa0b61b723b6a73e0 }
 
@@ -164,7 +164,7 @@ struct limine_smp_request {
     uint64_t flags;
 };
 
-// Memory map
+/* Memory map */
 
 #define LIMINE_MEMMAP_REQUEST { LIMINE_COMMON_MAGIC, 0x67cf3d9d378a806f, 0xe304acdfc50c3c62 }
 
@@ -195,7 +195,7 @@ struct limine_memmap_request {
     LIMINE_PTR(struct limine_memmap_response *) response;
 };
 
-// Entry point
+/* Entry point */
 
 #define LIMINE_ENTRY_POINT_REQUEST { LIMINE_COMMON_MAGIC, 0x13d86c035a1cd3e1, 0x2b0caa89d8f3026a }
 
@@ -212,7 +212,7 @@ struct limine_entry_point_request {
     LIMINE_PTR(limine_entry_point) entry;
 };
 
-// Module
+/* Module */
 
 #define LIMINE_MODULE_REQUEST { LIMINE_COMMON_MAGIC, 0x3e7e279702be32af, 0xca1c4f3bd1280cee }
 
@@ -236,7 +236,7 @@ struct limine_module_request {
     LIMINE_PTR(struct limine_module_response *) response;
 };
 
-// RSDP
+/* RSDP */
 
 #define LIMINE_RSDP_REQUEST { LIMINE_COMMON_MAGIC, 0xc5e77b6b397e7b43, 0x27637845accdcf3c }
 
@@ -251,7 +251,7 @@ struct limine_rsdp_request {
     LIMINE_PTR(struct limine_rsdp_response *) response;
 };
 
-// SMBIOS
+/* SMBIOS */
 
 #define LIMINE_SMBIOS_REQUEST { LIMINE_COMMON_MAGIC, 0x9e9046f11e095391, 0xaa4a520fefbde5ee }
 
@@ -267,7 +267,7 @@ struct limine_smbios_request {
     LIMINE_PTR(struct limine_smbios_response *) response;
 };
 
-// EFI system table
+/* EFI system table */
 
 #define LIMINE_EFI_SYSTEM_TABLE_REQUEST { LIMINE_COMMON_MAGIC, 0x5ceba5163eaaf6d6, 0x0a6981610cf65fcc }
 
@@ -282,7 +282,7 @@ struct limine_efi_system_table_request {
     LIMINE_PTR(struct limine_efi_system_table_response *) response;
 };
 
-// Boot time
+/* Boot time */
 
 #define LIMINE_BOOT_TIME_REQUEST { LIMINE_COMMON_MAGIC, 0x502746e184c088aa, 0xfbc5ec83e6327893 }
 
@@ -297,7 +297,7 @@ struct limine_boot_time_request {
     LIMINE_PTR(struct limine_boot_time_response *) response;
 };
 
-// Kernel address
+/* Kernel address */
 
 #define LIMINE_KERNEL_ADDRESS_REQUEST { LIMINE_COMMON_MAGIC, 0x71ba76863cc55f63, 0xb2644a48c516a487 }
 

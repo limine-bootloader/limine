@@ -31,7 +31,7 @@ INTERNAL_LD_FLAGS_MULTIBOOT1 := \
 INTERNALCFLAGS  :=       \
 	-I../stivale         \
 	-I.                  \
-	-I../common          \
+	-I..                 \
 	-std=c11             \
 	-ffreestanding       \
 	-fno-stack-protector \

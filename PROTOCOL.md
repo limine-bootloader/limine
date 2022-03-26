@@ -2,13 +2,17 @@
 
 The Limine boot protocol is a modern, minimal, fast, and extensible boot
 protocol, with a focus on backwards and forwards compatibility,
-created from the experienced gained by working on the
+created from the experience gained by working on the
 [stivale boot protocols](https://github.com/stivale).
 
 This file serves as the official centralised collection of features that
 the Limine boot protocol is composed of. Other bootloaders may support extra
 unofficial features, but it is strongly recommended to avoid fragmentation
 and submit new features by opening a pull request to this repository.
+
+The [limine.h](/limine.h) file provides an implementation of all the
+structures and constants described in this document, for the C and C++
+languages.
 
 ## General Notes
 
@@ -121,7 +125,8 @@ with at least the following entries, starting at offset 0:
 
 The IDT is in an undefined state. Kernel must load its own.
 
-IF flag, VM flag, and direction flag are cleared on entry. Other flags undefined.
+IF flag, VM flag, and direction flag are cleared on entry. Other flags
+undefined.
 
 PG is enabled (`cr0`), PE is enabled (`cr0`), PAE is enabled (`cr4`),
 LME is enabled (`EFER`).
@@ -203,6 +208,46 @@ struct limine_hhdm_response {
 
 * `offset` - the virtual address offset of the beginning of the higher half
 direct map.
+
+### Terminal Feature
+
+ID:
+```c
+#define LIMINE_TERMINAL_REQUEST { LIMINE_COMMON_MAGIC, 0x0785a0aea5d0750f, 0x1c1936fee0d6cf6e }
+```
+
+Request:
+```c
+typedef void (*limine_terminal_callback)(uint64_t, uint64_t, uint64_t, uint64_t);
+
+struct limine_terminal_request {
+    uint64_t id[4];
+    uint64_t revision;
+    struct limine_terminal_response *response;
+    limine_terminal_callback callback;
+};
+```
+
+* `callback` - Pointer to the callback function.
+
+Response:
+```c
+typedef void (*limine_terminal_write)(const char *, uint64_t);
+
+struct limine_terminal_response {
+    uint64_t revision;
+    uint32_t columns;
+    uint32_t rows;
+    limine_terminal_write write;
+};
+```
+
+* `columns` and `rows` - Columns and rows provided by the terminal.
+* `write` - Physical pointer to the terminal write() function.
+
+Note: Omitting this request will cause the bootloader to not initialise
+the terminal service. The terminal is further documented in the stivale2
+specification.
 
 ### Framebuffer Feature
 
@@ -344,6 +389,62 @@ processor. This field is unused for the structure describing the bootstrap
 processor.
 * `extra_argument` - A free for use field.
 
+### Memory Map Feature
+
+ID:
+```c
+#define LIMINE_MEMMAP_REQUEST { LIMINE_COMMON_MAGIC, 0x67cf3d9d378a806f, 0xe304acdfc50c3c62 }
+```
+
+Request:
+```c
+struct limine_memmap_request {
+    uint64_t id[4];
+    uint64_t revision;
+    struct limine_memmap_response *response;
+};
+```
+
+Response:
+```c
+struct limine_memmap_response {
+    uint64_t revision;
+    uint64_t entry_count;
+    struct limine_memmap_entry **entries;
+};
+```
+
+* `entry_count` - How many memory map entries are present.
+* `entries` - Pointer to an array of `entry_count` pointers to
+`struct limine_memmap_entry` structures.
+
+```c
+// Constants for `type`
+#define LIMINE_MEMMAP_USABLE                 0
+#define LIMINE_MEMMAP_RESERVED               1
+#define LIMINE_MEMMAP_ACPI_RECLAIMABLE       2
+#define LIMINE_MEMMAP_ACPI_NVS               3
+#define LIMINE_MEMMAP_BAD_MEMORY             4
+#define LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE 5
+#define LIMINE_MEMMAP_KERNEL_AND_MODULES     6
+#define LIMINE_MEMMAP_FRAMEBUFFER            7
+
+struct limine_memmap_entry {
+    uint64_t base;
+    uint64_t length;
+    uint64_t type;
+};
+```
+
+Note: The kernel and modules loaded are not marked as usable memory.
+They are marked as Kernel/Modules. The entries are guaranteed to be sorted by
+base address, lowest to highest. Usable and bootloader reclaimable entries
+are guaranteed to be 4096 byte aligned for both base and length. Usable and
+bootloader reclaimable entries are guaranteed not to overlap with any other
+entry. To the contrary, all non-usable entries (including kernel/modules) are
+not guaranteed any alignment, nor is it guaranteed that they do not overlap
+other entries.
+
 ### Entry Point Feature
 
 ID:
@@ -442,7 +543,8 @@ struct limine_file_location {
 * `revision` - Revision of the `struct limine_file_location` structure.
 * `partition_index` - 1-based partition index of the volume from which the
 module was loaded. If 0, it means invalid or unpartitioned.
-* `tftp_ip` - If non-0, this is the IP of the TFTP server the file was loaded from.
+* `tftp_ip` - If non-0, this is the IP of the TFTP server the file was loaded
+from.
 * `tftp_port` - Likewise, but port.
 * `mbr_disk_id` - If non-0, this is the ID of the disk the module was loaded
 from as reported in its MBR.

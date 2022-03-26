@@ -66,6 +66,7 @@ override INTERNAL_CFLAGS := \
 	-I../freestanding_headers \
 	-I'$(call SHESCAPE,$(BUILDDIR))/..' \
 	-I. \
+	-I.. \
 	-I../stivale \
 	-I'$(call SHESCAPE,$(BUILDDIR))/tinf'
 

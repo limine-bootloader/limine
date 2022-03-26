@@ -570,7 +570,7 @@ failed_to_load_header_section:
 
 #if defined (__i386__)
         if (stivale2_rt_stack == NULL) {
-            stivale2_rt_stack = ext_mem_alloc(8192);
+            stivale2_rt_stack = ext_mem_alloc(8192) + 8192;
         }
 
         tag->term_write = (uintptr_t)(void *)stivale2_term_write_entry;

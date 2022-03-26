@@ -50,7 +50,7 @@ if [ ! -f gcc-$GCCVERSION.tar.gz ]; then
     curl -o gcc-$GCCVERSION.tar.gz https://ftp.gnu.org/gnu/gcc/gcc-$GCCVERSION/gcc-$GCCVERSION.tar.gz
 fi
 if [ ! -f nasm-$NASMVERSION.tar.gz ]; then
-    curl -o nasm-$NASMVERSION.tar.gz https://www.nasm.us/pub/nasm/releasebuilds/$NASMVERSION/nasm-$NASMVERSION.tar.gz
+    curl -o nasm-$NASMVERSION.tar.gz https://limine-bootloader.org/files/misc/nasm-$NASMVERSION.tar.gz
 fi
 
 rm -rf build

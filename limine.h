@@ -20,8 +20,12 @@ struct limine_uuid {
     uint8_t d[8];
 };
 
-struct limine_file_location {
+struct limine_file {
     uint64_t revision;
+    LIMINE_PTR(void *) base;
+    uint64_t length;
+    LIMINE_PTR(char *) path;
+    LIMINE_PTR(char *) cmdline;
     uint64_t partition_index;
     uint32_t tftp_ip;
     uint32_t tftp_port;
@@ -212,22 +216,29 @@ struct limine_entry_point_request {
     LIMINE_PTR(limine_entry_point) entry;
 };
 
+/* Kernel File */
+
+#define LIMINE_KERNEL_FILE_REQUEST { LIMINE_COMMON_MAGIC, 0xad97e90e83f1ed67, 0x31eb5d1c5ff23b69 }
+
+struct limine_kernel_file_response {
+    uint64_t revision;
+    LIMINE_PTR(struct limine_file *) kernel_file;
+};
+
+struct limine_kernel_file_request {
+    uint64_t id[4];
+    uint64_t revision;
+    LIMINE_PTR(struct limine_kernel_file_response *) response;
+};
+
 /* Module */
 
 #define LIMINE_MODULE_REQUEST { LIMINE_COMMON_MAGIC, 0x3e7e279702be32af, 0xca1c4f3bd1280cee }
 
-struct limine_module {
-    LIMINE_PTR(void *) base;
-    uint64_t length;
-    LIMINE_PTR(char *) path;
-    LIMINE_PTR(char *) cmdline;
-    LIMINE_PTR(struct limine_file_location *) file_location;
-};
-
 struct limine_module_response {
     uint64_t revision;
     uint64_t module_count;
-    LIMINE_PTR(struct limine_module **) modules;
+    LIMINE_PTR(struct limine_file **) modules;
 };
 
 struct limine_module_request {

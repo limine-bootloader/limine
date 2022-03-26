@@ -39,8 +39,12 @@ static uint64_t physical_base, virtual_base, slide, direct_map_offset;
 static size_t requests_count;
 static void *requests[MAX_REQUESTS];
 
-static struct limine_file_location get_file_loc(struct file_handle *file) {
-    struct limine_file_location ret = {0};
+static uint64_t reported_addr(void *addr) {
+    return (uint64_t)(uintptr_t)addr + direct_map_offset;
+}
+
+static struct limine_file get_file(struct file_handle *file, char *cmdline) {
+    struct limine_file ret = {0};
 
     if (file->pxe) {
         ret.tftp_ip = file->pxe_ip;
@@ -67,18 +71,17 @@ static struct limine_file_location get_file_loc(struct file_handle *file) {
         memcpy(&ret.gpt_disk_uuid, &gpt_disk_uuid, sizeof(struct limine_uuid));
     }
 
+    char *path = ext_mem_alloc(strlen(file->path) + 1);
+    strcpy(path, file->path);
+    ret.path = reported_addr(path);
+
+    ret.base = reported_addr(freadall(file, MEMMAP_KERNEL_AND_MODULES));
+    ret.length = file->size;
+
+    ret.cmdline = reported_addr(cmdline);
+
     return ret;
 }
-
-static uint64_t reported_addr(void *addr) {
-    return (uint64_t)(uintptr_t)addr + direct_map_offset;
-}
-
-/*
-static uintptr_t get_phys_addr(uint64_t addr) {
-    return physical_base + (addr - virtual_base);
-}
-*/
 
 static void *_get_request(uint64_t id[4]) {
     for (size_t i = 0; i < requests_count; i++) {
@@ -120,17 +123,7 @@ bool limine_load(char *config, char *cmdline) {
     if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic(true, "limine: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
-    char *kpath = ext_mem_alloc(strlen(kernel_file->path) + 1);
-    strcpy(kpath, kernel_file->path);
-
     uint8_t *kernel = freadall(kernel_file, MEMMAP_BOOTLOADER_RECLAIMABLE);
-
-    size_t kernel_file_size = kernel_file->size;
-
-    struct limine_file_location *kl = ext_mem_alloc(sizeof(struct limine_file_location));
-    *kl = get_file_loc(kernel_file);
-
-    fclose(kernel_file);
 
     char *kaslr_s = config_get_value(config, 0, "KASLR");
     bool kaslr = true;
@@ -224,6 +217,10 @@ FEAT_START
         lv5pg_request->response = reported_addr(lv5pg_response);
     }
 FEAT_END
+
+    struct limine_file *kf = ext_mem_alloc(sizeof(struct limine_file));
+    *kf = get_file(kernel_file, cmdline);
+    fclose(kernel_file);
 
     // Entry point feature
 FEAT_START
@@ -348,6 +345,21 @@ FEAT_START
 FEAT_END
 #endif
 
+    // Kernel file
+FEAT_START
+    struct limine_kernel_file_request *kernel_file_request = get_request(LIMINE_KERNEL_FILE_REQUEST);
+    if (kernel_file_request == NULL) {
+        break; // next feature
+    }
+
+    struct limine_kernel_file_response *kernel_file_response =
+        ext_mem_alloc(sizeof(struct limine_kernel_file_response));
+
+    kernel_file_response->kernel_file = reported_addr(kf);
+
+    kernel_file_request->response = reported_addr(kernel_file_response);
+FEAT_END
+
     // Modules
 FEAT_START
     struct limine_module_request *module_request = get_request(LIMINE_MODULE_REQUEST);
@@ -362,30 +374,18 @@ FEAT_START
             break;
     }
 
-    // Module 0 is always the kernel
-    module_count++;
-
     struct limine_module_response *module_response =
         ext_mem_alloc(sizeof(struct limine_module_response));
 
-    struct limine_module *modules = ext_mem_alloc(module_count * sizeof(struct limine_module));
+    struct limine_file *modules = ext_mem_alloc(module_count * sizeof(struct limine_file));
 
-    modules[0].base = reported_addr(kernel);
-    modules[0].length = kernel_file_size;
-    modules[0].path = reported_addr(kpath);
-    modules[0].cmdline = reported_addr(cmdline);
-
-    modules[0].file_location = reported_addr(kl);
-
-    for (size_t i = 1; i < module_count; i++) {
+    for (size_t i = 0; i < module_count; i++) {
         struct conf_tuple conf_tuple =
-                config_get_tuple(config, i - 1,
+                config_get_tuple(config, i,
                                  "MODULE_PATH", "MODULE_CMDLINE");
 
         char *module_path = conf_tuple.value1;
         char *module_cmdline = conf_tuple.value2;
-
-        struct limine_module *m = &modules[i];
 
         if (module_cmdline == NULL) {
             module_cmdline = "";
@@ -397,19 +397,8 @@ FEAT_START
         if ((f = uri_open(module_path)) == NULL)
             panic(true, "limine: Failed to open module with path `%s`. Is the path correct?", module_path);
 
-        m->base = reported_addr(freadall(f, MEMMAP_KERNEL_AND_MODULES));
-        m->length = f->size;
-
-        char *mpath = ext_mem_alloc(strlen(f->path) + 1);
-        strcpy(mpath, f->path);
-        m->path = reported_addr(mpath);
-
-        m->cmdline = reported_addr(module_cmdline);
-
-        struct limine_file_location *l = ext_mem_alloc(sizeof(struct limine_file_location));
-        *l = get_file_loc(f);
-
-        m->file_location = reported_addr(l);
+        struct limine_file *l = &modules[i];
+        *l = get_file(f, module_cmdline);
 
         fclose(f);
     }

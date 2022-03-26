@@ -32,6 +32,11 @@ struct limine_memmap_request memmap_request = {
     .revision = 0, .response = NULL
 };
 
+struct limine_kernel_file_request kf_request = {
+    .id = LIMINE_KERNEL_FILE_REQUEST,
+    .revision = 0, .response = NULL
+};
+
 struct limine_module_request module_request = {
     .id = LIMINE_MODULE_REQUEST,
     .revision = 0, .response = NULL
@@ -95,31 +100,35 @@ static char *get_memmap_type(uint64_t type) {
     }
 }
 
-static void print_file_loc(struct limine_file_location *file_location) {
-    e9_printf("Loc->Revision: %d", file_location->revision);
-    e9_printf("Loc->PartIndex: %d", file_location->partition_index);
-    e9_printf("Loc->TFTPIP: %d.%d.%d.%d",
-              (file_location->tftp_ip & (0xff << 0)) >> 0,
-              (file_location->tftp_ip & (0xff << 8)) >> 8,
-              (file_location->tftp_ip & (0xff << 16)) >> 16,
-              (file_location->tftp_ip & (0xff << 24)) >> 24);
-    e9_printf("Loc->TFTPPort: %d", file_location->tftp_port);
-    e9_printf("Loc->MBRDiskId: %x", file_location->mbr_disk_id);
-    e9_printf("Loc->GPTDiskUUID: %x-%x-%x-%x",
-              file_location->gpt_disk_uuid.a,
-              file_location->gpt_disk_uuid.b,
-              file_location->gpt_disk_uuid.c,
-              *(uint64_t *)file_location->gpt_disk_uuid.d);
-    e9_printf("Loc->GPTPartUUID: %x-%x-%x-%x",
-              file_location->gpt_part_uuid.a,
-              file_location->gpt_part_uuid.b,
-              file_location->gpt_part_uuid.c,
-              *(uint64_t *)file_location->gpt_part_uuid.d);
-    e9_printf("Loc->PartUUID: %x-%x-%x-%x",
-              file_location->part_uuid.a,
-              file_location->part_uuid.b,
-              file_location->part_uuid.c,
-              *(uint64_t *)file_location->part_uuid.d);
+static void print_file(struct limine_file *file) {
+    e9_printf("File->Revision: %d", file->revision);
+    e9_printf("File->Base: %x", file->base);
+    e9_printf("File->Length: %x", file->length);
+    e9_printf("File->Path: %s", file->path);
+    e9_printf("File->CmdLine: %s", file->cmdline);
+    e9_printf("File->PartIndex: %d", file->partition_index);
+    e9_printf("File->TFTPIP: %d.%d.%d.%d",
+              (file->tftp_ip & (0xff << 0)) >> 0,
+              (file->tftp_ip & (0xff << 8)) >> 8,
+              (file->tftp_ip & (0xff << 16)) >> 16,
+              (file->tftp_ip & (0xff << 24)) >> 24);
+    e9_printf("File->TFTPPort: %d", file->tftp_port);
+    e9_printf("File->MBRDiskId: %x", file->mbr_disk_id);
+    e9_printf("File->GPTDiskUUID: %x-%x-%x-%x",
+              file->gpt_disk_uuid.a,
+              file->gpt_disk_uuid.b,
+              file->gpt_disk_uuid.c,
+              *(uint64_t *)file->gpt_disk_uuid.d);
+    e9_printf("File->GPTPartUUID: %x-%x-%x-%x",
+              file->gpt_part_uuid.a,
+              file->gpt_part_uuid.b,
+              file->gpt_part_uuid.c,
+              *(uint64_t *)file->gpt_part_uuid.d);
+    e9_printf("File->PartUUID: %x-%x-%x-%x",
+              file->part_uuid.a,
+              file->part_uuid.b,
+              file->part_uuid.c,
+              *(uint64_t *)file->part_uuid.d);
 }
 
 #define FEAT_START do {
@@ -218,6 +227,17 @@ FEAT_END
 
 FEAT_START
     e9_printf("");
+    if (kf_request.response == NULL) {
+        e9_printf("Kernel file not passed");
+        break;
+    }
+    struct limine_kernel_file_response *kf_response = kf_request.response;
+    e9_printf("Kernel file feature, revision %d", kf_response->revision);
+    print_file(kf_response->kernel_file);
+FEAT_END
+
+FEAT_START
+    e9_printf("");
     if (module_request.response == NULL) {
         e9_printf("Modules not passed");
         break;
@@ -226,14 +246,9 @@ FEAT_START
     e9_printf("Modules feature, revision %d", module_response->revision);
     e9_printf("%d module(s)", module_response->module_count);
     for (size_t i = 0; i < module_response->module_count; i++) {
-        struct limine_module *m = module_response->modules[i];
-
-        e9_printf("Base: %x", m->base);
-        e9_printf("Length: %x", m->length);
-        e9_printf("Path: %s", m->path);
-        e9_printf("Cmdline: %s", m->cmdline);
-
-        print_file_loc(m->file_location);
+        struct limine_file *f = module_response->modules[i];
+        e9_printf("---");
+        print_file(f);
     }
 FEAT_END
 

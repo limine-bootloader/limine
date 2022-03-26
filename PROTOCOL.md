@@ -473,6 +473,33 @@ struct limine_entry_point_response {
 };
 ```
 
+### Kernel File Feature
+
+ID:
+```c
+#define LIMINE_KERNEL_FILE_REQUEST { LIMINE_COMMON_MAGIC, 0xad97e90e83f1ed67, 0x31eb5d1c5ff23b69 }
+```
+
+Request:
+```c
+struct limine_kernel_file_request {
+    uint64_t id[4];
+    uint64_t revision;
+    struct limine_kernel_file_response *response;
+};
+```
+
+Response:
+```c
+struct limine_kernel_file_response {
+    uint64_t revision;
+    struct limine_file *kernel_file;
+};
+```
+
+* `kernel_file` - Pointer to the `struct limine_file` structure (see below)
+for the kernel file.
+
 ### Module Feature
 
 ID:
@@ -494,33 +521,15 @@ Response:
 struct limine_module_response {
     uint64_t revision;
     uint64_t module_count;
-    struct limine_module **modules;
+    struct limine_file **modules;
 };
 ```
 
 * `module_count` - How many modules are present.
 * `modules` - Pointer to an array of `module_count` pointers to
-`struct limine_module` structures.
+`struct limine_file` structures (see below).
 
-Note: The first module (module 0) is always the kernel file.
-
-```c
-struct limine_module {
-    void *base;
-    uint64_t length;
-    char *path;
-    char *cmdline;
-    struct limine_file_location *file_location;
-};
-```
-
-* `base` - The address of the module.
-* `length` - The size of the module.
-* `path` - The path of the module within the volume, with a leading slash.
-* `cmdline` - A command line associated with the module.
-* `file_location` - A pointer to the file location structure for the module.
-
-#### File Location Structure
+### File Structure
 
 ```c
 struct limine_uuid {
@@ -530,8 +539,12 @@ struct limine_uuid {
     uint8_t d[8];
 };
 
-struct limine_file_location {
+struct limine_file {
     uint64_t revision;
+    void *base;
+    uint64_t length;
+    char *path;
+    char *cmdline;
     uint64_t partition_index;
     uint32_t tftp_ip;
     uint32_t tftp_port;
@@ -542,20 +555,24 @@ struct limine_file_location {
 };
 ```
 
-* `revision` - Revision of the `struct limine_file_location` structure.
+* `revision` - Revision of the `struct limine_file` structure.
+* `base` - The address of the file.
+* `length` - The size of the file.
+* `path` - The path of the file within the volume, with a leading slash.
+* `cmdline` - A command line associated with the file.
 * `partition_index` - 1-based partition index of the volume from which the
-module was loaded. If 0, it means invalid or unpartitioned.
+file was loaded. If 0, it means invalid or unpartitioned.
 * `tftp_ip` - If non-0, this is the IP of the TFTP server the file was loaded
 from.
 * `tftp_port` - Likewise, but port.
-* `mbr_disk_id` - If non-0, this is the ID of the disk the module was loaded
+* `mbr_disk_id` - If non-0, this is the ID of the disk the file was loaded
 from as reported in its MBR.
-* `gpt_disk_uuid` - If non-0, this is the UUID of the disk the module was
+* `gpt_disk_uuid` - If non-0, this is the UUID of the disk the file was
 loaded from as reported in its GPT.
-* `gpt_part_uuid` - If non-0, this is the UUID of the partition the module
+* `gpt_part_uuid` - If non-0, this is the UUID of the partition the file
 was loaded from as reported in the GPT.
 * `part_uuid` - If non-0, this is the UUID of the filesystem of the partition
-the module was loaded from.
+the file was loaded from.
 
 ### RSDP Feature
 

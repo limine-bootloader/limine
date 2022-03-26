@@ -368,7 +368,7 @@ Notes: The presence of this request will prompt the bootloader to bootstrap
 the secondary processors. This will not be done if this request is not present.
 
 ```c
-typedef void (*limine_goto_address)(void);
+typedef void (*limine_goto_address)(struct limine_smp_info *);
 
 struct limine_smp_info {
     uint32_t processor_id;

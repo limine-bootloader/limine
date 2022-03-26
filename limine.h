@@ -143,7 +143,7 @@ struct limine_5_level_paging_request {
 
 #define LIMINE_SMP_X2APIC (1 << 0)
 
-typedef void (*limine_goto_address)(void);
+typedef void (*limine_goto_address)(struct limine_smp_info *);
 
 struct limine_smp_info {
     uint32_t processor_id;

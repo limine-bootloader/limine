@@ -633,6 +633,13 @@ static noreturn void _menu(bool timeout_enabled) {
     char *serial_str = config_get_value(NULL, 0, "SERIAL");
     serial = serial_str != NULL && strcmp(serial_str, "yes") == 0;
 
+    char *randomise_mem_str = config_get_value(NULL, 0, "RANDOMISE_MEMORY");
+    if (randomise_mem_str == NULL)
+        randomise_mem_str = config_get_value(NULL, 0, "RANDOMIZE_MEMORY");
+    bool randomise_mem = randomise_mem_str != NULL && strcmp(randomise_mem_str, "yes") == 0;
+    if (randomise_mem)
+        pmm_randomise_memory();
+
     char *editor_enabled_str = config_get_value(NULL, 0, "EDITOR_ENABLED");
     if (editor_enabled_str != NULL) {
         editor_enabled = strcmp(editor_enabled_str, "yes") == 0;

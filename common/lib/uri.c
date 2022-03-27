@@ -238,6 +238,7 @@ struct file_handle *uri_open(char *uri) {
         if (tinf_gzip_uncompress(compressed_fd->fd, src, ret->size)) {
             panic(true, "tinf error");
         }
+        compressed_fd->vol = ret->vol;
         fclose(ret);
         compressed_fd->is_memfile = true;
         ret = compressed_fd;

@@ -141,7 +141,8 @@ Legacy PIC and IO APIC IRQs are all masked.
 If booted by EFI/UEFI, boot services are exited.
 
 `rsp` is set to point to a stack, in bootloader-reserved memory, which is
-at least 16KiB (16384 bytes) in size. An invalid return address of 0 is pushed
+at least 16KiB (16384 bytes) in size, or the size specified in the Stack
+Size Request (see below). An invalid return address of 0 is pushed
 to the stack before jumping to the kernel.
 
 All other general purpose registers are set to 0.
@@ -181,6 +182,32 @@ struct limine_bootloader_info_response {
 
 `name` and `version` are 0-terminated ASCII strings containing the name and
 version of the loading bootloader.
+
+### Stack Size Feature
+
+ID:
+```c
+#define LIMINE_STACK_SIZE_REQUEST { LIMINE_COMMON_MAGIC, 0x224ef0460a8e8926, 0xe1cb0fc25f46ea3d }
+```
+
+Request:
+```c
+struct limine_stack_size_request {
+    uint64_t id[4];
+    uint64_t revision;
+    struct limine_stack_size_response *response;
+    uint64_t stack_size;
+};
+```
+
+* `stack_size` - The requested stack size (also used for SMP processors).
+
+Response:
+```c
+struct limine_stack_size_response {
+    uint64_t revision;
+};
+```
 
 ### HHDM (Higher Half Direct Map) Feature
 
@@ -384,7 +411,7 @@ struct limine_smp_info {
 * `processor_id` - ACPI Processor UID as specified by the MADT
 * `lapic_id` - Local APIC ID of the processor as specified by the MADT
 * `goto_address` - An atomic write to this field causes the parked CPU to
-jump to the written address, on a 16KiB stack. A pointer to the
+jump to the written address, on a 16KiB (or Stack Size Request size) stack. A pointer to the
 `struct limine_smp_info` structure of the CPU is passed in `RDI`. Other than
 that, the CPU state will be the same as described for the bootstrap
 processor. This field is unused for the structure describing the bootstrap

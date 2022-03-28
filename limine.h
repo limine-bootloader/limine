@@ -52,6 +52,21 @@ struct limine_bootloader_info_request {
     LIMINE_PTR(struct limine_bootloader_info_response *) response;
 };
 
+/* Stack size */
+
+#define LIMINE_STACK_SIZE_REQUEST { LIMINE_COMMON_MAGIC, 0x224ef0460a8e8926, 0xe1cb0fc25f46ea3d }
+
+struct limine_stack_size_response {
+    uint64_t revision;
+};
+
+struct limine_stack_size_request {
+    uint64_t id[4];
+    uint64_t revision;
+    LIMINE_PTR(struct limine_stack_size_response *) response;
+    uint64_t stack_size;
+};
+
 /* HHDM */
 
 #define LIMINE_HHDM_REQUEST { LIMINE_COMMON_MAGIC, 0x48dcf1cb8ad2b852, 0x63984e959a98244b }

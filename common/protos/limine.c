@@ -348,6 +348,22 @@ FEAT_START
 FEAT_END
 #endif
 
+    // Stack size
+    uint64_t stack_size = 16384;
+FEAT_START
+    struct limine_stack_size_request *stack_size_request = get_request(LIMINE_STACK_SIZE_REQUEST);
+    if (stack_size_request == NULL) {
+        break; // next feature
+    }
+
+    struct limine_stack_size_response *stack_size_response =
+        ext_mem_alloc(sizeof(struct limine_stack_size_response));
+
+    stack_size = stack_size_request->stack_size;
+
+    stack_size_request->response = reported_addr(stack_size_response);
+FEAT_END
+
     // Kernel file
 FEAT_START
     struct limine_kernel_file_request *kernel_file_request = get_request(LIMINE_KERNEL_FILE_REQUEST);
@@ -553,7 +569,7 @@ FEAT_END
     local_gdt->ptr_hi = local_gdt_base >> 32;
 #endif
 
-    void *stack = ext_mem_alloc(16384) + 16384;
+    void *stack = ext_mem_alloc(stack_size) + stack_size;
 
     pagemap_t pagemap = {0};
     pagemap = stivale_build_pagemap(want_5lv, true, ranges, ranges_count, true,
@@ -585,8 +601,8 @@ FEAT_START
     }
 
     for (size_t i = 0; i < cpu_count; i++) {
-        void *cpu_stack = ext_mem_alloc(16384) + 16384;
-        smp_info[i].stack_addr = reported_addr(cpu_stack + 16384);
+        void *cpu_stack = ext_mem_alloc(stack_size) + stack_size;
+        smp_info[i].stack_addr = reported_addr(cpu_stack + stack_size);
     }
 
     struct limine_smp_response *smp_response =

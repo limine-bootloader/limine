@@ -670,8 +670,11 @@ static noreturn void _menu(bool timeout_enabled) {
     if (randomise_mem_str == NULL)
         randomise_mem_str = config_get_value(NULL, 0, "RANDOMIZE_MEMORY");
     bool randomise_mem = randomise_mem_str != NULL && strcmp(randomise_mem_str, "yes") == 0;
-    if (randomise_mem)
+    if (randomise_mem) {
+        term_vbe(0, 0);
+        early_term = true;
         pmm_randomise_memory();
+    }
 
     char *editor_enabled_str = config_get_value(NULL, 0, "EDITOR_ENABLED");
     if (editor_enabled_str != NULL) {

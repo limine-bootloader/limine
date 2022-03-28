@@ -106,19 +106,19 @@ struct limine_framebuffer_request {
 
 #define LIMINE_TERMINAL_REQUEST { LIMINE_COMMON_MAGIC, 0x0785a0aea5d0750f, 0x1c1936fee0d6cf6e }
 
-#define LIMINE_TERM_CB_DEC 10
-#define LIMINE_TERM_CB_BELL 20
-#define LIMINE_TERM_CB_PRIVATE_ID 30
-#define LIMINE_TERM_CB_STATUS_REPORT 40
-#define LIMINE_TERM_CB_POS_REPORT 50
-#define LIMINE_TERM_CB_KBD_LEDS 60
-#define LIMINE_TERM_CB_MODE 70
-#define LIMINE_TERM_CB_LINUX 80
+#define LIMINE_TERMINAL_CB_DEC 10
+#define LIMINE_TERMINAL_CB_BELL 20
+#define LIMINE_TERMINAL_CB_PRIVATE_ID 30
+#define LIMINE_TERMINAL_CB_STATUS_REPORT 40
+#define LIMINE_TERMINAL_CB_POS_REPORT 50
+#define LIMINE_TERMINAL_CB_KBD_LEDS 60
+#define LIMINE_TERMINAL_CB_MODE 70
+#define LIMINE_TERMINAL_CB_LINUX 80
 
-#define LIMINE_TERM_CTX_SIZE ((uint64_t)(-1))
-#define LIMINE_TERM_CTX_SAVE ((uint64_t)(-2))
-#define LIMINE_TERM_CTX_RESTORE ((uint64_t)(-3))
-#define LIMINE_TERM_FULL_REFRESH ((uint64_t)(-4))
+#define LIMINE_TERMINAL_CTX_SIZE ((uint64_t)(-1))
+#define LIMINE_TERMINAL_CTX_SAVE ((uint64_t)(-2))
+#define LIMINE_TERMINAL_CTX_RESTORE ((uint64_t)(-3))
+#define LIMINE_TERMINAL_FULL_REFRESH ((uint64_t)(-4))
 
 typedef void (*limine_terminal_write)(const char *, uint64_t);
 typedef void (*limine_terminal_callback)(uint64_t, uint64_t, uint64_t, uint64_t);

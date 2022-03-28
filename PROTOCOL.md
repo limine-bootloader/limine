@@ -548,6 +548,7 @@ struct limine_file {
     char *path;
     char *cmdline;
     uint64_t partition_index;
+    uint32_t unused;
     uint32_t tftp_ip;
     uint32_t tftp_port;
     uint32_t mbr_disk_id;

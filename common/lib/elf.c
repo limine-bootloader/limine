@@ -479,7 +479,7 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
     *_ranges = ranges;
 }
 
-int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_slide, uint32_t alloc_type, bool kaslr, bool use_paddr, struct elf_range **ranges, uint64_t *ranges_count, bool fully_virtual, uint64_t *physical_base, uint64_t *virtual_base, uint64_t *_image_size) {
+int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_slide, uint32_t alloc_type, bool kaslr, bool use_paddr, struct elf_range **ranges, uint64_t *ranges_count, bool fully_virtual, uint64_t *physical_base, uint64_t *virtual_base, uint64_t *_image_size, bool *is_reloc) {
     struct elf64_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
@@ -494,6 +494,10 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
 
     if (hdr.machine != ARCH_X86_64) {
         panic(true, "elf: Not an x86_64 ELF file.\n");
+    }
+
+    if (is_reloc) {
+        *is_reloc = false;
     }
 
     uint64_t slide = 0;
@@ -556,6 +560,10 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
     if (!elf64_is_relocatable(elf, &hdr)) {
         simulation = false;
         goto final;
+    } else {
+        if (is_reloc) {
+            *is_reloc = true;
+        }
     }
 
 again:

@@ -142,13 +142,17 @@ bool limine_load(char *config, char *cmdline) {
     uint64_t ranges_count;
 
     uint64_t image_size;
+    bool is_reloc;
 
     if (elf64_load(kernel, &entry_point, NULL, &slide,
                    MEMMAP_KERNEL_AND_MODULES, kaslr, false,
                    &ranges, &ranges_count,
-                   true, &physical_base, &virtual_base, &image_size)) {
+                   true, &physical_base, &virtual_base, &image_size,
+                   &is_reloc)) {
         return false;
     }
+
+    kaslr = is_reloc;
 
     // Load requests
     requests_count = 0;

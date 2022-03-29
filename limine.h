@@ -1,6 +1,10 @@
 #ifndef _LIMINE_H
 #define _LIMINE_H 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 /* Misc */
@@ -355,5 +359,9 @@ struct limine_kernel_address_request {
     uint64_t revision;
     LIMINE_PTR(struct limine_kernel_address_response *) response;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

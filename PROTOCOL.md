@@ -25,7 +25,7 @@ The Limine protocol does not enforce any specific executable format, but
 kernels using formats not supported by the bootloader, or using flat binaries,
 *must* provide a Executable Layout Feature (see below).
 
-Compliant bootloader must support at least the ELF 64-bit executable format.
+Compliant bootloaders must support at least the ELF 64-bit executable format.
 
 ## Features
 

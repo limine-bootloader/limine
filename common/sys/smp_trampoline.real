@@ -141,6 +141,7 @@ bits 64
 parking64:
     mov ebx, ebx
     mov edi, dword [rbx + passed_info.smp_info_struct]
+    add rdi, qword [rbx + passed_info.hhdm]
     mov eax, 1
     lock xchg dword [rbx + passed_info.booted_flag], eax
 

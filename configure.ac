@@ -126,24 +126,24 @@ fi
 
 AC_SUBST(BUILD_UEFI64, [$BUILD_UEFI64])
 
-BUILD_ELTORITO_EFI="default"
+BUILD_CD_EFI="default"
 
-AC_ARG_ENABLE([eltorito-efi],
-    AS_HELP_STRING([--disable-eltorito-efi], [disable limine-eltorito-efi.bin build]),
-    BUILD_ELTORITO_EFI="$enableval")
+AC_ARG_ENABLE([cd-efi],
+    AS_HELP_STRING([--disable-cd-efi], [disable limine-cd-efi.bin build]),
+    BUILD_CD_EFI="$enableval")
 
-if ! test "x$BUILD_ELTORITO_EFI" = "xno"; then
+if ! test "x$BUILD_CD_EFI" = "xno"; then
     AC_CHECK_PROG([MTOOLS_FOUND], [mcopy], [yes])
     if ! test "x$MTOOLS_FOUND" = "xyes"; then
-        if test "x$BUILD_ELTORITO_EFI" = "xyes"; then
-            AC_MSG_ERROR([mtools not found, install mtools to build limine-eltorito-efi.bin])
+        if test "x$BUILD_CD_EFI" = "xyes"; then
+            AC_MSG_ERROR([mtools not found, install mtools to build limine-cd-efi.bin])
         fi
-        AC_MSG_WARN([mtools not found, install mtools to build limine-eltorito-efi.bin])
-        BUILD_ELTORITO_EFI="no"
+        AC_MSG_WARN([mtools not found, install mtools to build limine-cd-efi.bin])
+        BUILD_CD_EFI="no"
     fi
 fi
 
-AC_SUBST(BUILD_ELTORITO_EFI, [$BUILD_ELTORITO_EFI])
+AC_SUBST(BUILD_CD_EFI, [$BUILD_CD_EFI])
 
 AC_ARG_VAR(TOOLCHAIN, [Alternative toolchain prefix [default: limine]])
 test "x$TOOLCHAIN" = "x" && TOOLCHAIN='limine'

@@ -91,7 +91,7 @@ Building the toolchain can be accomplished by running:
 
 In order to build Limine, the following programs have to be installed:
 `GNU make`, `grep`, `sed`, `find`, `awk`, `gzip`, `nasm`, `mtools`
-(optional, necessary to build `limine-eltorito-efi.bin`).
+(optional, necessary to build `limine-cd-efi.bin`).
 Furthermore, either the toolchain must have been built in the previous
 paragraph, or `gcc` or `llvm/clang` must also be installed, alongside
 `GNU binutils`. `nasm` is optional if the toolchain was built in the previous
@@ -180,10 +180,10 @@ with a supported file system.
 
 ### BIOS/UEFI hybrid ISO creation
 In order to create a hybrid ISO with Limine, place the
-`limine-eltorito-efi.bin`, `limine-cd.bin`, `limine.sys`, and `limine.cfg` files
+`limine-cd-efi.bin`, `limine-cd.bin`, `limine.sys`, and `limine.cfg` files
 into a directory which will serve as the root of the created ISO.
 (`limine.sys` and `limine.cfg` must either be in the root or inside a `boot`
-subdirectory; `limine-eltorito-efi.bin` and `limine-cd.bin` can reside
+subdirectory; `limine-cd-efi.bin` and `limine-cd.bin` can reside
 anywhere).
 
 Place any other file you want to be on the final ISO in said directory, then
@@ -191,7 +191,7 @@ run:
 ```
 xorriso -as mkisofs -b <relative path of limine-cd.bin> \
         -no-emul-boot -boot-load-size 4 -boot-info-table \
-        --efi-boot <relative path of limine-eltorito-efi.bin> \
+        --efi-boot <relative path of limine-cd-efi.bin> \
         -efi-boot-part --efi-boot-image --protective-msdos-label \
         <root directory> -o image.iso
 ```
@@ -208,11 +208,11 @@ limine-s2deploy image.iso
 For example, if it was copied in `<root directory>/boot/limine-cd.bin`,
 it would be `boot/limine-cd.bin`.
 
-`<relative path of limine-eltorito-efi.bin>` is the relative path of
-`limine-eltorito-efi.bin` inside the root directory.
+`<relative path of limine-cd-efi.bin>` is the relative path of
+`limine-cd-efi.bin` inside the root directory.
 For example, if it was copied in
-`<root directory>/boot/limine-eltorito-efi.bin`, it would be
-`boot/limine-eltorito-efi.bin`.
+`<root directory>/boot/limine-cd-efi.bin`, it would be
+`boot/limine-cd-efi.bin`.
 
 ### BIOS/PXE boot
 The `limine-pxe.bin` binary is a valid PXE boot image.

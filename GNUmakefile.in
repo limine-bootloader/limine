@@ -16,7 +16,7 @@ NASMESCAPE = $(subst ','"'$(COMMA) \"'\"$(COMMA) '"',$(1))
 override PATH := @PATH@
 export PATH
 
-override BUILD_ELTORITO_EFI := @BUILD_ELTORITO_EFI@
+override BUILD_CD_EFI := @BUILD_CD_EFI@
 override BUILD_PXE := @BUILD_PXE@
 override BUILD_CD := @BUILD_CD@
 override BUILD_LIMINE_S2DEPLOY := @BUILD_LIMINE_S2DEPLOY@
@@ -101,7 +101,7 @@ install-data:
 	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/share/limine'
 	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(DESTDIR)$(PREFIX)/share/limine/' || true
 	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-cd.bin' '$(DESTDIR)$(PREFIX)/share/limine/' || true
-	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' '$(DESTDIR)$(PREFIX)/share/limine/' || true
+	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(DESTDIR)$(PREFIX)/share/limine/' || true
 	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin' '$(DESTDIR)$(PREFIX)/share/limine/' || true
 	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(DESTDIR)$(PREFIX)/share/limine/' || true
 	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(DESTDIR)$(PREFIX)/share/limine/' || true
@@ -140,24 +140,24 @@ ifneq ($(BUILD_LIMINE_S2DEPLOY), no)
 	$(MAKE) limine-s2deploy
 endif
 
-.PHONY: limine-eltorito-efi
-limine-eltorito-efi:
-ifneq ($(BUILD_ELTORITO_EFI), no)
+.PHONY: limine-cd-efi
+limine-cd-efi:
+ifneq ($(BUILD_CD_EFI), no)
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	dd if=/dev/zero of='$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' bs=512 count=2880 2>/dev/null
-	( mformat -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' -f 1440 :: && \
-	  mmd -D s -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' ::/EFI && \
-	  mmd -D s -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' ::/EFI/BOOT && \
+	dd if=/dev/zero of='$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' bs=512 count=2880 2>/dev/null
+	( mformat -i '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' -f 1440 :: && \
+	  mmd -D s -i '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' ::/EFI && \
+	  mmd -D s -i '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' ::/EFI/BOOT && \
 	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/common-uefi64/BOOTX64.EFI' ] && \
-	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/common-uefi64/BOOTX64.EFI' ::/EFI/BOOT ) || true ) && \
+	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/common-uefi64/BOOTX64.EFI' ::/EFI/BOOT ) || true ) && \
 	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/common-uefi32/BOOTIA32.EFI' ] && \
-	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/common-uefi32/BOOTIA32.EFI' ::/EFI/BOOT ) || true ) \
-	) || rm -f '$(call SHESCAPE,$(BINDIR))/limine-eltorito-efi.bin'
+	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/common-uefi32/BOOTIA32.EFI' ::/EFI/BOOT ) || true ) \
+	) || rm -f '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'
 endif
 
 .PHONY: limine-uefi
 limine-uefi: @BUILD_UEFI32@ @BUILD_UEFI64@
-	$(MAKE) limine-eltorito-efi
+	$(MAKE) limine-cd-efi
 
 .PHONY: limine-uefi64
 limine-uefi64: $(call MKESCAPE,$(SRCDIR))/reduced-gnu-efi
@@ -467,7 +467,7 @@ full-hybrid-test:
 	mkdir -p test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
 	sudo cp -rv test/* test_image/boot/
-	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine-eltorito-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label test_image/ -o test.iso
+	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine-cd-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label test_image/ -o test.iso
 	$(BINDIR)/limine-s2deploy test.iso
 	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -cdrom test.iso -debugcon stdio
 	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -hda test.iso -debugcon stdio

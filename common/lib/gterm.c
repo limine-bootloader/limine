@@ -735,6 +735,10 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     if (background == NULL) {
         margin = 0;
         margin_gradient = 0;
+    } else {
+        if (theme_background == NULL) {
+            default_bg = 0x68000000;
+        }
     }
 
     char *theme_margin = config_get_value(NULL, 0, "THEME_MARGIN");

@@ -5,7 +5,7 @@
 #include <mm/vmm.h>
 
 noreturn void stivale_spinup_32(
-                 int bits, bool level5pg, bool enable_nx, uint32_t pagemap_top_lv,
+                 int bits, bool level5pg, bool enable_nx, bool wp, uint32_t pagemap_top_lv,
                  uint32_t entry_point_lo, uint32_t entry_point_hi,
                  uint32_t stivale_struct_lo, uint32_t stivale_struct_hi,
                  uint32_t stack_lo, uint32_t stack_hi,
@@ -34,6 +34,15 @@ noreturn void stivale_spinup_32(
                 "movl %%cr4, %%eax\n\t"
                 "btsl $12, %%eax\n\t"
                 "movl %%eax, %%cr4\n\t"
+                ::: "eax", "memory"
+            );
+        }
+
+        if (wp) {
+            asm volatile (
+                "movl %%cr0, %%eax\n\t"
+                "btsl $16, %%eax\n\t"
+                "movl %%eax, %%cr0\n\t"
                 ::: "eax", "memory"
             );
         }

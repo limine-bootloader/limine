@@ -368,7 +368,7 @@ bool stivale_load(char *config, char *cmdline) {
 
     stivale_spinup(bits, want_5lv, &pagemap,
                    entry_point, REPORTED_ADDR((uint64_t)(uintptr_t)stivale_struct),
-                   stivale_hdr.stack, false, (uintptr_t)local_gdt);
+                   stivale_hdr.stack, false, false, (uintptr_t)local_gdt);
 
     __builtin_unreachable();
 
@@ -487,7 +487,7 @@ noreturn void stivale_spinup_32(
 noreturn void stivale_spinup(
                  int bits, bool level5pg, pagemap_t *pagemap,
                  uint64_t entry_point, uint64_t _stivale_struct, uint64_t stack,
-                 bool enable_nx, uint32_t local_gdt) {
+                 bool enable_nx, bool wp, uint32_t local_gdt) {
 #if bios == 1
     if (bits == 64) {
         // If we're going 64, we might as well call this BIOS interrupt
@@ -509,8 +509,8 @@ noreturn void stivale_spinup(
 
     irq_flush_type = IRQ_PIC_APIC_FLUSH;
 
-    common_spinup(stivale_spinup_32, 11,
-        bits, level5pg, enable_nx, (uint32_t)(uintptr_t)pagemap->top_level,
+    common_spinup(stivale_spinup_32, 12,
+        bits, level5pg, enable_nx, wp, (uint32_t)(uintptr_t)pagemap->top_level,
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
         (uint32_t)_stivale_struct, (uint32_t)(_stivale_struct >> 32),
         (uint32_t)stack, (uint32_t)(stack >> 32), local_gdt);

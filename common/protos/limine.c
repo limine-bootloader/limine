@@ -699,7 +699,7 @@ FEAT_START
                         &cpu_count, &bsp_lapic_id,
                         true, want_5lv,
                         pagemap, smp_request->flags & LIMINE_SMP_X2APIC, true,
-                        direct_map_offset);
+                        direct_map_offset, true);
 
     if (smp_info == NULL) {
         break;
@@ -800,7 +800,7 @@ FEAT_END
     term_runtime = true;
 
     stivale_spinup(64, want_5lv, &pagemap, entry_point, 0,
-                   reported_addr(stack), true, (uintptr_t)local_gdt);
+                   reported_addr(stack), true, true, (uintptr_t)local_gdt);
 
     __builtin_unreachable();
 }

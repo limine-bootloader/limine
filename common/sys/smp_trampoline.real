@@ -101,6 +101,14 @@ smp_trampoline:
     wrmsr
 
   .nonx:
+    test dword [rbx + passed_info.target_mode], (1 << 4)
+    jz .nowp
+
+    mov rax, cr0
+    bts rax, 16
+    mov cr0, rax
+
+  .nowp:
     mov rax, qword [rbx + passed_info.hhdm]
     add qword [rbx + passed_info.gdtr + 2], rax
     lgdt [rbx + passed_info.gdtr]

@@ -765,7 +765,8 @@ have_tm_tag:;
                             &cpu_count, &bsp_lapic_id,
                             bits == 64, want_5lv,
                             pagemap, smp_hdr_tag->flags & 1, want_pmrs,
-                            stivale2_hdr.flags & (1 << 1) ? direct_map_offset : 0);
+                            stivale2_hdr.flags & (1 << 1) ? direct_map_offset : 0,
+                            want_pmrs);
 
         if (smp_info != NULL) {
             tag->tag.identifier = STIVALE2_STRUCT_TAG_SMP_ID;
@@ -833,7 +834,7 @@ have_tm_tag:;
 
     stivale_spinup(bits, want_5lv, &pagemap, entry_point,
                    REPORTED_ADDR((uint64_t)(uintptr_t)stivale2_struct),
-                   stivale2_hdr.stack, want_pmrs, (uintptr_t)local_gdt);
+                   stivale2_hdr.stack, want_pmrs, want_pmrs, (uintptr_t)local_gdt);
 
     __builtin_unreachable();
 

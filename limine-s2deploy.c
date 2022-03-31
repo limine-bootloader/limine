@@ -135,6 +135,44 @@ static uint32_t crc32(void *_stream, size_t len) {
     return ret;
 }
 
+static bool bigendian = false;
+
+static uint16_t endswap16(uint16_t value) {
+    uint16_t ret = 0;
+    ret |= (value >> 8) & 0x00ff;
+    ret |= (value << 8) & 0xff00;
+    return ret;
+}
+
+static uint32_t endswap32(uint32_t value) {
+    uint32_t ret = 0;
+    ret |= (value >> 24) & 0x000000ff;
+    ret |= (value >> 8)  & 0x0000ff00;
+    ret |= (value << 8)  & 0x00ff0000;
+    ret |= (value << 24) & 0xff000000;
+    return ret;
+}
+
+static uint64_t endswap64(uint64_t value) {
+    uint64_t ret = 0;
+    ret |= (value >> 56) & 0x00000000000000ff;
+    ret |= (value >> 40) & 0x000000000000ff00;
+    ret |= (value >> 24) & 0x0000000000ff0000;
+    ret |= (value >> 8)  & 0x00000000ff000000;
+    ret |= (value << 8)  & 0x000000ff00000000;
+    ret |= (value << 24) & 0x0000ff0000000000;
+    ret |= (value << 40) & 0x00ff000000000000;
+    ret |= (value << 56) & 0xff00000000000000;
+    return ret;
+}
+
+#define ENDSWAP(VALUE) (bigendian ? (                    \
+    sizeof(VALUE) == 1 ? (VALUE)          :              \
+    sizeof(VALUE) == 2 ? endswap16(VALUE) :              \
+    sizeof(VALUE) == 4 ? endswap32(VALUE) :              \
+    sizeof(VALUE) == 8 ? endswap64(VALUE) : (abort(), 1) \
+) : (VALUE))
+
 static enum {
     CACHE_CLEAN,
     CACHE_DIRTY
@@ -285,6 +323,10 @@ int main(int argc, char *argv[]) {
     size_t   bootloader_file_size = sizeof(_binary_limine_hdd_bin_data);
     uint8_t  orig_mbr[70], timestamp[6];
 
+    uint32_t endcheck = 0x12345678;
+    uint8_t endbyte = *((uint8_t *)&endcheck);
+    bigendian = endbyte == 0x12;
+
     if (argc < 2) {
         printf("Usage: %s <device> [GPT partition index]\n", argv[0]);
 #ifdef IS_WINDOWS
@@ -332,8 +374,8 @@ int main(int argc, char *argv[]) {
     struct gpt_table_header secondary_gpt_header;
     if (gpt) {
         fprintf(stderr, "Secondary header at LBA 0x%" PRIx64 ".\n",
-                gpt_header.alternate_lba);
-        device_read(&secondary_gpt_header, lb_size * gpt_header.alternate_lba,
+                ENDSWAP(gpt_header.alternate_lba));
+        device_read(&secondary_gpt_header, lb_size * ENDSWAP(gpt_header.alternate_lba),
               sizeof(struct gpt_table_header));
         if (!strncmp(secondary_gpt_header.signature, "EFI PART", 8)) {
             fprintf(stderr, "Secondary header valid.\n");
@@ -348,71 +390,78 @@ int main(int argc, char *argv[]) {
         // Do all sanity checks on MBR
         mbr = 1;
 
-        uint16_t hint = 0;
-        device_read(&hint, 218, sizeof(uint16_t));
-        if (hint != 0) {
+        uint8_t hint8 = 0;
+        uint16_t hint16 = 0;
+        device_read(&hint16, 218, sizeof(uint16_t));
+        hint16 = ENDSWAP(hint16);
+        if (hint16 != 0) {
             if (!force_mbr) {
                 mbr = 0;
             } else {
-                hint = 0;
-                device_write(&hint, 218, sizeof(uint16_t));
+                hint16 = 0;
+                hint16 = ENDSWAP(hint16);
+                device_write(&hint16, 218, sizeof(uint16_t));
             }
         }
 
-        device_read(&hint, 444, sizeof(uint16_t));
-        if (hint != 0 && hint != 0x5a5a) {
+        device_read(&hint16, 444, sizeof(uint16_t));
+        hint16 = ENDSWAP(hint16);
+        if (hint16 != 0 && hint16 != 0x5a5a) {
             if (!force_mbr) {
                 mbr = 0;
             } else {
-                hint = 0;
-                device_write(&hint, 444, sizeof(uint16_t));
+                hint16 = 0;
+                hint16 = ENDSWAP(hint16);
+                device_write(&hint16, 444, sizeof(uint16_t));
             }
         }
 
-        device_read(&hint, 510, sizeof(uint16_t));
-        if (hint != 0xaa55) {
+        device_read(&hint16, 510, sizeof(uint16_t));
+        hint16 = ENDSWAP(hint16);
+        if (hint16 != 0xaa55) {
             if (!force_mbr) {
                 mbr = 0;
             } else {
-                hint = 0xaa55;
-                device_write(&hint, 510, sizeof(uint16_t));
+                hint16 = 0xaa55;
+                hint16 = ENDSWAP(hint16);
+                device_write(&hint16, 510, sizeof(uint16_t));
             }
         }
 
-        device_read(&hint, 446, sizeof(uint8_t));
-        if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80) {
+        device_read(&hint8, 446, sizeof(uint8_t));
+        if (hint8 != 0x00 && hint8 != 0x80) {
             if (!force_mbr) {
                 mbr = 0;
             } else {
-                hint = (uint8_t)hint & 0x80 ? 0x80 : 0x00;
-                device_write(&hint, 446, sizeof(uint8_t));
+                hint8 = hint8 & 0x80 ? 0x80 : 0x00;
+                device_write(&hint8, 446, sizeof(uint8_t));
             }
         }
-        device_read(&hint, 462, sizeof(uint8_t));
-        if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80) {
+        device_read(&hint8, 462, sizeof(uint8_t));
+        if (hint8 != 0x00 && hint8 != 0x80) {
             if (!force_mbr) {
                 mbr = 0;
             } else {
-                hint = (uint8_t)hint & 0x80 ? 0x80 : 0x00;
-                device_write(&hint, 462, sizeof(uint8_t));
+                hint8 = hint8 & 0x80 ? 0x80 : 0x00;
+                device_write(&hint8, 462, sizeof(uint8_t));
             }
         }
-        device_read(&hint, 478, sizeof(uint8_t));
-        if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80) {
+        device_read(&hint8, 478, sizeof(uint8_t));
+        if (hint8 != 0x00 && hint8 != 0x80) {
             if (!force_mbr) {
                 mbr = 0;
             } else {
-                hint = (uint8_t)hint & 0x80 ? 0x80 : 0x00;
-                device_write(&hint, 478, sizeof(uint8_t));
+                hint8 = hint8 & 0x80 ? 0x80 : 0x00;
+                device_write(&hint8, 478, sizeof(uint8_t));
             }
         }
-        device_read(&hint, 494, sizeof(uint8_t));
-        if ((uint8_t)hint != 0x00 && (uint8_t)hint != 0x80) {
+        device_read(&hint8, 494, sizeof(uint8_t));
+        if (hint8 != 0x00 && hint8 != 0x80) {
             if (!force_mbr) {
                 mbr = 0;
             } else {
-                hint = (uint8_t)hint & 0x80 ? 0x80 : 0x00;
-                device_write(&hint, 494, sizeof(uint8_t));
+                hint8 = hint8 & 0x80 ? 0x80 : 0x00;
+                device_write(&hint8, 494, sizeof(uint8_t));
             }
         }
 
@@ -435,13 +484,15 @@ int main(int argc, char *argv[]) {
                 device_write(hintc, 54, 5);
             }
         }
-        device_read(&hint, 1080, sizeof(uint16_t));
-        if (hint == 0xef53) {
+        device_read(&hint16, 1080, sizeof(uint16_t));
+        hint16 = ENDSWAP(hint16);
+        if (hint16 == 0xef53) {
             if (!force_mbr) {
                 mbr = 0;
             } else {
-                hint = 0;
-                device_write(&hint, 1080, sizeof(uint16_t));
+                hint16 = 0;
+                hint16 = ENDSWAP(hint16);
+                device_write(&hint16, 1080, sizeof(uint16_t));
             }
         }
     }
@@ -471,14 +522,14 @@ int main(int argc, char *argv[]) {
             uint32_t partition_num;
             sscanf(argv[2], "%" SCNu32, &partition_num);
             partition_num--;
-            if (partition_num > gpt_header.number_of_partition_entries) {
+            if (partition_num > ENDSWAP(gpt_header.number_of_partition_entries)) {
                 fprintf(stderr, "ERROR: Partition number is too large.\n");
                 goto cleanup;
             }
 
             struct gpt_entry gpt_entry;
             device_read(&gpt_entry,
-                (gpt_header.partition_entry_lba * lb_size)
+                (ENDSWAP(gpt_header.partition_entry_lba) * lb_size)
                 + (partition_num * sizeof(struct gpt_entry)),
                 sizeof(struct gpt_entry));
 
@@ -490,7 +541,7 @@ int main(int argc, char *argv[]) {
 
             fprintf(stderr, "GPT partition specified. Deploying there instead of embedding.\n");
 
-            stage2_loc_a = gpt_entry.starting_lba * lb_size;
+            stage2_loc_a = ENDSWAP(gpt_entry.starting_lba) * lb_size;
             stage2_loc_b = stage2_loc_a + stage2_size_a;
             if (stage2_loc_b & (lb_size - 1))
                 stage2_loc_b = (stage2_loc_b + lb_size) & ~(lb_size - 1);
@@ -498,10 +549,10 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "GPT partition NOT specified. Attempting GPT embedding.\n");
 
             int64_t max_partition_entry_used = -1;
-            for (int64_t i = 0; i < (int64_t)gpt_header.number_of_partition_entries; i++) {
+            for (int64_t i = 0; i < (int64_t)ENDSWAP(gpt_header.number_of_partition_entries); i++) {
                 struct gpt_entry gpt_entry;
                 device_read(&gpt_entry,
-                    (gpt_header.partition_entry_lba * lb_size)
+                    (ENDSWAP(gpt_header.partition_entry_lba) * lb_size)
                       + (i * sizeof(struct gpt_entry)),
                     sizeof(struct gpt_entry));
 
@@ -512,17 +563,17 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            stage2_loc_a  = (gpt_header.partition_entry_lba + 32) * lb_size;
+            stage2_loc_a  = (ENDSWAP(gpt_header.partition_entry_lba) + 32) * lb_size;
             stage2_loc_a -= stage2_size_a;
             stage2_loc_a &= ~(lb_size - 1);
-            stage2_loc_b  = (secondary_gpt_header.partition_entry_lba + 32) * lb_size;
+            stage2_loc_b  = (ENDSWAP(secondary_gpt_header.partition_entry_lba) + 32) * lb_size;
             stage2_loc_b -= stage2_size_b;
             stage2_loc_b &= ~(lb_size - 1);
 
             size_t partition_entries_per_lb =
-                lb_size / gpt_header.size_of_partition_entry;
+                lb_size / ENDSWAP(gpt_header.size_of_partition_entry);
             size_t new_partition_array_lba_size =
-                stage2_loc_a / lb_size - gpt_header.partition_entry_lba;
+                stage2_loc_a / lb_size - ENDSWAP(gpt_header.partition_entry_lba);
             size_t new_partition_entry_count =
                 new_partition_array_lba_size * partition_entries_per_lb;
 
@@ -534,51 +585,53 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "New maximum count of partition entries: %zu.\n", new_partition_entry_count);
 
             // Zero out unused partitions
-            void *empty = calloc(1, gpt_header.size_of_partition_entry);
+            void *empty = calloc(1, ENDSWAP(gpt_header.size_of_partition_entry));
             for (size_t i = max_partition_entry_used + 1; i < new_partition_entry_count; i++) {
                 device_write(empty,
-                    gpt_header.partition_entry_lba * lb_size + i * gpt_header.size_of_partition_entry,
-                    gpt_header.size_of_partition_entry);
+                    ENDSWAP(gpt_header.partition_entry_lba) * lb_size + i * ENDSWAP(gpt_header.size_of_partition_entry),
+                    ENDSWAP(gpt_header.size_of_partition_entry));
             }
             for (size_t i = max_partition_entry_used + 1; i < new_partition_entry_count; i++) {
                 device_write(empty,
-                    secondary_gpt_header.partition_entry_lba * lb_size + i * secondary_gpt_header.size_of_partition_entry,
-                    secondary_gpt_header.size_of_partition_entry);
+                    ENDSWAP(secondary_gpt_header.partition_entry_lba) * lb_size + i * ENDSWAP(secondary_gpt_header.size_of_partition_entry),
+                    ENDSWAP(secondary_gpt_header.size_of_partition_entry));
             }
             free(empty);
 
             uint8_t *partition_array =
-                malloc(new_partition_entry_count * gpt_header.size_of_partition_entry);
+                malloc(new_partition_entry_count * ENDSWAP(gpt_header.size_of_partition_entry));
             if (partition_array == NULL) {
                 perror("ERROR");
                 goto cleanup;
             }
 
             device_read(partition_array,
-                  gpt_header.partition_entry_lba * lb_size,
-                  new_partition_entry_count * gpt_header.size_of_partition_entry);
+                  ENDSWAP(gpt_header.partition_entry_lba) * lb_size,
+                  new_partition_entry_count * ENDSWAP(gpt_header.size_of_partition_entry));
 
             uint32_t crc32_partition_array =
                 crc32(partition_array,
-                      new_partition_entry_count * gpt_header.size_of_partition_entry);
+                      new_partition_entry_count * ENDSWAP(gpt_header.size_of_partition_entry));
 
             free(partition_array);
 
-            gpt_header.partition_entry_array_crc32 = crc32_partition_array;
-            gpt_header.number_of_partition_entries = new_partition_entry_count;
+            gpt_header.partition_entry_array_crc32 = ENDSWAP(crc32_partition_array);
+            gpt_header.number_of_partition_entries = ENDSWAP(new_partition_entry_count);
             gpt_header.crc32 = 0;
             gpt_header.crc32 = crc32(&gpt_header, 92);
+            gpt_header.crc32 = ENDSWAP(gpt_header.crc32);
             device_write(&gpt_header,
                          lb_size,
                          sizeof(struct gpt_table_header));
 
-            secondary_gpt_header.partition_entry_array_crc32 = crc32_partition_array;
+            secondary_gpt_header.partition_entry_array_crc32 = ENDSWAP(crc32_partition_array);
             secondary_gpt_header.number_of_partition_entries =
-                new_partition_entry_count;
+                ENDSWAP(new_partition_entry_count);
             secondary_gpt_header.crc32 = 0;
             secondary_gpt_header.crc32 = crc32(&secondary_gpt_header, 92);
+            secondary_gpt_header.crc32 = ENDSWAP(secondary_gpt_header.crc32);
             device_write(&secondary_gpt_header,
-                         lb_size * gpt_header.alternate_lba,
+                         lb_size * ENDSWAP(gpt_header.alternate_lba),
                          sizeof(struct gpt_table_header));
         }
     } else {
@@ -603,9 +656,13 @@ int main(int argc, char *argv[]) {
                  stage2_loc_b, stage2_size - stage2_size_a);
 
     // Hardcode in the bootsector the location of stage 2 halves
+    stage2_size_a = ENDSWAP(stage2_size_a);
     device_write(&stage2_size_a, 0x1a4 + 0,  sizeof(uint16_t));
+    stage2_size_b = ENDSWAP(stage2_size_b);
     device_write(&stage2_size_b, 0x1a4 + 2,  sizeof(uint16_t));
+    stage2_loc_a = ENDSWAP(stage2_loc_a);
     device_write(&stage2_loc_a,  0x1a4 + 4,  sizeof(uint64_t));
+    stage2_loc_b = ENDSWAP(stage2_loc_b);
     device_write(&stage2_loc_b,  0x1a4 + 12, sizeof(uint64_t));
 
     // Write back timestamp

@@ -102,8 +102,8 @@ static char *get_memmap_type(uint64_t type) {
 
 static void print_file(struct limine_file *file) {
     e9_printf("File->Revision: %d", file->revision);
-    e9_printf("File->Base: %x", file->base);
-    e9_printf("File->Length: %x", file->length);
+    e9_printf("File->Address: %x", file->address);
+    e9_printf("File->Size: %x", file->size);
     e9_printf("File->Path: %s", file->path);
     e9_printf("File->CmdLine: %s", file->cmdline);
     e9_printf("File->PartIndex: %d", file->partition_index);

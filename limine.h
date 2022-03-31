@@ -26,8 +26,8 @@ struct limine_uuid {
 
 struct limine_file {
     uint64_t revision;
-    LIMINE_PTR(void *) base;
-    uint64_t length;
+    LIMINE_PTR(void *) address;
+    uint64_t size;
     LIMINE_PTR(char *) path;
     LIMINE_PTR(char *) cmdline;
     uint64_t partition_index;

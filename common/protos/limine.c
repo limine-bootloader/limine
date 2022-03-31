@@ -74,8 +74,8 @@ static struct limine_file get_file(struct file_handle *file, char *cmdline) {
     strcpy(path, file->path);
     ret.path = reported_addr(path);
 
-    ret.base = reported_addr(freadall(file, MEMMAP_KERNEL_AND_MODULES));
-    ret.length = file->size;
+    ret.address = reported_addr(freadall(file, MEMMAP_KERNEL_AND_MODULES));
+    ret.size = file->size;
 
     ret.cmdline = reported_addr(cmdline);
 

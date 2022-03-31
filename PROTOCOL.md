@@ -632,8 +632,8 @@ struct limine_uuid {
 
 struct limine_file {
     uint64_t revision;
-    void *base;
-    uint64_t length;
+    void *address;
+    uint64_t size;
     char *path;
     char *cmdline;
     uint64_t partition_index;
@@ -648,8 +648,8 @@ struct limine_file {
 ```
 
 * `revision` - Revision of the `struct limine_file` structure.
-* `base` - The address of the file.
-* `length` - The size of the file.
+* `address` - The address of the file.
+* `size` - The size of the file.
 * `path` - The path of the file within the volume, with a leading slash.
 * `cmdline` - A command line associated with the file.
 * `partition_index` - 1-based partition index of the volume from which the

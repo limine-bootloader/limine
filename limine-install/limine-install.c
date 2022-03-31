@@ -161,11 +161,11 @@ static uint64_t endswap64(uint64_t value) {
     return ret;
 }
 
-#define ENDSWAP(VALUE) (bigendian ? (                     \
-    sizeof(VALUE) == 8  ? (VALUE)          :              \
-    sizeof(VALUE) == 16 ? endswap16(VALUE) :              \
-    sizeof(VALUE) == 32 ? endswap32(VALUE) :              \
-    sizeof(VALUE) == 64 ? endswap64(VALUE) : (abort(), 1) \
+#define ENDSWAP(VALUE) (bigendian ? (                    \
+    sizeof(VALUE) == 1 ? (VALUE)          :              \
+    sizeof(VALUE) == 2 ? endswap16(VALUE) :              \
+    sizeof(VALUE) == 4 ? endswap32(VALUE) :              \
+    sizeof(VALUE) == 8 ? endswap64(VALUE) : (abort(), 1) \
 ) : (VALUE))
 
 static enum {
@@ -623,7 +623,7 @@ int main(int argc, char *argv[]) {
             secondary_gpt_header.crc32 = crc32(&secondary_gpt_header, 92);
             secondary_gpt_header.crc32 = ENDSWAP(secondary_gpt_header.crc32);
             device_write(&secondary_gpt_header,
-                         lb_size * gpt_header.alternate_lba,
+                         lb_size * ENDSWAP(gpt_header.alternate_lba),
                          sizeof(struct gpt_table_header));
         }
     } else {

@@ -103,7 +103,8 @@ extern void (*term_full_refresh)(void);
 #define TERM_CTX_RESTORE ((uint64_t)(-3))
 #define TERM_FULL_REFRESH ((uint64_t)(-4))
 
-extern void (*term_callback)(uint64_t, uint64_t, uint64_t, uint64_t);
+extern uint64_t term_arg;
+extern void (*term_callback)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 
 extern bool term_autoflush;
 

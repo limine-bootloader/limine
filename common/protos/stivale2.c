@@ -73,7 +73,7 @@
 extern symbol stivale2_term_write_entry;
 void *stivale2_rt_stack = NULL;
 uint64_t stivale2_term_callback_ptr = 0;
-void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t);
+void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 #endif
 
 bool stivale2_load(char *config, char *cmdline) {

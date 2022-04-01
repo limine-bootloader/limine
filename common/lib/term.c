@@ -292,7 +292,8 @@ void (*term_context_save)(uint64_t ptr);
 void (*term_context_restore)(uint64_t ptr);
 void (*term_full_refresh)(void);
 
-void (*term_callback)(uint64_t, uint64_t, uint64_t, uint64_t) = NULL;
+uint64_t term_arg = 0;
+void (*term_callback)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) = NULL;
 
 struct term_context term_context;
 
@@ -669,7 +670,11 @@ static void dec_private_parse(uint8_t c) {
     }
 
     if (term_callback != NULL) {
-        term_callback(TERM_CB_DEC, esc_values_i, (uintptr_t)esc_values, c);
+        if (term_arg != 0) {
+            term_callback(term_arg, TERM_CB_DEC, esc_values_i, (uintptr_t)esc_values, c);
+        } else {
+            term_callback(TERM_CB_DEC, esc_values_i, (uintptr_t)esc_values, c, 0);
+        }
     }
 }
 
@@ -679,7 +684,11 @@ static void linux_private_parse(void) {
     }
 
     if (term_callback != NULL) {
-        term_callback(TERM_CB_LINUX, esc_values_i, (uintptr_t)esc_values, 0);
+        if (term_arg != 0) {
+            term_callback(term_arg, TERM_CB_LINUX, esc_values_i, (uintptr_t)esc_values, 0);
+        } else {
+            term_callback(TERM_CB_LINUX, esc_values_i, (uintptr_t)esc_values, 0, 0);
+        }
     }
 }
 
@@ -705,7 +714,11 @@ static void mode_toggle(uint8_t c) {
     }
 
     if (term_callback != NULL) {
-        term_callback(TERM_CB_MODE, esc_values_i, (uintptr_t)esc_values, c);
+        if (term_arg != 0) {
+            term_callback(term_arg, TERM_CB_MODE, esc_values_i, (uintptr_t)esc_values, c);
+        } else {
+            term_callback(TERM_CB_MODE, esc_values_i, (uintptr_t)esc_values, c, 0);
+        }
     }
 }
 
@@ -819,7 +832,11 @@ static void control_sequence_parse(uint8_t c) {
             break;
         case 'c':
             if (term_callback != NULL) {
-                term_callback(TERM_CB_PRIVATE_ID, 0, 0, 0);
+                if (term_arg != 0) {
+                    term_callback(term_arg, TERM_CB_PRIVATE_ID, 0, 0, 0);
+                } else {
+                    term_callback(TERM_CB_PRIVATE_ID, 0, 0, 0, 0);
+                }
             }
             break;
         case 'd':
@@ -849,19 +866,31 @@ static void control_sequence_parse(uint8_t c) {
             switch (esc_values[0]) {
                 case 5:
                     if (term_callback != NULL) {
-                        term_callback(TERM_CB_STATUS_REPORT, 0, 0, 0);
+                        if (term_arg != 0) {
+                            term_callback(term_arg, TERM_CB_STATUS_REPORT, 0, 0, 0);
+                        } else {
+                            term_callback(TERM_CB_STATUS_REPORT, 0, 0, 0, 0);
+                        }
                     }
                     break;
                 case 6:
                     if (term_callback != NULL) {
-                        term_callback(TERM_CB_POS_REPORT, x + 1, y + 1, 0);
+                        if (term_arg != 0) {
+                            term_callback(term_arg, TERM_CB_POS_REPORT, x + 1, y + 1, 0);
+                        } else {
+                            term_callback(TERM_CB_POS_REPORT, x + 1, y + 1, 0, 0);
+                        }
                     }
                     break;
             }
             break;
         case 'q':
             if (term_callback != NULL) {
-                term_callback(TERM_CB_KBD_LEDS, esc_values[0], 0, 0);
+                if (term_arg != 0) {
+                    term_callback(term_arg, TERM_CB_KBD_LEDS, esc_values[0], 0, 0);
+                } else {
+                    term_callback(TERM_CB_KBD_LEDS, esc_values[0], 0, 0, 0);
+                }
             }
             break;
         case 'J':
@@ -1066,7 +1095,11 @@ is_csi:
             break;
         case 'Z':
             if (term_callback != NULL) {
-                term_callback(TERM_CB_PRIVATE_ID, 0, 0, 0);
+                if (term_arg != 0) {
+                    term_callback(term_arg, TERM_CB_PRIVATE_ID, 0, 0, 0);
+                } else {
+                    term_callback(TERM_CB_PRIVATE_ID, 0, 0, 0, 0);
+                }
             }
             break;
         case '(':
@@ -1185,7 +1218,11 @@ void term_putchar(uint8_t c) {
         case '\a':
             // The bell is handled by the kernel
             if (term_callback != NULL) {
-                term_callback(TERM_CB_BELL, 0, 0, 0);
+                if (term_arg != 0) {
+                    term_callback(term_arg, TERM_CB_BELL, 0, 0, 0);
+                } else {
+                    term_callback(TERM_CB_BELL, 0, 0, 0, 0);
+                }
             }
             return;
         case 14:

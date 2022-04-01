@@ -43,6 +43,7 @@ bits 64
     mov rsi, [rbp + 16]
     mov rdx, [rbp + 24]
     mov rcx, [rbp + 32]
+    mov r8, [rbp + 40]
 
     call .get_got
   .get_got:

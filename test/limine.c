@@ -138,7 +138,7 @@ extern char kernel_start[];
 
 static void limine_main(void) {
     if (_terminal_request.response) {
-        stivale2_print = _terminal_request.response->write;
+        stivale2_print = _terminal_request.response->terminals[0]->write;
     }
 
     e9_printf("\nWe're alive");
@@ -323,9 +323,14 @@ FEAT_START
     }
     struct limine_terminal_response *term_response = _terminal_request.response;
     e9_printf("Terminal feature, revision %d", term_response->revision);
-    e9_printf("Columns: %d", term_response->columns);
-    e9_printf("Rows: %d", term_response->rows);
-    e9_printf("Write function at: %x", term_response->write);
+    e9_printf("%d terminal(s)", term_response->terminal_count);
+    for (size_t i = 0; i < term_response->terminal_count; i++) {
+        struct limine_terminal *terminal = term_response->terminals[i];
+        e9_printf("Columns: %d", terminal->columns);
+        e9_printf("Rows: %d", terminal->rows);
+        e9_printf("Using framebuffer: %x", terminal->framebuffer);
+        e9_printf("Write function at: %x", terminal->write);
+    }
 FEAT_END
 
     for (;;);

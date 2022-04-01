@@ -108,7 +108,7 @@ static void *_get_request(uint64_t id[4]) {
 extern symbol stivale2_term_write_entry;
 extern void *stivale2_rt_stack;
 extern uint64_t stivale2_term_callback_ptr;
-void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t);
+void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 #endif
 
 bool limine_load(char *config, char *cmdline) {
@@ -552,6 +552,7 @@ FEAT_END
     struct fb_info fb;
 
     // Terminal feature
+    uint64_t *term_fb_ptr = NULL;
 FEAT_START
     struct limine_terminal_request *terminal_request = get_request(LIMINE_TERMINAL_REQUEST);
     if (terminal_request == NULL) {
@@ -560,6 +561,8 @@ FEAT_START
 
     struct limine_terminal_response *terminal_response =
         ext_mem_alloc(sizeof(struct limine_terminal_response));
+
+    struct limine_terminal *terminal = ext_mem_alloc(sizeof(struct limine_terminal));
 
     quiet = false;
     serial = false;
@@ -579,18 +582,28 @@ FEAT_START
     term_callback = (void *)terminal_request->callback;
 #endif
 
+    term_arg = reported_addr(terminal);
+
 #if defined (__i386__)
     if (stivale2_rt_stack == NULL) {
         stivale2_rt_stack = ext_mem_alloc(16384) + 16384;
     }
 
-    terminal_response->write = (uintptr_t)(void *)stivale2_term_write_entry;
+    terminal->write = (uintptr_t)(void *)stivale2_term_write_entry;
 #elif defined (__x86_64__)
-    terminal_response->write = (uintptr_t)term_write;
+    terminal->write = (uintptr_t)term_write;
 #endif
 
-    terminal_response->columns = term_cols;
-    terminal_response->rows = term_rows;
+    term_fb_ptr = &terminal->framebuffer;
+
+    terminal->columns = term_cols;
+    terminal->rows = term_rows;
+
+    uint64_t *term_list = ext_mem_alloc(1 * sizeof(uint64_t));
+    term_list[0] = reported_addr(terminal);
+
+    terminal_response->terminal_count = 1;
+    terminal_response->terminals = reported_addr(term_list);
 
     terminal_request->response = reported_addr(terminal_response);
 
@@ -620,6 +633,10 @@ skip_fb_init:;
 
     // For now we only support 1 framebuffer
     struct limine_framebuffer *fbp = ext_mem_alloc(sizeof(struct limine_framebuffer));
+
+    if (term_fb_ptr != NULL) {
+        *term_fb_ptr = reported_addr(fbp);
+    }
 
     struct edid_info_struct *edid_info = get_edid_info();
     if (edid_info != NULL) {

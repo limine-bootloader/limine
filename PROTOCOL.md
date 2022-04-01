@@ -19,6 +19,8 @@ languages.
 All pointers are 64-bit wide. All pointers point to the object with the
 higher half direct map offset already added to them, unless otherwise noted.
 
+The calling convention matches the SysV C ABI for the specific architecture.
+
 ### Executable formats
 
 The Limine protocol does not enforce any specific executable format, but
@@ -306,7 +308,7 @@ ID:
 
 Request:
 ```c
-typedef void (*limine_terminal_callback)(uint64_t, uint64_t, uint64_t, uint64_t);
+typedef void (*limine_terminal_callback)(struct limine_terminal *, uint64_t, uint64_t, uint64_t, uint64_t);
 
 struct limine_terminal_request {
     uint64_t id[4];
@@ -320,22 +322,201 @@ struct limine_terminal_request {
 
 Response:
 ```c
-typedef void (*limine_terminal_write)(const char *, uint64_t);
-
 struct limine_terminal_response {
     uint64_t revision;
+    uint64_t terminal_count;
+    struct limine_terminal **terminals;
+};
+```
+
+* `terminal_count` - How many terminals are present.
+* `terminals` - Pointer to an array of `terminal_count` pointers to
+`struct limine_terminal` structures.
+
+```c
+typedef void (*limine_terminal_write)(const char *, uint64_t);
+
+struct limine_terminal {
     uint32_t columns;
     uint32_t rows;
+    struct limine_framebuffer *framebuffer;
     limine_terminal_write write;
 };
 ```
 
 * `columns` and `rows` - Columns and rows provided by the terminal.
+* `framebuffer` - The framebuffer associated with this terminal.
 * `write` - Physical pointer to the terminal write() function.
+The function is not thread-safe, nor reentrant, per-terminal.
+This means multiple terminals may be called simultaneously, and multiple
+callbacks may be handled simultaneously.
 
 Note: Omitting this request will cause the bootloader to not initialise
-the terminal service. The terminal is further documented in the stivale2
-specification.
+the terminal service.
+
+#### Terminal callback
+
+The callback is a function that is part of the kernel, which is called by the
+terminal during a `write()` call whenever an event or escape sequence cannot
+be handled by the bootloader's terminal alone, and the kernel may want to be
+notified in order to handle it itself.
+
+Returning from the callback will resume the `write()` call which will return
+to its caller normally.
+
+Not returning from a callback may leave the terminal in an undefined state
+and cause issues.
+
+The callback function has the following prototype:
+```c
+void callback(struct limine_terminal *terminal, uint64_t type, uint64_t, uint64_t, uint64_t);
+```
+
+The `terminal` argument is a pointer to the Limine terminal structure which
+has the `write()` call that caused the callback.
+
+The purpose of the last 3 arguments changes depending on the `type` argument.
+
+The callback types are as follows:
+
+* `LIMINE_TERMINAL_CB_DEC` - (type value: `10`)
+
+This callback is triggered whenever a DEC Private Mode (DECSET/DECRST)
+sequence is encountered that the terminal cannot handle alone. The arguments
+to this callback are: `terminal`, `type`, `values_count`, `values`, `final`.
+
+`values_count` is a count of how many values are in the array pointed to by
+`values`. `values` is a pointer to an array of `uint32_t` values, which are
+the values passed to the DEC private escape.
+`final` is the final character in the DEC private escape sequence (typically
+`l` or `h`).
+
+* `LIMINE_TERMINAL_CB_BELL` - (type value: `20`)
+
+This callback is triggered whenever a bell event is determined to be
+necessary (such as when a bell character `\a` is encountered). The arguments
+to this callback are: `terminal`, `type`, `unused1`, `unused2`, `unused3`.
+
+* `LIMINE_TERMINAL_CB_PRIVATE_ID` - (type value: `30`)
+
+This callback is triggered whenever the kernel has to respond to a DEC
+private identification request. The arguments to this callback are:
+`terminal`, `type`, `unused1`, `unused2`, `unused3`.
+
+* `LIMINE_TERMINAL_CB_STATUS_REPORT` - (type value `40`)
+
+This callback is triggered whenever the kernel has to respond to a ECMA-48
+status report request. The arguments to this callback are: `terminal`,
+`type`, `unused1`, `unused2`, `unused3`.
+
+* `LIMINE_TERMINAL_CB_POS_REPORT` - (type value `50`)
+
+This callback is triggered whenever the kernel has to respond to a ECMA-48
+cursor position report request. The arguments to this callback are:
+`terminal`, `type`, `x`, `y`, `unused3`. Where `x` and `y` represent the
+cursor position at the time the callback is triggered.
+
+* `LIMINE_TERMINAL_CB_KBD_LEDS` - (type value `60`)
+
+This callback is triggered whenever the kernel has to respond to a keyboard
+LED state change request. The arguments to this callback are: `terminal`,
+`type`, `led_state`, `unused2`, `unused3`. `led_state` can have one of the
+following values: `0, 1, 2, or 3`. These values mean: clear all LEDs, set
+scroll lock, set num lock, and set caps lock LED, respectively.
+
+* `LIMINE_TERMINAL_CB_MODE` - (type value: `70`)
+
+This callback is triggered whenever an ECMA-48 Mode Switch sequence
+is encountered that the terminal cannot handle alone. The arguments to this
+callback are: `terminal`, `type`, `values_count`, `values`, `final`.
+
+`values_count` is a count of how many values are in the array pointed to by
+`values`. `values` is a pointer to an array of `uint32_t` values, which are
+the values passed to the mode switch escape.
+`final` is the final character in the mode switch escape sequence (typically
+`l` or `h`).
+
+* `LIMINE_TERMINAL_CB_LINUX` - (type value `80`)
+
+This callback is triggered whenever a private Linux escape sequence
+is encountered that the terminal cannot handle alone. The arguments to this
+callback are: `terminal`, `type`, `values_count`, `values`, `unused3`.
+
+`values_count` is a count of how many values are in the array pointed to by
+`values`. `values` is a pointer to an array of `uint32_t` values, which are
+the values passed to the Linux private escape.
+
+#### Terminal context control
+
+The `write()` function can additionally be used to set and restore terminal
+context, and refresh the terminal fully.
+
+In order to achieve this, special values for the `length` argument are
+passed. These values are:
+```c
+#define LIMINE_TERMINAL_CTX_SIZE ((uint64_t)(-1))
+#define LIMINE_TERMINAL_CTX_SAVE ((uint64_t)(-2))
+#define LIMINE_TERMINAL_CTX_RESTORE ((uint64_t)(-3))
+#define LIMINE_TERMINAL_FULL_REFRESH ((uint64_t)(-4))
+```
+
+For `CTX_SIZE`, the `ptr` variable has to point to a location to which the
+terminal will *write* a single `uint64_t` which contains the size of the
+terminal context.
+
+For `CTX_SAVE` and `CTX_RESTORE`, the `ptr` variable has to point to a
+location to which the terminal will *save* or *restore* its context from,
+respectively.
+This location must have a size congruent to the value received from
+`CTX_SIZE`.
+
+For `FULL_REFRESH`, the `ptr` variable is unused. This routine is to be used
+after control of the framebuffer is taken over and the bootloader's terminal
+has to *fully* repaint the framebuffer to avoid inconsistencies.
+
+#### x86_64
+
+Additionally, the kernel must ensure, when calling `write()`, that:
+
+* Either the GDT provided by the bootloader is still properly loaded, or a
+custom GDT is loaded with at least the following descriptors in this specific
+order:
+
+  - Null descriptor
+  - 16-bit code descriptor. Base = `0`, limit = `0xffff`. Readable.
+  - 16-bit data descriptor. Base = `0`, limit = `0xffff`. Writable.
+  - 32-bit code descriptor. Base = `0`, limit = `0xffffffff`. Readable.
+  - 32-bit data descriptor. Base = `0`, limit = `0xffffffff`. Writable.
+  - 64-bit code descriptor. Base and limit irrelevant. Readable.
+  - 64-bit data descriptor. Base and limit irrelevant. Writable.
+
+* The currently loaded virtual address space is still the one provided at
+entry by the bootloader, or a custom virtual address space is loaded which
+identity maps the framebuffer memory region associated with the terminal, and
+all the bootloader reclaimable memory regions, with read, write, and execute
+permissions.
+
+* The routine is called *by its physical address* (the value of the function
+pointer is already physical), which should be identity mapped.
+
+* Bootloader-reclaimable memory entries are left untouched until after the
+kernel is done utilising bootloader-provided facilities (this terminal being
+one of them).
+
+Notes regarding segment registers and FPU:
+
+The values of the FS and GS segments are guaranteed preserved across the
+call. All other segment registers may have their "hidden" portion
+overwritten, but Limine guarantees that the "visible" portion is going to
+be restored to the one used at the time of call before returning.
+
+No registers other than the segment registers and general purpose registers
+are going to be used. Especially, this means that there is no need to save
+and restore FPU, SSE, or AVX state when calling the terminal write function.
+
+#### Terminal characteristics
+
+The terminal should strive for Linux console compatibility.
 
 ### Framebuffer Feature
 

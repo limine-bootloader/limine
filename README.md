@@ -55,12 +55,6 @@ or, to clone a specific binary point release (for example `v3.0`)
 git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-binary --depth=1
 ```
 
-Additionally, the absolute latest Limine binary release can be obtained by
-fetching the `latest-binary` branch:
-```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=latest-binary --depth=1
-```
-
 `limine-deploy` binaries are provided for Windows.
 
 In order to rebuild `limine-deploy`, simply run `make` in the binary

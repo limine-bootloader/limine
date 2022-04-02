@@ -322,34 +322,38 @@ struct limine_terminal_request {
 
 Response:
 ```c
+typedef void (*limine_terminal_write)(struct limine_terminal *terminal, const char *string, uint64_t length);
+
 struct limine_terminal_response {
     uint64_t revision;
     uint64_t terminal_count;
     struct limine_terminal **terminals;
+    limine_terminal_write write;
 };
 ```
 
 * `terminal_count` - How many terminals are present.
 * `terminals` - Pointer to an array of `terminal_count` pointers to
 `struct limine_terminal` structures.
+* `write` - Physical pointer to the terminal write() function.
+The function is not thread-safe, nor reentrant, per-terminal.
+This means multiple terminals may be called simultaneously, and multiple
+callbacks may be handled simultaneously.
+The `terminal` parameter points to the `struct limine_terminal` structure to
+use to output the string; the `string` parameter points to a
+string to print; the `length` paremeter contains the length, in bytes, of the
+string to print.
 
 ```c
-typedef void (*limine_terminal_write)(const char *, uint64_t);
-
 struct limine_terminal {
     uint32_t columns;
     uint32_t rows;
     struct limine_framebuffer *framebuffer;
-    limine_terminal_write write;
 };
 ```
 
 * `columns` and `rows` - Columns and rows provided by the terminal.
 * `framebuffer` - The framebuffer associated with this terminal.
-* `write` - Physical pointer to the terminal write() function.
-The function is not thread-safe, nor reentrant, per-terminal.
-This means multiple terminals may be called simultaneously, and multiple
-callbacks may be handled simultaneously.
 
 Note: Omitting this request will cause the bootloader to not initialise
 the terminal service.
@@ -373,7 +377,7 @@ void callback(struct limine_terminal *terminal, uint64_t type, uint64_t, uint64_
 ```
 
 The `terminal` argument is a pointer to the Limine terminal structure which
-has the `write()` call that caused the callback.
+represents the terminal that caused the callback.
 
 The purpose of the last 3 arguments changes depending on the `type` argument.
 

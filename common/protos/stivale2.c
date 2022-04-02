@@ -73,6 +73,7 @@
 extern symbol stivale2_term_write_entry;
 void *stivale2_rt_stack = NULL;
 uint64_t stivale2_term_callback_ptr = 0;
+uint64_t stivale2_term_write_ptr = 0;
 void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 #endif
 
@@ -574,6 +575,7 @@ failed_to_load_header_section:
             stivale2_rt_stack = ext_mem_alloc(8192) + 8192;
         }
 
+        stivale2_term_write_ptr = (uintptr_t)term_write;
         tag->term_write = (uintptr_t)(void *)stivale2_term_write_entry;
 #elif defined (__x86_64__)
         tag->term_write = (uintptr_t)term_write;

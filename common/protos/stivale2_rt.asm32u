@@ -15,6 +15,7 @@ section .text
 extern term_write
 extern stivale2_rt_stack
 extern stivale2_term_callback_ptr
+extern stivale2_term_write_ptr
 
 global stivale2_term_callback
 stivale2_term_callback:
@@ -98,6 +99,7 @@ stivale2_term_write_entry:
     mov word [rbx + user_es wrt ..gotoff], es
     mov word [rbx + user_ss wrt ..gotoff], ss
 
+    push rdx
     push rsi
     push rdi
 
@@ -113,8 +115,8 @@ bits 32
     mov es, ax
     mov ss, ax
 
-    call term_write
-    add esp, 16
+    call [ebx + stivale2_term_write_ptr wrt ..gotoff]
+    add esp, 24
 
     push dword [ebx + user_cs wrt ..gotoff]
     call .p2

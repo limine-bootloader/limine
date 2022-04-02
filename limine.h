@@ -171,20 +171,20 @@ struct limine_framebuffer_request {
 
 struct limine_terminal;
 
-typedef void (*limine_terminal_write)(const char *, uint64_t);
+typedef void (*limine_terminal_write)(struct limine_terminal *, const char *, uint64_t);
 typedef void (*limine_terminal_callback)(struct limine_terminal *, uint64_t, uint64_t, uint64_t, uint64_t);
 
 struct limine_terminal {
     uint32_t columns;
     uint32_t rows;
     LIMINE_PTR(struct limine_framebuffer *) framebuffer;
-    LIMINE_PTR(limine_terminal_write) write;
 };
 
 struct limine_terminal_response {
     uint64_t revision;
     uint64_t terminal_count;
     LIMINE_PTR(struct limine_terminal **) terminals;
+    LIMINE_PTR(limine_terminal_write) write;
 };
 
 struct limine_terminal_request {

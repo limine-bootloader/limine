@@ -136,9 +136,15 @@ static void print_file(struct limine_file *file) {
 
 extern char kernel_start[];
 
+static void write_shim(const char *s, uint64_t l) {
+    struct limine_terminal *terminal = _terminal_request.response->terminals[0];
+
+    _terminal_request.response->write(terminal, s, l);
+}
+
 static void limine_main(void) {
     if (_terminal_request.response) {
-        stivale2_print = _terminal_request.response->terminals[0]->write;
+        stivale2_print = write_shim;
     }
 
     e9_printf("\nWe're alive");
@@ -329,8 +335,8 @@ FEAT_START
         e9_printf("Columns: %d", terminal->columns);
         e9_printf("Rows: %d", terminal->rows);
         e9_printf("Using framebuffer: %x", terminal->framebuffer);
-        e9_printf("Write function at: %x", terminal->write);
     }
+    e9_printf("Write function at: %x", term_response->write);
 FEAT_END
 
     for (;;);

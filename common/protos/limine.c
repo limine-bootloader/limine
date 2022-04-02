@@ -108,8 +108,14 @@ static void *_get_request(uint64_t id[4]) {
 extern symbol stivale2_term_write_entry;
 extern void *stivale2_rt_stack;
 extern uint64_t stivale2_term_callback_ptr;
+extern uint64_t stivale2_term_write_ptr;
 void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 #endif
+
+static void term_write_shim(uint64_t context, uint64_t buf, uint64_t count) {
+    (void)context;
+    term_write(buf, count);
+}
 
 bool limine_load(char *config, char *cmdline) {
     uint32_t eax, ebx, ecx, edx;
@@ -589,9 +595,10 @@ FEAT_START
         stivale2_rt_stack = ext_mem_alloc(16384) + 16384;
     }
 
-    terminal->write = (uintptr_t)(void *)stivale2_term_write_entry;
+    stivale2_term_write_ptr = (uintptr_t)term_write_shim;
+    terminal_response->write = (uintptr_t)(void *)stivale2_term_write_entry;
 #elif defined (__x86_64__)
-    terminal->write = (uintptr_t)term_write;
+    terminal_response->write = (uintptr_t)term_write_shim;
 #endif
 
     term_fb_ptr = &terminal->framebuffer;

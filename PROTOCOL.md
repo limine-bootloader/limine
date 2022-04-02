@@ -21,14 +21,6 @@ higher half direct map offset already added to them, unless otherwise noted.
 
 The calling convention matches the SysV C ABI for the specific architecture.
 
-### Executable formats
-
-The Limine protocol does not enforce any specific executable format, but
-kernels using formats not supported by the bootloader, or using flat binaries,
-*must* provide a Executable Layout Feature (see below).
-
-Compliant bootloaders must support at least the ELF 64-bit executable format.
-
 ## Features
 
 The protocol is centered around the concept of request/response - collectively
@@ -81,7 +73,7 @@ revisions do.
 This is all there is to features. For a list of official Limine features, read
 the "Feature List" section below.
 
-## Entry memory layout
+## Executable memory layout
 
 The protocol mandates kernels to load themselves at or above
 `0xffffffff80000000`. Lower half kernels are *not supported*.
@@ -217,60 +209,6 @@ struct limine_stack_size_response {
     uint64_t revision;
 };
 ```
-
-### Executable Layout Feature
-
-ID:
-```c
-#define LIMINE_EXECUTABLE_LAYOUT_REQUEST { LIMINE_COMMON_MAGIC, 0xbbd4597377e1fdbb, 0x17540007cfa435ad }
-```
-
-Request:
-```c
-typedef void (*limine_entry_point)(void);
-
-struct limine_executable_layout_request {
-    uint64_t id[4];
-    uint64_t revision;
-    struct limine_executable_layout_response *response;
-    limine_entry_point entry_point;
-    uint64_t alignment;
-    uint64_t text_offset;
-    uint64_t text_address;
-    uint64_t text_size;
-    uint64_t data_offset;
-    uint64_t data_address;
-    uint64_t data_size;
-    uint64_t rodata_offset;
-    uint64_t rodata_address;
-    uint64_t rodata_size;
-    uint64_t bss_address;
-    uint64_t bss_size;
-};
-```
-
-* `entry_point` - The virtual address of the entry point of the kernel. It is
-equivalent to an entry point specified in an executable format, and thus it can
-be overridden by the Entry Point Feature.
-* `alignment` - The requested alignment for the physical base address of the
-kernel. It *must* be a power of 2. An alignment of 0 means 4096.
-* `{text,data,rodata}_offset` - The offset within the file where the segment
-begins.
-* `{text,data,rodata,bss}_address` - The virtual address to which to load the
-segment to.
-* `{text,data,rodata,bss}_size` - The size of the segment both in the file and
-in memory, except for bss, where it is only the in-memory size.
-
-Response:
-```c
-struct limine_executable_layout_response {
-    uint64_t revision;
-};
-```
-
-Notes: This request is parsed if the bootloader does not support the executable
-format of the kernel. It is otherwise ignored. If it is parsed and used for
-loading the kernel, then the response will be set to a vaild pointer.
 
 ### HHDM (Higher Half Direct Map) Feature
 

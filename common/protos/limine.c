@@ -137,6 +137,12 @@ bool limine_load(char *config, char *cmdline) {
 
     int bits = elf_bits(kernel);
 
+    if (bits == -1 || bits == 32) {
+        printv("limine: Kernel in unrecognised format");
+        return false;
+    }
+
+    // ELF loading
     uint64_t entry_point = 0;
     struct elf_range *ranges;
     uint64_t ranges_count;
@@ -144,106 +150,12 @@ bool limine_load(char *config, char *cmdline) {
     uint64_t image_size;
     bool is_reloc;
 
-    bool flat = false;
-
-    if (bits == -1 || bits == 32) {
-        struct limine_executable_layout_request *exec_layout = NULL;
-        uint64_t exec_layout_id[4] = LIMINE_EXECUTABLE_LAYOUT_REQUEST;
-
-        for (size_t i = 0; i < ALIGN_DOWN(kernel_file->size, 8); i += 8) {
-            uint64_t *p = (void *)(uintptr_t)kernel + i;
-
-            if (p[0] != exec_layout_id[0]) {
-                continue;
-            }
-            if (p[1] != exec_layout_id[1]) {
-                continue;
-            }
-            if (p[2] != exec_layout_id[2]) {
-                continue;
-            }
-            if (p[3] != exec_layout_id[3]) {
-                continue;
-            }
-
-            exec_layout = (void *)p;
-            break;
-        }
-
-        if (exec_layout == NULL) {
-            printv("limine: Kernel in unrecognised format\n");
-            return false;
-        }
-
-        entry_point = exec_layout->entry_point;
-
-        if (exec_layout->text_address % 4096
-         || exec_layout->data_address % 4096
-         || exec_layout->rodata_address % 4096
-         || exec_layout->bss_address % 4096) {
-            panic(true, "limine: Address of an executable segment is not page aligned");
-        }
-
-        ranges_count = 4;
-        ranges = ext_mem_alloc(sizeof(struct elf_range) * ranges_count);
-
-        ranges[0].base = exec_layout->text_address;
-        ranges[0].length = exec_layout->text_size;
-        ranges[0].permissions = ELF_PF_X | ELF_PF_R;
-
-        ranges[1].base = exec_layout->data_address;
-        ranges[1].length = exec_layout->data_size;
-        ranges[1].permissions = ELF_PF_R | ELF_PF_W;
-
-        ranges[2].base = exec_layout->rodata_address;
-        ranges[2].length = exec_layout->rodata_size;
-        ranges[2].permissions = ELF_PF_R;
-
-        ranges[3].base = exec_layout->bss_address;
-        ranges[3].length = exec_layout->bss_size;
-        ranges[3].permissions = ELF_PF_R | ELF_PF_W;
-
-        uint64_t min_addr = (uint64_t)-1;
-        uint64_t max_addr = 0;
-        for (size_t i = 0; i < ranges_count; i++) {
-            if (ranges[i].base < min_addr) {
-                min_addr = ranges[i].base;
-            }
-            if (ranges[i].base + ranges[i].length > max_addr) {
-                max_addr = ranges[i].base + ranges[i].length;
-            }
-        }
-
-        image_size = max_addr - min_addr;
-
-        is_reloc = false;
-        slide = 0;
-
-        virtual_base = min_addr;
-
-        void *image = ext_mem_alloc_type_aligned(image_size,
-                            MEMMAP_KERNEL_AND_MODULES, exec_layout->alignment ?: 4096);
-
-        physical_base = (uintptr_t)image;
-
-        memcpy(image + (exec_layout->text_address - min_addr),
-               kernel + exec_layout->text_offset, exec_layout->text_size);
-        memcpy(image + (exec_layout->data_address - min_addr),
-               kernel + exec_layout->data_offset, exec_layout->data_size);
-        memcpy(image + (exec_layout->rodata_address - min_addr),
-               kernel + exec_layout->rodata_offset, exec_layout->rodata_size);
-        memset(image + (exec_layout->bss_address - min_addr), 0, exec_layout->bss_size);
-
-        flat = true;
-    } else {
-        // ELF loading
-        if (elf64_load(kernel, &entry_point, NULL, &slide,
-                       MEMMAP_KERNEL_AND_MODULES, kaslr, false,
-                       &ranges, &ranges_count,
-                       true, &physical_base, &virtual_base, &image_size,
-                       &is_reloc)) {
-            return false;
-        }
+    if (elf64_load(kernel, &entry_point, NULL, &slide,
+                   MEMMAP_KERNEL_AND_MODULES, kaslr, false,
+                   &ranges, &ranges_count,
+                   true, &physical_base, &virtual_base, &image_size,
+                   &is_reloc)) {
+        return false;
     }
 
     kaslr = is_reloc;
@@ -328,29 +240,12 @@ FEAT_START
 
     entry_point = entrypoint_request->entry;
 
-    printv("limine: Entry point at %X\n", entry_point);
+    print("limine: Entry point at %X\n", entry_point);
 
     struct limine_entry_point_response *entrypoint_response =
         ext_mem_alloc(sizeof(struct limine_entry_point_response));
 
     entrypoint_request->response = reported_addr(entrypoint_response);
-FEAT_END
-
-    // Executable layout feature
-FEAT_START
-    if (!flat) {
-        break;
-    }
-
-    struct limine_executable_layout_request *exec_layout_request = get_request(LIMINE_EXECUTABLE_LAYOUT_REQUEST);
-    if (exec_layout_request == NULL) {
-        panic(true, "limine: How did this even happen?");
-    }
-
-    struct limine_executable_layout_response *exec_layout_response =
-        ext_mem_alloc(sizeof(struct limine_executable_layout_response));
-
-    exec_layout_request->response = reported_addr(exec_layout_response);
 FEAT_END
 
     // Bootloader info feature

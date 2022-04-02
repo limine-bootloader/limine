@@ -60,13 +60,13 @@ fi
 
 AC_SUBST(BUILD_BIOS, [$BUILD_BIOS])
 
-BUILD_LIMINE_S2DEPLOY="default"
+BUILD_LIMINE_DEPLOY="default"
 
-AC_ARG_ENABLE([limine-s2deploy],
-    AS_HELP_STRING([--disable-limine-s2deploy], [disable building limine-s2deploy]),
-    BUILD_LIMINE_S2DEPLOY="$enableval")
+AC_ARG_ENABLE([limine-deploy],
+    AS_HELP_STRING([--disable-limine-deploy], [disable building limine-deploy]),
+    BUILD_LIMINE_DEPLOY="$enableval")
 
-AC_SUBST(BUILD_LIMINE_S2DEPLOY, [$BUILD_LIMINE_S2DEPLOY])
+AC_SUBST(BUILD_LIMINE_DEPLOY, [$BUILD_LIMINE_DEPLOY])
 
 BUILD_CD="default"
 

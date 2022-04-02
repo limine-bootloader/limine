@@ -19,7 +19,7 @@ export PATH
 override BUILD_CD_EFI := @BUILD_CD_EFI@
 override BUILD_PXE := @BUILD_PXE@
 override BUILD_CD := @BUILD_CD@
-override BUILD_LIMINE_S2DEPLOY := @BUILD_LIMINE_S2DEPLOY@
+override BUILD_LIMINE_DEPLOY := @BUILD_LIMINE_DEPLOY@
 
 WERROR ?= @WERROR@
 export WERROR
@@ -82,12 +82,12 @@ all: @BUILD_UEFI@ @BUILD_BIOS@
 limine-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-hdd.h
 
 $(call MKESCAPE,$(BINDIR))/limine-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-hdd.bin
-	cd '$(call SHESCAPE,$(BINDIR))' && '$(call SHESCAPE,$(SRCDIR))/limine-s2deploy/hgen.sh' >limine-hdd.h
+	cd '$(call SHESCAPE,$(BINDIR))' && '$(call SHESCAPE,$(SRCDIR))/limine-deploy/hgen.sh' >limine-hdd.h
 
-.PHONY: limine-s2deploy
-limine-s2deploy:
+.PHONY: limine-deploy
+limine-deploy:
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	cp '$(call SHESCAPE,$(SRCDIR))/limine-s2deploy/Makefile' '$(call SHESCAPE,$(SRCDIR))/limine-s2deploy/limine-s2deploy.c' '$(call SHESCAPE,$(SRCDIR))/limine-s2deploy/.gitignore' '$(call SHESCAPE,$(BINDIR))/'
+	cp '$(call SHESCAPE,$(SRCDIR))/limine-deploy/Makefile' '$(call SHESCAPE,$(SRCDIR))/limine-deploy/limine-deploy.c' '$(call SHESCAPE,$(SRCDIR))/limine-deploy/.gitignore' '$(call SHESCAPE,$(BINDIR))/'
 	$(MAKE) limine-hdd.h
 	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))'
 
@@ -109,16 +109,16 @@ install-data:
 .PHONY: install-strip
 install-strip: install-data
 	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/bin'
-	$(INSTALL) -s '$(call SHESCAPE,$(BINDIR))/limine-s2deploy' '$(DESTDIR)$(PREFIX)/bin/' || true
+	$(INSTALL) -s '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(DESTDIR)$(PREFIX)/bin/' || true
 
 .PHONY: install
 install: install-data
 	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/bin'
-	$(INSTALL) '$(call SHESCAPE,$(BINDIR))/limine-s2deploy' '$(DESTDIR)$(PREFIX)/bin/' || true
+	$(INSTALL) '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(DESTDIR)$(PREFIX)/bin/' || true
 
 .PHONY: uninstall
 uninstall:
-	rm -f '$(DESTDIR)$(PREFIX)/bin/limine-s2deploy'
+	rm -f '$(DESTDIR)$(PREFIX)/bin/limine-deploy'
 	rm -f '$(DESTDIR)$(PREFIX)/share/limine'
 
 $(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/common-bios/stage2.bin.gz
@@ -136,8 +136,8 @@ endif
 .PHONY: limine-bios
 limine-bios: common-bios decompressor
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
-ifneq ($(BUILD_LIMINE_S2DEPLOY), no)
-	$(MAKE) limine-s2deploy
+ifneq ($(BUILD_LIMINE_DEPLOY), no)
+	$(MAKE) limine-deploy
 endif
 
 .PHONY: limine-cd-efi
@@ -268,7 +268,7 @@ echfs-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) limine-s2deploy
+	$(MAKE) limine-deploy
 	$(MAKE) -C test
 	echfs-utils -g -p0 test.hdd quick-format 512 > part_guid
 	sed "s/@GUID@/`cat part_guid`/g" < test/limine.cfg > limine.cfg.tmp
@@ -277,14 +277,14 @@ echfs-test:
 	echfs-utils -g -p0 test.hdd import test/test.elf boot/test.elf
 	echfs-utils -g -p0 test.hdd import test/bg.bmp boot/bg.bmp
 	echfs-utils -g -p0 test.hdd import $(BINDIR)/limine.sys boot/limine.sys
-	$(BINDIR)/limine-s2deploy test.hdd
+	$(BINDIR)/limine-deploy test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: fwcfg-common fwcfg-test fwcfg-simple-test
 fwcfg-common:
 	$(MAKE) test-clean
 	$(MAKE) limine-bios
-	$(MAKE) limine-s2deploy
+	$(MAKE) limine-deploy
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir -p test_image/boot
@@ -309,7 +309,7 @@ ext2-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) limine-s2deploy
+	$(MAKE) limine-deploy
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -324,7 +324,7 @@ ext2-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	$(BINDIR)/limine-s2deploy test.hdd
+	$(BINDIR)/limine-deploy test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: fat12-test
@@ -332,7 +332,7 @@ fat12-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) limine-s2deploy
+	$(MAKE) limine-deploy
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -347,7 +347,7 @@ fat12-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	$(BINDIR)/limine-s2deploy test.hdd
+	$(BINDIR)/limine-deploy test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: fat16-test
@@ -355,7 +355,7 @@ fat16-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) limine-s2deploy
+	$(MAKE) limine-deploy
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -370,7 +370,7 @@ fat16-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	$(BINDIR)/limine-s2deploy test.hdd
+	$(BINDIR)/limine-deploy test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: legacy-fat16-test
@@ -379,7 +379,7 @@ legacy-fat16-test:
 	$(MAKE) mbrtest.hdd
 	fdisk -l mbrtest.hdd
 	$(MAKE) limine-bios
-	$(MAKE) limine-s2deploy
+	$(MAKE) limine-deploy
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -394,7 +394,7 @@ legacy-fat16-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	$(BINDIR)/limine-s2deploy mbrtest.hdd
+	$(BINDIR)/limine-deploy mbrtest.hdd
 	qemu-system-i386 -cpu pentium2 -m 16M -M isapc -net none   -hda mbrtest.hdd -debugcon stdio
 
 .PHONY: fat32-test
@@ -402,7 +402,7 @@ fat32-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) limine-s2deploy
+	$(MAKE) limine-deploy
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -417,7 +417,7 @@ fat32-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	$(BINDIR)/limine-s2deploy test.hdd
+	$(BINDIR)/limine-deploy test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: iso9660-test
@@ -438,7 +438,7 @@ ntfs-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) limine-s2deploy
+	$(MAKE) limine-deploy
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -453,7 +453,7 @@ ntfs-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	$(BINDIR)/limine-s2deploy test.hdd
+	$(BINDIR)/limine-deploy test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: full-hybrid-test
@@ -468,7 +468,7 @@ full-hybrid-test:
 	sudo cp -rv $(BINDIR)/* test_image/boot/
 	sudo cp -rv test/* test_image/boot/
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine-cd-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label test_image/ -o test.iso
-	$(BINDIR)/limine-s2deploy test.iso
+	$(BINDIR)/limine-deploy test.iso
 	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -cdrom test.iso -debugcon stdio
 	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -hda test.iso -debugcon stdio
 	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4   -cdrom test.iso -debugcon stdio

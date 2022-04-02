@@ -678,7 +678,7 @@ int main(int argc, char *argv[]) {
                     "          the root or /boot directories of one of the partitions\n"
                     "          on the device, or boot will fail!\n");
 
-    fprintf(stderr, "Limine Stage 2 deployed successfully!\n");
+    fprintf(stderr, "Limine deployed successfully!\n");
 
     ok = 0;
 

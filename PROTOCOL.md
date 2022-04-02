@@ -73,7 +73,7 @@ revisions do.
 This is all there is to features. For a list of official Limine features, read
 the "Feature List" section below.
 
-## Executable memory layout
+## Entry memory layout
 
 The protocol mandates kernels to load themselves at or above
 `0xffffffff80000000`. Lower half kernels are *not supported*.

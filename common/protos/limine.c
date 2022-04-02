@@ -240,7 +240,7 @@ FEAT_START
 
     entry_point = entrypoint_request->entry;
 
-    print("limine: Entry point at %X\n", entry_point);
+    printv("limine: Entry point at %X\n", entry_point);
 
     struct limine_entry_point_response *entrypoint_response =
         ext_mem_alloc(sizeof(struct limine_entry_point_response));

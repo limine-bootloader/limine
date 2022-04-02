@@ -752,16 +752,21 @@ struct limine_uuid {
     uint8_t d[8];
 };
 
+#define LIMINE_MEDIA_TYPE_GENERIC 0
+#define LIMINE_MEDIA_TYPE_OPTICAL 1
+#define LIMINE_MEDIA_TYPE_TFTP 2
+
 struct limine_file {
     uint64_t revision;
     void *address;
     uint64_t size;
     char *path;
     char *cmdline;
-    uint64_t partition_index;
+    uint32_t media_type;
     uint32_t unused;
     uint32_t tftp_ip;
     uint32_t tftp_port;
+    uint32_t partition_index;
     uint32_t mbr_disk_id;
     struct limine_uuid gpt_disk_uuid;
     struct limine_uuid gpt_part_uuid;
@@ -774,11 +779,12 @@ struct limine_file {
 * `size` - The size of the file.
 * `path` - The path of the file within the volume, with a leading slash.
 * `cmdline` - A command line associated with the file.
-* `partition_index` - 1-based partition index of the volume from which the
-file was loaded. If 0, it means invalid or unpartitioned.
+* `media_type` - Type of media file resides on.
 * `tftp_ip` - If non-0, this is the IP of the TFTP server the file was loaded
 from.
 * `tftp_port` - Likewise, but port.
+* `partition_index` - 1-based partition index of the volume from which the
+file was loaded. If 0, it means invalid or unpartitioned.
 * `mbr_disk_id` - If non-0, this is the ID of the disk the file was loaded
 from as reported in its MBR.
 * `gpt_disk_uuid` - If non-0, this is the UUID of the disk the file was

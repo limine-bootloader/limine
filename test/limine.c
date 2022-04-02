@@ -106,6 +106,7 @@ static void print_file(struct limine_file *file) {
     e9_printf("File->Size: %x", file->size);
     e9_printf("File->Path: %s", file->path);
     e9_printf("File->CmdLine: %s", file->cmdline);
+    e9_printf("File->MediaType: %d", file->media_type);
     e9_printf("File->PartIndex: %d", file->partition_index);
     e9_printf("File->TFTPIP: %d.%d.%d.%d",
               (file->tftp_ip & (0xff << 0)) >> 0,

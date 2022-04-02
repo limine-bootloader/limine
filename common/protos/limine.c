@@ -47,10 +47,16 @@ static struct limine_file get_file(struct file_handle *file, char *cmdline) {
     struct limine_file ret = {0};
 
     if (file->pxe) {
+        ret.media_type = LIMINE_MEDIA_TYPE_TFTP;
+
         ret.tftp_ip = file->pxe_ip;
         ret.tftp_port = file->pxe_port;
     } else {
         struct volume *vol = file->vol;
+
+        if (vol->is_optical) {
+            ret.media_type = LIMINE_MEDIA_TYPE_OPTICAL;
+        }
 
         ret.partition_index = vol->partition;
 

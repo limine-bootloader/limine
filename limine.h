@@ -24,16 +24,21 @@ struct limine_uuid {
     uint8_t d[8];
 };
 
+#define LIMINE_MEDIA_TYPE_GENERIC 0
+#define LIMINE_MEDIA_TYPE_OPTICAL 1
+#define LIMINE_MEDIA_TYPE_TFTP 2
+
 struct limine_file {
     uint64_t revision;
     LIMINE_PTR(void *) address;
     uint64_t size;
     LIMINE_PTR(char *) path;
     LIMINE_PTR(char *) cmdline;
-    uint64_t partition_index;
+    uint32_t media_type;
     uint32_t unused;
     uint32_t tftp_ip;
     uint32_t tftp_port;
+    uint32_t partition_index;
     uint32_t mbr_disk_id;
     struct limine_uuid gpt_disk_uuid;
     struct limine_uuid gpt_part_uuid;

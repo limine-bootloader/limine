@@ -1,6 +1,10 @@
 override prefix := @prefix@
 override exec_prefix := @exec_prefix@
 
+override ACBINDIR := @bindir@
+override ACDATAROOTDIR := @datarootdir@
+override ACINCLUDEDIR := @includedir@
+
 DESTDIR ?=
 
 override BUILDDIR := @BUILDDIR@
@@ -99,32 +103,32 @@ clean: limine-bios-clean limine-uefi32-clean limine-uefi64-clean
 
 .PHONY: install-data
 install-data: all
-	$(INSTALL) -d '$(DESTDIR)@datarootdir@'
-	$(INSTALL) -d '$(DESTDIR)@datarootdir@/limine'
-	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(DESTDIR)@datarootdir@/limine/' || true
-	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-cd.bin' '$(DESTDIR)@datarootdir@/limine/' || true
-	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(DESTDIR)@datarootdir@/limine/' || true
-	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin' '$(DESTDIR)@datarootdir@/limine/' || true
-	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(DESTDIR)@datarootdir@/limine/' || true
-	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(DESTDIR)@datarootdir@/limine/' || true
-	$(INSTALL) -d '$(DESTDIR)@includedir@'
-	$(INSTALL) -m 644 limine.h '$(DESTDIR)@includedir@/'
+	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))'
+	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine'
+	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
+	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-cd.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
+	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
+	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
+	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
+	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
+	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))'
+	$(INSTALL) -m 644 limine.h '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))/'
 
 .PHONY: install-strip
 install-strip: install-data
-	$(INSTALL) -d '$(DESTDIR)@bindir@'
-	$(INSTALL) -s '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(DESTDIR)@bindir@/' || true
+	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))'
+	$(INSTALL) -s '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/' || true
 
 .PHONY: install
 install: install-data
-	$(INSTALL) -d '$(DESTDIR)@bindir@'
-	$(INSTALL) '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(DESTDIR)@bindir@/' || true
+	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))'
+	$(INSTALL) '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/' || true
 
 .PHONY: uninstall
 uninstall:
-	rm -f '$(DESTDIR)@bindir@/limine-deploy'
-	rm -rf '$(DESTDIR)@datarootdir@/limine'
-	rm -f '$(DESTDIR)@includedir@/limine.h'
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/limine-deploy'
+	rm -rf '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine'
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))/limine.h'
 
 $(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/common-bios/stage2.bin.gz
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'

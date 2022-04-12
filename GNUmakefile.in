@@ -96,7 +96,7 @@ clean: limine-bios-clean limine-uefi32-clean limine-uefi64-clean
 	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 
 .PHONY: install-data
-install-data:
+install-data: all
 	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/share'
 	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/share/limine'
 	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(DESTDIR)$(PREFIX)/share/limine/' || true
@@ -119,7 +119,7 @@ install: install-data
 .PHONY: uninstall
 uninstall:
 	rm -f '$(DESTDIR)$(PREFIX)/bin/limine-install'
-	rm -f '$(DESTDIR)$(PREFIX)/share/limine'
+	rm -rf '$(DESTDIR)$(PREFIX)/share/limine'
 
 $(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/common-bios/stage2.bin.gz
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'

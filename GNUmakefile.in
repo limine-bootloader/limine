@@ -124,6 +124,7 @@ install: install-data
 uninstall:
 	rm -f '$(DESTDIR)@bindir@/limine-deploy'
 	rm -f '$(DESTDIR)@datarootdir@/limine'
+	rm -f '$(DESTDIR)@includedir@/limine.h'
 
 $(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/common-bios/stage2.bin.gz
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'

@@ -55,6 +55,9 @@ jobs:
       - name: Copy install-sh to bin
         run: cp build-aux/install-sh build/bin/
 
+      - name: Copy limine.h to bin
+        run: cp limine.h build/bin/
+
       - name: Remove limine-hdd.bin
         run: rm build/bin/limine-hdd.bin
 

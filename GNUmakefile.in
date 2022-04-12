@@ -107,6 +107,8 @@ install-data:
 	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin' '$(DESTDIR)@datarootdir@/limine/' || true
 	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(DESTDIR)@datarootdir@/limine/' || true
 	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(DESTDIR)@datarootdir@/limine/' || true
+	$(INSTALL) -d '$(DESTDIR)@includedir@'
+	$(INSTALL) -m 644 limine.h '$(DESTDIR)@includedir@/'
 
 .PHONY: install-strip
 install-strip: install-data

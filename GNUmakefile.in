@@ -112,7 +112,7 @@ install-data: all
 	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
 	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))'
-	$(INSTALL) -m 644 limine.h '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))/'
+	$(INSTALL) -m 644 '$(call SHESCAPE,$(SRCDIR)/limine.h' '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))/'
 
 .PHONY: install-strip
 install-strip: install-data

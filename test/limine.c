@@ -12,70 +12,112 @@ struct limine_entry_point_request entry_point_request = {
     .entry = limine_main
 };
 
+__attribute__((section(".limine_reqs")))
+void *entry_point_req = &entry_point_request;
+
 struct limine_framebuffer_request framebuffer_request = {
     .id = LIMINE_FRAMEBUFFER_REQUEST,
     .revision = 0, .response = NULL
 };
+
+__attribute__((section(".limine_reqs")))
+void *framebuffer_req = &framebuffer_request;
 
 struct limine_bootloader_info_request bootloader_info_request = {
     .id = LIMINE_BOOTLOADER_INFO_REQUEST,
     .revision = 0, .response = NULL
 };
 
+__attribute__((section(".limine_reqs")))
+void *bootloader_info_req = &bootloader_info_request;
+
 struct limine_hhdm_request hhdm_request = {
     .id = LIMINE_HHDM_REQUEST,
     .revision = 0, .response = NULL
 };
+
+__attribute__((section(".limine_reqs")))
+void *hhdm_req = &hhdm_request;
 
 struct limine_memmap_request memmap_request = {
     .id = LIMINE_MEMMAP_REQUEST,
     .revision = 0, .response = NULL
 };
 
+__attribute__((section(".limine_reqs")))
+void *memmap_req = &memmap_request;
+
 struct limine_kernel_file_request kf_request = {
     .id = LIMINE_KERNEL_FILE_REQUEST,
     .revision = 0, .response = NULL
 };
+
+__attribute__((section(".limine_reqs")))
+void *kf_req = &kf_request;
 
 struct limine_module_request module_request = {
     .id = LIMINE_MODULE_REQUEST,
     .revision = 0, .response = NULL
 };
 
+__attribute__((section(".limine_reqs")))
+void *module_req = &module_request;
+
 struct limine_rsdp_request rsdp_request = {
     .id = LIMINE_RSDP_REQUEST,
     .revision = 0, .response = NULL
 };
+
+__attribute__((section(".limine_reqs")))
+void *rsdp_req = &rsdp_request;
 
 struct limine_smbios_request smbios_request = {
     .id = LIMINE_SMBIOS_REQUEST,
     .revision = 0, .response = NULL
 };
 
+__attribute__((section(".limine_reqs")))
+void *smbios_req = &smbios_request;
+
 struct limine_efi_system_table_request est_request = {
     .id = LIMINE_EFI_SYSTEM_TABLE_REQUEST,
     .revision = 0, .response = NULL
 };
+
+__attribute__((section(".limine_reqs")))
+void *est_req = &est_request;
 
 struct limine_boot_time_request boot_time_request = {
     .id = LIMINE_BOOT_TIME_REQUEST,
     .revision = 0, .response = NULL
 };
 
+__attribute__((section(".limine_reqs")))
+void *boot_time_req = &boot_time_request;
+
 struct limine_kernel_address_request kernel_address_request = {
     .id = LIMINE_KERNEL_ADDRESS_REQUEST,
     .revision = 0, .response = NULL
 };
+
+__attribute__((section(".limine_reqs")))
+void *kernel_address_req = &kernel_address_request;
 
 struct limine_smp_request _smp_request = {
     .id = LIMINE_SMP_REQUEST,
     .revision = 0, .response = NULL
 };
 
+__attribute__((section(".limine_reqs")))
+void *smp_req = &_smp_request;
+
 struct limine_terminal_request _terminal_request = {
     .id = LIMINE_TERMINAL_REQUEST,
     .revision = 0, .response = NULL
 };
+
+__attribute__((section(".limine_reqs")))
+void *terminal_req = &_terminal_request;
 
 static char *get_memmap_type(uint64_t type) {
     switch (type) {

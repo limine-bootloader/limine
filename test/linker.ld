@@ -20,6 +20,11 @@ SECTIONS
 
     . += 0x1000;
 
+    .limine_reqs : {
+        KEEP(*(.limine_reqs))
+        QUAD(0)
+    } :rodata
+
     .stivalehdr : {
         KEEP(*(.stivalehdr))
     } :rodata

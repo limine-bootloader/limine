@@ -262,6 +262,11 @@ int elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
                sizeof(struct elf64_shdr));
 
         if (!strcmp(&names[section.sh_name], name)) {
+            if (limit == 0) {
+                *(void **)buffer = ext_mem_alloc(section.sh_size);
+                buffer = *(void **)buffer;
+                limit = section.sh_size;
+            }
             if (section.sh_size > limit) {
                 ret = 3;
                 goto out;

@@ -37,7 +37,7 @@
 
 static uint64_t physical_base, virtual_base, slide, direct_map_offset;
 static size_t requests_count;
-static void *requests[MAX_REQUESTS];
+static void **requests;
 
 static uint64_t reported_addr(void *addr) {
     return (uint64_t)(uintptr_t)addr + direct_map_offset;
@@ -167,28 +167,40 @@ bool limine_load(char *config, char *cmdline) {
     kaslr = is_reloc;
 
     // Load requests
-    requests_count = 0;
-    uint64_t common_magic[2] = { LIMINE_COMMON_MAGIC };
-    for (size_t i = 0; i < ALIGN_DOWN(image_size, 8); i += 8) {
-        uint64_t *p = (void *)(uintptr_t)physical_base + i;
-
-        if (p[0] != common_magic[0]) {
-            continue;
+    if (elf64_load_section(kernel, &requests, ".limine_reqs", 0, slide) == 0) {
+        for (size_t i = 0; ; i++) {
+            if (requests[i] == NULL) {
+                break;
+            }
+            requests[i] -= virtual_base;
+            requests[i] += physical_base;
+            requests_count++;
         }
-        if (p[1] != common_magic[1]) {
-            continue;
-        }
+    } else {
+        requests = ext_mem_alloc(MAX_REQUESTS * sizeof(void *));
+        requests_count = 0;
+        uint64_t common_magic[2] = { LIMINE_COMMON_MAGIC };
+        for (size_t i = 0; i < ALIGN_DOWN(image_size, 8); i += 8) {
+            uint64_t *p = (void *)(uintptr_t)physical_base + i;
 
-        if (requests_count == MAX_REQUESTS) {
-            panic(true, "limine: Maximum requests exceeded");
-        }
+            if (p[0] != common_magic[0]) {
+                continue;
+            }
+            if (p[1] != common_magic[1]) {
+                continue;
+            }
 
-        // Check for a conflict
-        if (_get_request(p) != NULL) {
-            panic(true, "limine: Conflict detected for request ID %X %X", p[2], p[3]);
-        }
+            if (requests_count == MAX_REQUESTS) {
+                panic(true, "limine: Maximum requests exceeded");
+            }
 
-        requests[requests_count++] = p;
+            // Check for a conflict
+            if (_get_request(p) != NULL) {
+                panic(true, "limine: Conflict detected for request ID %X %X", p[2], p[3]);
+            }
+
+            requests[requests_count++] = p;
+        }
     }
 
     if (requests_count == 0) {

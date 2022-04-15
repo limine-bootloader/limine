@@ -314,8 +314,8 @@ static bool _device_write(const void *_buffer, uint64_t loc, size_t count) {
 int main(int argc, char *argv[]) {
     int      ok = EXIT_FAILURE;
     int      force_mbr = 0;
-    const uint8_t *bootloader_img = _binary_limine_hdd_bin_data;
-    size_t   bootloader_file_size = sizeof(_binary_limine_hdd_bin_data);
+    const uint8_t *bootloader_img = binary_limine_hdd_bin_data;
+    size_t   bootloader_file_size = sizeof(binary_limine_hdd_bin_data);
     uint8_t  orig_mbr[70], timestamp[6];
 
     uint32_t endcheck = 0x12345678;

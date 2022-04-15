@@ -317,10 +317,10 @@ static bool _device_write(const void *_buffer, uint64_t loc, size_t count) {
     } while (0)
 
 int main(int argc, char *argv[]) {
-    int      ok = 1;
+    int      ok = EXIT_FAILURE;
     int      force_mbr = 0;
-    const uint8_t *bootloader_img = _binary_limine_hdd_bin_data;
-    size_t   bootloader_file_size = sizeof(_binary_limine_hdd_bin_data);
+    const uint8_t *bootloader_img = binary_limine_hdd_bin_data;
+    size_t   bootloader_file_size = sizeof(binary_limine_hdd_bin_data);
     uint8_t  orig_mbr[70], timestamp[6];
 
     uint32_t endcheck = 0x12345678;
@@ -506,6 +506,25 @@ int main(int argc, char *argv[]) {
         goto cleanup;
     }
 
+    bool any_active = false;
+    uint8_t hint8;
+
+    device_read(&hint8, 446, sizeof(uint8_t));
+    any_active = any_active ? any_active : (hint8 & 0x80) != 0;
+    device_read(&hint8, 462, sizeof(uint8_t));
+    any_active = any_active ? any_active : (hint8 & 0x80) != 0;
+    device_read(&hint8, 478, sizeof(uint8_t));
+    any_active = any_active ? any_active : (hint8 & 0x80) != 0;
+    device_read(&hint8, 494, sizeof(uint8_t));
+    any_active = any_active ? any_active : (hint8 & 0x80) != 0;
+
+    if (!any_active) {
+        fprintf(stderr, "No active MBR partition found, some systems may not boot.\n");
+        fprintf(stderr, "Setting partition 1 as active to work around the issue...\n");
+        hint8 = 0x80;
+        device_write(&hint8, 446, sizeof(uint8_t));
+    }
+
     size_t   stage2_size   = bootloader_file_size - 512;
 
     size_t   stage2_sects  = DIV_ROUNDUP(stage2_size, 512);
@@ -680,7 +699,7 @@ int main(int argc, char *argv[]) {
 
     fprintf(stderr, "Limine deployed successfully!\n");
 
-    ok = 0;
+    ok = EXIT_SUCCESS;
 
 cleanup:
     if (cache)

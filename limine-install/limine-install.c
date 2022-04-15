@@ -420,8 +420,11 @@ int main(int argc, char *argv[]) {
             }
         }
 
+        bool any_active = false;
+
         device_read(&hint8, 446, sizeof(uint8_t));
         if (hint8 != 0x00 && hint8 != 0x80) {
+            any_active = any_active ? any_active : (hint8 & 0x80) != 0;
             if (!force_mbr) {
                 mbr = 0;
             } else {
@@ -431,6 +434,7 @@ int main(int argc, char *argv[]) {
         }
         device_read(&hint8, 462, sizeof(uint8_t));
         if (hint8 != 0x00 && hint8 != 0x80) {
+            any_active = any_active ? any_active : (hint8 & 0x80) != 0;
             if (!force_mbr) {
                 mbr = 0;
             } else {
@@ -440,6 +444,7 @@ int main(int argc, char *argv[]) {
         }
         device_read(&hint8, 478, sizeof(uint8_t));
         if (hint8 != 0x00 && hint8 != 0x80) {
+            any_active = any_active ? any_active : (hint8 & 0x80) != 0;
             if (!force_mbr) {
                 mbr = 0;
             } else {
@@ -449,12 +454,20 @@ int main(int argc, char *argv[]) {
         }
         device_read(&hint8, 494, sizeof(uint8_t));
         if (hint8 != 0x00 && hint8 != 0x80) {
+            any_active = any_active ? any_active : (hint8 & 0x80) != 0;
             if (!force_mbr) {
                 mbr = 0;
             } else {
                 hint8 = hint8 & 0x80 ? 0x80 : 0x00;
                 device_write(&hint8, 494, sizeof(uint8_t));
             }
+        }
+
+        if (!any_active) {
+            fprintf(stderr, "No active partition found, some systems may not boot.\n");
+            fprintf(stderr, "Setting partition 1 as active to work around the issue...\n");
+            hint8 = 0x80;
+            device_write(&hint8, 446, sizeof(uint8_t));
         }
 
         char hintc[64];
@@ -496,25 +509,6 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "       override these checks. ONLY DO THIS AT YOUR OWN RISK, DATA LOSS\n");
         fprintf(stderr, "       MAY OCCUR!\n");
         goto cleanup;
-    }
-
-    bool any_active = false;
-    uint8_t hint8;
-
-    device_read(&hint8, 446, sizeof(uint8_t));
-    any_active = any_active ? any_active : (hint8 & 0x80) != 0;
-    device_read(&hint8, 462, sizeof(uint8_t));
-    any_active = any_active ? any_active : (hint8 & 0x80) != 0;
-    device_read(&hint8, 478, sizeof(uint8_t));
-    any_active = any_active ? any_active : (hint8 & 0x80) != 0;
-    device_read(&hint8, 494, sizeof(uint8_t));
-    any_active = any_active ? any_active : (hint8 & 0x80) != 0;
-
-    if (!any_active) {
-        fprintf(stderr, "No active MBR partition found, some systems may not boot.\n");
-        fprintf(stderr, "Setting partition 1 as active to work around the issue...\n");
-        hint8 = 0x80;
-        device_write(&hint8, 446, sizeof(uint8_t));
     }
 
     size_t   stage2_size   = bootloader_file_size - 512;

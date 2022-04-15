@@ -184,19 +184,22 @@ bool efi_exit_boot_services(void) {
     efi_mmap_size += 4096;
 
     status = gBS->FreePool(efi_mmap);
-    if (status)
+    if (status) {
         goto fail;
+    }
 
     status = gBS->AllocatePool(EfiLoaderData, efi_mmap_size, (void **)&efi_mmap);
-    if (status)
+    if (status) {
         goto fail;
+    }
 
     size_t retries = 0;
 
 retry:
     status = gBS->GetMemoryMap(&efi_mmap_size, efi_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
-    if (status)
+    if (retries == 0 && status) {
         goto fail;
+    }
 
     // Be gone, UEFI!
     status = gBS->ExitBootServices(efi_image_handle, mmap_key);

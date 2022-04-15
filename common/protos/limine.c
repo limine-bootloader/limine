@@ -539,14 +539,14 @@ FEAT_START
     }
 
 skip_fb_init:;
+    memmap_alloc_range(fb.framebuffer_addr,
+                       (uint64_t)fb.framebuffer_pitch * fb.framebuffer_height,
+                       MEMMAP_FRAMEBUFFER, false, false, false, true);
+
     struct limine_framebuffer_request *framebuffer_request = get_request(LIMINE_FRAMEBUFFER_REQUEST);
     if (framebuffer_request == NULL) {
         break; // next feature
     }
-
-    memmap_alloc_range(fb.framebuffer_addr,
-                       (uint64_t)fb.framebuffer_pitch * fb.framebuffer_height,
-                       MEMMAP_FRAMEBUFFER, false, false, false, true);
 
     struct limine_framebuffer_response *framebuffer_response =
         ext_mem_alloc(sizeof(struct limine_framebuffer_response));

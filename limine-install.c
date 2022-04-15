@@ -463,13 +463,6 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        if (!any_active) {
-            fprintf(stderr, "No active partition found, some systems may not boot.\n");
-            fprintf(stderr, "Setting partition 1 as active to work around the issue...\n");
-            hint8 = 0x80;
-            device_write(&hint8, 446, sizeof(uint8_t));
-        }
-
         char hintc[64];
         device_read(hintc, 4, 8);
         if (memcmp(hintc, "_ECH_FS_", 8) == 0) {
@@ -499,6 +492,13 @@ int main(int argc, char *argv[]) {
                 hint16 = ENDSWAP(hint16);
                 device_write(&hint16, 1080, sizeof(uint16_t));
             }
+        }
+
+        if (mbr && !any_active) {
+            fprintf(stderr, "No active partition found, some systems may not boot.\n");
+            fprintf(stderr, "Setting partition 1 as active to work around the issue...\n");
+            hint8 = 0x80;
+            device_write(&hint8, 446, sizeof(uint8_t));
         }
     }
 

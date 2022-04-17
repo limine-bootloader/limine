@@ -555,12 +555,14 @@ failed_to_load_header_section:
         if (terminal_hdr_tag->flags & (1 << 0)) {
             // We provide callback
             tag->flags |= (1 << 2);
+            if (terminal_hdr_tag->callback != 0) {
 #if defined (__i386__)
-            term_callback = stivale2_term_callback;
-            stivale2_term_callback_ptr = terminal_hdr_tag->callback;
+                term_callback = stivale2_term_callback;
+                stivale2_term_callback_ptr = terminal_hdr_tag->callback;
 #elif defined (__x86_64__)
-            term_callback = (void *)terminal_hdr_tag->callback;
+                term_callback = (void *)terminal_hdr_tag->callback;
 #endif
+            }
         }
 
         // We provide max allowed string length

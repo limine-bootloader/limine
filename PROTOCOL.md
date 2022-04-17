@@ -149,7 +149,7 @@ Legacy PIC and IO APIC IRQs are all masked.
 If booted by EFI/UEFI, boot services are exited.
 
 `rsp` is set to point to a stack, in bootloader-reserved memory, which is
-at least 16KiB (16384 bytes) in size, or the size specified in the Stack
+at least 64KiB (65536 bytes) in size, or the size specified in the Stack
 Size Request (see below). An invalid return address of 0 is pushed
 to the stack before jumping to the kernel.
 
@@ -602,7 +602,7 @@ struct limine_smp_info {
 * `processor_id` - ACPI Processor UID as specified by the MADT
 * `lapic_id` - Local APIC ID of the processor as specified by the MADT
 * `goto_address` - An atomic write to this field causes the parked CPU to
-jump to the written address, on a 16KiB (or Stack Size Request size) stack. A pointer to the
+jump to the written address, on a 64KiB (or Stack Size Request size) stack. A pointer to the
 `struct limine_smp_info` structure of the CPU is passed in `RDI`. Other than
 that, the CPU state will be the same as described for the bootstrap
 processor. This field is unused for the structure describing the bootstrap

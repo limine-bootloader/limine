@@ -373,7 +373,7 @@ FEAT_END
 #endif
 
     // Stack size
-    uint64_t stack_size = 16384;
+    uint64_t stack_size = 65536;
 FEAT_START
     struct limine_stack_size_request *stack_size_request = get_request(LIMINE_STACK_SIZE_REQUEST);
     if (stack_size_request == NULL) {

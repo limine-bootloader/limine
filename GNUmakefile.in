@@ -84,18 +84,15 @@ override STAGE1_FILES := $(shell find '$(call SHESCAPE,$(SRCDIR))/stage1' -type 
 .PHONY: all
 all: @BUILD_UEFI@ @BUILD_BIOS@
 
-.PHONY: limine-hdd.h
-limine-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-hdd.h
-
-$(call MKESCAPE,$(BINDIR))/limine-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-hdd.bin
+$(call MKESCAPE,$(BINDIR))/limine-deploy: $(call MKESCAPE,$(SRCDIR))/limine-deploy/limine-deploy.c $(call MKESCAPE,$(BINDIR))/limine-hdd.bin
+	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cd '$(call SHESCAPE,$(BINDIR))' && '$(call SHESCAPE,$(SRCDIR))/limine-deploy/hgen.sh' >limine-hdd.h
+	cp '$(call SHESCAPE,$(SRCDIR))/limine-deploy/Makefile' '$(call SHESCAPE,$(SRCDIR))/limine-deploy/limine-deploy.c' '$(call SHESCAPE,$(SRCDIR))/limine-deploy/.gitignore' '$(call SHESCAPE,$(BINDIR))/'
+	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))'
 
 .PHONY: limine-deploy
 limine-deploy:
-	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	cp '$(call SHESCAPE,$(SRCDIR))/limine-deploy/Makefile' '$(call SHESCAPE,$(SRCDIR))/limine-deploy/limine-deploy.c' '$(call SHESCAPE,$(SRCDIR))/limine-deploy/.gitignore' '$(call SHESCAPE,$(BINDIR))/'
-	$(MAKE) limine-hdd.h
-	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))'
+	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-deploy'
 
 .PHONY: clean
 clean: limine-bios-clean limine-uefi32-clean limine-uefi64-clean
@@ -149,10 +146,10 @@ ifneq ($(BUILD_LIMINE_DEPLOY), no)
 	$(MAKE) limine-deploy
 endif
 
-.PHONY: limine-cd-efi
-limine-cd-efi:
+$(call MKESCAPE,$(BINDIR))/limine-cd-efi.bin: $(if @BUILD_UEFI32@, $(call MKESCAPE,$(BUILDDIR))/common-uefi32/BOOTIA32.EFI) $(if @BUILD_UEFI64@, $(call MKESCAPE,$(BUILDDIR))/common-uefi64/BOOTX64.EFI)
 ifneq ($(BUILD_CD_EFI), no)
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
+	rm -f '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'
 	dd if=/dev/zero of='$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' bs=512 count=2880 2>/dev/null
 	( mformat -i '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' -f 1440 :: && \
 	  mmd -D s -i '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' ::/EFI && \
@@ -163,6 +160,10 @@ ifneq ($(BUILD_CD_EFI), no)
 	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/common-uefi32/BOOTIA32.EFI' ::/EFI/BOOT ) || true ) \
 	) || rm -f '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'
 endif
+
+.PHONY: limine-cd-efi
+limine-cd-efi:
+	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'
 
 .PHONY: limine-uefi
 limine-uefi: @BUILD_UEFI32@ @BUILD_UEFI64@

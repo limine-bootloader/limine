@@ -226,6 +226,9 @@ del_mm1:
 }
 
 struct e820_entry_t *get_memmap(size_t *entries) {
+#if uefi == 1
+    pmm_reclaim_uefi_mem();
+#endif
     sanitise_entries(memmap, &memmap_entries, true);
 
     *entries = memmap_entries;

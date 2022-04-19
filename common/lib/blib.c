@@ -213,8 +213,6 @@ retry:
 
     asm volatile ("cli" ::: "memory");
 
-    pmm_reclaim_uefi_mem();
-
     // Go through new EFI memmap and free up bootloader entries
     size_t entry_count = efi_mmap_size / efi_desc_size;
 

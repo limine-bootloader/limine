@@ -11,7 +11,7 @@
 #if bios == 1
 extern symbol stage2_map;
 #elif uefi == 1
-extern symbol ImageBase;
+extern symbol __image_base;
 #endif
 
 extern symbol full_map;
@@ -27,7 +27,7 @@ static char *trace_address(size_t *off, size_t addr) {
 #elif uefi == 1
     limine_map = full_map;
 
-    addr -= (size_t)ImageBase;
+    addr -= (size_t)__image_base;
 #endif
 
     uintptr_t prev_addr = 0;

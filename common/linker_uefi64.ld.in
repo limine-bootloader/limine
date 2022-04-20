@@ -1,96 +1,143 @@
-/* The following code originates from gnu-efi */
-
-OUTPUT_FORMAT("elf64-x86-64", "elf64-x86-64", "elf64-x86-64")
+OUTPUT_FORMAT(elf64-x86-64)
 OUTPUT_ARCH(i386:x86-64)
 ENTRY(_start)
+
+PHDRS
+{
+    null    PT_NULL    FLAGS(0) ;
+    segm    PT_LOAD    FLAGS(7) ;
+    dynamic PT_DYNAMIC FLAGS(7) ;
+}
+
 SECTIONS
 {
-  . = 0;
-  ImageBase = .;
-  /* .hash and/or .gnu.hash MUST come first! */
-  .hash : { *(.hash) }
-  .gnu.hash : { *(.gnu.hash) }
-  . = ALIGN(4096);
-  .eh_frame :
-  {
-    *(.eh_frame)
-  }
-  . = ALIGN(4096);
-  .text :
-  {
-   _text = .;
-   *(.text)
-   *(.text.*)
-   *(.gnu.linkonce.t.*)
-   . = ALIGN(16);
-  }
-  _etext = .;
-  _text_size = . - _text;
-  . = ALIGN(4096);
-  .reloc :
-  {
-   *(.reloc)
-  }
-  . = ALIGN(4096);
-  .data :
-  {
-   _data = .;
-   *(.rodata*)
-   *(.got.plt)
-   *(.got)
+    . = 0;
+    __image_base = .;
+    __image_size = __image_end - __image_base;
+
+    .sect : {
+        *(.pe_header)
+
+        . = ALIGN(0x1000);
+
+        __text_start = .;
+        __text_size = __text_end - __text_start;
+        *(.text .text.*)
+        . = ALIGN(0x1000);
+        __text_end = .;
+
+        __reloc_start = .;
+        __reloc_size = __reloc_end - __reloc_start;
+        *(.reloc)
+        . = ALIGN(0x1000);
+        __reloc_end = .;
+
+        __sbat_start = .;
+        __sbat_size = __sbat_end - __sbat_start;
+        *(.sbat)
+        . = ALIGN(0x1000);
+        __sbat_end = .;
+
+        __data_start = .;
+        __data_size = __data_end - __data_start;
+        *(.rodata .rodata.*)
+
 #ifdef LINKER_NOMAP
    full_map = .;
 #else
    *(.full_map)
 #endif
+
    *(.no_unwind)
+
    data_begin = .;
-   *(.data*)
-   *(.sdata)
-   /* the EFI loader doesn't seem to like a .bss section, so we stick
-      it all into .data: */
-   *(.sbss)
-   *(.scommon)
-   *(.dynbss)
-   *(.bss)
-   *(COMMON)
+        *(.data .data.*)
+        *(.bss .bss.*)
+        *(COMMON)
    data_end = .;
-   *(.rel.local)
-  }
-  .note.gnu.build-id : { *(.note.gnu.build-id) }
+        . = ALIGN(0x1000);
+    } :segm
 
-  _edata = .;
-  _data_size = . - _etext;
+    .rela : {
+        *(.rela .rela.*)
+        . = ALIGN(0x1000);
+    } :segm
 
-  . = ALIGN(4096);
-  .sbat :
-  {
-    _sbat = .;
-    *(.sbat)
-    *(.sbat.*)
-  }
-  _esbat = .;
-  _sbat_size = . - _sbat;
+    .got : {
+        *(.got .got.*)
+        . = ALIGN(0x1000);
+    } :segm
 
-  . = ALIGN(4096);
-  .dynamic  : { *(.dynamic) }
-  . = ALIGN(4096);
-  .rela :
-  {
-    *(.rela.data*)
-    *(.rela.got)
-    *(.rela.stab)
-  }
-  . = ALIGN(4096);
-  .dynsym   : { *(.dynsym) }
-  . = ALIGN(4096);
-  .dynstr   : { *(.dynstr) }
-  . = ALIGN(4096);
-  .ignored.reloc :
-  {
-    *(.rela.reloc)
-    *(.eh_frame)
-    *(.note.GNU-stack)
-  }
-  .comment 0 : { *(.comment) }
+    .dynamic : {
+        __dynamic = .;
+        *(.dynamic)
+        . = ALIGN(0x1000);
+    } :segm :dynamic
+
+    __data_end = .;
+    __image_end = .;
+
+    .symtab 0 : {
+        *(.symtab)
+    } :null
+
+    .strtab 0 : {
+        *(.strtab)
+    } :null
+
+    .shstrtab 0 : {
+        *(.shstrtab)
+    } :null
+
+    .debug_aranges 0 : {
+        *(.debug_aranges)
+    } :null
+
+    .debug_pubnames 0 : {
+        *(.debug_pubnames)
+    } :null
+
+    .debug_info 0 : {
+        *(.debug_info)
+    } :null
+
+    .debug_abbrev 0 : {
+        *(.debug_abbrev)
+    } :null
+
+    .debug_line 0 : {
+        *(.debug_line)
+    } :null
+
+    .debug_loclists 0 : {
+        *(.debug_loclists)
+    } :null
+
+    .debug_rnglists 0 : {
+        *(.debug_rnglists)
+    } :null
+
+    .debug_frame 0 : {
+        *(.debug_frame)
+    } :null
+
+    .debug_loc 0 : {
+        *(.debug_loc)
+    } :null
+
+    .debug_ranges 0 : {
+        *(.debug_ranges)
+    } :null
+
+    .debug_str 0 : {
+        *(.debug_str)
+    } :null
+
+    .debug_line_str 0 : {
+        *(.debug_line_str)
+    } :null
+
+    /DISCARD/ : {
+        *(*)
+    }
 }

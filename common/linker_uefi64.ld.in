@@ -89,6 +89,10 @@ SECTIONS
         *(.shstrtab)
     } :null
 
+    /DISCARD/ : {
+        *.32.o(.debug*)
+    }
+
     .debug_aranges 0 : {
         *(.debug_aranges)
     } :null

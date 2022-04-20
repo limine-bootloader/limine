@@ -160,7 +160,11 @@ if ! test "x$LIMINE_CC" = "x"; then
         AC_MSG_ERROR([LIMINE_CC ($LIMINE_CC) not found])
     fi
 else
-    LIMINE_CC="$TOOLCHAIN-gcc"
+    if test "$TOOLCHAIN" = 'llvm'; then
+        LIMINE_CC='clang'
+    else
+        LIMINE_CC="$TOOLCHAIN-gcc"
+    fi
     AC_CHECK_PROG([LIMINE_CC_1], [$LIMINE_CC], [yes])
     if ! test "x$LIMINE_CC_1" = "xyes"; then
         LIMINE_CC="$CC"
@@ -199,20 +203,32 @@ AC_DEFUN([GET_BINUTILS_PROG], [
 
     if ! test "x$LIMINE_$1" = "x"; then
         AC_CHECK_PROG([LIMINE_$1_0], [$LIMINE_$1], [yes])
-        if ! test "x$LIMINE_$1_0" = "xyes" || ! $LIMINE_$1 --version | $GREP 'Free Software Foundation' >/dev/null 2>&1; then
+        if ! test "x$LIMINE_$1_0" = "xyes"; then
             AC_MSG_ERROR([LIMINE_$1 ($LIMINE_$1) is not a suitable $3])
         fi
     else
-        LIMINE_$1="$TOOLCHAIN-$2"
+        if test "$TOOLCHAIN" = 'llvm' && test '$2' = 'ld'; then
+            LIMINE_$1='ld.lld'
+        else
+            LIMINE_$1="$TOOLCHAIN-$2"
+        fi
         AC_CHECK_PROG([LIMINE_$1_1], [$LIMINE_$1], [yes])
-        if ! test "x$LIMINE_$1_1" = "xyes" || ! $LIMINE_$1 --version | $GREP 'Free Software Foundation' >/dev/null 2>&1; then
+        if ! test "x$LIMINE_$1_1" = "xyes"; then
             LIMINE_$1='g$2'
             AC_CHECK_PROG([LIMINE_$1_2], [$LIMINE_$1], [yes])
-            if ! test "x$LIMINE_$1_2" = "xyes" || ! $LIMINE_$1 --version | $GREP 'Free Software Foundation' >/dev/null 2>&1; then
+            if ! test "x$LIMINE_$1_2" = "xyes"; then
                 LIMINE_$1='$2'
                 AC_CHECK_PROG([LIMINE_$1_3], [$LIMINE_$1], [yes])
-                if ! test "x$LIMINE_$1_3" = "xyes" || ! $LIMINE_$1 --version | $GREP 'Free Software Foundation' >/dev/null 2>&1; then
-                    AC_MSG_ERROR([no suitable LIMINE_$1 found, run $srcdir/make_toolchain.sh or install GNU binutils])
+                if ! test "x$LIMINE_$1_3" = "xyes"; then
+                    if test '$2' = 'ld'; then
+                        LIMINE_$1='ld.lld'
+                    else
+                        LIMINE_$1='llvm-$2'
+                    fi
+                    AC_CHECK_PROG([LIMINE_$1_4], [$LIMINE_$1], [yes])
+                    if ! test "x$LIMINE_$1_4" = "xyes"; then
+                        AC_MSG_ERROR([no suitable LIMINE_$1 found, run $srcdir/make_toolchain.sh or install LLVM/GNU binutils])
+                    fi
                 fi
             fi
         fi

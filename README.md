@@ -88,7 +88,7 @@ In order to build Limine, the following programs have to be installed:
 (optional, necessary to build `limine-cd-efi.bin`).
 Furthermore, either the toolchain must have been built in the previous
 paragraph, or `gcc` or `llvm/clang` must also be installed, alongside
-`GNU binutils`. `nasm` is optional if the toolchain was built in the previous
+the respective binutils. `nasm` is optional if the toolchain was built in the previous
 paragraph as it is built as part of it.
 
 ### Configure
@@ -100,6 +100,8 @@ If checking out from the repository, run `./autogen.sh` first (`GNU autoconf` an
 
 Both `./autogen.sh` and `./configure` take arguments and environment variables;
 for more information on these, run `./configure --help`.
+
+To build using the LLVM toolchain, pass `TOOLCHAIN=llvm` to `./configure`.
 
 Limine supports both in-tree and out-of-tree builds. Simply run the `configure`
 script from the directory you wish to execute the build in. The following `make`

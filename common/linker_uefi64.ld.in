@@ -22,19 +22,25 @@ SECTIONS
 
         __text_start = .;
         __text_size = __text_end - __text_start;
+        __text_sizev = __text_endv - __text_start;
         *(.text .text.*)
+        __text_endv = .;
         . = ALIGN(0x1000);
         __text_end = .;
 
         __reloc_start = .;
         __reloc_size = __reloc_end - __reloc_start;
+        __reloc_sizev = __reloc_endv - __reloc_start;
         *(.reloc)
+        __reloc_endv = .;
         . = ALIGN(0x1000);
         __reloc_end = .;
 
         __sbat_start = .;
         __sbat_size = __sbat_end - __sbat_start;
+        __sbat_sizev = __sbat_endv - __sbat_start;
         *(.sbat)
+        __sbat_endv = .;
         . = ALIGN(0x1000);
         __sbat_end = .;
 

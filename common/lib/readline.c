@@ -263,12 +263,16 @@ int pit_sleep_and_quit_on_keypress(int seconds) {
     EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *exproto = NULL;
     EFI_SIMPLE_TEXT_IN_PROTOCOL *sproto = NULL;
 
+    bool use_sproto = false;
+
     if (gBS->HandleProtocol(gST->ConsoleInHandle, &exproto_guid, (void **)&exproto) != EFI_SUCCESS) {
         if (gBS->HandleProtocol(gST->ConsoleInHandle, &sproto_guid, (void **)&sproto) != EFI_SUCCESS) {
             panic(false, "Your input device doesn't have an input protocol!");
         }
 
         events[0] = sproto->WaitForKey;
+
+        use_sproto = true;
     } else {
         events[0] = exproto->WaitForKeyEx;
     }
@@ -287,7 +291,7 @@ again:
     }
 
     EFI_STATUS status;
-    if (events[0] == sproto->WaitForKey) {
+    if (use_sproto) {
         status = sproto->ReadKeyStroke(sproto, &kd.Key);
     } else {
         status = exproto->ReadKeyStrokeEx(exproto, &kd);
@@ -316,7 +320,7 @@ again:
             return GETCHAR_ESCAPE;
         }
 
-        if (events[0] == sproto->WaitForKey) {
+        if (use_sproto) {
             status = sproto->ReadKeyStroke(sproto, &kd.Key);
         } else {
             status = exproto->ReadKeyStrokeEx(exproto, &kd);
@@ -327,7 +331,7 @@ again:
         }
 
         if (kd.Key.UnicodeChar == '[') {
-            return input_sequence(events[0] == exproto->WaitForKeyEx, exproto, sproto);
+            return input_sequence(!use_sproto, exproto, sproto);
         }
     }
 

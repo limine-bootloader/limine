@@ -180,11 +180,17 @@ char *config_entry_editor(const char *title, const char *orig_entry) {
 
     bool syntax_highlighting_enabled = true;
     char *syntax_highlighting_enabled_config = config_get_value(NULL, 0, "EDITOR_HIGHLIGHTING");
-    if (!strcmp(syntax_highlighting_enabled_config, "no")) syntax_highlighting_enabled = false;
+    if (syntax_highlighting_enabled_config != NULL
+     && strcmp(syntax_highlighting_enabled_config, "no") == 0) {
+        syntax_highlighting_enabled = false;
+    }
 
     validation_enabled = true;
     char *validation_enabled_config = config_get_value(NULL, 0, "EDITOR_VALIDATION");
-    if (!strcmp(validation_enabled_config, "no")) validation_enabled = false;
+    if (validation_enabled_config != NULL
+     && strcmp(validation_enabled_config, "no") == 0) {
+        validation_enabled = false;
+    }
 
     char *buffer = ext_mem_alloc(EDITOR_MAX_BUFFER_SIZE);
     memcpy(buffer, orig_entry, entry_size);

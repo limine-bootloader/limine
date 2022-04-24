@@ -5,8 +5,9 @@ ENTRY(_start)
 PHDRS
 {
     null    PT_NULL    FLAGS(0) ;
-    segm    PT_LOAD    FLAGS(7) ;
-    dynamic PT_DYNAMIC FLAGS(7) ;
+    text    PT_LOAD    FLAGS((1 << 0) | (1 << 2)) ;
+    data    PT_LOAD    FLAGS((1 << 1) | (1 << 2)) ;
+    dynamic PT_DYNAMIC FLAGS((1 << 1) | (1 << 2)) ;
 }
 
 SECTIONS
@@ -15,37 +16,39 @@ SECTIONS
     __image_base = .;
     __image_size = __image_end - __image_base;
 
-    .sect : {
+    .text : {
         *(.pe_header)
-
         . = ALIGN(0x1000);
 
-        __text_start = .;
-        __text_size = __text_end - __text_start;
-        __text_sizev = __text_endv - __text_start;
         *(.text .text.*)
-        __text_endv = .;
         . = ALIGN(0x1000);
-        __text_end = .;
+    } :text
 
-        __reloc_start = .;
-        __reloc_size = __reloc_end - __reloc_start;
-        __reloc_sizev = __reloc_endv - __reloc_start;
-        *(.reloc)
-        __reloc_endv = .;
+    __text_start = __image_base + 0x1000;
+    __text_size = SIZEOF(.text) - 0x1000;
+    __text_end = __text_start + __text_size;
+
+    .data.sbat : {
+        *(.data.sbat)
         . = ALIGN(0x1000);
-        __reloc_end = .;
+    } :data
 
-        __sbat_start = .;
-        __sbat_size = __sbat_end - __sbat_start;
-        __sbat_sizev = __sbat_endv - __sbat_start;
-        *(.sbat)
-        __sbat_endv = .;
+    PROVIDE(__sbat_sizev = 1);
+
+    __sbat_start = __text_end;
+    __sbat_size = SIZEOF(.data.sbat);
+    __sbat_end = __sbat_start + __sbat_size;
+
+    .data.reloc : {
+        *(.data.reloc)
         . = ALIGN(0x1000);
-        __sbat_end = .;
+    } :data
 
-        __data_start = .;
-        __data_size = __data_end - __data_start;
+    __reloc_start = __sbat_end;
+    __reloc_size = SIZEOF(.data.reloc);
+    __reloc_end = __reloc_start + __reloc_size;
+
+    .data : {
         *(.rodata .rodata.*)
 
 #ifdef LINKER_NOMAP
@@ -61,27 +64,26 @@ SECTIONS
         *(.bss .bss.*)
         *(COMMON)
    data_end = .;
-        . = ALIGN(0x1000);
-    } :segm
+    } :data
 
     .rela : {
         *(.rela .rela.*)
-        . = ALIGN(0x1000);
-    } :segm
+    } :data
 
     .got : {
         *(.got .got.*)
-        . = ALIGN(0x1000);
-    } :segm
+    } :data
 
     .dynamic : {
-        __dynamic = .;
         *(.dynamic)
         . = ALIGN(0x1000);
-    } :segm :dynamic
+    } :data :dynamic
 
-    __data_end = .;
-    __image_end = .;
+    __data_start = __reloc_end;
+    __data_size = SIZEOF(.data) + SIZEOF(.rela) + SIZEOF(.got) + SIZEOF(.dynamic);
+    __data_end = __data_start + __data_size;
+
+    __image_end = __data_end;
 
     .symtab 0 : {
         *(.symtab)

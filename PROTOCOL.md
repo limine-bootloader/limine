@@ -44,7 +44,7 @@ bootloader will scan for inside the executable file to find requests. Requests
 may be located anywhere inside the executable as long as they are 8-byte
 aligned. There may only be 1 of the same request. The bootloader will refuse
 to boot an executable with multiple of the same request IDs. Alternatively, it is possible to provide a list of requests explicitly via an executable file section. See "Limine Requests Section".
-* `revision` - The revision of the request that the kernel provides. This is
+* `revision` - The revision of the request that the kernel provides. This starts at 0 and is
 bumped whenever new members or functionality are added to the request structure.
 Bootloaders process requests in a backwards compatible manner, *always*. This
 means that if the bootloader does not support the revision of the request,

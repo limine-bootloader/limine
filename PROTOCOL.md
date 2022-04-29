@@ -544,7 +544,7 @@ struct limine_5_level_paging_response {
 
 Notes: The presence of this request will prompt the bootloader to turn on
 x86_64 5-level paging. It will not be turned on if this request is not present.
-If the response pointer is unchanged, 5-level paging is engaged.
+If the response pointer is changed to a valid pointer, 5-level paging is engaged.
 
 ### SMP (multiprocessor) Feature
 

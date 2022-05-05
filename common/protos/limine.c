@@ -383,7 +383,9 @@ FEAT_START
     struct limine_stack_size_response *stack_size_response =
         ext_mem_alloc(sizeof(struct limine_stack_size_response));
 
-    stack_size = stack_size_request->stack_size;
+    if (stack_size_request->stack_size != 0) {
+        stack_size = stack_size_request->stack_size;
+    }
 
     stack_size_request->response = reported_addr(stack_size_response);
 FEAT_END

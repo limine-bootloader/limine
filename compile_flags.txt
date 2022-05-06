@@ -4,12 +4,13 @@
 -Ireduced-gnu-efi/inc/aarch64
 -Istivale
 -I.
--Duefi=1
--Dbios=0
+-Duefi=0
+-Dbios=1
 -Dport_x86=1
 -Dport_aarch64=0
 -target
 x86_64-elf
+-m32
 -std=gnu11
 -DLIMINE_VERSION="vscode"
 -DE9_OUTPUT=0

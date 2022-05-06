@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <mm/pmm.h>
+#include <arch/x86/e820.h>
 #include <lib/acpi.h>
 #include <lib/blib.h>
 #include <lib/libc.h>

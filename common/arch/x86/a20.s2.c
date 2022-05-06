@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <sys/a20.h>
-#include <sys/cpu.h>
+#include <arch/x86/a20.h>
+#include <arch/x86/cpu.h>
 #include <lib/real.h>
 
 bool a20_check(void) {

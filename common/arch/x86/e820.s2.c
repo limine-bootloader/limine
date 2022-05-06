@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <sys/e820.h>
+#include <arch/x86/e820.h>
 #include <lib/real.h>
 #include <lib/blib.h>
 #include <lib/print.h>

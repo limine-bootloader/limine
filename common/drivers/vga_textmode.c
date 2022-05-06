@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <drivers/vga_textmode.h>
-#include <sys/cpu.h>
+#include <arch/x86/cpu.h>
 #include <lib/real.h>
 #include <lib/libc.h>
 #include <lib/blib.h>

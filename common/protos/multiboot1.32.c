@@ -5,7 +5,7 @@
 #include <stdnoreturn.h>
 #include <mm/vmm.h>
 #if bios == 1
-#  include <sys/idt.h>
+#  include <arch/x86/idt.h>
 #endif
 
 noreturn void multiboot1_spinup_32(uint32_t entry_point, uint32_t multiboot1_info) {

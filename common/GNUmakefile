@@ -133,6 +133,8 @@ ifeq ($(TARGET), uefi32)
 override INTERNAL_CFLAGS += \
 		-Dbios=0 \
 		-Duefi=1 \
+		-Dport_x86=1 \
+		-Dport_aarch64=0 \
 		-m32 \
 		-march=i686 \
 		-mtune=generic \

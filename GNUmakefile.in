@@ -234,11 +234,11 @@ common-uefi64-clean:
 
 .PHONY: common-uefi-aarch64
 common-uefi-aarch64: $(call MKESCAPE,$(SRCDIR))/stivale
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all TARGET=uefi-aarch64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi64'
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all TARGET=uefi-aarch64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-aarch64'
 
 .PHONY: common-uefi-aarch64-clean
 common-uefi-aarch64-clean:
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' clean TARGET=uefi-aarch64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi64'
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' clean TARGET=uefi-aarch64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-aarch64'
 
 .PHONY: common-uefi32
 common-uefi32: $(call MKESCAPE,$(SRCDIR))/stivale

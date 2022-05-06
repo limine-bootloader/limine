@@ -96,6 +96,10 @@ typedef char symbol[];
 
 noreturn void stage3_common(void);
 
+#if port_x86
+noreturn void common_spinup(void *fnptr, int args, ...);
+#endif
+
 #define no_unwind __attribute__((section(".no_unwind")))
 
 #endif

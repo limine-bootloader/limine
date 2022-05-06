@@ -1,4 +1,4 @@
-#if port_x86 == 1
+#if port_x86
 #include <protos/multiboot2.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -11,9 +11,9 @@
 #include <lib/uri.h>
 #include <lib/fb.h>
 #include <lib/term.h>
-#include <sys/pic.h>
-#include <sys/cpu.h>
-#include <sys/idt.h>
+#include <arch/x86/pic.h>
+#include <arch/x86/cpu.h>
+#include <arch/x86/idt.h>
 #include <fs/file.h>
 #include <mm/vmm.h>
 #include <lib/acpi.h>

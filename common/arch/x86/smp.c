@@ -3,12 +3,12 @@
 #include <stdbool.h>
 #include <lib/libc.h>
 #include <lib/acpi.h>
-#include <sys/cpu.h>
+#include <arch/x86/cpu.h>
 #include <lib/blib.h>
 #include <lib/print.h>
-#include <sys/smp.h>
-#include <sys/lapic.h>
-#include <sys/gdt.h>
+#include <arch/x86/smp.h>
+#include <arch/x86/lapic.h>
+#include <arch/x86/gdt.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>
 

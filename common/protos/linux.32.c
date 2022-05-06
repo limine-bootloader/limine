@@ -1,7 +1,7 @@
 #if port_x86 == 1
 #include <stdint.h>
 #include <stdnoreturn.h>
-#include <sys/gdt.h>
+#include <arch/x86/gdt.h>
 
 noreturn void linux_spinup(void *entry, void *boot_params) {
     struct gdt_desc linux_gdt_descs[4];

@@ -10,7 +10,7 @@
 #endif
 #include <drivers/serial.h>
 #if port_x86
-#include <arch/aarch64/cpu.h>
+#include <arch/x86/cpu.h>
 #endif
 
 #if bios == 1

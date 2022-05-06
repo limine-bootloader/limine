@@ -1,9 +1,9 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <sys/idt.h>
-#include <sys/cpu.h>
-#include <sys/pic.h>
-#include <sys/lapic.h>
+#include <arch/x86/idt.h>
+#include <arch/x86/cpu.h>
+#include <arch/x86/pic.h>
+#include <arch/x86/lapic.h>
 #include <mm/pmm.h>
 #include <lib/blib.h>
 

@@ -1,8 +1,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <sys/lapic.h>
-#include <sys/cpu.h>
+#include <arch/x86/lapic.h>
+#include <arch/x86/cpu.h>
 #include <lib/blib.h>
 #include <lib/acpi.h>
 #include <mm/pmm.h>

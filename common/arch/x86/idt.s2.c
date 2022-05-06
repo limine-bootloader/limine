@@ -1,6 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
-#include <sys/idt.h>
+#include <arch/x86/idt.h>
 #include <lib/blib.h>
 
 #if bios == 1

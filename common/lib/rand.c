@@ -7,7 +7,7 @@
 #include <mm/pmm.h>
 
 #if port_x86
-#include <sys/cpu.h>
+#include <arch/x86/cpu.h>
 #elif port_aarch64
 #include <lib/time.h>
 #endif

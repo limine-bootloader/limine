@@ -6,10 +6,10 @@
 -I.
 -Duefi=1
 -Dbios=0
--Dport_x86=0
--Dport_aarch64=1
+-Dport_x86=1
+-Dport_aarch64=0
 -target
-aarch64-elf
+x86_64-elf
 -std=gnu11
 -DLIMINE_VERSION="vscode"
 -DE9_OUTPUT=0

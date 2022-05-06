@@ -58,7 +58,16 @@ static bool is_1gib_page_supported(void) {
     return CACHE;
 }
 
-void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags, enum page_size pg_size) {
+enum page_size {
+    Size4KiB,
+    Size2MiB,
+    Size1GiB
+};
+
+uint64_t get_page_size() {
+    return 0x1000;
+}
+static void ll_map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags, enum page_size pg_size) {
     // Calculate the indices in the various tables using the virtual address
     size_t pml5_entry = (virt_addr & ((uint64_t)0x1ff << 48)) >> 48;
     size_t pml4_entry = (virt_addr & ((uint64_t)0x1ff << 39)) >> 39;
@@ -109,4 +118,46 @@ level4:
     pml1 = get_next_level(pml2, pml2_entry);
 
     pml1[pml1_entry] = (pt_entry_t)(phys_addr | flags);
+}
+
+void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags, uint64_t size) {
+    uint64_t x86_flag_bits = 1 | ((flags & VM_WRITE) ? 2 : 0) | ((flags & VM_EXEC) ? 0 : (1UL << 63));
+    while (size > 0) {
+        if (!(virt_addr & 0x3fffffff) && !(phys_addr & 0x3fffffff) && size >= 0x40000000) {
+            ll_map_page(
+                pagemap,
+                virt_addr,
+                phys_addr,
+                x86_flag_bits,
+                Size1GiB
+            );
+            size -= 0x40000000;
+            virt_addr += 0x40000000;
+            phys_addr += 0x40000000;
+            continue;
+        }
+        if (!(virt_addr & 0x1fffff) && !(phys_addr & 0x1fffff) && size >= 0x200000) {
+            ll_map_page(
+                pagemap,
+                virt_addr,
+                phys_addr,
+                x86_flag_bits,
+                Size2MiB
+            );
+            size -= 0x200000;
+            virt_addr += 0x200000;
+            phys_addr += 0x200000;
+            continue;
+        }
+        ll_map_page(
+            pagemap,
+            virt_addr,
+            phys_addr,
+            x86_flag_bits,
+            Size4KiB
+        );
+        size -= 0x1000;
+        virt_addr += 0x1000;
+        phys_addr += 0x1000;
+    }
 }

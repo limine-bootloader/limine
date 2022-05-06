@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <sys/gdt.h>
+#include <arch/x86/gdt.h>
 #include <mm/pmm.h>
 #include <lib/libc.h>
 

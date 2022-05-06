@@ -84,7 +84,11 @@ nested:
 #elif uefi == 1
         print("System halted.");
         for (;;) {
+#if port_x86
             asm ("hlt");
+#elif port_aarch64
+            asm ("wfi");
+#endif
         }
 #endif
     }

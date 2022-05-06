@@ -14,16 +14,20 @@
 #include <lib/uri.h>
 #include <lib/fb.h>
 #include <lib/term.h>
-#include <sys/pic.h>
-#include <sys/cpu.h>
-#include <sys/gdt.h>
-#include <sys/idt.h>
-#include <sys/lapic.h>
 #include <fs/file.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>
 #include <stivale.h>
 #include <drivers/vga_textmode.h>
+
+#if port_x86
+#include <arch/x86/pic.h>
+#include <arch/x86/cpu.h>
+#include <arch/x86/gdt.h>
+#include <arch/x86/idt.h>
+#include <arch/x86/lapic.h>
+#endif
+
 
 #define REPORTED_ADDR(PTR) \
     ((PTR) + ((stivale_hdr.flags & (1 << 3)) ? \
@@ -129,6 +133,7 @@ bool stivale_load(char *config, char *cmdline) {
     int ret = 0;
     switch (bits) {
         case 64: {
+#if port_x86
             // Check if 64 bit CPU
             uint32_t eax, ebx, ecx, edx;
             if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
@@ -139,6 +144,7 @@ bool stivale_load(char *config, char *cmdline) {
                 printv("stivale: CPU has 5-level paging support\n");
                 level5pg = true;
             }
+#endif
 
             if (!loaded_by_anchor) {
                 if (elf64_load(kernel, &entry_point, NULL, &slide,
@@ -152,6 +158,7 @@ bool stivale_load(char *config, char *cmdline) {
 
             break;
         }
+#if port_x86
         case 32: {
             if (!loaded_by_anchor) {
                 if (elf32_load(kernel, (uint32_t *)&entry_point, NULL, STIVALE_MMAP_KERNEL_AND_MODULES))
@@ -163,8 +170,13 @@ bool stivale_load(char *config, char *cmdline) {
 
             break;
         }
+#endif
         default:
+#if port_x86
             panic(true, "stivale: Not 32 nor 64-bit kernel. What is this?");
+#elif port_aarch64
+            panic(true, "stivale: Not aarch64 kernel. What is this?");
+#endif
     }
 
     printv("stivale: %u-bit kernel detected\n", bits);
@@ -184,10 +196,17 @@ bool stivale_load(char *config, char *cmdline) {
         panic(true, "stivale: Higher half addresses header flag not supported in 32-bit mode.");
     }
 
+#if port_x86
     bool want_5lv = level5pg && (stivale_hdr.flags & (1 << 1));
 
     uint64_t direct_map_offset = want_5lv ? 0xff00000000000000 : 0xffff800000000000;
+#elif port_aarch64
+    // FIXME: i think i saw some FEAT_* which *might* allow for 5 level paging...
+    // but you never know with arm
+    uint64_t direct_map_offset = 0xffff800000000000;
+#endif
 
+#if port_x86
     struct gdtr *local_gdt = ext_mem_alloc(sizeof(struct gdtr));
     local_gdt->limit = gdt.limit;
     uint64_t local_gdt_base = (uint64_t)gdt.ptr;
@@ -197,6 +216,7 @@ bool stivale_load(char *config, char *cmdline) {
     local_gdt->ptr = local_gdt_base;
 #if defined (__i386__)
     local_gdt->ptr_hi = local_gdt_base >> 32;
+#endif
 #endif
 
     if (stivale_hdr.entry_point != 0)
@@ -342,9 +362,12 @@ bool stivale_load(char *config, char *cmdline) {
 #endif
 
     pagemap_t pagemap = {0};
+#if port_x86
     if (bits == 64)
         pagemap = stivale_build_pagemap(want_5lv, false, NULL, 0, false, 0, 0, direct_map_offset);
-
+#elif port_aarch64
+    pagemap = stivale_build_pagemap(false, NULL, 0, false, 0, 0, direct_map_offset);
+#endif
     // Reserve 32K at 0x70000 if possible
     if (!memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, false, false, false)) {
         if ((stivale_hdr.flags & (1 << 4)) == 0) {
@@ -366,9 +389,11 @@ bool stivale_load(char *config, char *cmdline) {
     stivale_struct->memory_map_entries = (uint64_t)mmap_entries;
     stivale_struct->memory_map_addr    = REPORTED_ADDR((uint64_t)(size_t)mmap_copy);
 
+#if port_x86
     stivale_spinup(bits, want_5lv, &pagemap,
                    entry_point, REPORTED_ADDR((uint64_t)(uintptr_t)stivale_struct),
                    stivale_hdr.stack, false, false, (uintptr_t)local_gdt);
+#endif
 
     __builtin_unreachable();
 
@@ -378,16 +403,21 @@ fail:
     return false;
 }
 
+#if port_x86
 pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range *ranges, size_t ranges_count,
                                 bool want_fully_virtual, uint64_t physical_base, uint64_t virtual_base,
                                 uint64_t direct_map_offset) {
     pagemap_t pagemap = new_pagemap(level5pg ? 5 : 4);
+#elif port_aarch64
+pagemap_t stivale_build_pagemap(bool unmap_null, struct elf_range *ranges, size_t ranges_count,
+                                bool want_fully_virtual, uint64_t physical_base, uint64_t virtual_base,
+                                uint64_t direct_map_offset) {
+    pagemap_t pagemap = new_pagemap();
+#endif
 
     if (ranges_count == 0) {
         // Map 0 to 2GiB at 0xffffffff80000000
-        for (uint64_t i = 0; i < 0x80000000; i += 0x40000000) {
-            map_page(pagemap, 0xffffffff80000000 + i, i, 0x03, Size1GiB);
-        }
+        map_page(pagemap, 0xffffffff80000000, 0, VM_READ|VM_WRITE|VM_EXEC, 0x80000000);
     } else {
         for (size_t i = 0; i < ranges_count; i++) {
             uint64_t virt = ranges[i].base;
@@ -403,45 +433,19 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
                 panic(false, "stivale2: Protected memory ranges are only supported for higher half kernels");
             }
 
-            uint64_t pf = VMM_FLAG_PRESENT |
-                (ranges[i].permissions & ELF_PF_X ? 0 : VMM_FLAG_NOEXEC) |
-                (ranges[i].permissions & ELF_PF_W ? VMM_FLAG_WRITE : 0);
+            uint64_t pf = VM_READ |
+                (ranges[i].permissions & ELF_PF_X ? VM_EXEC : 0) |
+                (ranges[i].permissions & ELF_PF_W ? VM_WRITE : 0);
 
-            for (uint64_t j = 0; j < ranges[i].length; j += 0x1000) {
-                map_page(pagemap, virt + j, phys + j, pf, Size4KiB);
-            }
+            map_page(pagemap, virt, phys, pf, 0x80000000);
         }
     }
 
-    // Sub 2MiB mappings
-    for (uint64_t i = 0; i < 0x200000; i += 0x1000) {
-        if (!(i == 0 && unmap_null))
-            map_page(pagemap, i, i, 0x03, Size4KiB);
-        map_page(pagemap, direct_map_offset + i, i, 0x03, Size4KiB);
-    }
+    // Map the lower half
+    if (unmap_null) map_page(pagemap, get_page_size(), get_page_size(), VM_READ|VM_WRITE|VM_EXEC, 0x100000000 - get_page_size());
+    else map_page(pagemap, 0, 0, VM_READ|VM_WRITE|VM_EXEC, 0x100000000);
 
-    // Map 2MiB to 4GiB at higher half base and 0
-    //
-    // NOTE: We cannot just directly map from 2MiB to 4GiB with 1GiB
-    // pages because if you do the math.
-    //
-    //     start = 0x200000
-    //     end   = 0x40000000
-    //
-    //     pages_required = (end - start) / (4096 * 512 * 512)
-    //
-    // So we map 2MiB to 1GiB with 2MiB pages and then map the rest
-    // with 1GiB pages :^)
-    for (uint64_t i = 0x200000; i < 0x40000000; i += 0x200000) {
-        map_page(pagemap, i, i, 0x03, Size2MiB);
-        map_page(pagemap, direct_map_offset + i, i, 0x03, Size2MiB);
-    }
-
-    for (uint64_t i = 0x40000000; i < 0x100000000; i += 0x40000000) {
-        map_page(pagemap, i, i, 0x03, Size1GiB);
-        map_page(pagemap, direct_map_offset + i, i, 0x03, Size1GiB);
-    }
-
+    // Now map the memory map entries
     size_t _memmap_entries = memmap_entries;
     struct e820_entry_t *_memmap =
         ext_mem_alloc(_memmap_entries * sizeof(struct e820_entry_t));
@@ -454,21 +458,13 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
         uint64_t length = _memmap[i].length;
         uint64_t top    = base + length;
 
-        if (base < 0x100000000)
-            base = 0x100000000;
-
-        if (base >= top)
-            continue;
-
-        uint64_t aligned_base   = ALIGN_DOWN(base, 0x40000000);
-        uint64_t aligned_top    = ALIGN_UP(top, 0x40000000);
-        uint64_t aligned_length = aligned_top - aligned_base;
-
-        for (uint64_t j = 0; j < aligned_length; j += 0x40000000) {
-            uint64_t page = aligned_base + j;
-            map_page(pagemap, page, page, 0x03, Size1GiB);
-            map_page(pagemap, direct_map_offset + page, page, 0x03, Size1GiB);
-        }
+        map_page(
+            pagemap,
+            ALIGN_DOWN(base, get_page_size()),
+            ALIGN_DOWN(base, get_page_size()),
+            VM_READ|VM_WRITE|VM_EXEC,
+            ALIGN_UP(top, get_page_size()) - ALIGN_DOWN(base, get_page_size())
+        );
     }
 
     return pagemap;
@@ -484,6 +480,7 @@ noreturn void stivale_spinup_32(
                  uint32_t stivale_struct_lo, uint32_t stivale_struct_hi,
                  uint32_t stack_lo, uint32_t stack_hi, uint32_t local_gdt);
 
+#if port_x86
 noreturn void stivale_spinup(
                  int bits, bool level5pg, pagemap_t *pagemap,
                  uint64_t entry_point, uint64_t _stivale_struct, uint64_t stack,
@@ -515,3 +512,4 @@ noreturn void stivale_spinup(
         (uint32_t)_stivale_struct, (uint32_t)(_stivale_struct >> 32),
         (uint32_t)stack, (uint32_t)(stack >> 32), local_gdt);
 }
+#endif

@@ -10,7 +10,7 @@
 #include <lib/uri.h>
 #include <lib/print.h>
 #include <lib/libc.h>
-#include <sys/idt.h>
+#include <arch/x86/idt.h>
 #include <drivers/vga_textmode.h>
 #include <mm/pmm.h>
 #if uefi == 1

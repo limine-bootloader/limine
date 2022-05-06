@@ -211,7 +211,11 @@ retry:
         goto retry;
     }
 
+#if port_x86
     asm volatile ("cli" ::: "memory");
+#elif port_aarch64
+    asm volatile ("msr daifset, 0xf" ::: "memory");
+#endif
 
     // Go through new EFI memmap and free up bootloader entries
     size_t entry_count = efi_mmap_size / efi_desc_size;

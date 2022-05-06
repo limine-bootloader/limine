@@ -9,8 +9,6 @@
 #include <lib/print.h>
 #include <pxe/tftp.h>
 
-#include <sys/cpu.h>
-
 #define SEPARATOR '\n'
 
 bool config_ready = false;

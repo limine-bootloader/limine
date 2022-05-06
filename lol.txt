@@ -1,0 +1,2080 @@
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/ArmPlatformPkg/PrePeiCore/PrePeiCoreUniCore/DEBUG/ArmPlatformPrePeiCore.dll 0x1800
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Core/Pei/PeiMain/DEBUG/PeiCore.dll 0x7240
+Register PPI Notify: DCD0BE23-9586-40F4-B643-06522CED4EDE
+Install PPI: 8C8CE578-8A3D-4F1C-9935-896185C32DD3
+Install PPI: 5473C07A-3DCB-4DCA-BD6F-1E9689E7349A
+The 0th FV start address is 0x00000001000, size is 0x001FF000, handle is 0x1000
+Register PPI Notify: 49EDB1C1-BF21-4761-BB12-EB0031AABB39
+Register PPI Notify: EA7CA24B-DED5-4DAD-A389-BF827E8F9B38
+Install PPI: B9E0ABFE-5979-4914-977F-6DEE78C278A6
+Install PPI: DBE23AA9-A345-4B97-85B6-B226F1617389
+Install PPI: 6847CC74-E9EC-4F8F-A29D-AB44E754A8FC
+DiscoverPeimsAndOrderWithApriori(): Found 0xA PEI FFS files in the 0th FV
+Loading PEIM 9B3ADA4F-AE56-4C24-8DEA-F03B7558AE50
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/PCD/Pei/Pcd/DEBUG/PcdPeim.dll 0x21240
+Loading PEIM at 0x00000021160 EntryPoint=0x00000021ECC PcdPeim.efi
+Install PPI: 06E81C58-4AD7-44BC-8390-F10265F72480
+Install PPI: 01F34D25-4DE2-23AD-3FF3-36353FF323F1
+Install PPI: 4D8B155B-C059-4C8F-8926-06FD4331DB8A
+Install PPI: A60C6B59-E459-425D-9C69-0BCC9CB27D81
+Register PPI Notify: 605EA650-C65C-42E1-BA80-91A52AB618C6
+Loading PEIM 6141E486-7543-4F1A-A579-FF532ED78E75
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/ResetSystemPei/ResetSystemPei/DEBUG/ResetSystemPei.dll 0x34240
+Loading PEIM at 0x00000034160 EntryPoint=0x00000035164 ResetSystemPei.efi
+Install PPI: 6CC45765-CCE4-42FD-BC56-011AAAC6C9A8
+Install PPI: 8C9F4DE3-7B90-47EF-9308-287CECD66DE8
+Install PPI: E09F355D-DAE8-4910-B14A-92780FDCF7CB
+Install PPI: 75CF14AE-3441-49DC-AA10-BB35A7BA8BAB
+Loading PEIM C61EF796-B50D-4F98-9F78-4F6F79D800D5
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/ArmPlatformPkg/MemoryInitPei/MemoryInitPeim/DEBUG/MemoryInit.dll 0x19240
+Loading PEIM at 0x00000019160 EntryPoint=0x000000196C4 MemoryInit.efi
+QemuVirtMemInfoPeiLibConstructor: System RAM @ 0x40000000 - 0x7FFFFFFF
+Memory Init PEIM Loaded
+PeiInstallPeiMemory MemoryBegin 0x7C000000, MemoryLength 0x4000000
+ArmVirtGetMemoryMap: Dumping System DRAM Memory Map:
+	PhysicalBase: 0x40000000
+	VirtualBase: 0x40000000
+	Length: 0x40000000
+Temp Stack : BaseAddress=0x4007E020 Length=0x1FE0
+Temp Heap  : BaseAddress=0x4007C030 Length=0x1FF0
+Total temporary memory:    16336 bytes.
+  temporary memory stack ever used:       4032 bytes.
+  temporary memory heap used for HobList: 3720 bytes.
+  temporary memory heap occupied by memory pages: 0 bytes.
+Memory Allocation 0x00000004 0x7FFFF000 - 0x7FFFFFFF
+Memory Allocation 0x00000004 0x7FFFE000 - 0x7FFFEFFF
+Memory Allocation 0x00000004 0x7FFFD000 - 0x7FFFDFFF
+Memory Allocation 0x00000004 0x7FFFC000 - 0x7FFFCFFF
+Old Stack size 8160, New stack size 131072
+Stack Hob: BaseAddress=0x7C000000 Length=0x20000
+Heap Offset = 0x3BFA3FD0 Stack Offset = 0x3BFA0000
+Loading PEIM 52C05B14-0B98-496C-BC3B-04B50211D680
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Core/Pei/PeiMain/DEBUG/PeiCore.dll 0x7FFEE240
+Loading PEIM at 0x0007FFEE160 EntryPoint=0x0007FFF8D00 PeiCore.efi
+Reinstall PPI: 8C8CE578-8A3D-4F1C-9935-896185C32DD3
+Reinstall PPI: 5473C07A-3DCB-4DCA-BD6F-1E9689E7349A
+Reinstall PPI: B9E0ABFE-5979-4914-977F-6DEE78C278A6
+Install PPI: F894643D-C449-42D1-8EA8-85BDD8C65BDE
+Loading PEIM 2FD8B7AD-F8FA-4021-9FC0-0AA572147CDC
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/ArmPkg/Drivers/CpuPei/CpuPei/DEBUG/CpuPei.dll 0x7FFEB240
+Loading PEIM at 0x0007FFEB160 EntryPoint=0x0007FFEBEA4 CpuPei.efi
+Loading PEIM 2AD0FC59-2314-4BF3-8633-13FA22A624A0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/ArmPlatformPkg/PlatformPei/PlatformPeim/DEBUG/PlatformPei.dll 0x7FFE7240
+Loading PEIM at 0x0007FFE7160 EntryPoint=0x0007FFE768C PlatformPei.efi
+Platform PEIM Loaded
+PlatformPeim: PL011 UART @ 0x9000000
+Install PPI: A030D115-54DD-447B-9064-F206883D7CCC
+Install PPI: 7408D748-FC8C-4EE6-9288-C4BEC092A410
+Loading PEIM 86D70125-BAA3-4296-A62F-602BEBBB9081
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Core/DxeIplPeim/DxeIpl/DEBUG/DxeIpl.dll 0x7FEDE240
+Loading PEIM at 0x0007FEDE160 EntryPoint=0x0007FEE3540 DxeIpl.efi
+Install PPI: EE4E5898-3914-4259-9D6E-DC7BD79403CF
+Install PPI: 1A36E4E7-FAB6-476A-8E75-695A0576FDD7
+Install PPI: 0AE8CE5D-E448-4437-A8D7-EBF5F194F731
+Customized Guided section Memory Size required is 0x7D1A10 and address is 0x7F6FC000
+ProcessFvFile() FV at 0x7F6FC010, FvAlignment required is 0x10
+Install PPI: EA7CA24B-DED5-4DAD-A389-BF827E8F9B38
+Notify: PPI Guid: EA7CA24B-DED5-4DAD-A389-BF827E8F9B38, Peim notify entry point: 8C7C
+The 1th FV start address is 0x0007F6FC010, size is 0x007D1A00, handle is 0x7F6FC010
+Install PPI: 49EDB1C1-BF21-4761-BB12-EB0031AABB39
+Notify: PPI Guid: 49EDB1C1-BF21-4761-BB12-EB0031AABB39, Peim notify entry point: 8C7C
+The FV 7F6FC010 has already been processed!
+DiscoverPeimsAndOrderWithApriori(): Found 0x0 PEI FFS files in the 1th FV
+DXE IPL Entry
+Loading PEIM D6A2CB7F-6A18-4E2F-B43B-9920A733700A
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Core/Dxe/DxeMain/DEBUG/DxeCore.dll 0x7F6B6000
+Loading PEIM at 0x0007F6B5000 EntryPoint=0x0007F6B6000 DxeCore.efi
+Loading DXE CORE at 0x0007F6B5000 EntryPoint=0x0007F6B6000
+Install PPI: 605EA650-C65C-42E1-BA80-91A52AB618C6
+Notify: PPI Guid: 605EA650-C65C-42E1-BA80-91A52AB618C6, Peim notify entry point: 21AB0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Core/Dxe/DxeMain/DEBUG/DxeCore.dll 0x7F6B6000
+HOBLIST address in DXE = 0x7F0D5018
+Memory Allocation 0x00000004 0x7FFFF000 - 0x7FFFFFFF
+Memory Allocation 0x00000004 0x7FFFE000 - 0x7FFFEFFF
+Memory Allocation 0x00000004 0x7FFFD000 - 0x7FFFDFFF
+Memory Allocation 0x00000004 0x7FFFC000 - 0x7FFFCFFF
+Memory Allocation 0x00000004 0x7F695000 - 0x7F6B4FFF
+Memory Allocation 0x00000003 0x7FFEE000 - 0x7FFFBFFF
+Memory Allocation 0x00000003 0x7FFEB000 - 0x7FFEDFFF
+Memory Allocation 0x00000003 0x7FFE7000 - 0x7FFEAFFF
+Memory Allocation 0x00000004 0x7FEE6000 - 0x7FFE6FFF
+Memory Allocation 0x00000003 0x7FEDE000 - 0x7FEE5FFF
+Memory Allocation 0x00000004 0x7FECE000 - 0x7FEDDFFF
+Memory Allocation 0x00000004 0x7F6FC000 - 0x7FECDFFF
+Memory Allocation 0x00000003 0x7F6B5000 - 0x7F6FBFFF
+Memory Allocation 0x00000003 0x7F6B5000 - 0x7F6FBFFF
+Memory Allocation 0x00000004 0x7F695000 - 0x7F6B4FFF
+Memory Allocation 0x00000004 0x7F694000 - 0x7F694FFF
+Memory Allocation 0x00000004 0x7F693000 - 0x7F693FFF
+Memory Allocation 0x00000004 0x7C000000 - 0x7C01FFFF
+FV Hob            0x1000 - 0x1FFFFF
+FV Hob            0x7F6FC010 - 0x7FECDA0F
+FV2 Hob           0x7F6FC010 - 0x7FECDA0F
+                  00000000-0000-0000-0000-000000000000 - 9E21FD93-9C72-4C15-8C4B-E77F1DB2D792
+FV3 Hob           0x7F6FC010 - 0x7FECDA0F - 0x0 - 0x1
+                  00000000-0000-0000-0000-000000000000 - 9E21FD93-9C72-4C15-8C4B-E77F1DB2D792
+InstallProtocolInterface: D8117CFE-94A6-11D4-9A3A-0090273FC14D 7F6DE000
+InstallProtocolInterface: 8F644FA9-E850-4DB1-9CE2-0B44698E8DA4 7F0D14B0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7F0CD018
+InstallProtocolInterface: 8F644FA9-E850-4DB1-9CE2-0B44698E8DA4 7F0CDBB0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7F0CDC98
+InstallProtocolInterface: 220E73B6-6BDB-4413-8405-B974B108619A 7F0CD130
+InstallProtocolInterface: 220E73B6-6BDB-4413-8405-B974B108619A 7F0CC7B0
+InstallProtocolInterface: FC1BCDB0-7D31-49AA-936A-A4600D9DD083 7F6DE3B0
+Loading driver 9B680FCE-AD6B-4F3A-B60B-F59899003443
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E812340
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/DevicePathDxe/DevicePathDxe/DEBUG/DevicePathDxe.dll 0x7F4B1000
+Loading driver at 0x0007F4B0000 EntryPoint=0x0007F4B2044 DevicePathDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7D3018
+ProtectUefiImageCommon - 0x7E812340
+  - 0x000000007F4B0000 - 0x0000000000010000
+InstallProtocolInterface: 0379BE4E-D706-437D-B037-EDB82FB772A4 7F4BA598
+InstallProtocolInterface: 8B843E20-8132-4852-90CC-551A4E4A7F1C 7F4BA588
+InstallProtocolInterface: 05C99A21-C70F-4AD2-8A5F-35DF3343F51E 7F4BA578
+Loading driver 80CF7257-87AB-47F9-A3FE-D50B76D89541
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E7D37C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/PCD/Dxe/Pcd/DEBUG/PcdDxe.dll 0x7F4A7000
+Loading driver at 0x0007F4A6000 EntryPoint=0x0007F4AA2F0 PcdDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7D3598
+ProtectUefiImageCommon - 0x7E7D37C0
+  - 0x000000007F4A6000 - 0x000000000000A000
+InstallProtocolInterface: 11B34006-D85B-4D0A-A290-D5A571310EF7 7F4AE198
+InstallProtocolInterface: 13A3F0F6-264A-3EF0-F2E0-DEC512342F34 7F4AE0F0
+InstallProtocolInterface: 5BE40F57-FA68-4610-BBBF-E9C5FCDAD365 7F4AE180
+InstallProtocolInterface: FD0F4478-0EFD-461D-BA2D-E58C45FD5F5E 7F4AE0E0
+Loading driver 9A871B00-1C16-4F61-8D2C-93B6654B5AD6
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E7E4440
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/ArmVirtPkg/FdtClientDxe/FdtClientDxe/DEBUG/FdtClientDxe.dll 0x7F49F000
+Loading driver at 0x0007F49E000 EntryPoint=0x0007F4A0078 FdtClientDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7E4798
+ProtectUefiImageCommon - 0x7E7E4440
+  - 0x000000007F49E000 - 0x0000000000008000
+InitializeFdtClientDxe: DTB @ 0x7FEE6000
+InstallProtocolInterface: E11FACA0-4710-4C8E-A7A2-01BAA2591B4C 7F4A4060
+Loading driver B601F8C4-43B7-4784-95B1-F4226CB40CEE
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E7DA0C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Core/RuntimeDxe/RuntimeDxe/DEBUG/RuntimeDxe.dll 0x7F510000
+Loading driver at 0x0007F500000 EntryPoint=0x0007F510908 RuntimeDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7DA918
+ProtectUefiImageCommon - 0x7E7DA0C0
+  - 0x000000007F500000 - 0x0000000000040000
+InstallProtocolInterface: B7DFB4E1-052F-449F-87BE-9818FC91B733 7F520050
+Loading driver F80697E9-7FD6-4665-8646-88E33EF71DFC
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E7DB040
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/SecurityStubDxe/SecurityStubDxe/DEBUG/SecurityStubDxe.dll 0x7F498000
+Loading driver at 0x0007F497000 EntryPoint=0x0007F498970 SecurityStubDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7DA698
+ProtectUefiImageCommon - 0x7E7DB040
+  - 0x000000007F497000 - 0x0000000000007000
+InstallProtocolInterface: 94AB2F58-1438-4EF1-9152-18941A3A0E68 7F49C0B8
+InstallProtocolInterface: A46423E3-4617-49F1-B9FF-D1BFA9115839 7F49C0C0
+InstallProtocolInterface: 15853D7C-3DDF-43E0-A1CB-EBF85B8F872C 7F49C0B0
+Loading driver 4C6E0267-C77D-410D-8100-1495911A989D
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E7DB440
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/EmbeddedPkg/MetronomeDxe/MetronomeDxe/DEBUG/MetronomeDxe.dll 0x7F492000
+Loading driver at 0x0007F491000 EntryPoint=0x0007F49253C MetronomeDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7DB718
+ProtectUefiImageCommon - 0x7E7DB440
+  - 0x000000007F491000 - 0x0000000000006000
+InstallProtocolInterface: 26BACCB2-6F42-11D4-BCE7-0080C73C8881 7F495040
+Loading driver 348C4D62-BFBD-4882-9ECE-C80BB1C4783B
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E7E3BC0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe/DEBUG/HiiDatabase.dll 0x7F472000
+Loading driver at 0x0007F471000 EntryPoint=0x0007F474978 HiiDatabase.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7E3A98
+ProtectUefiImageCommon - 0x7E7E3BC0
+  - 0x000000007F471000 - 0x0000000000020000
+InstallProtocolInterface: E9CA4775-8657-47FC-97E7-7ED65A084324 7F48F170
+InstallProtocolInterface: 0FD96974-23AA-4CDC-B9CB-98D17750322A 7F48F1E8
+InstallProtocolInterface: EF9FC172-A1B2-4693-B327-6D32FC416042 7F48F210
+InstallProtocolInterface: 587E72D7-CC50-4F79-8209-CA291FC1A10F 7F48F268
+InstallProtocolInterface: 0A8BADD5-03B8-4D19-B128-7B8F0EDAA596 7F48F298
+InstallProtocolInterface: 31A6406A-6BDF-4E46-B2A2-EBAA89C40920 7F48F190
+InstallProtocolInterface: 1A1241E6-8F19-41A9-BC0E-E8EF39E06546 7F48F1B8
+Loading driver 9A5163E7-5C29-453F-825C-837A46A81E15
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E7E2B40
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/SerialDxe/SerialDxe/DEBUG/SerialDxe.dll 0x7F46C000
+Loading driver at 0x0007F46B000 EntryPoint=0x0007F46D98C SerialDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7E2098
+ProtectUefiImageCommon - 0x7E7E2B40
+  - 0x000000007F46B000 - 0x0000000000006000
+InstallProtocolInterface: BB25CF6F-F1D4-11D2-9A0C-0090273FC1FD 7F46F090
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7F46F040
+Loading driver D93CE3D8-A7EB-4730-8C8E-CC466A9ECC3C
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E7E21C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/ReportStatusCodeRouter/RuntimeDxe/ReportStatusCodeRouterRuntimeDxe/DEBUG/ReportStatusCodeRouterRuntimeDxe.dll 0x7C1A0000
+Loading driver at 0x0007C190000 EntryPoint=0x0007C1A0668 ReportStatusCodeRouterRuntimeDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7E2698
+ProtectUefiImageCommon - 0x7E7E21C0
+  - 0x000000007C190000 - 0x0000000000040000
+InstallProtocolInterface: 86212936-0E76-41C8-A03A-2AF2FC1C39E2 7C1B0050
+InstallProtocolInterface: D2B2B828-0826-48A7-B3DF-983C006024F0 7C1B0060
+Loading driver A210F973-229D-4F4D-AA37-9895E6C9EABA
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E7E17C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/DpcDxe/DpcDxe/DEBUG/DpcDxe.dll 0x7F466000
+Loading driver at 0x0007F465000 EntryPoint=0x0007F4668E8 DpcDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7E1598
+ProtectUefiImageCommon - 0x7E7E17C0
+  - 0x000000007F465000 - 0x0000000000006000
+InstallProtocolInterface: 480F8AE9-0C46-4AA9-BC89-DB9FBA619806 7F469030
+Loading driver 22EA234F-E72A-11E4-91F9-28D2447C4829
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E7E0040
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/HttpUtilitiesDxe/HttpUtilitiesDxe/DEBUG/HttpUtilitiesDxe.dll 0x7F45F000
+Loading driver at 0x0007F45E000 EntryPoint=0x0007F45FF3C HttpUtilitiesDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7E1418
+ProtectUefiImageCommon - 0x7E7E0040
+  - 0x000000007F45E000 - 0x0000000000007000
+InstallProtocolInterface: 3E35C163-4074-45DD-431E-23989DD86B32 7F463050
+Loading driver 13AC6DD0-73D0-11D4-B06B-00AA00BD6DE7
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E7E09C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/EbcDxe/EbcDxe/DEBUG/EbcDxe.dll 0x7F455000
+Loading driver at 0x0007F454000 EntryPoint=0x0007F4558A8 EbcDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7E0798
+ProtectUefiImageCommon - 0x7E7E09C0
+  - 0x000000007F454000 - 0x000000000000A000
+InstallProtocolInterface: 13AC6DD1-73D0-11D4-B06B-00AA00BD6DE7 7E7E0718
+InstallProtocolInterface: 96F46153-97A7-4793-ACC1-FA19BF78EA97 7F45C050
+InstallProtocolInterface: 2755590C-6F3C-42FA-9EA4-A3BA543CDA25 7E7DF018
+InstallProtocolInterface: AAEACCFD-F27B-4C17-B610-75CA1F2DFB52 7E7DFE98
+Loading driver 0049858F-8CA7-4CCD-918B-D952CBF32975
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E7DF0C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/ArmVirtPkg/VirtioFdtDxe/VirtioFdtDxe/DEBUG/VirtioFdtDxe.dll 0x7F44E000
+Loading driver at 0x0007F44D000 EntryPoint=0x0007F44FEA8 VirtioFdtDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7DFA18
+ProtectUefiImageCommon - 0x7E7DF0C0
+  - 0x000000007F44D000 - 0x0000000000007000
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DF898
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DF6A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DF498
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DE020
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DEB98
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DEC20
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DED98
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DEAA0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DEA18
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DE1A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DE698
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DE2A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DE398
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DE4A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DDF18
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DDE20
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DDD98
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DD0A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DDD18
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DD8A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DD198
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DD6A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DD518
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DD320
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DD498
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DCB20
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DCF98
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DCCA0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DC098
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DC7A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DC918
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DC5A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DC718
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7DC220
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7DC318
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7D9020
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7D9B98
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7D9C20
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7D9D98
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7D9AA0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7D9A18
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7D91A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7D9698
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7D92A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7D9398
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7D94A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7D8F18
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7D8E20
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7D8D98
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7D80A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7D8D18
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7D88A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7D8198
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7D86A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7D8518
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7D8320
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7D8498
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7D7B20
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7D7F98
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7D7CA0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7D7098
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7D77A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E7D7918
+VirtioMmioInit: Warning: The VendorId (0x554D4551) does not match the VirtIo VendorId (0x1AF4).
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E7D75A0
+Loading driver FE5CEA76-4F72-49E8-986F-2CD899DFFE5D
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E7D6240
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteDxe/DEBUG/FaultTolerantWriteDxe.dll 0x7F445000
+Loading driver at 0x0007F444000 EntryPoint=0x0007F445C48 FaultTolerantWriteDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7D7298
+ProtectUefiImageCommon - 0x7E7D6240
+  - 0x000000007F444000 - 0x0000000000009000
+Loading driver 4B28E4C7-FF36-4E10-93CF-A82159E777C5
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E7D50C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/ResetSystemRuntimeDxe/ResetSystemRuntimeDxe/DEBUG/ResetSystemRuntimeDxe.dll 0x7C150000
+Loading driver at 0x0007C140000 EntryPoint=0x0007C15084C ResetSystemRuntimeDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7D5D98
+ProtectUefiImageCommon - 0x7E7D50C0
+  - 0x000000007C140000 - 0x0000000000040000
+InstallProtocolInterface: 27CFAC88-46CC-11D4-9A38-0090273FC14D 0
+InstallProtocolInterface: 9DA34AE0-EAF9-4BBF-8EC3-FD60226C44BE 7C1600B8
+InstallProtocolInterface: 695D7835-8D47-4C11-AB22-FA8ACCE7AE7A 7C160068
+InstallProtocolInterface: 2DF6BA0B-7092-440D-BD04-FB091EC3F3C1 7C160090
+Loading driver DE371F7C-DEC4-4D21-ADF1-593ABCC15882
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E7D4B40
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/ArmPkg/Drivers/ArmGic/ArmGicDxe/DEBUG/ArmGicDxe.dll 0x7F43D000
+Loading driver at 0x0007F43C000 EntryPoint=0x0007F43DE94 ArmGicDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7D4E98
+ProtectUefiImageCommon - 0x7E7D4B40
+  - 0x000000007F43C000 - 0x0000000000008000
+Found GIC @ 0x8000000/0x8010000
+InstallProtocolInterface: 2890B3EA-053D-1643-AD0C-D64808DA3FF1 7F4420C0
+InstallProtocolInterface: 32898322-2DA1-474A-BAAA-F3F7CF569470 7F442040
+Loading driver A487A478-51EF-48AA-8794-7BEE2A0562F1
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E391B40
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/ShellPkg/DynamicCommand/TftpDynamicCommand/TftpDynamicCommand/DEBUG/tftpDynamicCommand.dll 0x7F42E000
+Loading driver at 0x0007F42D000 EntryPoint=0x0007F42EB74 tftpDynamicCommand.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E7D4618
+InstallProtocolInterface: 6A1EE763-D47A-43B4-AABE-EF1DE2AB56FC 7F439070
+ProtectUefiImageCommon - 0x7E391B40
+  - 0x000000007F42D000 - 0x000000000000F000
+InstallProtocolInterface: 3C7200E9-005F-4EA4-87DE-A3DFAC8A27C3 7F4380A0
+Loading driver 2F30DA26-F51B-4B6F-85C4-31873C281BCA
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E390C40
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/OvmfPkg/LinuxInitrdDynamicShellCommand/LinuxInitrdDynamicShellCommand/DEBUG/LinuxInitrdDynamicShellCommand.dll 0x7F422000
+Loading driver at 0x0007F421000 EntryPoint=0x0007F427ACC LinuxInitrdDynamicShellCommand.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E390818
+InstallProtocolInterface: 6A1EE763-D47A-43B4-AABE-EF1DE2AB56FC 7F42B070
+ProtectUefiImageCommon - 0x7E390C40
+  - 0x000000007F421000 - 0x000000000000C000
+InstallProtocolInterface: 3C7200E9-005F-4EA4-87DE-A3DFAC8A27C3 7F42A160
+Loading driver EBF342FE-B1D3-4EF8-957C-8048606FF671
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E390340
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/SetupBrowserDxe/SetupBrowserDxe/DEBUG/SetupBrowser.dll 0x7F406000
+Loading driver at 0x0007F405000 EntryPoint=0x0007F415244 SetupBrowser.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E38DD98
+ProtectUefiImageCommon - 0x7E390340
+  - 0x000000007F405000 - 0x000000000001C000
+InstallProtocolInterface: B9D4C360-BCFB-4F9B-9298-53C136982258 7F41F0F0
+InstallProtocolInterface: A770C357-B693-4E6D-A6CF-D21C728E550B 7F41F120
+InstallProtocolInterface: 1F73B18D-4630-43C1-A1DE-6F80855D7DA4 7F41F100
+Loading driver F9D88642-0737-49BC-81B5-6889CD57D9EA
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E38C7C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/SmbiosDxe/SmbiosDxe/DEBUG/SmbiosDxe.dll 0x7F3FC000
+Loading driver at 0x0007F3FB000 EntryPoint=0x0007F3FED78 SmbiosDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E38C718
+ProtectUefiImageCommon - 0x7E38C7C0
+  - 0x000000007F3FB000 - 0x000000000000A000
+Found FwCfg @ 0x9020008/0x9020000
+Found FwCfg DMA @ 0x9020010
+DetectSmbiosVersion: SMBIOS 3.x DocRev from QEMU: 0x00
+DetectSmbiosVersion: SMBIOS version from QEMU: 0x0300
+InstallProtocolInterface: 03583FF6-CB36-4940-947E-B9B39F4AFAF7 7F4030F0
+Loading driver 168D1A6E-F4A5-448A-9E95-795661BB3067
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E384040
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/ArmPkg/Drivers/ArmPciCpuIo2Dxe/ArmPciCpuIo2Dxe/DEBUG/ArmPciCpuIo2Dxe.dll 0x7F3F6000
+Loading driver at 0x0007F3F5000 EntryPoint=0x0007F3F6E30 ArmPciCpuIo2Dxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E38C398
+ProtectUefiImageCommon - 0x7E384040
+  - 0x000000007F3F5000 - 0x0000000000006000
+InstallProtocolInterface: AD61F191-AE5F-4C0E-B9FA-E869D288C64F 7F3F9050
+Loading driver DCE1B094-7DC6-45D0-9FDD-D7FC3CC3E4EF
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3849C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/OvmfPkg/QemuRamfbDxe/QemuRamfbDxe/DEBUG/QemuRamfbDxe.dll 0x7F3EE000
+Loading driver at 0x0007F3ED000 EntryPoint=0x0007F3EE78C QemuRamfbDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E384918
+ProtectUefiImageCommon - 0x7E3849C0
+  - 0x000000007F3ED000 - 0x0000000000008000
+Found FwCfg @ 0x9020008/0x9020000
+Found FwCfg DMA @ 0x9020010
+Ramfb: Mode 0: 640x480, 1200 kB
+Ramfb: Mode 1: 800x600, 1875 kB
+Ramfb: Mode 2: 1024x768, 3072 kB
+Ramfb: Framebuffer at 0x7BD00000, 3072 kB, 768 pages
+Ramfb: SetMode 1 (800x600)
+0: shl:0 shr:0 mask:FF0000
+1: shl:0 shr:0 mask:FF00
+2: shl:0 shr:0 mask:FF
+Bytes per pixel: 4
+0: shl:0 shr:0 mask:FF0000
+1: shl:0 shr:0 mask:FF00
+2: shl:0 shr:0 mask:FF
+Bytes per pixel: 4
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E384898
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E384498
+InstallProtocolInterface: 9042A9DE-23DC-4A38-96FB-7ADED080516A 7F3F3040
+Loading driver F74D20EE-37E7-48FC-97F7-9B1047749C69
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E38ABC0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Logo/LogoDxe/DEBUG/LogoDxe.dll 0x7F3E5000
+Loading driver at 0x0007F3E4000 EntryPoint=0x0007F3E6358 LogoDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E38AA18
+InstallProtocolInterface: 6A1EE763-D47A-43B4-AABE-EF1DE2AB56FC 7F3E9070
+ProtectUefiImageCommon - 0x7E38ABC0
+  - 0x000000007F3E4000 - 0x0000000000009000
+InstallProtocolInterface: 53CD299F-2BC1-40C0-8C07-23F64FDB30E0 7F3E8060
+Loading driver B8D9777E-D72A-451F-9BDB-BAFB52A68415
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E386B40
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/ArmPkg/Drivers/CpuDxe/CpuDxe/DEBUG/ArmCpuDxe.dll 0x7F3D8000
+Loading driver at 0x0007F3D7000 EntryPoint=0x0007F3D89CC ArmCpuDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E386098
+ProtectUefiImageCommon - 0x7E386B40
+  - 0x000000007F3D7000 - 0x000000000000D000
+InstallProtocolInterface: 26BACCB1-6F42-11D4-BCE7-0080C73C8881 7F3E00D0
+MemoryProtectionCpuArchProtocolNotify:
+InitializeDxeNxMemoryProtectionPolicy: applying strict permissions to active memory regions
+SetUefiImageMemoryAttributes - 0x0000000040000000 - 0x000000003C140000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007C1E0000 - 0x00000000031F7000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F550000 - 0x0000000000165000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F6FC000 - 0x00000000007E2000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007FEE6000 - 0x0000000000101000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007FFFC000 - 0x0000000000004000 (0x0000000000004000)
+InitializeDxeNxMemoryProtectionPolicy: applying strict permissions to inactive memory regions
+ProtectUefiImageCommon - 0x7F6DE250
+  - 0x000000007F6B5000 - 0x0000000000047000
+SetUefiImageMemoryAttributes - 0x000000007F6B5000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F6B6000 - 0x0000000000028000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F6DE000 - 0x000000000001E000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E812340
+  - 0x000000007F4B0000 - 0x0000000000010000
+SetUefiImageMemoryAttributes - 0x000000007F4B0000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F4B1000 - 0x000000000000D000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F4BE000 - 0x0000000000002000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E7D37C0
+  - 0x000000007F4A6000 - 0x000000000000A000
+SetUefiImageMemoryAttributes - 0x000000007F4A6000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F4A7000 - 0x0000000000007000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F4AE000 - 0x0000000000002000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E7E4440
+  - 0x000000007F49E000 - 0x0000000000008000
+SetUefiImageMemoryAttributes - 0x000000007F49E000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F49F000 - 0x0000000000005000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F4A4000 - 0x0000000000002000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E7DA0C0
+  - 0x000000007F500000 - 0x0000000000040000
+SetUefiImageMemoryAttributes - 0x000000007F500000 - 0x0000000000010000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F510000 - 0x0000000000010000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F520000 - 0x0000000000020000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E7DB040
+  - 0x000000007F497000 - 0x0000000000007000
+SetUefiImageMemoryAttributes - 0x000000007F497000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F498000 - 0x0000000000004000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F49C000 - 0x0000000000002000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E7DB440
+  - 0x000000007F491000 - 0x0000000000006000
+SetUefiImageMemoryAttributes - 0x000000007F491000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F492000 - 0x0000000000003000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F495000 - 0x0000000000002000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E7E3BC0
+  - 0x000000007F471000 - 0x0000000000020000
+SetUefiImageMemoryAttributes - 0x000000007F471000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F472000 - 0x000000000001D000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F48F000 - 0x0000000000002000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E7E2B40
+  - 0x000000007F46B000 - 0x0000000000006000
+SetUefiImageMemoryAttributes - 0x000000007F46B000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F46C000 - 0x0000000000003000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F46F000 - 0x0000000000002000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E7E21C0
+  - 0x000000007C190000 - 0x0000000000040000
+SetUefiImageMemoryAttributes - 0x000000007C190000 - 0x0000000000010000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007C1A0000 - 0x0000000000010000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007C1B0000 - 0x0000000000020000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E7E17C0
+  - 0x000000007F465000 - 0x0000000000006000
+SetUefiImageMemoryAttributes - 0x000000007F465000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F466000 - 0x0000000000003000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F469000 - 0x0000000000002000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E7E0040
+  - 0x000000007F45E000 - 0x0000000000007000
+SetUefiImageMemoryAttributes - 0x000000007F45E000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F45F000 - 0x0000000000004000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F463000 - 0x0000000000002000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E7E09C0
+  - 0x000000007F454000 - 0x000000000000A000
+SetUefiImageMemoryAttributes - 0x000000007F454000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F455000 - 0x0000000000007000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F45C000 - 0x0000000000002000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E7DF0C0
+  - 0x000000007F44D000 - 0x0000000000007000
+SetUefiImageMemoryAttributes - 0x000000007F44D000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F44E000 - 0x0000000000004000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F452000 - 0x0000000000002000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E7D6240
+  - 0x000000007F444000 - 0x0000000000009000
+SetUefiImageMemoryAttributes - 0x000000007F444000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F445000 - 0x0000000000007000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F44C000 - 0x0000000000001000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E7D50C0
+  - 0x000000007C140000 - 0x0000000000040000
+SetUefiImageMemoryAttributes - 0x000000007C140000 - 0x0000000000010000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007C150000 - 0x0000000000010000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007C160000 - 0x0000000000020000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E7D4B40
+  - 0x000000007F43C000 - 0x0000000000008000
+SetUefiImageMemoryAttributes - 0x000000007F43C000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F43D000 - 0x0000000000005000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F442000 - 0x0000000000002000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E391B40
+  - 0x000000007F42D000 - 0x000000000000F000
+SetUefiImageMemoryAttributes - 0x000000007F42D000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F42E000 - 0x000000000000A000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F438000 - 0x0000000000004000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E390C40
+  - 0x000000007F421000 - 0x000000000000C000
+SetUefiImageMemoryAttributes - 0x000000007F421000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F422000 - 0x0000000000008000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F42A000 - 0x0000000000003000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E390340
+  - 0x000000007F405000 - 0x000000000001C000
+SetUefiImageMemoryAttributes - 0x000000007F405000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F406000 - 0x0000000000019000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F41F000 - 0x0000000000002000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E38C7C0
+  - 0x000000007F3FB000 - 0x000000000000A000
+SetUefiImageMemoryAttributes - 0x000000007F3FB000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F3FC000 - 0x0000000000007000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F403000 - 0x0000000000002000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E384040
+  - 0x000000007F3F5000 - 0x0000000000006000
+SetUefiImageMemoryAttributes - 0x000000007F3F5000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F3F6000 - 0x0000000000003000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F3F9000 - 0x0000000000002000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E3849C0
+  - 0x000000007F3ED000 - 0x0000000000008000
+SetUefiImageMemoryAttributes - 0x000000007F3ED000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F3EE000 - 0x0000000000005000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F3F3000 - 0x0000000000002000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E38ABC0
+  - 0x000000007F3E4000 - 0x0000000000009000
+SetUefiImageMemoryAttributes - 0x000000007F3E4000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F3E5000 - 0x0000000000003000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F3E8000 - 0x0000000000005000 (0x0000000000004000)
+ProtectUefiImageCommon - 0x7E386B40
+  - 0x000000007F3D7000 - 0x000000000000D000
+SetUefiImageMemoryAttributes - 0x000000007F3D7000 - 0x0000000000001000 (0x0000000000004000)
+SetUefiImageMemoryAttributes - 0x000000007F3D8000 - 0x0000000000008000 (0x0000000000020000)
+SetUefiImageMemoryAttributes - 0x000000007F3E0000 - 0x0000000000004000 (0x0000000000004000)
+Loading driver 49EA041E-6752-42CA-B0B1-7344FE2546B7
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E377040
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/ArmPkg/Drivers/TimerDxe/TimerDxe/DEBUG/ArmTimerDxe.dll 0x7F3D2000
+Loading driver at 0x0007F3D1000 EntryPoint=0x0007F3D2C4C ArmTimerDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7F0D2C98
+ProtectUefiImageCommon - 0x7E377040
+  - 0x000000007F3D1000 - 0x0000000000006000
+SetUefiImageMemoryAttributes - 0x000000007F3D1000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F3D2000 - 0x0000000000003000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F3D5000 - 0x0000000000002000 (0x0000000000004008)
+Found Timer interrupts 29, 30, 27, 26
+InstallProtocolInterface: 26BACCB3-6F42-11D4-BCE7-0080C73C8881 7F3D5070
+Loading driver E660EA85-058E-4B55-A54B-F02F83A24707
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3779C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/DisplayEngineDxe/DisplayEngineDxe/DEBUG/DisplayEngine.dll 0x7F3BA000
+Loading driver at 0x0007F3B9000 EntryPoint=0x0007F3BD848 DisplayEngine.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E377918
+ProtectUefiImageCommon - 0x7E3779C0
+  - 0x000000007F3B9000 - 0x0000000000018000
+SetUefiImageMemoryAttributes - 0x000000007F3B9000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F3BA000 - 0x0000000000013000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F3CD000 - 0x0000000000004000 (0x0000000000004008)
+InstallProtocolInterface: 9BBE29E9-FDA1-41EC-AD52-452213742D2E 7F3CED98
+InstallProtocolInterface: 4311EDC0-6054-46D4-9E40-893EA952FCCC 7F3CEDB0
+Loading driver EBF8ED7C-0DD1-4787-84F1-F48D537DCACF
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E378040
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/DriverHealthManagerDxe/DriverHealthManagerDxe/DEBUG/DriverHealthManagerDxe.dll 0x7F3B0000
+Loading driver at 0x0007F3AF000 EntryPoint=0x0007F3B3824 DriverHealthManagerDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E37B398
+ProtectUefiImageCommon - 0x7E378040
+  - 0x000000007F3AF000 - 0x000000000000A000
+SetUefiImageMemoryAttributes - 0x000000007F3AF000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F3B0000 - 0x0000000000007000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F3B7000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7F3B7268
+InstallProtocolInterface: 330D4706-F2A0-4E4F-A369-B66FA8D54385 7F3B7250
+Loading driver 4110465D-5FF3-4F4B-B580-24ED0D06747A
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3765C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/OvmfPkg/SmbiosPlatformDxe/SmbiosPlatformDxe/DEBUG/SmbiosPlatformDxe.dll 0x7F3A9000
+Loading driver at 0x0007F3A8000 EntryPoint=0x0007F3A9B1C SmbiosPlatformDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E376D98
+ProtectUefiImageCommon - 0x7E3765C0
+  - 0x000000007F3A8000 - 0x0000000000007000
+SetUefiImageMemoryAttributes - 0x000000007F3A8000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F3A9000 - 0x0000000000004000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F3AD000 - 0x0000000000002000 (0x0000000000004008)
+Found FwCfg @ 0x9020008/0x9020000
+Found FwCfg DMA @ 0x9020010
+SmbiosAdd: Smbios type 1 with size 0x3F is added to 64-bit table
+SmbiosCreateTable: Initialize 64-bit entry point structure
+SmbiosCreate64BitTable() re-allocate SMBIOS 64-bit table
+SmbiosAdd: Smbios type 3 with size 0x25 is added to 64-bit table
+SmbiosAdd: Smbios type 4 with size 0x3F is added to 64-bit table
+SmbiosAdd: Smbios type 16 with size 0x19 is added to 64-bit table
+SmbiosAdd: Smbios type 17 with size 0x35 is added to 64-bit table
+SmbiosAdd: Smbios type 32 with size 0xD is added to 64-bit table
+SmbiosAdd: Smbios type 0 with size 0x4A is added to 64-bit table
+Loading driver 28A03FF4-12B3-4305-A417-BB1A4F94081E
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3751C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/Disk/RamDiskDxe/RamDiskDxe/DEBUG/RamDiskDxe.dll 0x7F39A000
+Loading driver at 0x0007F399000 EntryPoint=0x0007F39F6DC RamDiskDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E375998
+ProtectUefiImageCommon - 0x7E3751C0
+  - 0x000000007F399000 - 0x000000000000F000
+SetUefiImageMemoryAttributes - 0x000000007F399000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F39A000 - 0x000000000000B000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F3A5000 - 0x0000000000003000 (0x0000000000004008)
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E375598
+InstallProtocolInterface: 330D4706-F2A0-4E4F-A369-B66FA8D54385 7F3A5100
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7F3A5080
+InstallProtocolInterface: 330D4706-F2A0-4E4F-A369-B66FA8D54385 7E373A30
+InstallProtocolInterface: AB38A0DF-6873-44A9-87E6-D4EB56148449 7F3A6208
+InstallProtocolInterface: 28A03FF4-12B3-4305-A417-BB1A4F94081E 7E373A18
+Loading driver 63EA1463-FBFA-428A-B97F-E222755852D7
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E372840
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/ArmVirtPkg/HighMemDxe/HighMemDxe/DEBUG/HighMemDxe.dll 0x7F395000
+Loading driver at 0x0007F394000 EntryPoint=0x0007F39554C HighMemDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E374098
+ProtectUefiImageCommon - 0x7E372840
+  - 0x000000007F394000 - 0x0000000000005000
+SetUefiImageMemoryAttributes - 0x000000007F394000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F395000 - 0x0000000000003000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F398000 - 0x0000000000001000 (0x0000000000004008)
+Loading driver B336F62D-4135-4A55-AE4E-4971BBF0885D
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E374140
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/EmbeddedPkg/RealTimeClockRuntimeDxe/RealTimeClockRuntimeDxe/DEBUG/RealTimeClock.dll 0x7F4D0000
+Loading driver at 0x0007F4C0000 EntryPoint=0x0007F4D038C RealTimeClock.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E374618
+ProtectUefiImageCommon - 0x7E374140
+  - 0x000000007F4C0000 - 0x0000000000030000
+SetUefiImageMemoryAttributes - 0x000000007F4C0000 - 0x0000000000010000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F4D0000 - 0x0000000000010000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F4E0000 - 0x0000000000010000 (0x0000000000004008)
+Found PL031 RTC @ 0x9010000
+InstallProtocolInterface: 27CFAC87-46CC-11D4-9A38-0090273FC14D 0
+InitializeRealTimeClock: using default timezone/daylight settings
+InstallProtocolInterface: 27CFAC87-46CC-11D4-9A38-0090273FC14D 0
+Loading driver 93E34C7E-B50E-11DF-9223-2443DFD72085
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3718C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/ArmPlatformPkg/Drivers/NorFlashDxe/NorFlashDxe/DEBUG/ArmVeNorFlashDxe.dll 0x7C100000
+Loading driver at 0x0007C0F0000 EntryPoint=0x0007C100000 ArmVeNorFlashDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E371798
+ProtectUefiImageCommon - 0x7E3718C0
+  - 0x000000007C0F0000 - 0x0000000000040000
+SetUefiImageMemoryAttributes - 0x000000007C0F0000 - 0x0000000000010000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007C100000 - 0x0000000000010000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007C110000 - 0x0000000000020000 (0x0000000000004008)
+ValidateFvHeader: No Firmware Volume header present
+NorFlashFvbInitialize: The FVB Header is not valid.
+NorFlashFvbInitialize: Installing a correct one for this volume.
+InstallProtocolInterface: D1A86E3F-0707-4C35-83CD-DC2C29C891A3 0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7F67ED08
+InstallProtocolInterface: 964E5B21-6459-11D2-8E39-00A0C969723B 7F67EC48
+InstallProtocolInterface: 8F644FA9-E850-4DB1-9CE2-0B44698E8DA4 7F67ECC0
+Ftw: FtwWorkSpaceLba - 0x1, WorkBlockSize  - 0x40000, FtwWorkSpaceBase - 0x0
+Ftw: FtwSpareLba     - 0x2, SpareBlockSize - 0x40000
+Ftw: NumberOfWorkBlock - 0x1, FtwWorkBlockLba - 0x1
+Ftw: WorkSpaceLbaInSpare - 0x0, WorkSpaceBaseInSpare - 0x0
+Ftw: Remaining work space size - 3FFE0
+Ftw: Work block header check mismatch
+Ftw: Work block header check mismatch
+Ftw: Both working and spare blocks are invalid, init workspace
+Ftw: start to reclaim work space
+Ftw: reclaim work space successfully
+InstallProtocolInterface: 3EBD9E82-2C78-4DE6-9786-8D4BFCB7C881 7E392028
+Loading driver F099D67F-71AE-4C36-B2A3-DCEB0EB2B7D8
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3701C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer/DEBUG/WatchdogTimer.dll 0x7F38F000
+Loading driver at 0x0007F38E000 EntryPoint=0x0007F38F5B4 WatchdogTimer.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E370898
+ProtectUefiImageCommon - 0x7E3701C0
+  - 0x000000007F38E000 - 0x0000000000006000
+SetUefiImageMemoryAttributes - 0x000000007F38E000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F38F000 - 0x0000000000003000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F392000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 665E3FF5-46CC-11D4-9A38-0090273FC14D 7F392060
+Loading driver 128FB770-5E79-4176-9E51-9BB268A17DD1
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E361040
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe/DEBUG/PciHostBridgeDxe.dll 0x7F382000
+Loading driver at 0x0007F381000 EntryPoint=0x0007F382000 PciHostBridgeDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E361D98
+ProtectUefiImageCommon - 0x7E361040
+  - 0x000000007F381000 - 0x000000000000D000
+SetUefiImageMemoryAttributes - 0x000000007F381000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F382000 - 0x000000000000A000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F38C000 - 0x0000000000002000 (0x0000000000004008)
+ProcessPciHost: Config[0x3F000000+0x1000000) Bus[0x0..0xF] Io[0x0+0x10000)@0x3EFF0000 Mem32[0x10000000+0x2EFF0000)@0x0 Mem64[0xFFFFFFFFFFFFFFFF+0x0)@0x0
+RootBridge: PciRoot(0x0)
+  Support/Attr: 70001 / 70001
+    DmaAbove4G: Yes
+NoExtConfSpace: No
+     AllocAttr: 1 (CombineMemPMem )
+           Bus: 0 - F Translation=0
+            Io: 0 - FFFF Translation=0
+           Mem: 10000000 - 3EFEFFFF Translation=0
+    MemAbove4G: FFFFFFFFFFFFFFFF - FFFFFFFFFFFFFFFE Translation=0
+          PMem: FFFFFFFFFFFFFFFF - 0 Translation=0
+   PMemAbove4G: FFFFFFFFFFFFFFFF - 0 Translation=0
+InstallProtocolInterface: CF8034BE-6768-4D8B-B739-7CCE683A9FBE 7E361340
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E371E98
+InstallProtocolInterface: 2F707EBB-4A1A-11D4-9A38-0090273FC14D 7E361770
+Loading driver CBD2E4D5-7068-4FF5-B462-9822B4AD8D60
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E36E0C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe/DEBUG/VariableRuntimeDxe.dll 0x7BCC0000
+Loading driver at 0x0007BCB0000 EntryPoint=0x0007BCC0000 VariableRuntimeDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E36E798
+ProtectUefiImageCommon - 0x7E36E0C0
+  - 0x000000007BCB0000 - 0x0000000000040000
+SetUefiImageMemoryAttributes - 0x000000007BCB0000 - 0x0000000000010000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007BCC0000 - 0x0000000000010000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007BCD0000 - 0x0000000000020000 (0x0000000000004008)
+VarCheckLibRegisterSetVariableCheckHandler - 0x7BCC3698 Success
+Variable driver common space: 0x3FF9C 0x3FF9C 0x3FF9C
+Variable driver will work with auth variable format!
+InstallProtocolInterface: CD3D0A05-9E24-437C-A891-1EE053DB7638 7BCD0198
+InstallProtocolInterface: AF23B340-97B4-4685-8D4F-A3F28169B21D 7BCD00B0
+InstallProtocolInterface: 1E5668E2-8481-11D4-BCF1-0080C73C8881 0
+NOTICE - AuthVariableLibInitialize() returns Unsupported!
+Variable driver will continue to work without auth variable support!
+[Variable] Lock: BB983CCF-151D-40E1-A07B-4A17BE168292:MemoryOverwriteRequestControlLock Success
+[Variable] Lock: E20939BE-32D4-41BE-A150-897F85D49829:MemoryOverwriteRequestControl Success
+RecordSecureBootPolicyVarData GetVariable SecureBoot Status E
+InstallProtocolInterface: 6441F818-6362-4E44-B570-7DBA31DD2453 0
+Loading driver 806040CA-DAD9-4978-A3B4-2D2AB0C8A48F
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E36C140
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/OvmfPkg/QemuKernelLoaderFsDxe/QemuKernelLoaderFsDxe/DEBUG/QemuKernelLoaderFsDxe.dll 0x7F37A000
+Loading driver at 0x0007F379000 EntryPoint=0x0007F37AE08 QemuKernelLoaderFsDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E36CB18
+ProtectUefiImageCommon - 0x7E36C140
+  - 0x000000007F379000 - 0x0000000000008000
+SetUefiImageMemoryAttributes - 0x000000007F379000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F37A000 - 0x0000000000005000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F37F000 - 0x0000000000002000 (0x0000000000004008)
+Found FwCfg @ 0x9020008/0x9020000
+Found FwCfg DMA @ 0x9020010
+Error: Image at 0007F379000 start failed: Not Found
+SetUefiImageMemoryAttributes - 0x000000007F379000 - 0x0000000000008000 (0x0000000000000008)
+remove-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/OvmfPkg/QemuKernelLoaderFsDxe/QemuKernelLoaderFsDxe/DEBUG/QemuKernelLoaderFsDxe.dll 0x7F37A000
+Loading driver 42857F0A-13F2-4B21-8A23-53D3F714B840
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E36C140
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/CapsuleRuntimeDxe/CapsuleRuntimeDxe/DEBUG/CapsuleRuntimeDxe.dll 0x7BB10000
+Loading driver at 0x0007BB00000 EntryPoint=0x0007BB10A24 CapsuleRuntimeDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E36C998
+ProtectUefiImageCommon - 0x7E36C140
+  - 0x000000007BB00000 - 0x0000000000030000
+SetUefiImageMemoryAttributes - 0x000000007BB00000 - 0x0000000000010000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007BB10000 - 0x0000000000010000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007BB20000 - 0x0000000000010000 (0x0000000000004008)
+InstallProtocolInterface: 5053697E-2CBC-4819-90D9-0580DEEE5754 0
+Loading driver AD608272-D07F-4964-801E-7BD3B7888652
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E36ABC0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/MonotonicCounterRuntimeDxe/MonotonicCounterRuntimeDxe/DEBUG/MonotonicCounterRuntimeDxe.dll 0x7BAD0000
+Loading driver at 0x0007BAC0000 EntryPoint=0x0007BAD03FC MonotonicCounterRuntimeDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E36AA98
+ProtectUefiImageCommon - 0x7E36ABC0
+  - 0x000000007BAC0000 - 0x0000000000030000
+SetUefiImageMemoryAttributes - 0x000000007BAC0000 - 0x0000000000010000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007BAD0000 - 0x0000000000010000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007BAE0000 - 0x0000000000010000 (0x0000000000004008)
+InstallProtocolInterface: 1DA97072-BDDC-4B30-99F1-72A0B56FFF2A 0
+Loading driver 6D33944A-EC75-4855-A54D-809C75241F6C
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E36A3C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/BdsDxe/BdsDxe/DEBUG/BdsDxe.dll 0x7F366000
+Loading driver at 0x0007F365000 EntryPoint=0x0007F3725CC BdsDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E369B18
+ProtectUefiImageCommon - 0x7E36A3C0
+  - 0x000000007F365000 - 0x000000000001C000
+SetUefiImageMemoryAttributes - 0x000000007F365000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F366000 - 0x0000000000019000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F37F000 - 0x0000000000002000 (0x0000000000004008)
+Found FwCfg @ 0x9020008/0x9020000
+Found FwCfg DMA @ 0x9020010
+InstallProtocolInterface: 665E3FF6-46CC-11D4-9A38-0090273FC14D 7F37F3D0
+Loading driver 7CA1024F-EB17-11E5-9DBA-28D2447C4829
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E369140
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/TlsAuthConfigDxe/TlsAuthConfigDxe/DEBUG/TlsAuthConfigDxe.dll 0x7F357000
+Loading driver at 0x0007F356000 EntryPoint=0x0007F35786C TlsAuthConfigDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E369918
+ProtectUefiImageCommon - 0x7E369140
+  - 0x000000007F356000 - 0x000000000000F000
+SetUefiImageMemoryAttributes - 0x000000007F356000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F357000 - 0x000000000000B000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F362000 - 0x0000000000003000 (0x0000000000004008)
+Found FwCfg @ 0x9020008/0x9020000
+Found FwCfg DMA @ 0x9020010
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E369598
+InstallProtocolInterface: 330D4706-F2A0-4E4F-A369-B66FA8D54385 7F363098
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7F362FD0
+InstallProtocolInterface: 330D4706-F2A0-4E4F-A369-B66FA8D54385 7E3674B0
+InstallProtocolInterface: 7CA1024F-EB17-11E5-9DBA-28D2447C4829 7E367498
+Loading driver 9D1DD27F-6D7F-427B-AEC4-B62F6279C2F1
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3666C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/ArmVirtPkg/PlatformHasAcpiDtDxe/PlatformHasAcpiDtDxe/DEBUG/PlatformHasAcpiDtDxe.dll 0x7F351000
+Loading driver at 0x0007F350000 EntryPoint=0x0007F351B1C PlatformHasAcpiDtDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E368898
+ProtectUefiImageCommon - 0x7E3666C0
+  - 0x000000007F350000 - 0x0000000000006000
+SetUefiImageMemoryAttributes - 0x000000007F350000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F351000 - 0x0000000000003000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F354000 - 0x0000000000002000 (0x0000000000004008)
+Found FwCfg @ 0x9020008/0x9020000
+Found FwCfg DMA @ 0x9020010
+InstallProtocolInterface: F0966B41-C23F-41B9-9604-0FF7E111965A 0
+Loading driver D9DCC5DF-4007-435E-9098-8970935504B2
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E365B40
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/OvmfPkg/PlatformDxe/Platform/DEBUG/PlatformDxe.dll 0x7F349000
+Loading driver at 0x0007F348000 EntryPoint=0x0007F34B3AC PlatformDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E365E18
+ProtectUefiImageCommon - 0x7E365B40
+  - 0x000000007F348000 - 0x0000000000008000
+SetUefiImageMemoryAttributes - 0x000000007F348000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F349000 - 0x0000000000006000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F34F000 - 0x0000000000001000 (0x0000000000004008)
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7F34F570
+InstallProtocolInterface: 330D4706-F2A0-4E4F-A369-B66FA8D54385 7F34F640
+Loading driver FDFF263D-5F68-4591-87BA-B768F445A9AF
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E364140
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/SecurityPkg/Tcg/Tcg2Dxe/Tcg2Dxe/DEBUG/Tcg2Dxe.dll 0x7F335000
+Loading driver at 0x0007F334000 EntryPoint=0x0007F337424 Tcg2Dxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E364498
+ProtectUefiImageCommon - 0x7E364140
+  - 0x000000007F334000 - 0x0000000000014000
+SetUefiImageMemoryAttributes - 0x000000007F334000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F335000 - 0x0000000000011000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F346000 - 0x0000000000002000 (0x0000000000004008)
+Found FwCfg @ 0x9020008/0x9020000
+Found FwCfg DMA @ 0x9020010
+WARNING: Tpm2RegisterTpm2DeviceLib - does not support 286BF25A-C2C3-408C-B3B4-25E6758B7317 registration
+No TPM2 instance required!
+Error: Image at 0007F334000 start failed: Unsupported
+SetUefiImageMemoryAttributes - 0x000000007F334000 - 0x0000000000014000 (0x0000000000000008)
+remove-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/SecurityPkg/Tcg/Tcg2Dxe/Tcg2Dxe/DEBUG/Tcg2Dxe.dll 0x7F335000
+Loading driver 51CCF399-4FDF-4E55-A45B-E123F84D456A
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E364140
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/Console/ConPlatformDxe/ConPlatformDxe/DEBUG/ConPlatformDxe.dll 0x7F341000
+Loading driver at 0x0007F340000 EntryPoint=0x0007F3427B0 ConPlatformDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E364018
+ProtectUefiImageCommon - 0x7E364140
+  - 0x000000007F340000 - 0x0000000000008000
+SetUefiImageMemoryAttributes - 0x000000007F340000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F341000 - 0x0000000000005000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F346000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F346080
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F346000
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F346018
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F3460B0
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F346000
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F346018
+Loading driver 408EDCEC-CF6D-477C-A5A8-B4844E3DE281
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E364940
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe/DEBUG/ConSplitterDxe.dll 0x7F336000
+Loading driver at 0x0007F335000 EntryPoint=0x0007F336DB8 ConSplitterDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E364C98
+ProtectUefiImageCommon - 0x7E364940
+  - 0x000000007F335000 - 0x000000000000B000
+SetUefiImageMemoryAttributes - 0x000000007F335000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F336000 - 0x0000000000008000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F33E000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F33E268
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F33E250
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F33E018
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F33E2F8
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F33E2E0
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F33E048
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F33E220
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F33E208
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F33E000
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F33E2B0
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F33E298
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F33E030
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F33E340
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F33E328
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F33E060
+InstallProtocolInterface: 387477C1-69C7-11D2-8E39-00A0C969723B 7F33E608
+InstallProtocolInterface: DD9E7534-7762-4698-8C14-F58517A625AA 7F33E638
+InstallProtocolInterface: 31878C87-0B75-11D5-9A4F-0090273FC14D 7F33E6A8
+InstallProtocolInterface: 8D59D32B-C655-4AE9-9B15-F25904992A43 7F33E700
+InstallProtocolInterface: 387477C2-69C7-11D2-8E39-00A0C969723B 7F33E4C8
+InstallProtocolInterface: 387477C2-69C7-11D2-8E39-00A0C969723B 7F33E108
+Loading driver CCCB0C28-4B24-11D5-9A5A-0090273FC14D
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E35F440
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe/DEBUG/GraphicsConsoleDxe.dll 0x7F32C000
+Loading driver at 0x0007F32B000 EntryPoint=0x0007F32D17C GraphicsConsoleDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E353F98
+ProtectUefiImageCommon - 0x7E35F440
+  - 0x000000007F32B000 - 0x000000000000A000
+SetUefiImageMemoryAttributes - 0x000000007F32B000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F32C000 - 0x0000000000006000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F332000 - 0x0000000000003000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F3321F0
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F332260
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F3321D8
+Loading driver 9E863906-A40F-4875-977F-5B93FF237FC6
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E353140
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe/DEBUG/TerminalDxe.dll 0x7F320000
+Loading driver at 0x0007F31F000 EntryPoint=0x0007F320500 TerminalDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E353418
+ProtectUefiImageCommon - 0x7E353140
+  - 0x000000007F31F000 - 0x000000000000C000
+SetUefiImageMemoryAttributes - 0x000000007F31F000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F320000 - 0x0000000000009000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F329000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F3292E8
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F3292D0
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F329050
+Loading driver 6B38F7B4-AD98-40E9-9093-ACA2B5A253C4
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E35EC40
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/Disk/DiskIoDxe/DiskIoDxe/DEBUG/DiskIoDxe.dll 0x7F317000
+Loading driver at 0x0007F316000 EntryPoint=0x0007F3178D0 DiskIoDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E35EB18
+ProtectUefiImageCommon - 0x7E35EC40
+  - 0x000000007F316000 - 0x0000000000009000
+SetUefiImageMemoryAttributes - 0x000000007F316000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F317000 - 0x0000000000006000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F31D000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F31D018
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F31D160
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F31D000
+Loading driver 1FA1F39E-FEFF-4AAE-BD7B-38A070A3B609
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E35E2C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/Disk/PartitionDxe/PartitionDxe/DEBUG/PartitionDxe.dll 0x7F30D000
+Loading driver at 0x0007F30C000 EntryPoint=0x0007F30D8FC PartitionDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E35E618
+ProtectUefiImageCommon - 0x7E35E2C0
+  - 0x000000007F30C000 - 0x000000000000A000
+SetUefiImageMemoryAttributes - 0x000000007F30C000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F30D000 - 0x0000000000007000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F314000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F314078
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F314118
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F314060
+Loading driver 961578FE-B6B7-44C3-AF35-6BC705CD2B1F
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E35D0C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/FatPkg/EnhancedFatDxe/Fat/DEBUG/Fat.dll 0x7F2FF000
+Loading driver at 0x0007F2FE000 EntryPoint=0x0007F2FFB40 Fat.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E35DA18
+ProtectUefiImageCommon - 0x7E35D0C0
+  - 0x000000007F2FE000 - 0x000000000000E000
+SetUefiImageMemoryAttributes - 0x000000007F2FE000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F2FF000 - 0x000000000000B000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F30A000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F30A118
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F30A100
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F30A0A0
+Loading driver CD3BAFB6-50FB-4FE8-8E4E-AB74D2C1A600
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E35D440
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe/DEBUG/EnglishDxe.dll 0x7F2F9000
+Loading driver at 0x0007F2F8000 EntryPoint=0x0007F2F96F8 EnglishDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E35CF98
+ProtectUefiImageCommon - 0x7E35D440
+  - 0x000000007F2F8000 - 0x0000000000006000
+SetUefiImageMemoryAttributes - 0x000000007F2F8000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F2F9000 - 0x0000000000003000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F2FC000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 1D85CD7F-F43D-11D2-9A0C-0090273FC14D 7F2FC038
+InstallProtocolInterface: A4C751FC-23AE-4C3E-92E9-4964CF63F349 7F2FC000
+Loading driver 905F13B0-8F91-4B0A-BD76-E1E78F9422E4
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E35C140
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/Disk/UdfDxe/UdfDxe/DEBUG/UdfDxe.dll 0x7F2EF000
+Loading driver at 0x0007F2EE000 EntryPoint=0x0007F2F171C UdfDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E35C718
+ProtectUefiImageCommon - 0x7E35C140
+  - 0x000000007F2EE000 - 0x000000000000A000
+SetUefiImageMemoryAttributes - 0x000000007F2EE000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F2EF000 - 0x0000000000007000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F2F6000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F2F6148
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F2F6108
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F2F6120
+Loading driver 11D92DFB-3CA9-4F93-BA2E-4780ED3E03B5
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E35B040
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/OvmfPkg/VirtioBlkDxe/VirtioBlk/DEBUG/VirtioBlkDxe.dll 0x7F2E8000
+Loading driver at 0x0007F2E7000 EntryPoint=0x0007F2E9118 VirtioBlkDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E35BE98
+ProtectUefiImageCommon - 0x7E35B040
+  - 0x000000007F2E7000 - 0x0000000000007000
+SetUefiImageMemoryAttributes - 0x000000007F2E7000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F2E8000 - 0x0000000000004000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F2EC000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F2EC030
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F2EC000
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F2EC018
+Loading driver A92CDB4B-82F1-4E0B-A516-8A655D371524
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E35B3C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/OvmfPkg/VirtioNetDxe/VirtioNet/DEBUG/VirtioNetDxe.dll 0x7F2DE000
+Loading driver at 0x0007F2DD000 EntryPoint=0x0007F2DE694 VirtioNetDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E35B698
+ProtectUefiImageCommon - 0x7E35B3C0
+  - 0x000000007F2DD000 - 0x000000000000A000
+SetUefiImageMemoryAttributes - 0x000000007F2DD000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F2DE000 - 0x0000000000007000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F2E5000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F2E5080
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F2E5050
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F2E5068
+Loading driver FAB5D4F4-83C0-4AAF-8480-442D11DF6CEA
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E358C40
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/OvmfPkg/VirtioScsiDxe/VirtioScsi/DEBUG/VirtioScsiDxe.dll 0x7F2D6000
+Loading driver at 0x0007F2D5000 EntryPoint=0x0007F2D66B0 VirtioScsiDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E358898
+ProtectUefiImageCommon - 0x7E358C40
+  - 0x000000007F2D5000 - 0x0000000000008000
+SetUefiImageMemoryAttributes - 0x000000007F2D5000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F2D6000 - 0x0000000000005000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F2DB000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F2DB018
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F2DB098
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F2DB000
+Loading driver 58E26F0D-CBAC-4BBA-B70F-18221415665A
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3582C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/OvmfPkg/VirtioRngDxe/VirtioRng/DEBUG/VirtioRngDxe.dll 0x7F2CF000
+Loading driver at 0x0007F2CE000 EntryPoint=0x0007F2CFB58 VirtioRngDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E358618
+ProtectUefiImageCommon - 0x7E3582C0
+  - 0x000000007F2CE000 - 0x0000000000007000
+SetUefiImageMemoryAttributes - 0x000000007F2CE000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F2CF000 - 0x0000000000004000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F2D3000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F2D3030
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F2D3000
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F2D3018
+Loading driver E4F61863-FE2C-4B56-A8F4-08519BC439DF
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E357140
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/VlanConfigDxe/VlanConfigDxe/DEBUG/VlanConfigDxe.dll 0x7F2C4000
+Loading driver at 0x0007F2C3000 EntryPoint=0x0007F2C4BA0 VlanConfigDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E357B18
+ProtectUefiImageCommon - 0x7E357140
+  - 0x000000007F2C3000 - 0x000000000000B000
+SetUefiImageMemoryAttributes - 0x000000007F2C3000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F2C4000 - 0x0000000000008000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F2CC000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F2CC0D8
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F2CC2A8
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F2CC0C0
+Loading driver 025BBFC7-E6A9-4B8B-82AD-6815A1AEAF4A
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E357540
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/MnpDxe/MnpDxe/DEBUG/MnpDxe.dll 0x7F2B5000
+Loading driver at 0x0007F2B4000 EntryPoint=0x0007F2B5E44 MnpDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E356B18
+ProtectUefiImageCommon - 0x7E357540
+  - 0x000000007F2B4000 - 0x000000000000F000
+SetUefiImageMemoryAttributes - 0x000000007F2B4000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F2B5000 - 0x000000000000C000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F2C1000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F2C1188
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F2C1158
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F2C1170
+Loading driver 529D3F93-E8E9-4E73-B1E1-BDF6A9D50113
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3567C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/ArpDxe/ArpDxe/DEBUG/ArpDxe.dll 0x7F2AB000
+Loading driver at 0x0007F2AA000 EntryPoint=0x0007F2AB644 ArpDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E356618
+ProtectUefiImageCommon - 0x7E3567C0
+  - 0x000000007F2AA000 - 0x000000000000A000
+SetUefiImageMemoryAttributes - 0x000000007F2AA000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F2AB000 - 0x0000000000007000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F2B2000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F2B20B0
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F2B2098
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F2B2000
+Loading driver 94734718-0BBC-47FB-96A5-EE7A5AE6A2AD
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E355040
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/Dhcp4Dxe/Dhcp4Dxe/DEBUG/Dhcp4Dxe.dll 0x7F29D000
+Loading driver at 0x0007F29C000 EntryPoint=0x0007F29DA18 Dhcp4Dxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E356418
+ProtectUefiImageCommon - 0x7E355040
+  - 0x000000007F29C000 - 0x000000000000E000
+SetUefiImageMemoryAttributes - 0x000000007F29C000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F29D000 - 0x000000000000B000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F2A8000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F2A8D30
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F2A8C90
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F2A8CA8
+Loading driver 9FB1A1F3-3B71-4324-B39A-745CBB015FFF
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3553C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/Ip4Dxe/Ip4Dxe/DEBUG/Ip4Dxe.dll 0x7F285000
+Loading driver at 0x0007F284000 EntryPoint=0x0007F285D0C Ip4Dxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E355B98
+ProtectUefiImageCommon - 0x7E3553C0
+  - 0x000000007F284000 - 0x0000000000018000
+SetUefiImageMemoryAttributes - 0x000000007F284000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F285000 - 0x0000000000015000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F29A000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F29A150
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F29A7C0
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F29A7D8
+Loading driver 6D6963AB-906D-4A65-A7CA-BD40E5D6AF2B
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E354C40
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/Udp4Dxe/Udp4Dxe/DEBUG/Udp4Dxe.dll 0x7F277000
+Loading driver at 0x0007F276000 EntryPoint=0x0007F277CA0 Udp4Dxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E354B18
+ProtectUefiImageCommon - 0x7E354C40
+  - 0x000000007F276000 - 0x000000000000E000
+SetUefiImageMemoryAttributes - 0x000000007F276000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F277000 - 0x000000000000B000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F282000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F282110
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F2820E0
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F2820F8
+Loading driver DC3641B8-2FA8-4ED3-BC1F-F9962A03454B
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3542C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/Mtftp4Dxe/Mtftp4Dxe/DEBUG/Mtftp4Dxe.dll 0x7F269000
+Loading driver at 0x0007F268000 EntryPoint=0x0007F26FF28 Mtftp4Dxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E343F98
+ProtectUefiImageCommon - 0x7E3542C0
+  - 0x000000007F268000 - 0x000000000000E000
+SetUefiImageMemoryAttributes - 0x000000007F268000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F269000 - 0x000000000000B000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F274000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F2740F0
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F274020
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F274038
+Loading driver 95E3669D-34BE-4775-A651-7EA41B69D89E
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E343140
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/Dhcp6Dxe/Dhcp6Dxe/DEBUG/Dhcp6Dxe.dll 0x7F25A000
+Loading driver at 0x0007F259000 EntryPoint=0x0007F25AB2C Dhcp6Dxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E343398
+ProtectUefiImageCommon - 0x7E343140
+  - 0x000000007F259000 - 0x000000000000F000
+SetUefiImageMemoryAttributes - 0x000000007F259000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F25A000 - 0x000000000000C000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F266000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F266120
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F2661C8
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F2661E0
+Loading driver 5BEDB5CC-D830-4EB2-8742-2D4CC9B54F2C
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E352040
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/Ip6Dxe/Ip6Dxe/DEBUG/Ip6Dxe.dll 0x7F23A000
+Loading driver at 0x0007F239000 EntryPoint=0x0007F23BC18 Ip6Dxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E352D18
+ProtectUefiImageCommon - 0x7E352040
+  - 0x000000007F239000 - 0x0000000000020000
+SetUefiImageMemoryAttributes - 0x000000007F239000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F23A000 - 0x000000000001C000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F256000 - 0x0000000000003000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F2573F0
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F2573C0
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F2573D8
+Loading driver D912C7BC-F098-4367-92BA-E911083C7B0E
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3523C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/Udp6Dxe/Udp6Dxe/DEBUG/Udp6Dxe.dll 0x7F22D000
+Loading driver at 0x0007F22C000 EntryPoint=0x0007F22D910 Udp6Dxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E352718
+ProtectUefiImageCommon - 0x7E3523C0
+  - 0x000000007F22C000 - 0x000000000000D000
+SetUefiImageMemoryAttributes - 0x000000007F22C000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F22D000 - 0x000000000000A000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F237000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F237090
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F237118
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F237130
+Loading driver 99F03B99-98D8-49DD-A8D3-3219D0FFE41E
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E351B40
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/Mtftp6Dxe/Mtftp6Dxe/DEBUG/Mtftp6Dxe.dll 0x7F21F000
+Loading driver at 0x0007F21E000 EntryPoint=0x0007F220000 Mtftp6Dxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E351E98
+ProtectUefiImageCommon - 0x7E351B40
+  - 0x000000007F21E000 - 0x000000000000E000
+SetUefiImageMemoryAttributes - 0x000000007F21E000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F21F000 - 0x000000000000B000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F22A000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F22A080
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F22A188
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F22A1A0
+Loading driver 1A7E4468-2F55-4A56-903C-01265EB7622B
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E351240
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/TcpDxe/TcpDxe/DEBUG/TcpDxe.dll 0x7F208000
+Loading driver at 0x0007F207000 EntryPoint=0x0007F20A860 TcpDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E351618
+ProtectUefiImageCommon - 0x7E351240
+  - 0x000000007F207000 - 0x0000000000017000
+SetUefiImageMemoryAttributes - 0x000000007F207000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F208000 - 0x0000000000014000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F21C000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F21C1E8
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F21C0A8
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F21C0C0
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F21C268
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F21C0A8
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F21C0C0
+Loading driver B95E9FDA-26DE-48D2-8807-1F9107AC5E3A
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E350240
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/UefiPxeBcDxe/UefiPxeBcDxe/DEBUG/UefiPxeBcDxe.dll 0x7F1F3000
+Loading driver at 0x0007F1F2000 EntryPoint=0x0007F1F3F14 UefiPxeBcDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E350498
+ProtectUefiImageCommon - 0x7E350240
+  - 0x000000007F1F2000 - 0x0000000000015000
+SetUefiImageMemoryAttributes - 0x000000007F1F2000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F1F3000 - 0x0000000000012000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F205000 - 0x0000000000002000 (0x0000000000004008)
+Found FwCfg @ 0x9020008/0x9020000
+Found FwCfg DMA @ 0x9020010
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F205040
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F2052C8
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F2052E0
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F205070
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F2052C8
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F2052E0
+Loading driver 3ACEB0C0-3C72-11E4-9A56-74D435052646
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E34E0C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/TlsDxe/TlsDxe/DEBUG/TlsDxe.dll 0x7F14E000
+Loading driver at 0x0007F14D000 EntryPoint=0x0007F159298 TlsDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E34EA98
+ProtectUefiImageCommon - 0x7E34E0C0
+  - 0x000000007F14D000 - 0x00000000000A5000
+SetUefiImageMemoryAttributes - 0x000000007F14D000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F14E000 - 0x000000000009C000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F1EA000 - 0x0000000000008000 (0x0000000000004008)
+InstallProtocolInterface: 952CB795-FF36-48CF-A249-4DF486D6AB8D 7E34E320
+Loading driver B219E140-DFFC-11E3-B956-0022681E6906
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3425C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/DnsDxe/DnsDxe/DEBUG/DnsDxe.dll 0x7F13D000
+Loading driver at 0x0007F13C000 EntryPoint=0x0007F1427D0 DnsDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E342418
+ProtectUefiImageCommon - 0x7E3425C0
+  - 0x000000007F13C000 - 0x0000000000011000
+SetUefiImageMemoryAttributes - 0x000000007F13C000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F13D000 - 0x000000000000E000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F14B000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F14B0D0
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F14B010
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F14B028
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F14B100
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F14B010
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F14B028
+Loading driver 2366C20F-E15A-11E3-8BF1-E4115B28BC50
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E340240
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/HttpDxe/HttpDxe/DEBUG/HttpDxe.dll 0x7F12C000
+Loading driver at 0x0007F12B000 EntryPoint=0x0007F12ED68 HttpDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E340198
+ProtectUefiImageCommon - 0x7E340240
+  - 0x000000007F12B000 - 0x0000000000011000
+SetUefiImageMemoryAttributes - 0x000000007F12B000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F12C000 - 0x000000000000E000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F13A000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F13A110
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F13A220
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F13A238
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F13A140
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F13A220
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F13A238
+Loading driver ECEBCB00-D9C8-11E4-AF3D-8CDCD426C973
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E329040
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/HttpBootDxe/HttpBootDxe/DEBUG/HttpBootDxe.dll 0x7F117000
+Loading driver at 0x0007F116000 EntryPoint=0x0007F1212A8 HttpBootDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E329298
+ProtectUefiImageCommon - 0x7E329040
+  - 0x000000007F116000 - 0x0000000000015000
+SetUefiImageMemoryAttributes - 0x000000007F116000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F117000 - 0x0000000000012000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F129000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F1292B8
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F129358
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F129370
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F1292E8
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F129358
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F129370
+Loading driver 86CDDF93-4872-4597-8AF9-A35AE4D3725F
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E33F040
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/NetworkPkg/IScsiDxe/IScsiDxe/DEBUG/IScsiDxe.dll 0x7F0F6000
+Loading driver at 0x0007F0F5000 EntryPoint=0x0007F0F7EB4 IScsiDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E329998
+ProtectUefiImageCommon - 0x7E33F040
+  - 0x000000007F0F5000 - 0x0000000000021000
+SetUefiImageMemoryAttributes - 0x000000007F0F5000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F0F6000 - 0x000000000001D000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F113000 - 0x0000000000003000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F1148D8
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F114A88
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F114AA0
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F114908
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F114A88
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F114AA0
+InstallProtocolInterface: 59324945-EC44-4C0D-B1CD-9DB139DF070C 7F114938
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7F114AC8
+InstallProtocolInterface: 330D4706-F2A0-4E4F-A369-B66FA8D54385 7E33FBA8
+InstallProtocolInterface: 7671D9D0-53DB-4173-AA69-2327F21F0BC7 7F1148C8
+Loading driver 0167CCC4-D0F7-4F21-A3EF-9E64B7CDCE8B
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E33C240
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Bus/Scsi/ScsiBusDxe/ScsiBusDxe/DEBUG/ScsiBus.dll 0x7F0EE000
+Loading driver at 0x0007F0ED000 EntryPoint=0x0007F0EE19C ScsiBus.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E33CC18
+ProtectUefiImageCommon - 0x7E33C240
+  - 0x000000007F0ED000 - 0x0000000000008000
+SetUefiImageMemoryAttributes - 0x000000007F0ED000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F0EE000 - 0x0000000000005000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F0F3000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F0F3050
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F0F30E8
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F0F3080
+Loading driver 0A66E322-3740-4CCE-AD62-BD172CECCA35
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E33E040
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Bus/Scsi/ScsiDiskDxe/ScsiDiskDxe/DEBUG/ScsiDisk.dll 0x7F0E0000
+Loading driver at 0x0007F0DF000 EntryPoint=0x0007F0E0ED4 ScsiDisk.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E33EF18
+ProtectUefiImageCommon - 0x7E33E040
+  - 0x000000007F0DF000 - 0x000000000000E000
+SetUefiImageMemoryAttributes - 0x000000007F0DF000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F0E0000 - 0x000000000000B000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F0EB000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7F0EB190
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7F0EB178
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7F0EB090
+Loading driver 5BE3BDF4-53CF-46A3-A6A9-73C34A6E5EE3
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E33E440
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Bus/Pci/NvmExpressDxe/NvmExpressDxe/DEBUG/NvmExpressDxe.dll 0x7C043000
+Loading driver at 0x0007C042000 EntryPoint=0x0007C045890 NvmExpressDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E33EA18
+ProtectUefiImageCommon - 0x7E33E440
+  - 0x000000007C042000 - 0x000000000000E000
+SetUefiImageMemoryAttributes - 0x000000007C042000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007C043000 - 0x000000000000B000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007C04E000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7C04E178
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7C04E160
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7C04E070
+InstallProtocolInterface: 5C198761-16A8-4E69-972C-89D67954F81D 7C04E0B8
+Loading driver 9622E42C-8E38-4A08-9E8F-54F784652F6B
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E33DB40
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe/DEBUG/AcpiTableDxe.dll 0x7C038000
+Loading driver at 0x0007C037000 EntryPoint=0x0007C03BD80 AcpiTableDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E33DA98
+ProtectUefiImageCommon - 0x7E33DB40
+  - 0x000000007C037000 - 0x000000000000B000
+SetUefiImageMemoryAttributes - 0x000000007C037000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007C038000 - 0x0000000000007000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007C03F000 - 0x0000000000003000 (0x0000000000004008)
+InstallProtocolInterface: FFE06BDD-6107-46A6-7BB2-5A9C7EC5275C 7E33D2A0
+InstallProtocolInterface: EB97088E-CFDF-49C6-BE4B-D906A5B20E86 7E33D2B0
+Loading driver B8E62775-BB0A-43F0-A843-5BE8B14F8CCD
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E339040
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe/DEBUG/BootGraphicsResourceTableDxe.dll 0x7F0D9000
+Loading driver at 0x0007F0D8000 EntryPoint=0x0007F0D9E58 BootGraphicsResourceTableDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E33D618
+ProtectUefiImageCommon - 0x7E339040
+  - 0x000000007F0D8000 - 0x0000000000007000
+SetUefiImageMemoryAttributes - 0x000000007F0D8000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007F0D9000 - 0x0000000000004000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007F0DD000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: CDEA2BD3-FC25-4C1C-B97C-B31186064990 7F0DD080
+InstallProtocolInterface: 4B5DC1DF-1EAA-48B2-A7E9-EAC489A00B5C 7F0DD070
+Loading driver 93B80004-9FB3-11D4-9A3A-0090273FC14D
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3394C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe/DEBUG/PciBusDxe.dll 0x7BA9E000
+Loading driver at 0x0007BA9D000 EntryPoint=0x0007BA9E318 PciBusDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E339798
+ProtectUefiImageCommon - 0x7E3394C0
+  - 0x000000007BA9D000 - 0x0000000000013000
+SetUefiImageMemoryAttributes - 0x000000007BA9D000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007BA9E000 - 0x0000000000010000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007BAAE000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7BAAE200
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7BAAE2A0
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7BAAE0C0
+InstallProtocolInterface: 19CB87AB-2CB9-4665-8360-DDCF6054F79D 7BAAE0D8
+Loading driver 83DD3B39-7CAF-4FAC-A542-E050B767E3A7
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3380C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/OvmfPkg/VirtioPciDeviceDxe/VirtioPciDeviceDxe/DEBUG/VirtioPciDeviceDxe.dll 0x7C031000
+Loading driver at 0x0007C030000 EntryPoint=0x0007C031AD4 VirtioPciDeviceDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E338A98
+ProtectUefiImageCommon - 0x7E3380C0
+  - 0x000000007C030000 - 0x0000000000007000
+SetUefiImageMemoryAttributes - 0x000000007C030000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007C031000 - 0x0000000000004000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007C035000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7C035030
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7C035000
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7C035018
+Loading driver 0170F60C-1D40-4651-956D-F0BD9879D527
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3385C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/OvmfPkg/Virtio10Dxe/Virtio10/DEBUG/Virtio10.dll 0x7BA95000
+Loading driver at 0x0007BA94000 EntryPoint=0x0007BA9607C Virtio10.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E338898
+ProtectUefiImageCommon - 0x7E3385C0
+  - 0x000000007BA94000 - 0x0000000000009000
+SetUefiImageMemoryAttributes - 0x000000007BA94000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007BA95000 - 0x0000000000006000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007BA9B000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7BA9B088
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7BA9B0C8
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7BA9B070
+Loading driver D6099B94-CD97-4CC5-8714-7F6312701A8A
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3372C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/OvmfPkg/VirtioGpuDxe/VirtioGpu/DEBUG/VirtioGpuDxe.dll 0x7BA8B000
+Loading driver at 0x0007BA8A000 EntryPoint=0x0007BA8BDAC VirtioGpuDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E337A98
+ProtectUefiImageCommon - 0x7E3372C0
+  - 0x000000007BA8A000 - 0x000000000000A000
+SetUefiImageMemoryAttributes - 0x000000007BA8A000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007BA8B000 - 0x0000000000007000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007BA92000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7BA92050
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7BA905B8
+Loading driver 2FB92EFA-2EE0-4BAE-9EB6-7464125E1EF7
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E337540
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Bus/Pci/UhciDxe/UhciDxe/DEBUG/UhciDxe.dll 0x7BA80000
+Loading driver at 0x0007BA7F000 EntryPoint=0x0007BA85284 UhciDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E336F98
+ProtectUefiImageCommon - 0x7E337540
+  - 0x000000007BA7F000 - 0x000000000000B000
+SetUefiImageMemoryAttributes - 0x000000007BA7F000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007BA80000 - 0x0000000000008000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007BA88000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7BA88080
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7BA88050
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7BA88068
+Loading driver BDFE430E-8F2A-4DB0-9991-6F856594777E
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E336B40
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Bus/Pci/EhciDxe/EhciDxe/DEBUG/EhciDxe.dll 0x7BA73000
+Loading driver at 0x0007BA72000 EntryPoint=0x0007BA74294 EhciDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E336898
+ProtectUefiImageCommon - 0x7E336B40
+  - 0x000000007BA72000 - 0x000000000000D000
+SetUefiImageMemoryAttributes - 0x000000007BA72000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007BA73000 - 0x000000000000A000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007BA7D000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7BA7D0D0
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7BA7D0B8
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7BA7D070
+Loading driver B7F50E91-A759-412C-ADE4-DCD03E7F7C28
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E335040
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Bus/Pci/XhciDxe/XhciDxe/DEBUG/XhciDxe.dll 0x7BA62000
+Loading driver at 0x0007BA61000 EntryPoint=0x0007BA62E18 XhciDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E335B98
+ProtectUefiImageCommon - 0x7E335040
+  - 0x000000007BA61000 - 0x0000000000011000
+SetUefiImageMemoryAttributes - 0x000000007BA61000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007BA62000 - 0x000000000000E000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007BA70000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7BA70098
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7BA70080
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7BA70108
+Loading driver 240612B7-A063-11D4-9A3A-0090273FC14D
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E335540
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Bus/Usb/UsbBusDxe/UsbBusDxe/DEBUG/UsbBusDxe.dll 0x7BA54000
+Loading driver at 0x0007BA53000 EntryPoint=0x0007BA54830 UsbBusDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E335E98
+ProtectUefiImageCommon - 0x7E335540
+  - 0x000000007BA53000 - 0x000000000000E000
+SetUefiImageMemoryAttributes - 0x000000007BA53000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007BA54000 - 0x000000000000B000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007BA5F000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7BA5F138
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7BA5F0C0
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7BA5F050
+Loading driver 2D2E62CF-9ECF-43B7-8219-94E7FC713DFE
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E334D40
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Bus/Usb/UsbKbDxe/UsbKbDxe/DEBUG/UsbKbDxe.dll 0x7BA4A000
+Loading driver at 0x0007BA49000 EntryPoint=0x0007BA4A138 UsbKbDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E335918
+ProtectUefiImageCommon - 0x7E334D40
+  - 0x000000007BA49000 - 0x000000000000A000
+SetUefiImageMemoryAttributes - 0x000000007BA49000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007BA4A000 - 0x0000000000007000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007BA51000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7BA51828
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7BA51810
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7BA510C0
+Loading driver 9FB4B4A7-42C0-4BCD-8540-9BCC6711F83E
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3347C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Bus/Usb/UsbMassStorageDxe/UsbMassStorageDxe/DEBUG/UsbMassStorageDxe.dll 0x7BA40000
+Loading driver at 0x0007BA3F000 EntryPoint=0x0007BA40D78 UsbMassStorageDxe.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E334A98
+ProtectUefiImageCommon - 0x7E3347C0
+  - 0x000000007BA3F000 - 0x000000000000A000
+SetUefiImageMemoryAttributes - 0x000000007BA3F000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007BA40000 - 0x0000000000007000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007BA47000 - 0x0000000000002000 (0x0000000000004008)
+InstallProtocolInterface: 18A031AB-B443-4D1A-A5C0-0C09261E9F71 7BA47050
+InstallProtocolInterface: 107A772C-D5E1-11D4-9A46-0090273FC14D 7BA47158
+InstallProtocolInterface: 6A7A5CFF-E8D9-4F70-BADA-75AB3025CE14 7BA470B0
+Loading driver 17985E6F-E778-4D94-AEFA-C5DD2B77E186
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E32D040
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/OvmfPkg/AcpiPlatformDxe/QemuFwCfgAcpiPlatformDxe/DEBUG/QemuFwCfgAcpiPlatform.dll 0x7BA36000
+Loading driver at 0x0007BA35000 EntryPoint=0x0007BA3A464 QemuFwCfgAcpiPlatform.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E32D898
+ProtectUefiImageCommon - 0x7E32D040
+  - 0x000000007BA35000 - 0x000000000000A000
+SetUefiImageMemoryAttributes - 0x000000007BA35000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007BA36000 - 0x0000000000007000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007BA3D000 - 0x0000000000002000 (0x0000000000004008)
+Found FwCfg @ 0x9020008/0x9020000
+Found FwCfg DMA @ 0x9020010
+AcpiPlatformEntryPoint: waiting for root bridges to be connected, registered callback
+Driver 4D9CBEF0-15A0-4D0C-83DB-5213E710C23F was discovered but not loaded!!
+[Bds] Entry...
+[BdsDxe] Locate Variable Lock protocol - Success
+[Variable] Lock: 8BE4DF61-93CA-11D2-AA0D-00E098032B8C:PlatformLangCodes Success
+[Variable] Lock: 8BE4DF61-93CA-11D2-AA0D-00E098032B8C:LangCodes Success
+[Variable] Lock: 8BE4DF61-93CA-11D2-AA0D-00E098032B8C:BootOptionSupport Success
+[Variable] Lock: 8BE4DF61-93CA-11D2-AA0D-00E098032B8C:HwErrRecSupport Success
+[Variable] Lock: 8BE4DF61-93CA-11D2-AA0D-00E098032B8C:OsIndicationsSupported Success
+Variable Driver Auto Update Lang, Lang:eng, PlatformLang:en Status: Success
+[Variable] Lock: 8BE4DF61-93CA-11D2-AA0D-00E098032B8C:PlatformRecovery0000 Success
+[Variable]END_OF_DXE is signaled
+Initialize variable error flag (FF)
+PCI Bus First Scanning
+PciBus: Discovered PCI @ [00|00|00]
+
+PciBus: Discovered PCI @ [00|01|00]
+   BAR[0]: Type =   Io32; Alignment = 0x1F;	Length = 0x20;	Offset = 0x10
+   BAR[1]: Type =  Mem32; Alignment = 0xFFF;	Length = 0x1000;	Offset = 0x14
+   BAR[4]: Type = PMem64; Alignment = 0x3FFF;	Length = 0x4000;	Offset = 0x20
+
+PciBus: Discovered PCI @ [00|02|00]
+   BAR[0]: Type =  Mem64; Alignment = 0x3FFF;	Length = 0x4000;	Offset = 0x10
+
+PciBus: Discovered PCI @ [00|03|00]
+   BAR[0]: Type =   Io32; Alignment = 0x7F;	Length = 0x80;	Offset = 0x10
+   BAR[1]: Type =  Mem32; Alignment = 0xFFF;	Length = 0x1000;	Offset = 0x14
+   BAR[4]: Type = PMem64; Alignment = 0x3FFF;	Length = 0x4000;	Offset = 0x20
+
+PciBus: Discovered PCI @ [00|00|00]
+
+PciBus: Discovered PCI @ [00|01|00]
+   BAR[0]: Type =   Io32; Alignment = 0x1F;	Length = 0x20;	Offset = 0x10
+   BAR[1]: Type =  Mem32; Alignment = 0xFFF;	Length = 0x1000;	Offset = 0x14
+   BAR[4]: Type = PMem64; Alignment = 0x3FFF;	Length = 0x4000;	Offset = 0x20
+
+PciBus: Discovered PCI @ [00|02|00]
+   BAR[0]: Type =  Mem64; Alignment = 0x3FFF;	Length = 0x4000;	Offset = 0x10
+
+PciBus: Discovered PCI @ [00|03|00]
+   BAR[0]: Type =   Io32; Alignment = 0x7F;	Length = 0x80;	Offset = 0x10
+   BAR[1]: Type =  Mem32; Alignment = 0xFFF;	Length = 0x1000;	Offset = 0x14
+   BAR[4]: Type = PMem64; Alignment = 0x3FFF;	Length = 0x4000;	Offset = 0x20
+
+PciHostBridge: SubmitResources for PciRoot(0x0)
+ I/O: Granularity/SpecificFlag = 0 / 01
+      Length/Alignment = 0x1000 / 0xFFF
+ Mem: Granularity/SpecificFlag = 32 / 00
+      Length/Alignment = 0x100000 / 0xFFFFF
+PciBus: HostBridge->SubmitResources() - Success
+PciHostBridge: NotifyPhase (AllocateResources)
+ RootBridge: PciRoot(0x0)
+  Mem: Base/Length/Alignment = 10000000/100000/FFFFF - Success
+  I/O: Base/Length/Alignment = 0/1000/FFF - Success
+PciBus: HostBridge->NotifyPhase(AllocateResources) - Success
+Process Option ROM: BAR Base/Length = 10000000/40000
+PciBus: Resource Map for Root Bridge PciRoot(0x0)
+Type =   Io16; Base = 0x0;	Length = 0x1000;	Alignment = 0xFFF
+   Base = 0x0;	Length = 0x80;	Alignment = 0x7F;	Owner = PCI [00|03|00:10]
+   Base = 0x80;	Length = 0x20;	Alignment = 0x1F;	Owner = PCI [00|01|00:10]
+Type =  Mem32; Base = 0x10000000;	Length = 0x100000;	Alignment = 0xFFFFF
+   Base = 0x10000000;	Length = 0x40000;	Alignment = 0x3FFFF;	Owner = PCI [00|00|00:00]; Type =  OpRom
+   Base = 0x10040000;	Length = 0x4000;	Alignment = 0x3FFF;	Owner = PCI [00|03|00:20]; Type = PMem32
+   Base = 0x10044000;	Length = 0x4000;	Alignment = 0x3FFF;	Owner = PCI [00|01|00:20]; Type = PMem32
+   Base = 0x10048000;	Length = 0x4000;	Alignment = 0x3FFF;	Owner = PCI [00|02|00:10]
+   Base = 0x1004C000;	Length = 0x1000;	Alignment = 0xFFF;	Owner = PCI [00|03|00:14]
+   Base = 0x1004D000;	Length = 0x1000;	Alignment = 0xFFF;	Owner = PCI [00|01|00:14]
+
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E32CE98
+InstallProtocolInterface: 4CF5B200-68B8-4CA5-9EEC-B23E3F50029A 7E32C028
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E32CF18
+InstallProtocolInterface: 4CF5B200-68B8-4CA5-9EEC-B23E3F50029A 7E32C428
+InstallProtocolInterface: 4006C0C1-FCB3-403E-996D-4A6C8724E06D 7E32C4F0
+[Security] 3rd party image[0] can be loaded after EndOfDxe: PciRoot(0x0)/Pci(0x1,0x0)/Offset(0x10E00,0x273FF).
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7E3007C0
+Image type X64 can't be loaded on AARCH64 UEFI system.
+Unloading driver at 0x00000000000
+InstallProtocolInterface: 3BC1B285-8A15-4A82-AABF-4D7D13FB3265 7E32C4D8
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E32CF98
+InstallProtocolInterface: 4CF5B200-68B8-4CA5-9EEC-B23E3F50029A 7E32C828
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E32AE98
+InstallProtocolInterface: 4CF5B200-68B8-4CA5-9EEC-B23E3F50029A 7E32A028
+InstallProtocolInterface: 30CFE3E7-3DE1-4586-BE20-DEABA1B3B793 0
+OnRootBridgesConnected: root bridges have been connected, installing ACPI tables
+InstallQemuFwCfgTables: installed 9 tables
+[Bds]RegisterKeyNotify: 000C/0000 80000000/00 Success
+[Bds]RegisterKeyNotify: 0017/0000 80000000/00 Success
+[Bds]RegisterKeyNotify: 0000/000D 80000000/00 Success
+GraphicsConsole video resolution 800 x 600
+Graphics - Mode 0, Column = 80, Row = 25
+Graphics - Mode 1, Column = 0, Row = 0
+Graphics - Mode 2, Column = 100, Row = 31
+Graphics Console Started, Mode: 0
+InstallProtocolInterface: 387477C2-69C7-11D2-8E39-00A0C969723B 7E2D7030
+InstallProtocolInterface: D3B36F2C-D551-11D4-9A46-0090273FC14D 0
+InstallProtocolInterface: D3B36F2D-D551-11D4-9A46-0090273FC14D 0
+InstallProtocolInterface: 9042A9DE-23DC-4A38-96FB-7ADED080516A 7F33E558
+Terminal - Mode 0, Column = 80, Row = 25
+Terminal - Mode 1, Column = 80, Row = 50
+Terminal - Mode 2, Column = 100, Row = 31
+[2J[01;01H[=3h[2J[01;01HInstallProtocolInterface: 387477C1-69C7-11D2-8E39-00A0C969723B 7E2D02C0
+InstallProtocolInterface: DD9E7534-7762-4698-8C14-F58517A625AA 7E2D03A8
+InstallProtocolInterface: 387477C2-69C7-11D2-8E39-00A0C969723B 7E2D02D8
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E2D7E98
+InstallProtocolInterface: D3B36F2B-D551-11D4-9A46-0090273FC14D 0
+InstallProtocolInterface: D3B36F2C-D551-11D4-9A46-0090273FC14D 0
+InstallProtocolInterface: D3B36F2D-D551-11D4-9A46-0090273FC14D 0
+[0m[35m[40m[0m[37m[40mXhcCreateUsb3Hc: Capability length 0x40
+XhcCreateUsb3Hc: HcSParams1 0x8001040
+XhcCreateUsb3Hc: HcSParams2 0xF
+XhcCreateUsb3Hc: HcCParams 0x80001
+XhcCreateUsb3Hc: DBOff 0x2000
+XhcCreateUsb3Hc: RTSOff 0x1000
+XhcCreateUsb3Hc: UsbLegSupOffset 0xFFFFFFFF
+XhcCreateUsb3Hc: DebugCapSupOffset 0xFFFFFFFF
+XhcResetHC!
+XhcInitSched:DCBAA=0x7E2A9000
+XhcInitSched: Created CMD ring [7E2A9240~7E2AA240) EVENT ring [7E2AA240~7E2AC240)
+InstallProtocolInterface: 3E745226-9818-45B6-A2AC-D7CD0E8BA2BC 7E2B9038
+XhcDriverBindingStart: XHCI started for controller @ 7E300A18
+InstallProtocolInterface: 240612B7-A063-11D4-9A3A-0090273FC14D 7E2A8020
+XhcGetCapability: 8 ports, 64 bit 1
+UsbRootHubInit: root hub 7E2A8C98 - max speed 3, 8 ports
+XhcClearRootHubPortFeature: status Success
+UsbEnumeratePort: port 0 state - 00, change - 01 on 7E2A8C98
+UsbEnumeratePort: Device Connect/Disconnect Normally
+UsbEnumeratePort: device disconnected event on port 0
+XhcClearRootHubPortFeature: status Success
+UsbEnumeratePort: port 1 state - 00, change - 01 on 7E2A8C98
+UsbEnumeratePort: Device Connect/Disconnect Normally
+UsbEnumeratePort: device disconnected event on port 1
+XhcClearRootHubPortFeature: status Success
+UsbEnumeratePort: port 2 state - 00, change - 01 on 7E2A8C98
+UsbEnumeratePort: Device Connect/Disconnect Normally
+UsbEnumeratePort: device disconnected event on port 2
+XhcClearRootHubPortFeature: status Success
+UsbEnumeratePort: port 3 state - 00, change - 01 on 7E2A8C98
+UsbEnumeratePort: Device Connect/Disconnect Normally
+UsbEnumeratePort: device disconnected event on port 3
+XhcClearRootHubPortFeature: status Success
+UsbEnumeratePort: port 4 state - 401, change - 01 on 7E2A8C98
+UsbEnumeratePort: Device Connect/Disconnect Normally
+UsbEnumeratePort: new device connected at port 4
+XhcUsbPortReset!
+XhcSetRootHubPortFeature: status Success
+XhcClearRootHubPortFeature: status Success
+XhcClearRootHubPortFeature: status Success
+Enable Slot Successfully, The Slot ID = 0x1
+    Address 1 assigned successfully
+UsbEnumerateNewDev: hub port 4 is reset
+UsbEnumerateNewDev: device is of 2 speed
+UsbEnumerateNewDev: device uses translator (0, 0)
+UsbEnumerateNewDev: device is now ADDRESSED at 1
+UsbEnumerateNewDev: max packet size for EP 0 is 64
+Evaluate context
+UsbBuildDescTable: device has 1 configures
+UsbGetOneConfig: total length is 34
+UsbParseConfigDesc: config 1 has 1 interfaces
+UsbParseInterfaceDesc: interface 0(setting 0) has 1 endpoints
+Endpoint[81]: Created INT ring [7E2ADAC0~7E2AEAC0)
+Configure Endpoint
+UsbEnumerateNewDev: device 1 is now in CONFIGED state
+UsbSelectConfig: config 1 selected for device 1
+UsbSelectSetting: setting 0 selected for interface 0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E2A7D98
+InstallProtocolInterface: 2B2F68D6-0CD2-44CF-8E8B-BBA20B1B5B75 7E2A7C40
+UsbConnectDriver: TPL before connect is 8, 7E2A6018
+InstallProtocolInterface: 387477C1-69C7-11D2-8E39-00A0C969723B 7E2A6338
+InstallProtocolInterface: DD9E7534-7762-4698-8C14-F58517A625AA 7E2A6350
+InstallProtocolInterface: D3B36F2B-D551-11D4-9A46-0090273FC14D 0
+UsbConnectDriver: TPL after connect is 8
+XhcClearRootHubPortFeature: status Success
+UsbEnumeratePort: port 5 state - 401, change - 01 on 7E2A8C98
+UsbEnumeratePort: Device Connect/Disconnect Normally
+UsbEnumeratePort: new device connected at port 5
+XhcUsbPortReset!
+XhcSetRootHubPortFeature: status Success
+XhcClearRootHubPortFeature: status Success
+XhcClearRootHubPortFeature: status Success
+Enable Slot Successfully, The Slot ID = 0x2
+    Address 2 assigned successfully
+UsbEnumerateNewDev: hub port 5 is reset
+UsbEnumerateNewDev: device is of 2 speed
+UsbEnumerateNewDev: device uses translator (0, 0)
+UsbEnumerateNewDev: device is now ADDRESSED at 2
+UsbEnumerateNewDev: max packet size for EP 0 is 64
+Evaluate context
+UsbBuildDescTable: device has 1 configures
+UsbGetOneConfig: total length is 34
+UsbParseConfigDesc: config 1 has 1 interfaces
+UsbParseInterfaceDesc: interface 0(setting 0) has 1 endpoints
+Endpoint[81]: Created INT ring [7E2B0300~7E2B1300)
+Configure Endpoint
+UsbEnumerateNewDev: device 2 is now in CONFIGED state
+UsbSelectConfig: config 1 selected for device 2
+UsbSelectSetting: setting 0 selected for interface 0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E2A1D98
+InstallProtocolInterface: 2B2F68D6-0CD2-44CF-8E8B-BBA20B1B5B75 7E2A1F40
+XhcClearRootHubPortFeature: status Success
+UsbEnumeratePort: port 6 state - 00, change - 01 on 7E2A8C98
+UsbEnumeratePort: Device Connect/Disconnect Normally
+UsbEnumeratePort: device disconnected event on port 6
+XhcClearRootHubPortFeature: status Success
+UsbEnumeratePort: port 7 state - 00, change - 01 on 7E2A8C98
+UsbEnumeratePort: Device Connect/Disconnect Normally
+UsbEnumeratePort: device disconnected event on port 7
+UsbBusStart: usb bus started on 7E300A18, root hub 7E2A8C98
+QemuLoadKernelImage: LoadImage(): Not Found
+InstallProtocolInterface: CE345171-BA0B-11D2-8E4F-00A0C969723B 7E29EDA0
+ BlockSize : 262144 
+ LastBlock : FF 
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7E29D020
+InstallProtocolInterface: A19832B9-AC25-11D3-9A2D-0090273FC14D 7E29B128
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7E29B998
+InstallProtocolInterface: 9E23D768-D2F3-4366-9FC3-3A7ABA864374 7E29E530
+InstallProtocolInterface: F36FF770-A7E1-42CF-9ED2-56F0F271F44C 7E29A9C0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7D18F718
+InstallProtocolInterface: 330D4706-F2A0-4E4F-A369-B66FA8D54385 7D18FB20
+InstallProtocolInterface: E4F61863-FE2C-4B56-A8F4-08519BC439DF 7D18FB18
+InstallProtocolInterface: 7AB33A91-ACE5-4326-B572-E7EE33D39F16 7D18E4C0
+InstallProtocolInterface: F44C00EE-1F2C-4A00-AA09-1C9F3E0800A3 7D18E0A0
+InstallProtocolInterface: 7AB33A91-ACE5-4326-B572-E7EE33D39F16 7D16BBC0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7D16AD98
+InstallProtocolInterface: 330D4706-F2A0-4E4F-A369-B66FA8D54385 7D16B838
+InstallProtocolInterface: C51711E7-B4BF-404A-BFB8-0A048EF1FFE4 7D16B020
+InstallProtocolInterface: 5B446ED1-E30B-4FAA-871A-3654ECA36080 7D16B580
+InstallProtocolInterface: 41D94CD2-35B6-455A-8258-D4E51334AADD 7D167120
+InstallProtocolInterface: 83F01464-99BD-45E5-B383-AF6305D8E9E6 7D167AA0
+InstallProtocolInterface: 41D94CD2-35B6-455A-8258-D4E51334AADD 7D163D20
+InstallProtocolInterface: 3AD9DF29-4501-478D-B1F8-7F7FE70E50F3 7D163038
+InstallProtocolInterface: 9D9A39D8-BD42-4A73-A4D5-8EE94BE11380 7D1641A0
+InstallProtocolInterface: 41D94CD2-35B6-455A-8258-D4E51334AADD 7D15D020
+InstallProtocolInterface: 3AD9DF29-4501-478D-B1F8-7F7FE70E50F3 7D15E5B8
+InstallProtocolInterface: 2FE800BE-8F01-4AA6-946B-D71388E1833F 7D15EC20
+InstallProtocolInterface: 7AB33A91-ACE5-4326-B572-E7EE33D39F16 7D15AAC0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7D15D818
+InstallProtocolInterface: 330D4706-F2A0-4E4F-A369-B66FA8D54385 7D15BFE8
+InstallProtocolInterface: EC835DD3-FE0F-617B-A621-B350C3E13388 7D15B020
+InstallProtocolInterface: 937FE521-95AE-4D1A-8929-48BCD90AD31A 7D15BF70
+InstallProtocolInterface: 2C8759D5-5C2D-66EF-925F-B66C101957E2 7D155020
+InstallProtocolInterface: 66ED4721-3C98-4D3E-81E3-D03DD39A7254 7D1561A0
+InstallProtocolInterface: 2C8759D5-5C2D-66EF-925F-B66C101957E2 7D152020
+InstallProtocolInterface: 4F948815-B4B9-43CB-8A33-90E060B34955 7D153538
+InstallProtocolInterface: 9FB9A8A1-2F4A-43A6-889C-D0F7B6C47AD5 7D1537B0
+InstallProtocolInterface: 2C8759D5-5C2D-66EF-925F-B66C101957E2 7D14FD20
+InstallProtocolInterface: 4F948815-B4B9-43CB-8A33-90E060B34955 7D14F038
+InstallProtocolInterface: D9760FF3-3CCA-4267-80F9-7527FAFA4223 7D150120
+InstallProtocolInterface: 41D94CD2-35B6-455A-8258-D4E51334AADD 7D14F4A0
+InstallProtocolInterface: 00720665-67EB-4A99-BAF7-D3C33A1C7CC9 7D14F7C0
+InstallProtocolInterface: 2C8759D5-5C2D-66EF-925F-B66C101957E2 7D14B020
+InstallProtocolInterface: EC20EB79-6C1A-4664-9A0D-D2E4CC16D664 7D14C640
+InstallProtocolInterface: B95E9FDA-26DE-48D2-8807-1F9107AC5E3A 7D13E030
+InstallProtocolInterface: 8A219718-4EF5-4761-91C8-C0F04BDA9E56 7D1497A0
+InstallProtocolInterface: 41D94CD2-35B6-455A-8258-D4E51334AADD 7D13DD20
+InstallProtocolInterface: 3AD9DF29-4501-478D-B1F8-7F7FE70E50F3 7D13D038
+InstallProtocolInterface: 78247C57-63DB-4708-99C2-A8B4A9A61F6B 7D1495B0
+InstallProtocolInterface: 41D94CD2-35B6-455A-8258-D4E51334AADD 7D13C020
+InstallProtocolInterface: 3AD9DF29-4501-478D-B1F8-7F7FE70E50F3 7D13D338
+InstallProtocolInterface: 41D94CD2-35B6-455A-8258-D4E51334AADD 7D13C220
+InstallProtocolInterface: 3AD9DF29-4501-478D-B1F8-7F7FE70E50F3 7D13C8B8
+InstallProtocolInterface: F4B427BB-BA21-4F16-BC4E-43E416AB619C 7D13BF30
+InstallProtocolInterface: 41D94CD2-35B6-455A-8258-D4E51334AADD 7D13B0A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7D13B218
+InstallProtocolInterface: 56EC3091-954C-11D2-8E3F-00A0C969723B 7D13B928
+InstallProtocolInterface: 03C4E603-AC28-11D3-9A2D-0090273FC14D 7D13E120
+InstallProtocolInterface: A19832B9-AC25-11D3-9A2D-0090273FC14D 7E29B128
+InstallProtocolInterface: 87C8BAD7-0595-4053-8297-DEDE395F5D5B 7D13AB40
+InstallProtocolInterface: BF0A78BA-EC29-49CF-A1C9-7AE54EAB6A51 7D13A7B8
+InstallProtocolInterface: 2C8759D5-5C2D-66EF-925F-B66C101957E2 7D13A2A0
+InstallProtocolInterface: 4F948815-B4B9-43CB-8A33-90E060B34955 7D13A5B8
+InstallProtocolInterface: 2C8759D5-5C2D-66EF-925F-B66C101957E2 7D139220
+InstallProtocolInterface: 4F948815-B4B9-43CB-8A33-90E060B34955 7D1390B8
+InstallProtocolInterface: 2C8759D5-5C2D-66EF-925F-B66C101957E2 7D138020
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7D138298
+InstallProtocolInterface: 56EC3091-954C-11D2-8E3F-00A0C969723B 7D13B428
+InstallProtocolInterface: 03C4E603-AC28-11D3-9A2D-0090273FC14D 7D13E120
+InstallProtocolInterface: A19832B9-AC25-11D3-9A2D-0090273FC14D 7E29B128
+InstallProtocolInterface: BDC8E6AF-D9BC-4379-A72A-E0C4E75DAE1C 7D138820
+InstallProtocolInterface: 65530BC7-A359-410F-B010-5AADC7EC2B62 7D1385B8
+InstallProtocolInterface: 41D94CD2-35B6-455A-8258-D4E51334AADD 7D1370A0
+InstallProtocolInterface: 46E44855-BD60-4AB7-AB0D-A679B9447D77 7D1373B8
+InstallProtocolInterface: 2C8759D5-5C2D-66EF-925F-B66C101957E2 7D1360A0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7D136498
+InstallProtocolInterface: 330D4706-F2A0-4E4F-A369-B66FA8D54385 7D12F1B8
+InstallProtocolInterface: ECEBCB00-D9C8-11E4-AF3D-8CDCD426C973 7D12F168
+InstallProtocolInterface: 8A219718-4EF5-4761-91C8-C0F04BDA9E56 7D12E420
+InstallProtocolInterface: 56EC3091-954C-11D2-8E3F-00A0C969723B 7D12E630
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7D12ED98
+InstallProtocolInterface: 87C8BAD7-0595-4053-8297-DEDE395F5D5B 7D12DBC0
+InstallProtocolInterface: 2C8759D5-5C2D-66EF-925F-B66C101957E2 7D12D120
+InstallProtocolInterface: 56EC3091-954C-11D2-8E3F-00A0C969723B 7D12DE30
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7D12C018
+InstallProtocolInterface: 65530BC7-A359-410F-B010-5AADC7EC2B62 7D12C238
+InstallProtocolInterface: 41D94CD2-35B6-455A-8258-D4E51334AADD 7D12C520
+InstallProtocolInterface: FA3CDE4C-87C2-427D-AEDE-7DD096C88C58 7D12CEB0
+InstallProtocolInterface: 46E44855-BD60-4AB7-AB0D-A679B9447D77 7D12B238
+InstallProtocolInterface: 2C8759D5-5C2D-66EF-925F-B66C101957E2 7D12B5A0
+InstallProtocolInterface: 28BE27E5-66CC-4A31-A315-DB14C3744D85 7D12BC30
+InstallProtocolInterface: 2C8759D5-5C2D-66EF-925F-B66C101957E2 7D129BA0
+InstallProtocolInterface: 4F948815-B4B9-43CB-8A33-90E060B34955 7D12A638
+InstallProtocolInterface: 7F1647C8-B76E-44B2-A565-F70FF19CD19E 7D12A7A0
+InstallProtocolInterface: 41D94CD2-35B6-455A-8258-D4E51334AADD 7D128420
+InstallProtocolInterface: 3AD9DF29-4501-478D-B1F8-7F7FE70E50F3 7D128EB8
+InstallProtocolInterface: B625B186-E063-44F7-8905-6A74DC6F52B4 7D1296A0
+UsbBusRecursivelyConnectWantedUsbIo: TPL before connect is 4
+UsbBusRecursivelyConnectWantedUsbIo: TPL after connect is 4
+InstallProtocolInterface: FA920010-6785-4941-B6EC-498C579F160A 7D1270A0
+VirtioBlkInit: LbaSize=0x200[B] NumBlocks=0xFC000[Lba]
+VirtioBlkInit: FirstAligned=0x0[Lba] PhysBlkSize=0x1[Lba]
+VirtioBlkInit: OptimalTransferLengthGranularity=0x0[Lba]
+InstallProtocolInterface: 964E5B21-6459-11D2-8E39-00A0C969723B 7D127590
+InstallProtocolInterface: CE345171-BA0B-11D2-8E4F-00A0C969723B 7D127320
+ BlockSize : 512 
+ LastBlock : FBFFF 
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7D127818
+InstallProtocolInterface: 964E5B21-6459-11D2-8E39-00A0C969723B 7D11BD30
+InstallProtocolInterface: 8CF2F62C-BC9B-4821-808D-EC9EC421A1A0 7D11BDE8
+InstallProtocolInterface: CE345171-BA0B-11D2-8E4F-00A0C969723B 7D127E20
+ BlockSize : 512 
+ LastBlock : FBFC0 
+InstallProtocolInterface: 964E5B22-6459-11D2-8E39-00A0C969723B 7D112030
+Installed Fat filesystem on 7D127898
+UsbBusRecursivelyConnectWantedUsbIo: TPL before connect is 4
+UsbBusRecursivelyConnectWantedUsbIo: TPL after connect is 4
+ BlockSize : 512 
+ LastBlock : FBFFF 
+UsbBusRecursivelyConnectWantedUsbIo: TPL before connect is 4
+UsbBusRecursivelyConnectWantedUsbIo: TPL after connect is 4
+[Bds]BmHotkeyCallback: 0017:0000
+[Bds]Hotkey for Boot0000 pressed - Success
+MnpAddFreeTxBuf: Add TxBufWrap 7CC8C018, TxBuf 7CC8C041
+MnpAddFreeTxBuf: Add TxBufWrap 7CC8C698, TxBuf 7CC8C6C1
+MnpAddFreeTxBuf: Add TxBufWrap 7CC8B018, TxBuf 7CC8B041
+MnpAddFreeTxBuf: Add TxBufWrap 7CC8B698, TxBuf 7CC8B6C1
+MnpAddFreeTxBuf: Add TxBufWrap 7CC8A018, TxBuf 7CC8A041
+MnpAddFreeTxBuf: Add TxBufWrap 7CC8A698, TxBuf 7CC8A6C1
+MnpAddFreeTxBuf: Add TxBufWrap 7CC89018, TxBuf 7CC89041
+MnpAddFreeTxBuf: Add TxBufWrap 7CC89698, TxBuf 7CC896C1
+MnpAddFreeTxBuf: Add TxBufWrap 7CC88018, TxBuf 7CC88041
+MnpAddFreeTxBuf: Add TxBufWrap 7CC88698, TxBuf 7CC886C1
+MnpAddFreeTxBuf: Add TxBufWrap 7CC87018, TxBuf 7CC87041
+MnpAddFreeTxBuf: Add TxBufWrap 7CC87698, TxBuf 7CC876C1
+MnpAddFreeTxBuf: Add TxBufWrap 7CC86018, TxBuf 7CC86041
+MnpAddFreeTxBuf: Add TxBufWrap 7CC86698, TxBuf 7CC866C1
+MnpAddFreeTxBuf: Add TxBufWrap 7CC85018, TxBuf 7CC85041
+MnpAddFreeTxBuf: Add TxBufWrap 7CC85698, TxBuf 7CC856C1
+MnpAddFreeTxBuf: Add TxBufWrap 7CC84018, TxBuf 7CC84041
+MnpAddFreeTxBuf: Add TxBufWrap 7CC84698, TxBuf 7CC846C1
+MnpAddFreeTxBuf: Add TxBufWrap 7CC83018, TxBuf 7CC83041
+MnpAddFreeTxBuf: Add TxBufWrap 7CC83698, TxBuf 7CC836C1
+MnpAddFreeTxBuf: Add TxBufWrap 7CC82018, TxBuf 7CC82041
+MnpAddFreeTxBuf: Add TxBufWrap 7CC82698, TxBuf 7CC826C1
+MnpAddFreeTxBuf: Add TxBufWrap 7CC81018, TxBuf 7CC81041
+MnpAddFreeTxBuf: Add TxBufWrap 7CC81698, TxBuf 7CC816C1
+MnpAddFreeTxBuf: Add TxBufWrap 7CC80018, TxBuf 7CC80041
+MnpAddFreeTxBuf: Add TxBufWrap 7CC80698, TxBuf 7CC806C1
+MnpAddFreeTxBuf: Add TxBufWrap 7CC7F018, TxBuf 7CC7F041
+MnpAddFreeTxBuf: Add TxBufWrap 7CC7F698, TxBuf 7CC7F6C1
+MnpAddFreeTxBuf: Add TxBufWrap 7CC7E018, TxBuf 7CC7E041
+MnpAddFreeTxBuf: Add TxBufWrap 7CC7E698, TxBuf 7CC7E6C1
+MnpAddFreeTxBuf: Add TxBufWrap 7CC7D018, TxBuf 7CC7D041
+MnpAddFreeTxBuf: Add TxBufWrap 7CC7D698, TxBuf 7CC7D6C1
+[Bds]OsIndication: 0000000000000000
+[Bds]=============Begin Load Options Dumping ...=============
+  Driver Options:
+  SysPrep Options:
+  Boot Options:
+    Boot0000: UiApp 		 0x0109
+    Boot0001: UEFI Misc Device 		 0x0001
+    Boot0002: UEFI Misc Device 2 		 0x0001
+    Boot0003: UEFI PXEv4 (MAC:525400123456) 		 0x0001
+    Boot0004: UEFI PXEv6 (MAC:525400123456) 		 0x0001
+    Boot0005: UEFI HTTPv4 (MAC:525400123456) 		 0x0001
+    Boot0006: UEFI HTTPv6 (MAC:525400123456) 		 0x0001
+    Boot0007: EFI Internal Shell 		 0x0001
+  PlatformRecovery Options:
+    PlatformRecovery0000: Default PlatformRecovery 		 0x0001
+[Bds]=============End Load Options Dumping=============
+[Bds]BdsWait ...Zzzzzzzzzzzz...
+[Bds]BdsWait(3)..Zzzz...
+[Bds]Exit the waiting!
+[Bds] Booting Boot Manager Menu.
+[Bds]Stop Hotkey Service!
+[Bds]UnregisterKeyNotify: 000C/0000 Success
+[Bds]UnregisterKeyNotify: 0017/0000 Success
+[Bds]UnregisterKeyNotify: 0000/000D Success
+Memory  Previous  Current    Next   
+ Type    Pages     Pages     Pages  
+======  ========  ========  ========
+  09    00000000  000000B0  000000DC
+  0A    00000000  00000030  0000003C
+  00    00000000  00000300  000003C0
+  06    0000012C  00000330  000003FC
+  05    00000096  00000250  000002E4
+  03    000003E8  00000483  000005A3
+  04    00002EE0  00002543  00002EE0
+  01    00000014  00000000  00000014
+  02    00000000  00000000  00000000
+Memory Type Information settings change.
+[Bds]Booting UiApp
+[Bds] Expand Fv(64074AFE-340A-4BE6-94BA-91B5B4D0F71E)/FvFile(462CAA21-7614-4503-836E-8AB6F4662331) -> Fv(64074AFE-340A-4BE6-94BA-91B5B4D0F71E)/FvFile(462CAA21-7614-4503-836E-8AB6F4662331)
+BdsDxe: loading Boot0000 "UiApp" from Fv(64074AFE-340A-4BE6-94BA-91B5B4D0F71E)/FvFile(462CAA21-7614-4503-836E-8AB6F4662331)
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7CC83D40
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/MdeModulePkg/Application/UiApp/UiApp/DEBUG/UiApp.dll 0x7BA0F000
+Loading driver at 0x0007BA0E000 EntryPoint=0x0007BA1091C UiApp.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E2CF618
+ProtectUefiImageCommon - 0x7CC83D40
+  - 0x000000007BA0E000 - 0x0000000000027000
+SetUefiImageMemoryAttributes - 0x000000007BA0E000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007BA0F000 - 0x000000000001E000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007BA2D000 - 0x0000000000008000 (0x0000000000004008)
+BdsDxe: starting Boot0000 "UiApp" from Fv(64074AFE-340A-4BE6-94BA-91B5B4D0F71E)/FvFile(462CAA21-7614-4503-836E-8AB6F4662331)
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7CC85F98
+InstallProtocolInterface: 330D4706-F2A0-4E4F-A369-B66FA8D54385 7BA31CC0
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7BA319D0
+InstallProtocolInterface: 330D4706-F2A0-4E4F-A369-B66FA8D54385 7BA33BA0
+UsbBusRecursivelyConnectWantedUsbIo: TPL before connect is 4
+UsbBusRecursivelyConnectWantedUsbIo: TPL after connect is 4
+ BlockSize : 262144 
+ LastBlock : FF 
+UsbBusRecursivelyConnectWantedUsbIo: TPL before connect is 4
+UsbBusRecursivelyConnectWantedUsbIo: TPL after connect is 4
+ BlockSize : 512 
+ LastBlock : FBFFF 
+UsbBusRecursivelyConnectWantedUsbIo: TPL before connect is 4
+UsbBusRecursivelyConnectWantedUsbIo: TPL after connect is 4
+ BlockSize : 512 
+ LastBlock : FBFFF 
+UsbBusRecursivelyConnectWantedUsbIo: TPL before connect is 4
+UsbBusRecursivelyConnectWantedUsbIo: TPL after connect is 4
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7BA319B8
+InstallProtocolInterface: 330D4706-F2A0-4E4F-A369-B66FA8D54385 7BA33B70
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7BA319A0
+InstallProtocolInterface: 330D4706-F2A0-4E4F-A369-B66FA8D54385 7BA31E38
+[2J[01;01HRamfb: SetMode 0 (640x480)
+0: shl:0 shr:0 mask:FF0000
+1: shl:0 shr:0 mask:FF00
+2: shl:0 shr:0 mask:FF
+Bytes per pixel: 4
+GraphicsConsole video resolution 640 x 480
+Graphics - Mode 0, Column = 80, Row = 25
+Graphics - Mode 1, Column = 0, Row = 0
+Graphics Console Started, Mode: 0
+InstallProtocolInterface: 387477C2-69C7-11D2-8E39-00A0C969723B 7E2D7130
+InstallProtocolInterface: D3B36F2C-D551-11D4-9A46-0090273FC14D 0
+InstallProtocolInterface: D3B36F2D-D551-11D4-9A46-0090273FC14D 0
+InstallProtocolInterface: 9042A9DE-23DC-4A38-96FB-7ADED080516A 7F33E558
+InstallProtocolInterface: D3B36F2B-D551-11D4-9A46-0090273FC14D 0
+InstallProtocolInterface: D3B36F2C-D551-11D4-9A46-0090273FC14D 0
+InstallProtocolInterface: D3B36F2D-D551-11D4-9A46-0090273FC14D 0
+[0m[35m[40m[0m[37m[40mUsbBusRecursivelyConnectWantedUsbIo: TPL before connect is 4
+UsbBusRecursivelyConnectWantedUsbIo: TPL after connect is 4
+ BlockSize : 262144 
+ LastBlock : FF 
+UsbBusRecursivelyConnectWantedUsbIo: TPL before connect is 4
+UsbBusRecursivelyConnectWantedUsbIo: TPL after connect is 4
+ BlockSize : 512 
+ LastBlock : FBFFF 
+UsbBusRecursivelyConnectWantedUsbIo: TPL before connect is 4
+UsbBusRecursivelyConnectWantedUsbIo: TPL after connect is 4
+ BlockSize : 512 
+ LastBlock : FBFFF 
+UsbBusRecursivelyConnectWantedUsbIo: TPL before connect is 4
+UsbBusRecursivelyConnectWantedUsbIo: TPL after connect is 4
+InstallProtocolInterface: 09576E91-6D3F-11D2-8E39-00A0C969723B 7BA2E380
+InstallProtocolInterface: 330D4706-F2A0-4E4F-A369-B66FA8D54385 7BA33B30
+InstallProtocolInterface: 348C4D62-BFBD-4882-9ECE-C80BB1C4783B 0
+[0m[30m[40m[01;01H                                                                                [02;01H                                                                                [03;01H                                                                                [04;01H                                                                                [05;01H                                                                                [06;01H                                                                                [07;01H                                                                                [08;01H                                                                                [09;01H                                                                                [10;01H                                                                                [11;01H                                                                                [12;01H                                                                                [13;01H                                                                                [14;01H                                                                                [15;01H                                                                                [16;01H                                                                                [17;01H                                                                                [18;01H                                                                                [19;01H                                                                                [20;01H                                                                                [21;01H                                                                                [22;01H                                                                                [23;01H                                                                                [24;01H                                                                                [25;01H                                                                                                                                                                [01;01H[0m[34m[47m[01;01H                                                                                [02;01H                                                                                [03;01H                                                                                [04;01H                                                                                [05;01H                                                                                [06;01H                                                                                [01;01H[02;02HQEMU Virtual Machine[03;02Hvirt-6.2[03;54H2.00 GHz[04;02H0.0.0[04;54H0 MB RAM[05;02H[05;54H[06;02H[06;54H[0m[37m[40m[21;01H                                                                                [22;01H                                                                                [23;01H                                                                                [24;01H                                                                                [21;01H[0m[30m[40m[25;53H  [25;54H  [25;55H  [25;56H  [25;57H  [25;58H  [25;59H  [25;60H  [25;61H  [25;62H  [25;63H  [25;64H  [25;65H  [25;66H  [25;67H  [25;68H  [25;69H  [25;70H  [25;71H  [25;72H  [25;73H  [0m[30m[47m[07;01H                                                                                [08;01H                                                                                [09;01H                                                                                [10;01H                                                                                [11;01H                                                                                [12;01H                                                                                [13;01H                                                                                [14;01H                                                                                [15;01H                                                                                [16;01H                                                                                [17;01H                                                                                [18;01H                                                                                [19;01H                                                                                [20;01H                                                                                [07;01H[07;01H                                                                                [0m[37m[40m[08;31H<Standard English>[0m[30m[47m[08;49H         [08;01H   [08;04HSelect Language            [0m[34m[47m[09;01H   [09;04H                                                      [0m[30m[47m[10;01H   [10;02H>[10;04HDevice Manager                                        [11;01H   [11;02H>[11;04HBoot Manager                                          [12;01H   [12;02H>[12;04HBoot Maintenance Manager                              [0m[34m[47m[13;01H   [13;04H                                                      [0m[30m[47m[14;01H   [14;04HContinue                                              [15;01H   [15;04HReset                                                 [16;01H                                                         [17;01H                                                         [18;01H                                                         [19;01H                                                         [20;01H                                                                                [0m[37m[40m[23;02H [22;02H [22;53H                         [22;27H                          [23;53H                           [23;03H^v=Move Highlight       [22;03H                        [23;27H<Enter>=Select Entry      [0m[34m[47m[08;58HThis is the option     [09;58Hone adjusts to change  [10;58Hthe language for the   [11;58Hcurrent system         [12;58H                       [13;58H                       [14;58H                       [15;58H                       [16;58H                       [17;58H                       [18;58H                       [19;58H                       [19;80H[0m[30m[40m[25;27H  [25;28H  [0m[30m[47m[08;31H<Standard English>         [08;01H   [08;04HSelect Language            [0m[37m[40m[23;02H [22;02H [22;53H                         [22;27H                          [23;53H                           [23;03H^v=Move Highlight       [23;27H<Enter>=Select Entry      [22;03H                        [0m[30m[47m[10;01H   [10;02H>[0m[37m[40m[10;04HDevice Manager[0m[30m[47m[10;18H                                        [0m[34m[47m[08;58HThis selection will    [09;58Htake you to the        [10;58HDevice Manager         [11;58H                       [12;58H                       [13;58H                       [14;58H                       [15;58H                       [16;58H                       [17;58H                       [18;58H                       [19;58H                       [19;80H[0m[30m[40m[25;27H  [25;28H  [0m[30m[47m[10;01H   [10;02H>[10;04HDevice Manager                                        [0m[37m[40m[23;02H [22;02H [22;53H                         [22;27H                          [23;53H                           [23;03H^v=Move Highlight       [23;27H<Enter>=Select Entry      [22;03H                        [0m[30m[47m[11;01H   [11;02H>[0m[37m[40m[11;04HBoot Manager[0m[30m[47m[11;16H                                          [0m[34m[47m[08;58HThis selection will    [09;58Htake you to the Boot   [10;58HManager                [11;58H                       [12;58H                       [13;58H                       [14;58H                       [15;58H                       [16;58H                       [17;58H                       [18;58H                       [19;58H                       [19;80H[0m[37m[40mInstallProtocolInterface: 348C4D62-BFBD-4882-9ECE-C80BB1C4783B 0
+InstallProtocolInterface: 348C4D62-BFBD-4882-9ECE-C80BB1C4783B 0
+[1m[37m[44m[01;01H/------------------------------------------------------------------------------\[02;01H|[02;80H|[02;02H                                [02;34HBoot Manager                                  [03;01H\------------------------------------------------------------------------------/[21;01H/------------------------------------------------------------------------------\[22;01H|[22;80H|[23;01H|[23;80H|[24;01H\------------------------------------------------------------------------------/[0m[30m[40m[25;53H  [25;54H  [25;55H  [25;56H  [25;57H  [25;58H  [25;59H  [25;60H  [25;61H  [25;62H  [25;63H  [25;64H  [25;65H  [25;66H  [25;67H  [25;68H  [25;69H  [25;70H  [25;71H  [25;72H  [25;73H  [0m[30m[47m[04;01H                                                                                [05;01H                                                                                [06;01H                                                                                [07;01H                                                                                [08;01H                                                                                [09;01H                                                                                [10;01H                                                                                [11;01H                                                                                [12;01H                                                                                [13;01H                                                                                [14;01H                                                                                [15;01H                                                                                [16;01H                                                                                [17;01H                                                                                [18;01H                                                                                [19;01H                                                                                [20;01H                                                                                [04;01H[04;01H                                                                                [0m[34m[47m[05;01H                                                         [06;01H   [06;04HBoot Manager Menu                                     [07;01H                                                         [0m[30m[47m[08;01H   [0m[37m[40m[08;04HUEFI Misc Device[0m[30m[47m[08;20H                                      [09;01H   [09;04HUEFI Misc Device 2                                    [10;01H   [10;04HUEFI PXEv4 (MAC:525400123456)                         [11;01H   [11;04HUEFI PXEv6 (MAC:525400123456)                         [12;01H   [12;04HUEFI HTTPv4 (MAC:525400123456)                        [13;01H   [13;04HUEFI HTTPv6 (MAC:525400123456)                        [14;01H   [14;04HEFI Internal Shell                                    [0m[34m[47m[15;01H                                                         [16;01H   [16;04HUse the <^> and <v> keys to choose a boot option,     [17;01H   [17;04Hthe <Enter> key to select a boot option, and the      [18;01H   [18;04H<Esc> key to exit the Boot Manager Menu.              [19;01H                                                         [20;01H                                                                                [0m[37m[40m[23;02H [22;02H [22;53H                         [22;27H                          [23;53HEsc=Exit                   [23;03H^v=Move Highlight       [23;27H<Enter>=Select Entry      [22;03H                        [0m[34m[47m[05;58HDevice Path :          [06;58HVenHw(93E34C7E-B50E-11 [07;58HDF-9223-2443DFD72085,0 [08;58H0)                     [09;58H                       [10;58H                       [11;58H                       [12;58H                       [13;58H                       [14;58H                       [15;58H                       [16;58H                       [17;58H                       [18;58H                       [19;58H                       [19;80H[0m[30m[40m[25;27H  [25;28H  [0m[30m[47m[04;01H                                                                                [0m[34m[47m[05;01H                                                         [06;01H   [06;04HBoot Manager Menu                                     [07;01H                                                         [0m[30m[47m[08;01H   [08;04HUEFI Misc Device                                      [09;01H   [09;04HUEFI Misc Device 2                                    [10;01H   [10;04HUEFI PXEv4 (MAC:525400123456)                         [11;01H   [11;04HUEFI PXEv6 (MAC:525400123456)                         [12;01H   [12;04HUEFI HTTPv4 (MAC:525400123456)                        [13;01H   [13;04HUEFI HTTPv6 (MAC:525400123456)                        [14;01H   [0m[37m[40m[14;04HEFI Internal Shell[0m[30m[47m[14;22H                                    [0m[34m[47m[15;01H                                                         [16;01H   [16;04HUse the <^> and <v> keys to choose a boot option,     [17;01H   [17;04Hthe <Enter> key to select a boot option, and the      [18;01H   [18;04H<Esc> key to exit the Boot Manager Menu.              [19;01H                                                         [20;01H                                                                                [0m[37m[40m[23;02H [22;02H [22;53H                         [22;27H                          [23;53HEsc=Exit                   [23;03H^v=Move Highlight       [23;27H<Enter>=Select Entry      [22;03H                        [0m[34m[47m[05;58HDevice Path :          [06;58HFv(64074AFE-340A-4BE6- [07;58H94BA-91B5B4D0F71E)/FvF [08;58Hile(7C04A583-9E3E-4F1C [09;58H-AD65-E05268D0B4D1)    [10;58H                       [11;58H                       [12;58H                       [13;58H                       [14;58H                       [15;58H                       [16;58H                       [17;58H                       [18;58H                       [19;58H                       [19;80H[0m[37m[40m[2J[01;01HRamfb: SetMode 1 (800x600)
+0: shl:0 shr:0 mask:FF0000
+1: shl:0 shr:0 mask:FF00
+2: shl:0 shr:0 mask:FF
+Bytes per pixel: 4
+InstallProtocolInterface: D3B36F2B-D551-11D4-9A46-0090273FC14D 0
+InstallProtocolInterface: D3B36F2C-D551-11D4-9A46-0090273FC14D 0
+InstallProtocolInterface: D3B36F2D-D551-11D4-9A46-0090273FC14D 0
+[0m[35m[40m[0m[37m[40mGraphicsConsole video resolution 800 x 600
+Graphics - Mode 0, Column = 80, Row = 25
+Graphics - Mode 1, Column = 0, Row = 0
+Graphics - Mode 2, Column = 100, Row = 31
+Graphics Console Started, Mode: 0
+InstallProtocolInterface: 387477C2-69C7-11D2-8E39-00A0C969723B 7E2D7130
+InstallProtocolInterface: D3B36F2C-D551-11D4-9A46-0090273FC14D 0
+InstallProtocolInterface: D3B36F2D-D551-11D4-9A46-0090273FC14D 0
+[0m[35m[40mInstallProtocolInterface: 9042A9DE-23DC-4A38-96FB-7ADED080516A 7F33E558
+[0m[37m[40m[Bds]Stop Hotkey Service!
+Memory  Previous  Current    Next   
+ Type    Pages     Pages     Pages  
+======  ========  ========  ========
+  09    00000000  000000C0  000000F0
+  0A    00000000  00000030  0000003C
+  00    00000000  00000300  000003C0
+  06    0000012C  00000330  000003FC
+  05    00000096  00000250  000002E4
+  03    000003E8  00000483  000005A3
+  04    00002EE0  000025B3  00002EE0
+  01    00000014  00000027  00000030
+  02    00000000  00000000  00000000
+Memory Type Information settings change.
+[Bds]Booting EFI Internal Shell
+[Bds] Expand Fv(64074AFE-340A-4BE6-94BA-91B5B4D0F71E)/FvFile(7C04A583-9E3E-4F1C-AD65-E05268D0B4D1) -> Fv(64074AFE-340A-4BE6-94BA-91B5B4D0F71E)/FvFile(7C04A583-9E3E-4F1C-AD65-E05268D0B4D1)
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7CB746C0
+add-symbol-file /home/lacos/src/upstream/qemu/roms/edk2/Build/ArmVirtQemu-AARCH64/DEBUG_GCC5/AARCH64/ShellPkg/Application/Shell/Shell/DEBUG/Shell.dll 0x7B87F000
+Loading driver at 0x0007B87E000 EntryPoint=0x0007B887DC8 Shell.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7CB68798
+ProtectUefiImageCommon - 0x7CB746C0
+  - 0x000000007B87E000 - 0x00000000000E2000
+SetUefiImageMemoryAttributes - 0x000000007B87E000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007B87F000 - 0x000000000007A000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007B8F9000 - 0x0000000000067000 (0x0000000000004008)
+[2J[01;01HInstallProtocolInterface: 387477C2-69C7-11D2-8E39-00A0C969723B 7E2910A0
+InstallProtocolInterface: 752F3136-4E16-4FDC-A22A-E5F46812F4CA 7E294F98
+InstallProtocolInterface: 6302D008-7F9B-4F30-87AC-60C9FEF5DA4E 7B94ECC8
+[01;01HUEFI Interactive Shell v2.2
+EDK II
+UEFI v2.70 (EDK II, 0x00010000)
+[1m[33m[40mMapping table[0m[37m[40m
+[1m[33m[40m      FS0:[0m[37m[40m [1m[37m[40mAlias(s):[0m[37m[40mHD0b:;BLK1:
+          PciRoot(0x0)/Pci(0x3,0x0)/HD(1,MBR,0xBE1AFDFA,0x3F,0xFBFC1)
+[1m[33m[40m     BLK2:[0m[37m[40m [1m[37m[40mAlias(s):[0m[37m[40m
+          VenHw(93E34C7E-B50E-11DF-9223-2443DFD72085,00)
+[1m[33m[40m     BLK0:[0m[37m[40m [1m[37m[40mAlias(s):[0m[37m[40m
+          PciRoot(0x0)/Pci(0x3,0x0)
+[11;01HPress [1m[37m[40mESC[0m[37m[40m in 5 seconds to skip [1m[33m[40mstartup.nsh[0m[37m[40m or any other key to continue.
+[12;01H[1m[33m[40mShell> [0m[37m[40m[12;08Hf[12;09H[12;09Hs[12;10H[12;10H0[12;11H[12;11H:[12;12H[12;12Hb[12;13H[12;13Ho[12;14HFSOpen: Open '.' Success
+[12;12HBOOTAA64.EFI[12;24H[12;24H
+FSOpen: Open 'BOOTAA64.EFI' Success
+FSOpen: Open 'BOOTAA64.EFI' Success
+FSOpen: Open 'BOOTAA64.EFI' Success
+FSOpen: Open 'BOOTAA64.EFI' Success
+[Security] 3rd party image[0] can be loaded after EndOfDxe: PciRoot(0x0)/Pci(0x3,0x0)/HD(1,MBR,0xBE1AFDFA,0x3F,0xFBFC1)/BOOTAA64.EFI.
+InstallProtocolInterface: 5B1B31A1-9562-11D2-8E3F-00A0C969723B 7CB45040
+Loading driver at 0x0007B856000 EntryPoint=0x0007B857000
+Loading driver at 0x0007B856000 EntryPoint=0x0007B857000 
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7E28B718
+ProtectUefiImageCommon - 0x7CB45040
+  - 0x000000007B856000 - 0x0000000000028000
+SetUefiImageMemoryAttributes - 0x000000007B856000 - 0x0000000000001000 (0x0000000000004008)
+SetUefiImageMemoryAttributes - 0x000000007B857000 - 0x0000000000021000 (0x0000000000020008)
+SetUefiImageMemoryAttributes - 0x000000007B878000 - 0x0000000000006000 (0x0000000000004008)
+InstallProtocolInterface: 752F3136-4E16-4FDC-A22A-E5F46812F4CA 7F6B4198
+ConvertPages: range 7CB23000 - 7CB25FFF covers multiple entries
+ConvertPages: Incompatible memory types, the pages to allocate have been allocated

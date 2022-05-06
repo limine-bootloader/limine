@@ -14,13 +14,8 @@
 #include <lib/libc.h>
 #include <lib/gterm.h>
 #include <lib/uri.h>
-#include <sys/smp.h>
-#include <sys/cpu.h>
-#include <sys/gdt.h>
 #include <lib/fb.h>
 #include <lib/term.h>
-#include <sys/pic.h>
-#include <sys/lapic.h>
 #include <fs/file.h>
 #include <mm/pmm.h>
 #include <stivale2.h>
@@ -28,6 +23,16 @@
 #include <drivers/edid.h>
 #include <drivers/vga_textmode.h>
 #include <lib/rand.h>
+
+#include <sys/smp.h>
+
+#if port_x86
+#include <arch/x86/cpu.h>
+#include <arch/x86/gdt.h>
+#include <arch/x86/pic.h>
+#include <arch/x86/lapic.h>
+#endif
+
 
 #define REPORTED_ADDR(PTR) \
     ((PTR) + ((stivale2_hdr.flags & (1 << 1)) ? \
@@ -152,6 +157,7 @@ bool stivale2_load(char *config, char *cmdline) {
     int ret = 0;
     switch (bits) {
         case 64: {
+#if port_x86
             // Check if 64 bit CPU
             uint32_t eax, ebx, ecx, edx;
             if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
@@ -162,6 +168,7 @@ bool stivale2_load(char *config, char *cmdline) {
                 printv("stivale2: CPU has 5-level paging support\n");
                 level5pg = true;
             }
+#endif
 
             if (loaded_by_anchor && (stivale2_hdr.flags & (1 << 2))) {
                 panic(true, "stivale2: PMRs are not supported for anchored kernels");
@@ -204,6 +211,7 @@ bool stivale2_load(char *config, char *cmdline) {
 
             break;
         }
+#if port_x86
         case 32: {
             if (!loaded_by_anchor) {
                 if (elf32_load(kernel, (uint32_t *)&entry_point, NULL, STIVALE2_MMAP_KERNEL_AND_MODULES))
@@ -215,8 +223,15 @@ bool stivale2_load(char *config, char *cmdline) {
 
             break;
         }
+#endif
+
         default:
+#if port_x86
             panic(true, "stivale2: Not 32 nor 64-bit kernel. What is this?");
+#elif port_aarch64
+            panic(true, "stivale2: Not an aarch64 kernel. What is this?");
+#endif
+
     }
 
     printv("stivale2: %u-bit kernel detected\n", bits);
@@ -258,6 +273,7 @@ failed_to_load_header_section:
         }
     }
 
+#if port_x86
     struct gdtr *local_gdt = ext_mem_alloc(sizeof(struct gdtr));
     local_gdt->limit = gdt.limit;
     uint64_t local_gdt_base = (uint64_t)gdt.ptr;
@@ -267,6 +283,7 @@ failed_to_load_header_section:
     local_gdt->ptr = local_gdt_base;
 #if defined (__i386__)
     local_gdt->ptr_hi = local_gdt_base >> 32;
+#endif
 #endif
 
     if (stivale2_hdr.entry_point != 0)
@@ -744,12 +761,20 @@ have_tm_tag:;
     bool unmap_null = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_UNMAP_NULL_ID) ? true : false;
 
     pagemap_t pagemap = {0};
+#if port_x86
     if (bits == 64)
         pagemap = stivale_build_pagemap(want_5lv, unmap_null,
                                         want_pmrs ? ranges : NULL,
                                         want_pmrs ? ranges_count : 0,
                                         want_fully_virtual, physical_base, virtual_base,
                                         direct_map_offset);
+#elif port_aarch64
+    pagemap = stivale_build_pagemap(unmap_null,
+                                    want_pmrs ? ranges : NULL,
+                                    want_pmrs ? ranges_count : 0,
+                                    want_fully_virtual, physical_base, virtual_base,
+                                    direct_map_offset);
+#endif
 
 #if uefi == 1
     efi_exit_boot_services();
@@ -776,8 +801,12 @@ have_tm_tag:;
             tag->tag.identifier = STIVALE2_STRUCT_TAG_SMP_ID;
             tag->bsp_lapic_id   = bsp_lapic_id;
             tag->cpu_count      = cpu_count;
+#if port_x86
             tag->flags         |= (smp_hdr_tag->flags & 1) && x2apic_check();
-
+#elif port_aarch64
+            // TODO: this could specify spintables/psci
+            tag->flags         |= 0;
+#endif
             append_tag(stivale2_struct, (struct stivale2_tag *)tag);
         }
     }
@@ -836,9 +865,14 @@ have_tm_tag:;
 
     term_runtime = true;
 
+#if port_x86
     stivale_spinup(bits, want_5lv, &pagemap, entry_point,
                    REPORTED_ADDR((uint64_t)(uintptr_t)stivale2_struct),
                    stivale2_hdr.stack, want_pmrs, want_pmrs, (uintptr_t)local_gdt);
+#elif port_aarch64
+    common_spinup(&pagemap, entry_point, 0, stivale2_hdr.stack, true, true);
+#endif
+
 
     __builtin_unreachable();
 

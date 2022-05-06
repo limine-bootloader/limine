@@ -57,7 +57,7 @@ uint64_t strtoui(const char *s, const char **end, int base);
 
 #if defined (__i386__)
 void memcpy32to64(uint64_t, uint64_t, uint64_t);
-#elif defined (__x86_64__)
+#elif defined (__x86_64__) || defined (__aarch64__)
 #  define memcpy32to64(X, Y, Z) memcpy((void *)(uintptr_t)(X), (void *)(uintptr_t)(Y), Z)
 #endif
 
@@ -77,13 +77,24 @@ void memcpy32to64(uint64_t, uint64_t, uint64_t);
     value; \
 })
 
+static inline uint16_t bswap16(uint16_t value) {
+    uint8_t* value_ptr = (uint8_t*)&value;
+    return value_ptr[0]<<8|value_ptr[1];
+}
+
+static inline uint32_t bswap32(uint32_t value) {
+    uint8_t* value_ptr = (uint8_t*)&value;
+    return value_ptr[0]<<24|value_ptr[1]<<16|value_ptr[2]<<8|value_ptr[3];
+}
+static inline uint64_t bswap64(uint64_t value) {
+    return ((uint64_t)bswap32(value & 0xffffffff) << 32) | bswap32(value >> 32);
+}
+
 #define SIZEOF_ARRAY(array) (sizeof(array) / sizeof(array[0]))
 
 typedef char symbol[];
 
 noreturn void stage3_common(void);
-
-noreturn void common_spinup(void *fnptr, int args, ...);
 
 #define no_unwind __attribute__((section(".no_unwind")))
 

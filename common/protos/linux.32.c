@@ -1,3 +1,4 @@
+#if port_x86 == 1
 #include <stdint.h>
 #include <stdnoreturn.h>
 #include <sys/gdt.h>
@@ -60,3 +61,4 @@ noreturn void linux_spinup(void *entry, void *boot_params) {
 
     __builtin_unreachable();
 }
+#endif

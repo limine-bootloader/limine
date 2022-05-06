@@ -1,3 +1,4 @@
+#if port_x86 == 1
 #include <protos/multiboot2.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -673,3 +674,4 @@ bool multiboot2_load(char *config, char* cmdline) {
     common_spinup(multiboot2_spinup_32, 2,
                     entry_point, (uint32_t)(uintptr_t)mbi_start);
 }
+#endif

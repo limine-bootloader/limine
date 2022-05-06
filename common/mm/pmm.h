@@ -4,7 +4,13 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <sys/e820.h>
+
+struct e820_entry_t {
+    uint64_t base;
+    uint64_t length;
+    uint32_t type;
+    uint32_t unused;
+};
 
 #define MEMMAP_USABLE                 1
 #define MEMMAP_RESERVED               2

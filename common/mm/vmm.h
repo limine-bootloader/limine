@@ -4,23 +4,30 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define VMM_FLAG_PRESENT ((uint64_t)1 << 0)
-#define VMM_FLAG_WRITE   ((uint64_t)1 << 1)
-#define VMM_FLAG_NOEXEC  ((uint64_t)1 << 63)
+#define VM_READ  ((uint64_t)1 << 0)
+#define VM_WRITE ((uint64_t)1 << 1)
+#define VM_EXEC  ((uint64_t)1 << 2)
 
 typedef struct {
+#if port_x86
     int   levels;
     void *top_level;
+#elif port_aarch64
+    void *ttbr0;
+    void *ttbr1;
+#endif
 } pagemap_t;
 
-enum page_size {
-    Size4KiB,
-    Size2MiB,
-    Size1GiB
-};
 
 void vmm_assert_nx(void);
+void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags, uint64_t size);
+
+uint64_t get_page_size();
+
+#if port_x86
 pagemap_t new_pagemap(int lv);
-void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags, enum page_size page_size);
+#elif port_aarch64
+pagemap_t new_pagemap(void);
+#endif
 
 #endif

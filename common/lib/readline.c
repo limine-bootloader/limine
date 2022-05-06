@@ -11,7 +11,6 @@
 #  include <efi.h>
 #endif
 #include <drivers/serial.h>
-#include <sys/cpu.h>
 
 int getchar(void) {
     for (;;) {

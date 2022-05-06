@@ -1,3 +1,4 @@
+#if port_x86 == 1
 #ifndef __PROTOS__MULTIBOOT1_H__
 #define __PROTOS__MULTIBOOT1_H__
 
@@ -96,4 +97,5 @@ struct multiboot1_mmap_entry {
 
 bool multiboot1_load(char *config, char *cmdline);
 
+#endif
 #endif

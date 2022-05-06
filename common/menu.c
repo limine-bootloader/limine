@@ -533,7 +533,7 @@ static size_t print_tree(const char *shift, size_t level, size_t base_index, siz
     return max_entries;
 }
 
-#if defined (__x86_64__)
+#if defined (__x86_64__) || defined (__aarch64__)
 __attribute__((used))
 static uintptr_t stack_at_first_entry = 0;
 #endif
@@ -575,6 +575,17 @@ noreturn void menu(__attribute__((unused)) bool timeout_enabled) {
         "push $0\n\t"
         "push $0\n\t"
         "jmp _menu"
+    );
+#elif defined (__aarch64__)
+    asm volatile(
+        "adr x19, stack_at_first_entry\n"
+        "ldr x18, [x19]\n"
+        "cmp x18, 0\n"
+        "bne 1f\n"
+        "mov x18, sp\n"
+        "str x18, [x19]\n"
+        "1: mov sp, x18\n"
+        "b _menu"
     );
 #endif
 }
@@ -919,10 +930,12 @@ noreturn void boot(char *config) {
 autodetect:
         stivale2_load(config, cmdline);
         stivale_load(config, cmdline);
+        limine_load(config, cmdline);
+#if port_x86
         multiboot2_load(config, cmdline);
         multiboot1_load(config, cmdline);
-        limine_load(config, cmdline);
         linux_load(config, cmdline);
+#endif
         panic(true, "Kernel protocol autodetection failed");
     }
 
@@ -934,12 +947,14 @@ autodetect:
         ret = stivale2_load(config, cmdline);
     } else if (!strcmp(proto, "limine")) {
         ret = limine_load(config, cmdline);
+#if port_x86
     } else if (!strcmp(proto, "linux")) {
         ret = linux_load(config, cmdline);
     } else if (!strcmp(proto, "multiboot1") || !strcmp(proto, "multiboot")) {
         ret = multiboot1_load(config, cmdline);
     } else if (!strcmp(proto, "multiboot2")) {
         ret = multiboot2_load(config, cmdline);
+#endif
     } else if (!strcmp(proto, "chainload")) {
         chainload(config);
     }

@@ -126,6 +126,20 @@ fi
 
 AC_SUBST(BUILD_UEFI64, [$BUILD_UEFI64])
 
+BUILD_UEFIAARCH64="default"
+
+AC_ARG_ENABLE([uefi-aa64],
+    AS_HELP_STRING([--disable-uefi-aa64], [disable building the aarch64 UEFI port]),
+    BUILD_UEFIAARCH64="$enableval")
+
+if test "x$BUILD_UEFIAARCH64" = "xno"; then
+    BUILD_UEFIAARCH64=""
+else
+    BUILD_UEFIAARCH64="limine-uefi-aarch64"
+fi
+
+AC_SUBST(BUILD_UEFIAARCH64, [$BUILD_UEFIAARCH64])
+
 BUILD_CD_EFI="default"
 
 AC_ARG_ENABLE([cd-efi],
@@ -151,7 +165,7 @@ test "x$TOOLCHAIN" = "x" && TOOLCHAIN='limine'
 AC_ARG_VAR(LIMINE_CC, [C compiler command for Limine [default: $TOOLCHAIN-gcc]])
 
 AC_DEFUN([CC_ERROR_MSG], [
-    AC_MSG_ERROR([no suitable LIMINE_CC found, run $srcdir/make_toolchain.sh or install x86_64 GCC/Clang])
+    AC_MSG_ERROR([no suitable LIMINE_CC found, run $srcdir/make_toolchain_{x86_64,aarch64}.sh or install x86_64/aarch64 GCC/Clang])
 ])
 
 if ! test "x$LIMINE_CC" = "x"; then
@@ -194,7 +208,10 @@ fi
 CC_MACHINE="$($LIMINE_CC -dumpmachine | dd bs=6 count=1 2>/dev/null)"
 if ! test "x$CC_MACHINE" = "xx86_64"; then
     if ! test "x$CC_MACHINE" = "xamd64-"; then
-        CC_ERROR_MSG
+        if ! test "x$CC_MACHINE" = "xaarch6"; then
+            printf "got to dumpmachine"
+            CC_ERROR_MSG
+        fi
     fi
 fi
 

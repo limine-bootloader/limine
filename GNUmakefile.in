@@ -95,7 +95,7 @@ limine-deploy:
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-deploy'
 
 .PHONY: clean
-clean: limine-bios-clean limine-uefi32-clean limine-uefi64-clean
+clean: limine-bios-clean limine-uefi32-clean limine-uefi64-clean limine-uefi-aarch64-clean
 	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 
 .PHONY: install-data
@@ -175,6 +175,12 @@ limine-uefi64: $(call MKESCAPE,$(SRCDIR))/reduced-gnu-efi
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi64/BOOTX64.EFI' '$(call SHESCAPE,$(BINDIR))/'
 
+.PHONY: limine-uefi-aarch64
+limine-uefi-aarch64: $(call MKESCAPE,$(SRCDIR))/reduced-gnu-efi
+	$(MAKE) common-uefi-aarch64
+	mkdir -p '$(call SHESCAPE,$(BINDIR))'
+	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi64/BOOTAA64.EFI' '$(call SHESCAPE,$(BINDIR))/'
+
 .PHONY: limine-uefi32
 limine-uefi32: $(call MKESCAPE,$(SRCDIR))/reduced-gnu-efi
 	$(MAKE) common-uefi32
@@ -186,6 +192,9 @@ limine-bios-clean: common-bios-clean decompressor-clean
 
 .PHONY: limine-uefi64-clean
 limine-uefi64-clean: common-uefi64-clean
+
+.PHONY: limine-uefi-aarch64-clean
+limine-uefi-aarch64-clean: common-uefi-aarch64-clean
 
 .PHONY: limine-uefi32-clean
 limine-uefi32-clean: common-uefi32-clean
@@ -222,6 +231,14 @@ common-uefi64: $(call MKESCAPE,$(SRCDIR))/stivale
 .PHONY: common-uefi64-clean
 common-uefi64-clean:
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' clean TARGET=uefi64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi64'
+
+.PHONY: common-uefi-aarch64
+common-uefi-aarch64: $(call MKESCAPE,$(SRCDIR))/stivale
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all TARGET=uefi-aarch64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi64'
+
+.PHONY: common-uefi-aarch64-clean
+common-uefi-aarch64-clean:
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' clean TARGET=uefi-aarch64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi64'
 
 .PHONY: common-uefi32
 common-uefi32: $(call MKESCAPE,$(SRCDIR))/stivale

@@ -4,8 +4,13 @@
 #include <lib/blib.h>
 #include <lib/print.h>
 #include <lib/rand.h>
-#include <sys/cpu.h>
 #include <mm/pmm.h>
+
+#if port_x86
+#include <sys/cpu.h>
+#elif port_aarch64
+#include <lib/time.h>
+#endif
 
 // TODO: Find where this mersenne twister implementation is inspired from
 //       and properly credit the original author(s).
@@ -22,6 +27,7 @@ static uint32_t *status;
 static int ctr;
 
 static void init_rand(void) {
+#if port_x86
     uint32_t seed = ((uint32_t)0xc597060c * (uint32_t)rdtsc())
                   * ((uint32_t)0xce86d624)
                   ^ ((uint32_t)0xee0da130 * (uint32_t)rdtsc());
@@ -34,6 +40,10 @@ static void init_rand(void) {
     } else if (cpuid(0x01, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 30))) {
         seed *= (seed ^ rdrand(uint32_t));
     }
+#elif port_aarch64
+    // FIXME: the dtb might have a kaslr slide too
+    uint32_t seed = 0xc597060c * time();
+#endif
 
     status = ext_mem_alloc(n * sizeof(uint32_t));
 

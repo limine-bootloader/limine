@@ -1,3 +1,4 @@
+#if port_x86 == 1
 /*   multiboot2.h - Multiboot 2 header file. Copied from the multiboot2 specs /
 /   Copyright (C) 1999,2003,2007,2008,2009,2010  Free Software Foundation, Inc.
  *
@@ -418,4 +419,5 @@ struct multiboot_tag_load_base_addr
 
 noreturn void multiboot2_spinup_32(uint32_t entry_point, uint32_t multiboot1_info);
 
+#endif
 #endif

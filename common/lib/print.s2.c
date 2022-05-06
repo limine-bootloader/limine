@@ -8,8 +8,10 @@
 #if bios == 1
 #include <lib/real.h>
 #endif
-#include <sys/cpu.h>
 #include <drivers/serial.h>
+#if port_x86
+#include <arch/aarch64/cpu.h>
+#endif
 
 #if bios == 1
 static void s2_print(const char *s, size_t len) {
@@ -210,6 +212,7 @@ out:
 #endif
 
     for (size_t i = 0; i < print_buf_i; i++) {
+#if port_x86
         if (E9_OUTPUT) {
             outb(0xe9, print_buf[i]);
         }
@@ -228,5 +231,6 @@ out:
             }
             serial_out(print_buf[i]);
         }
+#endif
     }
 }

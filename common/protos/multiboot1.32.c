@@ -1,3 +1,4 @@
+#if port_x86 == 1
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -43,3 +44,4 @@ noreturn void multiboot1_spinup_32(uint32_t entry_point, uint32_t multiboot1_inf
 
     __builtin_unreachable();
 }
+#endif

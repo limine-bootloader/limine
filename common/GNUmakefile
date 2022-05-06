@@ -18,6 +18,8 @@ ifeq ($(TARGET), bios)
 override OBJCOPY_ARCH := elf32-i386
 else ifeq ($(TARGET), uefi64)
 override OBJCOPY_ARCH := elf64-x86-64
+else ifeq ($(TARGET), uefi-aarch64)
+override OBJCOPY_ARCH := elf64-littleaarch64
 else ifeq ($(TARGET), uefi32)
 override OBJCOPY_ARCH := elf32-i386
 else
@@ -55,11 +57,6 @@ override INTERNAL_CFLAGS := \
 	-Wno-address-of-packed-member \
 	-Wshadow \
 	-Wvla \
-	-mno-80387 \
-	-mno-mmx \
-	-mno-3dnow \
-	-mno-sse \
-	-mno-sse2 \
 	-MMD \
 	-DCOM_OUTPUT=$(COM_OUTPUT) \
 	-DE9_OUTPUT=$(E9_OUTPUT) \
@@ -70,10 +67,24 @@ override INTERNAL_CFLAGS := \
 	-I../stivale \
 	-I'$(call SHESCAPE,$(BUILDDIR))/tinf'
 
+ifeq ($(TARGET), uefi-aarch64)
+override INTERNAL_CFLAGS += \
+		-fpie \
+		-Dbios=0 \
+		-Duefi=1 \
+		-Dport_x86=0 \
+		-Dport_aarch64=1 \
+		-I'$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/inc' \
+		-I'$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/inc/aarch64' \
+		-mstrict-align
+endif
+
 ifeq ($(TARGET), bios)
 override INTERNAL_CFLAGS += \
 		-Dbios=1 \
 		-Duefi=0 \
+		-Dport_x86=1 \
+		-Dport_aarch64=0 \
 		-m32 \
 		-march=i686 \
 		-mtune=generic \
@@ -87,6 +98,8 @@ override INTERNAL_CFLAGS32 := \
 		$(INTERNAL_CFLAGS) \
 		-Dbios=0 \
 		-Duefi=1 \
+		-Dport_x86=1 \
+		-Dport_aarch64=0 \
 		-m32 \
 		-march=i686 \
 		-mtune=generic \
@@ -105,7 +118,13 @@ override INTERNAL_CFLAGS += \
 		-I'$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/inc' \
 		-I'$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/inc/x86_64' \
 		-fpie \
+		-mno-80387 \
+		-mno-mmx \
+		-mno-3dnow \
+		-mno-sse \
+		-mno-sse2 \
 		-mno-red-zone
+		
 endif
 
 ifeq ($(TARGET), uefi32)
@@ -141,6 +160,14 @@ override INTERNAL_LDFLAGS += \
 		--no-dynamic-linker \
 		-ztext
 endif
+ifeq ($(TARGET), uefi-aarch64)
+override INTERNAL_LDFLAGS += \
+		-maarch64elf \
+		-static \
+		-pie \
+		--no-dynamic-linker \
+		-ztext
+endif
 
 ifeq ($(TARGET), uefi32)
 override INTERNAL_LDFLAGS += \
@@ -153,31 +180,40 @@ endif
 
 .PHONY: all clean
 
-override C_FILES := $(shell find ./ -type f -name '*.c')
+override C_FILES := $(shell find ./ -type f -name '*.c' | grep -v '^\.//\?arch')
+override ARCH_AARCH64_C_FILES := $(shell find ./arch/aarch64 -type f -name '*.c') $(C_FILES)
+override ARCH_x86_C_FILES := $(shell find ./arch/x86 -type f -name '*.c') $(C_FILES)
 ifeq ($(TARGET), bios)
 override ASM32_FILES := $(shell find ./ -type f -name '*.asm32')
 override ASMB_FILES := $(shell find ./ -type f -name '*.asmb')
 
-override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM32_FILES:.asm32=.o) $(ASMB_FILES:.asmb=.o) $(C_FILES:.c=.o))
+override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM32_FILES:.asm32=.o) $(ASMB_FILES:.asmb=.o) $(ARCH_x86_C_FILES:.c=.o))
 endif
 ifeq ($(TARGET), uefi64)
 override ASM64_FILES := $(shell find ./ -type f -name '*.asm64')
 override ASM64U_FILES := $(shell find ./ -type f -name '*.asm64u')
 
-override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM64_FILES:.asm64=.o) $(ASM64U_FILES:.asm64u=.o) $(C_FILES:.c=.o))
+override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM64_FILES:.asm64=.o) $(ASM64U_FILES:.asm64u=.o) $(ARCH_x86_C_FILES:.c=.o))
 endif
+
+ifeq ($(TARGET), uefi-aarch64)
+override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ARCH_AARCH64_C_FILES:.c=.o))
+endif
+
 ifeq ($(TARGET), uefi32)
 override ASM32_FILES := $(shell find ./ -type f -name '*.asm32')
 override ASM32U_FILES := $(shell find ./ -type f -name '*.asm32u')
 
-override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM32_FILES:.asm32=.o) $(ASM32U_FILES:.asm32u=.o) $(C_FILES:.c=.o))
+override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM32_FILES:.asm32=.o) $(ASM32U_FILES:.asm32u=.o) $(ARCH_x86_C_FILES:.c=.o))
 endif
-override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.d))
+override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ARCH_x86_C_FILES:.c=.d))
 
 ifeq ($(TARGET), bios)
 all: $(call MKESCAPE,$(BUILDDIR))/limine_dbg.elf $(call MKESCAPE,$(BUILDDIR))/limine.sys $(call MKESCAPE,$(BUILDDIR))/stage2.bin.gz
 else ifeq ($(TARGET), uefi64)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI
+else ifeq ($(TARGET), uefi-aarch64)
+all: $(call MKESCAPE,$(BUILDDIR))/BOOTAA64.EFI
 else ifeq ($(TARGET), uefi32)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI
 endif
@@ -193,7 +229,7 @@ $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o: $(call MKESCAPE,$(BUILDDIR))/
 
 $(call MKESCAPE,$(BUILDDIR))/font.o: font.bin
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
-	$(LIMINE_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) font.bin '$(call SHESCAPE,$@)'
+	$(LIMINE_OBJCOPY) -I binary -O $(OBJCOPY_ARCH) font.bin '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))/tinf'
@@ -328,6 +364,54 @@ $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gn
 
 endif
 
+ifeq ($(TARGET), uefi-aarch64)
+
+$(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
+	cd '$(call SHESCAPE,$(BUILDDIR))' && \
+		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' full 64 '\.text'
+	printf "\xb7\x00" | dd if=/dev/stdin of=$(call MKESCAPE,$(BUILDDIR))/full.map.o bs=2 count=1 seek=9 conv=notrunc
+
+$(call MKESCAPE,$(BUILDDIR))/BOOTAA64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.elf
+	$(LIMINE_OBJCOPY) -O binary '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
+
+$(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-aarch64.o: reduced-gnu-efi
+	true
+
+$(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a: reduced-gnu-efi
+	true
+
+.PHONY: reduced-gnu-efi
+reduced-gnu-efi: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
+	unset ARFLAGS; unset CPPFLAGS; \
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi' \
+		CC="$(LIMINE_CC) -mstrict-align" \
+		CFLAGS='-nostdinc' \
+		INCDIR='-I$(call SHESCAPE,$(SRCDIR))/../freestanding_headers' \
+		AR="$(LIMINE_AR)" \
+		ARCH=aarch64
+
+$(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_aarch64.ld.in
+	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
+	$(LIMINE_CC) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_aarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-aarch64.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o
+	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+	$(LIMINE_LD) \
+		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
+		'$(call OBJESCAPE,$^)' $(LIMINE_LDFLAGS) $(INTERNAL_LDFLAGS) -o '$(call SHESCAPE,$@)'
+
+$(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_aarch64.ld.in
+	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
+	$(LIMINE_CC) -x c -E -P -undef linker_uefi_aarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-aarch64.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
+	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+	$(LIMINE_LD) \
+		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
+		'$(call OBJESCAPE,$^)' $(LIMINE_LDFLAGS) $(INTERNAL_LDFLAGS) -o '$(call SHESCAPE,$@)'
+
+endif
+
 ifeq ($(TARGET), uefi32)
 
 $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
@@ -380,6 +464,12 @@ endif
 -include $(HEADER_DEPS)
 
 ifeq ($(TARGET), uefi64)
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
+	$(LIMINE_CC) $(LIMINE_CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+endif
+
+ifeq ($(TARGET), uefi-aarch64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(LIMINE_CC) $(LIMINE_CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'

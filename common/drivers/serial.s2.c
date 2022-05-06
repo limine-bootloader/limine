@@ -2,10 +2,12 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <drivers/serial.h>
-#include <sys/cpu.h>
 #include <lib/blib.h>
 #if uefi == 1
 #  include <efi.h>
+#endif
+#if bios == 1
+#include <arch/x86/cpu.h>
 #endif
 
 static bool serial_initialised = false;

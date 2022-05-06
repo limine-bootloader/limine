@@ -9,8 +9,6 @@
 #include <lib/part.h>
 #include <lib/config.h>
 #include <lib/trace.h>
-#include <sys/e820.h>
-#include <sys/a20.h>
 #include <lib/print.h>
 #include <fs/file.h>
 #include <lib/elf.h>
@@ -23,8 +21,14 @@
 #include <pxe/pxe.h>
 #include <pxe/tftp.h>
 #include <drivers/disk.h>
-#include <sys/idt.h>
-#include <sys/cpu.h>
+
+#if port_x86 == 1
+#include <arch/x86/e820.h>
+#include <arch/x86/a20.h>
+#include <arch/x86/idt.h>
+#include <arch/x86/cpu.h>
+#endif
+
 
 struct volume *boot_volume;
 

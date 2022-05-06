@@ -1,3 +1,4 @@
+#if port_x86
 #include <stdint.h>
 #include <stddef.h>
 #include <stdnoreturn.h>
@@ -11,7 +12,7 @@
 #include <lib/print.h>
 #include <lib/uri.h>
 #include <mm/pmm.h>
-#include <sys/idt.h>
+#include <arch/x86/idt.h>
 #include <lib/fb.h>
 #include <lib/acpi.h>
 #include <drivers/edid.h>
@@ -611,3 +612,4 @@ set_textmode:;
 
     common_spinup(linux_spinup, 2, (void *)kernel_load_addr, boot_params);
 }
+#endif

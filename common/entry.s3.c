@@ -8,10 +8,6 @@
 #include <lib/part.h>
 #include <lib/config.h>
 #include <lib/trace.h>
-#include <sys/e820.h>
-#include <sys/a20.h>
-#include <sys/idt.h>
-#include <sys/gdt.h>
 #include <lib/print.h>
 #include <fs/file.h>
 #include <lib/elf.h>
@@ -20,8 +16,15 @@
 #include <pxe/pxe.h>
 #include <pxe/tftp.h>
 #include <drivers/disk.h>
-#include <sys/lapic.h>
 #include <lib/readline.h>
+
+#if port_x86
+#include <arch/x86/e820.h>
+#include <arch/x86/a20.h>
+#include <arch/x86/idt.h>
+#include <arch/x86/gdt.h>
+#include <arch/x86/lapic.h>
+#endif
 
 void stage3_common(void);
 
@@ -43,6 +46,10 @@ EFI_STATUS efi_main(
         "movl %eax, (%esp)\n\t"
         "jmp uefi_entry\n\t"
     );
+#elif defined(__aarch64__)
+    asm("mov lr, xzr");
+    asm("bl uefi_entry");
+    asm("b .");
 #endif
 }
 
@@ -65,7 +72,9 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 
     init_memmap();
 
+#if port_x86
     init_gdt();
+#endif
 
     disk_create_index();
 
@@ -129,8 +138,10 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 noreturn void stage3_common(void) {
     term_notready();
 
+#if port_x86
     init_flush_irqs();
     init_io_apics();
+#endif
 
     menu(true);
 }

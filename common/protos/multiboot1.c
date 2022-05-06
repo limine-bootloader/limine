@@ -1,3 +1,4 @@
+#if port_x86 == 1
 #include <stdint.h>
 #include <stddef.h>
 #include <stdnoreturn.h>
@@ -282,3 +283,4 @@ nofb:;
     common_spinup(multiboot1_spinup_32, 2,
                   entry_point, (uint32_t)(uintptr_t)multiboot1_info);
 }
+#endif

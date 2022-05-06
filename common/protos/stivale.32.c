@@ -1,3 +1,4 @@
+#if port_x86
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -154,3 +155,4 @@ noreturn void stivale_spinup_32(
 
     __builtin_unreachable();
 }
+#endif

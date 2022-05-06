@@ -12,7 +12,10 @@
 #include <lib/print.h>
 #include <lib/rand.h>
 #include <mm/pmm.h>
-#include <sys/cpu.h>
+
+#if port_x86
+#include <arch/x86/cpu.h>
+#endif
 
 #define DEFAULT_FASTEST_XFER_SIZE 64
 #define MAX_FASTEST_XFER_SIZE 512

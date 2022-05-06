@@ -1,0 +1,77 @@
+OUTPUT_FORMAT("elf64-littleaarch64", "elf64-littleaarch64", "elf64-littleaarch64")
+OUTPUT_ARCH(aarch64)
+ENTRY(_start)
+SECTIONS
+{
+  . = 0;
+  __image_base = .;
+  __image_size = __image_end - __image_base;
+  .text 0x0 : {
+    _text = .;
+    *(.text.head)
+    *(.text)
+    *(.text.*)
+    *(.gnu.linkonce.t.*)
+    *(.srodata)
+    *(.rodata*)
+    . = ALIGN(16);
+  }
+  _etext = .;
+  .dynamic  : { *(.dynamic) }
+  _text_size = . - _text;
+  .data : ALIGN(4096)
+  {
+   _data = .;
+    *(.no_unwind)
+
+    data_begin = .;
+   *(.sdata)
+   *(.data)
+   *(.data1)
+   *(.data.*)
+   *(.got.plt)
+   *(.got)
+
+#ifdef LINKER_NOMAP
+   full_map = .;
+#else
+   *(.full_map)
+#endif
+
+   /* the EFI loader doesn't seem to like a .bss section, so we stick
+      it all into .data: */
+   . = ALIGN(16);
+   _bss = .;
+   *(.sbss)
+   *(.scommon)
+   *(.dynbss)
+   *(.bss)
+   *(COMMON)
+   . = ALIGN(16);
+   _bss_end = .;
+   data_end = .;
+  }
+
+  .rela.dyn : { *(.rela.dyn) }
+  .rela.plt : { *(.rela.plt) }
+  .rela.got : { *(.rela.got) }
+  .rela.data : { *(.rela.data) *(.rela.data*) }
+  . = ALIGN(512);
+  _edata = .;
+  _data_size = . - _data;
+  __image_end = .;
+
+  . = ALIGN(4096);
+  .dynsym   : { *(.dynsym) }
+  . = ALIGN(4096);
+  .dynstr   : { *(.dynstr) }
+  . = ALIGN(4096);
+  .note.gnu.build-id : { *(.note.gnu.build-id) }
+  /DISCARD/ :
+  {
+    *(.rel.reloc)
+    *(.eh_frame)
+    *(.note.GNU-stack)
+  }
+  .comment 0 : { *(.comment) }
+}

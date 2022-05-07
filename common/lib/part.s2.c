@@ -295,6 +295,9 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
     volume_read(volume, hintc, 54, 3);
     if (memcmp(hintc, "FAT", 3) == 0)
         return INVALID_TABLE;
+    volume_read(volume, hintc, 82, 3);
+    if (memcmp(hintc, "FAT", 3) == 0)
+        return false;
     volume_read(volume, &hint, 1080, sizeof(uint16_t));
     if (hint == 0xef53)
         return INVALID_TABLE;

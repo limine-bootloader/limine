@@ -9,42 +9,42 @@
 #define FAT32_LFN_MAX_ENTRIES 20
 #define FAT32_LFN_MAX_FILENAME_LENGTH (FAT32_LFN_MAX_ENTRIES * 13 + 1)
 
-#define FAT32_VALID_SIGNATURE_1 0x28
-#define FAT32_VALID_SIGNATURE_2 0x29
-#define FAT32_VALID_SYSTEM_IDENTIFIER "FAT32   "
-#define FAT16_VALID_SYSTEM_IDENTIFIER "FAT16   "
-#define FAT12_VALID_SYSTEM_IDENTIFIER "FAT12   "
 #define FAT32_ATTRIBUTE_SUBDIRECTORY 0x10
 #define FAT32_LFN_ATTRIBUTE 0x0F
 
 struct fat32_bpb {
-    uint8_t jump[3];
-    char oem[8];
-    uint16_t bytes_per_sector;
-    uint8_t sectors_per_cluster;
-    uint16_t reserved_sectors;
-    uint8_t fats_count;
-    uint16_t directory_entries_count;
-    uint16_t sector_totals;
-    uint8_t media_descriptor_type;
-    uint16_t sectors_per_fat_16;
-    uint16_t sectors_per_track;
-    uint16_t heads_count;
-    uint32_t hidden_sectors_count;
-    uint32_t large_sectors_count;
-    uint32_t sectors_per_fat_32;
-    uint16_t flags;
-    uint16_t fat_version_number;
-    uint32_t root_directory_cluster;
-    uint16_t fs_info_sector;
-    uint16_t backup_boot_sector;
-    uint8_t reserved[12];
-    uint8_t drive_number;
-    uint8_t nt_flags;
-    uint8_t signature;
-    uint32_t volume_serial_number;
-    char label[11];
-    char system_identifier[8];
+    union {
+        struct {
+            uint8_t jump[3];
+            char oem[8];
+            uint16_t bytes_per_sector;
+            uint8_t sectors_per_cluster;
+            uint16_t reserved_sectors;
+            uint8_t fats_count;
+            uint16_t root_entries_count;
+            uint16_t sectors_count_16;
+            uint8_t media_descriptor_type;
+            uint16_t sectors_per_fat_16;
+            uint16_t sectors_per_track;
+            uint16_t heads_count;
+            uint32_t hidden_sectors_count;
+            uint32_t sectors_count_32;
+            uint32_t sectors_per_fat_32;
+            uint16_t flags;
+            uint16_t fat_version_number;
+            uint32_t root_directory_cluster;
+            uint16_t fs_info_sector;
+            uint16_t backup_boot_sector;
+            uint8_t reserved[12];
+            uint8_t drive_number;
+            uint8_t nt_flags;
+            uint8_t signature;
+            uint32_t volume_serial_number;
+            char label[11];
+            char system_identifier[8];
+        } __attribute__((packed));
+        uint8_t padding[512];
+    };
 } __attribute__((packed));
 
 struct fat32_directory_entry {
@@ -74,26 +74,56 @@ static int fat32_init_context(struct fat32_context* context, struct volume *part
     struct fat32_bpb bpb;
     volume_read(context->part, &bpb, 0, sizeof(struct fat32_bpb));
 
-    if (strncmp(bpb.system_identifier, FAT32_VALID_SYSTEM_IDENTIFIER, SIZEOF_ARRAY(bpb.system_identifier)) == 0) {
-        if (bpb.signature == FAT32_VALID_SIGNATURE_1 || bpb.signature == FAT32_VALID_SIGNATURE_2) {
-            context->type = 32;
-            goto valid;
-        }
+    // Generic check
+    if (*(uint16_t *)(((void *)&bpb) + 510) != 0xaa55) {
+        return 1;
     }
 
-    if (strncmp((((void *)&bpb) + 0x36), FAT16_VALID_SYSTEM_IDENTIFIER, SIZEOF_ARRAY(bpb.system_identifier)) == 0) {
-        context->type = 16;
+    // Checks for FAT12/16
+    if (strncmp((((void *)&bpb) + 0x36), "FAT", 3) == 0) {
+        if (*(((uint8_t *)&bpb) + 0x26) != 0x29) {
+            for (size_t i = 0; i < 15; i++) {
+                if (*(((uint8_t *)&bpb) + 0x27 + i) != 0) {
+                    return 1;
+                }
+            }
+        }
+
         goto valid;
     }
 
-    if (strncmp((((void *)&bpb) + 0x36), FAT12_VALID_SYSTEM_IDENTIFIER, SIZEOF_ARRAY(bpb.system_identifier)) == 0) {
-        context->type = 12;
+    // Checks for FAT32
+    if (strncmp((((void *)&bpb) + 0x52), "FAT", 3) == 0) {
+        if (*(((uint8_t *)&bpb) + 0x42) != 0x29) {
+            for (size_t i = 0; i < 15; i++) {
+                if (*(((uint8_t *)&bpb) + 0x43 + i) != 0) {
+                    return 1;
+                }
+            }
+        }
+
         goto valid;
     }
 
     return 1;
 
 valid:
+    // The following mess to identify the FAT type is from the FAT spec
+    // at paragraph 3.5
+    size_t root_dir_sects = ((bpb.root_entries_count * 32) + (bpb.bytes_per_sector - 1)) / bpb.bytes_per_sector;
+
+    size_t data_sects = (bpb.sectors_count_16 ?: bpb.sectors_count_32) - (bpb.reserved_sectors + (bpb.fats_count * (bpb.sectors_per_fat_16 ?: bpb.sectors_per_fat_32)) + root_dir_sects);
+
+    size_t clusters_count = data_sects / bpb.sectors_per_cluster;
+
+    if (clusters_count < 4085) {
+        context->type = 12;
+    } else if (clusters_count < 65525) {
+        context->type = 16;
+    } else {
+        context->type = 32;
+    }
+
     context->bytes_per_sector = bpb.bytes_per_sector;
     context->sectors_per_cluster = bpb.sectors_per_cluster;
     context->reserved_sectors = bpb.reserved_sectors;
@@ -102,7 +132,7 @@ valid:
     context->sectors_per_fat = context->type == 32 ? bpb.sectors_per_fat_32 : bpb.sectors_per_fat_16;
     context->root_directory_cluster = bpb.root_directory_cluster;
     context->fat_start_lba = bpb.reserved_sectors;
-    context->root_entries = bpb.directory_entries_count;
+    context->root_entries = bpb.root_entries_count;
     context->root_start = context->reserved_sectors + context->number_of_fats * context->sectors_per_fat;
     context->root_size = DIV_ROUNDUP(context->root_entries * sizeof(struct fat32_directory_entry), context->bytes_per_sector);
     switch (context->type) {

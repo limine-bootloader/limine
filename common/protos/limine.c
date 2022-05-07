@@ -721,7 +721,7 @@ FEAT_START
 
     if (dtb_request != NULL) {
         dtb_response = ext_mem_alloc(sizeof(struct limine_dtb_response));
-        memmap_alloc_range((uint64_t)(dtb), bswap32(*(uint32_t*)(dtb + 4)), MEMMAP_BOOTLOADER_RECLAIMABLE, false, false, false, true);
+        memmap_alloc_range((uint64_t)(size_t)(dtb), bswap32(*(uint32_t*)(dtb + 4)), MEMMAP_BOOTLOADER_RECLAIMABLE, false, false, false, true);
     } else {
         break;
     }

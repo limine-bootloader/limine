@@ -12,6 +12,10 @@
 #endif
 #include <drivers/serial.h>
 
+#if port_x86
+#include <arch/x86/cpu.h>
+#endif
+
 int getchar(void) {
     for (;;) {
         int ret = pit_sleep_and_quit_on_keypress(65535);

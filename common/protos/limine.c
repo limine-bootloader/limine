@@ -702,6 +702,7 @@ FEAT_START
 
 FEAT_END
 
+#if uefi
     // DTB
 FEAT_START
     struct limine_dtb_request *dtb_request = get_request(LIMINE_DTB_REQUEST);
@@ -729,6 +730,7 @@ FEAT_START
     dtb_response->dtb_size = bswap32(*(uint32_t*)(dtb + 4));
     dtb_request->response = reported_addr(dtb_response);
 FEAT_END
+#endif
 
     // Memmap
 FEAT_START

@@ -109,20 +109,42 @@ noreturn void common_spinup(
     
 
     if (currentel == /* el2 */ 8) {
+        // drop down to el1 (borrowed from sabaton)
         asm volatile (
+            // aarch64 in EL1
+            "  orr x1, xzr, #(1 << 31)\n"
+            "  orr x1, x1,  #(1 << 1)\n"
+            "  msr hcr_el2, x1\n"
+
+            // Counters in EL1
+            "  mrs x1, cnthctl_el2\n"
+            "  orr x1, x1, #3\n"
+            "  msr cnthctl_el2, x1\n"
+            "  msr cntvoff_el2, xzr\n"
+
+            // FP/SIMD in EL1
+            "  mov x1, #0x33ff\n"
+            "  msr cptr_el2, x1\n"
+            "  msr hstr_el2, xzr\n"
+            "  mov x1, #0x300000\n"
+            "  msr cpacr_el1, x1\n"
+
+            // Get the fuck out of EL2 into EL1
+            "  msr elr_el2, lr\n"
+            "  mov x1, #0x3c5\n"
+            "  msr spsr_el2, x1\n"
+
+            
             "  mov x0, %[info]\n"
             "  msr SPSel, XZR\n"
             "  dmb sy\n"
             "  cbz %[stack], 1f\n"
             "  mov sp, %[stack]\n"
-            "1:msr ELR_EL2, %[entry]\n"
-            "  msr SPSR_EL2, %[spsr]\n"
-            "  eret\n"
+            "1:br %[entry]\n"
             :
             : [entry] "r" (entry_point),
             [stack] "r" (stack),
-            [info]  "r" (stivale_struct),
-            [spsr]  "r" (/* el1, use SPSel=0 */ 0b01000ULL)
+            [info]  "r" (stivale_struct)
             : "x0"
         );
     } else {

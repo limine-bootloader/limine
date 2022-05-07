@@ -445,6 +445,8 @@ pagemap_t stivale_build_pagemap(bool unmap_null, struct elf_range *ranges, size_
     if (unmap_null) map_page(pagemap, get_page_size(), get_page_size(), VM_READ|VM_WRITE|VM_EXEC, 0x100000000 - get_page_size());
     else map_page(pagemap, 0, 0, VM_READ|VM_WRITE|VM_EXEC, 0x100000000);
 
+    map_page(pagemap, direct_map_offset, 0, VM_READ|VM_WRITE|VM_EXEC, 0x100000000);
+
     // Now map the memory map entries
     size_t _memmap_entries = memmap_entries;
     struct e820_entry_t *_memmap =
@@ -461,6 +463,13 @@ pagemap_t stivale_build_pagemap(bool unmap_null, struct elf_range *ranges, size_
         map_page(
             pagemap,
             ALIGN_DOWN(base, get_page_size()),
+            ALIGN_DOWN(base, get_page_size()),
+            VM_READ|VM_WRITE|VM_EXEC,
+            ALIGN_UP(top, get_page_size()) - ALIGN_DOWN(base, get_page_size())
+        );
+        map_page(
+            pagemap,
+            ALIGN_DOWN(base, get_page_size()) + direct_map_offset,
             ALIGN_DOWN(base, get_page_size()),
             VM_READ|VM_WRITE|VM_EXEC,
             ALIGN_UP(top, get_page_size()) - ALIGN_DOWN(base, get_page_size())

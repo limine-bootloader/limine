@@ -28,15 +28,16 @@ noreturn void common_spinup(
                  int bits, bool level5pg, pagemap_t *pagemap,
                  uint64_t entry_point, uint64_t stivale_struct, uint64_t stack,
                  bool enable_nx, bool wp) {
-    uint64_t sctlr, aa64mmfr0;
+    uint64_t sctlr, aa64mmfr0, currentel;
     asm (
         "MRS %[sctlr], SCTLR_EL1\n"
         "MRS %[aa64mmfr0], ID_AA64MMFR0_EL1\n"
+        "MRS %[currentel], CurrentEL\n"
         : [sctlr] "=r"(sctlr),
-        [aa64mmfr0] "=r"(aa64mmfr0)
+        [aa64mmfr0] "=r"(aa64mmfr0),
+        [currentel] "=r"(currentel)
     );
     
-
     sctlr |= 1; // sctlr_el1.M = 1
     sctlr &= ~2; // sctlr_el1.A = 0
 
@@ -106,18 +107,38 @@ noreturn void common_spinup(
         : "memory"
     );
     
-    asm volatile (
-        "  mov x0, %[info]\n"
-        "  msr SPSel, XZR\n"
-        "  dmb sy\n"
-        "  cbz %[stack], 1f\n"
-        "  mov sp, %[stack]\n"
-        "1:br %[entry]\n"
-        :
-        : [entry] "r" (entry_point),
-          [stack] "r" (stack),
-          [info]  "r" (stivale_struct)
-        : "x0"
-    );
+
+    if (currentel == /* el2 */ 8) {
+        asm volatile (
+            "  mov x0, %[info]\n"
+            "  msr SPSel, XZR\n"
+            "  dmb sy\n"
+            "  cbz %[stack], 1f\n"
+            "  mov sp, %[stack]\n"
+            "1:msr ELR_EL1, %[entry]\n"
+            "  msr SPSR_EL1, %[spsr]\n"
+            "  eret\n"
+            :
+            : [entry] "r" (entry_point),
+            [stack] "r" (stack),
+            [info]  "r" (stivale_struct),
+            [spsr]  "r" (/* el1, use SPSel=0 */ 0b01000ULL)
+            : "x0"
+        );
+    } else {
+        asm volatile (
+            "  mov x0, %[info]\n"
+            "  msr SPSel, XZR\n"
+            "  dmb sy\n"
+            "  cbz %[stack], 1f\n"
+            "  mov sp, %[stack]\n"
+            "1:br %[entry]\n"
+            :
+            : [entry] "r" (entry_point),
+            [stack] "r" (stack),
+            [info]  "r" (stivale_struct)
+            : "x0"
+        );
+    }
     __builtin_unreachable();
 }

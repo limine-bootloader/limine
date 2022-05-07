@@ -179,7 +179,7 @@ limine-uefi64: $(call MKESCAPE,$(SRCDIR))/reduced-gnu-efi
 limine-uefi-aarch64: $(call MKESCAPE,$(SRCDIR))/reduced-gnu-efi
 	$(MAKE) common-uefi-aarch64
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi64/BOOTAA64.EFI' '$(call SHESCAPE,$(BINDIR))/'
+	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi-aarch64/BOOTAA64.EFI' '$(call SHESCAPE,$(BINDIR))/'
 
 .PHONY: limine-uefi32
 limine-uefi32: $(call MKESCAPE,$(SRCDIR))/reduced-gnu-efi

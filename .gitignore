@@ -35,5 +35,6 @@
 /common-bios
 /common-uefi32
 /common-uefi64
+/common-uefi-aarch64
 /decompressor-build
 /stage1.stamp

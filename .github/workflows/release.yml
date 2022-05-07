@@ -26,7 +26,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install git build-essential autoconf automake nasm gcc-mingw-w64 curl mtools -y
 
       - name: Build the toolchain
-        run: ./make_toolchain.sh
+        run: ./make_toolchain_x86_64.sh
 
       - name: Regenerate
         run: NOCONFIGURE=yes ./autogen.sh
@@ -39,6 +39,21 @@ jobs:
 
       - name: Build the bootloader
         run: make -C build
+
+      - name: Build the aarch64 toolchain
+        run: ./make_toolchain_aarch64.sh
+
+      - name: Regenerate for aarch64
+        run: NOCONFIGURE=yes ./autogen.sh
+
+      - name: Create build dir
+        run: mkdir -p buildaa64
+
+      - name: Configure aarch64
+        run: cd buildaa64 && ../configure
+
+      - name: Build the bootloader for aarch64
+        run: make -C buildaa64
 
       - name: Clean limine-deploy
         run: rm build/bin/limine-deploy
@@ -69,7 +84,8 @@ jobs:
           git checkout $BRANCH_NAME-binary || git checkout --orphan $BRANCH_NAME-binary
           rm -rf $(ls -a | grep -v '^\.git$' | grep -v '^\.\.$' | grep -v '^\.$' | grep -v '^build$')
           cp -r build/bin/. ./
-          rm -rf build
+          cp -r buildaa64/bin/. ./
+          rm -rf build buildaa64
           git add -f .
           git commit -m "Binary release $TAG_NAME"
           git push origin $BRANCH_NAME-binary

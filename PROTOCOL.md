@@ -155,6 +155,35 @@ to the stack before jumping to the kernel.
 
 All other general purpose registers are set to 0.
 
+## aarch64
+`IP` will be the entry point as defined as part of the executable file format,
+unless the an Entry Point feature is requested (see below), in which case,
+the value of `IP` is going to be taken from there.
+
+The kernel is entered at EL1.
+
+`VBAR_EL1` is in an undefined state. Kernel must load its own.
+
+`DAIF.{D,A,I,F}` are set/masked.
+
+`SCTLR_EL1.{M,C,I}` are set. Other bits are undefined.
+`MAIR` has at least the following entries, in some order:
+  * `0b00001100`, used for mmio regions
+  * `0b11111111`, used for normal memory
+
+`SP` is set to point to a stack, in bootloader-reserved memory, which is
+at least 64KiB (65536 bytes) in size, or the size specified in the Stack
+Size Request (see below). An invalid return address of 0 is pushed
+to the stack before jumping to the kernel.
+
+`SPSel.SP` is 0.
+
+Neither floating point, SIMD nor timer accesses trap to a higher EL than 1.
+
+If booted by EFI/UEFI, boot services are exited.
+
+All other general purpose registers are set to 0.
+
 ## Feature List
 
 Request IDs are composed of 4 64-bit unsigned integers, but the first 2 are
@@ -463,6 +492,25 @@ No registers other than the segment registers and general purpose registers
 are going to be used. Especially, this means that there is no need to save
 and restore FPU, SSE, or AVX state when calling the terminal write function.
 
+### aarch64
+
+Additionally, the kernel must ensure, when calling `write()`, that:
+
+* The currently loaded virtual address space is still the one provided at
+entry by the bootloader, or a custom virtual address space is loaded which
+identity maps the framebuffer memory region associated with the terminal, and
+all the bootloader reclaimable memory regions, with read, write, and execute
+permissions for the EL1.
+
+* The routine is called *by its physical address* (the value of the function
+pointer is already physical), which should be identity mapped.
+
+* Bootloader-reclaimable memory entries are left untouched until after the
+kernel is done utilising bootloader-provided facilities (this terminal being
+one of them).
+
+* The routine is entered in EL1.
+
 #### Terminal characteristics
 
 The terminal should strive for Linux console compatibility.
@@ -608,6 +656,34 @@ that, the CPU state will be the same as described for the bootstrap
 processor. This field is unused for the structure describing the bootstrap
 processor.
 * `extra_argument` - A free for use field.
+
+### Device Tree Feature
+
+ID:
+```c
+#define LIMINE_DTB_REQUEST { LIMINE_COMMON_MAGIC, 0x700188bdeb8828b1, 0xc40d9b1c78d9422b }
+```
+
+Request:
+```c
+struct limine_dtb_request {
+    uint64_t id[4];
+    uint64_t revision;
+    struct limine_smp_response *response;
+    uint64_t flags;
+};
+```
+
+Response:
+```c
+struct limine_dtb_response {
+    void *dtb;
+    uint64_t dtb_size;
+};
+```
+
+* `dtb` - Pointer to the device tree.
+* `dtb_size` - Length of the device tree.
 
 ### Memory Map Feature
 

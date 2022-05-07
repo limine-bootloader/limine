@@ -217,6 +217,22 @@ struct limine_smp_request {
     uint64_t flags;
 };
 
+/* DTB */
+
+#define LIMINE_DTB_REQUEST { LIMINE_COMMON_MAGIC, 0x700188bdeb8828b1, 0xc40d9b1c78d9422b }
+
+struct limine_dtb_request {
+    uint64_t id[4];
+    uint64_t revision;
+    LIMINE_PTR(struct limine_smp_response *) response;
+    uint64_t flags;
+};
+
+struct limine_dtb_response {
+    LIMINE_PTR(void *) dtb;
+    uint64_t dtb_size;
+};
+
 /* Memory map */
 
 #define LIMINE_MEMMAP_REQUEST { LIMINE_COMMON_MAGIC, 0x67cf3d9d378a806f, 0xe304acdfc50c3c62 }

@@ -48,6 +48,19 @@ static uint64_t reported_addr(void *addr) {
     return (uint64_t)(uintptr_t)addr + direct_map_offset;
 }
 
+struct fdt_header {
+    uint32_t magic;
+    uint32_t totalsize;
+    uint32_t off_dt_struct;
+    uint32_t off_dt_strings;
+    uint32_t off_mem_rsvmap;
+    uint32_t version;
+    uint32_t last_comp_version;
+    uint32_t boot_cpuid_phys;
+    uint32_t size_dt_strings;
+    uint32_t size_dt_struct;
+};
+
 static struct limine_file get_file(struct file_handle *file, char *cmdline) {
     struct limine_file ret = {0};
 
@@ -686,6 +699,33 @@ FEAT_START
     smp_response->cpus = reported_addr(smp_list);
 
     smp_request->response = reported_addr(smp_response);
+
+FEAT_END
+
+    // DTB
+FEAT_START
+    struct limine_dtb_request *dtb_request = get_request(LIMINE_DTB_REQUEST);
+    struct limine_dtb_response *dtb_response;
+
+    void* dtb = NULL;
+    for (uint64_t i = 0;i < gST->NumberOfTableEntries;i++) {
+        if (!memcmp(&gST->ConfigurationTable[i].VendorGuid, &(EFI_GUID)EFI_DTB_TABLE_GUID, sizeof(EFI_GUID))) {
+            dtb = gST->ConfigurationTable[i].VendorTable;
+        }
+    }
+    if (!dtb) {
+        dtb_request->response = 0;
+        break;
+    }
+
+    if (dtb_request != NULL) {
+        dtb_response = ext_mem_alloc(sizeof(struct limine_dtb_response));
+        memmap_alloc_range((uint64_t)(dtb), bswap32(*(uint32_t*)(dtb + 4)), MEMMAP_BOOTLOADER_RECLAIMABLE, false, false, false, true);
+    }
+
+    dtb_response->dtb = reported_addr(dtb);
+    dtb_response->dtb_size = bswap32(*(uint32_t*)(dtb + 4));
+    dtb_request->response = reported_addr(dtb_response);
 FEAT_END
 
     // Memmap

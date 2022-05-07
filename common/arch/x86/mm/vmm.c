@@ -121,7 +121,7 @@ level4:
 }
 
 void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags, uint64_t size) {
-    uint64_t x86_flag_bits = 1 | ((flags & VM_WRITE) ? 2 : 0) | ((flags & VM_EXEC) ? 0 : (1UL << 63));
+    uint64_t x86_flag_bits = 1 | ((flags & VM_WRITE) ? 2 : 0) | ((flags & VM_EXEC) ? 0 : (1ULL << 63));
     while (size > 0) {
         if (!(virt_addr & 0x3fffffff) && !(phys_addr & 0x3fffffff) && size >= 0x40000000) {
             ll_map_page(

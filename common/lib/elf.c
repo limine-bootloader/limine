@@ -127,8 +127,20 @@ static bool elf64_is_relocatable(uint8_t *elf, struct elf64_hdr *hdr) {
         memcpy(&phdr, elf + (hdr->phoff + i * hdr->phdr_size),
                sizeof(struct elf64_phdr));
 
-        if (phdr.p_type == PT_DYNAMIC)
-            return true;
+        if (phdr.p_type != PT_DYNAMIC) {
+            continue;
+        }
+
+        for (uint16_t j = 0; j < phdr.p_filesz / sizeof(struct elf64_dyn); j++) {
+            struct elf64_dyn dyn;
+            memcpy(&dyn, elf + (phdr.p_offset + j * sizeof(struct elf64_dyn)),
+                   sizeof(struct elf64_dyn));
+
+            switch (dyn.d_tag) {
+                case DT_RELA:
+                    return true;
+            }
+        }
     }
 
     return false;

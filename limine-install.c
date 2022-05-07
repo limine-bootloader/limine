@@ -482,6 +482,15 @@ int main(int argc, char *argv[]) {
                 device_write(hintc, 54, 5);
             }
         }
+        device_read(hintc, 82, 3);
+        if (memcmp(hintc, "FAT", 3) == 0) {
+            if (!force_mbr) {
+                mbr = 0;
+            } else {
+                memset(hintc, 0, 5);
+                device_write(hintc, 82, 5);
+            }
+        }
         device_read(&hint16, 1080, sizeof(uint16_t));
         hint16 = ENDSWAP(hint16);
         if (hint16 == 0xef53) {

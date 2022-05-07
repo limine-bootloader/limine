@@ -507,6 +507,29 @@ failed_to_load_header_section:
     }
 
     //////////////////////////////////////////////
+    // Create DTB struct tag
+    //////////////////////////////////////////////
+    {
+
+    void* dtb = NULL;
+    for (uint64_t i = 0;i < gST->NumberOfTableEntries;i++) {
+        if (!memcmp(&gST->ConfigurationTable[i].VendorGuid, &(EFI_GUID)EFI_DTB_TABLE_GUID, sizeof(EFI_GUID))) {
+            dtb = gST->ConfigurationTable[i].VendorTable;
+        }
+    }
+
+    if (dtb) {
+        struct stivale2_struct_tag_dtb *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_dtb));
+        tag->tag.identifier = STIVALE2_STRUCT_TAG_DTB;
+        memmap_alloc_range((uint64_t)(size_t)(dtb), bswap32(*(uint32_t*)(dtb + 4)), MEMMAP_BOOTLOADER_RECLAIMABLE, false, false, false, true);
+        tag->addr = REPORTED_ADDR((uint64_t)(uintptr_t)dtb);
+        tag->size = bswap32(*(uint32_t*)(dtb + 4));
+
+        append_tag(stivale2_struct, (struct stivale2_tag *)tag);
+    }
+    }
+
+    //////////////////////////////////////////////
     // Create framebuffer struct tag
     //////////////////////////////////////////////
     {

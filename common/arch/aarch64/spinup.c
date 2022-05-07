@@ -115,8 +115,8 @@ noreturn void common_spinup(
             "  dmb sy\n"
             "  cbz %[stack], 1f\n"
             "  mov sp, %[stack]\n"
-            "1:msr ELR_EL1, %[entry]\n"
-            "  msr SPSR_EL1, %[spsr]\n"
+            "1:msr ELR_EL2, %[entry]\n"
+            "  msr SPSR_EL2, %[spsr]\n"
             "  eret\n"
             :
             : [entry] "r" (entry_point),

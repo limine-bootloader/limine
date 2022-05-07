@@ -243,6 +243,9 @@ static bool is_valid_mbr(struct volume *volume) {
     volume_read(volume, hintc, 54, 3);
     if (memcmp(hintc, "FAT", 3) == 0)
         return false;
+    volume_read(volume, hintc, 82, 3);
+    if (memcmp(hintc, "FAT", 3) == 0)
+        return false;
     volume_read(volume, &hint, 1080, sizeof(uint16_t));
     if (hint == 0xef53)
         return false;

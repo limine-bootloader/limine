@@ -29,6 +29,7 @@ struct fw_cfg_context {
 
 static void fwcfg_disp_read(struct fw_cfg_context* ctx, uint16_t sel, uint32_t outsz, uint8_t* outbuf) {
 #if port_x86
+    (void)ctx; // the context is not needed on x86
     outw(0x510, sel);
     for (uint32_t i = 0;i < outsz;i++) outbuf[i] = inb(0x511);
 #elif port_aarch64

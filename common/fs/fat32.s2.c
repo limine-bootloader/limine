@@ -107,7 +107,7 @@ static int fat32_init_context(struct fat32_context* context, struct volume *part
 
     return 1;
 
-valid:
+valid:;
     // The following mess to identify the FAT type is from the FAT spec
     // at paragraph 3.5
     size_t root_dir_sects = ((bpb.root_entries_count * 32) + (bpb.bytes_per_sector - 1)) / bpb.bytes_per_sector;

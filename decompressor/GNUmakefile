@@ -52,8 +52,8 @@ override INTERNAL_LDFLAGS := \
 	-Tlinker.ld
 
 override C_FILES := $(shell find ./ -type f -name '*.c')
-override ASM_FILES := $(shell find ./ -type f -name '*.asm')
-override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o))
+override ASM_FILES := $(shell find ./ -type f -name '*.S')
+override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM_FILES:.S=.o) $(C_FILES:.c=.o))
 override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.d))
 
 .PHONY: all
@@ -83,9 +83,9 @@ $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(LIMINE_CC) $(LIMINE_CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/%.o: %.asm
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.S
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -f elf32 -o '$(call SHESCAPE,$@)'
+	$(LIMINE_CC) $(LIMINE_CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
 .PHONY: clean
 clean:

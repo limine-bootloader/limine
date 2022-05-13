@@ -547,6 +547,13 @@ skip_fb_init:;
                        (uint64_t)fb.framebuffer_pitch * fb.framebuffer_height,
                        MEMMAP_FRAMEBUFFER, false, false, false, true);
 
+    // For now we only support 1 framebuffer
+    struct limine_framebuffer *fbp = ext_mem_alloc(sizeof(struct limine_framebuffer));
+
+    if (term_fb_ptr != NULL) {
+        *term_fb_ptr = reported_addr(fbp);
+    }
+
     struct limine_framebuffer_request *framebuffer_request = get_request(LIMINE_FRAMEBUFFER_REQUEST);
     if (framebuffer_request == NULL) {
         break; // next feature
@@ -554,13 +561,6 @@ skip_fb_init:;
 
     struct limine_framebuffer_response *framebuffer_response =
         ext_mem_alloc(sizeof(struct limine_framebuffer_response));
-
-    // For now we only support 1 framebuffer
-    struct limine_framebuffer *fbp = ext_mem_alloc(sizeof(struct limine_framebuffer));
-
-    if (term_fb_ptr != NULL) {
-        *term_fb_ptr = reported_addr(fbp);
-    }
 
     struct edid_info_struct *edid_info = get_edid_info();
     if (edid_info != NULL) {

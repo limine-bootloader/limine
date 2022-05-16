@@ -509,6 +509,7 @@ failed_to_load_header_section:
     //////////////////////////////////////////////
     // Create DTB struct tag
     //////////////////////////////////////////////
+#if uefi == 1
     {
 
     void* dtb = NULL;
@@ -528,6 +529,7 @@ failed_to_load_header_section:
         append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
     }
+#endif
 
     //////////////////////////////////////////////
     // Create framebuffer struct tag

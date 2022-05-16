@@ -18,7 +18,7 @@
 #include <drivers/disk.h>
 #include <lib/readline.h>
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
 #include <arch/x86/e820.h>
 #include <arch/x86/a20.h>
 #include <arch/x86/idt.h>
@@ -72,7 +72,7 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 
     init_memmap();
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     init_gdt();
 #endif
 
@@ -138,7 +138,7 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 noreturn void stage3_common(void) {
     term_notready();
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     init_flush_irqs();
     init_io_apics();
 #endif

@@ -72,8 +72,6 @@ override INTERNAL_CFLAGS += \
 		-fpie \
 		-Dbios=0 \
 		-Duefi=1 \
-		-Dport_x86=0 \
-		-Dport_aarch64=1 \
 		-I'$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/inc' \
 		-I'$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/inc/aarch64' \
 		-mstrict-align
@@ -83,8 +81,6 @@ ifeq ($(TARGET), bios)
 override INTERNAL_CFLAGS += \
 		-Dbios=1 \
 		-Duefi=0 \
-		-Dport_x86=1 \
-		-Dport_aarch64=0 \
 		-m32 \
 		-march=i686 \
 		-mtune=generic \
@@ -98,8 +94,6 @@ override INTERNAL_CFLAGS32 := \
 		$(INTERNAL_CFLAGS) \
 		-Dbios=0 \
 		-Duefi=1 \
-		-Dport_x86=1 \
-		-Dport_aarch64=0 \
 		-m32 \
 		-march=i686 \
 		-mtune=generic \
@@ -110,8 +104,6 @@ override INTERNAL_CFLAGS32 := \
 override INTERNAL_CFLAGS += \
 		-Dbios=0 \
 		-Duefi=1 \
-		-Dport_x86=1 \
-		-Dport_aarch64=0 \
 		-m64 \
 		-march=x86-64 \
 		-mtune=generic \
@@ -133,8 +125,6 @@ ifeq ($(TARGET), uefi32)
 override INTERNAL_CFLAGS += \
 		-Dbios=0 \
 		-Duefi=1 \
-		-Dport_x86=1 \
-		-Dport_aarch64=0 \
 		-m32 \
 		-march=i686 \
 		-mtune=generic \

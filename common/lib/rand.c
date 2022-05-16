@@ -6,9 +6,9 @@
 #include <lib/rand.h>
 #include <mm/pmm.h>
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
 #include <arch/x86/cpu.h>
-#elif port_aarch64
+#elif defined (__aarch64__)
 #include <lib/time.h>
 #endif
 
@@ -27,7 +27,7 @@ static uint32_t *status;
 static int ctr;
 
 static void init_rand(void) {
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     uint32_t seed = ((uint32_t)0xc597060c * (uint32_t)rdtsc())
                   * ((uint32_t)0xce86d624)
                   ^ ((uint32_t)0xee0da130 * (uint32_t)rdtsc());
@@ -40,7 +40,7 @@ static void init_rand(void) {
     } else if (cpuid(0x01, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 30))) {
         seed *= (seed ^ rdrand(uint32_t));
     }
-#elif port_aarch64
+#elif defined (__aarch64__)
     // FIXME: the dtb might have a kaslr slide too
     uint32_t seed = 0xc597060c * time();
 #endif

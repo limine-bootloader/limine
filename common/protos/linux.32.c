@@ -1,4 +1,4 @@
-#if port_x86 == 1
+#if defined (__i386__) || defined (__x86_64__)
 #include <stdint.h>
 #include <stdnoreturn.h>
 #include <arch/x86/gdt.h>

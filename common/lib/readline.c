@@ -12,7 +12,7 @@
 #endif
 #include <drivers/serial.h>
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
 #include <arch/x86/cpu.h>
 #endif
 

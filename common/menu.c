@@ -928,7 +928,7 @@ autodetect:
         stivale2_load(config, cmdline);
         stivale_load(config, cmdline);
         limine_load(config, cmdline);
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
         multiboot2_load(config, cmdline);
         multiboot1_load(config, cmdline);
         linux_load(config, cmdline);
@@ -944,7 +944,7 @@ autodetect:
         ret = stivale2_load(config, cmdline);
     } else if (!strcmp(proto, "limine")) {
         ret = limine_load(config, cmdline);
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     } else if (!strcmp(proto, "linux")) {
         ret = linux_load(config, cmdline);
     } else if (!strcmp(proto, "multiboot1") || !strcmp(proto, "multiboot")) {

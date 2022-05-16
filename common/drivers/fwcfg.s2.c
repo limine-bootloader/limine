@@ -4,9 +4,9 @@
 #include <mm/pmm.h>
 #include <lib/blib.h>
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
 #include <arch/x86/cpu.h>
-#elif port_aarch64
+#elif defined (__aarch64__)
 #include <arch/aarch64/dtb.h>
 #endif
 
@@ -22,17 +22,17 @@ struct fw_cfg_files {
 };
 
 struct fw_cfg_context {
-#if port_aarch64
+#if defined (__aarch64__)
     void* fwcfg_address;
 #endif
 };
 
 static void fwcfg_disp_read(struct fw_cfg_context* ctx, uint16_t sel, uint32_t outsz, uint8_t* outbuf) {
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     (void)ctx; // the context is not needed on x86
     outw(0x510, sel);
     for (uint32_t i = 0;i < outsz;i++) outbuf[i] = inb(0x511);
-#elif port_aarch64
+#elif defined (__aarch64__)
     *(volatile uint16_t*)(ctx->fwcfg_address + 8) = bswap16(sel);
     for (uint32_t i = 0;i < outsz;i++) outbuf[i] = *(volatile uint8_t*)ctx->fwcfg_address;
 #endif
@@ -100,11 +100,11 @@ static bool fwcfg_do_open(struct fw_cfg_context* ctx, struct file_handle *handle
     return false;
 }
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
 bool fwcfg_open(struct file_handle *handle, const char *path) {
     return fwcfg_do_open(NULL, handle, path);
 }
-#elif port_aarch64
+#elif defined (__aarch64__)
 bool fwcfg_open(struct file_handle *handle, const char *path) {
     static struct fw_cfg_context context = {.fwcfg_address=NULL};
     static bool initialized_context = false;

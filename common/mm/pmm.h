@@ -5,9 +5,9 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
 #include <arch/x86/e820.h>
-#elif port_aarch64
+#elif defined (__aarch64__)
 struct e820_entry_t {
     uint64_t base;
     uint64_t length;

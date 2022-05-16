@@ -9,7 +9,7 @@
 #include <lib/real.h>
 #endif
 #include <drivers/serial.h>
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
 #include <arch/x86/cpu.h>
 #endif
 
@@ -212,7 +212,7 @@ out:
 #endif
 
     for (size_t i = 0; i < print_buf_i; i++) {
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
         if (E9_OUTPUT) {
             outb(0xe9, print_buf[i]);
         }

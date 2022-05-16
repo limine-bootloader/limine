@@ -9,10 +9,10 @@
 #define VM_EXEC  ((uint64_t)1 << 2)
 
 typedef struct {
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     int   levels;
     void *top_level;
-#elif port_aarch64
+#elif defined (__aarch64__)
     void *ttbr0;
     void *ttbr1;
 #endif
@@ -24,9 +24,9 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
 
 uint64_t get_page_size();
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
 pagemap_t new_pagemap(int lv);
-#elif port_aarch64
+#elif defined (__aarch64__)
 pagemap_t new_pagemap(void);
 #endif
 

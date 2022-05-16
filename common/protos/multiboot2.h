@@ -1,4 +1,4 @@
-#if port_x86 == 1
+#if defined (__i386__) || defined (__x86_64__)
 /*   multiboot2.h - Multiboot 2 header file. Copied from the multiboot2 specs /
 /   Copyright (C) 1999,2003,2007,2008,2009,2010  Free Software Foundation, Inc.
  *

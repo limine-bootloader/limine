@@ -22,7 +22,7 @@
 #include <pxe/tftp.h>
 #include <drivers/disk.h>
 
-#if port_x86 == 1
+#if defined (__i386__) || defined (__x86_64__)
 #include <arch/x86/e820.h>
 #include <arch/x86/a20.h>
 #include <arch/x86/idt.h>

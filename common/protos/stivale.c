@@ -20,13 +20,13 @@
 #include <stivale.h>
 #include <drivers/vga_textmode.h>
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
 #include <arch/x86/pic.h>
 #include <arch/x86/cpu.h>
 #include <arch/x86/gdt.h>
 #include <arch/x86/idt.h>
 #include <arch/x86/lapic.h>
-#elif port_aarch64
+#elif defined (__aarch64__)
 #include <arch/aarch64/spinup.h>
 #endif
 
@@ -89,7 +89,7 @@ bool stivale_load(char *config, char *cmdline) {
 
     struct stivale_header stivale_hdr;
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     bool level5pg = false;
 #endif
     uint64_t slide = 0;
@@ -137,7 +137,7 @@ bool stivale_load(char *config, char *cmdline) {
     int ret = 0;
     switch (bits) {
         case 64: {
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
             // Check if 64 bit CPU
             uint32_t eax, ebx, ecx, edx;
             if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
@@ -162,7 +162,7 @@ bool stivale_load(char *config, char *cmdline) {
 
             break;
         }
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
         case 32: {
             if (!loaded_by_anchor) {
                 if (elf32_load(kernel, (uint32_t *)&entry_point, NULL, STIVALE_MMAP_KERNEL_AND_MODULES))
@@ -176,9 +176,9 @@ bool stivale_load(char *config, char *cmdline) {
         }
 #endif
         default:
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
             panic(true, "stivale: Not 32 nor 64-bit kernel. What is this?");
-#elif port_aarch64
+#elif defined (__aarch64__)
             panic(true, "stivale: Not aarch64 kernel. What is this?");
 #endif
     }
@@ -200,17 +200,17 @@ bool stivale_load(char *config, char *cmdline) {
         panic(true, "stivale: Higher half addresses header flag not supported in 32-bit mode.");
     }
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     bool want_5lv = level5pg && (stivale_hdr.flags & (1 << 1));
 
     uint64_t direct_map_offset = want_5lv ? 0xff00000000000000 : 0xffff800000000000;
-#elif port_aarch64
+#elif defined (__aarch64__)
     // FIXME: i think i saw some FEAT_* which *might* allow for 5 level paging...
     // but you never know with arm
     uint64_t direct_map_offset = 0xffff800000000000;
 #endif
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     struct gdtr *local_gdt = ext_mem_alloc(sizeof(struct gdtr));
     local_gdt->limit = gdt.limit;
     uint64_t local_gdt_base = (uint64_t)gdt.ptr;
@@ -366,10 +366,10 @@ bool stivale_load(char *config, char *cmdline) {
 #endif
 
     pagemap_t pagemap = {0};
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     if (bits == 64)
         pagemap = stivale_build_pagemap(want_5lv, false, NULL, 0, false, 0, 0, direct_map_offset);
-#elif port_aarch64
+#elif defined (__aarch64__)
     pagemap = stivale_build_pagemap(false, NULL, 0, false, 0, 0, direct_map_offset);
 #endif
     // Reserve 32K at 0x70000 if possible
@@ -393,11 +393,11 @@ bool stivale_load(char *config, char *cmdline) {
     stivale_struct->memory_map_entries = (uint64_t)mmap_entries;
     stivale_struct->memory_map_addr    = REPORTED_ADDR((uint64_t)(size_t)mmap_copy);
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     stivale_spinup(bits, want_5lv, &pagemap,
                    entry_point, REPORTED_ADDR((uint64_t)(uintptr_t)stivale_struct),
                    stivale_hdr.stack, false, false, (uintptr_t)local_gdt);
-#elif port_aarch64
+#elif defined (__aarch64__)
     common_spinup(&pagemap, entry_point,
                   REPORTED_ADDR((uint64_t)(uintptr_t)stivale_struct),
                   stivale_hdr.stack, false);
@@ -411,12 +411,12 @@ fail:
     return false;
 }
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
 pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range *ranges, size_t ranges_count,
                                 bool want_fully_virtual, uint64_t physical_base, uint64_t virtual_base,
                                 uint64_t direct_map_offset) {
     pagemap_t pagemap = new_pagemap(level5pg ? 5 : 4);
-#elif port_aarch64
+#elif defined (__aarch64__)
 pagemap_t stivale_build_pagemap(bool unmap_null, struct elf_range *ranges, size_t ranges_count,
                                 bool want_fully_virtual, uint64_t physical_base, uint64_t virtual_base,
                                 uint64_t direct_map_offset) {
@@ -497,7 +497,7 @@ noreturn void stivale_spinup_32(
                  uint32_t stivale_struct_lo, uint32_t stivale_struct_hi,
                  uint32_t stack_lo, uint32_t stack_hi, uint32_t local_gdt);
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
 noreturn void stivale_spinup(
                  int bits, bool level5pg, pagemap_t *pagemap,
                  uint64_t entry_point, uint64_t _stivale_struct, uint64_t stack,

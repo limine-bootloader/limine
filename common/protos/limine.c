@@ -24,13 +24,14 @@
 #include <sys/smp.h>
 #include <protos/stivale.h>
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
 #include <arch/x86/lapic.h>
 #include <arch/x86/pic.h>
 #include <arch/x86/cpu.h>
 #include <arch/x86/gdt.h>
-#elif port_aarch64
+#elif defined (__aarch64__)
 #include <arch/aarch64/spinup.h>
+#include <arch/aarch64/smp.h>
 #endif
 
 #define LIMINE_NO_POINTERS
@@ -142,7 +143,7 @@ static void term_write_shim(uint64_t context, uint64_t buf, uint64_t count) {
 }
 
 bool limine_load(char *config, char *cmdline) {
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     uint32_t eax, ebx, ecx, edx;
 #endif
 
@@ -227,7 +228,7 @@ bool limine_load(char *config, char *cmdline) {
         return false;
     }
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     // Check if 64 bit CPU
     if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
         panic(true, "limine: This CPU does not support 64-bit mode.");
@@ -246,7 +247,7 @@ bool limine_load(char *config, char *cmdline) {
     bool want_5lv = false;
 FEAT_START
     bool level5pg = false;
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     // Check if 5-level paging is available
     if (cpuid(0x00000007, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 16))) {
         printv("limine: CPU has 5-level paging support\n");
@@ -629,7 +630,7 @@ FEAT_START
     boot_time_request->response = reported_addr(boot_time_response);
 FEAT_END
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     // Wrap-up stuff before memmap close
     struct gdtr *local_gdt = ext_mem_alloc(sizeof(struct gdtr));
     local_gdt->limit = gdt.limit;
@@ -644,10 +645,10 @@ FEAT_END
     void *stack = ext_mem_alloc(stack_size) + stack_size;
 
     pagemap_t pagemap = {0};
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     pagemap = stivale_build_pagemap(want_5lv, true, ranges, ranges_count, true,
                                     physical_base, virtual_base, direct_map_offset);
-#elif port_aarch64
+#elif defined (__aarch64__)
     pagemap = stivale_build_pagemap(true, ranges, ranges_count, true,
                                     physical_base, virtual_base, direct_map_offset);
 #endif
@@ -685,7 +686,7 @@ FEAT_START
     struct limine_smp_response *smp_response =
         ext_mem_alloc(sizeof(struct limine_smp_response));
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     smp_response->flags |= (smp_request->flags & LIMINE_SMP_X2APIC) && x2apic_check();
 #endif
     smp_response->bsp_lapic_id = bsp_lapic_id;
@@ -804,10 +805,10 @@ FEAT_END
 
     term_runtime = true;
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     stivale_spinup(64, want_5lv, &pagemap, entry_point, 0,
                    reported_addr(stack), true, true, (uintptr_t)local_gdt);
-#elif port_aarch64
+#elif defined (__aarch64__)
     common_spinup(&pagemap, entry_point, 0, reported_addr(stack), true);
 #endif
 

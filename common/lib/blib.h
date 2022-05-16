@@ -96,7 +96,7 @@ typedef char symbol[];
 
 noreturn void stage3_common(void);
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
 noreturn void common_spinup(void *fnptr, int args, ...);
 #endif
 

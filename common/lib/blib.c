@@ -211,9 +211,9 @@ retry:
         goto retry;
     }
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     asm volatile ("cli" ::: "memory");
-#elif port_aarch64
+#elif defined (__aarch64__)
     asm volatile ("msr daifset, 0xf" ::: "memory");
 #endif
 

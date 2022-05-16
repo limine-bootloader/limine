@@ -26,12 +26,12 @@
 
 #include <sys/smp.h>
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
 #include <arch/x86/cpu.h>
 #include <arch/x86/gdt.h>
 #include <arch/x86/pic.h>
 #include <arch/x86/lapic.h>
-#elif port_aarch64
+#elif defined (__aarch64__)
 #include <arch/aarch64/spinup.h>
 #endif
 
@@ -159,7 +159,7 @@ bool stivale2_load(char *config, char *cmdline) {
     int ret = 0;
     switch (bits) {
         case 64: {
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
             // Check if 64 bit CPU
             uint32_t eax, ebx, ecx, edx;
             if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
@@ -213,7 +213,7 @@ bool stivale2_load(char *config, char *cmdline) {
 
             break;
         }
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
         case 32: {
             if (!loaded_by_anchor) {
                 if (elf32_load(kernel, (uint32_t *)&entry_point, NULL, STIVALE2_MMAP_KERNEL_AND_MODULES))
@@ -228,9 +228,9 @@ bool stivale2_load(char *config, char *cmdline) {
 #endif
 
         default:
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
             panic(true, "stivale2: Not 32 nor 64-bit kernel. What is this?");
-#elif port_aarch64
+#elif defined (__aarch64__)
             panic(true, "stivale2: Not an aarch64 kernel. What is this?");
 #endif
 
@@ -275,7 +275,7 @@ failed_to_load_header_section:
         }
     }
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     struct gdtr *local_gdt = ext_mem_alloc(sizeof(struct gdtr));
     local_gdt->limit = gdt.limit;
     uint64_t local_gdt_base = (uint64_t)gdt.ptr;
@@ -788,14 +788,14 @@ have_tm_tag:;
     bool unmap_null = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_UNMAP_NULL_ID) ? true : false;
 
     pagemap_t pagemap = {0};
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     if (bits == 64)
         pagemap = stivale_build_pagemap(want_5lv, unmap_null,
                                         want_pmrs ? ranges : NULL,
                                         want_pmrs ? ranges_count : 0,
                                         want_fully_virtual, physical_base, virtual_base,
                                         direct_map_offset);
-#elif port_aarch64
+#elif defined (__aarch64__)
     pagemap = stivale_build_pagemap(unmap_null,
                                     want_pmrs ? ranges : NULL,
                                     want_pmrs ? ranges_count : 0,
@@ -828,9 +828,9 @@ have_tm_tag:;
             tag->tag.identifier = STIVALE2_STRUCT_TAG_SMP_ID;
             tag->bsp_lapic_id   = bsp_lapic_id;
             tag->cpu_count      = cpu_count;
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
             tag->flags         |= (smp_hdr_tag->flags & 1) && x2apic_check();
-#elif port_aarch64
+#elif defined (__aarch64__)
             // TODO: this could specify spintables/psci
             tag->flags         |= 0;
 #endif
@@ -892,11 +892,11 @@ have_tm_tag:;
 
     term_runtime = true;
 
-#if port_x86
+#if defined (__i386__) || defined (__x86_64__)
     stivale_spinup(bits, want_5lv, &pagemap, entry_point,
                    REPORTED_ADDR((uint64_t)(uintptr_t)stivale2_struct),
                    stivale2_hdr.stack, want_pmrs, want_pmrs, (uintptr_t)local_gdt);
-#elif port_aarch64
+#elif defined (__aarch64__)
     common_spinup(&pagemap, entry_point, 0, stivale2_hdr.stack, true);
 #endif
 

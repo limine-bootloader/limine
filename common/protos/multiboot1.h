@@ -1,4 +1,4 @@
-#if port_x86 == 1
+#if defined (__i386__) || defined (__x86_64__)
 #ifndef __PROTOS__MULTIBOOT1_H__
 #define __PROTOS__MULTIBOOT1_H__
 

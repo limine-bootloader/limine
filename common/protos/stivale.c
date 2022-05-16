@@ -26,6 +26,8 @@
 #include <arch/x86/gdt.h>
 #include <arch/x86/idt.h>
 #include <arch/x86/lapic.h>
+#elif port_aarch64
+#include <arch/aarch64/spinup.h>
 #endif
 
 
@@ -87,7 +89,9 @@ bool stivale_load(char *config, char *cmdline) {
 
     struct stivale_header stivale_hdr;
 
+#if port_x86
     bool level5pg = false;
+#endif
     uint64_t slide = 0;
     uint64_t entry_point = 0;
 
@@ -393,6 +397,10 @@ bool stivale_load(char *config, char *cmdline) {
     stivale_spinup(bits, want_5lv, &pagemap,
                    entry_point, REPORTED_ADDR((uint64_t)(uintptr_t)stivale_struct),
                    stivale_hdr.stack, false, false, (uintptr_t)local_gdt);
+#elif port_aarch64
+    common_spinup(&pagemap, entry_point,
+                  REPORTED_ADDR((uint64_t)(uintptr_t)stivale_struct),
+                  stivale_hdr.stack, false);
 #endif
 
     __builtin_unreachable();

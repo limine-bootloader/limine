@@ -31,6 +31,8 @@
 #include <arch/x86/gdt.h>
 #include <arch/x86/pic.h>
 #include <arch/x86/lapic.h>
+#elif port_aarch64
+#include <arch/aarch64/spinup.h>
 #endif
 
 
@@ -895,7 +897,7 @@ have_tm_tag:;
                    REPORTED_ADDR((uint64_t)(uintptr_t)stivale2_struct),
                    stivale2_hdr.stack, want_pmrs, want_pmrs, (uintptr_t)local_gdt);
 #elif port_aarch64
-    common_spinup(&pagemap, entry_point, 0, stivale2_hdr.stack, true, true);
+    common_spinup(&pagemap, entry_point, 0, stivale2_hdr.stack, true);
 #endif
 
 

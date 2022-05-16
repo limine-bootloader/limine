@@ -808,7 +808,7 @@ FEAT_END
     stivale_spinup(64, want_5lv, &pagemap, entry_point, 0,
                    reported_addr(stack), true, true, (uintptr_t)local_gdt);
 #elif port_aarch64
-    common_spinup(&pagemap, entry_point, 0, reported_addr(stack), true, true);
+    common_spinup(&pagemap, entry_point, 0, reported_addr(stack), true);
 #endif
 
     __builtin_unreachable();

@@ -4,9 +4,9 @@
 #include <lib/blib.h>
 #include <mm/vmm.h>
 
-noreturn void c(
-                 int bits, bool level5pg, pagemap_t *pagemap,
-                 uint64_t entry_point, uint64_t stivale_struct, uint64_t stack,
-                 bool enable_nx, bool wp);
+noreturn void common_spinup(
+                 pagemap_t *pagemap, uint64_t entry_point,
+                 uint64_t stivale_struct, uint64_t stack,
+                 bool enable_nx);
 
 #endif

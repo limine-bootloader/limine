@@ -25,9 +25,11 @@ vbar_entry(lower_el_spx_serror)
 );
 
 noreturn void common_spinup(
-                 int bits, bool level5pg, pagemap_t *pagemap,
-                 uint64_t entry_point, uint64_t stivale_struct, uint64_t stack,
-                 bool enable_nx, bool wp) {
+                 pagemap_t *pagemap, uint64_t entry_point,
+                 uint64_t stivale_struct, uint64_t stack,
+                 bool enable_nx) {
+    (void)enable_nx;
+    
     uint64_t sctlr, aa64mmfr0, currentel;
     asm (
         "MRS %[sctlr], SCTLR_EL1\n"

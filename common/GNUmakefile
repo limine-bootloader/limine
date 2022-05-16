@@ -373,7 +373,8 @@ ifeq ($(TARGET), uefi-aarch64)
 $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' full 64 '\.text'
-	printf "\xb7\x00" | dd if=/dev/stdin of=$(call MKESCAPE,$(BUILDDIR))/full.map.o bs=2 count=1 seek=9 conv=notrunc
+	$(LIMINE_CC) $(LIMINE_CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
+	rm -f '$(call SHESCAPE,$(BUILDDIR))/full.map.S' '$(call SHESCAPE,$(BUILDDIR))/full.map.d'
 
 $(call MKESCAPE,$(BUILDDIR))/BOOTAA64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.elf
 	$(LIMINE_OBJCOPY) -O binary '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'

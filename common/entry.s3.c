@@ -29,29 +29,29 @@
 void stage3_common(void);
 
 #if uefi == 1
-__attribute__((naked))
-EFI_STATUS efi_main(
-    __attribute__((unused)) EFI_HANDLE ImageHandle,
-    __attribute__((unused)) EFI_SYSTEM_TABLE *SystemTable) {
-    // Invalid return address of 0 to end stacktraces here
+// EFI_STATUS efi_main(
+//     __attribute__((unused)) EFI_HANDLE ImageHandle,
+//     __attribute__((unused)) EFI_SYSTEM_TABLE *SystemTable);
+
+// Invalid return address of 0 to end stacktraces here
+asm (
+    ".text\n"
+    ".globl efi_main\n"
+    "efi_main:\n"
 #if defined (__x86_64__)
-    asm (
-        "xorl %eax, %eax\n\t"
-        "movq %rax, (%rsp)\n\t"
-        "jmp uefi_entry\n\t"
-    );
+    "xorl %eax, %eax\n\t"
+    "movq %rax, (%rsp)\n\t"
+    "jmp uefi_entry\n\t"
 #elif defined (__i386__)
-    asm (
-        "xorl %eax, %eax\n\t"
-        "movl %eax, (%esp)\n\t"
-        "jmp uefi_entry\n\t"
-    );
+    "xorl %eax, %eax\n\t"
+    "movl %eax, (%esp)\n\t"
+    "jmp uefi_entry\n\t"
 #elif defined(__aarch64__)
-    asm("mov lr, xzr");
-    asm("bl uefi_entry");
-    asm("b .");
+    "mov lr, xzr\n"
+    "bl uefi_entry\n"
+    "b .\n"
 #endif
-}
+);
 
 noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     gST = SystemTable;

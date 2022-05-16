@@ -100,8 +100,8 @@ void dtb_skip_opcode(struct dtb_ref* ref) {
         ref->offset++;
         while (ref->offset & 3) ref->offset++;
         while (true) {
-            uint32_t typ = bswap32(*(uint32_t*)(ref->dtb->dtb + ref->offset));
-            if (typ == /* end node */ 2) break;
+            uint32_t subtype = bswap32(*(uint32_t*)(ref->dtb->dtb + ref->offset));
+            if (subtype == /* end node */ 2) break;
             dtb_skip_opcode(ref);
         }
         ref->offset += 4;

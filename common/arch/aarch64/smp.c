@@ -13,7 +13,18 @@ struct smp_information *init_smp(size_t    header_hack_size,
                                  bool      nx,
                                  uint64_t  hhdm,
                                  bool      wp) {
-    void* dtbptr = NULL;
+    (void)header_hack_size;
+    (void)header_ptr;
+    (void)cpu_count;
+    (void)_bsp_lapic_id;
+    (void)longmode;
+    (void)lv5;
+    (void)pagemap;
+    (void)x2apic;
+    (void)nx;
+    (void)hhdm;
+    (void)wp;
+
     struct dtb dtb;
     if (!dtb_init(&dtb)) return NULL;
 

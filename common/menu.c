@@ -538,57 +538,54 @@ __attribute__((used))
 static uintptr_t stack_at_first_entry = 0;
 #endif
 
-__attribute__((naked))
-noreturn void menu(__attribute__((unused)) bool timeout_enabled) {
+noreturn void menu(__attribute__((unused)) bool timeout_enabled);
+asm(
+".text\n"
+".globl menu\n"
+"menu:\n"
 #if defined (__i386__)
-    asm volatile (
-        "pop %eax\n\t"
-        "call 1f\n\t"
-        "1:\n\t"
-        "pop %eax\n\t"
-        "add $(2f - 1b), %eax\n\t"
-        "cmpl $0, (%eax)\n\t"
-        "jne 1f\n\t"
-        "mov %esp, (%eax)\n\t"
-        "jmp 3f\n\t"
-        "1:\n\t"
-        "mov (%esp), %edi\n\t"
-        "mov (%eax), %esp\n\t"
-        "push %edi\n\t"
-        "jmp 3f\n\t"
-        "2:\n\t"
-        ".long 0\n\t"
-        "3:\n\t"
-        "push $0\n\t"
-        "jmp _menu"
-    );
+    "pop %eax\n\t"
+    "call 1f\n\t"
+    "1:\n\t"
+    "pop %eax\n\t"
+    "add $(2f - 1b), %eax\n\t"
+    "cmpl $0, (%eax)\n\t"
+    "jne 1f\n\t"
+    "mov %esp, (%eax)\n\t"
+    "jmp 3f\n\t"
+    "1:\n\t"
+    "mov (%esp), %edi\n\t"
+    "mov (%eax), %esp\n\t"
+    "push %edi\n\t"
+    "jmp 3f\n\t"
+    "2:\n\t"
+    ".long 0\n\t"
+    "3:\n\t"
+    "push $0\n\t"
+    "jmp _menu"
 #elif defined (__x86_64__)
-    asm volatile (
-        "xor %eax, %eax\n\t"
-        "cmp %rax, stack_at_first_entry(%rip)\n\t"
-        "jne 1f\n\t"
-        "mov %rsp, stack_at_first_entry(%rip)\n\t"
-        "jmp 2f\n\t"
-        "1:\n\t"
-        "mov stack_at_first_entry(%rip), %rsp\n\t"
-        "2:\n\t"
-        "push $0\n\t"
-        "push $0\n\t"
-        "jmp _menu"
-    );
+    "xor %eax, %eax\n\t"
+    "cmp %rax, stack_at_first_entry(%rip)\n\t"
+    "jne 1f\n\t"
+    "mov %rsp, stack_at_first_entry(%rip)\n\t"
+    "jmp 2f\n\t"
+    "1:\n\t"
+    "mov stack_at_first_entry(%rip), %rsp\n\t"
+    "2:\n\t"
+    "push $0\n\t"
+    "push $0\n\t"
+    "jmp _menu"
 #elif defined (__aarch64__)
-    asm volatile(
-        "adr x19, stack_at_first_entry\n"
-        "ldr x18, [x19]\n"
-        "cmp x18, 0\n"
-        "bne 1f\n"
-        "mov x18, sp\n"
-        "str x18, [x19]\n"
-        "1: mov sp, x18\n"
-        "b _menu"
-    );
+    "adr x19, stack_at_first_entry\n"
+    "ldr x18, [x19]\n"
+    "cmp x18, 0\n"
+    "bne 1f\n"
+    "mov x18, sp\n"
+    "str x18, [x19]\n"
+    "1: mov sp, x18\n"
+    "b _menu"
 #endif
-}
+);
 
 static struct e820_entry_t *rewound_memmap = NULL;
 static size_t rewound_memmap_entries = 0;

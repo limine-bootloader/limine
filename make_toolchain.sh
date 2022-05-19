@@ -9,7 +9,7 @@ cd "$srcdir"
 
 TARGET=x86_64-elf
 BINUTILSVERSION=2.38
-GCCVERSION=11.3.0
+GCCVERSION=12.1.0
 NASMVERSION=2.15.05
 
 if command -v gmake; then

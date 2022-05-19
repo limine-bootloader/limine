@@ -2,26 +2,35 @@ OUTPUT_FORMAT(elf32-i386)
 OUTPUT_ARCH(i386)
 ENTRY(_start)
 
+PHDRS
+{
+    null    PT_NULL    FLAGS(0) ;
+    text_s2 PT_LOAD    FLAGS((1 << 0) | (1 << 2)) ;
+    data_s2 PT_LOAD    FLAGS((1 << 1) | (1 << 2)) ;
+    text_s3 PT_LOAD    FLAGS((1 << 0) | (1 << 2)) ;
+    data_s3 PT_LOAD    FLAGS((1 << 1) | (1 << 2)) ;
+}
+
 SECTIONS
 {
     . = 0x8000;
 
     .entry : {
         *(.entry)
-    }
+    } :text_s2
 
     .realmode : {
         *(.realmode)
-    }
+    } :text_s2
 
     .stage2.text : {
         *.s2.o(.text .text.*)
-    }
+    } :text_s2
 
     .stage2.build-id : {
         build_id_s2 = .;
         *build-id.s2.o(*)
-    }
+    } :data_s2
 
     .stage2.data : {
         *.s2.o(.no_unwind)
@@ -47,18 +56,18 @@ SECTIONS
 #else
         *(.stage2_map)
 #endif
-    }
+    } :data_s2
 
 #ifndef LINKER_STAGE2ONLY
     .stage3.text : {
         stage3_addr = .;
         *(.text .text.*)
-    }
+    } :text_s3
 
     .stage3.build-id : {
         build_id_s3 = .;
         *build-id.s3.o(*)
-    }
+    } :data_s3
 
     .stage3.data : {
         *(.rodata .rodata.*)
@@ -70,13 +79,10 @@ SECTIONS
         *(.no_unwind)
         data_begin = .;
         *(.data .data.*)
-    }
+    } :data_s3
 #endif
 
-    .note.gnu.build-id : {
-        *(.note.gnu.build-id)
-        limine_sys_size = . - 0x8000;
-    }
+    limine_sys_size = . - 0x8000;
 
     .bss : {
         bss_begin = .;
@@ -84,68 +90,72 @@ SECTIONS
         *(.bss .bss.*)
         bss_end = .;
         data_end = .;
-    }
+    } :data_s3
+
+    .note.gnu.build-id 0 : {
+        *(.note.gnu.build-id)
+    } :null
 
     .symtab 0 : {
         *(.symtab)
-    }
+    } :null
 
     .strtab 0 : {
         *(.strtab)
-    }
+    } :null
 
     .shstrtab 0 : {
         *(.shstrtab)
-    }
+    } :null
 
 #ifdef LINKER_DBG
     .debug_aranges 0 : {
         *(.debug_aranges)
-    }
+    } :null
 
     .debug_pubnames 0 : {
         *(.debug_pubnames)
-    }
+    } :null
 
     .debug_info 0 : {
         *(.debug_info)
-    }
+    } :null
 
     .debug_abbrev 0 : {
         *(.debug_abbrev)
-    }
+    } :null
 
     .debug_line 0 : {
         *(.debug_line)
-    }
+    } :null
 
     .debug_loclists 0 : {
         *(.debug_loclists)
-    }
+    } :null
 
     .debug_rnglists 0 : {
         *(.debug_rnglists)
-    }
+    } :null
 
     .debug_frame 0 : {
         *(.debug_frame)
-    }
+    } :null
 
     .debug_loc 0 : {
         *(.debug_loc)
-    }
+    } :null
 
     .debug_ranges 0 : {
         *(.debug_ranges)
-    }
+    } :null
 
     .debug_str 0 : {
         *(.debug_str)
-    }
+    } :null
 
     .debug_line_str 0 : {
         *(.debug_line_str)
-    }
+    } :null
 #endif
 
     /DISCARD/ : {

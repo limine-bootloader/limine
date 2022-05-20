@@ -15,24 +15,16 @@ SECTIONS
 {
     . = 0x8000;
 
-    .entry : {
+    .text.stage2 : {
         *(.entry)
-    } :text_s2
-
-    .realmode : {
         *(.realmode)
-    } :text_s2
-
-    .stage2.text : {
         *.s2.o(.text .text.*)
     } :text_s2
 
-    .stage2.build-id : {
+    .data.stage2 : {
         build_id_s2 = .;
         *build-id.s2.o(*)
-    } :data_s2
 
-    .stage2.data : {
         *.s2.o(.no_unwind)
         s2_data_begin = .;
         *.s2.o(.data .data.*)
@@ -59,17 +51,15 @@ SECTIONS
     } :data_s2
 
 #ifndef LINKER_STAGE2ONLY
-    .stage3.text : {
+    .text.stage3 : {
         stage3_addr = .;
         *(.text .text.*)
     } :text_s3
 
-    .stage3.build-id : {
+    .data.stage3 : {
         build_id_s3 = .;
         *build-id.s3.o(*)
-    } :data_s3
 
-    .stage3.data : {
         *(.rodata .rodata.*)
 #ifdef LINKER_NOMAP
         full_map = .;
@@ -82,7 +72,10 @@ SECTIONS
     } :data_s3
 #endif
 
-    limine_sys_size = . - 0x8000;
+    .note.gnu.build-id : {
+        *(.note.gnu.build-id)
+        limine_sys_size = . - 0x8000;
+    } :data_s3
 
     .bss : {
         bss_begin = .;
@@ -91,10 +84,6 @@ SECTIONS
         bss_end = .;
         data_end = .;
     } :data_s3
-
-    .note.gnu.build-id 0 : {
-        *(.note.gnu.build-id)
-    } :null
 
     .symtab 0 : {
         *(.symtab)

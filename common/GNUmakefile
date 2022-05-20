@@ -215,7 +215,7 @@ $(call MKESCAPE,$(BUILDDIR))/stage2.bin.gz: $(call MKESCAPE,$(BUILDDIR))/stage2.
 	gzip -n -9 < '$(call SHESCAPE,$<)' > '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/stage2.bin: $(call MKESCAPE,$(BUILDDIR))/limine.sys
-	dd if='$(call SHESCAPE,$<)' bs=$$(( 0x$$("$(LIMINE_READELF)" -S '$(call SHESCAPE,$(BUILDDIR))/limine.elf' | $(GREP) .stage3.text | $(SED) 's/^.*] //' | $(AWK) '{print $$3}' | $(SED) 's/^0*//') - 0x8000 )) count=1 of='$(call SHESCAPE,$@)' 2>/dev/null
+	dd if='$(call SHESCAPE,$<)' bs=$$(( 0x$$("$(LIMINE_READELF)" -S '$(call SHESCAPE,$(BUILDDIR))/limine.elf' | $(GREP) .text.stage3 | $(SED) 's/^.*] //' | $(AWK) '{print $$3}' | $(SED) 's/^0*//') - 0x8000 )) count=1 of='$(call SHESCAPE,$@)' 2>/dev/null
 
 $(call MKESCAPE,$(BUILDDIR))/stage2.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_stage2only.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \

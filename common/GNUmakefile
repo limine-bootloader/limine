@@ -175,7 +175,7 @@ endif
 override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.d))
 
 ifeq ($(TARGET), bios)
-all: $(call MKESCAPE,$(BUILDDIR))/limine_dbg.elf $(call MKESCAPE,$(BUILDDIR))/limine.sys $(call MKESCAPE,$(BUILDDIR))/stage2.bin.gz
+all: $(call MKESCAPE,$(BUILDDIR))/limine.sys $(call MKESCAPE,$(BUILDDIR))/stage2.bin.gz
 else ifeq ($(TARGET), uefi64)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI
 else ifeq ($(TARGET), uefi32)
@@ -264,14 +264,6 @@ $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tin
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		$(LIMINE_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s3.bin build-id.s3.o
 	$(LIMINE_LD) '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' '$(call OBJESCAPE,$^)' $(LIMINE_LDFLAGS) $(INTERNAL_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' -o '$(call SHESCAPE,$@)'
-
-$(call MKESCAPE,$(BUILDDIR))/linker_dbg.ld: linker_bios.ld.in
-	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
-	$(LIMINE_CC) -x c -E -P -undef -DLINKER_DBG linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_dbg.ld'
-
-$(call MKESCAPE,$(BUILDDIR))/limine_dbg.elf: $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/stage2.map.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_dbg.ld'
-	$(LIMINE_LD) '$(call OBJESCAPE,$^)' $(LIMINE_LDFLAGS) $(INTERNAL_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker_dbg.ld' -o '$(call SHESCAPE,$@)'
 
 endif
 

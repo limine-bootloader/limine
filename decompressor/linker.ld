@@ -2,6 +2,12 @@ OUTPUT_FORMAT(elf32-i386)
 OUTPUT_ARCH(i386)
 ENTRY(_start)
 
+PHDRS
+{
+    text  PT_LOAD    FLAGS((1 << 0) | (1 << 2)) ;
+    data  PT_LOAD    FLAGS((1 << 1) | (1 << 2)) ;
+}
+
 SECTIONS
 {
     . = 0x70000;
@@ -9,36 +15,21 @@ SECTIONS
     .text : {
         *(.entry)
         *(.text .text.*)
-    }
+    } :text
 
     .rodata : {
         *(.rodata .rodata.*)
-    }
-
-    .data : {
         *(.data .data.*)
-    }
+    } :data
 
     .bss : {
         bss_begin = .;
         *(COMMON)
         *(.bss .bss.*)
         bss_end = .;
-    }
-
-    .symtab 0 : {
-        *(.symtab)
-    }
-
-    .strtab 0 : {
-        *(.strtab)
-    }
-
-    .shstrtab 0 : {
-        *(.shstrtab)
-    }
+    } :data
 
     /DISCARD/ : {
-        *(*)
+        *.o(*)
     }
 }

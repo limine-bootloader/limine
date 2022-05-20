@@ -4,7 +4,6 @@ ENTRY(_start)
 
 PHDRS
 {
-    null    PT_NULL    FLAGS(0) ;
     text    PT_LOAD    FLAGS((1 << 0) | (1 << 2)) ;
     data    PT_LOAD    FLAGS((1 << 1) | (1 << 2)) ;
     dynamic PT_DYNAMIC FLAGS((1 << 1) | (1 << 2)) ;
@@ -85,71 +84,7 @@ SECTIONS
 
     __image_end = __data_end;
 
-    .symtab 0 : {
-        *(.symtab)
-    } :null
-
-    .strtab 0 : {
-        *(.strtab)
-    } :null
-
-    .shstrtab 0 : {
-        *(.shstrtab)
-    } :null
-
     /DISCARD/ : {
-        *.32.o(.debug*)
-    }
-
-    .debug_aranges 0 : {
-        *(.debug_aranges)
-    } :null
-
-    .debug_pubnames 0 : {
-        *(.debug_pubnames)
-    } :null
-
-    .debug_info 0 : {
-        *(.debug_info)
-    } :null
-
-    .debug_abbrev 0 : {
-        *(.debug_abbrev)
-    } :null
-
-    .debug_line 0 : {
-        *(.debug_line)
-    } :null
-
-    .debug_loclists 0 : {
-        *(.debug_loclists)
-    } :null
-
-    .debug_rnglists 0 : {
-        *(.debug_rnglists)
-    } :null
-
-    .debug_frame 0 : {
-        *(.debug_frame)
-    } :null
-
-    .debug_loc 0 : {
-        *(.debug_loc)
-    } :null
-
-    .debug_ranges 0 : {
-        *(.debug_ranges)
-    } :null
-
-    .debug_str 0 : {
-        *(.debug_str)
-    } :null
-
-    .debug_line_str 0 : {
-        *(.debug_line_str)
-    } :null
-
-    /DISCARD/ : {
-        *(*)
+        *.o(*)
     }
 }

@@ -22,7 +22,7 @@ SECTIONS
 
     .data.stage2 : {
         build_id_s2 = .;
-        *build-id.s2.o(*)
+        KEEP(*build-id.s2.o(*))
 
         *.s2.o(.no_unwind)
         s2_data_begin = .;
@@ -57,7 +57,7 @@ SECTIONS
 
     .data.stage3 : {
         build_id_s3 = .;
-        *build-id.s3.o(*)
+        KEEP(*build-id.s3.o(*))
 
         *(.rodata .rodata.*)
 #ifdef LINKER_NOMAP

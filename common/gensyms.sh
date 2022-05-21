@@ -5,7 +5,7 @@ set -e
 LC_ALL=C
 export LC_ALL
 
-TMP0=$(mktemp)
+TMP0="$(mktemp)"
 
 cat >"$TMP0" <<EOF
 #! /bin/sh
@@ -21,10 +21,12 @@ chmod +x "$TMP0"
 
 rm "$TMP0"
 
-TMP1=$(mktemp)
-TMP2=$(mktemp)
-TMP3=$(mktemp)
-TMP4=$(mktemp)
+TMP1="$(mktemp)"
+TMP2="$(mktemp)"
+TMP3="$(mktemp)"
+TMP4="$(mktemp)"
+
+trap "rm -f '$TMP1' '$TMP2' '$TMP3' '$TMP4'; trap - EXIT; exit" EXIT INT TERM QUIT HUP
 
 "$LIMINE_OBJDUMP" -t "$1" | ( "$SED" '/[[:<:]]d[[:>:]]/d' 2>/dev/null || "$SED" '/\bd\b/d' ) | sort > "$TMP1"
 "$GREP" "$4" < "$TMP1" | cut -d' ' -f1 > "$TMP2"
@@ -45,4 +47,3 @@ elif [ "$3" = "64" ]; then
 fi
 
 mv "$TMP4" "$2.map.S"
-rm "$TMP1" "$TMP2" "$TMP3"

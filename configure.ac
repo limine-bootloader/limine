@@ -145,10 +145,10 @@ fi
 
 AC_SUBST(BUILD_CD_EFI, [$BUILD_CD_EFI])
 
-AC_ARG_VAR(TOOLCHAIN, [Alternative toolchain prefix [default: limine]])
+AC_ARG_VAR(TOOLCHAIN, [Alternative toolchain prefix (or 'llvm') [default: limine]])
 test "x$TOOLCHAIN" = "x" && TOOLCHAIN='limine'
 
-AC_ARG_VAR(LIMINE_CC, [C compiler command for Limine [default: $TOOLCHAIN-gcc]])
+AC_ARG_VAR(LIMINE_CC, [C compiler command for Limine])
 
 AC_DEFUN([CC_ERROR_MSG], [
     AC_MSG_ERROR([no suitable LIMINE_CC found, run $srcdir/make_toolchain.sh or install x86_64 GCC/Clang])
@@ -167,10 +167,22 @@ else
     fi
     AC_CHECK_PROG([LIMINE_CC_1], [$LIMINE_CC], [yes])
     if ! test "x$LIMINE_CC_1" = "xyes"; then
-        LIMINE_CC="$CC"
+        LIMINE_CC="$TOOLCHAIN-cc"
         AC_CHECK_PROG([LIMINE_CC_2], [$LIMINE_CC], [yes])
         if ! test "x$LIMINE_CC_2" = "xyes"; then
-            CC_ERROR_MSG
+            LIMINE_CC="gcc"
+            AC_CHECK_PROG([LIMINE_CC_3], [$LIMINE_CC], [yes])
+            if ! test "x$LIMINE_CC_3" = "xyes"; then
+                LIMINE_CC="clang"
+                AC_CHECK_PROG([LIMINE_CC_4], [$LIMINE_CC], [yes])
+                if ! test "x$LIMINE_CC_4" = "xyes"; then
+                    LIMINE_CC="cc"
+                    AC_CHECK_PROG([LIMINE_CC_5], [$LIMINE_CC], [yes])
+                    if ! test "x$LIMINE_CC_5" = "xyes"; then
+                        CC_ERROR_MSG
+                    fi
+                fi
+            fi
         fi
     fi
 fi
@@ -199,12 +211,12 @@ if ! test "x$CC_MACHINE" = "xx86_64"; then
 fi
 
 AC_DEFUN([GET_BINUTILS_PROG], [
-    AC_ARG_VAR(LIMINE_$1, [$3 command for Limine [default: $TOOLCHAIN-$2]])
+    AC_ARG_VAR(LIMINE_$1, [$3 command for Limine])
 
     if ! test "x$LIMINE_$1" = "x"; then
         AC_CHECK_PROG([LIMINE_$1_0], [$LIMINE_$1], [yes])
         if ! test "x$LIMINE_$1_0" = "xyes"; then
-            AC_MSG_ERROR([LIMINE_$1 ($LIMINE_$1) is not a suitable $3])
+            AC_MSG_ERROR([LIMINE_$1 ($LIMINE_$1) not found])
         fi
     else
         if test "$TOOLCHAIN" = 'llvm' && test '$2' = 'ld'; then

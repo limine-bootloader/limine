@@ -9,7 +9,7 @@
 #include <lib/fb.h>
 
 bool init_gop(struct fb_info *ret,
-              uint16_t target_width, uint16_t target_height, uint16_t target_bpp);
+              uint64_t target_width, uint64_t target_height, uint16_t target_bpp);
 
 #endif
 

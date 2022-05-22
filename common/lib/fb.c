@@ -7,7 +7,7 @@
 #include <mm/pmm.h>
 
 bool fb_init(struct fb_info *ret,
-             uint16_t target_width, uint16_t target_height, uint16_t target_bpp) {
+             uint64_t target_width, uint64_t target_height, uint16_t target_bpp) {
     bool r;
 
 #if bios == 1

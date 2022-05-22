@@ -34,7 +34,7 @@ static void linear_mask_to_mask_shift(
 
 // Most of this code taken from https://wiki.osdev.org/GOP
 
-static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, int bpp) {
+static bool try_mode(struct fb_info *ret, size_t mode, uint64_t width, uint64_t height, int bpp) {
     EFI_STATUS status;
 
     EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
@@ -90,8 +90,8 @@ static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, in
     }
 
     if (width != 0 && height != 0 && bpp != 0) {
-        if ((int)mode_info->HorizontalResolution != width
-         || (int)mode_info->VerticalResolution != height
+        if ((uint64_t)mode_info->HorizontalResolution != width
+         || (uint64_t)mode_info->VerticalResolution != height
          || (int)ret->framebuffer_bpp != bpp)
             return false;
     }
@@ -128,7 +128,7 @@ static bool try_mode(struct fb_info *ret, size_t mode, int width, int height, in
 static no_unwind size_t preset_mode = INVALID_PRESET_MODE;
 
 bool init_gop(struct fb_info *ret,
-              uint16_t target_width, uint16_t target_height, uint16_t target_bpp) {
+              uint64_t target_width, uint64_t target_height, uint16_t target_bpp) {
     ret->default_res = false;
 
     EFI_STATUS status;

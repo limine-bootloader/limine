@@ -126,6 +126,7 @@ static bool try_mode(struct fb_info *ret, size_t mode, uint64_t width, uint64_t 
 #define INVALID_PRESET_MODE 0xffffffff
 
 static no_unwind size_t preset_mode = INVALID_PRESET_MODE;
+static no_unwind EFI_GRAPHICS_OUTPUT_MODE_INFORMATION preset_mode_info;
 
 bool init_gop(struct fb_info *ret,
               uint64_t target_width, uint64_t target_height, uint16_t target_bpp) {
@@ -146,7 +147,12 @@ bool init_gop(struct fb_info *ret,
 
     if (status == EFI_NOT_STARTED) {
         status = gop->SetMode(gop, 0);
+        if (status) {
+            panic(false, "gop: Initialisation failed");
+        }
     }
+
+    status = gop->QueryMode(gop, gop->Mode->Mode, &mode_info_size, &mode_info);
 
     if (status) {
         panic(false, "gop: Initialisation failed");
@@ -154,11 +160,13 @@ bool init_gop(struct fb_info *ret,
 
     if (preset_mode == INVALID_PRESET_MODE) {
         preset_mode = gop->Mode->Mode;
+        memcpy(&preset_mode_info, mode_info, mode_info_size);
         current_video_mode = preset_mode;
     }
 
     struct resolution fallback_resolutions[] = {
-        { 0,    0,   0  },   // Overridden by preset mode
+        { 0,    0,   0  },   // Overridden by EDID
+        { 0,    0,   0  },   // Overridden by preset
         { 1024, 768, 32 },
         { 800,  600, 32 },
         { 640,  480, 32 },
@@ -175,23 +183,6 @@ bool init_gop(struct fb_info *ret,
     size_t current_fallback = 0;
 
     if (!target_width || !target_height || !target_bpp) {
-        ret->default_res = true;
-
-        struct edid_info_struct *edid_info = get_edid_info();
-        if (edid_info != NULL) {
-            int edid_width   = (int)edid_info->det_timing_desc1[2];
-                edid_width  += ((int)edid_info->det_timing_desc1[4] & 0xf0) << 4;
-            int edid_height  = (int)edid_info->det_timing_desc1[5];
-                edid_height += ((int)edid_info->det_timing_desc1[7] & 0xf0) << 4;
-            if (edid_width && edid_height) {
-                target_width  = edid_width;
-                target_height = edid_height;
-                target_bpp    = 32;
-                printv("gop: EDID detected screen resolution of %ux%u\n",
-                       target_width, target_height);
-                goto retry;
-            }
-        }
         goto fallback;
     } else {
         printv("gop: Requested resolution of %ux%ux%u\n",
@@ -208,17 +199,37 @@ fallback:
     ret->default_res = true;
 
     if (current_fallback == 0) {
+        current_fallback++;
+
+        struct edid_info_struct *edid_info = get_edid_info();
+        if (edid_info != NULL) {
+            uint64_t edid_width = (uint64_t)edid_info->det_timing_desc1[2];
+                     edid_width += ((uint64_t)edid_info->det_timing_desc1[4] & 0xf0) << 4;
+            uint64_t edid_height = (uint64_t)edid_info->det_timing_desc1[5];
+                     edid_height += ((uint64_t)edid_info->det_timing_desc1[7] & 0xf0) << 4;
+            if (edid_width >= preset_mode_info.HorizontalResolution
+             && edid_height >= preset_mode_info.VerticalResolution) {
+                target_width  = edid_width;
+                target_height = edid_height;
+                target_bpp    = 32;
+                goto retry;
+            }
+        }
+    }
+
+    if (current_fallback == 1) {
+        current_fallback++;
+
         if (try_mode(ret, preset_mode, 0, 0, 0))
             return true;
-
-        current_fallback++;
     }
 
     if (current_fallback < SIZEOF_ARRAY(fallback_resolutions)) {
+        current_fallback++;
+
         target_width  = fallback_resolutions[current_fallback].width;
         target_height = fallback_resolutions[current_fallback].height;
         target_bpp    = fallback_resolutions[current_fallback].bpp;
-        current_fallback++;
         goto retry;
     }
 

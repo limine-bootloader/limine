@@ -472,8 +472,10 @@ FEAT_END
 
     struct fb_info fb;
 
-    // Terminal feature
     uint64_t *term_fb_ptr = NULL;
+    uint64_t *term_fb_legacy_ptr = NULL;
+
+    // Terminal feature
 FEAT_START
     struct limine_terminal_request *terminal_request = get_request(LIMINE_TERMINAL_REQUEST);
     if (terminal_request == NULL) {
@@ -534,19 +536,80 @@ FEAT_START
     goto skip_fb_init;
 FEAT_END
 
-    // Framebuffer feature
+    // Terminal feature (legacy)
 FEAT_START
+    struct limine_terminal_legacy_request *terminal_request = get_request(LIMINE_TERMINAL_LEGACY_REQUEST);
+    if (term_fb_ptr != NULL || terminal_request == NULL) {
+        break; // next feature
+    }
+
+    struct limine_terminal_legacy_response *terminal_response =
+        ext_mem_alloc(sizeof(struct limine_terminal_legacy_response));
+
+    struct limine_terminal_legacy *terminal = ext_mem_alloc(sizeof(struct limine_terminal_legacy));
+
+    quiet = false;
+    serial = false;
+
+    term_vbe(req_width, req_height);
+
+    if (current_video_mode < 0) {
+        panic(true, "limine: Failed to initialise terminal");
+    }
+
+    fb = fbinfo;
+
+    if (terminal_request->callback != 0) {
+#if defined (__i386__)
+        term_callback = stivale2_term_callback;
+        stivale2_term_callback_ptr = terminal_request->callback;
+#elif defined (__x86_64__)
+        term_callback = (void *)terminal_request->callback;
+#endif
+    }
+
+    term_arg = reported_addr(terminal);
+
+#if defined (__i386__)
+    if (stivale2_rt_stack == NULL) {
+        stivale2_rt_stack = ext_mem_alloc(16384) + 16384;
+    }
+
+    stivale2_term_write_ptr = (uintptr_t)term_write_shim;
+    terminal_response->write = (uintptr_t)(void *)stivale2_term_write_entry;
+#elif defined (__x86_64__)
+    terminal_response->write = (uintptr_t)term_write_shim;
+#endif
+
+    term_fb_legacy_ptr = &terminal->framebuffer;
+
+    terminal->columns = term_cols;
+    terminal->rows = term_rows;
+
+    uint64_t *term_list = ext_mem_alloc(1 * sizeof(uint64_t));
+    term_list[0] = reported_addr(terminal);
+
+    terminal_response->terminal_count = 1;
+    terminal_response->terminals = reported_addr(term_list);
+
+    terminal_request->response = reported_addr(terminal_response);
+
+    goto skip_fb_init;
+FEAT_END
+
     term_deinit();
 
     if (!fb_init(&fb, req_width, req_height, req_bpp)) {
         panic(true, "limine: Could not acquire framebuffer");
     }
 
-skip_fb_init:;
+skip_fb_init:
     memmap_alloc_range(fb.framebuffer_addr,
                        (uint64_t)fb.framebuffer_pitch * fb.framebuffer_height,
                        MEMMAP_FRAMEBUFFER, false, false, false, true);
 
+    // Framebuffer feature
+FEAT_START
     // For now we only support 1 framebuffer
     struct limine_framebuffer *fbp = ext_mem_alloc(sizeof(struct limine_framebuffer));
 
@@ -561,6 +624,51 @@ skip_fb_init:;
 
     struct limine_framebuffer_response *framebuffer_response =
         ext_mem_alloc(sizeof(struct limine_framebuffer_response));
+
+    struct edid_info_struct *edid_info = get_edid_info();
+    if (edid_info != NULL) {
+        fbp->edid_size = sizeof(struct edid_info_struct);
+        fbp->edid = reported_addr(edid_info);
+    }
+
+    fbp->memory_model     = LIMINE_FRAMEBUFFER_RGB;
+    fbp->address          = reported_addr((void *)(uintptr_t)fb.framebuffer_addr);
+    fbp->width            = fb.framebuffer_width;
+    fbp->height           = fb.framebuffer_height;
+    fbp->bpp              = fb.framebuffer_bpp;
+    fbp->pitch            = fb.framebuffer_pitch;
+    fbp->red_mask_size    = fb.red_mask_size;
+    fbp->red_mask_shift   = fb.red_mask_shift;
+    fbp->green_mask_size  = fb.green_mask_size;
+    fbp->green_mask_shift = fb.green_mask_shift;
+    fbp->blue_mask_size   = fb.blue_mask_size;
+    fbp->blue_mask_shift  = fb.blue_mask_shift;
+
+    uint64_t *fb_list = ext_mem_alloc(1 * sizeof(uint64_t));
+    fb_list[0] = reported_addr(fbp);
+
+    framebuffer_response->framebuffer_count = 1;
+    framebuffer_response->framebuffers = reported_addr(fb_list);
+
+    framebuffer_request->response = reported_addr(framebuffer_response);
+FEAT_END
+
+    // Framebuffer feature (legacy)
+FEAT_START
+    // For now we only support 1 framebuffer
+    struct limine_framebuffer_legacy *fbp = ext_mem_alloc(sizeof(struct limine_framebuffer_legacy));
+
+    if (term_fb_legacy_ptr != NULL) {
+        *term_fb_legacy_ptr = reported_addr(fbp);
+    }
+
+    struct limine_framebuffer_legacy_request *framebuffer_request = get_request(LIMINE_FRAMEBUFFER_LEGACY_REQUEST);
+    if (framebuffer_request == NULL) {
+        break; // next feature
+    }
+
+    struct limine_framebuffer_legacy_response *framebuffer_response =
+        ext_mem_alloc(sizeof(struct limine_framebuffer_legacy_response));
 
     struct edid_info_struct *edid_info = get_edid_info();
     if (edid_info != NULL) {

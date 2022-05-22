@@ -23,6 +23,14 @@ struct limine_framebuffer_request framebuffer_request = {
 __attribute__((section(".limine_reqs")))
 void *framebuffer_req = &framebuffer_request;
 
+struct limine_framebuffer_legacy_request framebuffer_legacy_request = {
+    .id = LIMINE_FRAMEBUFFER_LEGACY_REQUEST,
+    .revision = 0, .response = NULL
+};
+
+__attribute__((section(".limine_reqs")))
+void *framebuffer_legacy_req = &framebuffer_legacy_request;
+
 struct limine_bootloader_info_request bootloader_info_request = {
     .id = LIMINE_BOOTLOADER_INFO_REQUEST,
     .revision = 0, .response = NULL
@@ -118,6 +126,14 @@ struct limine_terminal_request _terminal_request = {
 
 __attribute__((section(".limine_reqs")))
 void *terminal_req = &_terminal_request;
+
+struct limine_terminal_legacy_request _terminal_legacy_request = {
+    .id = LIMINE_TERMINAL_LEGACY_REQUEST,
+    .revision = 0, .response = NULL
+};
+
+__attribute__((section(".limine_reqs")))
+void *terminal_legacy_req = &_terminal_legacy_request;
 
 static char *get_memmap_type(uint64_t type) {
     switch (type) {
@@ -276,6 +292,34 @@ FEAT_END
 
 FEAT_START
     e9_printf("");
+    if (framebuffer_legacy_request.response == NULL) {
+        e9_printf("Framebuffer (legacy) not passed");
+        break;
+    }
+    struct limine_framebuffer_legacy_response *fb_response = framebuffer_legacy_request.response;
+    e9_printf("Framebuffers feature (legacy), revision %d", fb_response->revision);
+    e9_printf("%d framebuffer(s)", fb_response->framebuffer_count);
+    for (size_t i = 0; i < fb_response->framebuffer_count; i++) {
+        struct limine_framebuffer_legacy *fb = fb_response->framebuffers[i];
+        e9_printf("Address: %x", fb->address);
+        e9_printf("Width: %d", fb->width);
+        e9_printf("Height: %d", fb->height);
+        e9_printf("Pitch: %d", fb->pitch);
+        e9_printf("BPP: %d", fb->bpp);
+        e9_printf("Memory model: %d", fb->memory_model);
+        e9_printf("Red mask size: %d", fb->red_mask_size);
+        e9_printf("Red mask shift: %d", fb->red_mask_shift);
+        e9_printf("Green mask size: %d", fb->green_mask_size);
+        e9_printf("Green mask shift: %d", fb->green_mask_shift);
+        e9_printf("Blue mask size: %d", fb->blue_mask_size);
+        e9_printf("Blue mask shift: %d", fb->blue_mask_shift);
+        e9_printf("EDID size: %d", fb->edid_size);
+        e9_printf("EDID at: %x", fb->edid);
+    }
+FEAT_END
+
+FEAT_START
+    e9_printf("");
     if (kf_request.response == NULL) {
         e9_printf("Kernel file not passed");
         break;
@@ -375,6 +419,24 @@ FEAT_START
     e9_printf("%d terminal(s)", term_response->terminal_count);
     for (size_t i = 0; i < term_response->terminal_count; i++) {
         struct limine_terminal *terminal = term_response->terminals[i];
+        e9_printf("Columns: %d", terminal->columns);
+        e9_printf("Rows: %d", terminal->rows);
+        e9_printf("Using framebuffer: %x", terminal->framebuffer);
+    }
+    e9_printf("Write function at: %x", term_response->write);
+FEAT_END
+
+FEAT_START
+    e9_printf("");
+    if (_terminal_legacy_request.response == NULL) {
+        e9_printf("Terminal (legacy) not passed");
+        break;
+    }
+    struct limine_terminal_legacy_response *term_response = _terminal_legacy_request.response;
+    e9_printf("Terminal feature (legacy), revision %d", term_response->revision);
+    e9_printf("%d terminal(s)", term_response->terminal_count);
+    for (size_t i = 0; i < term_response->terminal_count; i++) {
+        struct limine_terminal_legacy *terminal = term_response->terminals[i];
         e9_printf("Columns: %d", terminal->columns);
         e9_printf("Rows: %d", terminal->rows);
         e9_printf("Using framebuffer: %x", terminal->framebuffer);

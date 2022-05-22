@@ -5,10 +5,6 @@
 Limine is a modern, advanced x86/x86_64 BIOS/UEFI multiprotocol bootloader, used
 as the reference implementation for the [Limine boot protocol](/PROTOCOL.md).
 
-### Support Limine
-Like Limine and want to support it? Donate Bitcoin to
-`bc1q00d59y75crpapw7qp8sea5j5sx6l4k2ssjylf9` :)
-
 ### Limine's boot menu
 
 ![Reference screenshot](/screenshot.png?raw=true "Reference screenshot")
@@ -50,9 +46,9 @@ For example, to clone the latest binary release of the `v3.x` branch one can do
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example `v3.0`)
+or, to clone a specific binary point release (for example `v3.5`)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v3.5-binary --depth=1
 ```
 
 `limine-deploy` binaries are provided for Windows.

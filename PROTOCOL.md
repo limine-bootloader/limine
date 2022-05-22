@@ -248,7 +248,7 @@ direct map.
 
 ID:
 ```c
-#define LIMINE_TERMINAL_REQUEST { LIMINE_COMMON_MAGIC, 0x0785a0aea5d0750f, 0x1c1936fee0d6cf6e }
+#define LIMINE_TERMINAL_REQUEST { LIMINE_COMMON_MAGIC, 0xc8ac59310c2b0844, 0xa68d0c7265d38878 }
 ```
 
 Request:
@@ -291,8 +291,8 @@ string to print.
 
 ```c
 struct limine_terminal {
-    uint32_t columns;
-    uint32_t rows;
+    uint64_t columns;
+    uint64_t rows;
     struct limine_framebuffer *framebuffer;
 };
 ```
@@ -471,7 +471,7 @@ The terminal should strive for Linux console compatibility.
 
 ID:
 ```c
-#define LIMINE_FRAMEBUFFER_REQUEST { LIMINE_COMMON_MAGIC, 0xcbfe81d7dd2d1977, 0x063150319ebc9b71 }
+#define LIMINE_FRAMEBUFFER_REQUEST { LIMINE_COMMON_MAGIC, 0x9d5827dcd881dd75, 0xa3148604f6fab11b }
 ```
 
 Request:
@@ -502,10 +502,10 @@ struct limine_framebuffer_response {
 
 struct limine_framebuffer {
     void *address;
-    uint16_t width;
-    uint16_t height;
-    uint16_t pitch;
-    uint16_t bpp;
+    uint64_t width;
+    uint64_t height;
+    uint64_t pitch;
+    uint16_t bpp; // Bits per pixel
     uint8_t memory_model;
     uint8_t red_mask_size;
     uint8_t red_mask_shift;
@@ -513,7 +513,7 @@ struct limine_framebuffer {
     uint8_t green_mask_shift;
     uint8_t blue_mask_size;
     uint8_t blue_mask_shift;
-    uint8_t unused;
+    uint8_t unused[7];
     uint64_t edid_size;
     void *edid;
 };

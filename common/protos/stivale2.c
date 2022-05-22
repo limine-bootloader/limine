@@ -27,6 +27,7 @@
 #include <pxe/tftp.h>
 #include <drivers/edid.h>
 #include <drivers/vga_textmode.h>
+#include <drivers/gop.h>
 #include <lib/rand.h>
 
 #define REPORTED_ADDR(PTR) \
@@ -538,6 +539,9 @@ failed_to_load_header_section:
             term_textmode();
             textmode = true;
         } else {
+#if uefi == 1
+            gop_force_16 = true;
+#endif
             term_vbe(req_width, req_height);
 
             if (current_video_mode < 0) {
@@ -606,6 +610,9 @@ failed_to_load_header_section:
     if (hdrtag != NULL || (avtag != NULL && uefi) || (avtag != NULL && preference == 0)) {
         term_deinit();
 
+#if uefi == 1
+        gop_force_16 = true;
+#endif
         if (fb_init(fb, req_width, req_height, req_bpp)) {
 have_fb_tag:;
             struct stivale2_struct_tag_framebuffer *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_framebuffer));

@@ -16,6 +16,7 @@
 #include <lib/acpi.h>
 #include <drivers/edid.h>
 #include <drivers/vga_textmode.h>
+#include <drivers/gop.h>
 
 noreturn void linux_spinup(void *entry, void *boot_params);
 
@@ -513,6 +514,9 @@ bool linux_load(char *config, char *cmdline) {
         parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
     struct fb_info fbinfo;
+#if uefi == 1
+    gop_force_16 = true;
+#endif
     if (!fb_init(&fbinfo, req_width, req_height, req_bpp)) {
 #if uefi == 1
         panic(true, "linux: Unable to set video mode");

@@ -34,6 +34,8 @@ static void linear_mask_to_mask_shift(
 
 // Most of this code taken from https://wiki.osdev.org/GOP
 
+bool gop_force_16 = false;
+
 static bool try_mode(struct fb_info *ret, size_t mode, uint64_t width, uint64_t height, int bpp) {
     EFI_STATUS status;
 
@@ -94,6 +96,14 @@ static bool try_mode(struct fb_info *ret, size_t mode, uint64_t width, uint64_t 
          || (uint64_t)mode_info->VerticalResolution != height
          || (int)ret->framebuffer_bpp != bpp)
             return false;
+    }
+
+    if (gop_force_16) {
+        if (mode_info->HorizontalResolution >= 65536
+         || mode_info->VerticalResolution >= 65536
+         || mode_info->PixelsPerScanLine * (ret->framebuffer_bpp / 8) >= 65536) {
+            return false;
+        }
     }
 
     printv("gop: Found matching mode %x, attempting to set...\n", mode);
@@ -191,8 +201,10 @@ bool init_gop(struct fb_info *ret,
 
 retry:
     for (size_t i = 0; i < modes_count; i++) {
-        if (try_mode(ret, i, target_width, target_height, target_bpp))
+        if (try_mode(ret, i, target_width, target_height, target_bpp)) {
+            gop_force_16 = false;
             return true;
+        }
     }
 
 fallback:
@@ -220,8 +232,10 @@ fallback:
     if (current_fallback == 1) {
         current_fallback++;
 
-        if (try_mode(ret, preset_mode, 0, 0, 0))
+        if (try_mode(ret, preset_mode, 0, 0, 0)) {
+            gop_force_16 = false;
             return true;
+        }
     }
 
     if (current_fallback < SIZEOF_ARRAY(fallback_resolutions)) {
@@ -233,6 +247,7 @@ fallback:
         goto retry;
     }
 
+    gop_force_16 = false;
     return false;
 }
 

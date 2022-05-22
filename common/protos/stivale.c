@@ -24,6 +24,7 @@
 #include <mm/pmm.h>
 #include <stivale.h>
 #include <drivers/vga_textmode.h>
+#include <drivers/gop.h>
 
 #define REPORTED_ADDR(PTR) \
     ((PTR) + ((stivale_hdr.flags & (1 << 3)) ? \
@@ -309,6 +310,9 @@ bool stivale_load(char *config, char *cmdline) {
             parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
         struct fb_info fbinfo;
+#if uefi == 1
+        gop_force_16 = true;
+#endif
         if (!fb_init(&fbinfo, req_width, req_height, req_bpp))
             panic(true, "stivale: Unable to set video mode");
 

@@ -123,6 +123,11 @@ static void term_write_shim(uint64_t context, uint64_t buf, uint64_t count) {
     term_write(buf, count);
 }
 
+static noreturn void fb_too_big(void) {
+    panic(true, "limine: Framebuffer is too large for the legacy terminal/framebuffer requests to handle.\n"
+                "               Please update kernel to the new requests, or file a bug report to the upstream kernel if necessary.");
+}
+
 bool limine_load(char *config, char *cmdline) {
     uint32_t eax, ebx, ecx, edx;
 
@@ -559,6 +564,11 @@ FEAT_START
 
     fb = fbinfo;
 
+    if (fb.framebuffer_width >= 65536 || fb.framebuffer_height >= 65536
+     || fb.framebuffer_pitch >= 65536) {
+        fb_too_big();
+    }
+
     if (terminal_request->callback != 0) {
 #if defined (__i386__)
         term_callback = stivale2_term_callback;
@@ -651,6 +661,8 @@ FEAT_START
     framebuffer_response->framebuffers = reported_addr(fb_list);
 
     framebuffer_request->response = reported_addr(framebuffer_response);
+
+    goto no_legacy_fb;
 FEAT_END
 
     // Framebuffer feature (legacy)
@@ -665,6 +677,11 @@ FEAT_START
     struct limine_framebuffer_legacy_request *framebuffer_request = get_request(LIMINE_FRAMEBUFFER_LEGACY_REQUEST);
     if (framebuffer_request == NULL) {
         break; // next feature
+    }
+
+    if (fb.framebuffer_width >= 65536 || fb.framebuffer_height >= 65536
+     || fb.framebuffer_pitch >= 65536) {
+        fb_too_big();
     }
 
     struct limine_framebuffer_legacy_response *framebuffer_response =
@@ -698,6 +715,7 @@ FEAT_START
     framebuffer_request->response = reported_addr(framebuffer_response);
 FEAT_END
 
+no_legacy_fb:;
     // Boot time feature
 FEAT_START
     struct limine_boot_time_request *boot_time_request = get_request(LIMINE_BOOT_TIME_REQUEST);

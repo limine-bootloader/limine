@@ -232,9 +232,19 @@ fallback:
     if (current_fallback == 1) {
         current_fallback++;
 
-        if (try_mode(ret, preset_mode, 0, 0, 0)) {
+        uint16_t preset_mode_bpp = linear_masks_to_bpp(preset_mode_info.PixelInformation.RedMask,
+                                                       preset_mode_info.PixelInformation.GreenMask,
+                                                       preset_mode_info.PixelInformation.BlueMask,
+                                                       preset_mode_info.PixelInformation.ReservedMask);
+
+        if (preset_mode_bpp == 32 && try_mode(ret, preset_mode, 0, 0, 0)) {
             gop_force_16 = false;
             return true;
+        } else {
+            target_width = preset_mode_info.HorizontalResolution;
+            target_height = preset_mode_info.VerticalResolution;
+            target_bpp = 32;
+            goto retry;
         }
     }
 

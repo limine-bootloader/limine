@@ -172,6 +172,31 @@ no_unwind bool efi_boot_services_exited = false;
 
 #define EFI_COPY_MAX_ENTRIES 512
 
+#if defined (__aarch64__)
+extern symbol vbar;
+#define vbar_entry(what) ".align 7\nb .\n.asciz \"vbar_el1 entry: " #what "\"\n"
+asm("\
+.align 11\n\
+vbar:"
+vbar_entry(curr_el_sp0_sync)
+vbar_entry(curr_el_sp0_irq)
+vbar_entry(curr_el_sp0_fiq)
+vbar_entry(curr_el_sp0_serror)
+vbar_entry(curr_el_spx_sync)
+vbar_entry(curr_el_spx_irq)
+vbar_entry(curr_el_spx_fiq)
+vbar_entry(curr_el_spx_serror)
+vbar_entry(lower_el_sp0_sync)
+vbar_entry(lower_el_sp0_irq)
+vbar_entry(lower_el_sp0_fiq)
+vbar_entry(lower_el_sp0_serror)
+vbar_entry(lower_el_spx_sync)
+vbar_entry(lower_el_spx_irq)
+vbar_entry(lower_el_spx_fiq)
+vbar_entry(lower_el_spx_serror)
+);
+#endif
+
 bool efi_exit_boot_services(void) {
     EFI_STATUS status;
 
@@ -215,6 +240,7 @@ retry:
     asm volatile ("cli" ::: "memory");
 #elif defined (__aarch64__)
     asm volatile ("msr daifset, 0xf" ::: "memory");
+    asm volatile ("msr vbar_el1, %0" :: "r"(vbar));
 #endif
 
     // Go through new EFI memmap and free up bootloader entries

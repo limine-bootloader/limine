@@ -465,6 +465,9 @@ another_recl:;
     // Punch holes in our EFI reclaimable entry for every EFI area which is
     // boot services or conventional that fits within
     size_t efi_mmap_entry_count = efi_mmap_size / efi_desc_size;
+    // print("efi_mmap_entry_count=%U efi_mmap_size=%U efi_desc_size=%U efi_mmap=%p\n", efi_mmap_entry_count, efi_mmap_size, efi_desc_size, efi_mmap);
+    print("X\n");
+    
     for (size_t i = 0; i < efi_mmap_entry_count; i++) {
         EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
 

@@ -48,6 +48,8 @@ asm (
     "jmp uefi_entry\n\t"
 #elif defined(__aarch64__)
     "mov lr, xzr\n"
+    "stp xzr, xzr, [sp, #-16]!\n"
+    "mov x29, xzr\n"
     "bl uefi_entry\n"
     "b .\n"
 #endif

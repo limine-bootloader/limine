@@ -70,7 +70,8 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
                     goto mapped;
                 } while(0);
             } else if (level == 0 || (*entry & 2) == 0) {
-                panic(true, "overlapping mappings!");
+                current_step_size = get_page_size();
+                goto mapped;
             }
 
             if (*entry == 0) {

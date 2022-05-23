@@ -892,6 +892,7 @@ have_tm_tag:;
 
     term_runtime = true;
 
+
 #if defined (__i386__) || defined (__x86_64__)
     stivale_spinup(bits, want_5lv, &pagemap, entry_point,
                    REPORTED_ADDR((uint64_t)(uintptr_t)stivale2_struct),

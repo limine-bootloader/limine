@@ -445,7 +445,7 @@ pagemap_t stivale_build_pagemap(bool unmap_null, struct elf_range *ranges, size_
                 (ranges[i].permissions & ELF_PF_X ? VM_EXEC : 0) |
                 (ranges[i].permissions & ELF_PF_W ? VM_WRITE : 0);
 
-            map_page(pagemap, virt, phys, pf, 0x80000000);
+            map_page(pagemap, virt, phys, pf, ranges[i].length);
         }
     }
 

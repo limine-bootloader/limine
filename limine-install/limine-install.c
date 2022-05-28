@@ -424,7 +424,6 @@ int main(int argc, char *argv[]) {
 
         device_read(&hint8, 446, sizeof(uint8_t));
         if (hint8 != 0x00 && hint8 != 0x80) {
-            any_active = any_active ? any_active : (hint8 & 0x80) != 0;
             if (!force_mbr) {
                 mbr = 0;
             } else {
@@ -432,9 +431,9 @@ int main(int argc, char *argv[]) {
                 device_write(&hint8, 446, sizeof(uint8_t));
             }
         }
+        any_active = any_active ? any_active : (hint8 & 0x80) != 0;
         device_read(&hint8, 462, sizeof(uint8_t));
         if (hint8 != 0x00 && hint8 != 0x80) {
-            any_active = any_active ? any_active : (hint8 & 0x80) != 0;
             if (!force_mbr) {
                 mbr = 0;
             } else {
@@ -442,9 +441,9 @@ int main(int argc, char *argv[]) {
                 device_write(&hint8, 462, sizeof(uint8_t));
             }
         }
+        any_active = any_active ? any_active : (hint8 & 0x80) != 0;
         device_read(&hint8, 478, sizeof(uint8_t));
         if (hint8 != 0x00 && hint8 != 0x80) {
-            any_active = any_active ? any_active : (hint8 & 0x80) != 0;
             if (!force_mbr) {
                 mbr = 0;
             } else {
@@ -452,9 +451,9 @@ int main(int argc, char *argv[]) {
                 device_write(&hint8, 478, sizeof(uint8_t));
             }
         }
+        any_active = any_active ? any_active : (hint8 & 0x80) != 0;
         device_read(&hint8, 494, sizeof(uint8_t));
         if (hint8 != 0x00 && hint8 != 0x80) {
-            any_active = any_active ? any_active : (hint8 & 0x80) != 0;
             if (!force_mbr) {
                 mbr = 0;
             } else {
@@ -462,6 +461,7 @@ int main(int argc, char *argv[]) {
                 device_write(&hint8, 494, sizeof(uint8_t));
             }
         }
+        any_active = any_active ? any_active : (hint8 & 0x80) != 0;
 
         char hintc[64];
         device_read(hintc, 4, 8);

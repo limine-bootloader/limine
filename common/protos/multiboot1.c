@@ -134,7 +134,8 @@ bool multiboot1_load(char *config, char *cmdline) {
         for (size_t i = 0; i < n_modules; i++) {
             struct multiboot1_module *m = mods + i;
 
-            char *module_path = config_get_value(config, i, "MODULE_PATH");
+            struct conf_tuple conf_tuple = config_get_tuple(config, i, "MODULE_PATH", "MODULE_STRING");
+            char *module_path = conf_tuple.value1;
             if (module_path == NULL)
                 panic(true, "multiboot1: Module disappeared unexpectedly");
 
@@ -144,7 +145,10 @@ bool multiboot1_load(char *config, char *cmdline) {
             if ((f = uri_open(module_path)) == NULL)
                 panic(true, "multiboot1: Failed to open module with path `%s`. Is the path correct?", module_path);
 
-            char *module_cmdline = config_get_value(config, i, "MODULE_STRING");
+            char *module_cmdline = conf_tuple.value2;
+            if (module_cmdline == NULL) {
+                module_cmdline = "";
+            }
             char *lowmem_modstr = conv_mem_alloc(strlen(module_cmdline) + 1);
             strcpy(lowmem_modstr, module_cmdline);
 

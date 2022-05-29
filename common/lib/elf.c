@@ -317,6 +317,19 @@ struct elf_section_hdr_info* elf64_section_hdr_info(uint8_t *elf) {
 
     memcpy(info->section_hdrs, elf + (hdr.shoff), info->section_hdr_size);
 
+    for (size_t i = 0; i < info->num; i++) {
+        struct elf64_shdr *shdr = info->section_hdrs + i * hdr.shdr_size;
+
+        if (shdr->sh_addr != 0 || shdr->sh_size == 0) {
+            continue;
+        }
+
+        void *section = conv_mem_alloc(shdr->sh_size);
+        memcpy(section, elf + shdr->sh_offset, shdr->sh_size);
+
+        shdr->sh_addr = (uintptr_t)section;
+    }
+
     return info;
 }
 
@@ -335,6 +348,19 @@ struct elf_section_hdr_info* elf32_section_hdr_info(uint8_t *elf) {
     info->section_hdrs = ext_mem_alloc(info->section_hdr_size);
 
     memcpy(info->section_hdrs, elf + (hdr.shoff), info->section_hdr_size);
+
+    for (size_t i = 0; i < info->num; i++) {
+        struct elf32_shdr *shdr = info->section_hdrs + i * hdr.shdr_size;
+
+        if (shdr->sh_addr != 0 || shdr->sh_size == 0) {
+            continue;
+        }
+
+        void *section = conv_mem_alloc(shdr->sh_size);
+        memcpy(section, elf + shdr->sh_offset, shdr->sh_size);
+
+        shdr->sh_addr = (uintptr_t)section;
+    }
 
     return info;
 }

@@ -160,9 +160,9 @@ bool init_gop(struct fb_info *ret,
         if (status) {
             panic(false, "gop: Initialisation failed");
         }
+        status = gop->QueryMode(gop, gop->Mode == NULL ? 0 : gop->Mode->Mode,
+                                &mode_info_size, &mode_info);
     }
-
-    status = gop->QueryMode(gop, gop->Mode->Mode, &mode_info_size, &mode_info);
 
     if (status) {
         panic(false, "gop: Initialisation failed");

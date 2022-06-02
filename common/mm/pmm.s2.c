@@ -406,6 +406,9 @@ fail:
 }
 
 void pmm_reclaim_uefi_mem(void) {
+#if defined (__aarch64__)
+    return; // I refuse to work on this.
+#endif
     // First, ensure the boot services are still boot services, or free, in
     // the EFI memmap
     for (size_t i = 0; i < memmap_entries; i++) {
@@ -466,7 +469,6 @@ another_recl:;
     // boot services or conventional that fits within
     size_t efi_mmap_entry_count = efi_mmap_size / efi_desc_size;
     // print("efi_mmap_entry_count=%U efi_mmap_size=%U efi_desc_size=%U efi_mmap=%p\n", efi_mmap_entry_count, efi_mmap_size, efi_desc_size, efi_mmap);
-    print("X\n");
     
     for (size_t i = 0; i < efi_mmap_entry_count; i++) {
         EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;

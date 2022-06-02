@@ -136,9 +136,7 @@ static bool try_mode(struct fb_info *ret, size_t mode, uint64_t width, uint64_t 
 #define INVALID_PRESET_MODE 0xffffffff
 
 static no_unwind size_t preset_mode = INVALID_PRESET_MODE;
-static no_unwind size_t preset_mode_width;
-static no_unwind size_t preset_mode_height;
-static no_unwind size_t preset_mode_bpp;
+static no_unwind EFI_GRAPHICS_OUTPUT_MODE_INFORMATION preset_mode_info;
 
 bool init_gop(struct fb_info *ret,
               uint64_t target_width, uint64_t target_height, uint16_t target_bpp) {
@@ -162,9 +160,9 @@ bool init_gop(struct fb_info *ret,
         if (status) {
             panic(false, "gop: Initialisation failed");
         }
-        status = gop->QueryMode(gop, gop->Mode == NULL ? 0 : gop->Mode->Mode,
-                                &mode_info_size, &mode_info);
     }
+
+    status = gop->QueryMode(gop, gop->Mode->Mode, &mode_info_size, &mode_info);
 
     if (status) {
         panic(false, "gop: Initialisation failed");
@@ -172,13 +170,7 @@ bool init_gop(struct fb_info *ret,
 
     if (preset_mode == INVALID_PRESET_MODE) {
         preset_mode = gop->Mode->Mode;
-        preset_mode_width = mode_info->HorizontalResolution;
-        preset_mode_height = mode_info->VerticalResolution;
-        preset_mode_bpp = linear_masks_to_bpp(
-            mode_info->PixelInformation.RedMask,
-            mode_info->PixelInformation.GreenMask,
-            mode_info->PixelInformation.BlueMask,
-            mode_info->PixelInformation.ReservedMask);
+        memcpy(&preset_mode_info, mode_info, mode_info_size);
         current_video_mode = preset_mode;
     }
 
@@ -227,8 +219,8 @@ fallback:
                      edid_width += ((uint64_t)edid_info->det_timing_desc1[4] & 0xf0) << 4;
             uint64_t edid_height = (uint64_t)edid_info->det_timing_desc1[5];
                      edid_height += ((uint64_t)edid_info->det_timing_desc1[7] & 0xf0) << 4;
-            if (edid_width >= preset_mode_width
-             && edid_height >= preset_mode_height) {
+            if (edid_width >= preset_mode_info.HorizontalResolution
+             && edid_height >= preset_mode_info.VerticalResolution) {
                 target_width  = edid_width;
                 target_height = edid_height;
                 target_bpp    = 32;
@@ -240,12 +232,17 @@ fallback:
     if (current_fallback == 1) {
         current_fallback++;
 
+        uint16_t preset_mode_bpp = linear_masks_to_bpp(preset_mode_info.PixelInformation.RedMask,
+                                                       preset_mode_info.PixelInformation.GreenMask,
+                                                       preset_mode_info.PixelInformation.BlueMask,
+                                                       preset_mode_info.PixelInformation.ReservedMask);
+
         if (preset_mode_bpp == 32 && try_mode(ret, preset_mode, 0, 0, 0)) {
             gop_force_16 = false;
             return true;
         } else {
-            target_width = preset_mode_width;
-            target_height = preset_mode_height;
+            target_width = preset_mode_info.HorizontalResolution;
+            target_height = preset_mode_info.VerticalResolution;
             target_bpp = 32;
             goto retry;
         }

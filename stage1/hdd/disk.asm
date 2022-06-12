@@ -67,8 +67,10 @@ read_sectors:
     jc .done
 
     add word  [si+4], bp
+    xor ebx, ebx
     inc dword [si+8]
-    adc dword [si+12], 0
+    seto bl
+    add dword [si+12], ebx
 
     loop .loop
 

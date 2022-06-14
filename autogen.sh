@@ -10,7 +10,7 @@ test -z "$srcdir" && srcdir=.
 cd "$srcdir"
 
 [ -d freestanding_headers ] || git clone https://github.com/mintsuki/freestanding_headers.git
-[ -d reduced-gnu-efi ] || git clone https://github.com/limine-bootloader/reduced-gnu-efi.git
+[ -d limine-efi ] || git clone https://github.com/limine-bootloader/limine-efi.git
 
 automake_libdir="$(automake --print-libdir)"
 

@@ -92,10 +92,11 @@ paragraph as it is built as part of it.
 If using a release tarball (recommended, see https://github.com/limine-bootloader/limine/releases),
 run `./configure` directly.
 
-If checking out from the repository, run `./autogen.sh` first (`GNU autoconf` and `GNU automake` required).
+If checking out from the repository, run `./bootstrap` first in order to download the
+necessary dependencies and generate the configure script (`GNU autoconf` and `GNU automake` required).
 
-Both `./autogen.sh` and `./configure` take arguments and environment variables;
-for more information on these, run `./configure --help`.
+`./configure` takes arguments and environment variables; for more information on
+these, run `./configure --help`.
 
 To build using the LLVM toolchain, pass `TOOLCHAIN=llvm` to `./configure`.
 

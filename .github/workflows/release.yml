@@ -29,7 +29,7 @@ jobs:
         run: ./make_toolchain.sh
 
       - name: Regenerate
-        run: NOCONFIGURE=yes ./autogen.sh
+        run: ./bootstrap
 
       - name: Create build dir
         run: mkdir -p build
@@ -80,7 +80,7 @@ jobs:
         run: git checkout $TAG_NAME && rm -rf * && git checkout .
 
       - name: Package release tarball
-        run: ./autogen.sh && make dist
+        run: ./bootstrap && ./configure && make dist
 
       - name: Create release notes
         run: echo "Binary release can be found at https://github.com/limine-bootloader/limine/tree/$TAG_NAME-binary" > rel_notes.txt

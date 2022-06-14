@@ -170,13 +170,13 @@ limine-uefi: @BUILD_UEFI32@ @BUILD_UEFI64@
 	$(MAKE) limine-cd-efi
 
 .PHONY: limine-uefi64
-limine-uefi64: $(call MKESCAPE,$(SRCDIR))/reduced-gnu-efi
+limine-uefi64: $(call MKESCAPE,$(SRCDIR))/limine-efi
 	$(MAKE) common-uefi64
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi64/BOOTX64.EFI' '$(call SHESCAPE,$(BINDIR))/'
 
 .PHONY: limine-uefi32
-limine-uefi32: $(call MKESCAPE,$(SRCDIR))/reduced-gnu-efi
+limine-uefi32: $(call MKESCAPE,$(SRCDIR))/limine-efi
 	$(MAKE) common-uefi32
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi32/BOOTIA32.EFI' '$(call SHESCAPE,$(BINDIR))/'
@@ -199,7 +199,7 @@ dist:
 	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && NOCONFIGURE=yes ./autogen.sh
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/freestanding_headers/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/libgcc-binaries/.git"
-	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/reduced-gnu-efi/.git"
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/limine-efi/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/stivale/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/autom4te.cache"
@@ -216,7 +216,7 @@ distclean: clean
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding_headers stivale libgcc-binaries reduced-gnu-efi configure build-aux *'~' autom4te.cache *.tar.xz *.tar.gz
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding_headers stivale libgcc-binaries limine-efi configure build-aux *'~' autom4te.cache *.tar.xz *.tar.gz
 
 .PHONY: common-uefi64
 common-uefi64: $(call MKESCAPE,$(SRCDIR))/stivale

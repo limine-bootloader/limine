@@ -12,7 +12,7 @@ cd "$srcdir"
 [ -d freestanding_headers ] || git clone https://github.com/mintsuki/freestanding_headers.git
 [ -d stivale ] || git clone https://github.com/stivale/stivale.git
 [ -d libgcc-binaries ] || git clone https://github.com/mintsuki/libgcc-binaries.git
-[ -d reduced-gnu-efi ] || git clone https://github.com/limine-bootloader/reduced-gnu-efi.git
+[ -d limine-efi ] || git clone https://github.com/limine-bootloader/limine-efi.git
 
 automake_libdir="$(automake --print-libdir)"
 

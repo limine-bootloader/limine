@@ -102,8 +102,8 @@ override INTERNAL_CFLAGS += \
 		-mtune=generic \
 		-mabi=sysv \
 		-DGNU_EFI_USE_MS_ABI \
-		-I'$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/inc' \
-		-I'$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/inc/x86_64' \
+		-I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
+		-I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/x86_64' \
 		-fpie \
 		-mno-red-zone
 endif
@@ -117,8 +117,8 @@ override INTERNAL_CFLAGS += \
 		-mtune=generic \
 		-mabi=sysv \
 		-DGNU_EFI_USE_MS_ABI \
-		-I'$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/inc' \
-		-I'$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/inc/ia32' \
+		-I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
+		-I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/ia32' \
 		-fpie
 endif
 
@@ -274,9 +274,9 @@ $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(OBJ) ../libgcc-binaries/libgcc-i686.a
 
 endif
 
-$(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi: ../reduced-gnu-efi/*
+$(call MKESCAPE,$(BUILDDIR))/limine-efi: ../limine-efi/*
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))/'
-	cp -r ../reduced-gnu-efi '$(call SHESCAPE,$(BUILDDIR))/'
+	cp -r ../limine-efi '$(call SHESCAPE,$(BUILDDIR))/'
 
 ifeq ($(TARGET), uefi64)
 
@@ -289,16 +289,16 @@ $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nom
 $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.elf
 	$(LIMINE_OBJCOPY) -O binary '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-x86_64.o: reduced-gnu-efi
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.o: limine-efi
 	true
 
-$(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a: reduced-gnu-efi
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/libgnuefi.a: limine-efi
 	true
 
-.PHONY: reduced-gnu-efi
-reduced-gnu-efi: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
+.PHONY: limine-efi
+limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	unset ARFLAGS; unset CPPFLAGS; \
-	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi' \
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
 		CC="$(LIMINE_CC) -m64 -march=x86-64 -mtune=generic" \
 		CFLAGS='-nostdinc' \
 		INCDIR='-I$(call SHESCAPE,$(SRCDIR))/../freestanding_headers' \
@@ -309,7 +309,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi64.ld.in
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
 	$(LIMINE_CC) -x c -E -P -undef -DLINKER_NOMAP linker_uefi64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a $(OBJ) ../libgcc-binaries/libgcc-x86_64-no-red-zone.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/libgnuefi.a $(OBJ) ../libgcc-binaries/libgcc-x86_64-no-red-zone.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LIMINE_LD) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
@@ -319,7 +319,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi64.ld.in
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
 	$(LIMINE_CC) -x c -E -P -undef linker_uefi64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a $(OBJ) ../libgcc-binaries/libgcc-x86_64-no-red-zone.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/libgnuefi.a $(OBJ) ../libgcc-binaries/libgcc-x86_64-no-red-zone.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LIMINE_LD) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
@@ -338,16 +338,16 @@ $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nom
 $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.elf
 	$(LIMINE_OBJCOPY) -O binary '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-ia32.o: reduced-gnu-efi
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.o: limine-efi
 	true
 
-$(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a: reduced-gnu-efi
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/libgnuefi.a: limine-efi
 	true
 
-.PHONY: reduced-gnu-efi
-reduced-gnu-efi: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
+.PHONY: limine-efi
+limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	unset ARFLAGS; unset CPPFLAGS; \
-	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi' \
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
 		CC="$(LIMINE_CC) -m32 -march=i686 -mtune=generic" \
 		CFLAGS='-nostdinc' \
 		INCDIR='-I$(call SHESCAPE,$(SRCDIR))/../freestanding_headers' \
@@ -358,7 +358,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi32.ld.in
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
 	$(LIMINE_CC) -x c -E -P -undef -DLINKER_NOMAP linker_uefi32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/libgnuefi.a $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LIMINE_LD) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
@@ -368,7 +368,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi32.ld.in
 	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
 	$(LIMINE_CC) -x c -E -P -undef linker_uefi32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi/gnuefi/libgnuefi.a $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/libgnuefi.a $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/sys/smp_trampoline.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LIMINE_LD) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
@@ -379,13 +379,13 @@ endif
 -include $(HEADER_DEPS)
 
 ifeq ($(TARGET), uefi64)
-$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(LIMINE_CC) $(LIMINE_CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET), uefi32)
-$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(LIMINE_CC) $(LIMINE_CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
@@ -407,7 +407,7 @@ endif
 -include $(HEADER_DEPS)
 
 ifeq ($(TARGET), uefi64)
-$(call MKESCAPE,$(BUILDDIR))/%.32.o: %.32.c $(call MKESCAPE,$(BUILDDIR))/reduced-gnu-efi
+$(call MKESCAPE,$(BUILDDIR))/%.32.o: %.32.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(LIMINE_CC) $(LIMINE_CFLAGS) $(INTERNAL_CFLAGS32) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@).32'
 	$(LIMINE_OBJCOPY) -I elf32-i386 -O elf64-x86-64 '$(call SHESCAPE,$@).32' '$(call SHESCAPE,$@)'

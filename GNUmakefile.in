@@ -274,23 +274,6 @@ mbrtest.hdd:
 	dd if=/dev/zero bs=1M count=0 seek=64 of=mbrtest.hdd
 	echo -e "o\nn\np\n1\n2048\n\nt\n6\na\nw\n" | fdisk mbrtest.hdd -H 16 -S 63
 
-.PHONY: echfs-test
-echfs-test:
-	$(MAKE) test-clean
-	$(MAKE) test.hdd
-	$(MAKE) limine-bios
-	$(MAKE) limine-deploy
-	$(MAKE) -C test
-	echfs-utils -g -p0 test.hdd quick-format 512 > part_guid
-	sed "s/@GUID@/`cat part_guid`/g" < test/limine.cfg > limine.cfg.tmp
-	echfs-utils -g -p0 test.hdd import limine.cfg.tmp limine.cfg
-	rm -f limine.cfg.tmp part_guid
-	echfs-utils -g -p0 test.hdd import test/test.elf boot/test.elf
-	echfs-utils -g -p0 test.hdd import test/bg.bmp boot/bg.bmp
-	echfs-utils -g -p0 test.hdd import $(BINDIR)/limine.sys boot/limine.sys
-	$(BINDIR)/limine-deploy test.hdd
-	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
-
 .PHONY: fwcfg-common fwcfg-test fwcfg-simple-test
 fwcfg-common:
 	$(MAKE) test-clean

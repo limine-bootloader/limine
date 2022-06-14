@@ -20,7 +20,6 @@ as the reference implementation for the [Limine boot protocol](/PROTOCOL.md).
 
 ### Supported filesystems
 * ext2/3/4
-* echfs
 * FAT12/16/32
 * NTFS
 * ISO9660 (CDs/DVDs)

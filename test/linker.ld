@@ -1,8 +1,7 @@
-ENTRY(stivale_main)
+ENTRY(limine_main)
 
 PHDRS
 {
-    null    PT_NULL    FLAGS(0) ;                   /* Null segment */
     text    PT_LOAD    FLAGS((1 << 0) | (1 << 2)) ; /* Execute + Read */
     rodata  PT_LOAD    FLAGS((1 << 2)) ;            /* Read only */
     data    PT_LOAD    FLAGS((1 << 1) | (1 << 2)) ; /* Write + Read */
@@ -23,14 +22,6 @@ SECTIONS
     .limine_reqs : {
         KEEP(*(.limine_reqs))
         QUAD(0)
-    } :rodata
-
-    .stivalehdr : {
-        KEEP(*(.stivalehdr))
-    } :rodata
-
-    .stivale2hdr : {
-        KEEP(*(.stivale2hdr))
     } :rodata
 
     .rodata : {

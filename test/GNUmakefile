@@ -29,7 +29,6 @@ INTERNAL_LD_FLAGS_MULTIBOOT1 := \
 	--no-dynamic-linker         \
 
 INTERNALCFLAGS  :=       \
-	-I../stivale         \
 	-I.                  \
 	-I..                 \
 	-std=c11             \
@@ -46,7 +45,7 @@ INTERNALCFLAGS  :=       \
 
 all: test.elf multiboot2.elf multiboot.elf
 
-test.elf: stivale.o stivale2.o limine.o e9print.o memory.o
+test.elf: limine.o e9print.o memory.o
 	$(LD) $^ $(LDFLAGS) $(INTERNALLDFLAGS) -o $@
 
 multiboot2.elf: multiboot2_trampoline.o
@@ -66,6 +65,6 @@ multiboot.elf: multiboot_trampoline.o
 	nasm -felf32 $< -o $@
 
 clean:
-	rm -rf test.elf limine.o stivale.o stivale2.o e9print.o memory.o
+	rm -rf test.elf limine.o e9print.o memory.o
 	rm -rf multiboot2.o multiboot2.elf multiboot2_trampoline.o
 	rm -rf multiboot.o multiboot_trampoline.o multiboot.elf

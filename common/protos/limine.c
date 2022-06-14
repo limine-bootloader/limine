@@ -2,8 +2,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <config.h>
-#include <protos/stivale.h>
-#include <protos/stivale2.h>
 #include <lib/elf.h>
 #include <lib/blib.h>
 #include <lib/acpi.h>
@@ -21,9 +19,9 @@
 #include <lib/term.h>
 #include <sys/pic.h>
 #include <sys/lapic.h>
+#include <sys/idt.h>
 #include <fs/file.h>
 #include <mm/pmm.h>
-#include <stivale2.h>
 #include <pxe/tftp.h>
 #include <drivers/edid.h>
 #include <drivers/vga_textmode.h>
@@ -34,6 +32,132 @@
 
 #define MAX_REQUESTS 128
 #define MAX_MEMMAP 256
+
+pagemap_t build_pagemap(bool level5pg, struct elf_range *ranges, size_t ranges_count,
+                        uint64_t physical_base, uint64_t virtual_base,
+                        uint64_t direct_map_offset) {
+    pagemap_t pagemap = new_pagemap(level5pg ? 5 : 4);
+
+    if (ranges_count == 0) {
+        // Map 0 to 2GiB at 0xffffffff80000000
+        for (uint64_t i = 0; i < 0x80000000; i += 0x40000000) {
+            map_page(pagemap, 0xffffffff80000000 + i, i, 0x03, Size1GiB);
+        }
+    } else {
+        for (size_t i = 0; i < ranges_count; i++) {
+            uint64_t virt = ranges[i].base;
+            uint64_t phys;
+
+            if (virt & ((uint64_t)1 << 63)) {
+                phys = physical_base + (virt - virtual_base);
+            } else {
+                panic(false, "limine: Protected memory ranges are only supported for higher half kernels");
+            }
+
+            uint64_t pf = VMM_FLAG_PRESENT |
+                (ranges[i].permissions & ELF_PF_X ? 0 : VMM_FLAG_NOEXEC) |
+                (ranges[i].permissions & ELF_PF_W ? VMM_FLAG_WRITE : 0);
+
+            for (uint64_t j = 0; j < ranges[i].length; j += 0x1000) {
+                map_page(pagemap, virt + j, phys + j, pf, Size4KiB);
+            }
+        }
+    }
+
+    // Sub 2MiB mappings
+    for (uint64_t i = 0; i < 0x200000; i += 0x1000) {
+        if (i != 0) {
+            map_page(pagemap, i, i, 0x03, Size4KiB);
+        }
+        map_page(pagemap, direct_map_offset + i, i, 0x03, Size4KiB);
+    }
+
+    // Map 2MiB to 4GiB at higher half base and 0
+    //
+    // NOTE: We cannot just directly map from 2MiB to 4GiB with 1GiB
+    // pages because if you do the math.
+    //
+    //     start = 0x200000
+    //     end   = 0x40000000
+    //
+    //     pages_required = (end - start) / (4096 * 512 * 512)
+    //
+    // So we map 2MiB to 1GiB with 2MiB pages and then map the rest
+    // with 1GiB pages :^)
+    for (uint64_t i = 0x200000; i < 0x40000000; i += 0x200000) {
+        map_page(pagemap, i, i, 0x03, Size2MiB);
+        map_page(pagemap, direct_map_offset + i, i, 0x03, Size2MiB);
+    }
+
+    for (uint64_t i = 0x40000000; i < 0x100000000; i += 0x40000000) {
+        map_page(pagemap, i, i, 0x03, Size1GiB);
+        map_page(pagemap, direct_map_offset + i, i, 0x03, Size1GiB);
+    }
+
+    size_t _memmap_entries = memmap_entries;
+    struct e820_entry_t *_memmap =
+        ext_mem_alloc(_memmap_entries * sizeof(struct e820_entry_t));
+    for (size_t i = 0; i < _memmap_entries; i++)
+        _memmap[i] = memmap[i];
+
+    // Map any other region of memory from the memmap
+    for (size_t i = 0; i < _memmap_entries; i++) {
+        uint64_t base   = _memmap[i].base;
+        uint64_t length = _memmap[i].length;
+        uint64_t top    = base + length;
+
+        if (base < 0x100000000)
+            base = 0x100000000;
+
+        if (base >= top)
+            continue;
+
+        uint64_t aligned_base   = ALIGN_DOWN(base, 0x40000000);
+        uint64_t aligned_top    = ALIGN_UP(top, 0x40000000);
+        uint64_t aligned_length = aligned_top - aligned_base;
+
+        for (uint64_t j = 0; j < aligned_length; j += 0x40000000) {
+            uint64_t page = aligned_base + j;
+            map_page(pagemap, page, page, 0x03, Size1GiB);
+            map_page(pagemap, direct_map_offset + page, page, 0x03, Size1GiB);
+        }
+    }
+
+    return pagemap;
+}
+
+#if uefi == 1
+extern symbol ImageBase;
+#endif
+
+extern symbol limine_spinup_32;
+
+static noreturn void spinup(bool level5pg, pagemap_t *pagemap,
+                            uint64_t entry_point, uint64_t stack,
+                            uint32_t local_gdt) {
+#if bios == 1
+    // If we're going 64, we might as well call this BIOS interrupt
+    // to tell the BIOS that we are entering Long Mode, since it is in
+    // the specification.
+    struct rm_regs r = {0};
+    r.eax = 0xec00;
+    r.ebx = 0x02;   // Long mode only
+    rm_int(0x15, &r, &r);
+#endif
+
+    vmm_assert_nx();
+
+    pic_mask_all();
+    io_apic_mask_all();
+
+    irq_flush_type = IRQ_PIC_APIC_FLUSH;
+
+    common_spinup(limine_spinup_32, 7,
+        level5pg, (uint32_t)(uintptr_t)pagemap->top_level,
+        (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
+        (uint32_t)stack, (uint32_t)(stack >> 32),
+        local_gdt);
+}
 
 static uint64_t physical_base, virtual_base, slide, direct_map_offset;
 static size_t requests_count;
@@ -111,11 +235,11 @@ static void *_get_request(uint64_t id[4]) {
 #define FEAT_END } while (0);
 
 #if defined (__i386__)
-extern symbol stivale2_term_write_entry;
-extern void *stivale2_rt_stack;
-extern uint64_t stivale2_term_callback_ptr;
-extern uint64_t stivale2_term_write_ptr;
-void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
+extern symbol limine_term_write_entry;
+void *limine_rt_stack = NULL;
+uint64_t limine_term_callback_ptr = 0;
+uint64_t limine_term_write_ptr = 0;
+void limine_term_callback(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 #endif
 
 static void term_write_shim(uint64_t context, uint64_t buf, uint64_t count) {
@@ -505,8 +629,8 @@ FEAT_START
 
     if (terminal_request->callback != 0) {
 #if defined (__i386__)
-        term_callback = stivale2_term_callback;
-        stivale2_term_callback_ptr = terminal_request->callback;
+        term_callback = limine_term_callback;
+        limine_term_callback_ptr = terminal_request->callback;
 #elif defined (__x86_64__)
         term_callback = (void *)terminal_request->callback;
 #endif
@@ -515,12 +639,12 @@ FEAT_START
     term_arg = reported_addr(terminal);
 
 #if defined (__i386__)
-    if (stivale2_rt_stack == NULL) {
-        stivale2_rt_stack = ext_mem_alloc(16384) + 16384;
+    if (limine_rt_stack == NULL) {
+        limine_rt_stack = ext_mem_alloc(16384) + 16384;
     }
 
-    stivale2_term_write_ptr = (uintptr_t)term_write_shim;
-    terminal_response->write = (uintptr_t)(void *)stivale2_term_write_entry;
+    limine_term_write_ptr = (uintptr_t)term_write_shim;
+    terminal_response->write = (uintptr_t)(void *)limine_term_write_entry;
 #elif defined (__x86_64__)
     terminal_response->write = (uintptr_t)term_write_shim;
 #endif
@@ -571,8 +695,8 @@ FEAT_START
 
     if (terminal_request->callback != 0) {
 #if defined (__i386__)
-        term_callback = stivale2_term_callback;
-        stivale2_term_callback_ptr = terminal_request->callback;
+        term_callback = limine_term_callback;
+        limine_term_callback_ptr = terminal_request->callback;
 #elif defined (__x86_64__)
         term_callback = (void *)terminal_request->callback;
 #endif
@@ -581,12 +705,12 @@ FEAT_START
     term_arg = reported_addr(terminal);
 
 #if defined (__i386__)
-    if (stivale2_rt_stack == NULL) {
-        stivale2_rt_stack = ext_mem_alloc(16384) + 16384;
+    if (limine_rt_stack == NULL) {
+        limine_rt_stack = ext_mem_alloc(16384) + 16384;
     }
 
-    stivale2_term_write_ptr = (uintptr_t)term_write_shim;
-    terminal_response->write = (uintptr_t)(void *)stivale2_term_write_entry;
+    limine_term_write_ptr = (uintptr_t)term_write_shim;
+    terminal_response->write = (uintptr_t)(void *)limine_term_write_entry;
 #elif defined (__x86_64__)
     terminal_response->write = (uintptr_t)term_write_shim;
 #endif
@@ -744,8 +868,8 @@ FEAT_END
     void *stack = ext_mem_alloc(stack_size) + stack_size;
 
     pagemap_t pagemap = {0};
-    pagemap = stivale_build_pagemap(want_5lv, true, ranges, ranges_count, true,
-                                    physical_base, virtual_base, direct_map_offset);
+    pagemap = build_pagemap(want_5lv, ranges, ranges_count,
+                            physical_base, virtual_base, direct_map_offset);
 
 #if uefi == 1
     efi_exit_boot_services();
@@ -866,8 +990,8 @@ FEAT_END
 
     term_runtime = true;
 
-    stivale_spinup(64, want_5lv, &pagemap, entry_point, 0,
-                   reported_addr(stack), true, true, (uintptr_t)local_gdt);
+    spinup(want_5lv, &pagemap, entry_point,
+           reported_addr(stack), (uintptr_t)local_gdt);
 
     __builtin_unreachable();
 }

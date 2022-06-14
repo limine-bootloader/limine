@@ -15,8 +15,6 @@
 #include <mm/pmm.h>
 #include <drivers/vbe.h>
 #include <console.h>
-#include <protos/stivale.h>
-#include <protos/stivale2.h>
 #include <protos/linux.h>
 #include <protos/chainload.h>
 #include <protos/multiboot1.h>
@@ -917,8 +915,6 @@ noreturn void boot(char *config) {
     if (proto == NULL) {
         printv("PROTOCOL not specified, using autodetection...\n");
 autodetect:
-        stivale2_load(config, cmdline);
-        stivale_load(config, cmdline);
         multiboot2_load(config, cmdline);
         multiboot1_load(config, cmdline);
         limine_load(config, cmdline);
@@ -928,10 +924,10 @@ autodetect:
 
     bool ret = true;
 
-    if (!strcmp(proto, "stivale1") || !strcmp(proto, "stivale")) {
-        ret = stivale_load(config, cmdline);
-    } else if (!strcmp(proto, "stivale2")) {
-        ret = stivale2_load(config, cmdline);
+    if (!strcmp(proto, "stivale1") || !strcmp(proto, "stivale") || !strcmp(proto, "stivale2")) {
+        print("The stivale and stivale2 protocols is no longer supported as of Limine 4.x\n");
+        print("Please notify kernel maintainers to move to the Limine boot protocol or\n");
+        print("roll back to Limine 3.x.\n\n");
     } else if (!strcmp(proto, "limine")) {
         ret = limine_load(config, cmdline);
     } else if (!strcmp(proto, "linux")) {

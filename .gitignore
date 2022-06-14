@@ -20,7 +20,6 @@
 /bochsout.txt
 /bx_enh_dbg.ini
 /.vscode
-/stivale
 /test_image
 !/common/font.bin
 /configure

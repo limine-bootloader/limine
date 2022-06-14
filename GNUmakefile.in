@@ -199,7 +199,6 @@ dist:
 	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && NOCONFIGURE=yes ./autogen.sh
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/freestanding_headers/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/reduced-gnu-efi/.git"
-	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/stivale/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/autom4te.cache"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/test"
@@ -215,10 +214,10 @@ distclean: clean
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding_headers stivale reduced-gnu-efi configure build-aux *'~' autom4te.cache *.tar.xz *.tar.gz
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding_headers reduced-gnu-efi configure build-aux *'~' autom4te.cache *.tar.xz *.tar.gz
 
 .PHONY: common-uefi64
-common-uefi64: $(call MKESCAPE,$(SRCDIR))/stivale
+common-uefi64:
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all TARGET=uefi64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi64'
 
 .PHONY: common-uefi64-clean
@@ -226,7 +225,7 @@ common-uefi64-clean:
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' clean TARGET=uefi64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi64'
 
 .PHONY: common-uefi32
-common-uefi32: $(call MKESCAPE,$(SRCDIR))/stivale
+common-uefi32:
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all TARGET=uefi32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi32'
 
 .PHONY: common-uefi32-clean
@@ -234,7 +233,7 @@ common-uefi32-clean:
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' clean TARGET=uefi32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi32'
 
 .PHONY: common-bios
-common-bios: $(call MKESCAPE,$(SRCDIR))/stivale
+common-bios:
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all TARGET=bios BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-bios'
 
 .PHONY: common-bios-clean

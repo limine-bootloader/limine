@@ -14,7 +14,6 @@ as the reference implementation for the [Limine boot protocol](/PROTOCOL.md).
 ### Supported boot protocols
 * Linux
 * [Limine](/PROTOCOL.md)
-* stivale and stivale2 (see [their specifications](https://github.com/stivale) for details)
 * Multiboot 1
 * Multiboot 2
 * Chainloading

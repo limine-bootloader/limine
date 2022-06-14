@@ -1,13 +1,13 @@
 #include <e9print.h>
 #include <stddef.h>
 
-void (*stivale2_print)(const char *buf, size_t size) = NULL;
+void (*limine_print)(const char *buf, size_t size) = NULL;
 
 static const char CONVERSION_TABLE[] = "0123456789abcdef";
 
 void e9_putc(char c) {
-    if (stivale2_print != NULL)
-        stivale2_print(&c, 1);
+    if (limine_print != NULL)
+        limine_print(&c, 1);
     __asm__ __volatile__ ("outb %0, %1" :: "a" (c), "Nd" (0xe9) : "memory");
 }
 

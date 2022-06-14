@@ -13,12 +13,12 @@ user_ss: resq 1
 section .text
 
 extern term_write
-extern stivale2_rt_stack
-extern stivale2_term_callback_ptr
-extern stivale2_term_write_ptr
+extern limine_rt_stack
+extern limine_term_callback_ptr
+extern limine_term_write_ptr
 
-global stivale2_term_callback
-stivale2_term_callback:
+global limine_term_callback
+limine_term_callback:
 bits 32
     push ebp
     mov ebp, esp
@@ -53,7 +53,7 @@ bits 64
 
     mov rbx, rsp
     mov rsp, [rax + user_stack wrt ..gotoff]
-    call [rax + stivale2_term_callback_ptr wrt ..gotoff]
+    call [rax + limine_term_callback_ptr wrt ..gotoff]
     mov rsp, rbx
 
     ; Go 32
@@ -77,8 +77,8 @@ bits 32
     ret
 
 bits 64
-global stivale2_term_write_entry
-stivale2_term_write_entry:
+global limine_term_write_entry
+limine_term_write_entry:
     push rbx
     push rbp
     push r12
@@ -92,7 +92,7 @@ stivale2_term_write_entry:
     add ebx, _GLOBAL_OFFSET_TABLE_ + $$ - .get_got wrt ..gotpc
 
     mov [rbx + user_stack wrt ..gotoff], rsp
-    mov esp, [rbx + stivale2_rt_stack wrt ..gotoff]
+    mov esp, [rbx + limine_rt_stack wrt ..gotoff]
 
     mov word [rbx + user_cs wrt ..gotoff], cs
     mov word [rbx + user_ds wrt ..gotoff], ds
@@ -115,7 +115,7 @@ bits 32
     mov es, ax
     mov ss, ax
 
-    call [ebx + stivale2_term_write_ptr wrt ..gotoff]
+    call [ebx + limine_term_write_ptr wrt ..gotoff]
     add esp, 24
 
     push dword [ebx + user_cs wrt ..gotoff]

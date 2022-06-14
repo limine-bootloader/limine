@@ -97,7 +97,7 @@ Editor control options.
 
 *Locally assignable (non protocol specific)* keys are:
 * `COMMENT` - An optional comment string that will be displayed by the bootloader on the menu when an entry is selected.
-* `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `limine`, `stivale`, `stivale2`, `chainload`, `multiboot` or `multiboot1` and `multiboot2`. If the protocol is omitted, Limine will try to autodetect it, following this list of protocols, in this order: `stivale2 -> stivale1 -> multiboot2 -> multiboot1 -> limine -> linux -> failure`.
+* `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `limine`, `chainload`, `multiboot` or `multiboot1` and `multiboot2`. If the protocol is omitted, Limine will try to autodetect it, following this list of protocols, in this order: `multiboot2 -> multiboot1 -> limine -> linux -> failure`.
 * `CMDLINE` - The command line string to be passed to the kernel. Can be omitted.
 * `KERNEL_CMDLINE` - Alias of `CMDLINE`.
 
@@ -128,21 +128,6 @@ Editor control options.
 * Chainload protocol on UEFI:
   * `IMAGE_PATH` - URI of the EFI application to chainload.
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
-* stivale and stivale2 protocols:
-  * `KERNEL_PATH` - The URI path of the kernel.
-  * `MODULE_PATH` - The URI path to a module.
-  * `MODULE_STRING` - A string to be passed to a module.
-
-  **Note:** One can define these 2 last variable multiple times to specify multiple
-  modules.
-  The entries will be matched in order. E.g.: The 1st module path entry will be matched
-  to the 1st module string entry that appear, and so on.
-
-  **Note**: If `MODULE_STRING` is not specified for an entry, the `MODULE_STRING` will default to the `MODULE_PATH`.
-
-  * `RESOLUTION` - The resolution to be used should the kernel request a graphical framebuffer. This setting takes the form of `<width>x<height>x<bpp>` and *overrides* any resolution requested by the kernel, or automatic resolution requests. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
-  * `KASLR` - For relocatable kernels, if set to `no`, disable kernel address space layout randomisation. KASLR is enabled by default.
-  * `TEXTMODE` - If set to `yes`, prefer text mode if the kernel has no video mode requirements. (Only for stivale2)
 * Chainload protocol on BIOS:
   * `DRIVE` - The 1-based BIOS drive to chainload, if omitted, assume boot drive.
   * `PARTITION` - The 1-based BIOS partition to chainload, if omitted, chainload drive (MBR).

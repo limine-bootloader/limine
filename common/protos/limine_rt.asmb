@@ -11,12 +11,12 @@ user_ss: resq 1
 section .text
 
 extern term_write
-extern stivale2_rt_stack
-extern stivale2_term_callback_ptr
-extern stivale2_term_write_ptr
+extern limine_rt_stack
+extern limine_term_callback_ptr
+extern limine_term_write_ptr
 
-global stivale2_term_callback
-stivale2_term_callback:
+global limine_term_callback
+limine_term_callback:
 bits 32
     push ebp
     mov ebp, esp
@@ -44,7 +44,7 @@ bits 64
 
     mov rbx, rsp
     mov rsp, [user_stack]
-    call [stivale2_term_callback_ptr]
+    call [limine_term_callback_ptr]
     mov rsp, rbx
 
     ; Go 32
@@ -65,8 +65,8 @@ bits 32
 
     ret
 
-global stivale2_term_write_entry
-stivale2_term_write_entry:
+global limine_term_write_entry
+limine_term_write_entry:
 bits 64
     push rbx
     push rbp
@@ -76,7 +76,7 @@ bits 64
     push r15
 
     mov [user_stack], rsp
-    mov esp, [stivale2_rt_stack]
+    mov esp, [limine_rt_stack]
 
     mov word [user_cs], cs
     mov word [user_ds], ds
@@ -97,7 +97,7 @@ bits 32
     mov es, ax
     mov ss, ax
 
-    call [stivale2_term_write_ptr]
+    call [limine_term_write_ptr]
     add esp, 24
 
     push dword [user_cs]

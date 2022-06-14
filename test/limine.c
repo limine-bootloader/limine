@@ -201,9 +201,9 @@ static void write_shim(const char *s, uint64_t l) {
     _terminal_request.response->write(terminal, s, l);
 }
 
-static void limine_main(void) {
+void limine_main(void) {
     if (_terminal_request.response) {
-        stivale2_print = write_shim;
+        limine_print = write_shim;
     }
 
     e9_printf("\nWe're alive");

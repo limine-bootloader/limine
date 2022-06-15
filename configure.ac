@@ -46,10 +46,16 @@ if ! test "x$GZIP_FOUND" = "xyes"; then
     AC_MSG_ERROR([gzip not found, please install gzip before configuring])
 fi
 
-BUILD_BIOS="default"
+BUILD_ALL="no"
+
+AC_ARG_ENABLE([all],
+    AS_HELP_STRING([--enable-all], [enable ALL ports]),
+    BUILD_ALL="$enableval")
+
+BUILD_BIOS="$BUILD_ALL"
 
 AC_ARG_ENABLE([bios],
-    AS_HELP_STRING([--disable-bios], [disable building the x86 BIOS port]),
+    AS_HELP_STRING([--enable-bios], [enable building the x86 BIOS port]),
     BUILD_BIOS="$enableval")
 
 if test "x$BUILD_BIOS" = "xno"; then
@@ -60,34 +66,34 @@ fi
 
 AC_SUBST(BUILD_BIOS, [$BUILD_BIOS])
 
-BUILD_LIMINE_DEPLOY="default"
+BUILD_LIMINE_DEPLOY="$BUILD_ALL"
 
 AC_ARG_ENABLE([limine-deploy],
-    AS_HELP_STRING([--disable-limine-deploy], [disable building limine-deploy]),
+    AS_HELP_STRING([--enable-limine-deploy], [enable building limine-deploy]),
     BUILD_LIMINE_DEPLOY="$enableval")
 
 AC_SUBST(BUILD_LIMINE_DEPLOY, [$BUILD_LIMINE_DEPLOY])
 
-BUILD_CD="default"
+BUILD_CD="$BUILD_ALL"
 
 AC_ARG_ENABLE([bios-cd],
-    AS_HELP_STRING([--disable-bios-cd], [disable building the x86 BIOS CD image]),
+    AS_HELP_STRING([--enable-bios-cd], [enable building the x86 BIOS CD image]),
     BUILD_CD="$enableval")
 
 AC_SUBST(BUILD_CD, [$BUILD_CD])
 
-BUILD_PXE="default"
+BUILD_PXE="$BUILD_ALL"
 
 AC_ARG_ENABLE([bios-pxe],
-    AS_HELP_STRING([--disable-bios-pxe], [disable building the x86 BIOS PXE image]),
+    AS_HELP_STRING([--enable-bios-pxe], [enable building the x86 BIOS PXE image]),
     BUILD_PXE="$enableval")
 
 AC_SUBST(BUILD_PXE, [$BUILD_PXE])
 
-BUILD_UEFI_IA32="default"
+BUILD_UEFI_IA32="$BUILD_ALL"
 
 AC_ARG_ENABLE([uefi-ia32],
-    AS_HELP_STRING([--disable-uefi-ia32], [disable building the IA-32 UEFI port]),
+    AS_HELP_STRING([--enable-uefi-ia32], [enable building the IA-32 UEFI port]),
     BUILD_UEFI_IA32="$enableval")
 
 if test "x$BUILD_UEFI_IA32" = "xno"; then
@@ -98,10 +104,10 @@ fi
 
 AC_SUBST(BUILD_UEFI_IA32, [$BUILD_UEFI_IA32])
 
-BUILD_UEFI_X86_64="default"
+BUILD_UEFI_X86_64="$BUILD_ALL"
 
 AC_ARG_ENABLE([uefi-x86-64],
-    AS_HELP_STRING([--disable-uefi-x86_64], [disable building the x86_64 UEFI port]),
+    AS_HELP_STRING([--enable-uefi-x86_64], [enable building the x86_64 UEFI port]),
     BUILD_UEFI_X86_64="$enableval")
 
 if test "x$BUILD_UEFI_X86_64" = "xno"; then
@@ -112,10 +118,10 @@ fi
 
 AC_SUBST(BUILD_UEFI_X86_64, [$BUILD_UEFI_X86_64])
 
-BUILD_CD_EFI="default"
+BUILD_CD_EFI="$BUILD_ALL"
 
 AC_ARG_ENABLE([cd-efi],
-    AS_HELP_STRING([--disable-cd-efi], [disable limine-cd-efi.bin build]),
+    AS_HELP_STRING([--enable-cd-efi], [enable limine-cd-efi.bin build]),
     BUILD_CD_EFI="$enableval")
 
 if ! test "x$BUILD_CD_EFI" = "xno"; then

@@ -35,7 +35,7 @@ jobs:
         run: mkdir -p build
 
       - name: Configure
-        run: cd build && ../configure
+        run: cd build && ../configure --enable-all
 
       - name: Build the bootloader
         run: make -C build
@@ -80,7 +80,7 @@ jobs:
         run: git checkout $TAG_NAME && rm -rf * && git checkout .
 
       - name: Package release tarball
-        run: ./bootstrap && ./configure && make dist
+        run: ./bootstrap && ./configure --enable-all && make dist
 
       - name: Create release notes
         run: echo "Binary release can be found at https://github.com/limine-bootloader/limine/tree/$TAG_NAME-binary" > rel_notes.txt

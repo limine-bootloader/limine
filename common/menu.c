@@ -917,51 +917,28 @@ noreturn void boot(char *config) {
 
     char *proto = config_get_value(config, 0, "PROTOCOL");
     if (proto == NULL) {
-        printv("PROTOCOL not specified, using autodetection...\n");
-autodetect:
-        stivale2_load(config, cmdline);
-        stivale_load(config, cmdline);
-        multiboot2_load(config, cmdline);
-        multiboot1_load(config, cmdline);
-        limine_load(config, cmdline);
-        linux_load(config, cmdline);
-        panic(true, "Kernel protocol autodetection failed");
+        panic(true, "Boot protocol not specified for this entry");
     }
 
-    bool ret = true;
-
     if (!strcmp(proto, "stivale1") || !strcmp(proto, "stivale")) {
-        ret = stivale_load(config, cmdline);
+        stivale_load(config, cmdline);
     } else if (!strcmp(proto, "stivale2")) {
-        ret = stivale2_load(config, cmdline);
+        stivale2_load(config, cmdline);
     } else if (!strcmp(proto, "limine")) {
-        ret = limine_load(config, cmdline);
+        limine_load(config, cmdline);
     } else if (!strcmp(proto, "linux")) {
-        ret = linux_load(config, cmdline);
+        linux_load(config, cmdline);
     } else if (!strcmp(proto, "multiboot1") || !strcmp(proto, "multiboot")) {
-        ret = multiboot1_load(config, cmdline);
+        multiboot1_load(config, cmdline);
     } else if (!strcmp(proto, "multiboot2")) {
-        ret = multiboot2_load(config, cmdline);
+        multiboot2_load(config, cmdline);
     } else if (!strcmp(proto, "chainload_next")) {
         chainload_next(config);
     } else if (!strcmp(proto, "chainload")) {
         chainload(config);
     }
 
-    if (ret) {
-        print("WARNING: Unsupported protocol specified: %s.\n", proto);
-    } else {
-        print("WARNING: Incorrect protocol specified for kernel.\n");
-    }
-
-    print("         Press A to attempt autodetection or any other key to return to menu.\n");
-
-    int c = getchar();
-    if (c == 'a' || c == 'A') {
-        goto autodetect;
-    } else {
-        menu(false);
-    }
+    panic(true, "Incorrect protocol specified for kernel.");
 
     __builtin_unreachable();
 }

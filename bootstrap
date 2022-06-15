@@ -2,8 +2,6 @@
 
 set -ex
 
-origdir="$(pwd -P)"
-
 srcdir="$(dirname "$0")"
 test -z "$srcdir" && srcdir=.
 
@@ -20,9 +18,3 @@ mkdir -p build-aux
 cp "${automake_libdir}/install-sh" build-aux
 
 autoconf
-
-cd "$origdir"
-
-if test -z "$NOCONFIGURE"; then
-    exec "$srcdir"/configure "$@"
-fi

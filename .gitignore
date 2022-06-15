@@ -34,7 +34,7 @@
 /GNUmakefile
 /config.h
 /common-bios
-/common-uefi32
-/common-uefi64
+/common-uefi-ia32
+/common-uefi-x86-64
 /decompressor-build
 /stage1.stamp

@@ -15,7 +15,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install git build-essential autoconf automake nasm curl mtools llvm clang lld -y
 
       - name: Build the bootloader (GNU)
-        run: ./bootstrap && ./configure --enable-werror && make all && make maintainer-clean
+        run: ./bootstrap && ./configure --enable-werror --enable-all && make all && make maintainer-clean
 
       - name: Build the bootloader (LLVM)
-        run: ./bootstrap && ./configure TOOLCHAIN=llvm --enable-werror && make all && make maintainer-clean
+        run: ./bootstrap && ./configure TOOLCHAIN=llvm --enable-werror --enable-all && make all && make maintainer-clean

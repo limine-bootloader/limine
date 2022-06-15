@@ -49,7 +49,7 @@ fi
 BUILD_BIOS="default"
 
 AC_ARG_ENABLE([bios],
-    AS_HELP_STRING([--disable-bios], [disable building the BIOS port]),
+    AS_HELP_STRING([--disable-bios], [disable building the x86 BIOS port]),
     BUILD_BIOS="$enableval")
 
 if test "x$BUILD_BIOS" = "xno"; then
@@ -71,7 +71,7 @@ AC_SUBST(BUILD_LIMINE_DEPLOY, [$BUILD_LIMINE_DEPLOY])
 BUILD_CD="default"
 
 AC_ARG_ENABLE([bios-cd],
-    AS_HELP_STRING([--disable-bios-cd], [disable building the BIOS CD image]),
+    AS_HELP_STRING([--disable-bios-cd], [disable building the x86 BIOS CD image]),
     BUILD_CD="$enableval")
 
 AC_SUBST(BUILD_CD, [$BUILD_CD])
@@ -79,52 +79,38 @@ AC_SUBST(BUILD_CD, [$BUILD_CD])
 BUILD_PXE="default"
 
 AC_ARG_ENABLE([bios-pxe],
-    AS_HELP_STRING([--disable-bios-pxe], [disable building the BIOS PXE image]),
+    AS_HELP_STRING([--disable-bios-pxe], [disable building the x86 BIOS PXE image]),
     BUILD_PXE="$enableval")
 
 AC_SUBST(BUILD_PXE, [$BUILD_PXE])
 
-BUILD_UEFI="default"
+BUILD_UEFI_IA32="default"
 
-AC_ARG_ENABLE([uefi],
-    AS_HELP_STRING([--disable-uefi], [disable building both UEFI ports]),
-    BUILD_UEFI="$enableval")
+AC_ARG_ENABLE([uefi-ia32],
+    AS_HELP_STRING([--disable-uefi-ia32], [disable building the IA-32 UEFI port]),
+    BUILD_UEFI_IA32="$enableval")
 
-if test "x$BUILD_UEFI" = "xno"; then
-    BUILD_UEFI=""
+if test "x$BUILD_UEFI_IA32" = "xno"; then
+    BUILD_UEFI_IA32=""
 else
-    BUILD_UEFI="limine-uefi"
+    BUILD_UEFI_IA32="limine-uefi-ia32"
 fi
 
-AC_SUBST(BUILD_UEFI, [$BUILD_UEFI])
+AC_SUBST(BUILD_UEFI_IA32, [$BUILD_UEFI_IA32])
 
-BUILD_UEFI32="default"
+BUILD_UEFI_X86_64="default"
 
-AC_ARG_ENABLE([uefi32],
-    AS_HELP_STRING([--disable-uefi32], [disable building the 32-bit UEFI port]),
-    BUILD_UEFI32="$enableval")
+AC_ARG_ENABLE([uefi-x86-64],
+    AS_HELP_STRING([--disable-uefi-x86_64], [disable building the x86_64 UEFI port]),
+    BUILD_UEFI_X86_64="$enableval")
 
-if test "x$BUILD_UEFI32" = "xno"; then
-    BUILD_UEFI32=""
+if test "x$BUILD_UEFI_X86_64" = "xno"; then
+    BUILD_UEFI_X86_64=""
 else
-    BUILD_UEFI32="limine-uefi32"
+    BUILD_UEFI_X86_64="limine-uefi-x86-64"
 fi
 
-AC_SUBST(BUILD_UEFI32, [$BUILD_UEFI32])
-
-BUILD_UEFI64="default"
-
-AC_ARG_ENABLE([uefi64],
-    AS_HELP_STRING([--disable-uefi64], [disable building the 64-bit UEFI port]),
-    BUILD_UEFI64="$enableval")
-
-if test "x$BUILD_UEFI64" = "xno"; then
-    BUILD_UEFI64=""
-else
-    BUILD_UEFI64="limine-uefi64"
-fi
-
-AC_SUBST(BUILD_UEFI64, [$BUILD_UEFI64])
+AC_SUBST(BUILD_UEFI_X86_64, [$BUILD_UEFI_X86_64])
 
 BUILD_CD_EFI="default"
 

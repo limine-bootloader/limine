@@ -82,7 +82,7 @@ export USING_CLANG
 override STAGE1_FILES := $(shell find '$(call SHESCAPE,$(SRCDIR))/stage1' -type f -name '*.asm')
 
 .PHONY: all
-all: @BUILD_UEFI@ @BUILD_BIOS@
+all: @BUILD_UEFI_X86_64@ @BUILD_UEFI_IA32@ @BUILD_BIOS@
 
 $(call MKESCAPE,$(BINDIR))/limine-deploy: $(call MKESCAPE,$(SRCDIR))/limine-deploy/limine-deploy.c $(call MKESCAPE,$(BINDIR))/limine-hdd.bin
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
@@ -95,7 +95,7 @@ limine-deploy:
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-deploy'
 
 .PHONY: clean
-clean: limine-bios-clean limine-uefi32-clean limine-uefi64-clean
+clean: limine-bios-clean limine-uefi-ia32-clean limine-uefi-x86-64-clean
 	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 
 .PHONY: install-data
@@ -146,7 +146,7 @@ ifneq ($(BUILD_LIMINE_DEPLOY), no)
 	$(MAKE) limine-deploy
 endif
 
-$(call MKESCAPE,$(BINDIR))/limine-cd-efi.bin: $(if @BUILD_UEFI32@, $(call MKESCAPE,$(BUILDDIR))/common-uefi32/BOOTIA32.EFI) $(if @BUILD_UEFI64@, $(call MKESCAPE,$(BUILDDIR))/common-uefi64/BOOTX64.EFI)
+$(call MKESCAPE,$(BINDIR))/limine-cd-efi.bin: $(if @BUILD_UEFI_IA32@, $(call MKESCAPE,$(BUILDDIR))/common-uefi-ia32/BOOTIA32.EFI) $(if @BUILD_UEFI_X86_64@, $(call MKESCAPE,$(BUILDDIR))/common-uefi-x86-64/BOOTX64.EFI)
 ifneq ($(BUILD_CD_EFI), no)
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	rm -f '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'
@@ -154,10 +154,10 @@ ifneq ($(BUILD_CD_EFI), no)
 	( mformat -i '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' -f 1440 :: && \
 	  mmd -D s -i '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' ::/EFI && \
 	  mmd -D s -i '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' ::/EFI/BOOT && \
-	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/common-uefi64/BOOTX64.EFI' ] && \
-	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/common-uefi64/BOOTX64.EFI' ::/EFI/BOOT ) || true ) && \
-	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/common-uefi32/BOOTIA32.EFI' ] && \
-	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/common-uefi32/BOOTIA32.EFI' ::/EFI/BOOT ) || true ) \
+	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64/BOOTX64.EFI' ] && \
+	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64/BOOTX64.EFI' ::/EFI/BOOT ) || true ) && \
+	  ( ( [ -f '$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32/BOOTIA32.EFI' ] && \
+	      mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32/BOOTIA32.EFI' ::/EFI/BOOT ) || true ) \
 	) || rm -f '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'
 endif
 
@@ -165,30 +165,26 @@ endif
 limine-cd-efi:
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'
 
-.PHONY: limine-uefi
-limine-uefi: @BUILD_UEFI32@ @BUILD_UEFI64@
-	$(MAKE) limine-cd-efi
-
-.PHONY: limine-uefi64
-limine-uefi64: $(call MKESCAPE,$(SRCDIR))/limine-efi
-	$(MAKE) common-uefi64
+.PHONY: limine-uefi-x86-64
+limine-uefi-x86-64: $(call MKESCAPE,$(SRCDIR))/limine-efi
+	$(MAKE) common-uefi-x86-64
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi64/BOOTX64.EFI' '$(call SHESCAPE,$(BINDIR))/'
+	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64/BOOTX64.EFI' '$(call SHESCAPE,$(BINDIR))/'
 
-.PHONY: limine-uefi32
-limine-uefi32: $(call MKESCAPE,$(SRCDIR))/limine-efi
-	$(MAKE) common-uefi32
+.PHONY: limine-uefi-ia32
+limine-uefi-ia32: $(call MKESCAPE,$(SRCDIR))/limine-efi
+	$(MAKE) common-uefi-ia32
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi32/BOOTIA32.EFI' '$(call SHESCAPE,$(BINDIR))/'
+	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32/BOOTIA32.EFI' '$(call SHESCAPE,$(BINDIR))/'
 
 .PHONY: limine-bios-clean
 limine-bios-clean: common-bios-clean decompressor-clean
 
-.PHONY: limine-uefi64-clean
-limine-uefi64-clean: common-uefi64-clean
+.PHONY: limine-uefi-x86-64-clean
+limine-uefi-x86-64-clean: common-uefi-x86-64-clean
 
-.PHONY: limine-uefi32-clean
-limine-uefi32-clean: common-uefi32-clean
+.PHONY: limine-uefi-ia32-clean
+limine-uefi-ia32-clean: common-uefi-ia32-clean
 
 .PHONY: dist
 dist:
@@ -216,21 +212,21 @@ distclean: clean
 maintainer-clean: distclean
 	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding_headers limine-efi configure build-aux *'~' autom4te.cache *.tar.xz *.tar.gz
 
-.PHONY: common-uefi64
-common-uefi64:
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all TARGET=uefi64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi64'
+.PHONY: common-uefi-x86-64
+common-uefi-x86-64:
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all TARGET=uefi-x86-64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64'
 
-.PHONY: common-uefi64-clean
-common-uefi64-clean:
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' clean TARGET=uefi64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi64'
+.PHONY: common-uefi-x86-64-clean
+common-uefi-x86-64-clean:
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' clean TARGET=uefi-x86-64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64'
 
-.PHONY: common-uefi32
-common-uefi32:
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all TARGET=uefi32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi32'
+.PHONY: common-uefi-ia32
+common-uefi-ia32:
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all TARGET=uefi-ia32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32'
 
-.PHONY: common-uefi32-clean
-common-uefi32-clean:
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' clean TARGET=uefi32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi32'
+.PHONY: common-uefi-ia32-clean
+common-uefi-ia32-clean:
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' clean TARGET=uefi-ia32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32'
 
 .PHONY: common-bios
 common-bios:
@@ -486,7 +482,7 @@ uefi-test:
 	$(MAKE) ovmf-x64
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
-	$(MAKE) limine-uefi64
+	$(MAKE) limine-uefi-x86-64
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image
@@ -505,12 +501,12 @@ uefi-test:
 	rm -rf test_image loopback_dev
 	qemu-system-x86_64 -m 512M -M q35 -L ovmf -bios ovmf-x64/OVMF.fd -net none -smp 4   -hda test.hdd -debugcon stdio
 
-.PHONY: uefi32-test
-uefi32-test:
+.PHONY: uefi-ia32-test
+uefi-ia32-test:
 	$(MAKE) ovmf-ia32
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
-	$(MAKE) limine-uefi32
+	$(MAKE) limine-uefi-ia32
 	$(MAKE) -C test
 	rm -rf test_image/
 	mkdir test_image

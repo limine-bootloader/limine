@@ -143,7 +143,7 @@ test "x$TOOLCHAIN" = "x" && TOOLCHAIN='limine'
 AC_ARG_VAR(LIMINE_CC, [C compiler command for Limine])
 
 AC_DEFUN([CC_ERROR_MSG], [
-    AC_MSG_ERROR([no suitable LIMINE_CC found, run $srcdir/make_toolchain.sh or install x86_64 GCC/Clang])
+    AC_MSG_ERROR([no suitable LIMINE_CC found, run $srcdir/make_toolchain.sh or install the appropriate GCC/Clang])
 ])
 
 if ! test "x$LIMINE_CC" = "x"; then
@@ -191,17 +191,6 @@ else
     CC_ERROR_MSG
 fi
 
-if ! $LIMINE_CC -dumpmachine >/dev/null 2>&1; then
-    CC_ERROR_MSG
-fi
-
-CC_MACHINE="$($LIMINE_CC -dumpmachine | dd bs=6 count=1 2>/dev/null)"
-if ! test "x$CC_MACHINE" = "xx86_64"; then
-    if ! test "x$CC_MACHINE" = "xamd64-"; then
-        CC_ERROR_MSG
-    fi
-fi
-
 AC_DEFUN([GET_BINUTILS_PROG], [
     AC_ARG_VAR(LIMINE_$1, [$3 command for Limine])
 
@@ -231,7 +220,7 @@ AC_DEFUN([GET_BINUTILS_PROG], [
                     fi
                     AC_CHECK_PROG([LIMINE_$1_4], [$LIMINE_$1], [yes])
                     if ! test "x$LIMINE_$1_4" = "xyes"; then
-                        AC_MSG_ERROR([no suitable LIMINE_$1 found, run $srcdir/make_toolchain.sh or install LLVM/GNU binutils])
+                        AC_MSG_ERROR([no suitable LIMINE_$1 found, run $srcdir/make_toolchain.sh or install the appropriate LLVM/GNU binutils])
                     fi
                 fi
             fi

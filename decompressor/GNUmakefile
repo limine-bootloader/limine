@@ -1,5 +1,6 @@
+include $(TOOLCHAIN_FILE)
+
 BUILDDIR ?=
-USING_CLANG ?= 0
 
 override SPACE := $(subst ,, )
 

@@ -22,6 +22,10 @@
 /.vscode
 /test_image
 !/common/font.bin
+/toolchain-detect/configure
+/toolchain-detect/configure.ac.save
+/toolchain-detect/*~
+/toolchain-detect/autom4te.cache
 /configure
 /configure.ac.save
 /build-aux

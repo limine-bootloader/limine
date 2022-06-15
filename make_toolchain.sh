@@ -7,10 +7,15 @@ test -z "$srcdir" && srcdir=.
 
 cd "$srcdir"
 
-TARGET=x86_64-elf
+if [ -z "$TARGET" ]; then
+    set +x
+    echo "TARGET not specified"
+    exit 1
+fi
+
+TARGET=$TARGET-elf
 BINUTILSVERSION=2.38
 GCCVERSION=12.1.0
-NASMVERSION=2.15.05
 
 if command -v gmake; then
     export MAKE=gmake
@@ -49,9 +54,6 @@ fi
 if [ ! -f gcc-$GCCVERSION.tar.gz ]; then
     curl -o gcc-$GCCVERSION.tar.gz https://ftp.gnu.org/gnu/gcc/gcc-$GCCVERSION/gcc-$GCCVERSION.tar.gz
 fi
-if [ ! -f nasm-$NASMVERSION.tar.gz ]; then
-    curl -o nasm-$NASMVERSION.tar.gz https://limine-bootloader.org/files/misc/nasm-$NASMVERSION.tar.gz
-fi
 
 rm -rf build
 mkdir build
@@ -59,11 +61,10 @@ cd build
 
 $TAR -zxf ../binutils-$BINUTILSVERSION.tar.gz
 $TAR -zxf ../gcc-$GCCVERSION.tar.gz
-$TAR -zxf ../nasm-$NASMVERSION.tar.gz
 
 mkdir build-binutils
 cd build-binutils
-../binutils-$BINUTILSVERSION/configure CFLAGS="$CFLAGS" CXXFLAGS="$CFLAGS"  --target=$TARGET --prefix="$PREFIX" --program-prefix=limine- --with-sysroot --disable-nls --disable-werror --enable-targets=x86_64-elf,x86_64-pe
+../binutils-$BINUTILSVERSION/configure CFLAGS="$CFLAGS" CXXFLAGS="$CFLAGS"  --target=$TARGET --prefix="$PREFIX" --with-sysroot --disable-nls --disable-werror
 $MAKE
 $MAKE install
 cd ..
@@ -76,16 +77,9 @@ chmod +x contrib/download_prerequisites
 cd ..
 mkdir build-gcc
 cd build-gcc
-../gcc-$GCCVERSION/configure CFLAGS="$CFLAGS" CXXFLAGS="$CFLAGS" --target=$TARGET --prefix="$PREFIX" --program-prefix=limine- --disable-nls --enable-languages=c --without-headers
+../gcc-$GCCVERSION/configure CFLAGS="$CFLAGS" CXXFLAGS="$CFLAGS" --target=$TARGET --prefix="$PREFIX" --disable-nls --enable-languages=c --without-headers
 $MAKE all-gcc
 $MAKE all-target-libgcc
 $MAKE install-gcc
 $MAKE install-target-libgcc
-cd ..
-
-mkdir build-nasm
-cd build-nasm
-../nasm-$NASMVERSION/configure --prefix="$PREFIX"
-MAKEFLAGS="" $MAKE
-MAKEFLAGS="" $MAKE install
 cd ..

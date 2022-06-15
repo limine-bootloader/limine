@@ -1,6 +1,7 @@
+include $(TOOLCHAIN_FILE)
+
 TARGET ?=
 BUILDDIR ?=
-USING_CLANG ?= 0
 
 override SRCDIR := $(shell pwd -P)
 
@@ -150,7 +151,7 @@ override INTERNAL_LDFLAGS += \
 		-ztext
 endif
 
-.PHONY: all clean
+.PHONY: all
 
 override C_FILES := $(shell find ./ -type f -name '*.c')
 ifeq ($(TARGET), bios)
@@ -442,6 +443,3 @@ $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_uefi_ia32
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' -F dwarf -g $(WERROR) -f elf32 -o '$(call SHESCAPE,$@)'
 endif
-
-clean:
-	rm -rf '$(call SHESCAPE,$(BUILDDIR))'

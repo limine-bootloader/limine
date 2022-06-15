@@ -76,9 +76,6 @@ export LIMINE_READELF
 
 override LIMINE_VERSION := @PACKAGE_VERSION@
 
-override USING_CLANG := @USING_CLANG@
-export USING_CLANG
-
 override STAGE1_FILES := $(shell find '$(call SHESCAPE,$(SRCDIR))/stage1' -type f -name '*.asm')
 
 .PHONY: all
@@ -211,38 +208,62 @@ distclean: clean
 .PHONY: maintainer-clean
 maintainer-clean: distclean
 	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding_headers limine-efi configure build-aux *'~' autom4te.cache *.tar.xz *.tar.gz
+	cd '$(call SHESCAPE,$(SRCDIR))'/toolchain-detect && rm -rf configure *'~' autom4te.cache
 
 .PHONY: common-uefi-x86-64
 common-uefi-x86-64:
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all TARGET=uefi-x86-64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64'
+	mkdir -p '$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64'
+	cd '$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64' && \
+		TARGET=uefi-x86-64 '$(call SHESCAPE,$(SRCDIR))'/toolchain-detect/configure
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all \
+		TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64/toolchain.mk' \
+		TARGET=uefi-x86-64 \
+		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64'
 
 .PHONY: common-uefi-x86-64-clean
 common-uefi-x86-64-clean:
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' clean TARGET=uefi-x86-64 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64'
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64'
 
 .PHONY: common-uefi-ia32
 common-uefi-ia32:
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all TARGET=uefi-ia32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32'
+	mkdir -p '$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32'
+	cd '$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32' && \
+		TARGET=uefi-ia32 '$(call SHESCAPE,$(SRCDIR))'/toolchain-detect/configure
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all \
+		TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32/toolchain.mk' \
+		TARGET=uefi-ia32 \
+		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32'
 
 .PHONY: common-uefi-ia32-clean
 common-uefi-ia32-clean:
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' clean TARGET=uefi-ia32 BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32'
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32'
 
 .PHONY: common-bios
 common-bios:
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all TARGET=bios BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-bios'
+	mkdir -p '$(call SHESCAPE,$(BUILDDIR))/common-bios'
+	cd '$(call SHESCAPE,$(BUILDDIR))/common-bios' && \
+		TARGET=bios '$(call SHESCAPE,$(SRCDIR))'/toolchain-detect/configure
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all \
+		TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/common-bios/toolchain.mk' \
+		TARGET=bios \
+		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-bios'
 
 .PHONY: common-bios-clean
 common-bios-clean:
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' clean TARGET=bios BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-bios'
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))/common-bios'
 
 .PHONY: decompressor
 decompressor:
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/decompressor' all BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/decompressor-build'
+	mkdir -p '$(call SHESCAPE,$(BUILDDIR))/decompressor-build'
+	cd '$(call SHESCAPE,$(BUILDDIR))/decompressor-build' && \
+		TARGET=bios '$(call SHESCAPE,$(SRCDIR))'/toolchain-detect/configure
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/decompressor' all \
+		TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/common-bios/toolchain.mk' \
+		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/decompressor-build'
 
 .PHONY: decompressor-clean
 decompressor-clean:
-	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/decompressor' clean BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/decompressor-build'
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))/decompressor-build'
 
 .PHONY: test-clean
 test-clean:

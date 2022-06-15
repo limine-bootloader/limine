@@ -18,3 +18,4 @@ mkdir -p build-aux
 cp "${automake_libdir}/install-sh" build-aux
 
 autoconf
+( cd toolchain-detect && autoconf )

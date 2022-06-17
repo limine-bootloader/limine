@@ -41,7 +41,6 @@ SECTIONS
         term_write = .;
         term_textmode = .;
         term_vbe = .;
-        term_fallback = .;
         stage3_addr = .;
         data_begin = .;
 #else

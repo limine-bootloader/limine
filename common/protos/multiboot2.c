@@ -286,7 +286,7 @@ bool multiboot2_load(char *config, char* cmdline) {
     size_t mb2_info_size = get_multiboot2_info_size(
         cmdline,
         modules_size,
-        section_hdr_info ? section_hdr_info->section_entry_size * section_hdr_info->num : 0,
+        section_hdr_info ? section_hdr_info->section_entry_size : 0,
         section_hdr_info ? section_hdr_info->num : 0,
         smbios_tag_size
     );

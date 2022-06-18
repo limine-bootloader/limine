@@ -968,11 +968,7 @@ noreturn void boot(char *config) {
     } else if (!strcmp(proto, "chainload_next")) {
         chainload_next(config);
     } else if (!strcmp(proto, "chainload")) {
-#if defined (__x86_64__) || defined (__i386__)
         chainload(config);
-#else
-        print("TODO: Chainload is not available on aarch64.\n\n");
-#endif
     }
 
     panic(true, "Incorrect protocol specified for kernel.");

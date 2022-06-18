@@ -55,6 +55,20 @@ static size_t get_multiboot2_info_size(
 
 #define append_tag(P, TAG) ({ (P) += ALIGN_UP((TAG)->size, MULTIBOOT_TAG_ALIGN); })
 
+static uint32_t kernel_top;
+
+static void *mb2_alloc(size_t size) {
+    void *ret = (void *)(uintptr_t)ALIGN_UP(kernel_top, 4096);
+
+    while (!memmap_alloc_range((uintptr_t)ret, size, MEMMAP_KERNEL_AND_MODULES,
+                               true, false, false, false)) {
+        ret += 0x200000;
+    }
+
+    kernel_top = (uintptr_t)ret + size;
+    return ret;
+}
+
 bool multiboot2_load(char *config, char* cmdline) {
     struct file_handle *kernel_file;
 
@@ -175,8 +189,6 @@ bool multiboot2_load(char *config, char* cmdline) {
         }
     }
 
-    uint32_t kernel_top;
-
     if (addresstag != NULL) {
         if (addresstag->load_addr > addresstag->header_addr)
             panic(true, "multiboot2: Illegal load address");
@@ -285,6 +297,42 @@ bool multiboot2_load(char *config, char* cmdline) {
     info_idx += sizeof(struct multiboot2_start_tag);
 
     //////////////////////////////////////////////
+    // Create ELF info tag
+    //////////////////////////////////////////////
+    if (section_hdr_info == NULL) {
+        if (is_elf_info_requested) {
+            panic(true, "multiboot2: Cannot return ELF file information");
+        }
+    } else {
+        uint32_t size = sizeof(struct multiboot_tag_elf_sections) + section_hdr_info->section_hdr_size;
+        struct multiboot_tag_elf_sections *tag = (struct multiboot_tag_elf_sections*)(mb2_info + info_idx);
+
+        tag->type = MULTIBOOT_TAG_TYPE_ELF_SECTIONS;
+        tag->size = size;
+
+        tag->num = section_hdr_info->num;
+        tag->entsize = section_hdr_info->section_entry_size;
+        tag->shndx = section_hdr_info->str_section_idx;
+
+        memcpy(tag->sections, kernel + section_hdr_info->section_offset, section_hdr_info->section_hdr_size);
+
+        for (size_t i = 0; i < section_hdr_info->num; i++) {
+            struct elf64_shdr *shdr = (void *)kernel + section_hdr_info->section_offset + i * section_hdr_info->section_entry_size;
+
+            if (shdr->sh_addr != 0 || shdr->sh_size == 0) {
+                continue;
+            }
+
+            void *section = mb2_alloc(shdr->sh_size);
+            memcpy(section, kernel + shdr->sh_offset, shdr->sh_size);
+
+            shdr->sh_addr = (uintptr_t)section;
+        }
+
+        append_tag(info_idx, tag);
+    }
+
+    //////////////////////////////////////////////
     // Create modules tag
     //////////////////////////////////////////////
     for (size_t i = 0; i < n_modules; i++) {
@@ -298,19 +346,14 @@ bool multiboot2_load(char *config, char* cmdline) {
         if ((f = uri_open(module_path)) == NULL)
             panic(true, "multiboot2: Failed to open module with path `%s`. Is the path correct?", module_path);
 
-        void *module_addr = (void *)(uintptr_t)ALIGN_UP(kernel_top, 4096);
 
         // Module commandline can be null, so we guard against that and make the
         // string "".
         char *module_cmdline = conf_tuple.value2;
         if (!module_cmdline) module_cmdline = "";
 
-        while (!memmap_alloc_range((uintptr_t)module_addr, f->size, MEMMAP_KERNEL_AND_MODULES,
-                                   true, false, false, false)) {
-            module_addr += 0x200000;
-        }
+        void *module_addr = mb2_alloc(f->size);
 
-        kernel_top = (uintptr_t)module_addr + f->size;
         fread(f, module_addr, 0, f->size);
 
         struct multiboot_tag_module *module_tag = (struct multiboot_tag_module *)(mb2_info + info_idx);
@@ -547,30 +590,6 @@ bool multiboot2_load(char *config, char* cmdline) {
         append_tag(info_idx, tag);
     }
 #endif
-
-    //////////////////////////////////////////////
-    // Create ELF info tag
-    //////////////////////////////////////////////
-    {
-        if (section_hdr_info == NULL) {
-            if (is_elf_info_requested) {
-                panic(true, "multiboot2: Cannot return ELF file information");
-            }
-        } else {
-            uint32_t size = sizeof(struct multiboot_tag_elf_sections) + section_hdr_info->section_hdr_size;
-            struct multiboot_tag_elf_sections *tag = (struct multiboot_tag_elf_sections*)(mb2_info + info_idx);
-
-            tag->type = MULTIBOOT_TAG_TYPE_ELF_SECTIONS;
-            tag->size = size;
-
-            tag->num = section_hdr_info->num;
-            tag->entsize = section_hdr_info->section_entry_size;
-            tag->shndx = section_hdr_info->str_section_idx;
-
-            memcpy(tag->sections, section_hdr_info->section_hdrs, section_hdr_info->section_hdr_size);
-            append_tag(info_idx, tag);
-        }
-    }
 
 #if uefi == 1
     efi_exit_boot_services();

@@ -2,21 +2,18 @@ AC_INIT([Limine], m4_esyscmd([../version.sh]), [https://github.com/limine-bootlo
 
 AC_PREREQ(2.69)
 
-case "$TARGET" in
-    uefi-x86-64)
-        ARCHITECTURE=x86_64
-        ;;
-    uefi-ia32|bios)
-        ARCHITECTURE=i686
-        ;;
-    *)
-        AC_MSG_ERROR([invalid target])
-        ;;
-esac
+BUILDDIR="$(pwd -P)"
+
+if test -f "$BUILDDIR/$ARCHITECTURE-toolchain.mk"; then
+    exit 0
+fi
+
+AC_PROG_GREP
 
 if test "x$TOOLCHAIN" = "x"; then
     TOOLCHAIN=$ARCHITECTURE-elf
 fi
+
 AC_SUBST(TOOLCHAIN, $TOOLCHAIN)
 
 AC_DEFUN([CC_ERROR_MSG], [
@@ -108,5 +105,5 @@ GET_BINUTILS_PROG(OBJCOPY, objcopy, objcopy)
 GET_BINUTILS_PROG(OBJDUMP, objdump, objdump)
 GET_BINUTILS_PROG(READELF, readelf, readelf)
 
-AC_CONFIG_FILES(toolchain.mk)
+AC_CONFIG_FILES([$ARCHITECTURE-toolchain.mk:toolchain.mk.in])
 AC_OUTPUT

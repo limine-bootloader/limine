@@ -205,7 +205,7 @@ dist:
 
 .PHONY: distclean
 distclean: clean
-	rm -rf toolchain ovmf* config.log config.status GNUmakefile config.h
+	rm -rf toolchain ovmf* config.log config.status GNUmakefile config.h toolchain-files
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
@@ -214,11 +214,8 @@ maintainer-clean: distclean
 
 .PHONY: common-uefi-x86-64
 common-uefi-x86-64:
-	mkdir -p '$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64'
-	cd '$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64' && \
-		TARGET=uefi-x86-64 '$(call SHESCAPE,$(SRCDIR))'/toolchain-detect/configure
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all \
-		TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64/toolchain.mk' \
+		TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/x86_64-toolchain.mk' \
 		TARGET=uefi-x86-64 \
 		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64'
 
@@ -228,11 +225,8 @@ common-uefi-x86-64-clean:
 
 .PHONY: common-uefi-ia32
 common-uefi-ia32: $(call MKESCAPE,$(SRCDIR))/stivale
-	mkdir -p '$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32'
-	cd '$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32' && \
-		TARGET=uefi-ia32 '$(call SHESCAPE,$(SRCDIR))'/toolchain-detect/configure
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all \
-		TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32/toolchain.mk' \
+		TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/i686-toolchain.mk' \
 		TARGET=uefi-ia32 \
 		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32'
 
@@ -242,11 +236,8 @@ common-uefi-ia32-clean:
 
 .PHONY: common-bios
 common-bios: $(call MKESCAPE,$(SRCDIR))/stivale
-	mkdir -p '$(call SHESCAPE,$(BUILDDIR))/common-bios'
-	cd '$(call SHESCAPE,$(BUILDDIR))/common-bios' && \
-		TARGET=bios '$(call SHESCAPE,$(SRCDIR))'/toolchain-detect/configure
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all \
-		TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/common-bios/toolchain.mk' \
+		TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/i686-toolchain.mk' \
 		TARGET=bios \
 		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-bios'
 
@@ -256,11 +247,8 @@ common-bios-clean:
 
 .PHONY: decompressor
 decompressor:
-	mkdir -p '$(call SHESCAPE,$(BUILDDIR))/decompressor-build'
-	cd '$(call SHESCAPE,$(BUILDDIR))/decompressor-build' && \
-		TARGET=bios '$(call SHESCAPE,$(SRCDIR))'/toolchain-detect/configure
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/decompressor' all \
-		TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/common-bios/toolchain.mk' \
+		TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/i686-toolchain.mk' \
 		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/decompressor-build'
 
 .PHONY: decompressor-clean

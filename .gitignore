@@ -1,6 +1,7 @@
 /bin
 /build
 /toolchain
+/toolchain-files
 /limine-efi
 /freestanding_headers
 /ovmf*

@@ -13,6 +13,8 @@ AC_SUBST(SRCDIR, [$SRCDIR])
 AC_SUBST(BUILDDIR, [$BUILDDIR])
 AC_SUBST(PATH, [$PATH])
 
+rm -rf "$BUILDDIR/toolchain-files"
+
 test "x$CFLAGS" = "x" && CFLAGS='-g -O2 -pipe -Wall -Wextra'
 AC_PROG_CC
 
@@ -61,6 +63,11 @@ AC_ARG_ENABLE([bios],
 if test "x$BUILD_BIOS" = "xno"; then
     BUILD_BIOS=""
 else
+    (
+    mkdir -p "$BUILDDIR/toolchain-files"
+    cd "$BUILDDIR/toolchain-files"
+    ARCHITECTURE=i686 "$SRCDIR/toolchain-detect/configure" || exit 1
+    )
     BUILD_BIOS="limine-bios"
 fi
 
@@ -99,6 +106,11 @@ AC_ARG_ENABLE([uefi-ia32],
 if test "x$BUILD_UEFI_IA32" = "xno"; then
     BUILD_UEFI_IA32=""
 else
+    (
+    mkdir -p "$BUILDDIR/toolchain-files"
+    cd "$BUILDDIR/toolchain-files"
+    ARCHITECTURE=i686 "$SRCDIR/toolchain-detect/configure" || exit 1
+    )
     BUILD_UEFI_IA32="limine-uefi-ia32"
 fi
 
@@ -113,6 +125,11 @@ AC_ARG_ENABLE([uefi-x86-64],
 if test "x$BUILD_UEFI_X86_64" = "xno"; then
     BUILD_UEFI_X86_64=""
 else
+    (
+    mkdir -p "$BUILDDIR/toolchain-files"
+    cd "$BUILDDIR/toolchain-files"
+    ARCHITECTURE=x86_64 "$SRCDIR/toolchain-detect/configure" || exit 1
+    )
     BUILD_UEFI_X86_64="limine-uefi-x86-64"
 fi
 

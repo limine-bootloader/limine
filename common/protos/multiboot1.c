@@ -21,6 +21,20 @@
 
 noreturn void multiboot1_spinup_32(uint32_t entry_point, uint32_t multiboot1_info);
 
+static uint32_t kernel_top;
+
+static void *mb1_alloc(size_t size) {
+    void *ret = (void *)(uintptr_t)ALIGN_UP(kernel_top, 4096);
+
+    while (!memmap_alloc_range((uintptr_t)ret, size, MEMMAP_KERNEL_AND_MODULES,
+                               true, false, false, false)) {
+        ret += 0x200000;
+    }
+
+    kernel_top = (uintptr_t)ret + size;
+    return ret;
+}
+
 bool multiboot1_load(char *config, char *cmdline) {
     struct file_handle *kernel_file;
 
@@ -63,7 +77,8 @@ bool multiboot1_load(char *config, char *cmdline) {
         panic(true, "multiboot1: Header checksum is invalid");
 
     uint32_t entry_point;
-    uint32_t kernel_top;
+
+    struct elf_section_hdr_info *section_hdr_info = NULL;
 
     if (header.flags & (1 << 16)) {
         if (header.load_addr > header.header_addr)
@@ -101,6 +116,16 @@ bool multiboot1_load(char *config, char *cmdline) {
 
         switch (bits) {
             case 32:
+                section_hdr_info = elf32_section_hdr_info(kernel);
+                break;
+            case 64: {
+                section_hdr_info = elf64_section_hdr_info(kernel);
+                break;
+            }
+        }
+
+        switch (bits) {
+            case 32:
                 if (elf32_load(kernel, &entry_point, &kernel_top, MEMMAP_KERNEL_AND_MODULES))
                     panic(true, "multiboot1: ELF32 load failure");
                 break;
@@ -116,6 +141,33 @@ bool multiboot1_load(char *config, char *cmdline) {
             default:
                 panic(true, "multiboot1: Invalid ELF file bitness");
         }
+    }
+
+    if (section_hdr_info != NULL) {
+        multiboot1_info->elf_sect.num = section_hdr_info->num;
+        multiboot1_info->elf_sect.size = section_hdr_info->section_entry_size;
+        multiboot1_info->elf_sect.shndx = section_hdr_info->str_section_idx;
+
+        void *sections = conv_mem_alloc(section_hdr_info->section_entry_size * section_hdr_info->num);
+
+        multiboot1_info->elf_sect.addr = (uintptr_t)sections;
+
+        memcpy(sections, kernel + section_hdr_info->section_offset, section_hdr_info->section_entry_size * section_hdr_info->num);
+
+        for (size_t i = 0; i < section_hdr_info->num; i++) {
+            struct elf64_shdr *shdr = (void *)sections + section_hdr_info->section_offset + i * section_hdr_info->section_entry_size;
+
+            if (shdr->sh_addr != 0 || shdr->sh_size == 0) {
+                continue;
+            }
+
+            void *section = mb1_alloc(shdr->sh_size);
+            memcpy(section, kernel + shdr->sh_offset, shdr->sh_size);
+
+            shdr->sh_addr = (uintptr_t)section;
+        }
+
+        multiboot1_info->flags |= (1 << 5);
     }
 
     uint32_t n_modules;
@@ -152,12 +204,8 @@ bool multiboot1_load(char *config, char *cmdline) {
             char *lowmem_modstr = conv_mem_alloc(strlen(module_cmdline) + 1);
             strcpy(lowmem_modstr, module_cmdline);
 
-            void *module_addr = (void *)(uintptr_t)ALIGN_UP(kernel_top, 4096);
-            while (!memmap_alloc_range((uintptr_t)module_addr, f->size, MEMMAP_KERNEL_AND_MODULES,
-                                       true, false, false, false)) {
-                module_addr += 0x200000;
-            }
-            kernel_top = (uintptr_t)module_addr + f->size;
+            void *module_addr = mb1_alloc(f->size);
+
             fread(f, module_addr, 0, f->size);
 
             m->begin   = (uint32_t)(size_t)module_addr;

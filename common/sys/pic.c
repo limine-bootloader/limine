@@ -1,3 +1,5 @@
+#if defined (__x86_64__) || defined (__i386__)
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -42,3 +44,5 @@ void pic_mask_all(void) {
     outb(0xa1, 0xff);
     outb(0x21, 0xff);
 }
+
+#endif

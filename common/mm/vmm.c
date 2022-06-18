@@ -1,3 +1,5 @@
+#if defined (__x86_64__) || defined (__i386__)
+
 #include <stdint.h>
 #include <stddef.h>
 #include <mm/vmm.h>
@@ -110,3 +112,5 @@ level4:
 
     pml1[pml1_entry] = (pt_entry_t)(phys_addr | flags);
 }
+
+#endif

@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#if defined(__x86_64__) || defined(__i386__)
+
 inline bool cpuid(uint32_t leaf, uint32_t subleaf,
           uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
     uint32_t cpuid_max;
@@ -216,5 +218,19 @@ inline void delay(uint64_t cycles) {
     ); \
     ret; \
 })
+
+#elif defined (__aarch64__)
+
+// TODO
+
+inline uint64_t rdtsc(void) {
+    uint64_t v;
+    asm volatile ("mrs %0, cntpct_el0" : "=r" (v));
+    return v;
+}
+
+#else
+#error Unknown architecture
+#endif
 
 #endif

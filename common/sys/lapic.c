@@ -1,3 +1,5 @@
+#if defined (__x86_64__) || defined (__i386__)
+
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -162,7 +164,7 @@ void io_apic_write(size_t io_apic, uint32_t reg, uint32_t value) {
 }
 
 uint32_t io_apic_gsi_count(size_t io_apic) {
-	return ((io_apic_read(io_apic, 1) & 0xff0000) >> 16) + 1;
+    return ((io_apic_read(io_apic, 1) & 0xff0000) >> 16) + 1;
 }
 
 void io_apic_mask_all(void) {
@@ -175,3 +177,5 @@ void io_apic_mask_all(void) {
         }
     }
 }
+
+#endif

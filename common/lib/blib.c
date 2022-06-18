@@ -211,7 +211,13 @@ retry:
         goto retry;
     }
 
+#if defined(__x86_64__) || defined(__i386__)
     asm volatile ("cli" ::: "memory");
+#elif defined (__aarch64__)
+    asm volatile ("msr daifset, #15" ::: "memory");
+#else
+#error Unknown architecture
+#endif
 
     efi_boot_services_exited = true;
 

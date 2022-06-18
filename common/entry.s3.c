@@ -43,6 +43,14 @@ EFI_STATUS efi_main(
         "movl %eax, (%esp)\n\t"
         "jmp uefi_entry\n\t"
     );
+#elif defined (__aarch64__)
+    asm (
+        "mov x30, xzr\n\t"
+        "mov x29, xzr\n\t"
+        "b uefi_entry\n\t"
+    );
+#else
+#error Unknown architecture
 #endif
 }
 
@@ -65,7 +73,9 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 
     init_memmap();
 
+#if defined (__x86_64__) || defined (__i386__)
     init_gdt();
+#endif
 
     disk_create_index();
 
@@ -129,8 +139,10 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 noreturn void stage3_common(void) {
     term_notready();
 
+#if defined (__x86_64__) || defined (__i386__)
     init_flush_irqs();
     init_io_apics();
+#endif
 
     menu(true);
 }

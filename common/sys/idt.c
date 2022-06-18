@@ -1,3 +1,5 @@
+#if defined (__x86_64__) || defined (__i386__)
+
 #include <stdint.h>
 #include <stddef.h>
 #include <sys/idt.h>
@@ -67,3 +69,5 @@ void flush_irqs(void) {
 
     asm volatile ("lidt %0" :: "m"(old_idt) : "memory");
 }
+
+#endif

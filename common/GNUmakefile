@@ -21,6 +21,8 @@ else ifeq ($(TARGET),uefi-x86-64)
     override OBJCOPY_ARCH := elf64-x86-64
 else ifeq ($(TARGET),uefi-ia32)
     override OBJCOPY_ARCH := elf32-i386
+else ifeq ($(TARGET),uefi-aarch64)
+    override OBJCOPY_ARCH := elf64-littleaarch64
 else
     $(error Invalid target)
 endif
@@ -44,10 +46,6 @@ override CROSS_CFLAGS += \
     -Wno-address-of-packed-member \
     -Wshadow \
     -Wvla \
-    -mno-80387 \
-    -mno-mmx \
-    -mno-sse \
-    -mno-sse2 \
     -MMD \
     -DCOM_OUTPUT=$(COM_OUTPUT) \
     -DE9_OUTPUT=$(E9_OUTPUT) \
@@ -67,6 +65,14 @@ ifeq ($(TARGET),bios)
         -mabi=sysv \
         -fno-pie \
         -fno-pic
+endif
+
+ifeq ($(TARGET),$(filter $(TARGET),bios uefi-ia32 uefi-x86_64))
+    override CROSS_CFLAGS += \
+        -mno-80387 \
+        -mno-mmx \
+        -mno-sse \
+        -mno-sse2
 endif
 
 ifeq ($(TARGET),uefi-x86-64)
@@ -98,6 +104,18 @@ ifeq ($(TARGET),uefi-ia32)
         -fpie
 endif
 
+ifeq ($(TARGET),uefi-aarch64)
+    override CROSS_CFLAGS += \
+        -Dbios=0 \
+        -Duefi=1 \
+        -mtune=generic \
+        -DGNU_EFI_USE_MS_ABI \
+        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
+        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/aarch64' \
+        -fpie \
+        -mgeneral-regs-only
+endif
+
 override CROSS_LDFLAGS += \
     -nostdlib \
     -z max-page-size=0x1000
@@ -127,6 +145,15 @@ ifeq ($(TARGET),uefi-ia32)
         -ztext
 endif
 
+ifeq ($(TARGET),uefi-aarch64)
+    override CROSS_LDFLAGS += \
+        -maarch64elf \
+        -static \
+        -pie \
+        --no-dynamic-linker \
+        -ztext
+endif
+
 override C_FILES := $(shell find ./ -type f -name '*.c')
 ifeq ($(TARGET),bios)
     override ASMX86_FILES := $(shell find ./ -type f -name '*.asm_x86')
@@ -150,6 +177,13 @@ ifeq ($(TARGET),uefi-ia32)
 
     override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.o) $(ASM32_FILES:.asm_ia32=.o) $(ASM32U_FILES:.asm_uefi_ia32=.o) $(ASMX86_FILES:.asm_x86=.o))
 endif
+ifeq ($(TARGET),uefi-aarch64)
+    override ASM64_FILES := $(shell find ./ -type f -name '*.asm_aarch64')
+    override ASM64U_FILES := $(shell find ./ -type f -name '*.asm_uefi_aarch64')
+
+    override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.o) $(ASM64_FILES:.asm_aarch64=.o) $(ASM64U_FILES:.asm_uefi_aarch64=.o))
+endif
+
 override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.d))
 
 .PHONY: all
@@ -160,11 +194,13 @@ else ifeq ($(TARGET),uefi-x86-64)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI
 else ifeq ($(TARGET),uefi-ia32)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI
+else ifeq ($(TARGET), uefi-aarch64)
+all: $(call MKESCAPE,$(BUILDDIR))/BOOTAA64.EFI
 endif
 
 $(call MKESCAPE,$(BUILDDIR))/font.o: font.bin
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) font.bin '$(call SHESCAPE,$@)'
+	$(CROSS_OBJCOPY) -I binary -O $(OBJCOPY_ARCH) font.bin '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))/tinf'
@@ -290,6 +326,46 @@ $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 
 endif
 
+ifeq ($(TARGET),uefi-aarch64)
+
+$(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
+	cd '$(call SHESCAPE,$(BUILDDIR))' && \
+		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' full 64 '\.text'
+	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
+	rm -f '$(call SHESCAPE,$(BUILDDIR))/full.map.S' '$(call SHESCAPE,$(BUILDDIR))/full.map.d'
+
+$(call MKESCAPE,$(BUILDDIR))/BOOTAA64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.elf
+	$(CROSS_OBJCOPY) -O binary '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
+
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-aarch64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_aarch64.o: $(call MKESCAPE,$(BUILDDIR))/limine-efi
+	unset ARFLAGS; unset CPPFLAGS; \
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
+		CC="$(CROSS_CC) -mtune=generic" \
+		CFLAGS='-nostdinc' \
+		INCDIR='-I$(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
+		ARCH=aarch64
+
+$(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_aarch64.ld.in
+	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
+	$(CROSS_CC) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_aarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-aarch64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_aarch64.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o
+	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+	$(CROSS_LD) \
+		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
+		'$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) -o '$(call SHESCAPE,$@)'
+
+$(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_aarch64.ld.in
+	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
+	$(CROSS_CC) -x c -E -P -undef linker_uefi_aarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-aarch64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_aarch64.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
+	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+	$(CROSS_LD) \
+		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
+		'$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) -o '$(call SHESCAPE,$@)'
+endif
+
 ifeq ($(TARGET),uefi-ia32)
 
 $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
@@ -334,6 +410,12 @@ endif
 -include $(HEADER_DEPS)
 
 ifeq ($(TARGET),uefi-x86-64)
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/limine-efi
+	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
+	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+endif
+
+ifeq ($(TARGET), uefi-aarch64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
@@ -387,6 +469,16 @@ $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_uefi_x86_64
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_x86
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' -F dwarf -g $(WERROR) -f elf64 -o '$(call SHESCAPE,$@)'
+endif
+
+ifeq ($(TARGET), uefi-aarch64)
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_aarch64
+	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
+	$(CROSS_CC) $(CROSS_CFLAGS) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_uefi_aarch64
+	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
+	$(CROSS_CC) $(CROSS_CFLAGS) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-ia32)

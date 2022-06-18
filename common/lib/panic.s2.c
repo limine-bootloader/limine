@@ -83,7 +83,13 @@ nested:
 #elif uefi == 1
         print("System halted.");
         for (;;) {
+#if defined (__x86_64__) || defined (__i386__)
             asm ("hlt");
+#elif defined (__aarch64__)
+            asm ("wfi");
+#else
+#error Unknown architecture
+#endif
         }
 #endif
     }

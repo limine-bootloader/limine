@@ -1,3 +1,5 @@
+#if defined (__x86_64__) || defined (__i386__)
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -278,3 +280,5 @@ struct smp_information *init_smp(size_t    header_hack_size,
 
     return ret;
 }
+
+#endif

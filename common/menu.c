@@ -534,7 +534,7 @@ static size_t print_tree(const char *shift, size_t level, size_t base_index, siz
     return max_entries;
 }
 
-#if defined (__x86_64__)
+#if defined (__x86_64__) || defined (__aarch64__)
 __attribute__((used))
 static uintptr_t stack_at_first_entry = 0;
 #endif
@@ -577,6 +577,24 @@ noreturn void menu(__attribute__((unused)) bool timeout_enabled) {
         "push $0\n\t"
         "jmp _menu"
     );
+#elif defined (__aarch64__)
+    asm volatile (
+        "adrp x8, stack_at_first_entry\n\t"
+        "ldr x9, [x8, :lo12:stack_at_first_entry]\n\t"
+        "cbz x9, 1f\n\t"
+        "mov sp, x9\n\t"
+        "b 2f\n\t"
+        "1:\n\t"
+        "mov x9, sp\n\t"
+        "str x9, [x8, :lo12:stack_at_first_entry]\n\t"
+        "2:\n\t"
+        "mov x30, xzr\n\t"
+        "mov x29, xzr\n\t"
+        "b _menu"
+    );
+
+#else
+#error Unknown architecture
 #endif
 }
 
@@ -924,17 +942,37 @@ noreturn void boot(char *config) {
         print("Please notify kernel maintainers to move to the Limine boot protocol or\n");
         print("roll back to Limine 3.x.\n\n");
     } else if (!strcmp(proto, "limine")) {
+#if defined (__x86_64__) || defined (__i386__)
         limine_load(config, cmdline);
+#else
+        print("TODO: Limine is not available on aarch64.\n\n");
+#endif
     } else if (!strcmp(proto, "linux")) {
+#if defined (__x86_64__) || defined (__i386__)
         linux_load(config, cmdline);
+#else
+        print("TODO: Linux is not available on aarch64.\n\n");
+#endif
     } else if (!strcmp(proto, "multiboot1") || !strcmp(proto, "multiboot")) {
+#if defined (__x86_64__) || defined (__i386__)
         multiboot1_load(config, cmdline);
+#else
+        print("Multiboot 1 is not available on aarch64.\n\n");
+#endif
     } else if (!strcmp(proto, "multiboot2")) {
+#if defined (__x86_64__) || defined (__i386__)
         multiboot2_load(config, cmdline);
+#else
+        print("Multiboot 2 is not available on aarch64.\n\n");
+#endif
     } else if (!strcmp(proto, "chainload_next")) {
         chainload_next(config);
     } else if (!strcmp(proto, "chainload")) {
+#if defined (__x86_64__) || defined (__i386__)
         chainload(config);
+#else
+        print("TODO: Chainload is not available on aarch64.\n\n");
+#endif
     }
 
     panic(true, "Incorrect protocol specified for kernel.");

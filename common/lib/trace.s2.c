@@ -52,8 +52,10 @@ void print_stacktrace(size_t *base_ptr) {
             "movl %%ebp, %0"
 #elif defined (__x86_64__)
             "movq %%rbp, %0"
+#elif defined (__aarch64__)
+            "mov %0, x29"
 #endif
-            : "=g"(base_ptr)
+            : "=r"(base_ptr)
             :: "memory"
         );
     }

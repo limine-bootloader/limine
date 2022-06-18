@@ -37,11 +37,11 @@ echo ".globl $2_map" >> "$TMP4"
 echo "$2_map:" >> "$TMP4"
 
 if [ "$3" = "32" ]; then
-    paste -d'$' "$TMP2" "$TMP3" | "$SED" 's/^/.long 0x/g;s/$/"/g;s/\$/\
+    paste -d'#' "$TMP2" "$TMP3" | "$SED" 's/^/.long 0x/g;s/$/"/g;s/\#/\
 .asciz "/g' >> "$TMP4"
     echo ".long 0xffffffff" >> "$TMP4"
 elif [ "$3" = "64" ]; then
-    paste -d'$' "$TMP2" "$TMP3" | "$SED" 's/^/.quad 0x/g;s/$/"/g;s/\$/\
+    paste -d'#' "$TMP2" "$TMP3" | "$SED" 's/^/.quad 0x/g;s/$/"/g;s/\#/\
 .asciz "/g' >> "$TMP4"
     echo ".quad 0xffffffffffffffff" >> "$TMP4"
 fi

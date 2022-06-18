@@ -1,3 +1,5 @@
+#if defined (__x86_64__) || defined (__i386__)
+
 #include <stdint.h>
 #include <stddef.h>
 #include <stdnoreturn.h>
@@ -629,3 +631,5 @@ set_textmode:;
     common_spinup(linux_spinup, 2, (uint32_t)kernel_load_addr,
                                    (uint32_t)(uintptr_t)boot_params);
 }
+
+#endif

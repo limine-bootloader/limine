@@ -1,3 +1,7 @@
+
+// TODO(qookie): port to aarch64
+#if defined (__x86_64__) || defined (__i386__)
+
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -858,3 +862,5 @@ FEAT_END
         (uint32_t)reported_stack, (uint32_t)(reported_stack >> 32),
         (uint32_t)(uintptr_t)local_gdt);
 }
+
+#endif

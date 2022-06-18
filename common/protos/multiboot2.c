@@ -26,7 +26,7 @@
 static size_t get_multiboot2_info_size(
     char *cmdline,
     size_t modules_size,
-    uint32_t section_hdr_size, uint32_t section_num,
+    uint32_t section_entry_size, uint32_t section_num,
     uint32_t smbios_tag_size
 ) {
     return ALIGN_UP(sizeof(struct multiboot2_start_tag), MULTIBOOT_TAG_ALIGN) +                                         // start
@@ -35,7 +35,7 @@ static size_t get_multiboot2_info_size(
         ALIGN_UP(sizeof(struct multiboot_tag_framebuffer), MULTIBOOT_TAG_ALIGN) +                                       // framebuffer
         ALIGN_UP(sizeof(struct multiboot_tag_new_acpi) + sizeof(struct rsdp), MULTIBOOT_TAG_ALIGN) +                    // new ACPI info
         ALIGN_UP(sizeof(struct multiboot_tag_old_acpi) + 20, MULTIBOOT_TAG_ALIGN) +                                     // old ACPI info
-        ALIGN_UP(sizeof(struct multiboot_tag_elf_sections) + section_hdr_size * section_num, MULTIBOOT_TAG_ALIGN) +                   // ELF info
+        ALIGN_UP(sizeof(struct multiboot_tag_elf_sections) + section_entry_size * section_num, MULTIBOOT_TAG_ALIGN) +                   // ELF info
         ALIGN_UP(modules_size, MULTIBOOT_TAG_ALIGN) +                                                                   // modules
         ALIGN_UP(smbios_tag_size, MULTIBOOT_TAG_ALIGN) +                                                                // SMBIOS
         ALIGN_UP(sizeof(struct multiboot_tag_basic_meminfo), MULTIBOOT_TAG_ALIGN) +                                     // basic memory info
@@ -286,7 +286,8 @@ bool multiboot2_load(char *config, char* cmdline) {
     size_t mb2_info_size = get_multiboot2_info_size(
         cmdline,
         modules_size,
-        section_hdr_info ? section_hdr_info->section_hdr_size : 0, section_hdr_info->num,
+        section_hdr_info ? section_hdr_info->section_entry_size * section_hdr_info->num : 0,
+        section_hdr_info ? section_hdr_info->num : 0,
         smbios_tag_size
     );
 
@@ -304,7 +305,7 @@ bool multiboot2_load(char *config, char* cmdline) {
             panic(true, "multiboot2: Cannot return ELF file information");
         }
     } else {
-        uint32_t size = sizeof(struct multiboot_tag_elf_sections) + section_hdr_info->section_hdr_size * section_hdr_info->num;
+        uint32_t size = sizeof(struct multiboot_tag_elf_sections) + section_hdr_info->section_entry_size * section_hdr_info->num;
         struct multiboot_tag_elf_sections *tag = (struct multiboot_tag_elf_sections*)(mb2_info + info_idx);
 
         tag->type = MULTIBOOT_TAG_TYPE_ELF_SECTIONS;
@@ -314,7 +315,7 @@ bool multiboot2_load(char *config, char* cmdline) {
         tag->entsize = section_hdr_info->section_entry_size;
         tag->shndx = section_hdr_info->str_section_idx;
 
-        memcpy(tag->sections, kernel + section_hdr_info->section_offset, section_hdr_info->section_hdr_size * section_hdr_info->num);
+        memcpy(tag->sections, kernel + section_hdr_info->section_offset, section_hdr_info->section_entry_size * section_hdr_info->num);
 
         for (size_t i = 0; i < section_hdr_info->num; i++) {
             struct elf64_shdr *shdr = (void *)kernel + section_hdr_info->section_offset + i * section_hdr_info->section_entry_size;

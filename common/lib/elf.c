@@ -306,7 +306,6 @@ struct elf_section_hdr_info* elf64_section_hdr_info(uint8_t *elf) {
 
     info->num = hdr.sh_num;
     info->section_entry_size = hdr.shdr_size;
-    info->section_hdr_size = info->num * info->section_entry_size;
     info->str_section_idx = hdr.shstrndx;
     info->section_offset = hdr.shoff;
 
@@ -323,7 +322,6 @@ struct elf_section_hdr_info* elf32_section_hdr_info(uint8_t *elf) {
 
     info->num = hdr.sh_num;
     info->section_entry_size = hdr.shdr_size;
-    info->section_hdr_size = info->num * info->section_entry_size;
     info->str_section_idx = hdr.shstrndx;
     info->section_offset = hdr.shoff;
 

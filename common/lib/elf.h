@@ -18,7 +18,6 @@ struct elf_range {
 };
 
 struct elf_section_hdr_info {
-    uint32_t section_hdr_size;
     uint32_t section_entry_size;
     uint32_t str_section_idx;
     uint32_t num;

@@ -324,10 +324,13 @@ bool ext2_open(struct ext2_file_handle *ret, struct volume *part, const char *pa
     if (sb->s_rev_level != 0 &&
         (sb->s_feature_incompat & EXT2_IF_COMPRESSION ||
          sb->s_feature_incompat & EXT2_IF_INLINE_DATA ||
-         sb->s_feature_incompat & EXT2_FEATURE_INCOMPAT_META_BG ||
-         sb->s_feature_incompat & EXT2_IF_ENCRYPT)) {
+         sb->s_feature_incompat & EXT2_FEATURE_INCOMPAT_META_BG)) {
         print("ext2: filesystem has unsupported features %x\n", sb->s_feature_incompat);
         return false;
+    }
+
+    if (sb->s_rev_level != 0 && sb->s_feature_incompat & EXT2_IF_ENCRYPT) {
+        print("ext2: WARNING: File system has encryption feature on, stuff may misbehave\n");
     }
 
     if (sb->s_state == EXT2_FS_UNRECOVERABLE_ERRORS) {

@@ -17,8 +17,6 @@ else
     ENFORCE_TOOLCHAIN=yes
 fi
 
-AC_SUBST(TOOLCHAIN, $TOOLCHAIN)
-
 AC_DEFUN([CC_ERROR_MSG], [
     AC_MSG_ERROR([no suitable LIMINE_CC found, run $srcdir/make_toolchain.sh or install the appropriate GCC/Clang])
 ])

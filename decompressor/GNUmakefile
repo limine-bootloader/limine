@@ -12,10 +12,6 @@ ifeq ($(call MKESCAPE,$(BUILDDIR)), )
 	$(error BUILDDIR not specified)
 endif
 
-ifeq ($(USING_CLANG), 1)
-override LIMINE_CC += --target=i686-elf
-endif
-
 override INTERNAL_CFLAGS := \
 	$(WERROR) \
 	-m32 \
@@ -87,7 +83,3 @@ $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' -f elf32 -o '$(call SHESCAPE,$@)'
-
-.PHONY: clean
-clean:
-	rm -rf '$(call SHESCAPE,$(BUILDDIR))'

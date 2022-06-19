@@ -1,5 +1,3 @@
-override USING_CLANG := @USING_CLANG@
-export USING_CLANG
 override TOOLCHAIN := @TOOLCHAIN@
 export TOOLCHAIN
 override LIMINE_CC := @LIMINE_CC@

@@ -66,8 +66,8 @@ else
     (
     mkdir -p "$BUILDDIR/toolchain-files"
     cd "$BUILDDIR/toolchain-files"
-    ARCHITECTURE=i686 "$SRCDIR/toolchain-detect/configure" || exit 1
-    )
+    ARCHITECTURE=i686 "$SRCDIR/toolchain-detect/configure"
+    ) || exit 1
     BUILD_BIOS="limine-bios"
 fi
 
@@ -109,8 +109,8 @@ else
     (
     mkdir -p "$BUILDDIR/toolchain-files"
     cd "$BUILDDIR/toolchain-files"
-    ARCHITECTURE=i686 "$SRCDIR/toolchain-detect/configure" || exit 1
-    )
+    ARCHITECTURE=i686 "$SRCDIR/toolchain-detect/configure"
+    ) || exit 1
     BUILD_UEFI_IA32="limine-uefi-ia32"
 fi
 
@@ -128,8 +128,8 @@ else
     (
     mkdir -p "$BUILDDIR/toolchain-files"
     cd "$BUILDDIR/toolchain-files"
-    ARCHITECTURE=x86_64 "$SRCDIR/toolchain-detect/configure" || exit 1
-    )
+    ARCHITECTURE=x86_64 "$SRCDIR/toolchain-detect/configure"
+    ) || exit 1
     BUILD_UEFI_X86_64="limine-uefi-x86-64"
 fi
 

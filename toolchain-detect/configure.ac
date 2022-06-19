@@ -12,6 +12,8 @@ AC_PROG_GREP
 
 if test "x$TOOLCHAIN" = "x"; then
     TOOLCHAIN=$ARCHITECTURE-elf
+else
+    ENFORCE_TOOLCHAIN=yes
 fi
 
 AC_SUBST(TOOLCHAIN, $TOOLCHAIN)
@@ -33,6 +35,9 @@ else
     fi
     AC_CHECK_PROG([LIMINE_CC_1], [$LIMINE_CC], [yes])
     if ! test "x$LIMINE_CC_1" = "xyes"; then
+        if test "x$ENFORCE_TOOLCHAIN" = "xyes"; then
+            CC_ERROR_MSG
+        fi
         LIMINE_CC="$TOOLCHAIN-cc"
         AC_CHECK_PROG([LIMINE_CC_2], [$LIMINE_CC], [yes])
         if ! test "x$LIMINE_CC_2" = "xyes"; then
@@ -59,10 +64,19 @@ if ! $LIMINE_CC --version >/dev/null 2>&1; then
 fi
 
 if $LIMINE_CC --version | $GREP clang >/dev/null 2>&1; then
-    AC_SUBST(USING_CLANG, 1)
+    LIMINE_CC="$LIMINE_CC --target=$ARCHITECTURE-elf"
 elif $LIMINE_CC --version | $GREP 'Free Software Foundation' >/dev/null 2>&1; then
-    AC_SUBST(USING_CLANG, 0)
+    true
 else
+    CC_ERROR_MSG
+fi
+
+if ! $LIMINE_CC -dumpmachine >/dev/null 2>&1; then
+    CC_ERROR_MSG
+fi
+
+CC_MACHINE="$($LIMINE_CC -dumpmachine | dd bs=${#ARCHITECTURE} count=1 2>/dev/null)"
+if ! test "x$CC_MACHINE" = "x$ARCHITECTURE"; then
     CC_ERROR_MSG
 fi
 
@@ -80,6 +94,9 @@ AC_DEFUN([GET_BINUTILS_PROG], [
         fi
         AC_CHECK_PROG([LIMINE_$1_1], [$LIMINE_$1], [yes])
         if ! test "x$LIMINE_$1_1" = "xyes"; then
+            if test "x$ENFORCE_TOOLCHAIN" = "xyes"; then
+                AC_MSG_ERROR([LIMINE_$1 ($LIMINE_$1) not found])
+            fi
             if test '$2' = 'ld'; then
                 LIMINE_$1='ld.lld'
             else

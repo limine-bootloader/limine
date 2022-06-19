@@ -1,5 +1,3 @@
-override TOOLCHAIN := @TOOLCHAIN@
-export TOOLCHAIN
 override LIMINE_CC := @LIMINE_CC@
 export LIMINE_CC
 override LIMINE_LD := @LIMINE_LD@

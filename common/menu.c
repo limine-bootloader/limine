@@ -447,6 +447,7 @@ refresh:
     term_double_buffer_flush();
 
     int c = getchar();
+    size_t buffer_len = strlen(buffer);
     switch (c) {
         case GETCHAR_CURSOR_DOWN:
             cursor_offset = get_next_line(cursor_offset, buffer);
@@ -460,7 +461,7 @@ refresh:
             }
             break;
         case GETCHAR_CURSOR_RIGHT:
-            if (cursor_offset < strlen(buffer)) {
+            if (cursor_offset < buffer_len) {
                 cursor_offset++;
             }
             break;
@@ -493,9 +494,9 @@ refresh:
             editor_no_term_reset ? editor_no_term_reset = false : reset_term();
             return NULL;
         default:
-            if (strlen(buffer) < EDITOR_MAX_BUFFER_SIZE - 1) {
+            if (buffer_len < EDITOR_MAX_BUFFER_SIZE - 1) {
                 if (isprint(c) || c == '\n') {
-                    for (size_t i = strlen(buffer); ; i--) {
+                    for (size_t i = buffer_len; ; i--) {
                         buffer[i+1] = buffer[i];
                         if (i == cursor_offset)
                             break;

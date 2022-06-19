@@ -318,7 +318,7 @@ bool multiboot2_load(char *config, char* cmdline) {
         memcpy(tag->sections, kernel + section_hdr_info->section_offset, section_hdr_info->section_entry_size * section_hdr_info->num);
 
         for (size_t i = 0; i < section_hdr_info->num; i++) {
-            struct elf64_shdr *shdr = (void *)tag->sections + section_hdr_info->section_offset + i * section_hdr_info->section_entry_size;
+            struct elf64_shdr *shdr = (void *)tag->sections + i * section_hdr_info->section_entry_size;
 
             if (shdr->sh_addr != 0 || shdr->sh_size == 0) {
                 continue;

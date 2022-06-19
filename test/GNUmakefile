@@ -1,3 +1,5 @@
+AC		= nasm
+AFLAGS		= -felf32
 CC              = cc
 CFLAGS          = -O2 -g -Wall -Wextra -Wpedantic
 LDFLAGS         =
@@ -62,7 +64,7 @@ multiboot.elf: multiboot_trampoline.o
 	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -c $< -o $@
 
 %.o: %.asm
-	nasm -felf32 $< -o $@
+	$(AC) $(AFLAGS) $< -o $@
 
 clean:
 	rm -rf test.elf limine.o e9print.o memory.o

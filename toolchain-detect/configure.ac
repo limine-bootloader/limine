@@ -10,6 +10,7 @@ fi
 
 AC_PROG_GREP
 
+ENFORCE_TOOLCHAIN=no
 if test "x$TOOLCHAIN" = "x"; then
     TOOLCHAIN=$ARCHITECTURE-elf
 else
@@ -38,20 +39,16 @@ else
         if test "x$ENFORCE_TOOLCHAIN" = "xyes"; then
             CC_ERROR_MSG
         fi
-        LIMINE_CC="$TOOLCHAIN-cc"
+        LIMINE_CC="clang"
         AC_CHECK_PROG([LIMINE_CC_2], [$LIMINE_CC], [yes])
         if ! test "x$LIMINE_CC_2" = "xyes"; then
-            LIMINE_CC="clang"
+            LIMINE_CC="gcc"
             AC_CHECK_PROG([LIMINE_CC_3], [$LIMINE_CC], [yes])
             if ! test "x$LIMINE_CC_3" = "xyes"; then
-                LIMINE_CC="gcc"
+                LIMINE_CC="cc"
                 AC_CHECK_PROG([LIMINE_CC_4], [$LIMINE_CC], [yes])
                 if ! test "x$LIMINE_CC_4" = "xyes"; then
-                    LIMINE_CC="cc"
-                    AC_CHECK_PROG([LIMINE_CC_5], [$LIMINE_CC], [yes])
-                    if ! test "x$LIMINE_CC_5" = "xyes"; then
-                        CC_ERROR_MSG
-                    fi
+                    CC_ERROR_MSG
                 fi
             fi
         fi

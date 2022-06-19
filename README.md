@@ -72,8 +72,9 @@ The toolchain's build process depends on the following packages: `GNU make`,
 
 Building the toolchain can be accomplished by running:
 ```bash
-./make_toolchain.sh
+TARGET=<target architecture> ./make_toolchain.sh
 ```
+where `<target architecture>` is something like `i686` or `x86_64`.
 
 ### Prerequisites
 

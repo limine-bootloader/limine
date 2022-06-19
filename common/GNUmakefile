@@ -25,18 +25,6 @@ else
 $(error Invalid target)
 endif
 
-ifeq ($(USING_CLANG), 1)
-ifeq ($(TARGET), bios)
-override LIMINE_CC += --target=i686-elf
-endif
-ifeq ($(TARGET), uefi-x86-64)
-override LIMINE_CC += --target=x86_64-elf
-endif
-ifeq ($(TARGET), uefi-ia32)
-override LIMINE_CC += --target=i686-elf
-endif
-endif
-
 COM_OUTPUT ?= false
 E9_OUTPUT ?= false
 

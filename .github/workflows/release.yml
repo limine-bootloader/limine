@@ -23,10 +23,7 @@ jobs:
         run: echo "BRANCH_NAME=$(echo "$TAG_NAME" | grep -o 'v[0-9]\+\.')0-branch" >> $GITHUB_ENV
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install git build-essential autoconf automake nasm gcc-mingw-w64 curl mtools -y
-
-      - name: Build the toolchain
-        run: ./make_toolchain.sh
+        run: sudo apt-get update && sudo apt-get install git build-essential autoconf automake nasm gcc-mingw-w64 curl mtools llvm lld clang -y
 
       - name: Regenerate
         run: NOCONFIGURE=yes ./autogen.sh
@@ -35,7 +32,7 @@ jobs:
         run: mkdir -p build
 
       - name: Configure
-        run: cd build && ../configure
+        run: cd build && ../configure TOOLCHAIN=llvm
 
       - name: Build the bootloader
         run: make -C build

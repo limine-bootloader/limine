@@ -5,17 +5,18 @@ on: [push, pull_request]
 jobs:
   build:
     name: Check for compilation failures
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
+    container: archlinux:latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install git build-essential autoconf automake nasm curl mtools llvm clang lld -y
+        run: pacman --noconfirm -Syu && pacman --needed --noconfirm -S base-devel git autoconf automake nasm curl mtools llvm clang lld
 
-      - name: Build the bootloader (GNU)
-        run: ./bootstrap && ./configure --enable-werror --enable-all && make all && make maintainer-clean
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Git config
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Build the bootloader (LLVM)
         run: ./bootstrap && ./configure TOOLCHAIN=llvm --enable-werror --enable-all && make all && make maintainer-clean

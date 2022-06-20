@@ -83,8 +83,7 @@ In order to build Limine, the following programs have to be installed:
 (optional, necessary to build `limine-cd-efi.bin`).
 Furthermore, either the toolchain must have been built in the previous
 paragraph, or `gcc` or `llvm/clang` must also be installed, alongside
-the respective binutils. `nasm` is optional if the toolchain was built in the previous
-paragraph as it is built as part of it.
+the respective binutils.
 
 ### Configure
 

@@ -373,6 +373,21 @@ struct limine_kernel_address_request {
     LIMINE_PTR(struct limine_kernel_address_response *) response;
 };
 
+/* Device Tree Blob */
+
+#define LIMINE_DTB_REQUEST { LIMINE_COMMON_MAGIC, 0xb40ddb48fb54bac7, 0x545081493f81ffb7 }
+
+struct limine_dtb_response {
+    uint64_t revision;
+    LIMINE_PTR(void *) dtb_ptr;
+};
+
+struct limine_dtb_request {
+    uint64_t id[4];
+    uint64_t revision;
+    LIMINE_PTR(struct limine_dtb_response *) response;
+};
+
 #ifdef __cplusplus
 }
 #endif

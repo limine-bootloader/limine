@@ -18,7 +18,7 @@ SECTIONS
         *(.entry)
         *(.realmode)
         *.s2.o(.text .text.*)
-        *libgcc*.o(.text .text.*)
+        *libgcc*.a:*(.text .text.*)
     } :text_s2
 
     .data.stage2 : {
@@ -28,10 +28,10 @@ SECTIONS
         *.s2.o(.no_unwind)
         s2_data_begin = .;
         *.s2.o(.data .data.*)
-        *libgcc*.o(.data .data.*)
+        *libgcc*.a:*(.data .data.*)
         s2_data_end = .;
         *.s2.o(.rodata .rodata.*)
-        *libgcc*.o(.rodata .rodata.*)
+        *libgcc*.a:*(.rodata .rodata.*)
 #ifdef LINKER_STAGE2ONLY
         /* stage2 missing symbols overrides */
         stage2_map = .;

@@ -4,8 +4,6 @@ override LIMINE_LD := @LIMINE_LD@
 export LIMINE_LD
 override LIMINE_AR := @LIMINE_AR@
 export LIMINE_AR
-override LIMINE_AS := @LIMINE_AS@
-export LIMINE_AS
 override LIMINE_OBJCOPY := @LIMINE_OBJCOPY@
 export LIMINE_OBJCOPY
 override LIMINE_OBJDUMP := @LIMINE_OBJDUMP@

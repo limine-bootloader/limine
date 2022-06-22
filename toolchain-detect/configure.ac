@@ -71,6 +71,17 @@ if ! $LIMINE_CC -dumpmachine >/dev/null 2>&1; then
 fi
 
 CC_MACHINE="$($LIMINE_CC -dumpmachine | dd bs=${#ARCHITECTURE} count=1 2>/dev/null)"
+
+if test "x$CC_MACHINE" = "xx86_"; then
+    case "$ARCHITECTURE" in
+        i?86)
+            CC_MACHINE="$ARCHITECTURE"
+            ;;
+        *)
+            ;;
+    esac
+fi
+
 if ! test "x$CC_MACHINE" = "x$ARCHITECTURE"; then
     CC_ERROR_MSG
 fi
@@ -111,8 +122,6 @@ AC_DEFUN([GET_BINUTILS_PROG], [
 ])
 
 GET_BINUTILS_PROG(LD, ld, linker)
-GET_BINUTILS_PROG(AR, ar, archiver)
-GET_BINUTILS_PROG(AS, as, assembler)
 GET_BINUTILS_PROG(OBJCOPY, objcopy, objcopy)
 GET_BINUTILS_PROG(OBJDUMP, objdump, objdump)
 GET_BINUTILS_PROG(READELF, readelf, readelf)

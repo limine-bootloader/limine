@@ -334,17 +334,21 @@ int main(int argc, char *argv[]) {
 #endif
         goto cleanup;
     }
+    for (int i = 1; i < argc; i++)
+	{
+		if (strcmp(argv[i], "--force-mbr") == 0)
+		{
+			force_mbr = 1;
+		}
+		else
+		{
 
-    if (argc >= 3) {
-        if (strcmp(argv[2], "--force-mbr") == 0) {
-            force_mbr = 1;
-        }
-    }
-
-    device = fopen(argv[1], "r+b");
-    if (device == NULL) {
-        perror("ERROR");
-        goto cleanup;
+			if ((device = fopen(argv[i], "r+b")) == NULL)
+			{
+				perror("ERROR");
+				goto cleanup;
+			}
+		}
     }
 
     if (!device_init())

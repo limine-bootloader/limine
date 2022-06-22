@@ -169,11 +169,12 @@ bool multiboot1_load(char *config, char *cmdline) {
         multiboot1_info->flags |= (1 << 5);
     }
 
-    uint32_t n_modules = 0;
-    while(config_get_value(config, n_modules, "MODULE_PATH") != NULL){
-        n_modules++;
+    
+    uint32_t n_modules;
+    for (n_modules = 0; ; n_modules++) {
+        if (config_get_value(config, n_modules, "MODULE_PATH") == NULL)
+            break;
     }
-
     if (n_modules) {
         struct multiboot1_module *mods = conv_mem_alloc(sizeof(*mods) * n_modules);
 

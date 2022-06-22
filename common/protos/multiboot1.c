@@ -55,8 +55,7 @@ bool multiboot1_load(char *config, char *cmdline) {
     size_t header_offset = 0;
 
     for (header_offset = 0; header_offset < 8192; header_offset += 4) {
-        uint32_t v;
-        memcpy(&v, kernel + header_offset, 4);
+        uint32_t v = *(uint32_t *)(kernel+header_offset);
 
         if (v == MULTIBOOT1_HEADER_MAGIC) {
             memcpy(&header, kernel + header_offset, sizeof(header));
@@ -170,6 +169,7 @@ bool multiboot1_load(char *config, char *cmdline) {
         multiboot1_info->flags |= (1 << 5);
     }
 
+    
     uint32_t n_modules;
 
     for (n_modules = 0; ; n_modules++) {

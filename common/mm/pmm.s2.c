@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <mm/pmm.h>
+#include <mm/vmm.h>
 #include <sys/e820.h>
 #include <lib/acpi.h>
 #include <lib/blib.h>
@@ -227,6 +228,52 @@ del_mm1:
 
 struct e820_entry_t *get_memmap(size_t *entries) {
 #if uefi == 1
+
+#if defined (__x86_64__)
+    pagemap_t pagemap = new_pagemap(4);
+
+    for (uint64_t i = 0; i < 0x100000000; i += 0x40000000) {
+        map_page(pagemap, i, i, 0x03, Size1GiB);
+    }
+
+    size_t _memmap_entries = memmap_entries;
+    struct e820_entry_t *_memmap =
+        ext_mem_alloc(_memmap_entries * sizeof(struct e820_entry_t));
+    for (size_t i = 0; i < _memmap_entries; i++)
+        _memmap[i] = memmap[i];
+
+    // Map any other region of memory from the memmap
+    for (size_t i = 0; i < _memmap_entries; i++) {
+        uint64_t base   = _memmap[i].base;
+        uint64_t length = _memmap[i].length;
+        uint64_t top    = base + length;
+
+        if (base < 0x100000000)
+            base = 0x100000000;
+
+        if (base >= top)
+            continue;
+
+        uint64_t aligned_base   = ALIGN_DOWN(base, 0x40000000);
+        uint64_t aligned_top    = ALIGN_UP(top, 0x40000000);
+        uint64_t aligned_length = aligned_top - aligned_base;
+
+        for (uint64_t j = 0; j < aligned_length; j += 0x40000000) {
+            uint64_t page = aligned_base + j;
+            map_page(pagemap, page, page, 0x03, Size1GiB);
+        }
+    }
+
+    asm volatile ("mov %0, %%cr3" :: "r"(pagemap.top_level) : "memory");
+#elif defined (__i386__)
+    asm volatile (
+        "mov %%cr0, %%eax\n\t"
+        "btr $31, %%eax\n\t"
+        "mov %%eax, %%cr0\n\t"
+        ::: "eax", "memory"
+    );
+#endif
+
     pmm_reclaim_uefi_mem();
 #endif
     sanitise_entries(memmap, &memmap_entries, true);

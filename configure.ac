@@ -138,7 +138,7 @@ AC_SUBST(BUILD_UEFI_X86_64, [$BUILD_UEFI_X86_64])
 BUILD_CD_EFI="$BUILD_ALL"
 
 AC_ARG_ENABLE([cd-efi],
-    AS_HELP_STRING([--enable-cd-efi], [enable limine-cd-efi.bin build]),
+    AS_HELP_STRING([--enable-cd-efi], [enable building limine-cd-efi.bin]),
     BUILD_CD_EFI="$enableval")
 
 if ! test "x$BUILD_CD_EFI" = "xno"; then

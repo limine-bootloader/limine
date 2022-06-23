@@ -243,8 +243,10 @@ void term_write(uint64_t buf, uint64_t count) {
     }
 
     bool native = false;
-#if defined (__x86_64__)
+#if defined (__x86_64__) || defined (__aarch64__)
     native = true;
+#elif !defined (__i386__)
+#error Unknown architecture
 #endif
 
     if (!term_runtime || native) {

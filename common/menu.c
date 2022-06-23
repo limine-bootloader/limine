@@ -942,11 +942,7 @@ noreturn void boot(char *config) {
         print("Please notify kernel maintainers to move to the Limine boot protocol or\n");
         print("roll back to Limine 3.x.\n\n");
     } else if (!strcmp(proto, "limine")) {
-#if defined (__x86_64__) || defined (__i386__)
         limine_load(config, cmdline);
-#else
-        print("TODO: Limine is not available on aarch64.\n\n");
-#endif
     } else if (!strcmp(proto, "linux")) {
 #if defined (__x86_64__) || defined (__i386__)
         linux_load(config, cmdline);

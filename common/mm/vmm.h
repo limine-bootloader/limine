@@ -6,7 +6,6 @@
 
 #if defined (__x86_64__) || defined (__i386__)
 
-#define VMM_FLAG_PRESENT ((uint64_t)1 << 0)
 #define VMM_FLAG_WRITE   ((uint64_t)1 << 1)
 #define VMM_FLAG_NOEXEC  ((uint64_t)1 << 63)
 

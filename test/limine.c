@@ -119,6 +119,14 @@ struct limine_terminal_request _terminal_request = {
 __attribute__((section(".limine_reqs")))
 void *terminal_req = &_terminal_request;
 
+struct limine_dtb_request _dtb_request = {
+    .id = LIMINE_DTB_REQUEST,
+    .revision = 0, .response = NULL
+};
+
+__attribute__((section(".limine_reqs")))
+void *dtb_req = &_dtb_request;
+
 static char *get_memmap_type(uint64_t type) {
     switch (type) {
         case LIMINE_MEMMAP_USABLE:
@@ -380,6 +388,17 @@ FEAT_START
         e9_printf("Using framebuffer: %x", terminal->framebuffer);
     }
     e9_printf("Write function at: %x", term_response->write);
+FEAT_END
+
+FEAT_START
+    e9_printf("");
+    if (_dtb_request.response == NULL) {
+        e9_printf("Device tree blob not passed");
+        break;
+    }
+    struct limine_dtb_response *dtb_response = _dtb_request.response;
+    e9_printf("Device tree blob feature, revision %d", dtb_response->revision);
+    e9_printf("Device tree blob pointer: %x", dtb_response->dtb_ptr);
 FEAT_END
 
     for (;;);

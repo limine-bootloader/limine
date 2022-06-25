@@ -8,25 +8,26 @@ on:
 jobs:
   build:
     name: Build and upload artifacts
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
+    container: archlinux:latest
 
     steps:
+      - name: Install dependencies
+        run: pacman --noconfirm -Syu && pacman --needed --noconfirm -S base-devel git autoconf automake nasm curl mtools llvm clang lld mingw-w64-gcc openssh
+
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: '0'
+
+      - name: Git config
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Get tag name
         run: echo "TAG_NAME=$(git describe --exact-match --tags $(git log -n1 --pretty='%h'))" >> $GITHUB_ENV
 
       - name: Get branch name
         run: echo "BRANCH_NAME=$(echo "$TAG_NAME" | grep -o 'v[0-9]\+\.')0-branch" >> $GITHUB_ENV
-
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install git build-essential autoconf automake nasm gcc-mingw-w64 curl mtools -y
-
-      - name: Build the toolchain
-        run: ./make_toolchain.sh
 
       - name: Regenerate
         run: ./bootstrap
@@ -35,7 +36,7 @@ jobs:
         run: mkdir -p build
 
       - name: Configure
-        run: cd build && ../configure --enable-all
+        run: cd build && ../configure --enable-all TOOLCHAIN=llvm
 
       - name: Build the bootloader
         run: make -C build
@@ -65,6 +66,7 @@ jobs:
         run: |
           git config user.name 'mintsuki'
           git config user.email 'mintsuki@users.noreply.github.com'
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/limine-bootloader/limine.git
           git fetch --all
           git checkout $BRANCH_NAME-binary || git checkout --orphan $BRANCH_NAME-binary
           rm -rf $(ls -a | grep -v '^\.git$' | grep -v '^\.\.$' | grep -v '^\.$' | grep -v '^build$')

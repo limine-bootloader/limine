@@ -44,9 +44,9 @@ For example, to clone the latest binary release of the `v3.x` branch one can do
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example `v3.5`)
+or, to clone a specific binary point release (for example `v3.8`)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v3.5-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v3.8-binary --depth=1
 ```
 
 `limine-deploy` binaries are provided for Windows.
@@ -95,6 +95,9 @@ necessary dependencies and generate the configure script (`GNU autoconf` and `GN
 
 `./configure` takes arguments and environment variables; for more information on
 these, run `./configure --help`.
+
+**`./configure` by default does not build any Limine port. Make sure to read the**
+**output of `./configure --help` and enable any or all ports!**
 
 To build using the LLVM toolchain, pass `TOOLCHAIN=llvm` to `./configure`.
 

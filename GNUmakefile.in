@@ -213,7 +213,7 @@ distclean: clean
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding_headers stivale libgcc-binaries limine-efi configure build-aux *'~' autom4te.cache *.tar.xz *.tar.gz
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding_headers stivale libgcc-binaries make_toolchain.sh limine-efi configure build-aux *'~' autom4te.cache *.tar.xz *.tar.gz
 	cd '$(call SHESCAPE,$(SRCDIR))'/toolchain-detect && rm -rf configure *'~' autom4te.cache
 
 .PHONY: common-uefi-x86-64

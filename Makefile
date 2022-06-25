@@ -36,4 +36,4 @@ clean:
 	rm -f limine-deploy limine-deploy.exe
 
 limine-deploy: limine-deploy.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -std=c99 limine-deploy.c -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) -std=c99 -D__USE_MINGW_ANSI_STDIO limine-deploy.c -o $@

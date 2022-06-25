@@ -203,7 +203,6 @@ dist:
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/version.sh"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/bootstrap"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/bochsrc"
-	echo "$(LIMINE_VERSION)" > '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/version"
 	cd '$(call SHESCAPE,$(BUILDDIR))' && tar -Jcf "limine-$(LIMINE_VERSION).tar.xz" "limine-$(LIMINE_VERSION)"
 	cd '$(call SHESCAPE,$(BUILDDIR))' && tar -zcf "limine-$(LIMINE_VERSION).tar.gz" "limine-$(LIMINE_VERSION)"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"

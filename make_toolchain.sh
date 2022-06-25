@@ -63,7 +63,7 @@ $TAR -zxf ../nasm-$NASMVERSION.tar.gz
 
 mkdir build-binutils
 cd build-binutils
-../binutils-$BINUTILSVERSION/configure CFLAGS="$CFLAGS" CXXFLAGS="$CFLAGS"  --target=$TARGET --prefix="$PREFIX" --program-prefix=limine- --with-sysroot --disable-nls --disable-werror --enable-targets=x86_64-elf
+../binutils-$BINUTILSVERSION/configure CFLAGS="$CFLAGS" CXXFLAGS="$CFLAGS"  --target=$TARGET --prefix="$PREFIX" --program-prefix=limine- --with-sysroot --disable-nls --disable-werror --enable-targets=x86_64-elf,x86_64-pe
 $MAKE
 $MAKE install
 cd ..

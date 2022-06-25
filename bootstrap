@@ -11,6 +11,7 @@ cd "$srcdir"
 [ -d stivale ] || git clone https://github.com/stivale/stivale.git
 [ -d libgcc-binaries ] || git clone https://github.com/mintsuki/libgcc-binaries.git
 [ -d limine-efi ] || git clone https://github.com/limine-bootloader/limine-efi.git
+[ -f make_toolchain.sh ] || curl -o make_toolchain.sh https://gist.github.com/mintsuki/50fca7022e09f241e40809168662493d/raw/c7eb3dd24100da888893dcee6e8d6b577613b577/make_toolchain.sh
 
 automake_libdir="$(automake --print-libdir)"
 

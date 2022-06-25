@@ -128,12 +128,7 @@ Editor control options.
 * Chainload protocol on UEFI:
   * `IMAGE_PATH` - URI of the EFI application to chainload.
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
-* Chainload protocol on BIOS:
-  * `DRIVE` - The 1-based BIOS drive to chainload, if omitted, assume boot drive.
-  * `PARTITION` - The 1-based BIOS partition to chainload, if omitted, chainload drive (MBR).
-* Chainload protocol on UEFI:
-  * `IMAGE_PATH` - URI of the EFI application to chainload.
-  * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
+
 * multiboot1 and multiboot2 protocols:
   * `KERNEL_PATH` - The URI path of the kernel.
   * `MODULE_PATH` - The URI path to a module.

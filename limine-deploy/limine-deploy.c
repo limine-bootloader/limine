@@ -322,6 +322,7 @@ int main(int argc, char *argv[]) {
     const uint8_t *bootloader_img = binary_limine_hdd_bin_data;
     size_t   bootloader_file_size = sizeof(binary_limine_hdd_bin_data);
     uint8_t  orig_mbr[70], timestamp[6];
+    const char *part_ndx = NULL;
 
     uint32_t endcheck = 0x12345678;
     uint8_t endbyte = *((uint8_t *)&endcheck);
@@ -335,15 +336,28 @@ int main(int argc, char *argv[]) {
         goto cleanup;
     }
 
-    if (argc >= 3) {
-        if (strcmp(argv[2], "--force-mbr") == 0) {
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--force-mbr") == 0) { // TODO: add to usage
+            if (force_mbr) {
+                puts("Warning: --force-mbr already set");
+            }
             force_mbr = 1;
+        } else {
+            if (device) { // [GPT partition index]
+                part_ndx = argv[i]; // TODO: Make this non-positional?
+            } else if ((device = fopen(argv[i], "r+b")) == NULL) { // <device>
+                perror("ERROR");
+                goto cleanup;
+            }
         }
     }
 
-    device = fopen(argv[1], "r+b");
-    if (device == NULL) {
-        perror("ERROR");
+    if (!device) {
+        perror("ERROR: No device specified");
+        printf("Usage: %s <device> [GPT partition index]\n", argv[0]);
+#ifdef IS_WINDOWS
+        system("pause");
+#endif
         goto cleanup;
     }
 
@@ -540,9 +554,9 @@ int main(int argc, char *argv[]) {
     uint64_t stage2_loc_b = stage2_loc_a + stage2_size_a;
 
     if (gpt) {
-        if (argc >= 3) {
+        if (part_ndx) {
             uint32_t partition_num;
-            sscanf(argv[2], "%" SCNu32, &partition_num);
+            sscanf(part_ndx, "%" SCNu32, &partition_num);
             partition_num--;
             if (partition_num > ENDSWAP(gpt_header.number_of_partition_entries)) {
                 fprintf(stderr, "ERROR: Partition number is too large.\n");

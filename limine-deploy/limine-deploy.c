@@ -356,8 +356,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (!device) {
-        perror("ERROR: No device specified");
+    if (device == NULL) {
+        fprintf(stderr, "ERROR: No device specified\n");
         usage();
         goto cleanup;
     }
@@ -555,7 +555,7 @@ int main(int argc, char *argv[]) {
     uint64_t stage2_loc_b = stage2_loc_a + stage2_size_a;
 
     if (gpt) {
-        if (part_ndx) {
+        if (part_ndx != NULL) {
             uint32_t partition_num;
             sscanf(part_ndx, "%" SCNu32, &partition_num);
             partition_num--;

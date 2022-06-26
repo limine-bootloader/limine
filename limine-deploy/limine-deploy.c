@@ -316,7 +316,7 @@ static bool _device_write(const void *_buffer, uint64_t loc, size_t count) {
             goto cleanup;                       \
     } while (0)
 
-void usage(const char *name) {
+static void usage(const char *name) {
     printf("Usage: %s <device> [GPT partition index]\n", name);
 #ifdef IS_WINDOWS
     system("pause");
@@ -537,9 +537,8 @@ int main(int argc, char *argv[]) {
     if (gpt == 0 && mbr == 0) {
         fprintf(stderr, "ERROR: Could not determine if the device has a valid partition table.\n");
         fprintf(stderr, "       Please ensure the device has a valid MBR or GPT.\n");
-        fprintf(stderr, "       Alternatively, pass `--force-mbr` at the end of the command to\n");
-        fprintf(stderr, "       override these checks. ONLY DO THIS AT YOUR OWN RISK, DATA LOSS\n");
-        fprintf(stderr, "       MAY OCCUR!\n");
+        fprintf(stderr, "       Alternatively, pass `--force-mbr` to override these checks. ONLY\n");
+        fprintf(stderr, "        DO THIS AT YOUR OWN RISK, DATA LOSS MAY OCCUR!\n");
         goto cleanup;
     }
 

@@ -316,6 +316,13 @@ static bool _device_write(const void *_buffer, uint64_t loc, size_t count) {
             goto cleanup;                       \
     } while (0)
 
+void usage() {
+    printf("Usage: %s <device> [GPT partition index]\n", argv[0]);
+#ifdef IS_WINDOWS
+    system("pause");
+#endif
+}
+
 int main(int argc, char *argv[]) {
     int      ok = EXIT_FAILURE;
     int      force_mbr = 0;
@@ -329,10 +336,7 @@ int main(int argc, char *argv[]) {
     bigendian = endbyte == 0x12;
 
     if (argc < 2) {
-        printf("Usage: %s <device> [GPT partition index]\n", argv[0]);
-#ifdef IS_WINDOWS
-        system("pause");
-#endif
+        usage();
         goto cleanup;
     }
 
@@ -354,10 +358,7 @@ int main(int argc, char *argv[]) {
 
     if (!device) {
         perror("ERROR: No device specified");
-        printf("Usage: %s <device> [GPT partition index]\n", argv[0]);
-#ifdef IS_WINDOWS
-        system("pause");
-#endif
+        usage();
         goto cleanup;
     }
 

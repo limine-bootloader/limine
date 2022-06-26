@@ -316,34 +316,49 @@ static bool _device_write(const void *_buffer, uint64_t loc, size_t count) {
             goto cleanup;                       \
     } while (0)
 
+static void usage(const char *name) {
+    printf("Usage: %s <device> [GPT partition index]\n", name);
+#ifdef IS_WINDOWS
+    system("pause");
+#endif
+}
+
 int main(int argc, char *argv[]) {
     int      ok = EXIT_FAILURE;
     int      force_mbr = 0;
     const uint8_t *bootloader_img = binary_limine_hdd_bin_data;
     size_t   bootloader_file_size = sizeof(binary_limine_hdd_bin_data);
     uint8_t  orig_mbr[70], timestamp[6];
+    const char *part_ndx = NULL;
 
     uint32_t endcheck = 0x12345678;
     uint8_t endbyte = *((uint8_t *)&endcheck);
     bigendian = endbyte == 0x12;
 
     if (argc < 2) {
-        printf("Usage: %s <device> [GPT partition index]\n", argv[0]);
-#ifdef IS_WINDOWS
-        system("pause");
-#endif
+        usage(argv[0]);
         goto cleanup;
     }
 
-    if (argc >= 3) {
-        if (strcmp(argv[2], "--force-mbr") == 0) {
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--force-mbr") == 0) { // TODO: add to usage
+            if (force_mbr) {
+                puts("Warning: --force-mbr already set");
+            }
             force_mbr = 1;
+        } else {
+            if (device != NULL) { // [GPT partition index]
+                part_ndx = argv[i]; // TODO: Make this non-positional?
+            } else if ((device = fopen(argv[i], "r+b")) == NULL) { // <device>
+                perror("ERROR");
+                goto cleanup;
+            }
         }
     }
 
-    device = fopen(argv[1], "r+b");
     if (device == NULL) {
-        perror("ERROR");
+        fprintf(stderr, "ERROR: No device specified\n");
+        usage(argv[0]);
         goto cleanup;
     }
 
@@ -522,9 +537,8 @@ int main(int argc, char *argv[]) {
     if (gpt == 0 && mbr == 0) {
         fprintf(stderr, "ERROR: Could not determine if the device has a valid partition table.\n");
         fprintf(stderr, "       Please ensure the device has a valid MBR or GPT.\n");
-        fprintf(stderr, "       Alternatively, pass `--force-mbr` at the end of the command to\n");
-        fprintf(stderr, "       override these checks. ONLY DO THIS AT YOUR OWN RISK, DATA LOSS\n");
-        fprintf(stderr, "       MAY OCCUR!\n");
+        fprintf(stderr, "       Alternatively, pass `--force-mbr` to override these checks. ONLY\n");
+        fprintf(stderr, "        DO THIS AT YOUR OWN RISK, DATA LOSS MAY OCCUR!\n");
         goto cleanup;
     }
 
@@ -540,9 +554,9 @@ int main(int argc, char *argv[]) {
     uint64_t stage2_loc_b = stage2_loc_a + stage2_size_a;
 
     if (gpt) {
-        if (argc >= 3) {
+        if (part_ndx != NULL) {
             uint32_t partition_num;
-            sscanf(argv[2], "%" SCNu32, &partition_num);
+            sscanf(part_ndx, "%" SCNu32, &partition_num);
             partition_num--;
             if (partition_num > ENDSWAP(gpt_header.number_of_partition_entries)) {
                 fprintf(stderr, "ERROR: Partition number is too large.\n");

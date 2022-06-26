@@ -347,7 +347,7 @@ int main(int argc, char *argv[]) {
             }
             force_mbr = 1;
         } else {
-            if (device) { // [GPT partition index]
+            if (device != NULL) { // [GPT partition index]
                 part_ndx = argv[i]; // TODO: Make this non-positional?
             } else if ((device = fopen(argv[i], "r+b")) == NULL) { // <device>
                 perror("ERROR");

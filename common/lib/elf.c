@@ -568,6 +568,11 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
         }
     }
 
+    if (use_paddr) {
+        simulation = true;
+        goto final;
+    }
+
     if (!elf64_is_relocatable(elf, &hdr)) {
         simulation = false;
         goto final;
@@ -678,7 +683,7 @@ final:
             memset(ptr, 0, to_zero);
         }
 
-        if (elf64_apply_relocations(elf, &hdr, (void *)(uintptr_t)load_addr, phdr.p_vaddr, phdr.p_memsz, slide)) {
+        if (!use_paddr && elf64_apply_relocations(elf, &hdr, (void *)(uintptr_t)load_addr, phdr.p_vaddr, phdr.p_memsz, slide)) {
             panic(true, "elf: Failed to apply relocations");
         }
 

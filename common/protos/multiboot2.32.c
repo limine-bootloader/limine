@@ -7,7 +7,19 @@
 #  include <sys/idt.h>
 #endif
 
-noreturn void multiboot2_spinup_32(uint32_t entry_point, uint32_t multiboot2_info) {
+struct reloc_stub {
+    char jmp[4];
+    uint32_t magic;
+    uint32_t entry_point;
+    uint32_t mb_info_target;
+};
+
+noreturn void multiboot2_spinup_32(uint32_t entry_point,
+                                   uint32_t multiboot2_info, uint32_t mb_info_target,
+                                   uint32_t mb_info_size,
+                                   uint32_t elf_ranges, uint32_t elf_ranges_count,
+                                   uint32_t slide,
+                                   struct reloc_stub *reloc_stub) {
 #if bios == 1
     struct idtr idtr;
 
@@ -22,22 +34,16 @@ noreturn void multiboot2_spinup_32(uint32_t entry_point, uint32_t multiboot2_inf
     );
 #endif
 
+    reloc_stub->magic = 0x36d76289;
+    reloc_stub->entry_point = entry_point;
+    reloc_stub->mb_info_target = mb_info_target;
+
     asm volatile (
-        "cld\n\t"
-
-        "push %2\n\t"
-
-        "xor %%ecx, %%ecx\n\t"
-        "xor %%edx, %%edx\n\t"
-        "xor %%esi, %%esi\n\t"
-        "xor %%edi, %%edi\n\t"
-        "xor %%ebp, %%ebp\n\t"
-
-        "ret\n\t"
+        "jmp *%%ebx"
         :
-        : "a" (0x36d76289),
-          "b" (multiboot2_info),
-          "r" (entry_point)
+        : "b"(reloc_stub), "S"(multiboot2_info),
+          "c"(mb_info_size), "a"(elf_ranges), "d"(elf_ranges_count),
+          "D"(slide)
         : "memory"
     );
 

@@ -6,20 +6,14 @@
 #if bios == 1
 #  include <sys/idt.h>
 #endif
-
-struct reloc_stub {
-    char jmp[4];
-    uint32_t magic;
-    uint32_t entry_point;
-    uint32_t mb_info_target;
-};
+#include <protos/multiboot.h>
 
 noreturn void multiboot2_spinup_32(uint32_t entry_point,
                                    uint32_t multiboot2_info, uint32_t mb_info_target,
                                    uint32_t mb_info_size,
                                    uint32_t elf_ranges, uint32_t elf_ranges_count,
                                    uint32_t slide,
-                                   struct reloc_stub *reloc_stub) {
+                                   struct mb_reloc_stub *reloc_stub) {
 #if bios == 1
     struct idtr idtr;
 

@@ -6,8 +6,14 @@
 #if bios == 1
 #  include <sys/idt.h>
 #endif
+#include <protos/multiboot.h>
 
-noreturn void multiboot1_spinup_32(uint32_t entry_point, uint32_t multiboot1_info) {
+noreturn void multiboot1_spinup_32(uint32_t entry_point,
+                                   uint32_t multiboot1_info, uint32_t mb_info_target,
+                                   uint32_t mb_info_size,
+                                   uint32_t elf_ranges, uint32_t elf_ranges_count,
+                                   uint32_t slide,
+                                   struct mb_reloc_stub *reloc_stub) {
 #if bios == 1
     struct idtr idtr;
 
@@ -22,22 +28,16 @@ noreturn void multiboot1_spinup_32(uint32_t entry_point, uint32_t multiboot1_inf
     );
 #endif
 
+    reloc_stub->magic = 0x2badb002;
+    reloc_stub->entry_point = entry_point;
+    reloc_stub->mb_info_target = mb_info_target;
+
     asm volatile (
-        "cld\n\t"
-
-        "push %2\n\t"
-
-        "xor %%ecx, %%ecx\n\t"
-        "xor %%edx, %%edx\n\t"
-        "xor %%esi, %%esi\n\t"
-        "xor %%edi, %%edi\n\t"
-        "xor %%ebp, %%ebp\n\t"
-
-        "ret\n\t"
+        "jmp *%%ebx"
         :
-        : "a" (0x2badb002),
-          "b" (multiboot1_info),
-          "r" (entry_point)
+        : "b"(reloc_stub), "S"(multiboot1_info),
+          "c"(mb_info_size), "a"(elf_ranges), "d"(elf_ranges_count),
+          "D"(slide)
         : "memory"
     );
 

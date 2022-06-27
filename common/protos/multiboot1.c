@@ -19,9 +19,17 @@
 #include <mm/pmm.h>
 #include <drivers/vga_textmode.h>
 
+extern symbol multiboot_reloc_stub, multiboot_reloc_stub_end;
+
 noreturn void multiboot1_spinup_32(uint32_t entry_point, uint32_t multiboot1_info);
 
 static uint32_t kernel_top;
+
+static bool mb1_overlap_check(uint64_t base1, uint64_t top1,
+                              uint64_t base2, uint64_t top2) {
+    return ((base1 >= base2 && base1 <  top2)
+         || (top1  >  base2 && top1  <= top2));
+}
 
 static void *mb1_alloc(size_t size) {
     void *ret = (void *)(uintptr_t)ALIGN_UP(kernel_top, 4096);
@@ -70,14 +78,15 @@ bool multiboot1_load(char *config, char *cmdline) {
 
     print("multiboot1: Loading kernel `%s`...\n", kernel_path);
 
-    struct multiboot1_info *multiboot1_info = conv_mem_alloc(sizeof(struct multiboot1_info));
-
     if (header.magic + header.flags + header.checksum)
         panic(true, "multiboot1: Header checksum is invalid");
 
     uint32_t entry_point;
 
     struct elf_section_hdr_info *section_hdr_info = NULL;
+
+    struct elf_range *elf_ranges;
+    uint64_t elf_ranges_count, slide;
 
     if (header.flags & (1 << 16)) {
         if (header.load_addr > header.header_addr)
@@ -125,21 +134,64 @@ bool multiboot1_load(char *config, char *cmdline) {
 
         switch (bits) {
             case 32:
-                if (elf32_load(kernel, &entry_point, &kernel_top, MEMMAP_KERNEL_AND_MODULES))
+                if (elf32_load(kernel, &entry_point, &kernel_top, MEMMAP_BOOTLOADER_RECLAIMABLE))
                     panic(true, "multiboot1: ELF32 load failure");
                 break;
             case 64: {
                 uint64_t e, t;
-                if (elf64_load(kernel, &e, &t, NULL, MEMMAP_KERNEL_AND_MODULES, false, true, NULL, NULL, false, NULL, NULL, NULL, NULL))
+                if (elf64_load(kernel, &e, &t, &slide, MEMMAP_BOOTLOADER_RECLAIMABLE, false, true, &elf_ranges, &elf_ranges_count, false, NULL, NULL, NULL, NULL))
                     panic(true, "multiboot1: ELF64 load failure");
-                entry_point = e;
-                kernel_top = t;
+                entry_point = e - slide;
+
+                t -= slide;
+                if (t < 0x100000) {
+                    kernel_top = 0x100000;
+                } else {
+                    kernel_top = t;
+                }
 
                 break;
             }
             default:
                 panic(true, "multiboot1: Invalid ELF file bitness");
         }
+    }
+
+    // GRUB allocates boot info at 0x10000, *except* if the kernel happens
+    // to overlap this region, then it gets moved to right after the
+    // kernel, or whichever PHDR happens to sit at 0x10000.
+    // Allocate it wherever, then move it to where GRUB puts it
+    // afterwards.
+    size_t mb1_info_size = sizeof(struct multiboot1_info);
+    struct multiboot1_info *multiboot1_info = ext_mem_alloc(mb1_info_size);
+    uint64_t mb1_info_final_loc = 0x10000;
+retry_mb1_info_reloc:
+    for (size_t i = 0; i < elf_ranges_count; i++) {
+        uint64_t mb1_info_top = mb1_info_final_loc + mb1_info_size;
+
+        uint64_t base = elf_ranges[i].base - slide;
+        uint64_t length = elf_ranges[i].length - slide;
+        uint64_t top = base + length;
+
+        // Do they overlap?
+        if (mb1_overlap_check(base, top, mb1_info_final_loc, mb1_info_top)) {
+            mb1_info_final_loc = top;
+            goto retry_mb1_info_reloc;
+        }
+
+        // Make sure it is memory that actually exists.
+        if (!memmap_alloc_range(mb1_info_final_loc, mb1_info_size, MEMMAP_BOOTLOADER_RECLAIMABLE,
+                                MEMMAP_USABLE, false, true, false)) {
+            if (!memmap_alloc_range(mb1_info_final_loc, mb1_info_size, MEMMAP_BOOTLOADER_RECLAIMABLE,
+                                    MEMMAP_BOOTLOADER_RECLAIMABLE, false, true, false)) {
+                mb1_info_final_loc += 0x1000;
+                goto retry_mb1_info_reloc;
+            }
+        }
+    }
+
+    if (mb1_info_final_loc + mb1_info_size > kernel_top) {
+        kernel_top = mb1_info_final_loc + mb1_info_size;
     }
 
     if (section_hdr_info != NULL) {
@@ -169,7 +221,6 @@ bool multiboot1_load(char *config, char *cmdline) {
         multiboot1_info->flags |= (1 << 5);
     }
 
-    
     uint32_t n_modules;
 
     for (n_modules = 0; ; n_modules++) {
@@ -298,6 +349,11 @@ nofb:;
 #endif
     }
 
+    // Load relocation stub where it won't get overwritten
+    size_t reloc_stub_size = (size_t)multiboot_reloc_stub_end - (size_t)multiboot_reloc_stub;
+    void *reloc_stub = mb1_alloc(reloc_stub_size);
+    memcpy(reloc_stub, multiboot_reloc_stub, reloc_stub_size);
+
 #if uefi == 1
     efi_exit_boot_services();
 #endif
@@ -331,6 +387,11 @@ nofb:;
 
     irq_flush_type = IRQ_PIC_ONLY_FLUSH;
 
-    common_spinup(multiboot1_spinup_32, 2,
-                  entry_point, (uint32_t)(uintptr_t)multiboot1_info);
+    common_spinup(multiboot1_spinup_32, 8,
+                  entry_point,
+                  (uint32_t)(uintptr_t)multiboot1_info, (uint32_t)mb1_info_final_loc,
+                  (uint32_t)mb1_info_size,
+                  (uint32_t)(uintptr_t)elf_ranges, (uint32_t)elf_ranges_count,
+                  (uint32_t)slide,
+                  (uint32_t)(uintptr_t)reloc_stub);
 }

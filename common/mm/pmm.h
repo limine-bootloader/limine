@@ -43,7 +43,7 @@ void init_memmap(void);
 struct e820_entry_t *get_memmap(size_t *entries);
 struct e820_entry_t *get_raw_memmap(size_t *entry_count);
 void print_memmap(struct e820_entry_t *mm, size_t size);
-bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only, bool panic, bool simulation, bool new_entry);
+bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, uint32_t overlay_type, bool panic, bool simulation, bool new_entry);
 void pmm_randomise_memory(void);
 
 void *ext_mem_alloc(size_t count);

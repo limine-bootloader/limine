@@ -1,0 +1,56 @@
+section .data
+
+global multiboot_reloc_stub
+multiboot_reloc_stub:
+    jmp .code
+
+    times 4-($-multiboot_reloc_stub) db 0
+
+  .magic_value:    dd 0
+  .entry_point:    dd 0
+  .mb_info_target: dd 0
+
+    ; EBX = self
+    ; ESI = multiboot info (original)
+    ; ECX = multiboot info (size)
+
+    ; EAX = elf ranges
+    ; EDX = elf ranges count
+    ; EDI = slide
+
+  .code:
+    mov ebp, edi
+
+    mov edi, [ebx + (.mb_info_target - multiboot_reloc_stub)]
+
+    ; Copy multiboot info; frees ESI, EDI, and ECX
+    rep movsb
+
+ .elf_ranges_loop:
+    mov esi, [eax]   ; ESI = elf_range.base
+    mov edi, esi     ; EDI = elf_range.base - slide
+    sub edi, ebp
+    mov ecx, [eax+8] ; ECX = elf_range.length
+    rep movsb        ; Copy range to target location
+
+    add eax, 24      ; Move to the next elf_range
+
+    dec edx          ; Loop until we're done
+    jnz .elf_ranges_loop
+
+    ; We're done relocating!
+
+    push dword [ebx + (.entry_point - multiboot_reloc_stub)]
+
+    mov eax, [ebx + (.magic_value - multiboot_reloc_stub)]
+    mov ebx, [ebx + (.mb_info_target - multiboot_reloc_stub)]
+    xor ecx, ecx
+    xor edx, edx
+    xor esi, esi
+    xor edi, edi
+    xor ebp, ebp
+
+    ret
+
+global multiboot_reloc_stub_end
+multiboot_reloc_stub_end:

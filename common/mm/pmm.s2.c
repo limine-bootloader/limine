@@ -808,7 +808,7 @@ static bool pmm_new_entry(uint64_t base, uint64_t length, uint32_t type) {
     return true;
 }
 
-bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free_only, bool do_panic, bool simulation, bool new_entry) {
+bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, uint32_t overlay_type, bool do_panic, bool simulation, bool new_entry) {
     if (length == 0)
         return true;
 
@@ -819,7 +819,7 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, bool free
     uint64_t top = base + length;
 
     for (size_t i = 0; i < memmap_entries; i++) {
-        if (free_only && memmap[i].type != MEMMAP_USABLE)
+        if (overlay_type != 0 && memmap[i].type != overlay_type)
             continue;
 
         uint64_t entry_base = memmap[i].base;

@@ -143,22 +143,25 @@ endif
 
 override C_FILES := $(shell find ./ -type f -name '*.c')
 ifeq ($(TARGET), bios)
+override ASMX86_FILES := $(shell find ./ -type f -name '*.asm_x86')
 override ASM32_FILES := $(shell find ./ -type f -name '*.asm_ia32')
 override ASMB_FILES := $(shell find ./ -type f -name '*.asm_bios_ia32')
 
-override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.o) $(ASM32_FILES:.asm_ia32=.o) $(ASMB_FILES:.asm_bios_ia32=.o))
+override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.o) $(ASM32_FILES:.asm_ia32=.o) $(ASMB_FILES:.asm_bios_ia32=.o) $(ASMX86_FILES:.asm_x86=.o))
 endif
 ifeq ($(TARGET), uefi-x86-64)
+override ASMX86_FILES := $(shell find ./ -type f -name '*.asm_x86')
 override ASM64_FILES := $(shell find ./ -type f -name '*.asm_x86_64')
 override ASM64U_FILES := $(shell find ./ -type f -name '*.asm_uefi_x86_64')
 
-override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.o) $(ASM64_FILES:.asm_x86_64=.o) $(ASM64U_FILES:.asm_uefi_x86_64=.o))
+override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.o) $(ASM64_FILES:.asm_x86_64=.o) $(ASM64U_FILES:.asm_uefi_x86_64=.o) $(ASMX86_FILES:.asm_x86=.o))
 endif
 ifeq ($(TARGET), uefi-ia32)
+override ASMX86_FILES := $(shell find ./ -type f -name '*.asm_x86')
 override ASM32_FILES := $(shell find ./ -type f -name '*.asm_ia32')
 override ASM32U_FILES := $(shell find ./ -type f -name '*.asm_uefi_ia32')
 
-override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.o) $(ASM32_FILES:.asm_ia32=.o) $(ASM32U_FILES:.asm_uefi_ia32=.o))
+override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.o) $(ASM32_FILES:.asm_ia32=.o) $(ASM32U_FILES:.asm_uefi_ia32=.o) $(ASMX86_FILES:.asm_x86=.o))
 endif
 override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.d))
 
@@ -408,6 +411,10 @@ $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_ia32
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_bios_ia32
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' -F dwarf -g $(WERROR) -f elf32 -o '$(call SHESCAPE,$@)'
+
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_x86
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g $(WERROR) -f elf32 -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET), uefi-x86-64)
@@ -418,6 +425,10 @@ $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_x86_64
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_uefi_x86_64
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' -F dwarf -g $(WERROR) -f elf64 -o '$(call SHESCAPE,$@)'
+
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_x86
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g $(WERROR) -f elf64 -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET), uefi-ia32)
@@ -426,6 +437,10 @@ $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_ia32
 	nasm '$(call SHESCAPE,$<)' -F dwarf -g $(WERROR) -f elf32 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_uefi_ia32
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g $(WERROR) -f elf32 -o '$(call SHESCAPE,$@)'
+
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_x86
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' -F dwarf -g $(WERROR) -f elf32 -o '$(call SHESCAPE,$@)'
 endif

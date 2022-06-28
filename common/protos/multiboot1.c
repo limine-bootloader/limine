@@ -86,39 +86,63 @@ bool multiboot1_load(char *config, char *cmdline) {
     struct elf_section_hdr_info *section_hdr_info = NULL;
 
     struct elf_range *elf_ranges;
-    uint64_t elf_ranges_count, slide;
+    uint64_t elf_ranges_count, slide = 0;
 
     if (header.flags & (1 << 16)) {
         if (header.load_addr > header.header_addr)
             panic(true, "multiboot1: Illegal load address");
 
-        size_t load_size = 0;
-
+        size_t load_size;
         if (header.load_end_addr)
             load_size = header.load_end_addr - header.load_addr;
         else
             load_size = kernel_file_size;
 
-        memmap_alloc_range(header.load_addr, load_size, MEMMAP_KERNEL_AND_MODULES, true, true, false, false);
-        memcpy((void *)(uintptr_t)header.load_addr, kernel + (header_offset
-                - (header.header_addr - header.load_addr)), load_size);
-
-        kernel_top = header.load_addr + load_size;
-
+        uint32_t bss_size = 0;
         if (header.bss_end_addr) {
             uintptr_t bss_addr = header.load_addr + load_size;
             if (header.bss_end_addr < bss_addr)
                 panic(true, "multiboot1: Illegal bss end address");
 
-            uint32_t bss_size = header.bss_end_addr - bss_addr;
-
-            memmap_alloc_range(bss_addr, bss_size, MEMMAP_KERNEL_AND_MODULES, true, true, false, false);
-            memset((void *)bss_addr, 0, bss_size);
-
-            kernel_top = bss_addr + bss_size;
+            bss_size = header.bss_end_addr - bss_addr;
         }
 
-        entry_point = header.entry_addr;
+        size_t full_size = load_size + bss_size;
+
+        bool simulation = true;
+        size_t try_count = 0;
+        size_t max_simulated_tries = 0x100000;
+
+retry_raw_load:;
+        uint64_t load_addr = header.load_addr + slide;
+
+        if (!memmap_alloc_range(load_addr, full_size, MEMMAP_BOOTLOADER_RECLAIMABLE, true, false, simulation, false)) {
+            if (simulation == false || ++try_count == max_simulated_tries) {
+                panic(true, "multiboot1: Failed to allocate necessary memory range (%X-%X)", load_addr, load_addr + full_size);
+            }
+            slide += 0x1000;
+            goto retry_raw_load;
+        }
+
+        if (simulation) {
+            simulation = false;
+            goto retry_raw_load;
+        }
+
+        memset((void *)(uintptr_t)load_addr, 0, full_size);
+
+        memcpy((void *)(uintptr_t)load_addr, kernel + (header_offset
+                - (header.header_addr - header.load_addr)), load_size);
+
+        kernel_top = load_addr + full_size;
+
+        entry_point = header.entry_addr + slide;
+
+        elf_ranges_count = 1;
+        elf_ranges = ext_mem_alloc(sizeof(struct elf_range));
+
+        elf_ranges->base = load_addr;
+        elf_ranges->length = full_size;
     } else {
         int bits = elf_bits(kernel);
 
@@ -136,25 +160,27 @@ bool multiboot1_load(char *config, char *cmdline) {
             case 32:
                 if (elf32_load(kernel, &entry_point, &kernel_top, MEMMAP_BOOTLOADER_RECLAIMABLE, &slide, &elf_ranges, &elf_ranges_count))
                     panic(true, "multiboot1: ELF32 load failure");
+
                 break;
             case 64: {
                 uint64_t e, t;
                 if (elf64_load(kernel, &e, &t, &slide, MEMMAP_BOOTLOADER_RECLAIMABLE, false, true, &elf_ranges, &elf_ranges_count, false, NULL, NULL, NULL, NULL))
                     panic(true, "multiboot1: ELF64 load failure");
-                entry_point = e - slide;
-
-                t -= slide;
-                if (t < 0x100000) {
-                    kernel_top = 0x100000;
-                } else {
-                    kernel_top = t;
-                }
+                entry_point = e;
+                kernel_top = t;
 
                 break;
             }
             default:
                 panic(true, "multiboot1: Invalid ELF file bitness");
         }
+    }
+
+    entry_point -= slide;
+
+    kernel_top -= slide;
+    if (kernel_top < 0x100000) {
+        kernel_top = 0x100000;
     }
 
     // GRUB allocates boot info at 0x10000, *except* if the kernel happens

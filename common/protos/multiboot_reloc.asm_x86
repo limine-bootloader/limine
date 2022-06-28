@@ -1,5 +1,7 @@
 section .data
 
+bits 32
+
 global multiboot_reloc_stub
 multiboot_reloc_stub:
     jmp .code

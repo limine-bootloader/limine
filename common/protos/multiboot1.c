@@ -134,7 +134,7 @@ bool multiboot1_load(char *config, char *cmdline) {
 
         switch (bits) {
             case 32:
-                if (elf32_load(kernel, &entry_point, &kernel_top, MEMMAP_BOOTLOADER_RECLAIMABLE))
+                if (elf32_load(kernel, &entry_point, &kernel_top, MEMMAP_BOOTLOADER_RECLAIMABLE, &slide, &elf_ranges, &elf_ranges_count))
                     panic(true, "multiboot1: ELF32 load failure");
                 break;
             case 64: {

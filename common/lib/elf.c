@@ -393,6 +393,56 @@ out:
     return ret;
 }
 
+static void elf32_get_ranges(uint8_t *elf, uint64_t slide, struct elf_range **_ranges, uint64_t *_ranges_count) {
+    struct elf32_hdr hdr;
+    memcpy(&hdr, elf + (0), sizeof(struct elf32_hdr));
+
+    uint64_t ranges_count = 0;
+
+    if (hdr.phdr_size < sizeof(struct elf32_phdr)) {
+        panic(true, "elf: phdr_size < sizeof(struct elf64_phdr)");
+    }
+
+    for (uint16_t i = 0; i < hdr.ph_num; i++) {
+        struct elf32_phdr phdr;
+        memcpy(&phdr, elf + (hdr.phoff + i * hdr.phdr_size),
+               sizeof(struct elf32_phdr));
+
+        if (phdr.p_type != PT_LOAD)
+            continue;
+
+        ranges_count++;
+    }
+
+    if (ranges_count == 0) {
+        panic(true, "elf: Attempted to use PMRs but no higher half PHDRs exist");
+    }
+
+    struct elf_range *ranges = ext_mem_alloc(ranges_count * sizeof(struct elf_range));
+
+    size_t r = 0;
+    for (uint16_t i = 0; i < hdr.ph_num; i++) {
+        struct elf32_phdr phdr;
+        memcpy(&phdr, elf + (hdr.phoff + i * hdr.phdr_size),
+               sizeof(struct elf32_phdr));
+
+        if (phdr.p_type != PT_LOAD)
+            continue;
+
+        uint64_t load_addr = phdr.p_paddr + slide;
+        uint64_t this_top = load_addr + phdr.p_memsz;
+
+        ranges[r].base = load_addr;
+        ranges[r].length = this_top - ranges[r].base;
+        ranges[r].permissions = phdr.p_flags & 0b111;
+
+        r++;
+    }
+
+    *_ranges_count = ranges_count;
+    *_ranges = ranges;
+}
+
 static uint64_t elf64_max_align(uint8_t *elf) {
     uint64_t ret = 0;
 
@@ -725,7 +775,7 @@ final:
     return 0;
 }
 
-int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t alloc_type) {
+int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t alloc_type, uint64_t *_slide, struct elf_range **ranges, uint64_t *ranges_count) {
     struct elf32_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf32_hdr));
 
@@ -744,9 +794,15 @@ int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t allo
         return -1;
     }
 
+    uint64_t slide = 0;
+    bool simulation = true;
+    size_t try_count = 0;
+    size_t max_simulated_tries = 0x100000;
+
     uint32_t entry = hdr.entry;
     bool entry_adjusted = false;
 
+again:
     if (top)
         *top = 0;
 
@@ -767,21 +823,33 @@ int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t allo
             panic(true, "elf: p_filesz > p_memsz");
         }
 
+        uint64_t load_addr = phdr.p_paddr + slide;
+
         if (top) {
-            uint32_t this_top = phdr.p_paddr + phdr.p_memsz;
+            uint32_t this_top = load_addr + phdr.p_memsz;
             if (this_top > *top) {
                 *top = this_top;
             }
         }
 
-        memmap_alloc_range((size_t)phdr.p_paddr, (size_t)phdr.p_memsz, alloc_type, true, true, false, false);
+        if (!memmap_alloc_range((size_t)load_addr, (size_t)phdr.p_memsz, alloc_type, true, false, simulation, false)) {
+            if (simulation == false || ++try_count == max_simulated_tries) {
+                panic(true, "elf: Failed to allocate necessary memory range (%X-%X)", load_addr, load_addr + phdr.p_memsz);
+            }
+            slide += 0x1000;
+            goto again;
+        }
 
-        memcpy((void *)(uintptr_t)phdr.p_paddr, elf + (phdr.p_offset), phdr.p_filesz);
+        if (simulation) {
+            continue;
+        }
+
+        memcpy((void *)(uintptr_t)load_addr, elf + (phdr.p_offset), phdr.p_filesz);
 
         size_t to_zero = (size_t)(phdr.p_memsz - phdr.p_filesz);
 
         if (to_zero) {
-            void *ptr = (void *)(uintptr_t)(phdr.p_paddr + phdr.p_filesz);
+            void *ptr = (void *)(uintptr_t)(load_addr + phdr.p_filesz);
             memset(ptr, 0, to_zero);
         }
 
@@ -792,7 +860,18 @@ int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t allo
         }
     }
 
-    *entry_point = entry;
+    if (simulation) {
+        simulation = false;
+        goto again;
+    }
+
+    *entry_point = entry + slide;
+    if (_slide)
+        *_slide = slide;
+
+    if (ranges_count != NULL && ranges != NULL) {
+        elf32_get_ranges(elf, slide, ranges, ranges_count);
+    }
 
     return 0;
 }

@@ -454,7 +454,7 @@ bool multiboot2_load(char *config, char* cmdline) {
 
         term_deinit();
 
-        if (fbtag && fbtag->type == MULTIBOOT_FRAMEBUFFER_TYPE_RGB) {
+        if (fbtag) {
             size_t req_width = fbtag->width;
             size_t req_height = fbtag->height;
             size_t req_bpp = fbtag->depth;

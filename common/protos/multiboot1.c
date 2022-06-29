@@ -372,7 +372,6 @@ nofb:;
         mmap[i].type = raw_memmap[i].type;
     }
 
-
     struct meminfo memory_info = mmap_get_info(mb_mmap_count, raw_memmap);
 
     // Convert the uppermem and lowermem fields from bytes to

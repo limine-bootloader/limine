@@ -187,7 +187,7 @@ bool stivale2_load(char *config, char *cmdline) {
                 }
 
                 if (elf64_load(kernel, &entry_point, NULL, &slide,
-                               STIVALE2_MMAP_KERNEL_AND_MODULES, kaslr, false,
+                               STIVALE2_MMAP_KERNEL_AND_MODULES, kaslr,
                                want_pmrs ? &ranges : NULL,
                                want_pmrs ? &ranges_count : NULL,
                                want_fully_virtual, &physical_base, &virtual_base,

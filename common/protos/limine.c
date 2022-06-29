@@ -162,7 +162,7 @@ bool limine_load(char *config, char *cmdline) {
     bool is_reloc;
 
     if (elf64_load(kernel, &entry_point, NULL, &slide,
-                   MEMMAP_KERNEL_AND_MODULES, kaslr, false,
+                   MEMMAP_KERNEL_AND_MODULES, kaslr,
                    &ranges, &ranges_count,
                    true, &physical_base, &virtual_base, &image_size,
                    &is_reloc)) {

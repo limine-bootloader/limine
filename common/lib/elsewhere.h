@@ -13,7 +13,7 @@ struct elsewhere_range {
 
 bool elsewhere_append(
         bool flexible_target,
-        struct elsewhere_range *ranges, size_t *ranges_count,
+        struct elsewhere_range *ranges, uint64_t *ranges_count,
         void *elsewhere, uint64_t *target, size_t t_length);
 
 #endif

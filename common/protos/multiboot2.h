@@ -24,7 +24,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdnoreturn.h>
 
 bool multiboot2_load(char *config, char *cmdline);
 
@@ -415,7 +414,5 @@ struct multiboot_tag_load_base_addr
     uint32_t size;
     uint32_t load_base_addr;
 };
-
-noreturn void multiboot2_spinup_32(uint32_t entry_point, uint32_t multiboot1_info);
 
 #endif

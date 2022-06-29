@@ -36,10 +36,10 @@ struct elf_section_hdr_info* elf32_section_hdr_info(uint8_t *elf);
 
 bool elf32_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
                           struct elsewhere_range **ranges,
-                          size_t *ranges_count);
+                          uint64_t *ranges_count);
 bool elf64_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
                           struct elsewhere_range **ranges,
-                          size_t *ranges_count);
+                          uint64_t *ranges_count);
 
 struct elf64_hdr {
     uint8_t  ident[16];

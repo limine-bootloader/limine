@@ -46,7 +46,7 @@ retry:
                 if (!flexible_target) {
                     return false;
                 }
-                *target = top;
+                *target = ALIGN_UP(top, 4096);
                 goto retry;
             }
         }

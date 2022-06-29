@@ -393,56 +393,6 @@ out:
     return ret;
 }
 
-static void elf32_get_ranges(uint8_t *elf, uint64_t slide, struct elf_range **_ranges, uint64_t *_ranges_count) {
-    struct elf32_hdr hdr;
-    memcpy(&hdr, elf + (0), sizeof(struct elf32_hdr));
-
-    uint64_t ranges_count = 0;
-
-    if (hdr.phdr_size < sizeof(struct elf32_phdr)) {
-        panic(true, "elf: phdr_size < sizeof(struct elf64_phdr)");
-    }
-
-    for (uint16_t i = 0; i < hdr.ph_num; i++) {
-        struct elf32_phdr phdr;
-        memcpy(&phdr, elf + (hdr.phoff + i * hdr.phdr_size),
-               sizeof(struct elf32_phdr));
-
-        if (phdr.p_type != PT_LOAD)
-            continue;
-
-        ranges_count++;
-    }
-
-    if (ranges_count == 0) {
-        panic(true, "elf: Attempted to use PMRs but no higher half PHDRs exist");
-    }
-
-    struct elf_range *ranges = ext_mem_alloc(ranges_count * sizeof(struct elf_range));
-
-    size_t r = 0;
-    for (uint16_t i = 0; i < hdr.ph_num; i++) {
-        struct elf32_phdr phdr;
-        memcpy(&phdr, elf + (hdr.phoff + i * hdr.phdr_size),
-               sizeof(struct elf32_phdr));
-
-        if (phdr.p_type != PT_LOAD)
-            continue;
-
-        uint64_t load_addr = phdr.p_paddr + slide;
-        uint64_t this_top = load_addr + phdr.p_memsz;
-
-        ranges[r].base = load_addr;
-        ranges[r].length = this_top - ranges[r].base;
-        ranges[r].permissions = phdr.p_flags & 0b111;
-
-        r++;
-    }
-
-    *_ranges_count = ranges_count;
-    *_ranges = ranges;
-}
-
 static uint64_t elf64_max_align(uint8_t *elf) {
     uint64_t ret = 0;
 
@@ -473,7 +423,7 @@ static uint64_t elf64_max_align(uint8_t *elf) {
     return ret;
 }
 
-static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struct elf_range **_ranges, uint64_t *_ranges_count) {
+static void elf64_get_ranges(uint8_t *elf, uint64_t slide, struct elf_range **_ranges, uint64_t *_ranges_count) {
     struct elf64_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
@@ -491,7 +441,7 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
         if (phdr.p_type != PT_LOAD)
             continue;
 
-        if (!use_paddr && phdr.p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
+        if (phdr.p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
             continue;
         }
 
@@ -515,27 +465,18 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
 
         uint64_t load_addr = 0;
 
-        if (use_paddr) {
-            load_addr = phdr.p_paddr;
-        } else {
-            load_addr = phdr.p_vaddr;
+        load_addr = phdr.p_vaddr;
 
-            if (phdr.p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
-                continue;
-            }
+        if (phdr.p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
+            continue;
         }
 
         load_addr += slide;
 
         uint64_t this_top = load_addr + phdr.p_memsz;
 
-        if (use_paddr) {
-            ranges[r].base = load_addr;
-            ranges[r].length = this_top - ranges[r].base;
-        } else {
-            ranges[r].base = load_addr & ~(phdr.p_align - 1);
-            ranges[r].length = ALIGN_UP(this_top - ranges[r].base, phdr.p_align);
-        }
+        ranges[r].base = load_addr & ~(phdr.p_align - 1);
+        ranges[r].length = ALIGN_UP(this_top - ranges[r].base, phdr.p_align);
         ranges[r].permissions = phdr.p_flags & 0b111;
 
         r++;
@@ -545,7 +486,7 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, bool use_paddr, struc
     *_ranges = ranges;
 }
 
-int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_slide, uint32_t alloc_type, bool kaslr, bool use_paddr, struct elf_range **ranges, uint64_t *ranges_count, bool fully_virtual, uint64_t *physical_base, uint64_t *virtual_base, uint64_t *_image_size, bool *is_reloc) {
+int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_slide, uint32_t alloc_type, bool kaslr, struct elf_range **ranges, uint64_t *ranges_count, bool fully_virtual, uint64_t *physical_base, uint64_t *virtual_base, uint64_t *_image_size, bool *is_reloc) {
     struct elf64_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf64_hdr));
 
@@ -623,11 +564,6 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
         }
     }
 
-    if (use_paddr) {
-        simulation = true;
-        goto final;
-    }
-
     if (!elf64_is_relocatable(elf, &hdr)) {
         simulation = false;
         goto final;
@@ -670,25 +606,19 @@ final:
             panic(true, "elf: p_filesz > p_memsz");
         }
 
-        uint64_t load_addr = 0;
+        uint64_t load_addr = phdr.p_vaddr;
 
-        if (use_paddr) {
-            load_addr = phdr.p_paddr;
-        } else {
-            load_addr = phdr.p_vaddr;
+        if (phdr.p_vaddr >= FIXED_HIGHER_HALF_OFFSET_64) {
+            higher_half = true;
 
-            if (phdr.p_vaddr >= FIXED_HIGHER_HALF_OFFSET_64) {
-                higher_half = true;
-
-                if (fully_virtual) {
-                    load_addr = *physical_base + (phdr.p_vaddr - *virtual_base);
-                } else {
-                    load_addr = phdr.p_vaddr - FIXED_HIGHER_HALF_OFFSET_64;
-                }
-            } else if (ranges) {
-                // Drop lower half
-                continue;
+            if (fully_virtual) {
+                load_addr = *physical_base + (phdr.p_vaddr - *virtual_base);
+            } else {
+                load_addr = phdr.p_vaddr - FIXED_HIGHER_HALF_OFFSET_64;
             }
+        } else if (ranges) {
+            // Drop lower half
+            continue;
         }
 
         if (!fully_virtual) {
@@ -706,11 +636,7 @@ final:
         uint64_t mem_base, mem_size;
 
         if (ranges) {
-            if (use_paddr) {
-                mem_base = load_addr;
-            } else {
-                mem_base = load_addr & ~(phdr.p_align - 1);
-            }
+            mem_base = load_addr & ~(phdr.p_align - 1);
             mem_size = this_top - mem_base;
         } else {
             mem_base = load_addr;
@@ -742,16 +668,8 @@ final:
             memset(ptr, 0, to_zero);
         }
 
-        if (!use_paddr && elf64_apply_relocations(elf, &hdr, (void *)(uintptr_t)load_addr, phdr.p_vaddr, phdr.p_memsz, slide)) {
+        if (elf64_apply_relocations(elf, &hdr, (void *)(uintptr_t)load_addr, phdr.p_vaddr, phdr.p_memsz, slide)) {
             panic(true, "elf: Failed to apply relocations");
-        }
-
-        if (use_paddr) {
-            if (!entry_adjusted && entry >= phdr.p_vaddr && entry < (phdr.p_vaddr + phdr.p_memsz)) {
-                entry -= phdr.p_vaddr;
-                entry += phdr.p_paddr;
-                entry_adjusted = true;
-            }
         }
     }
 
@@ -769,13 +687,13 @@ final:
         *_slide = slide;
 
     if (ranges_count != NULL && ranges != NULL) {
-        elf64_get_ranges(elf, slide, use_paddr, ranges, ranges_count);
+        elf64_get_ranges(elf, slide, ranges, ranges_count);
     }
 
     return 0;
 }
 
-int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t alloc_type, uint64_t *_slide, struct elf_range **ranges, uint64_t *ranges_count) {
+int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t alloc_type) {
     struct elf32_hdr hdr;
     memcpy(&hdr, elf + (0), sizeof(struct elf32_hdr));
 
@@ -794,15 +712,9 @@ int elf32_load(uint8_t *elf, uint32_t *entry_point, uint32_t *top, uint32_t allo
         return -1;
     }
 
-    uint64_t slide = 0;
-    bool simulation = true;
-    size_t try_count = 0;
-    size_t max_simulated_tries = 0x100000;
-
     uint32_t entry = hdr.entry;
     bool entry_adjusted = false;
 
-again:
     if (top)
         *top = 0;
 
@@ -823,33 +735,21 @@ again:
             panic(true, "elf: p_filesz > p_memsz");
         }
 
-        uint64_t load_addr = phdr.p_paddr + slide;
-
         if (top) {
-            uint32_t this_top = load_addr + phdr.p_memsz;
+            uint32_t this_top = phdr.p_paddr + phdr.p_memsz;
             if (this_top > *top) {
                 *top = this_top;
             }
         }
 
-        if (!memmap_alloc_range((size_t)load_addr, (size_t)phdr.p_memsz, alloc_type, true, false, simulation, false)) {
-            if (simulation == false || ++try_count == max_simulated_tries) {
-                panic(true, "elf: Failed to allocate necessary memory range (%X-%X)", load_addr, load_addr + phdr.p_memsz);
-            }
-            slide += 0x1000;
-            goto again;
-        }
+        memmap_alloc_range((size_t)phdr.p_paddr, (size_t)phdr.p_memsz, alloc_type, true, true, false, false);
 
-        if (simulation) {
-            continue;
-        }
-
-        memcpy((void *)(uintptr_t)load_addr, elf + (phdr.p_offset), phdr.p_filesz);
+        memcpy((void *)(uintptr_t)phdr.p_paddr, elf + (phdr.p_offset), phdr.p_filesz);
 
         size_t to_zero = (size_t)(phdr.p_memsz - phdr.p_filesz);
 
         if (to_zero) {
-            void *ptr = (void *)(uintptr_t)(load_addr + phdr.p_filesz);
+            void *ptr = (void *)(uintptr_t)(phdr.p_paddr + phdr.p_filesz);
             memset(ptr, 0, to_zero);
         }
 
@@ -860,18 +760,7 @@ again:
         }
     }
 
-    if (simulation) {
-        simulation = false;
-        goto again;
-    }
-
-    *entry_point = entry + slide;
-    if (_slide)
-        *_slide = slide;
-
-    if (ranges_count != NULL && ranges != NULL) {
-        elf32_get_ranges(elf, slide, ranges, ranges_count);
-    }
+    *entry_point = entry;
 
     return 0;
 }

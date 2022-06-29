@@ -5,6 +5,7 @@
 #include <lib/elf.h>
 #include <lib/print.h>
 #include <lib/rand.h>
+#include <lib/elsewhere.h>
 #include <mm/pmm.h>
 #include <fs/file.h>
 

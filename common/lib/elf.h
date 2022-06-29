@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <lib/blib.h>
+#include <lib/elsewhere.h>
 
 #define FIXED_HIGHER_HALF_OFFSET_64 ((uint64_t)0xffffffff80000000)
 

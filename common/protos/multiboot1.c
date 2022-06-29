@@ -25,6 +25,29 @@ noreturn void multiboot1_spinup_32(uint32_t entry_point, uint32_t multiboot1_inf
 
 static uint32_t kernel_top;
 
+#define LIMINE_BRAND "Limine " LIMINE_VERSION
+
+// Returns the size required to store the multiboot info.
+static size_t get_multiboot1_info_size(
+    char *cmdline,
+    size_t modules_count, size_t modules_cmdlines_size,
+    uint32_t section_entry_size, uint32_t section_num
+) {
+    return ALIGN_UP(sizeof(struct multiboot1_info), 16) +                   // base structure
+           ALIGN_UP(strlen(cmdline) + 1, 16) +                              // cmdline
+           ALIGN_UP(sizeof(LIMINE_BRAND), 16) +                             // bootloader brand
+           ALIGN_UP(sizeof(section_entry_size * section_num), 16) +         // ELF info
+           ALIGN_UP(sizeof(struct multiboot1_module) * modules_count, 16) + // modules count
+           ALIGN_UP(modules_cmdlines_size, 16) +                            // modules command lines
+           ALIGN_UP(sizeof(struct multiboot1_mmap_entry) * 256, 16);        // memory map
+}
+
+static void *mb1_info_alloc(void **mb1_info_raw, size_t size) {
+    void *ret = *mb1_info_raw;
+    *mb1_info_raw += ALIGN_UP(size, 16);
+    return ret;
+}
+
 static bool mb1_overlap_check(uint64_t base1, uint64_t top1,
                               uint64_t base2, uint64_t top2) {
     return ((base1 >= base2 && base1 <  top2)
@@ -183,20 +206,39 @@ retry_raw_load:;
         kernel_top = 0x100000;
     }
 
+    size_t n_modules;
+    size_t modules_cmdlines_size = 0;
+
+    for (n_modules = 0;; n_modules++) {
+        struct conf_tuple conf_tuple = config_get_tuple(config, n_modules, "MODULE_PATH", "MODULE_STRING");
+        if (!conf_tuple.value1) break;
+
+        char *module_cmdline = conf_tuple.value2;
+        if (!module_cmdline) module_cmdline = "";
+        modules_cmdlines_size += ALIGN_UP(strlen(module_cmdline) + 1, 16);
+    }
+
+    size_t mb1_info_size = get_multiboot1_info_size(
+        cmdline,
+        n_modules,
+        modules_cmdlines_size,
+        section_hdr_info ? section_hdr_info->section_entry_size : 0,
+        section_hdr_info ? section_hdr_info->num : 0
+    );
+
     // GRUB allocates boot info at 0x10000, *except* if the kernel happens
     // to overlap this region, then it gets moved to right after the
     // kernel, or whichever PHDR happens to sit at 0x10000.
     // Allocate it wherever, then move it to where GRUB puts it
     // afterwards.
-    size_t mb1_info_size = sizeof(struct multiboot1_info);
-    struct multiboot1_info *multiboot1_info = ext_mem_alloc(mb1_info_size);
+    void *mb1_info_raw = ext_mem_alloc(mb1_info_size);
     uint64_t mb1_info_final_loc = 0x10000;
 retry_mb1_info_reloc:
     for (size_t i = 0; i < elf_ranges_count; i++) {
         uint64_t mb1_info_top = mb1_info_final_loc + mb1_info_size;
 
         uint64_t base = elf_ranges[i].base - slide;
-        uint64_t length = elf_ranges[i].length - slide;
+        uint64_t length = elf_ranges[i].length;
         uint64_t top = base + length;
 
         // Do they overlap?
@@ -216,18 +258,24 @@ retry_mb1_info_reloc:
         }
     }
 
+    size_t mb1_info_slide = (size_t)mb1_info_raw - mb1_info_final_loc;
+
     if (mb1_info_final_loc + mb1_info_size > kernel_top) {
         kernel_top = mb1_info_final_loc + mb1_info_size;
     }
+
+    struct multiboot1_info *multiboot1_info =
+        mb1_info_alloc(&mb1_info_raw, sizeof(struct multiboot1_info));
 
     if (section_hdr_info != NULL) {
         multiboot1_info->elf_sect.num = section_hdr_info->num;
         multiboot1_info->elf_sect.size = section_hdr_info->section_entry_size;
         multiboot1_info->elf_sect.shndx = section_hdr_info->str_section_idx;
 
-        void *sections = conv_mem_alloc(section_hdr_info->section_entry_size * section_hdr_info->num);
+        void *sections = mb1_info_alloc(&mb1_info_raw,
+            section_hdr_info->section_entry_size * section_hdr_info->num);
 
-        multiboot1_info->elf_sect.addr = (uintptr_t)sections;
+        multiboot1_info->elf_sect.addr = (uintptr_t)sections - mb1_info_slide;
 
         memcpy(sections, kernel + section_hdr_info->section_offset, section_hdr_info->section_entry_size * section_hdr_info->num);
 
@@ -247,18 +295,12 @@ retry_mb1_info_reloc:
         multiboot1_info->flags |= (1 << 5);
     }
 
-    uint32_t n_modules;
-
-    for (n_modules = 0; ; n_modules++) {
-        if (config_get_value(config, n_modules, "MODULE_PATH") == NULL)
-            break;
-    }
-
     if (n_modules) {
-        struct multiboot1_module *mods = conv_mem_alloc(sizeof(*mods) * n_modules);
+        struct multiboot1_module *mods =
+            mb1_info_alloc(&mb1_info_raw, sizeof(struct multiboot1_module) * n_modules);
 
         multiboot1_info->mods_count = n_modules;
-        multiboot1_info->mods_addr = (uint32_t)(size_t)mods;
+        multiboot1_info->mods_addr = (size_t)mods - mb1_info_slide;
 
         for (size_t i = 0; i < n_modules; i++) {
             struct multiboot1_module *m = mods + i;
@@ -278,7 +320,7 @@ retry_mb1_info_reloc:
             if (module_cmdline == NULL) {
                 module_cmdline = "";
             }
-            char *lowmem_modstr = conv_mem_alloc(strlen(module_cmdline) + 1);
+            char *lowmem_modstr = mb1_info_alloc(&mb1_info_raw, strlen(module_cmdline) + 1);
             strcpy(lowmem_modstr, module_cmdline);
 
             void *module_addr = mb1_alloc(f->size);
@@ -287,7 +329,7 @@ retry_mb1_info_reloc:
 
             m->begin   = (uint32_t)(size_t)module_addr;
             m->end     = m->begin + f->size;
-            m->cmdline = (uint32_t)(size_t)lowmem_modstr;
+            m->cmdline = (uint32_t)(size_t)lowmem_modstr - mb1_info_slide;
             m->pad     = 0;
 
             fclose(f);
@@ -304,17 +346,17 @@ retry_mb1_info_reloc:
         multiboot1_info->flags |= (1 << 3);
     }
 
-    char *lowmem_cmdline = conv_mem_alloc(strlen(cmdline) + 1);
+    char *lowmem_cmdline = mb1_info_alloc(&mb1_info_raw, strlen(cmdline) + 1);
     strcpy(lowmem_cmdline, cmdline);
-    multiboot1_info->cmdline = (uint32_t)(size_t)lowmem_cmdline;
+    multiboot1_info->cmdline = (uint32_t)(size_t)lowmem_cmdline - mb1_info_slide;
     if (cmdline)
         multiboot1_info->flags |= (1 << 2);
 
-    char *bootload_name = "Limine " LIMINE_VERSION;
-    char *lowmem_bootname = conv_mem_alloc(strlen(bootload_name) + 1);
+    char *bootload_name = LIMINE_BRAND;
+    char *lowmem_bootname = mb1_info_alloc(&mb1_info_raw, strlen(bootload_name) + 1);
     strcpy(lowmem_bootname, bootload_name);
 
-    multiboot1_info->bootloader_name = (uint32_t)(size_t)lowmem_bootname;
+    multiboot1_info->bootloader_name = (uint32_t)(size_t)lowmem_bootname - mb1_info_slide;
     multiboot1_info->flags |= (1 << 9);
 
     term_deinit();
@@ -388,7 +430,7 @@ nofb:;
     struct e820_entry_t *raw_memmap = get_raw_memmap(&mb_mmap_count);
 
     size_t mb_mmap_len = mb_mmap_count * sizeof(struct multiboot1_mmap_entry);
-    struct multiboot1_mmap_entry *mmap = conv_mem_alloc(mb_mmap_len);
+    struct multiboot1_mmap_entry *mmap = mb1_info_alloc(&mb1_info_raw, mb_mmap_len);
 
     // Multiboot is bad and passes raw memmap. We do the same to support it.
     for (size_t i = 0; i < mb_mmap_count; i++) {
@@ -408,7 +450,7 @@ nofb:;
     }
 
     multiboot1_info->mmap_length = mb_mmap_len;
-    multiboot1_info->mmap_addr = ((uint32_t)(size_t)mmap);
+    multiboot1_info->mmap_addr = (uint32_t)(size_t)mmap - mb1_info_slide;
     multiboot1_info->flags |= (1 << 0) | (1 << 6);
 
     irq_flush_type = IRQ_PIC_ONLY_FLUSH;

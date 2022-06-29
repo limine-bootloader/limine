@@ -11,6 +11,7 @@
 #include <lib/uri.h>
 #include <lib/fb.h>
 #include <lib/term.h>
+#include <lib/elsewhere.h>
 #include <sys/pic.h>
 #include <sys/cpu.h>
 #include <sys/idt.h>
@@ -22,8 +23,6 @@
 extern symbol multiboot_reloc_stub, multiboot_reloc_stub_end;
 
 noreturn void multiboot1_spinup_32(uint32_t entry_point, uint32_t multiboot1_info);
-
-static uint32_t kernel_top;
 
 #define LIMINE_BRAND "Limine " LIMINE_VERSION
 
@@ -45,24 +44,6 @@ static size_t get_multiboot1_info_size(
 static void *mb1_info_alloc(void **mb1_info_raw, size_t size) {
     void *ret = *mb1_info_raw;
     *mb1_info_raw += ALIGN_UP(size, 16);
-    return ret;
-}
-
-static bool mb1_overlap_check(uint64_t base1, uint64_t top1,
-                              uint64_t base2, uint64_t top2) {
-    return ((base1 >= base2 && base1 <  top2)
-         || (top1  >  base2 && top1  <= top2));
-}
-
-static void *mb1_alloc(size_t size) {
-    void *ret = (void *)(uintptr_t)ALIGN_UP(kernel_top, 4096);
-
-    while (!memmap_alloc_range((uintptr_t)ret, size, MEMMAP_KERNEL_AND_MODULES,
-                               true, false, false, false)) {
-        ret += 0x200000;
-    }
-
-    kernel_top = (uintptr_t)ret + size;
     return ret;
 }
 
@@ -104,12 +85,11 @@ bool multiboot1_load(char *config, char *cmdline) {
     if (header.magic + header.flags + header.checksum)
         panic(true, "multiboot1: Header checksum is invalid");
 
-    uint32_t entry_point;
-
     struct elf_section_hdr_info *section_hdr_info = NULL;
 
-    struct elf_range *elf_ranges;
-    uint64_t elf_ranges_count, slide = 0;
+    uint64_t entry_point;
+    struct elsewhere_range *ranges;
+    uint64_t ranges_count;
 
     if (header.flags & (1 << 16)) {
         if (header.load_addr > header.header_addr)
@@ -132,78 +112,39 @@ bool multiboot1_load(char *config, char *cmdline) {
 
         size_t full_size = load_size + bss_size;
 
-        bool simulation = true;
-        size_t try_count = 0;
-        size_t max_simulated_tries = 0x100000;
+        void *elsewhere = ext_mem_alloc(full_size);
 
-retry_raw_load:;
-        uint64_t load_addr = header.load_addr + slide;
-
-        if (!memmap_alloc_range(load_addr, full_size, MEMMAP_BOOTLOADER_RECLAIMABLE, true, false, simulation, false)) {
-            if (simulation == false || ++try_count == max_simulated_tries) {
-                panic(true, "multiboot1: Failed to allocate necessary memory range (%X-%X)", load_addr, load_addr + full_size);
-            }
-            slide += 0x1000;
-            goto retry_raw_load;
-        }
-
-        if (simulation) {
-            simulation = false;
-            goto retry_raw_load;
-        }
-
-        memset((void *)(uintptr_t)load_addr, 0, full_size);
-
-        memcpy((void *)(uintptr_t)load_addr, kernel + (header_offset
+        memcpy(elsewhere, kernel + (header_offset
                 - (header.header_addr - header.load_addr)), load_size);
 
-        kernel_top = load_addr + full_size;
+        entry_point = header.entry_addr;
 
-        entry_point = header.entry_addr + slide;
+        ranges_count = 1;
+        ranges = ext_mem_alloc(sizeof(struct elsewhere_range));
 
-        elf_ranges_count = 1;
-        elf_ranges = ext_mem_alloc(sizeof(struct elf_range));
-
-        elf_ranges->base = load_addr;
-        elf_ranges->length = full_size;
+        ranges->elsewhere = elsewhere;
+        ranges->target = header.load_addr;
+        ranges->length = full_size;
     } else {
         int bits = elf_bits(kernel);
 
         switch (bits) {
             case 32:
+                if (!elf32_load_elsewhere(kernel, &entry_point, &ranges, &ranges_count))
+                    panic(true, "multiboot1: ELF32 load failure");
+
                 section_hdr_info = elf32_section_hdr_info(kernel);
                 break;
             case 64: {
-                section_hdr_info = elf64_section_hdr_info(kernel);
-                break;
-            }
-        }
-
-        switch (bits) {
-            case 32:
-                if (elf32_load(kernel, &entry_point, &kernel_top, MEMMAP_BOOTLOADER_RECLAIMABLE, &slide, &elf_ranges, &elf_ranges_count))
-                    panic(true, "multiboot1: ELF32 load failure");
-
-                break;
-            case 64: {
-                uint64_t e, t;
-                if (elf64_load(kernel, &e, &t, &slide, MEMMAP_BOOTLOADER_RECLAIMABLE, false, true, &elf_ranges, &elf_ranges_count, false, NULL, NULL, NULL, NULL))
+                if (!elf64_load_elsewhere(kernel, &entry_point, &ranges, &ranges_count))
                     panic(true, "multiboot1: ELF64 load failure");
-                entry_point = e;
-                kernel_top = t;
 
+                section_hdr_info = elf64_section_hdr_info(kernel);
                 break;
             }
             default:
                 panic(true, "multiboot1: Invalid ELF file bitness");
         }
-    }
-
-    entry_point -= slide;
-
-    kernel_top -= slide;
-    if (kernel_top < 0x100000) {
-        kernel_top = 0x100000;
     }
 
     size_t n_modules;
@@ -226,43 +167,32 @@ retry_raw_load:;
         section_hdr_info ? section_hdr_info->num : 0
     );
 
+    // Realloc elsewhere ranges to include mb1 info, modules, and elf sections
+    struct elsewhere_range *new_ranges = ext_mem_alloc(sizeof(struct elsewhere_range) *
+        (ranges_count
+       + 1 /* mb1 info range */
+       + n_modules,
+       + section_hdr_info ? section_hdr_info->num : 0));
+
+    memcpy(new_ranges, ranges, sizeof(struct elsewhere_range) * ranges_count);
+    pmm_free(ranges, sizeof(struct elsewhere_range) * ranges_count);
+    ranges = new_ranges;
+
     // GRUB allocates boot info at 0x10000, *except* if the kernel happens
     // to overlap this region, then it gets moved to right after the
     // kernel, or whichever PHDR happens to sit at 0x10000.
     // Allocate it wherever, then move it to where GRUB puts it
     // afterwards.
+
+    // Elsewhere append mb1 info *after* kernel but *before* modules.
     void *mb1_info_raw = ext_mem_alloc(mb1_info_size);
     uint64_t mb1_info_final_loc = 0x10000;
-retry_mb1_info_reloc:
-    for (size_t i = 0; i < elf_ranges_count; i++) {
-        uint64_t mb1_info_top = mb1_info_final_loc + mb1_info_size;
 
-        uint64_t base = elf_ranges[i].base - slide;
-        uint64_t length = elf_ranges[i].length;
-        uint64_t top = base + length;
-
-        // Do they overlap?
-        if (mb1_overlap_check(base, top, mb1_info_final_loc, mb1_info_top)) {
-            mb1_info_final_loc = top;
-            goto retry_mb1_info_reloc;
-        }
-
-        // Make sure it is memory that actually exists.
-        if (!memmap_alloc_range(mb1_info_final_loc, mb1_info_size, MEMMAP_BOOTLOADER_RECLAIMABLE,
-                                MEMMAP_USABLE, false, true, false)) {
-            if (!memmap_alloc_range(mb1_info_final_loc, mb1_info_size, MEMMAP_BOOTLOADER_RECLAIMABLE,
-                                    MEMMAP_BOOTLOADER_RECLAIMABLE, false, true, false)) {
-                mb1_info_final_loc += 0x1000;
-                goto retry_mb1_info_reloc;
-            }
-        }
-    }
+    elsewhere_append(true /* flexible target */,
+            ranges, &ranges_count,
+            mb1_info_raw, &mb1_info_final_loc, mb1_info_size);
 
     size_t mb1_info_slide = (size_t)mb1_info_raw - mb1_info_final_loc;
-
-    if (mb1_info_final_loc + mb1_info_size > kernel_top) {
-        kernel_top = mb1_info_final_loc + mb1_info_size;
-    }
 
     struct multiboot1_info *multiboot1_info =
         mb1_info_alloc(&mb1_info_raw, sizeof(struct multiboot1_info));
@@ -286,10 +216,13 @@ retry_mb1_info_reloc:
                 continue;
             }
 
-            void *section = mb1_alloc(shdr->sh_size);
-            memcpy(section, kernel + shdr->sh_offset, shdr->sh_size);
+            uint64_t section = (uint64_t)-1; /* no target preference, use top */
 
-            shdr->sh_addr = (uintptr_t)section;
+            elsewhere_append(true /* flexible target */,
+                    ranges, &ranges_count,
+                    kernel + shdr->sh_offset, &section, shdr->sh_size);
+
+            shdr->sh_addr = section;
         }
 
         multiboot1_info->flags |= (1 << 5);
@@ -323,11 +256,14 @@ retry_mb1_info_reloc:
             char *lowmem_modstr = mb1_info_alloc(&mb1_info_raw, strlen(module_cmdline) + 1);
             strcpy(lowmem_modstr, module_cmdline);
 
-            void *module_addr = mb1_alloc(f->size);
+            void *module_addr = freadall(f);
+            uint64_t module_target = (uint64_t)-1; /* no target preference, use top */
 
-            fread(f, module_addr, 0, f->size);
+            elsewhere_append(true /* flexible target */,
+                    ranges, &ranges_count,
+                    module_addr, &module_target, f->size);
 
-            m->begin   = (uint32_t)(size_t)module_addr;
+            m->begin   = module_target;
             m->end     = m->begin + f->size;
             m->cmdline = (uint32_t)(size_t)lowmem_modstr - mb1_info_slide;
             m->pad     = 0;
@@ -417,9 +353,9 @@ nofb:;
 #endif
     }
 
-    // Load relocation stub where it won't get overwritten
+    // Load relocation stub where it won't get overwritten (hopefully)
     size_t reloc_stub_size = (size_t)multiboot_reloc_stub_end - (size_t)multiboot_reloc_stub;
-    void *reloc_stub = mb1_alloc(reloc_stub_size);
+    void *reloc_stub = ext_mem_alloc(reloc_stub_size);
     memcpy(reloc_stub, multiboot_reloc_stub, reloc_stub_size);
 
 #if uefi == 1
@@ -440,14 +376,13 @@ nofb:;
         mmap[i].type = raw_memmap[i].type;
     }
 
-    {
-        struct meminfo memory_info = mmap_get_info(mb_mmap_count, raw_memmap);
 
-        // Convert the uppermem and lowermem fields from bytes to
-        // KiB.
-        multiboot1_info->mem_lower = memory_info.lowermem / 1024;
-        multiboot1_info->mem_upper = memory_info.uppermem / 1024;
-    }
+    struct meminfo memory_info = mmap_get_info(mb_mmap_count, raw_memmap);
+
+    // Convert the uppermem and lowermem fields from bytes to
+    // KiB.
+    multiboot1_info->mem_lower = memory_info.lowermem / 1024;
+    multiboot1_info->mem_upper = memory_info.uppermem / 1024;
 
     multiboot1_info->mmap_length = mb_mmap_len;
     multiboot1_info->mmap_addr = (uint32_t)(size_t)mmap - mb1_info_slide;
@@ -455,11 +390,7 @@ nofb:;
 
     irq_flush_type = IRQ_PIC_ONLY_FLUSH;
 
-    common_spinup(multiboot1_spinup_32, 8,
-                  entry_point,
-                  (uint32_t)(uintptr_t)multiboot1_info, (uint32_t)mb1_info_final_loc,
-                  (uint32_t)mb1_info_size,
-                  (uint32_t)(uintptr_t)elf_ranges, (uint32_t)elf_ranges_count,
-                  (uint32_t)slide,
-                  (uint32_t)(uintptr_t)reloc_stub);
+    common_spinup(multiboot_spinup_32, 4,
+                  0x2badb002, entry_point,
+                  (uint32_t)(uintptr_t)ranges, (uint32_t)ranges_count);
 }

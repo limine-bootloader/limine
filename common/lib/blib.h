@@ -87,10 +87,4 @@ noreturn void common_spinup(void *fnptr, int args, ...);
 
 #define no_unwind __attribute__((section(".no_unwind")))
 
-struct elsewhere_range {
-    uint64_t elsewhere;
-    uint64_t target;
-    uint64_t length;
-};
-
 #endif

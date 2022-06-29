@@ -1,6 +1,7 @@
-#include <protos/multiboot2.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <protos/multiboot2.h>
+#include <protos/multiboot.h>
 #include <config.h>
 #include <lib/libc.h>
 #include <lib/elf.h>
@@ -10,6 +11,7 @@
 #include <lib/uri.h>
 #include <lib/fb.h>
 #include <lib/term.h>
+#include <lib/elsewhere.h>
 #include <sys/pic.h>
 #include <sys/cpu.h>
 #include <sys/idt.h>
@@ -19,8 +21,6 @@
 #include <mm/pmm.h>
 #include <lib/blib.h>
 #include <drivers/vga_textmode.h>
-
-extern symbol multiboot_reloc_stub, multiboot_reloc_stub_end;
 
 #define LIMINE_BRAND "Limine " LIMINE_VERSION
 
@@ -56,26 +56,6 @@ static size_t get_multiboot2_info_size(
 }
 
 #define append_tag(P, TAG) ({ (P) += ALIGN_UP((TAG)->size, MULTIBOOT_TAG_ALIGN); })
-
-static uint32_t kernel_top;
-
-static bool mb2_overlap_check(uint64_t base1, uint64_t top1,
-                              uint64_t base2, uint64_t top2) {
-    return ((base1 >= base2 && base1 <  top2)
-         || (top1  >  base2 && top1  <= top2));
-}
-
-static void *mb2_alloc(size_t size) {
-    void *ret = (void *)(uintptr_t)ALIGN_UP(kernel_top, 4096);
-
-    while (!memmap_alloc_range((uintptr_t)ret, size, MEMMAP_KERNEL_AND_MODULES,
-                               true, false, false, false)) {
-        ret += 0x200000;
-    }
-
-    kernel_top = (uintptr_t)ret + size;
-    return ret;
-}
 
 bool multiboot2_load(char *config, char* cmdline) {
     struct file_handle *kernel_file;
@@ -122,7 +102,7 @@ bool multiboot2_load(char *config, char* cmdline) {
 
     bool is_elf_info_requested = false;
 
-    uint32_t entry_point = 0xffffffff;
+    uint64_t entry_point = 0xffffffff;
 
     // Iterate through the entries...
     for (struct multiboot_header_tag *tag = (struct multiboot_header_tag*)(header + 1); // header + 1 to skip the header struct.
@@ -197,8 +177,8 @@ bool multiboot2_load(char *config, char* cmdline) {
         }
     }
 
-    struct elf_range *elf_ranges;
-    uint64_t elf_ranges_count, slide;
+    struct elsewhere_range *ranges;
+    uint64_t ranges_count;
 
     if (addresstag != NULL) {
         if (addresstag->load_addr > addresstag->header_addr)
@@ -217,7 +197,7 @@ bool multiboot2_load(char *config, char* cmdline) {
         memcpy((void *)(uintptr_t)addresstag->load_addr, kernel + (header_offset
                 - (addresstag->header_addr - addresstag->load_addr)), load_size);
 
-        kernel_top = addresstag->load_addr + load_size;
+        //kernel_top = addresstag->load_addr + load_size;
 
         if (addresstag->bss_end_addr) {
             uintptr_t bss_addr = addresstag->load_addr + load_size;
@@ -229,20 +209,20 @@ bool multiboot2_load(char *config, char* cmdline) {
             memmap_alloc_range(bss_addr, bss_size, MEMMAP_KERNEL_AND_MODULES, true, true, false, false);
             memset((void *)bss_addr, 0, bss_size);
 
-            kernel_top = bss_addr + bss_size;
+            //kernel_top = bss_addr + bss_size;
         }
     } else {
+        uint64_t e;
         int bits = elf_bits(kernel);
-        uint64_t e = 0, t = 0;
 
         switch (bits) {
             case 32:
-                if (elf32_load(kernel, (uint32_t *)&e, (uint32_t *)&t, MEMMAP_BOOTLOADER_RECLAIMABLE, &slide, &elf_ranges, &elf_ranges_count))
+                if (elf32_load_elsewhere(kernel, &e, &ranges, &ranges_count))
                     panic(true, "multiboot2: ELF32 load failure");
 
                 break;
             case 64: {
-                if (elf64_load(kernel, &e, &t, &slide, MEMMAP_BOOTLOADER_RECLAIMABLE, false, true, &elf_ranges, &elf_ranges_count, false, NULL, NULL, NULL, NULL))
+                if (elf64_load_elsewhere(kernel, &e, &ranges, &ranges_count))
                     panic(true, "multiboot2: ELF64 load failure");
 
                 break;
@@ -251,16 +231,8 @@ bool multiboot2_load(char *config, char* cmdline) {
                 panic(true, "multiboot2: Invalid ELF file bitness");
         }
 
-        e -= slide;
         if (entry_point == 0xffffffff) {
             entry_point = e;
-        }
-
-        t -= slide;
-        if (t < 0x100000) {
-            kernel_top = 0x100000;
-        } else {
-            kernel_top = t;
         }
     }
 
@@ -311,41 +283,30 @@ bool multiboot2_load(char *config, char* cmdline) {
 
     size_t info_idx = 0;
 
+    // Realloc elsewhere ranges to include mb2 info, modules, and elf sections
+    struct elsewhere_range *new_ranges = ext_mem_alloc(sizeof(struct elsewhere_range) *
+        (ranges_count
+       + 1 /* mb2 info range */
+       + n_modules
+       + (section_hdr_info ? section_hdr_info->num : 0)));
+
+    memcpy(new_ranges, ranges, sizeof(struct elsewhere_range) * ranges_count);
+    pmm_free(ranges, sizeof(struct elsewhere_range) * ranges_count);
+    ranges = new_ranges;
+
     // GRUB allocates boot info at 0x10000, *except* if the kernel happens
     // to overlap this region, then it gets moved to right after the
     // kernel, or whichever PHDR happens to sit at 0x10000.
     // Allocate it wherever, then move it to where GRUB puts it
     // afterwards.
+
+    // Elsewhere append mb2 info *after* kernel but *before* modules.
     uint8_t *mb2_info = ext_mem_alloc(mb2_info_size);
     uint64_t mb2_info_final_loc = 0x10000;
-retry_mb2_info_reloc:
-    for (size_t i = 0; i < elf_ranges_count; i++) {
-        uint64_t mb2_info_top = mb2_info_final_loc + mb2_info_size;
 
-        uint64_t base = elf_ranges[i].base - slide;
-        uint64_t length = elf_ranges[i].length - slide;
-        uint64_t top = base + length;
-
-        // Do they overlap?
-        if (mb2_overlap_check(base, top, mb2_info_final_loc, mb2_info_top)) {
-            mb2_info_final_loc = top;
-            goto retry_mb2_info_reloc;
-        }
-
-        // Make sure it is memory that actually exists.
-        if (!memmap_alloc_range(mb2_info_final_loc, mb2_info_size, MEMMAP_BOOTLOADER_RECLAIMABLE,
-                                MEMMAP_USABLE, false, true, false)) {
-            if (!memmap_alloc_range(mb2_info_final_loc, mb2_info_size, MEMMAP_BOOTLOADER_RECLAIMABLE,
-                                    MEMMAP_BOOTLOADER_RECLAIMABLE, false, true, false)) {
-                mb2_info_final_loc += 0x1000;
-                goto retry_mb2_info_reloc;
-            }
-        }
-    }
-
-    if (mb2_info_final_loc + mb2_info_size > kernel_top) {
-        kernel_top = mb2_info_final_loc + mb2_info_size;
-    }
+    elsewhere_append(true /* flexible target */,
+            ranges, &ranges_count,
+            mb2_info, &mb2_info_final_loc, mb2_info_size);
 
     struct multiboot2_start_tag *mbi_start = (struct multiboot2_start_tag *)mb2_info;
     info_idx += sizeof(struct multiboot2_start_tag);
@@ -377,10 +338,13 @@ retry_mb2_info_reloc:
                 continue;
             }
 
-            void *section = mb2_alloc(shdr->sh_size);
-            memcpy(section, kernel + shdr->sh_offset, shdr->sh_size);
+            uint64_t section = (uint64_t)-1; /* no target preference, use top */
 
-            shdr->sh_addr = (uintptr_t)section;
+            elsewhere_append(true /* flexible target */,
+                    ranges, &ranges_count,
+                    kernel + shdr->sh_offset, &section, shdr->sh_size);
+
+            shdr->sh_addr = section;
         }
 
         append_tag(info_idx, tag);
@@ -406,15 +370,18 @@ retry_mb2_info_reloc:
         char *module_cmdline = conf_tuple.value2;
         if (!module_cmdline) module_cmdline = "";
 
-        void *module_addr = mb2_alloc(f->size);
+        void *module_addr = freadall(f, MEMMAP_BOOTLOADER_RECLAIMABLE);
+        uint64_t module_target = (uint64_t)-1;
 
-        fread(f, module_addr, 0, f->size);
+        elsewhere_append(true /* flexible target */,
+                ranges, &ranges_count,
+                module_addr, &module_target, f->size);
 
         struct multiboot_tag_module *module_tag = (struct multiboot_tag_module *)(mb2_info + info_idx);
 
         module_tag->type = MULTIBOOT_TAG_TYPE_MODULE;
         module_tag->size = sizeof(struct multiboot_tag_module) + strlen(module_cmdline) + 1;
-        module_tag->mod_start   = (uint32_t)(size_t)module_addr;
+        module_tag->mod_start   = module_target;
         module_tag->mod_end     = module_tag->mod_start + f->size;
         strcpy(module_tag->cmdline, module_cmdline); // Copy over the command line
 
@@ -645,9 +612,9 @@ retry_mb2_info_reloc:
     }
 #endif
 
-    // Load relocation stub where it won't get overwritten
+    // Load relocation stub where it won't get overwritten (hopefully)
     size_t reloc_stub_size = (size_t)multiboot_reloc_stub_end - (size_t)multiboot_reloc_stub;
-    void *reloc_stub = mb2_alloc(reloc_stub_size);
+    void *reloc_stub = ext_mem_alloc(reloc_stub_size);
     memcpy(reloc_stub, multiboot_reloc_stub, reloc_stub_size);
 
 #if uefi == 1
@@ -743,11 +710,8 @@ retry_mb2_info_reloc:
 
     irq_flush_type = IRQ_PIC_ONLY_FLUSH;
 
-    common_spinup(multiboot2_spinup_32, 8,
-                  entry_point,
-                  (uint32_t)(uintptr_t)mb2_info, (uint32_t)mb2_info_final_loc,
-                  (uint32_t)mb2_info_size,
-                  (uint32_t)(uintptr_t)elf_ranges, (uint32_t)elf_ranges_count,
-                  (uint32_t)slide,
-                  (uint32_t)(uintptr_t)reloc_stub);
+    common_spinup(multiboot_spinup_32, 6,
+                  (uint32_t)(uintptr_t)reloc_stub, (uint32_t)0x36d76289,
+                  (uint32_t)mb2_info_final_loc, (uint32_t)entry_point,
+                  (uint32_t)(uintptr_t)ranges, (uint32_t)ranges_count);
 }

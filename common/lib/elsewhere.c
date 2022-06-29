@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <lib/elsewhere.h>
 #include <lib/blib.h>
+#include <mm/pmm.h>
 
 static bool elsewhere_overlap_check(uint64_t base1, uint64_t top1,
                               uint64_t base2, uint64_t top2) {
@@ -12,7 +13,7 @@ static bool elsewhere_overlap_check(uint64_t base1, uint64_t top1,
 
 bool elsewhere_append(
         bool flexible_target,
-        struct elsewhere_range *ranges, size_t *ranges_count,
+        struct elsewhere_range *ranges, uint64_t *ranges_count,
         void *elsewhere, uint64_t *target, size_t t_length) {
     // original target of -1 means "allocate after top of all ranges"
     // flexible target is ignored
@@ -80,7 +81,7 @@ retry:
     }
 
     // Add the elsewhere range
-    ranges[*ranges_count].elsewhere = elsewhere;
+    ranges[*ranges_count].elsewhere = (uintptr_t)elsewhere;
     ranges[*ranges_count].target = *target;
     ranges[*ranges_count].length = t_length;
     *ranges_count += 1;

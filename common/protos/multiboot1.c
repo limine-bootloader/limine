@@ -1,8 +1,8 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <stdnoreturn.h>
-#include <config.h>
 #include <protos/multiboot1.h>
+#include <protos/multiboot.h>
+#include <config.h>
 #include <lib/libc.h>
 #include <lib/elf.h>
 #include <lib/blib.h>
@@ -19,10 +19,6 @@
 #include <mm/vmm.h>
 #include <mm/pmm.h>
 #include <drivers/vga_textmode.h>
-
-extern symbol multiboot_reloc_stub, multiboot_reloc_stub_end;
-
-noreturn void multiboot1_spinup_32(uint32_t entry_point, uint32_t multiboot1_info);
 
 #define LIMINE_BRAND "Limine " LIMINE_VERSION
 
@@ -122,7 +118,7 @@ bool multiboot1_load(char *config, char *cmdline) {
         ranges_count = 1;
         ranges = ext_mem_alloc(sizeof(struct elsewhere_range));
 
-        ranges->elsewhere = elsewhere;
+        ranges->elsewhere = (uintptr_t)elsewhere;
         ranges->target = header.load_addr;
         ranges->length = full_size;
     } else {
@@ -171,8 +167,8 @@ bool multiboot1_load(char *config, char *cmdline) {
     struct elsewhere_range *new_ranges = ext_mem_alloc(sizeof(struct elsewhere_range) *
         (ranges_count
        + 1 /* mb1 info range */
-       + n_modules,
-       + section_hdr_info ? section_hdr_info->num : 0));
+       + n_modules
+       + (section_hdr_info ? section_hdr_info->num : 0)));
 
     memcpy(new_ranges, ranges, sizeof(struct elsewhere_range) * ranges_count);
     pmm_free(ranges, sizeof(struct elsewhere_range) * ranges_count);
@@ -256,7 +252,7 @@ bool multiboot1_load(char *config, char *cmdline) {
             char *lowmem_modstr = mb1_info_alloc(&mb1_info_raw, strlen(module_cmdline) + 1);
             strcpy(lowmem_modstr, module_cmdline);
 
-            void *module_addr = freadall(f);
+            void *module_addr = freadall(f, MEMMAP_BOOTLOADER_RECLAIMABLE);
             uint64_t module_target = (uint64_t)-1; /* no target preference, use top */
 
             elsewhere_append(true /* flexible target */,
@@ -390,7 +386,8 @@ nofb:;
 
     irq_flush_type = IRQ_PIC_ONLY_FLUSH;
 
-    common_spinup(multiboot_spinup_32, 4,
-                  0x2badb002, entry_point,
+    common_spinup(multiboot_spinup_32, 6,
+                  (uint32_t)(uintptr_t)reloc_stub, (uint32_t)0x2badb002,
+                  (uint32_t)mb1_info_final_loc, (uint32_t)entry_point,
                   (uint32_t)(uintptr_t)ranges, (uint32_t)ranges_count);
 }

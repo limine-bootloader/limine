@@ -450,9 +450,11 @@ bool multiboot2_load(char *config, char* cmdline) {
     // Create framebuffer tag
     //////////////////////////////////////////////
     {
+        struct multiboot_tag_framebuffer *tag = (struct multiboot_tag_framebuffer *)(mb2_info + info_idx);
+
         term_deinit();
 
-        if (fbtag) {
+        if (fbtag && fbtag->type == MULTIBOOT_FRAMEBUFFER_TYPE_RGB) {
             size_t req_width = fbtag->width;
             size_t req_height = fbtag->height;
             size_t req_bpp = fbtag->depth;
@@ -461,7 +463,6 @@ bool multiboot2_load(char *config, char* cmdline) {
             if (resolution != NULL)
                 parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
-            struct multiboot_tag_framebuffer *tag = (struct multiboot_tag_framebuffer *)(mb2_info + info_idx);
 
             struct fb_info fbinfo;
             if (!fb_init(&fbinfo, req_width, req_height, req_bpp)) {
@@ -495,16 +496,23 @@ bool multiboot2_load(char *config, char* cmdline) {
                 tag->framebuffer_blue_field_position = fbinfo.blue_mask_shift;
                 tag->framebuffer_blue_mask_size = fbinfo.blue_mask_size;
             }
-
-            append_tag(info_idx, &tag->common);
         } else {
 #if uefi == 1
             panic(true, "multiboot2: Cannot use text mode with UEFI");
 #elif bios == 1
             size_t rows, cols;
             init_vga_textmode(&rows, &cols, false);
+
+            tag->common.framebuffer_addr = 0xb8000;
+            tag->common.framebuffer_width = cols;
+            tag->common.framebuffer_height = rows;
+            tag->common.framebuffer_bpp = 16;
+            tag->common.framebuffer_pitch = 2 * cols;
+            tag->common.framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT;
 #endif
         }
+
+        append_tag(info_idx, &tag->common);
     }
 
     //////////////////////////////////////////////

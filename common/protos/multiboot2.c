@@ -186,8 +186,7 @@ bool multiboot2_load(char *config, char* cmdline) {
         if (addresstag->load_addr > addresstag->header_addr)
             panic(true, "multiboot2: Illegal load address");
 
-        size_t load_size = 0;
-
+        size_t load_size;
         if (addresstag->load_end_addr)
             load_size = addresstag->load_end_addr - addresstag->load_addr;
         else
@@ -195,24 +194,32 @@ bool multiboot2_load(char *config, char* cmdline) {
 
         size_t header_offset = (size_t)header - (size_t)kernel;
 
-        memmap_alloc_range(addresstag->load_addr, load_size, MEMMAP_KERNEL_AND_MODULES, true, true, false, false);
-        memcpy((void *)(uintptr_t)addresstag->load_addr, kernel + (header_offset
-                - (addresstag->header_addr - addresstag->load_addr)), load_size);
-
-        //kernel_top = addresstag->load_addr + load_size;
-
+        uint32_t bss_size = 0;
         if (addresstag->bss_end_addr) {
             uintptr_t bss_addr = addresstag->load_addr + load_size;
             if (addresstag->bss_end_addr < bss_addr)
                 panic(true, "multiboot2: Illegal bss end address");
 
-            uint32_t bss_size = addresstag->bss_end_addr - bss_addr;
-
-            memmap_alloc_range(bss_addr, bss_size, MEMMAP_KERNEL_AND_MODULES, true, true, false, false);
-            memset((void *)bss_addr, 0, bss_size);
-
-            //kernel_top = bss_addr + bss_size;
+            bss_size = addresstag->bss_end_addr - bss_addr;
         }
+
+        size_t full_size = load_size + bss_size;
+
+        void *elsewhere = ext_mem_alloc(full_size);
+
+        memcpy(elsewhere, kernel + (header_offset
+                - (addresstag->header_addr - addresstag->load_addr)), load_size);
+
+        if (entry_point == 0xffffffff) {
+            panic(true, "multiboot2: Using address tag but entry address tag missing");
+        }
+
+        ranges_count = 1;
+        ranges = ext_mem_alloc(sizeof(struct elsewhere_range));
+
+        ranges->elsewhere = (uintptr_t)elsewhere;
+        ranges->target = addresstag->load_addr;
+        ranges->length = full_size;
     } else {
         uint64_t e;
         int bits = elf_bits(kernel);

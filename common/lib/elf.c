@@ -829,9 +829,9 @@ bool elf32_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
             entry_adjusted = true;
         }
 
-        (*ranges[cur_entry]).elsewhere = (uintptr_t)elsewhere;
-        (*ranges[cur_entry]).target = phdr->p_paddr;
-        (*ranges[cur_entry]).length = phdr->p_memsz;
+        (*ranges)[cur_entry].elsewhere = (uintptr_t)elsewhere;
+        (*ranges)[cur_entry].target = phdr->p_paddr;
+        (*ranges)[cur_entry].length = phdr->p_memsz;
 
         cur_entry++;
     }
@@ -903,9 +903,9 @@ bool elf64_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
             entry_adjusted = true;
         }
 
-        (*ranges[cur_entry]).elsewhere = (uintptr_t)elsewhere;
-        (*ranges[cur_entry]).target = phdr->p_paddr;
-        (*ranges[cur_entry]).length = phdr->p_memsz;
+        (*ranges)[cur_entry].elsewhere = (uintptr_t)elsewhere;
+        (*ranges)[cur_entry].target = phdr->p_paddr;
+        (*ranges)[cur_entry].length = phdr->p_memsz;
 
         cur_entry++;
     }

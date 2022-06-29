@@ -177,6 +177,8 @@ bool multiboot2_load(char *config, char* cmdline) {
         }
     }
 
+    struct elf_section_hdr_info *section_hdr_info = NULL;
+
     struct elsewhere_range *ranges;
     uint64_t ranges_count;
 
@@ -217,14 +219,16 @@ bool multiboot2_load(char *config, char* cmdline) {
 
         switch (bits) {
             case 32:
-                if (elf32_load_elsewhere(kernel, &e, &ranges, &ranges_count))
+                if (!elf32_load_elsewhere(kernel, &e, &ranges, &ranges_count))
                     panic(true, "multiboot2: ELF32 load failure");
 
+                section_hdr_info = elf32_section_hdr_info(kernel);
                 break;
             case 64: {
-                if (elf64_load_elsewhere(kernel, &e, &ranges, &ranges_count))
+                if (!elf64_load_elsewhere(kernel, &e, &ranges, &ranges_count))
                     panic(true, "multiboot2: ELF64 load failure");
 
+                section_hdr_info = elf64_section_hdr_info(kernel);
                 break;
             }
             default:
@@ -233,19 +237,6 @@ bool multiboot2_load(char *config, char* cmdline) {
 
         if (entry_point == 0xffffffff) {
             entry_point = e;
-        }
-    }
-
-    struct elf_section_hdr_info *section_hdr_info = NULL;
-    int bits = elf_bits(kernel);
-
-    switch (bits) {
-        case 32:
-            section_hdr_info = elf32_section_hdr_info(kernel);
-            break;
-        case 64: {
-            section_hdr_info = elf64_section_hdr_info(kernel);
-            break;
         }
     }
 

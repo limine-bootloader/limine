@@ -23,7 +23,7 @@ void multiboot2_main(uint32_t magic, struct multiboot_info* mb_info_addr) {
     size_t add_size = 0;
 
     // NOTE: We set i to 8 to skip size and reserved fields:
-    for (size_t i = 8; i < mb_info_addr->size; i += add_size) { 
+    for (size_t i = 8; i < mb_info_addr->size; i += add_size) {
         struct multiboot_tag *tag = (struct multiboot_tag *)((uint8_t *)mb_info_addr + i);
 
         if (tag->type == MULTIBOOT_TAG_TYPE_END) {
@@ -69,46 +69,38 @@ void multiboot2_main(uint32_t magic, struct multiboot_info* mb_info_addr) {
                 e9_printf("\t mmap:");
                 e9_printf("\t\t entry_size=%d", mmap->entry_size);
                 e9_printf("\t\t entry_version=%d", mmap->entry_version);
-                e9_printf("\t\t useable_entries:");
+                e9_printf("\t\t entries:");
 
-                struct multiboot_mmap_entry *start = (struct multiboot_mmap_entry *)(mmap->entries);
-                struct multiboot_mmap_entry *end = (struct multiboot_mmap_entry *)(mmap->entries + mmap->size);
+                struct multiboot_mmap_entry *m = (struct multiboot_mmap_entry *)(mmap->entries);
 
-                size_t total_mem = 0;
+                size_t entry_count = mmap->size / sizeof(struct multiboot_mmap_entry);
+                e9_printf("\t\t entry count: %d", entry_count);
 
-                // For now we only print the useable memory map entries since
+                // For now we only print the usable memory map entries since
                 // printing the whole memory map blows my terminal up. We also
                 // iterate through the avaliable memory map entries and add up
-                // to find the total amount of useable memory.
-                for (struct multiboot_mmap_entry* entry = start; entry < end; entry++) {
-                    if (entry->type != MULTIBOOT_MEMORY_AVAILABLE) {
-                        continue;
-                    }
-
-                    e9_printf("\t\t\t addr=%x", entry->addr);
-                    e9_printf("\t\t\t len=%x", entry->len);
-                    e9_printf("\t\t\t type=Useable");
-
-                    total_mem += entry->len;
+                // to find the total amount of usable memory.
+                for (size_t i = 0; i < entry_count; i++) {
+                    e9_printf("\t\t\t addr=%x", m[i].addr);
+                    e9_printf("\t\t\t len=%x", m[i].len);
+                    e9_printf("\t\t\t type=%x", m[i].type);
                 }
-
-                e9_printf("Total usable memory: %x", total_mem);
 
                 break;
             }
-        
+
             // unimplemented(Andy-Python-Programmer): MULTIBOOT_TAG_TYPE_VBE
 
             case MULTIBOOT_TAG_TYPE_FRAMEBUFFER: {
                 struct multiboot_tag_framebuffer *fb = (struct multiboot_tag_framebuffer *)tag;
 
                 e9_printf("\t framebuffer:");
-                e9_printf("\t\t framebuffer_pitch: %x", fb->common.framebuffer_pitch);
-                e9_printf("\t\t framebuffer_width: %x", fb->common.framebuffer_width);
-                e9_printf("\t\t framebuffer_height: %x", fb->common.framebuffer_height);
-                e9_printf("\t\t framebuffer_bpp: %x", fb->common.framebuffer_bpp);
-                e9_printf("\t\t framebuffer_type: %x", fb->common.framebuffer_type);
-                e9_printf("\t\t framebuffer_adddress: %x", fb->common.framebuffer_addr);
+                e9_printf("\t\t framebuffer_pitch: %d", fb->common.framebuffer_pitch);
+                e9_printf("\t\t framebuffer_width: %d", fb->common.framebuffer_width);
+                e9_printf("\t\t framebuffer_height: %d", fb->common.framebuffer_height);
+                e9_printf("\t\t framebuffer_bpp: %d", fb->common.framebuffer_bpp);
+                e9_printf("\t\t framebuffer_type: %d", fb->common.framebuffer_type);
+                e9_printf("\t\t framebuffer_address: %x", fb->common.framebuffer_addr);
 
                 switch (fb->common.framebuffer_type) {
                     case MULTIBOOT_FRAMEBUFFER_TYPE_RGB: {
@@ -131,7 +123,7 @@ void multiboot2_main(uint32_t magic, struct multiboot_info* mb_info_addr) {
         add_size = tag->size;
 
         // Align the size to 8 bytes.
-        if ((add_size % 8) != 0) 
+        if ((add_size % 8) != 0)
 			add_size += (8 - add_size % 8);
     }
 

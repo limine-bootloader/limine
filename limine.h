@@ -188,11 +188,13 @@ struct limine_5_level_paging_request {
 
 #define LIMINE_SMP_REQUEST { LIMINE_COMMON_MAGIC, 0x95a67b819a1b857e, 0xa0b61b723b6a73e0 }
 
-#define LIMINE_SMP_X2APIC (1 << 0)
-
 struct limine_smp_info;
 
 typedef void (*limine_goto_address)(struct limine_smp_info *);
+
+#if defined (__x86_64__) || defined (__i386__)
+
+#define LIMINE_SMP_X2APIC (1 << 0)
 
 struct limine_smp_info {
     uint32_t processor_id;
@@ -209,6 +211,29 @@ struct limine_smp_response {
     uint64_t cpu_count;
     LIMINE_PTR(struct limine_smp_info **) cpus;
 };
+
+#elif defined (__aarch64__)
+
+struct limine_smp_info {
+    uint32_t processor_id;
+    uint32_t gic_iface_no;
+    uint64_t mpidr;
+    uint64_t reserved;
+    LIMINE_PTR(limine_goto_address) goto_address;
+    uint64_t extra_argument;
+};
+
+struct limine_smp_response {
+    uint64_t revision;
+    uint32_t flags;
+    uint64_t bsp_mpidr;
+    uint64_t cpu_count;
+    LIMINE_PTR(struct limine_smp_info **) cpus;
+};
+
+#else
+#error Unknown architecture
+#endif
 
 struct limine_smp_request {
     uint64_t id[4];

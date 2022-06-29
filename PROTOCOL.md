@@ -627,9 +627,12 @@ struct limine_smp_request {
 };
 ```
 
-* `flags` - Bit 0: Enable X2APIC, if possible.
+* `flags` - Bit 0: Enable X2APIC, if possible. (x86_64-only)
+
+#### x86_64:
 
 Response:
+
 ```c
 struct limine_smp_response {
     uint64_t revision;
@@ -672,6 +675,55 @@ that, the CPU state will be the same as described for the bootstrap
 processor. This field is unused for the structure describing the bootstrap
 processor. For all CPUs, this field is guaranteed to be NULL when control is first passed
 to the bootstrap processor.
+* `extra_argument` - A free for use field.
+
+#### aarch64:
+
+Response:
+
+```c
+struct limine_smp_response {
+    uint64_t revision;
+    uint32_t flags;
+    uint64_t bsp_mpidr;
+    uint64_t cpu_count;
+    struct limine_smp_info **cpus;
+};
+```
+
+* `flags` - Always zero
+* `bsp_mpidr` - MPIDR of the bootstrap processor (as read from `MPIDR_EL1`, with Res1 masked off).
+* `cpu_count` - How many CPUs are present. It includes the bootstrap processor.
+* `cpus` - Pointer to an array of `cpu_count` pointers to
+`struct limine_smp_info` structures.
+
+Notes: The presence of this request will prompt the bootloader to bootstrap
+the secondary processors. This will not be done if this request is not present.
+
+```c
+struct limine_smp_info;
+
+typedef void (*limine_goto_address)(struct limine_smp_info *);
+
+struct limine_smp_info {
+    uint32_t processor_id;
+    uint32_t gic_iface_no;
+    uint64_t mpidr;
+    uint64_t reserved;
+    limine_goto_address goto_address;
+    uint64_t extra_argument;
+};
+```
+
+* `processor_id` - ACPI Processor UID as specified by the MADT
+* `gic_iface_no` - GIC CPU Interface number of the processor as specified by the MADT (possibly always 0)
+* `mpidr` - MPIDR of the processor as specified by the MADT or device tree
+* `goto_address` - An atomic write to this field causes the parked CPU to
+jump to the written address, on a 64KiB (or Stack Size Request size) stack. A pointer to the
+`struct limine_smp_info` structure of the CPU is passed in `X0`. Other than
+that, the CPU state will be the same as described for the bootstrap
+processor. This field is unused for the structure describing the bootstrap
+processor.
 * `extra_argument` - A free for use field.
 
 ### Memory Map Feature

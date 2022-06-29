@@ -2,6 +2,7 @@
 #define __SYS__CPU_H__
 
 #include <stdint.h>
+#include <stddef.h>
 #include <stdbool.h>
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -221,12 +222,61 @@ inline void delay(uint64_t cycles) {
 
 #elif defined (__aarch64__)
 
-// TODO
-
 inline uint64_t rdtsc(void) {
     uint64_t v;
     asm volatile ("mrs %0, cntpct_el0" : "=r" (v));
     return v;
+}
+
+#define locked_read(var) ({ \
+    typeof(*var) ret = 0; \
+    asm volatile ( \
+        "ldar %0, %1" \
+        : "=r" (ret) \
+        : "m" (*(var)) \
+        : "memory" \
+    ); \
+    ret; \
+})
+
+inline size_t icache_line_size(void) {
+    uint64_t ctr;
+    asm volatile ("mrs %0, ctr_el0" : "=r"(ctr));
+
+    return (ctr & 0b1111) << 4;
+}
+
+inline size_t dcache_line_size(void) {
+    uint64_t ctr;
+    asm volatile ("mrs %0, ctr_el0" : "=r"(ctr));
+
+    return ((ctr >> 16) & 0b1111) << 4;
+}
+
+// Clean and invalidate D-Cache to Point of Coherency
+inline void clean_inval_dcache_poc(uintptr_t start, uintptr_t end) {
+    size_t dsz = dcache_line_size();
+
+    uintptr_t addr = start & ~(dsz - 1);
+    while (addr < end) {
+        asm volatile ("dc civac, %0" :: "r"(addr) : "memory");
+        addr += dsz;
+    }
+
+    asm volatile ("dsb sy\n\tisb");
+}
+
+// Invalidate I-Cache to Point of Unification
+inline void inval_icache_pou(uintptr_t start, uintptr_t end) {
+    size_t isz = icache_line_size();
+
+    uintptr_t addr = start & ~(isz - 1);
+    while (addr < end) {
+        asm volatile ("ic ivau, %0" :: "r"(addr) : "memory");
+        addr += isz;
+    }
+
+    asm volatile ("dsb sy\n\tisb");
 }
 
 #else

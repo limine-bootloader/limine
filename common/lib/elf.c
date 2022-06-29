@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <lib/blib.h>
+#include <sys/cpu.h>
 #include <lib/libc.h>
 #include <lib/elf.h>
 #include <lib/print.h>
@@ -698,6 +699,11 @@ final:
         if (elf64_apply_relocations(elf, &hdr, (void *)(uintptr_t)load_addr, phdr.p_vaddr, phdr.p_memsz, slide)) {
             panic(true, "elf: Failed to apply relocations");
         }
+
+#if defined (__aarch64__)
+        clean_inval_dcache_poc(mem_base, mem_base + mem_size);
+        inval_icache_pou(mem_base, mem_base + mem_size);
+#endif
     }
 
     if (simulation) {

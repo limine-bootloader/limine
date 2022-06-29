@@ -16,7 +16,8 @@ multiboot_reloc_stub:
     ; EDX = ranges count
 
   .code:
-    mov esp, .mini_stack_top
+    mov esp, ebx
+    add esp, .mini_stack_top - multiboot_reloc_stub
 
     push edi
     push esi
@@ -54,6 +55,7 @@ multiboot_reloc_stub:
 
     ret
 
+    align 16
  .mini_stack:
     times 3 dq 0
  .mini_stack_top:

@@ -1,5 +1,6 @@
 #include <e9print.h>
 #include <stddef.h>
+#include <stdint.h>
 
 void (*limine_print)(const char *buf, size_t size) = NULL;
 

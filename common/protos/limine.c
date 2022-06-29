@@ -129,6 +129,39 @@ static pagemap_t build_pagemap(bool level5pg, struct elf_range *ranges, size_t r
 
 #if defined (__x86_64__) || defined (__i386__)
 extern symbol limine_spinup_32;
+#elif defined (__aarch64__)
+
+#define LIMINE_SCTLR ((1 << 29) /* Res1 */                \
+                    | (1 << 28) /* Res1 */                \
+                    | (1 << 23) /* Res1 */                \
+                    | (1 << 22) /* Res1 */                \
+                    | (1 << 20) /* Res1 */                \
+                    | (1 << 12) /* I-Cache */             \
+                    | (1 << 11) /* Res1 */                \
+                    | (1 << 8)  /* Res1 */                \
+                    | (1 << 7)  /* Res1 */                \
+                    | (1 << 4)  /* SP0 Alignment check */ \
+                    | (1 << 3)  /* SP Alignment check */  \
+                    | (1 << 2)  /* D-Cache */             \
+                    | (1 << 0)) /* MMU */                 \
+
+#define LIMINE_MAIR ( (0b11111111 << 0)   /* Normal WB RW-allocate non-transient */ \
+                    | (0b01000100 << 8) ) /* Normal NC */
+
+#define LIMINE_TCR(tsz, pa) ( ((uint64_t)(pa) << 32)         /* Intermediate address size */  \
+                            | ((uint64_t)2 << 30)            /* TTBR1 4K granule */           \
+                            | ((uint64_t)2 << 28)            /* TTBR1 Inner shareable */      \
+                            | ((uint64_t)1 << 26)            /* TTBR1 Outer WB RW-Allocate */ \
+                            | ((uint64_t)1 << 24)            /* TTBR1 Inner WB RW-Allocate */ \
+                            | ((uint64_t)(tsz) << 16)        /* Address bits in TTBR1 */      \
+                                                             /* TTBR0 4K granule */           \
+                            | ((uint64_t)2 << 12)            /* TTBR0 Inner shareable */      \
+                            | ((uint64_t)1 << 10)            /* TTBR0 Outer WB RW-Allocate */ \
+                            | ((uint64_t)1 << 8)             /* TTBR0 Inner WB RW-Allocate */ \
+                            | ((uint64_t)(tsz) << 0))        /* Address bits in TTBR0 */
+
+#else
+#error Unknown architecture
 #endif
 
 static uint64_t physical_base, virtual_base, slide, direct_map_offset;
@@ -340,6 +373,15 @@ FEAT_START
         lv5pg_request->response = reported_addr(lv5pg_response);
     }
 FEAT_END
+
+#if defined (__aarch64__)
+    uint64_t aa64mmfr0;
+    asm volatile ("mrs %0, id_aa64mmfr0_el1" : "=r" (aa64mmfr0));
+
+    uint64_t pa = aa64mmfr0 & 0xF;
+
+    uint64_t tsz = 64 - (want_5lv ? 57 : 48);
+#endif
 
     struct limine_file *kf = ext_mem_alloc(sizeof(struct limine_file));
     *kf = get_file(kernel_file, cmdline);
@@ -772,18 +814,25 @@ FEAT_START
         break; // next feature
     }
 
-    // TODO(qookie): make this more generic and port this to aarch64
-#if defined (__x86_64__) || defined (__i386__)
-
     struct limine_smp_info *smp_array;
     struct smp_information *smp_info;
     size_t cpu_count;
+#if defined (__x86_64__) || defined (__i386__)
     uint32_t bsp_lapic_id;
     smp_info = init_smp(0, (void **)&smp_array,
                         &cpu_count, &bsp_lapic_id,
                         true, want_5lv,
                         pagemap, smp_request->flags & LIMINE_SMP_X2APIC, true,
                         direct_map_offset, true);
+#elif defined (__aarch64__)
+    uint64_t bsp_mpidr;
+
+    smp_info = init_smp(0, (void **)&smp_array,
+                        &cpu_count, &bsp_mpidr,
+                        pagemap, LIMINE_MAIR, LIMINE_TCR(tsz, pa), LIMINE_SCTLR);
+#else
+#error Unknown architecture
+#endif
 
     if (smp_info == NULL) {
         break;
@@ -797,8 +846,14 @@ FEAT_START
     struct limine_smp_response *smp_response =
         ext_mem_alloc(sizeof(struct limine_smp_response));
 
+#if defined (__x86_64__) || defined (__i386__)
     smp_response->flags |= (smp_request->flags & LIMINE_SMP_X2APIC) && x2apic_check();
     smp_response->bsp_lapic_id = bsp_lapic_id;
+#elif defined (__aarch64__)
+    smp_response->bsp_mpidr = bsp_mpidr;
+#else
+#error Unknown architecture
+#endif
 
     uint64_t *smp_list = ext_mem_alloc(cpu_count * sizeof(uint64_t));
     for (size_t i = 0; i < cpu_count; i++) {
@@ -809,7 +864,6 @@ FEAT_START
     smp_response->cpus = reported_addr(smp_list);
 
     smp_request->response = reported_addr(smp_response);
-#endif
 FEAT_END
 
     // Memmap
@@ -912,45 +966,9 @@ FEAT_END
 #elif defined (__aarch64__)
     vmm_assert_4k_pages();
 
-    uint64_t aa64mmfr0;
-    asm volatile ("mrs %0, id_aa64mmfr0_el1" : "=r" (aa64mmfr0));
-
-    uint64_t pa = aa64mmfr0 & 0xF;
-
-    uint64_t tsz = 64 - (level5pg ? 57 : 48);
-
-    uint64_t tcr = ((uint64_t)pa << 32) // Intermediate address size
-                 | (2 << 30)            // TTBR1 4K granule
-                 | (2 << 28)            // TTBR1 Inner shareable
-                 | (1 << 26)            // TTBR1 Outer WB RW-Allocate
-                 | (1 << 24)            // TTBR1 Inner WB RW-Allocate
-                 | (tsz << 16)          // Address bits in TTBR1
-                                        // TTBR0 4K granule
-                 | (2 << 12)            // TTBR0 Inner shareable
-                 | (1 << 10)            // TTBR0 Outer WB RW-Allocate
-                 | (1 << 8)             // TTBR0 Inner WB RW-Allocate
-                 | (tsz << 0);          // Address bits in TTBR0
-
-
-    uint64_t mair = (0b11111111 << 0); // Normal WB RW-allocate non-transient
-
-    uint64_t sctlr = (1 << 29) // Res1
-                   | (1 << 28) // Res1
-                   | (1 << 23) // Res1
-                   | (1 << 22) // Res1
-                   | (1 << 20) // Res1
-                   | (1 << 12) // I-Cache
-                   | (1 << 11) // Res1
-                   | (1 << 8)  // Res1
-                   | (1 << 7)  // Res1
-                   | (1 << 4)  // SP0 Alignment check
-                   | (1 << 3)  // SP Alignment check
-                   | (1 << 2)  // D-Cache
-                   | (1 << 0); // MMU
-
-    enter_in_el1(entry_point, stack, sctlr, mair, tcr, 
-                 (uint64_t)pagemap->top_level[0],
-                 (uint64_t)pagemap->top_level[1], 0);
+    enter_in_el1(entry_point, (uint64_t)stack, LIMINE_SCTLR, LIMINE_MAIR, LIMINE_TCR(tsz, pa),
+                 (uint64_t)pagemap.top_level[0],
+                 (uint64_t)pagemap.top_level[1], 0);
 #else
 #error Unknown architecture
 #endif

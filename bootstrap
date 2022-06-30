@@ -7,7 +7,7 @@ test -z "$srcdir" && srcdir=.
 
 cd "$srcdir"
 
-[ -d freestanding_headers ] || git clone https://github.com/mintsuki/freestanding_headers.git
+[ -d freestanding-headers ] || git clone https://github.com/mintsuki/freestanding-headers.git
 [ -d libgcc-binaries ] || git clone https://github.com/mintsuki/libgcc-binaries.git
 [ -d limine-efi ] || git clone https://github.com/limine-bootloader/limine-efi.git
 [ -f make_toolchain.sh ] || ( curl -o make_toolchain.sh https://gist.githubusercontent.com/mintsuki/50fca7022e09f241e40809168662493d/raw/c7eb3dd24100da888893dcee6e8d6b577613b577/make_toolchain.sh && chmod +x make_toolchain.sh )

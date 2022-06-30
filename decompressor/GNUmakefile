@@ -37,7 +37,7 @@ override INTERNAL_CFLAGS := \
 	-mno-sse \
 	-mno-sse2 \
 	-MMD \
-	-I../freestanding_headers \
+	-I../freestanding-headers \
 	-I. \
 	-I'$(call SHESCAPE,$(BUILDDIR))/tinf'
 

@@ -482,6 +482,9 @@ bool multiboot2_load(char *config, char* cmdline) {
     {
         struct multiboot_tag_framebuffer *tag = (struct multiboot_tag_framebuffer *)(mb2_info + info_idx);
 
+        tag->common.type = MULTIBOOT_TAG_TYPE_FRAMEBUFFER;
+        tag->common.size = sizeof(struct multiboot_tag_framebuffer);
+
         term_deinit();
 
         if (fbtag) {
@@ -506,11 +509,9 @@ bool multiboot2_load(char *config, char* cmdline) {
                 tag->common.framebuffer_bpp = 16;
                 tag->common.framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT;
 #elif uefi == 1
-                panic(true, "multiboot2: Cannot use text mode with UEFI");
+                panic(true, "multiboot2: Failed to set video mode");
 #endif
             } else {
-                tag->common.type = MULTIBOOT_TAG_TYPE_FRAMEBUFFER;
-                tag->common.size = sizeof(struct multiboot_tag_framebuffer);
                 tag->common.framebuffer_addr = fbinfo.framebuffer_addr;
                 tag->common.framebuffer_pitch = fbinfo.framebuffer_pitch;
                 tag->common.framebuffer_width = fbinfo.framebuffer_width;
@@ -527,7 +528,24 @@ bool multiboot2_load(char *config, char* cmdline) {
             }
         } else {
 #if uefi == 1
-            panic(true, "multiboot2: Cannot use text mode with UEFI");
+            print("multiboot2: Warning: Cannot use text mode with UEFI\n");
+            struct fb_info fbinfo;
+            if (!fb_init(&fbinfo, 0, 0, 0)) {
+                panic(true, "multiboot2: Failed to set video mode");
+            }
+            tag->common.framebuffer_addr = fbinfo.framebuffer_addr;
+            tag->common.framebuffer_pitch = fbinfo.framebuffer_pitch;
+            tag->common.framebuffer_width = fbinfo.framebuffer_width;
+            tag->common.framebuffer_height = fbinfo.framebuffer_height;
+            tag->common.framebuffer_bpp = fbinfo.framebuffer_bpp;
+            tag->common.framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_RGB; // We only support RGB for VBE
+
+            tag->framebuffer_red_field_position = fbinfo.red_mask_shift;
+            tag->framebuffer_red_mask_size = fbinfo.red_mask_size;
+            tag->framebuffer_green_field_position = fbinfo.green_mask_shift;
+            tag->framebuffer_green_mask_size = fbinfo.green_mask_size;
+            tag->framebuffer_blue_field_position = fbinfo.blue_mask_shift;
+            tag->framebuffer_blue_mask_size = fbinfo.blue_mask_size;
 #elif bios == 1
             size_t rows, cols;
             init_vga_textmode(&rows, &cols, false);

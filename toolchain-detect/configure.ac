@@ -9,6 +9,7 @@ if test -f "$BUILDDIR/$ARCHITECTURE-toolchain.mk"; then
 fi
 
 AC_PROG_GREP
+AC_PROG_SED
 
 ENFORCE_TOOLCHAIN=no
 if test "x$TOOLCHAIN" = "x"; then
@@ -70,9 +71,13 @@ if ! $LIMINE_CC -dumpmachine >/dev/null 2>&1; then
     CC_ERROR_MSG
 fi
 
-CC_MACHINE="$($LIMINE_CC -dumpmachine | dd bs=${#ARCHITECTURE} count=1 2>/dev/null)"
+CC_MACHINE="$($LIMINE_CC -dumpmachine | $SED 's/-.*//g')"
 
-if test "x$CC_MACHINE" = "xx86_"; then
+if test "x$CC_MACHINE" = "xamd64"; then
+    CC_MACHINE=x86_64
+fi
+
+if test "x$CC_MACHINE" = "xx86_64"; then
     case "$ARCHITECTURE" in
         i?86)
             CC_MACHINE="$ARCHITECTURE"

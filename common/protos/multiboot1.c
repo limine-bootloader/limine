@@ -305,9 +305,40 @@ bool multiboot1_load(char *config, char *cmdline) {
 
             struct fb_info fbinfo;
             if (!fb_init(&fbinfo, req_width, req_height, req_bpp)) {
-                goto nofb;
-            }
+#if uefi == 1
+                panic(true, "multiboot1: Failed to set video mode");
+#elif bios == 1
+                size_t rows, cols;
+                init_vga_textmode(&rows, &cols, false);
 
+                multiboot1_info->fb_addr    = 0xb8000;
+                multiboot1_info->fb_width   = cols;
+                multiboot1_info->fb_height  = rows;
+                multiboot1_info->fb_bpp     = 16;
+                multiboot1_info->fb_pitch   = 2 * cols;
+                multiboot1_info->fb_type    = 2;
+#endif
+            } else {
+                multiboot1_info->fb_addr    = (uint64_t)fbinfo.framebuffer_addr;
+                multiboot1_info->fb_width   = fbinfo.framebuffer_width;
+                multiboot1_info->fb_height  = fbinfo.framebuffer_height;
+                multiboot1_info->fb_bpp     = fbinfo.framebuffer_bpp;
+                multiboot1_info->fb_pitch   = fbinfo.framebuffer_pitch;
+                multiboot1_info->fb_type    = 1;
+                multiboot1_info->fb_red_mask_size    = fbinfo.red_mask_size;
+                multiboot1_info->fb_red_mask_shift   = fbinfo.red_mask_shift;
+                multiboot1_info->fb_green_mask_size  = fbinfo.green_mask_size;
+                multiboot1_info->fb_green_mask_shift = fbinfo.green_mask_shift;
+                multiboot1_info->fb_blue_mask_size   = fbinfo.blue_mask_size;
+                multiboot1_info->fb_blue_mask_shift  = fbinfo.blue_mask_shift;
+            }
+        } else {
+#if uefi == 1
+            print("multiboot1: Warning: Cannot use text mode with UEFI\n");
+            struct fb_info fbinfo;
+            if (!fb_init(&fbinfo, 0, 0, 0)) {
+                panic(true, "multiboot1: Failed to set video mode");
+            }
             multiboot1_info->fb_addr    = (uint64_t)fbinfo.framebuffer_addr;
             multiboot1_info->fb_width   = fbinfo.framebuffer_width;
             multiboot1_info->fb_height  = fbinfo.framebuffer_height;
@@ -320,10 +351,6 @@ bool multiboot1_load(char *config, char *cmdline) {
             multiboot1_info->fb_green_mask_shift = fbinfo.green_mask_shift;
             multiboot1_info->fb_blue_mask_size   = fbinfo.blue_mask_size;
             multiboot1_info->fb_blue_mask_shift  = fbinfo.blue_mask_shift;
-        } else if (header.fb_mode == 1) {
-nofb:;
-#if uefi == 1
-            panic(true, "multiboot1: Cannot use text mode with UEFI.");
 #elif bios == 1
             size_t rows, cols;
             init_vga_textmode(&rows, &cols, false);
@@ -335,8 +362,6 @@ nofb:;
             multiboot1_info->fb_pitch   = 2 * cols;
             multiboot1_info->fb_type    = 2;
 #endif
-        } else {
-            panic(true, "multiboot1: Illegal framebuffer type requested");
         }
 
         multiboot1_info->flags |= (1 << 12);

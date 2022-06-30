@@ -33,12 +33,13 @@ static size_t get_multiboot2_info_size(
 ) {
     return ALIGN_UP(sizeof(struct multiboot2_start_tag), MULTIBOOT_TAG_ALIGN) +                                         // start
         ALIGN_UP(sizeof(struct multiboot_tag_string) + strlen(cmdline) + 1, MULTIBOOT_TAG_ALIGN) +                      // cmdline
-        ALIGN_UP(sizeof(struct multiboot_tag_string) + sizeof(LIMINE_BRAND), MULTIBOOT_TAG_ALIGN) +                   // bootloader brand
+        ALIGN_UP(sizeof(struct multiboot_tag_string) + sizeof(LIMINE_BRAND), MULTIBOOT_TAG_ALIGN) +                     // bootloader brand
         ALIGN_UP(sizeof(struct multiboot_tag_framebuffer), MULTIBOOT_TAG_ALIGN) +                                       // framebuffer
         ALIGN_UP(sizeof(struct multiboot_tag_new_acpi) + sizeof(struct rsdp), MULTIBOOT_TAG_ALIGN) +                    // new ACPI info
         ALIGN_UP(sizeof(struct multiboot_tag_old_acpi) + 20, MULTIBOOT_TAG_ALIGN) +                                     // old ACPI info
-        ALIGN_UP(sizeof(struct multiboot_tag_elf_sections) + section_entry_size * section_num, MULTIBOOT_TAG_ALIGN) +                   // ELF info
+        ALIGN_UP(sizeof(struct multiboot_tag_elf_sections) + section_entry_size * section_num, MULTIBOOT_TAG_ALIGN) +   // ELF info
         ALIGN_UP(modules_size, MULTIBOOT_TAG_ALIGN) +                                                                   // modules
+        ALIGN_UP(sizeof(struct multiboot_tag_load_base_addr), MULTIBOOT_TAG_ALIGN) +                                    // load base address
         ALIGN_UP(smbios_tag_size, MULTIBOOT_TAG_ALIGN) +                                                                // SMBIOS
         ALIGN_UP(sizeof(struct multiboot_tag_basic_meminfo), MULTIBOOT_TAG_ALIGN) +                                     // basic memory info
         ALIGN_UP(sizeof(struct multiboot_tag_mmap) + sizeof(struct multiboot_mmap_entry) * 256, MULTIBOOT_TAG_ALIGN) +  // MMAP
@@ -96,6 +97,8 @@ bool multiboot2_load(char *config, char* cmdline) {
 
     struct multiboot_header_tag_address *addresstag = NULL;
     struct multiboot_header_tag_framebuffer *fbtag = NULL;
+
+    bool has_reloc_header = false;
 
     bool is_new_acpi_required = false;
     bool is_old_acpi_required = false;
@@ -173,7 +176,11 @@ bool multiboot2_load(char *config, char* cmdline) {
             case MULTIBOOT_HEADER_TAG_EFI_BS:
                 break;
 
-            default: panic(true, "multiboot2: Unknown header tag type");
+            case MULTIBOOT_HEADER_TAG_RELOCATABLE:
+                has_reloc_header = true;
+                break;
+
+            default: panic(true, "multiboot2: Unknown header tag type: %u\n");
         }
     }
 
@@ -244,6 +251,14 @@ bool multiboot2_load(char *config, char* cmdline) {
 
         if (entry_point == 0xffffffff) {
             entry_point = e;
+        }
+    }
+
+    // Get the load base address (AKA the lowest target in the ranges)
+    uint64_t load_base_addr = (uint64_t)-1;
+    for (size_t i = 0; i < ranges_count; i++) {
+        if (load_base_addr > ranges[i].target) {
+            load_base_addr = ranges[i].target;
         }
     }
 
@@ -344,6 +359,21 @@ bool multiboot2_load(char *config, char* cmdline) {
 
             shdr->sh_addr = section;
         }
+
+        append_tag(info_idx, tag);
+    }
+
+    //////////////////////////////////////////////
+    // Create load base address tag
+    //////////////////////////////////////////////
+    if (has_reloc_header) {
+        uint32_t size = sizeof(struct multiboot_tag_load_base_addr);
+        struct multiboot_tag_load_base_addr *tag = (void *)(mb2_info + info_idx);
+
+        tag->type = MULTIBOOT_TAG_TYPE_LOAD_BASE_ADDR;
+        tag->size = size;
+
+        tag->load_base_addr = load_base_addr;
 
         append_tag(info_idx, tag);
     }
@@ -462,7 +492,6 @@ bool multiboot2_load(char *config, char* cmdline) {
             char *resolution = config_get_value(config, 0, "RESOLUTION");
             if (resolution != NULL)
                 parse_resolution(&req_width, &req_height, &req_bpp, resolution);
-
 
             struct fb_info fbinfo;
             if (!fb_init(&fbinfo, req_width, req_height, req_bpp)) {

@@ -4,7 +4,7 @@
 /toolchain
 /toolchain-files
 /limine-efi
-/freestanding_headers
+/freestanding-headers
 /make_toolchain.sh
 /ovmf*
 *.o

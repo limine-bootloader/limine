@@ -52,7 +52,7 @@ override INTERNAL_CFLAGS := \
 	-MMD \
 	-DCOM_OUTPUT=$(COM_OUTPUT) \
 	-DE9_OUTPUT=$(E9_OUTPUT) \
-	-I../freestanding_headers \
+	-I../freestanding-headers \
 	-I'$(call SHESCAPE,$(BUILDDIR))/..' \
 	-I. \
 	-I.. \
@@ -293,7 +293,7 @@ limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
 		CC="$(LIMINE_CC) -m64 -march=x86-64 -mtune=generic" \
 		CFLAGS='-nostdinc' \
-		INCDIR='-I$(call SHESCAPE,$(SRCDIR))/../freestanding_headers' \
+		INCDIR='-I$(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
 		ARCH=x86_64
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_x86_64.ld.in
@@ -341,7 +341,7 @@ limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
 		CC="$(LIMINE_CC) -m32 -march=i686 -mtune=generic" \
 		CFLAGS='-nostdinc' \
-		INCDIR='-I$(call SHESCAPE,$(SRCDIR))/../freestanding_headers' \
+		INCDIR='-I$(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
 		ARCH=ia32
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_ia32.ld.in

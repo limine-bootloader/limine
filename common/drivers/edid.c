@@ -80,7 +80,7 @@ struct edid_info_struct *get_edid_info(void) {
     if (status)
         goto fail;
 
-    if (edid->SizeOfEdid < sizeof(struct edid_info_struct))
+    if (edid->SizeOfEdid != sizeof(struct edid_info_struct))
         goto fail;
 
     memcpy(buf, edid->Edid, sizeof(struct edid_info_struct));

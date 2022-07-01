@@ -1,11 +1,14 @@
 #if uefi == 1
 
+#include <stdint.h>
+#include <stddef.h>
 #include <efi.h>
 #include <lib/blib.h>
 #include <lib/term.h>
 #include <drivers/gop.h>
 #include <drivers/edid.h>
 #include <lib/print.h>
+#include <mm/pmm.h>
 
 static uint16_t linear_masks_to_bpp(uint32_t red_mask, uint32_t green_mask,
                                     uint32_t blue_mask, uint32_t alpha_mask) {
@@ -36,13 +39,9 @@ static void linear_mask_to_mask_shift(
 
 bool gop_force_16 = false;
 
-static bool try_mode(struct fb_info *ret, size_t mode, uint64_t width, uint64_t height, int bpp) {
+static bool try_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop,
+                     struct fb_info *ret, size_t mode, uint64_t width, uint64_t height, int bpp) {
     EFI_STATUS status;
-
-    EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
-    EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
-
-    gBS->LocateProtocol(&gop_guid, NULL, (void **)&gop);
 
     EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *mode_info;
     UINTN mode_info_size;
@@ -144,10 +143,35 @@ bool init_gop(struct fb_info *ret,
 
     EFI_STATUS status;
 
+    EFI_HANDLE tmp_handles[1];
+
+    EFI_HANDLE *handles = tmp_handles;
+    UINTN handles_size = sizeof(EFI_HANDLE);
     EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+
+    status = gBS->LocateHandle(ByProtocol, &gop_guid, NULL, &handles_size, handles);
+
+    if (status != EFI_SUCCESS && status != EFI_BUFFER_TOO_SMALL) {
+        return false;
+    }
+
+    handles = ext_mem_alloc(handles_size);
+
+    status = gBS->LocateHandle(ByProtocol, &gop_guid, NULL, &handles_size, handles);
+    if (status != EFI_SUCCESS) {
+        pmm_free(handles, handles_size);
+        return false;
+    }
+
+    EFI_HANDLE gop_handle = handles[0];
+    pmm_free(handles, handles_size);
+
     EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
 
-    gBS->LocateProtocol(&gop_guid, NULL, (void **)&gop);
+    status = gBS->HandleProtocol(gop_handle, &gop_guid, (void **)&gop);
+    if (status != EFI_SUCCESS) {
+        return false;
+    }
 
     EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *mode_info;
     UINTN mode_info_size;
@@ -201,7 +225,7 @@ bool init_gop(struct fb_info *ret,
 
 retry:
     for (size_t i = 0; i < modes_count; i++) {
-        if (try_mode(ret, i, target_width, target_height, target_bpp)) {
+        if (try_mode(gop, ret, i, target_width, target_height, target_bpp)) {
             gop_force_16 = false;
             return true;
         }
@@ -232,7 +256,7 @@ fallback:
     if (current_fallback == 1) {
         current_fallback++;
 
-        if (try_mode(ret, preset_mode, 0, 0, 0)) {
+        if (try_mode(gop, ret, preset_mode, 0, 0, 0)) {
             gop_force_16 = false;
             return true;
         }

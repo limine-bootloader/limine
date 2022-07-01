@@ -3,8 +3,20 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <sys/cpu.h>
 
-#define EBDA ((size_t)(*((volatile uint16_t *)0x40e)) * 16)
+#define EBDA (ebda_get())
+
+static inline uintptr_t ebda_get(void) {
+    uintptr_t ebda = (uintptr_t)mminw(0x40e) << 4;
+
+    // Sanity checks
+    if (ebda < 0x80000 || ebda >= 0xa0000) {
+        ebda = 0x80000;
+    }
+
+    return ebda;
+}
 
 struct sdt {
     char     signature[4];

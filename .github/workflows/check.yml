@@ -20,3 +20,6 @@ jobs:
 
       - name: Build the bootloader (LLVM)
         run: ./bootstrap && ./configure TOOLCHAIN=llvm --enable-werror --enable-all && make all && make maintainer-clean
+
+      - name: Build the bootloader (GCC)
+        run: ./bootstrap && ./configure LIMINE_CC=gcc LIMINE_LD=ld LIMINE_OBJCOPY=objcopy LIMINE_OBJDUMP=objdump LIMINE_READELF=readelf --enable-werror --enable-all && make all && make maintainer-clean

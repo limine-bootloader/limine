@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <lib/part.h>
+#include <lib/print.h>
 
 void list_volumes(void) {
     for (size_t i = 0; i < volume_index_i; i++) {

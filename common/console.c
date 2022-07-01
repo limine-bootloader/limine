@@ -9,13 +9,15 @@
 #include <lib/libc.h>
 #include <lib/blib.h>
 #include <lib/term.h>
+#include <lib/part.h>
 
 static void console_help(void) {
     print(
         "Available commands:\n"
         "exit      -- Exit Limine console.\n"
-        "clear     -- Clears the console.\n"
+        "clear     -- Clear the console.\n"
         "%s"
+        "lsvol     -- List volumes.\n"
         "version   -- Print version.\n"
         "copyright -- Print copyright.\n"
         "help      -- Print this help message.\n",
@@ -38,6 +40,8 @@ void console(void) {
             break;
         } else if (strcmp(prompt, "clear") == 0) {
             print("\e[2J\e[H");
+        } else if (strcmp(prompt, "lsvol") == 0) {
+            list_volumes();
         } else if (editor_enabled && strcmp(prompt, "editor") == 0) {
             char *new_entry = config_entry_editor("New Entry", "");
             if (new_entry != NULL) {

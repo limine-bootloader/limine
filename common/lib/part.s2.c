@@ -125,15 +125,29 @@ struct gpt_entry {
 bool gpt_get_guid(struct guid *guid, struct volume *volume) {
     struct gpt_table_header header = {0};
 
-    int sector_size = 512;
+    int lb_guesses[] = {
+        512,
+        4096
+    };
+    int lb_size = -1;
 
-    // read header, located after the first block
-    volume_read(volume, &header, sector_size * 1, sizeof(header));
+    for (size_t i = 0; i < SIZEOF_ARRAY(lb_guesses); i++) {
+        // read header, located after the first block
+        volume_read(volume, &header, lb_guesses[i] * 1, sizeof(header));
 
-    // check the header
-    // 'EFI PART'
-    if (strncmp(header.signature, "EFI PART", 8))
+        // check the header
+        // 'EFI PART'
+        if (strncmp(header.signature, "EFI PART", 8))
+            continue;
+
+        lb_size = lb_guesses[i];
+        break;
+    }
+
+    if (lb_size == -1) {
         return false;
+    }
+
     if (header.revision != 0x00010000)
         return false;
 
@@ -145,15 +159,29 @@ bool gpt_get_guid(struct guid *guid, struct volume *volume) {
 static int gpt_get_part(struct volume *ret, struct volume *volume, int partition) {
     struct gpt_table_header header = {0};
 
-    int sector_size = 512;
+    int lb_guesses[] = {
+        512,
+        4096
+    };
+    int lb_size = -1;
 
-    // read header, located after the first block
-    volume_read(volume, &header, sector_size * 1, sizeof(header));
+    for (size_t i = 0; i < SIZEOF_ARRAY(lb_guesses); i++) {
+        // read header, located after the first block
+        volume_read(volume, &header, lb_guesses[i] * 1, sizeof(header));
 
-    // check the header
-    // 'EFI PART'
-    if (strncmp(header.signature, "EFI PART", 8))
+        // check the header
+        // 'EFI PART'
+        if (strncmp(header.signature, "EFI PART", 8))
+            continue;
+
+        lb_size = lb_guesses[i];
+        break;
+    }
+
+    if (lb_size == -1) {
         return INVALID_TABLE;
+    }
+
     if (header.revision != 0x00010000)
         return INVALID_TABLE;
 
@@ -163,7 +191,7 @@ static int gpt_get_part(struct volume *ret, struct volume *volume, int partition
 
     struct gpt_entry entry = {0};
     volume_read(volume, &entry,
-         (header.partition_entry_lba * sector_size) + (partition * sizeof(entry)),
+         (header.partition_entry_lba * lb_size) + (partition * sizeof(entry)),
          sizeof(entry));
 
     struct guid empty_guid = {0};
@@ -181,8 +209,8 @@ static int gpt_get_part(struct volume *ret, struct volume *volume, int partition
     ret->is_optical  = volume->is_optical;
     ret->partition   = partition + 1;
     ret->sector_size = volume->sector_size;
-    ret->first_sect  = entry.starting_lba;
-    ret->sect_count  = (entry.ending_lba - entry.starting_lba) + 1;
+    ret->first_sect  = entry.starting_lba / (lb_size / 512);
+    ret->sect_count  = ((entry.ending_lba - entry.starting_lba) + 1) / (lb_size / 512);
     ret->backing_dev = volume;
 
     struct guid guid;

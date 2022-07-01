@@ -52,6 +52,8 @@ struct volume {
     struct guid part_guid;
 };
 
+void list_volumes(void);
+
 extern struct volume **volume_index;
 extern size_t volume_index_i;
 

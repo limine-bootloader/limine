@@ -209,8 +209,8 @@ static int gpt_get_part(struct volume *ret, struct volume *volume, int partition
     ret->is_optical  = volume->is_optical;
     ret->partition   = partition + 1;
     ret->sector_size = volume->sector_size;
-    ret->first_sect  = entry.starting_lba / (lb_size / 512);
-    ret->sect_count  = ((entry.ending_lba - entry.starting_lba) + 1) / (lb_size / 512);
+    ret->first_sect  = entry.starting_lba * (lb_size / 512);
+    ret->sect_count  = ((entry.ending_lba - entry.starting_lba) + 1) * (lb_size / 512);
     ret->backing_dev = volume;
 
     struct guid guid;

@@ -393,7 +393,7 @@ void disk_create_index(void) {
 
     EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
     EFI_HANDLE *handles = tmp_handles;
-    UINTN handles_size = 1;
+    UINTN handles_size = sizeof(EFI_HANDLE);
 
     status = gBS->LocateHandle(ByProtocol, &block_io_guid, NULL, &handles_size, handles);
 

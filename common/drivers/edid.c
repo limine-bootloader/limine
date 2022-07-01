@@ -57,7 +57,7 @@ struct edid_info_struct *get_edid_info(void) {
     EFI_HANDLE tmp_handles[1];
 
     EFI_HANDLE *handles = tmp_handles;
-    UINTN handles_size = 1;
+    UINTN handles_size = sizeof(EFI_HANDLE);
     EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
 
     status = gBS->LocateHandle(ByProtocol, &gop_guid, NULL, &handles_size, handles);

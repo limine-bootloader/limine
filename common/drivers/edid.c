@@ -54,13 +54,15 @@ struct edid_info_struct *get_edid_info(void) {
 
     EFI_STATUS status;
 
-    EFI_HANDLE *handles = NULL;
-    UINTN handles_size = 0;
+    EFI_HANDLE tmp_handles[1];
+
+    EFI_HANDLE *handles = tmp_handles;
+    UINTN handles_size = 1;
     EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
 
     status = gBS->LocateHandle(ByProtocol, &gop_guid, NULL, &handles_size, handles);
 
-    if (status && status != EFI_BUFFER_TOO_SMALL)
+    if (status != EFI_SUCCESS && status != EFI_BUFFER_TOO_SMALL)
         goto fail_n;
 
     handles = ext_mem_alloc(handles_size);

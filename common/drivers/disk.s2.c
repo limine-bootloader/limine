@@ -389,15 +389,26 @@ static void find_part_handles(EFI_HANDLE *handles, size_t handle_count) {
 void disk_create_index(void) {
     EFI_STATUS status;
 
-    EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
-    EFI_HANDLE *handles = NULL;
-    UINTN handles_size = 0;
+    EFI_HANDLE tmp_handles[1];
 
-    gBS->LocateHandle(ByProtocol, &block_io_guid, NULL, &handles_size, handles);
+    EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
+    EFI_HANDLE *handles = tmp_handles;
+    UINTN handles_size = 1;
+
+    status = gBS->LocateHandle(ByProtocol, &block_io_guid, NULL, &handles_size, handles);
+
+    if (status != EFI_BUFFER_TOO_SMALL && status != EFI_SUCCESS) {
+        goto fail;
+    }
 
     handles = ext_mem_alloc(handles_size);
 
-    gBS->LocateHandle(ByProtocol, &block_io_guid, NULL, &handles_size, handles);
+    status = gBS->LocateHandle(ByProtocol, &block_io_guid, NULL, &handles_size, handles);
+
+    if (status != EFI_SUCCESS) {
+fail:
+        panic(false, "LocateHandle for BLOCK_IO_PROTOCOL failed. Machine not supported by Limine UEFI.");
+    }
 
     volume_index = ext_mem_alloc(sizeof(struct volume) * MAX_VOLUMES);
 

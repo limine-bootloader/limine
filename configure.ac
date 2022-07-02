@@ -3,6 +3,7 @@ AC_INIT([Limine], m4_esyscmd([./version.sh]), [https://github.com/limine-bootloa
 AC_PREREQ(2.69)
 
 AC_CONFIG_AUX_DIR([build-aux])
+AC_CONFIG_SUBDIRS([toolchain-detect])
 
 SRCDIR="$(cd "$srcdir" && pwd -P)"
 BUILDDIR="$(pwd -P)"

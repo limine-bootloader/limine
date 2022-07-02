@@ -28,7 +28,7 @@ int init_config_disk(struct volume *part) {
         return -1;
     }
 
-    size_t config_size = f->size + 1;
+    size_t config_size = f->size + 2;
     config_addr = ext_mem_alloc(config_size);
 
     fread(f, config_addr, 0, f->size);
@@ -45,7 +45,7 @@ int init_config_pxe(void) {
         return -1;
     }
 
-    size_t config_size = f.size + 1;
+    size_t config_size = f.size + 2;
     config_addr = ext_mem_alloc(config_size);
 
     fread(&f, config_addr, 0, f.size);
@@ -147,6 +147,9 @@ struct macro {
 static struct macro *macros = NULL;
 
 int init_config(size_t config_size) {
+    // add trailing newline if not present
+    config_addr[config_size - 2] = '\n';
+
     // remove windows carriage returns and spaces at the start of lines, if any
     for (size_t i = 0; i < config_size; i++) {
         size_t skip = 0;

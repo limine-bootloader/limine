@@ -178,8 +178,7 @@ int init_config(size_t config_size) {
             }
 
             if (config_addr[i] == '\n' || config_addr[i] == 0 || config_addr[i+1] != '=') {
-                bad_config = true;
-                panic(true, "config: Malformed macro definition");
+                continue;
             }
             i += 2;
 
@@ -208,13 +207,22 @@ int init_config(size_t config_size) {
         for (i = 0, in = 0; i < config_size;) {
             if ((config_size - i >= 3 && memcmp(config_addr + i, "\n${", 3) == 0)
              || (config_size - i >= 2 && i == 0 && memcmp(config_addr, "${", 2) == 0)) {
+                size_t orig_i = i;
                 i += i ? 3 : 2;
-                while (config_addr[i] != '\n' && config_addr[i] != 0) {
-                    i++;
+                while (config_addr[i++] != '}') {
+                    if (i >= config_size) {
+                        bad_config = true;
+                        panic(true, "config: Malformed macro usage");
+                    }
+                }
+                if (config_addr[i] != '=') {
+                    i = orig_i;
+                    goto next;
                 }
                 continue;
             }
 
+next:
             if (config_size - i >= 2 && memcmp(config_addr + i, "${", 2) == 0) {
                 char *macro_name = ext_mem_alloc(1024);
                 i += 2;

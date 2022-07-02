@@ -12,6 +12,7 @@
 #define PATH_MAX 4096
 
 bool fs_get_guid(struct guid *guid, struct volume *part);
+char *fs_get_label(struct volume *part);
 
 struct file_handle {
     bool       is_memfile;

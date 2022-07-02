@@ -50,6 +50,8 @@ struct volume {
     struct guid guid;
     bool part_guid_valid;
     struct guid part_guid;
+    bool fslabel_valid;
+    char *fslabel;
 };
 
 void list_volumes(void);
@@ -63,6 +65,7 @@ uint32_t mbr_get_id(struct volume *volume);
 int part_get(struct volume *part, struct volume *volume, int partition);
 
 struct volume *volume_get_by_guid(struct guid *guid);
+struct volume *volume_get_by_fslabel(char *fslabel);
 struct volume *volume_get_by_coord(bool optical, int drive, int partition);
 #if bios == 1
 struct volume *volume_get_by_bios_drive(int drive);

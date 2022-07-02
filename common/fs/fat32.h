@@ -7,6 +7,7 @@
 struct fat32_context {
     struct volume *part;
     int type;
+    char label[12];
     uint16_t bytes_per_sector;
     uint8_t sectors_per_cluster;
     uint16_t reserved_sectors;
@@ -31,6 +32,7 @@ struct fat32_file_handle {
 };
 
 int fat32_check_signature(struct volume *part);
+char *fat32_get_label(struct volume *part);
 
 bool fat32_open(struct fat32_file_handle *ret, struct volume *part, const char *path);
 void fat32_read(struct fat32_file_handle *file, void *buf, uint64_t loc, uint64_t count);

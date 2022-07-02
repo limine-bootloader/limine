@@ -488,3 +488,22 @@ bool ext2_get_guid(struct guid *guid, struct volume *part) {
 
     return true;
 }
+
+char *ext2_get_label(struct volume *part) {
+    struct ext2_superblock sb;
+    volume_read(part, &sb, 1024, sizeof(struct ext2_superblock));
+
+    if (sb.s_magic != EXT2_S_MAGIC) {
+        return NULL;
+    }
+
+    if (sb.s_rev_level < 1) {
+        return NULL;
+    }
+
+    size_t label_len = strlen((char *)sb.s_volume_name);
+    char *ret = ext_mem_alloc(label_len + 1);
+    strcpy(ret, (char *)sb.s_volume_name);
+
+    return ret;
+}

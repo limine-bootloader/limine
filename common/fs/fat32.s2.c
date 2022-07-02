@@ -124,6 +124,15 @@ valid:;
         context->type = 32;
     }
 
+    memcpy(context->label, bpb.label, 11);
+    context->label[11] = 0;
+    // remove trailing spaces
+    for (int i = 10; i >= 0; i--) {
+        if (context->label[i] == ' ') {
+            context->label[i] = 0;
+        }
+    }
+
     context->bytes_per_sector = bpb.bytes_per_sector;
     context->sectors_per_cluster = bpb.sectors_per_cluster;
     context->reserved_sectors = bpb.reserved_sectors;
@@ -360,6 +369,23 @@ out:
 int fat32_check_signature(struct volume *part) {
     struct fat32_context context;
     return fat32_init_context(&context, part) == 0;
+}
+
+char *fat32_get_label(struct volume *part) {
+    struct fat32_context context;
+    if (fat32_init_context(&context, part) != 0) {
+        return NULL;
+    }
+
+    size_t label_len = strlen(context.label);
+    if (label_len == 0) {
+        return NULL;
+    }
+
+    char *ret = ext_mem_alloc(label_len + 1);
+    strcpy(ret, context.label);
+
+    return ret;
 }
 
 bool fat32_open(struct fat32_file_handle* ret, struct volume *part, const char* path) {

@@ -221,6 +221,14 @@ static int gpt_get_part(struct volume *ret, struct volume *volume, int partition
         ret->guid = guid;
     }
 
+    char *fslabel = fs_get_label(ret);
+    if (fslabel == NULL) {
+        ret->fslabel_valid = false;
+    } else {
+        ret->fslabel_valid = true;
+        ret->fslabel = fslabel;
+    }
+
     ret->part_guid_valid = true;
     ret->part_guid = entry.unique_partition_guid;
 
@@ -339,6 +347,14 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
         ret->guid = guid;
     }
 
+    char *fslabel = fs_get_label(ret);
+    if (fslabel == NULL) {
+        ret->fslabel_valid = false;
+    } else {
+        ret->fslabel_valid = true;
+        ret->fslabel = fslabel;
+    }
+
     ret->part_guid_valid = false;
 
     return 0;
@@ -413,6 +429,14 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
         ret->guid = guid;
     }
 
+    char *fslabel = fs_get_label(ret);
+    if (fslabel == NULL) {
+        ret->fslabel_valid = false;
+    } else {
+        ret->fslabel_valid = true;
+        ret->fslabel = fslabel;
+    }
+
     ret->part_guid_valid = false;
 
     return 0;
@@ -443,6 +467,17 @@ struct volume *volume_get_by_guid(struct guid *guid) {
         }
         if (volume_index[i]->part_guid_valid
          && memcmp(&volume_index[i]->part_guid, guid, 16) == 0) {
+            return volume_index[i];
+        }
+    }
+
+    return NULL;
+}
+
+struct volume *volume_get_by_fslabel(char *fslabel) {
+    for (size_t i = 0; i < volume_index_i; i++) {
+        if (volume_index[i]->fslabel_valid
+         && strcmp(volume_index[i]->fslabel, fslabel) == 0) {
             return volume_index[i];
         }
     }

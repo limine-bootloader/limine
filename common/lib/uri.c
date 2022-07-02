@@ -133,6 +133,15 @@ static struct file_handle *uri_guid_dispatch(char *guid_str, char *path) {
     return fopen(volume, path);
 }
 
+static struct file_handle *uri_fslabel_dispatch(char *fslabel, char *path) {
+    struct volume *volume = volume_get_by_fslabel(fslabel);
+    if (volume == NULL) {
+        return NULL;
+    }
+
+    return fopen(volume, path);
+}
+
 static struct file_handle *uri_fwcfg_dispatch(char *path) {
     struct file_handle *ret = ext_mem_alloc(sizeof(struct file_handle));
     if (!fwcfg_open(ret, path)) {
@@ -216,6 +225,8 @@ struct file_handle *uri_open(char *uri) {
         ret = uri_guid_dispatch(root, path);
     } else if (!strcmp(resource, "uuid")) {
         ret = uri_guid_dispatch(root, path);
+    } else if (!strcmp(resource, "fslabel")) {
+        ret = uri_fslabel_dispatch(root, path);
 #if bios == 1
     } else if (!strcmp(resource, "tftp")) {
         ret = uri_tftp_dispatch(root, path);

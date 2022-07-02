@@ -13,6 +13,17 @@
 #include <lib/libc.h>
 #include <pxe/tftp.h>
 
+char *fs_get_label(struct volume *part) {
+    if (fat32_check_signature(part)) {
+        return fat32_get_label(part);
+    }
+    if (ext2_check_signature(part)) {
+        return ext2_get_label(part);
+    }
+
+    return NULL;
+}
+
 bool fs_get_guid(struct guid *guid, struct volume *part) {
     if (echfs_check_signature(part)) {
         return echfs_get_guid(guid, part);

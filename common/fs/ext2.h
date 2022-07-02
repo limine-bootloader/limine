@@ -50,7 +50,7 @@ struct ext2_superblock {
     uint32_t s_feature_ro_compat;
 
     uint64_t s_uuid[2];
-    uint64_t s_volume_name[2];
+    uint8_t s_volume_name[16];
 
     uint64_t s_last_mounted[8];
 
@@ -124,6 +124,7 @@ struct ext2_file_handle {
 
 int ext2_check_signature(struct volume *part);
 bool ext2_get_guid(struct guid *guid, struct volume *part);
+char *ext2_get_label(struct volume *part);
 
 bool ext2_open(struct ext2_file_handle *ret, struct volume *part, const char *path);
 void ext2_read(struct ext2_file_handle *file, void *buf, uint64_t loc, uint64_t count);

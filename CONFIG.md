@@ -155,6 +155,7 @@ A resource can be one of the following:
 * `odd` - Optical disk drives (CDs/DVDs/...). The `root` takes the form of `drive:partition`; for example: `odd://3:1/...` would use optical drive 3, partition 1. Partitions and drives are both 1-based (partition values of 5+ for MBR logical partitions). Omitting the partition is possible; for example: `odd://2:/...`. Omitting the partition will access the entire volume instead of a specific partition (useful for unpartitioned media, which is often the case for optical media).
 * `guid` - The `root` takes the form of a GUID/UUID, such as `guid://736b5698-5ae1-4dff-be2c-ef8f44a61c52/...`. The GUID is that of either a filesystem, when available, or a GPT partition GUID, when using GPT, in a unified namespace.
 * `uuid` - Alias of `guid`.
+* `fslabel` - The `root` is the name of the filesystem label of a partition.
 * `tftp` - The `root` is the IP address of the tftp server to load the file from. If the root is left empty (`tftp:///...`) the file will be loaded from the server Limine booted from. This resource is only available when booting off PXE.
 * `fwcfg` - The `root` must be empty. The `path` refers to a fw_cfg filename to be loaded. The canonical place to put fw_cfg files is in the `opt/fqdn.<name>` namespace.
 

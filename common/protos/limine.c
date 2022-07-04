@@ -169,7 +169,7 @@ bool limine_load(char *config, char *cmdline) {
         return false;
     }
 
-    kaslr = is_reloc;
+    kaslr = kaslr && is_reloc;
 
     // Load requests
     if (elf64_load_section(kernel, &requests, ".limine_reqs", 0, slide) == 0) {

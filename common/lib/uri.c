@@ -162,8 +162,8 @@ static struct file_handle *uri_tftp_dispatch(char *root, char *path) {
         }
     }
 
-    struct file_handle *ret = ext_mem_alloc(sizeof(struct file_handle));
-    if (!tftp_open(ret, ip, 69, path)) {
+    struct file_handle *ret;
+    if ((ret = tftp_open(ip, 69, path)) == NULL) {
         return NULL;
     }
 

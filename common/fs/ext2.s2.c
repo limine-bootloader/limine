@@ -8,6 +8,121 @@
 #include <lib/print.h>
 #include <mm/pmm.h>
 
+/* Superblock Fields */
+struct ext2_superblock {
+    uint32_t s_inodes_count;
+    uint32_t s_blocks_count;
+    uint32_t s_r_blocks_count;
+    uint32_t s_free_blocks_count;
+    uint32_t s_free_inodes_count;
+    uint32_t s_first_data_block;
+    uint32_t s_log_block_size;
+    uint32_t s_log_frag_size;
+    uint32_t s_blocks_per_group;
+    uint32_t s_frags_per_group;
+    uint32_t s_inodes_per_group;
+    uint32_t s_mtime;
+    uint32_t s_wtime;
+
+    uint16_t s_mnt_count;
+    uint16_t s_max_mnt_count;
+    uint16_t s_magic;
+    uint16_t s_state;
+    uint16_t s_errors;
+    uint16_t s_minor_rev_level;
+
+    uint32_t s_lastcheck;
+    uint32_t s_checkinterval;
+    uint32_t s_creator_os;
+    uint32_t s_rev_level;
+    uint16_t s_def_resuid;
+    uint16_t s_def_gid;
+
+    // if version number >= 1, we have to use the ext2 extended superblock as well
+
+    /* Extended Superblock */
+    uint32_t s_first_ino;
+
+    uint16_t s_inode_size;
+    uint16_t s_block_group_nr;
+
+    uint32_t s_feature_compat;
+    uint32_t s_feature_incompat;
+    uint32_t s_feature_ro_compat;
+
+    uint64_t s_uuid[2];
+    uint8_t s_volume_name[16];
+
+    uint64_t s_last_mounted[8];
+
+    uint32_t compression_info;
+    uint8_t prealloc_blocks;
+    uint8_t prealloc_dir_blocks;
+    uint16_t reserved_gdt_blocks;
+    uint8_t journal_uuid[16];
+    uint32_t journal_inum;
+    uint32_t journal_dev;
+    uint32_t last_orphan;
+    uint32_t hash_seed[4];
+    uint8_t def_hash_version;
+    uint8_t jnl_backup_type;
+    uint16_t group_desc_size;
+    uint32_t default_mount_opts;
+    uint32_t first_meta_bg;
+    uint32_t mkfs_time;
+    uint32_t jnl_blocks[17];
+} __attribute__((packed));
+
+struct ext2_linux {
+    uint8_t  frag_num;
+    uint8_t  frag_size;
+
+    uint16_t reserved_16;
+    uint16_t user_id_high;
+    uint16_t group_id_high;
+
+    uint32_t reserved_32;
+} __attribute__((packed));
+
+struct ext2_inode {
+    uint16_t i_mode;
+    uint16_t i_uid;
+
+    uint32_t i_size;
+    uint32_t i_atime;
+    uint32_t i_ctime;
+    uint32_t i_mtime;
+    uint32_t i_dtime;
+
+    uint16_t i_gid;
+    uint16_t i_links_count;
+
+    uint32_t i_blocks_count;
+    uint32_t i_flags;
+    uint32_t i_osd1;
+    uint32_t i_blocks[15];
+    uint32_t i_generation;
+
+    /* EXT2 v >= 1.0 */
+    uint32_t i_eab;
+    uint32_t i_maj;
+
+    /* EXT2 vAll */
+    uint32_t i_frag_block;
+
+    struct ext2_linux i_osd2;
+} __attribute__((packed));
+
+struct ext2_file_handle {
+    struct volume *part;
+    struct ext2_superblock sb;
+    int size;
+    struct ext2_inode root_inode;
+    struct ext2_inode inode;
+    uint64_t block_size;
+    uint32_t *alloc_map;
+};
+
 /* Inode types */
 #define S_IFIFO  0x1000
 #define S_IFCHR  0x2000
@@ -314,19 +429,30 @@ out:
     return ret;
 }
 
-bool ext2_open(struct ext2_file_handle *ret, struct volume *part, const char *path) {
+static void ext2_read(struct file_handle *handle, void *buf, uint64_t loc, uint64_t count);
+static void ext2_close(struct file_handle *file);
+
+struct file_handle *ext2_open(struct volume *part, const char *path) {
+    struct ext2_file_handle *ret = ext_mem_alloc(sizeof(struct ext2_file_handle));
+
     ret->part = part;
 
     volume_read(ret->part, &ret->sb, 1024, sizeof(struct ext2_superblock));
 
     struct ext2_superblock *sb = &ret->sb;
 
+    if (sb->s_magic != EXT2_S_MAGIC) {
+        pmm_free(ret, sizeof(struct ext2_file_handle));
+        return NULL;
+    }
+
     if (sb->s_rev_level != 0 &&
         (sb->s_feature_incompat & EXT2_IF_COMPRESSION ||
          sb->s_feature_incompat & EXT2_IF_INLINE_DATA ||
          sb->s_feature_incompat & EXT2_FEATURE_INCOMPAT_META_BG)) {
         print("ext2: filesystem has unsupported features %x\n", sb->s_feature_incompat);
-        return false;
+        pmm_free(ret, sizeof(struct ext2_file_handle));
+        return NULL;
     }
 
     if (sb->s_rev_level != 0 && sb->s_feature_incompat & EXT2_IF_ENCRYPT) {
@@ -335,7 +461,8 @@ bool ext2_open(struct ext2_file_handle *ret, struct volume *part, const char *pa
 
     if (sb->s_state == EXT2_FS_UNRECOVERABLE_ERRORS) {
         print("ext2: unrecoverable errors found\n");
-        return false;
+        pmm_free(ret, sizeof(struct ext2_file_handle));
+        return NULL;
     }
 
     ret->block_size = ((uint64_t)1024 << ret->sb.s_log_block_size);
@@ -344,18 +471,23 @@ bool ext2_open(struct ext2_file_handle *ret, struct volume *part, const char *pa
 
     struct ext2_dir_entry entry;
 
-    if (!ext2_parse_dirent(&entry, ret, path))
-        return false;
+    if (!ext2_parse_dirent(&entry, ret, path)) {
+        pmm_free(ret, sizeof(struct ext2_file_handle));
+        return NULL;
+    }
 
     ext2_get_inode(&ret->inode, ret, entry.inode);
 
     while ((ret->inode.i_mode & FMT_MASK) != S_IFREG) {
         if ((ret->inode.i_mode & FMT_MASK) == S_IFLNK) {
-            if (!symlink_to_inode(&ret->inode, ret))
-                return false;
+            if (!symlink_to_inode(&ret->inode, ret)) {
+                pmm_free(ret, sizeof(struct ext2_file_handle));
+                return NULL;
+            }
         } else {
             print("ext2: Entity is not regular file nor symlink\n");
-            return false;
+            pmm_free(ret, sizeof(struct ext2_file_handle));
+            return NULL;
         }
     }
 
@@ -363,18 +495,32 @@ bool ext2_open(struct ext2_file_handle *ret, struct volume *part, const char *pa
 
     ret->alloc_map = create_alloc_map(ret, &ret->inode);
 
-    return true;
+    struct file_handle *handle = ext_mem_alloc(sizeof(struct file_handle));
+
+    handle->fd = ret;
+    handle->read = (void *)ext2_read;
+    handle->close = (void *)ext2_close;
+    handle->size = ret->size;
+    handle->vol = part;
+#if uefi == 1
+    handle->efi_part_handle = part->efi_part_handle;
+#endif
+
+    return handle;
 }
 
-void ext2_close(struct ext2_file_handle *file) {
-    if (file->alloc_map != NULL) {
-        pmm_free(file->alloc_map, file->inode.i_blocks_count * sizeof(uint32_t));
+static void ext2_close(struct file_handle *file) {
+    struct ext2_file_handle *f = file->fd;
+    if (f->alloc_map != NULL) {
+        pmm_free(f->alloc_map, f->inode.i_blocks_count * sizeof(uint32_t));
     }
-    pmm_free(file, sizeof(struct ext2_file_handle));
+    pmm_free(f, sizeof(struct ext2_file_handle));
+    pmm_free(file, sizeof(struct file_handle));
 }
 
-void ext2_read(struct ext2_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
-    inode_read(buf, loc, count, &file->inode, file, file->alloc_map);
+static void ext2_read(struct file_handle *file, void *buf, uint64_t loc, uint64_t count) {
+    struct ext2_file_handle *f = file->fd;
+    inode_read(buf, loc, count, &f->inode, f, f->alloc_map);
 }
 
 static struct ext4_extent_header *ext4_find_leaf(struct ext4_extent_header *ext_block, uint32_t read_block, uint64_t block_size, struct volume *part) {
@@ -464,16 +610,6 @@ static int inode_read(void *buf, uint64_t loc, uint64_t count,
     }
 
     return 0;
-}
-
-int ext2_check_signature(struct volume *part) {
-    struct ext2_superblock sb;
-    volume_read(part, &sb, 1024, sizeof(struct ext2_superblock));
-
-    if (sb.s_magic != EXT2_S_MAGIC)
-        return 0;
-
-    return 1;
 }
 
 bool ext2_get_guid(struct guid *guid, struct volume *part) {

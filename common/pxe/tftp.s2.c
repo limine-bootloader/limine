@@ -16,7 +16,7 @@ uint32_t get_boot_server_info(void) {
     return ph->sip;
 }
 
-bool tftp_open(struct file_handle *handle, uint32_t server_ip, uint16_t server_port, const char *name) {
+struct file_handle *tftp_open(uint32_t server_ip, uint16_t server_port, const char *name) {
     int ret = 0;
 
     if (!server_ip) {
@@ -26,7 +26,7 @@ bool tftp_open(struct file_handle *handle, uint32_t server_ip, uint16_t server_p
     struct PXENV_UNDI_GET_INFORMATION undi_info = { 0 };
     ret = pxe_call(UNDI_GET_INFORMATION, ((uint16_t)rm_seg(&undi_info)), (uint16_t)rm_off(&undi_info));
     if (ret) {
-        return false;
+        return NULL;
     }
 
     //TODO figure out a more proper way to do this.
@@ -39,8 +39,10 @@ bool tftp_open(struct file_handle *handle, uint32_t server_ip, uint16_t server_p
     strcpy((char*)fsize.name, name);
     ret = pxe_call(TFTP_GET_FILE_SIZE, ((uint16_t)rm_seg(&fsize)), (uint16_t)rm_off(&fsize));
     if (ret) {
-        return false;
+        return NULL;
     }
+
+    struct file_handle *handle = ext_mem_alloc(sizeof(struct file_handle));
 
     handle->size = fsize.file_size;
     handle->is_memfile = true;
@@ -60,7 +62,8 @@ bool tftp_open(struct file_handle *handle, uint32_t server_ip, uint16_t server_p
     ret = pxe_call(TFTP_OPEN, ((uint16_t)rm_seg(&open)), (uint16_t)rm_off(&open));
     if (ret) {
         print("tftp: Failed to open file %x or bad packet size", open.status);
-        return false;
+        pmm_free(handle, sizeof(struct file_handle));
+        return NULL;
     }
 
     mtu = open.packet_size;
@@ -100,7 +103,7 @@ bool tftp_open(struct file_handle *handle, uint32_t server_ip, uint16_t server_p
 
     pmm_free(buf, mtu);
 
-    return true;
+    return handle;
 }
 
 #endif

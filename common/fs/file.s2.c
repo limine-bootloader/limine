@@ -13,115 +13,55 @@
 #include <pxe/tftp.h>
 
 char *fs_get_label(struct volume *part) {
-    if (fat32_check_signature(part)) {
-        return fat32_get_label(part);
+    char *ret;
+
+    if ((ret = fat32_get_label(part)) != NULL) {
+        return ret;
     }
-    if (ext2_check_signature(part)) {
-        return ext2_get_label(part);
+    if ((ret = ext2_get_label(part)) != NULL) {
+        return ret;
     }
 
     return NULL;
 }
 
 bool fs_get_guid(struct guid *guid, struct volume *part) {
-    if (ext2_check_signature(part)) {
-        return ext2_get_guid(guid, part);
+    if (ext2_get_guid(guid, part) == true) {
+        return true;
     }
 
     return false;
 }
 
 struct file_handle *fopen(struct volume *part, const char *filename) {
-    struct file_handle *ret = ext_mem_alloc(sizeof(struct file_handle));
-
-    ret->is_memfile = false;
-    ret->readall = false;
-
-    ret->vol = part;
-
     if (strlen(filename) + 2 > PATH_MAX) {
         panic(true, "fopen: Path too long");
     }
 
-    ret->path[0] = '/';
-
-    strcpy(ret->path + 1, filename);
+    struct file_handle *ret;
 
 #if bios == 1
     if (part->pxe) {
-        if (!tftp_open(ret, 0, 69, filename)) {
-            goto fail;
+        if ((ret = tftp_open(0, 69, filename)) == NULL) {
+            return NULL;
         }
         return ret;
     }
 #endif
 
-#if uefi == 1
-    ret->efi_part_handle = part->efi_part_handle;
-#endif
-
-    if (iso9660_check_signature(part)) {
-        struct iso9660_file_handle *fd = ext_mem_alloc(sizeof(struct iso9660_file_handle));
-
-        if (!iso9660_open(fd, part, filename)) {
-            goto fail;
-        }
-
-        ret->fd = (void *)fd;
-        ret->read = (void *)iso9660_read;
-        ret->close = (void *)iso9660_close;
-        ret->size = fd->size;
-
+    if ((ret = ext2_open(part, filename)) != NULL) {
+        return ret;
+    }
+    if ((ret = fat32_open(part, filename)) != NULL) {
+        return ret;
+    }
+    if ((ret = iso9660_open(part, filename)) != NULL) {
+        return ret;
+    }
+    if ((ret = ntfs_open(part, filename)) != NULL) {
         return ret;
     }
 
-    if (ext2_check_signature(part)) {
-        struct ext2_file_handle *fd = ext_mem_alloc(sizeof(struct ext2_file_handle));
-
-        if (!ext2_open(fd, part, filename)) {
-            goto fail;
-        }
-
-        ret->fd = (void *)fd;
-        ret->read = (void *)ext2_read;
-        ret->close = (void *)ext2_close;
-        ret->size = fd->size;
-
-        return ret;
-    }
-
-    if (fat32_check_signature(part)) {
-        struct fat32_file_handle *fd = ext_mem_alloc(sizeof(struct fat32_file_handle));
-
-        if (!fat32_open(fd, part, filename)) {
-            goto fail;
-        }
-
-        ret->fd = (void *)fd;
-        ret->read = (void *)fat32_read;
-        ret->close = (void *)fat32_close;
-        ret->size = fd->size_bytes;
-
-        return ret;
-    }
-
-    if (ntfs_check_signature(part)) {
-        struct ntfs_file_handle *fd = ext_mem_alloc(sizeof(struct ntfs_file_handle));
-
-        if (!ntfs_open(fd, part, filename)) {
-            goto fail;
-        }
-
-        ret->fd = (void *)fd;
-        ret->read = (void *)ntfs_read;
-        ret->close = (void *)ntfs_close;
-        ret->size = fd->size_bytes;
-
-        return ret;
-    }
-
-fail:
-    pmm_free(ret, sizeof(struct file_handle));
     return NULL;
 }
 
@@ -130,17 +70,17 @@ void fclose(struct file_handle *fd) {
         if (fd->readall == false) {
             pmm_free(fd->fd, fd->size);
         }
+        pmm_free(fd, sizeof(struct file_handle));
     } else {
-        fd->close(fd->fd);
+        fd->close(fd);
     }
-    pmm_free(fd, sizeof(struct file_handle));
 }
 
 void fread(struct file_handle *fd, void *buf, uint64_t loc, uint64_t count) {
     if (fd->is_memfile) {
         memcpy(buf, fd->fd + loc, count);
     } else {
-        fd->read(fd->fd, buf, loc, count);
+        fd->read(fd, buf, loc, count);
     }
 }
 
@@ -154,7 +94,7 @@ void *freadall(struct file_handle *fd, uint32_t type) {
         return fd->fd;
     } else {
         void *ret = ext_mem_alloc_type(fd->size, type);
-        fd->read(fd->fd, ret, 0, fd->size);
+        fd->read(fd, ret, 0, fd->size);
         return ret;
     }
 }

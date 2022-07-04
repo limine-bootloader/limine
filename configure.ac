@@ -7,14 +7,12 @@ AC_CONFIG_SUBDIRS([toolchain-detect])
 
 SRCDIR="$(cd "$srcdir" && pwd -P)"
 BUILDDIR="$(pwd -P)"
-PATH="$BUILDDIR/toolchain/bin$PATH_SEPARATOR$SRCDIR/toolchain/bin$PATH_SEPARATOR/usr/local/bin$PATH_SEPARATOR$PATH"
+PATH="$BUILDDIR/toolchain/bin:$SRCDIR/toolchain/bin:$PATH"
 export PATH
 
 AC_SUBST(SRCDIR, [$SRCDIR])
 AC_SUBST(BUILDDIR, [$BUILDDIR])
 AC_SUBST(PATH, [$PATH])
-
-rm -rf "$BUILDDIR/toolchain-files"
 
 test "x$CFLAGS" = "x" && CFLAGS='-g -O2 -pipe -Wall -Wextra'
 AC_PROG_CC
@@ -48,6 +46,8 @@ AC_CHECK_PROG([GZIP_FOUND], [gzip], [yes])
 if ! test "x$GZIP_FOUND" = "xyes"; then
     AC_MSG_ERROR([gzip not found, please install gzip before configuring])
 fi
+
+rm -rf "$BUILDDIR/toolchain-files"
 
 BUILD_ALL="no"
 
@@ -162,11 +162,13 @@ AC_ARG_VAR(LIMINE_OBJCOPY, [objcopy command for Limine])
 AC_ARG_VAR(LIMINE_OBJDUMP, [objdump command for Limine])
 AC_ARG_VAR(LIMINE_READELF, [readelf command for Limine])
 
-AC_ARG_VAR(LIMINE_CFLAGS, [C flags for Limine [default: -O3 -pipe -Wall -Wextra]])
-test "x$LIMINE_CFLAGS" = "x" && LIMINE_CFLAGS='-O3 -pipe -Wall -Wextra'
+m4_define([DEFAULT_LIMINE_CFLAGS], [-O3 -pipe -Wall -Wextra])
+AC_ARG_VAR(LIMINE_CFLAGS, [C flags for Limine @<:@default: ]DEFAULT_LIMINE_CFLAGS[@:>@])
+test "x$LIMINE_CFLAGS" = "x" && LIMINE_CFLAGS="DEFAULT_LIMINE_CFLAGS"
 
-AC_ARG_VAR(LIMINE_LDFLAGS, [Linker flags for Limine [default: ]])
-test "x$LIMINE_LDFLAGS" = "x" && LIMINE_LDFLAGS=' '
+m4_define([DEFAULT_LIMINE_LDFLAGS], [])
+AC_ARG_VAR(LIMINE_LDFLAGS, [Linker flags for Limine @<:@default: ]DEFAULT_LIMINE_LDFLAGS[@:>@])
+test "x$LIMINE_LDFLAGS" = "x" && LIMINE_LDFLAGS="DEFAULT_LIMINE_LDFLAGS"
 
 LIMINE_COPYRIGHT=$($GREP Copyright "$SRCDIR/LICENSE.md")
 AC_SUBST(LIMINE_COPYRIGHT, [$LIMINE_COPYRIGHT])

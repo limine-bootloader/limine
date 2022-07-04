@@ -12,6 +12,33 @@
 #define FAT32_ATTRIBUTE_SUBDIRECTORY 0x10
 #define FAT32_LFN_ATTRIBUTE 0x0F
 
+struct fat32_context {
+    struct volume *part;
+    int type;
+    char label[12];
+    uint16_t bytes_per_sector;
+    uint8_t sectors_per_cluster;
+    uint16_t reserved_sectors;
+    uint8_t number_of_fats;
+    uint32_t hidden_sectors;
+    uint32_t sectors_per_fat;
+    uint32_t fat_start_lba;
+    uint32_t data_start_lba;
+    uint32_t root_directory_cluster;
+    uint16_t root_entries;
+    uint32_t root_start;
+    uint32_t root_size;
+};
+
+struct fat32_file_handle {
+    struct fat32_context context;
+    uint32_t first_cluster;
+    uint32_t size_bytes;
+    uint32_t size_clusters;
+    uint32_t *cluster_chain;
+    size_t chain_len;
+};
+
 struct fat32_bpb {
     union {
         struct {
@@ -366,11 +393,6 @@ out:
     return ret;
 }
 
-int fat32_check_signature(struct volume *part) {
-    struct fat32_context context;
-    return fat32_init_context(&context, part) == 0;
-}
-
 char *fat32_get_label(struct volume *part) {
     struct fat32_context context;
     if (fat32_init_context(&context, part) != 0) {
@@ -388,13 +410,15 @@ char *fat32_get_label(struct volume *part) {
     return ret;
 }
 
-bool fat32_open(struct fat32_file_handle* ret, struct volume *part, const char* path) {
+static void fat32_read(struct file_handle *handle, void *buf, uint64_t loc, uint64_t count);
+static void fat32_close(struct file_handle *file);
+
+struct file_handle *fat32_open(struct volume *part, const char *path) {
     struct fat32_context context;
     int r = fat32_init_context(&context, part);
 
     if (r) {
-        print("fat32: context init failure (%d)\n", r);
-        return false;
+        return NULL;
     }
 
     struct fat32_directory_entry _current_directory;
@@ -444,13 +468,16 @@ bool fat32_open(struct fat32_file_handle* ret, struct volume *part, const char* 
         }
 
         if ((r = fat32_open_in(&context, current_directory, &current_file, current_part)) != 0) {
-            return false;
+            return NULL;
         }
 
         if (expect_directory) {
             _current_directory = current_file;
             current_directory = &_current_directory;
         } else {
+            struct file_handle *handle = ext_mem_alloc(sizeof(struct file_handle));
+            struct fat32_file_handle *ret = ext_mem_alloc(sizeof(struct fat32_file_handle));
+
             ret->context = context;
             ret->first_cluster = current_file.cluster_num_low;
             if (context.type == 32)
@@ -458,16 +485,29 @@ bool fat32_open(struct fat32_file_handle* ret, struct volume *part, const char* 
             ret->size_clusters = DIV_ROUNDUP(current_file.file_size_bytes, context.bytes_per_sector);
             ret->size_bytes = current_file.file_size_bytes;
             ret->cluster_chain = cache_cluster_chain(&context, ret->first_cluster, &ret->chain_len);
-            return true;
+
+            handle->fd = (void *)ret;
+            handle->read = (void *)fat32_read;
+            handle->close = (void *)fat32_close;
+            handle->size = ret->size_bytes;
+            handle->vol = part;
+#if uefi == 1
+            handle->efi_part_handle = part->efi_part_handle;
+#endif
+
+            return handle;
         }
     }
 }
 
-void fat32_read(struct fat32_file_handle* file, void* buf, uint64_t loc, uint64_t count) {
-    read_cluster_chain(&file->context, file->cluster_chain, buf, loc, count);
+static void fat32_read(struct file_handle *file, void *buf, uint64_t loc, uint64_t count) {
+    struct fat32_file_handle *f = file->fd;
+    read_cluster_chain(&f->context, f->cluster_chain, buf, loc, count);
 }
 
-void fat32_close(struct fat32_file_handle *file) {
-    pmm_free(file->cluster_chain, file->chain_len * sizeof(uint32_t));
-    pmm_free(file, sizeof(struct fat32_file_handle));
+static void fat32_close(struct file_handle *file) {
+    struct fat32_file_handle *f = file->fd;
+    pmm_free(f->cluster_chain, f->chain_len * sizeof(uint32_t));
+    pmm_free(f, sizeof(struct fat32_file_handle));
+    pmm_free(file, sizeof(struct file_handle));
 }

@@ -40,15 +40,15 @@ int init_config_disk(struct volume *part) {
 
 #if bios == 1
 int init_config_pxe(void) {
-    struct file_handle f;
-    if (tftp_open(&f, 0, 69, "limine.cfg")) {
+    struct file_handle *f;
+    if ((f = tftp_open(0, 69, "limine.cfg")) == NULL) {
         return -1;
     }
 
-    size_t config_size = f.size + 2;
+    size_t config_size = f->size + 2;
     config_addr = ext_mem_alloc(config_size);
 
-    fread(&f, config_addr, 0, f.size);
+    fread(f, config_addr, 0, f->size);
 
     return init_config(config_size);
 }

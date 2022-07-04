@@ -3,6 +3,20 @@
 #include <lib/libc.h>
 #include <mm/pmm.h>
 
+#define ISO9660_SECTOR_SIZE (2 << 10)
+
+struct iso9660_context {
+    struct volume *vol;
+    void *root;
+    uint32_t root_size;
+};
+
+struct iso9660_file_handle {
+    struct iso9660_context *context;
+    uint32_t LBA;
+    uint32_t size;
+};
+
 #define ISO9660_FIRST_VOLUME_DESCRIPTOR 0x10
 #define ISO9660_VOLUME_DESCRIPTOR_SIZE ISO9660_SECTOR_SIZE
 #define ROCK_RIDGE_MAX_FILENAME 255
@@ -198,17 +212,20 @@ static struct iso9660_directory_entry *iso9660_find(void *buffer, uint32_t size,
     return NULL;
 }
 
+static void iso9660_read(struct file_handle *handle, void *buf, uint64_t loc, uint64_t count);
+static void iso9660_close(struct file_handle *file);
 
-// --- Public functions ---
-int iso9660_check_signature(struct volume *vol) {
+struct file_handle *iso9660_open(struct volume *vol, const char *path) {
     char buf[6];
     const uint64_t signature = ISO9660_FIRST_VOLUME_DESCRIPTOR * ISO9660_SECTOR_SIZE + 1;
     volume_read(vol, buf, signature, 5);
     buf[5] = '\0';
-    return !strcmp(buf, "CD001");
-}
+    if (strcmp(buf, "CD001") != 0) {
+        return NULL;
+    }
 
-bool iso9660_open(struct iso9660_file_handle *ret, struct volume *vol, const char *path) {
+    struct iso9660_file_handle *ret = ext_mem_alloc(sizeof(struct iso9660_file_handle));
+
     ret->context = iso9660_get_context(vol);
 
     while (*path == '/')
@@ -230,8 +247,10 @@ bool iso9660_open(struct iso9660_file_handle *ret, struct volume *vol, const cha
         *aux = '\0';
 
         struct iso9660_directory_entry *entry = iso9660_find(current, current_size, filename);
-        if (!entry)
-            return false;    // Not found :(
+        if (!entry) {
+            pmm_free(ret, sizeof(struct iso9660_file_handle));
+            return NULL;    // Not found :(
+        }
 
         next_sector = entry->extent.little;
         next_size = entry->extent_size.little;
@@ -253,13 +272,27 @@ bool iso9660_open(struct iso9660_file_handle *ret, struct volume *vol, const cha
 
     ret->LBA = next_sector;
     ret->size = next_size;
-    return true;
+
+    struct file_handle *handle = ext_mem_alloc(sizeof(struct file_handle));
+
+    handle->fd = ret;
+    handle->read = (void *)iso9660_read;
+    handle->close = (void *)iso9660_close;
+    handle->size = ret->size;
+    handle->vol = vol;
+#if uefi == 1
+    handle->efi_part_handle = vol->efi_part_handle;
+#endif
+
+    return handle;
 }
 
-void iso9660_read(struct iso9660_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
-    volume_read(file->context->vol, buf, file->LBA * ISO9660_SECTOR_SIZE + loc, count);
+static void iso9660_read(struct file_handle *file, void *buf, uint64_t loc, uint64_t count) {
+    struct iso9660_file_handle *f = file->fd;
+    volume_read(f->context->vol, buf, f->LBA * ISO9660_SECTOR_SIZE + loc, count);
 }
 
-void iso9660_close(struct iso9660_file_handle *file) {
-    pmm_free(file, sizeof(struct iso9660_file_handle));
+static void iso9660_close(struct file_handle *file) {
+    pmm_free(file->fd, sizeof(struct iso9660_file_handle));
+    pmm_free(file, sizeof(struct file_handle));
 }

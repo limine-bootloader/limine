@@ -7,6 +7,33 @@
 #include <stdbool.h>
 #include <mm/pmm.h>
 
+struct echfs_dir_entry {
+    uint64_t parent_id;
+    uint8_t type;
+    char name[201];
+    uint64_t atime;
+    uint64_t mtime;
+    uint16_t perms;
+    uint16_t owner;
+    uint16_t group;
+    uint64_t ctime;
+    uint64_t payload;
+    uint64_t size;
+} __attribute__((packed));
+
+struct echfs_file_handle {
+    struct volume *part;
+    uint64_t block_size;
+    uint64_t block_count;
+    uint64_t dir_length;
+    uint64_t alloc_table_size;
+    uint64_t alloc_table_offset;
+    uint64_t dir_offset;
+    uint64_t file_block_count;
+    uint64_t *alloc_map;
+    struct echfs_dir_entry dir_entry;
+};
+
 struct echfs_identity_table {
     uint8_t  jmp[4];
     char     signature[8];
@@ -26,7 +53,9 @@ static bool read_block(struct echfs_file_handle *file, void *buf, uint64_t block
     return volume_read(file->part, buf, (file->alloc_map[block] * file->block_size) + offset, count);
 }
 
-void echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_t count) {
+static void echfs_read(struct file_handle *h, void *buf, uint64_t loc, uint64_t count) {
+    struct echfs_file_handle *file = h->fd;
+
     for (uint64_t progress = 0; progress < count;) {
         uint64_t block = (loc + progress) / file->block_size;
 
@@ -38,17 +67,6 @@ void echfs_read(struct echfs_file_handle *file, void *buf, uint64_t loc, uint64_
         read_block(file, buf + progress, block, offset, chunk);
         progress += chunk;
     }
-}
-
-int echfs_check_signature(struct volume *part) {
-    struct echfs_identity_table id_table;
-    volume_read(part, &id_table, 0, sizeof(struct echfs_identity_table));
-
-    if (strncmp(id_table.signature, "_ECH_FS_", 8)) {
-        return 0;
-    }
-
-    return 1;
 }
 
 bool echfs_get_guid(struct guid *guid, struct volume *part) {
@@ -64,21 +82,24 @@ bool echfs_get_guid(struct guid *guid, struct volume *part) {
     return true;
 }
 
-void echfs_close(struct echfs_file_handle *file) {
-    pmm_free(file->alloc_map, file->file_block_count * sizeof(uint64_t));
-    pmm_free(file, sizeof(struct echfs_file_handle));
+static void echfs_close(struct file_handle *file) {
+    struct echfs_file_handle *f = file->fd;
+    pmm_free(f->alloc_map, f->file_block_count * sizeof(uint64_t));
+    pmm_free(f, sizeof(struct echfs_file_handle));
+    pmm_free(file, sizeof(struct file_handle));
 }
 
-bool echfs_open(struct echfs_file_handle *ret, struct volume *part, const char *path) {
-    ret->part = part;
-
+struct file_handle *echfs_open(struct volume *part, const char *path) {
     struct echfs_identity_table id_table;
-    volume_read(ret->part, &id_table, 0, sizeof(struct echfs_identity_table));
+    volume_read(part, &id_table, 0, sizeof(struct echfs_identity_table));
 
     if (strncmp(id_table.signature, "_ECH_FS_", 8)) {
-        print("echfs: signature invalid\n");
-        return false;
+        return NULL;
     }
+
+    struct echfs_file_handle *ret = ext_mem_alloc(sizeof(struct echfs_file_handle));
+
+    ret->part = part;
 
     ret->block_size         = id_table.block_size;
     ret->block_count        = id_table.block_count;
@@ -124,7 +145,8 @@ next:;
         }
     }
 
-    return false;
+    pmm_free(ret, sizeof(struct echfs_file_handle));
+    return NULL;
 
 found:;
     // Load the allocation map.
@@ -141,5 +163,16 @@ found:;
             sizeof(uint64_t));
     }
 
-    return true;
+    struct file_handle *handle = ext_mem_alloc(sizeof(struct file_handle));
+
+    handle->fd = ret;
+    handle->read = (void *)echfs_read;
+    handle->close = (void *)echfs_close;
+    handle->size = ret->dir_entry.size;
+    handle->vol = part;
+#if uefi == 1
+    handle->efi_part_handle = part->efi_part_handle;
+#endif
+
+    return handle;
 }

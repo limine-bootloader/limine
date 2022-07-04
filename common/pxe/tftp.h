@@ -38,7 +38,7 @@ struct pxenv_get_file_size {
 #define TFTP_CLOSE 0x21
 
 //server_ip and server_port can be 0 for default
-bool tftp_open(struct file_handle *handle, uint32_t server_ip, uint16_t server_port, const char *name);
+struct file_handle *tftp_open(uint32_t server_ip, uint16_t server_port, const char *name);
 
 uint32_t get_boot_server_info(void);
 

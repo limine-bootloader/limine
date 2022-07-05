@@ -44,9 +44,9 @@ For example, to clone the latest binary release of the `v3.x` branch one can do
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example `v3.10.1`)
+or, to clone a specific binary point release (for example `v3.10.2`)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v3.10.1-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v3.10.2-binary --depth=1
 ```
 
 In order to rebuild `limine-deploy`, simply run `make` in the binary
@@ -117,9 +117,9 @@ The generated bootloader files are going to be in `bin`.
 ## Installing Limine binaries
 
 This step is optional as the bootloader binaries can be used from the `bin` or
-release directory just fine. This step will only install them to a `share` and
+release directory just fine. This step will only install them to `share`, `include`, and
 `bin` directories in the specified prefix (default is `/usr/local`, see
-`./configure --help`, or the `PREFIX` variable if installing a binary release).
+`./configure --help`, or the `PREFIX` variable if installing from a binary release).
 
 To install Limine, run:
 ```bash

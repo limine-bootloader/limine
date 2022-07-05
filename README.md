@@ -46,15 +46,15 @@ For example, to clone the latest binary release of the `v3.x` branch one can do
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example `v3.8`)
+or, to clone a specific binary point release (for example `v3.10.1`)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v3.8-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v3.10.1-binary --depth=1
 ```
-
-`limine-deploy` binaries are provided for Windows.
 
 In order to rebuild `limine-deploy`, simply run `make` in the binary
 release directory.
+
+`limine-deploy.exe` binaries are provided for Windows.
 
 ## Building the bootloader
 
@@ -101,7 +101,7 @@ these, run `./configure --help`.
 **`./configure` by default does not build any Limine port. Make sure to read the**
 **output of `./configure --help` and enable any or all ports!**
 
-To build using the LLVM toolchain, pass `TOOLCHAIN=llvm` to `./configure`.
+To build using the LLVM toolchain, pass `CROSS_TOOLCHAIN=llvm` to `./configure`.
 
 Limine supports both in-tree and out-of-tree builds. Simply run the `configure`
 script from the directory you wish to execute the build in. The following `make`

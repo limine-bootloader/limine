@@ -1,0 +1,67 @@
+section .data
+
+align 16
+linux_gdt:
+    dq 0
+
+    dq 0
+
+    dw 0xffff
+    dw 0x0000
+    db 0x00
+    db 10011010b
+    db 11001111b
+    db 0x00
+
+    dw 0xffff
+    dw 0x0000
+    db 0x00
+    db 10010010b
+    db 11001111b
+    db 0x00
+
+  .end:
+
+align 16
+linux_gdt_ptr:
+    dw (linux_gdt.end - linux_gdt) - 1
+    dd 0
+
+bits 32
+
+section .text
+
+global linux_spinup
+linux_spinup:
+    call .p0
+  .p0:
+    pop eax
+    lea ebx, [eax - (linux_spinup.p0 - linux_gdt_ptr)]
+    lea ecx, [eax - (linux_spinup.p0 - linux_gdt)]
+    mov [ebx+2], ecx
+
+    lgdt [ebx]
+
+    push 0x10
+    call .p1
+  .p1:
+    add dword [esp], .fj - .p1
+    retfd
+
+  .fj:
+    mov eax, 0x18
+    mov ds, eax
+    mov es, eax
+    mov fs, eax
+    mov gs, eax
+    mov ss, eax
+
+    xor ebp, ebp
+    xor edi, edi
+    xor ebx, ebx
+
+    mov esi, [esp+8] ; boot_params
+
+    cld
+
+    jmp [esp+4]

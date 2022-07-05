@@ -1,0 +1,21 @@
+bits 32
+
+section .text
+global multiboot_spinup_32:
+multiboot_spinup_32:
+    sub esp, 6
+    mov word [esp-2], 0x3ff
+    mov dword [esp], 0
+    lidt [esp-2]
+    add esp, 6
+
+    add esp, 4 ; return address
+
+    pop ebx ; reloc_stub
+    pop esi ; magic
+    pop edi ; protocol_info
+    pop ecx ; entry_point
+    pop eax ; elf_ranges
+    pop edx ; elf_ranges_count
+
+    jmp ebx

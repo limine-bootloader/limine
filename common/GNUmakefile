@@ -395,14 +395,6 @@ endif
 
 -include $(HEADER_DEPS)
 
-ifeq ($(TARGET), uefi-x86-64)
-$(call MKESCAPE,$(BUILDDIR))/%.32.o: %.32.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
-	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) $(INTERNAL_CFLAGS32) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@).32'
-	$(CROSS_OBJCOPY) -I elf32-i386 -O elf64-x86-64 '$(call SHESCAPE,$@).32' '$(call SHESCAPE,$@)'
-	rm '$(call SHESCAPE,$@).32'
-endif
-
 ifeq ($(TARGET), bios)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_ia32
 	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"

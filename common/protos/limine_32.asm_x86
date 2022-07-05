@@ -1,0 +1,97 @@
+bits 32
+
+section .text
+
+global limine_spinup_32
+limine_spinup_32:
+    ; Enable EFER.NXE
+    mov ecx, 0xc0000080
+    rdmsr
+    bts eax, 11
+    wrmsr
+
+    ; Enable CR4.LA57
+    cmp dword [esp+4], 0 ; level5pg
+    je .no_la57
+    mov eax, cr4
+    bts eax, 12
+    mov cr4, eax
+  .no_la57:
+
+    ; Enable CR0.WP
+    mov eax, cr0
+    bts eax, 16
+    mov cr0, eax
+
+    cld
+
+    mov eax, [esp+8] ; pagemap_top_lv
+    mov cr3, eax
+
+    ; Enable CR4.PAE
+    mov eax, cr4
+    bts eax, 5
+    mov cr4, eax
+
+    ; Enable EFER.LME
+    mov eax, 0xc0000080
+    rdmsr
+    bts eax, 8
+    wrmsr
+
+    ; Enable CR0.PG
+    mov eax, cr0
+    bts eax, 31
+    mov cr0, eax
+
+    ; Go 64
+    push 0x28
+    call .p1
+  .p1:
+    add dword [esp], .mode64 - .p1
+    retfd
+
+bits 64
+  .mode64:
+    mov eax, 0x30
+    mov ds, eax
+    mov es, eax
+    mov fs, eax
+    mov gs, eax
+    mov ss, eax
+
+    ; Load 64-bit GDT
+    mov eax, [rsp+28] ; local_gdt
+    lgdt [rax]
+
+    ; Push fake return address
+    mov rsi, [rsp+20] ; stack
+    sub rsi, 8
+    mov qword [rsi], 0
+
+    ; Prepare iretq frame
+    mov rax, qword [rsp+12] ; entry_point
+    push 0x30
+    push rsi
+    pushfq
+    push 0x28
+    push rax
+
+    ; Zero out all GPRs
+    xor eax, eax
+    xor ebx, ebx
+    xor ecx, ecx
+    xor edx, edx
+    xor esi, esi
+    xor edi, edi
+    xor ebp, ebp
+    xor r8d, r8d
+    xor r9d, r9d
+    xor r10d, r10d
+    xor r11d, r11d
+    xor r12d, r12d
+    xor r13d, r13d
+    xor r14d, r14d
+    xor r15d, r15d
+
+    iretq

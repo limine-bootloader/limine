@@ -52,23 +52,23 @@ export CFLAGS
 LDFLAGS ?= @LDFLAGS@
 export LDFLAGS
 
-LIMINE_CFLAGS ?= @LIMINE_CFLAGS@
-export LIMINE_CFLAGS
-LIMINE_LDFLAGS ?= @LIMINE_LDFLAGS@
-export LIMINE_LDFLAGS
+CROSS_CFLAGS ?= @CROSS_CFLAGS@
+export CROSS_CFLAGS
+CROSS_LDFLAGS ?= @CROSS_LDFLAGS@
+export CROSS_LDFLAGS
 
-TOOLCHAIN ?= @TOOLCHAIN@
-export TOOLCHAIN
-LIMINE_CC ?= @LIMINE_CC@
-export LIMINE_CC
-LIMINE_LD ?= @LIMINE_LD@
-export LIMINE_LD
-LIMINE_OBJCOPY ?= @LIMINE_OBJCOPY@
-export LIMINE_OBJCOPY
-LIMINE_OBJDUMP ?= @LIMINE_OBJDUMP@
-export LIMINE_OBJDUMP
-LIMINE_READELF ?= @LIMINE_READELF@
-export LIMINE_READELF
+CROSS_TOOLCHAIN ?= @CROSS_TOOLCHAIN@
+export CROSS_TOOLCHAIN
+CROSS_CC ?= @CROSS_CC@
+export CROSS_CC
+CROSS_LD ?= @CROSS_LD@
+export CROSS_LD
+CROSS_OBJCOPY ?= @CROSS_OBJCOPY@
+export CROSS_OBJCOPY
+CROSS_OBJDUMP ?= @CROSS_OBJDUMP@
+export CROSS_OBJDUMP
+CROSS_READELF ?= @CROSS_READELF@
+export CROSS_READELF
 
 override LIMINE_VERSION := @PACKAGE_VERSION@
 
@@ -192,11 +192,13 @@ dist:
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/libgcc-binaries/.gitignore"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/limine-efi/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/limine-efi/.gitignore"
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/cross-detect/.git"
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/cross-detect/.gitignore"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/.gitignore"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/.github"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/autom4te.cache"
-	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/toolchain-detect/autom4te.cache"
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/cross-detect/autom4te.cache"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/test"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/screenshot.png"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/bochsrc"
@@ -207,17 +209,16 @@ dist:
 
 .PHONY: distclean
 distclean: clean
-	rm -rf toolchain ovmf* config.log config.status GNUmakefile config.h toolchain-files
+	rm -rf toolchain ovmf* config.log config.status GNUmakefile config.h cross-files
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding-headers libgcc-binaries make_toolchain.sh limine-efi configure build-aux *'~' autom4te.cache *.tar.xz *.tar.gz
-	cd '$(call SHESCAPE,$(SRCDIR))'/toolchain-detect && rm -rf configure *'~' autom4te.cache
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding-headers libgcc-binaries make_toolchain.sh limine-efi cross-detect configure build-aux *'~' autom4te.cache *.tar.xz *.tar.gz
 
 .PHONY: common-uefi-x86-64
 common-uefi-x86-64:
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all \
-		TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/x86_64-toolchain.mk' \
+		CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk' \
 		TARGET=uefi-x86-64 \
 		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64'
 
@@ -228,7 +229,7 @@ common-uefi-x86-64-clean:
 .PHONY: common-uefi-ia32
 common-uefi-ia32:
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all \
-		TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/i686-toolchain.mk' \
+		CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/i686-toolchain.mk' \
 		TARGET=uefi-ia32 \
 		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32'
 
@@ -239,7 +240,7 @@ common-uefi-ia32-clean:
 .PHONY: common-bios
 common-bios:
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all \
-		TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/i686-toolchain.mk' \
+		CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/i686-toolchain.mk' \
 		TARGET=bios \
 		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-bios'
 
@@ -250,7 +251,7 @@ common-bios-clean:
 .PHONY: decompressor
 decompressor:
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/decompressor' all \
-		TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/i686-toolchain.mk' \
+		CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/i686-toolchain.mk' \
 		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/decompressor-build'
 
 .PHONY: decompressor-clean

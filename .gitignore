@@ -2,7 +2,7 @@
 /bin
 /build
 /toolchain
-/toolchain-files
+/cross-files
 /limine-efi
 /freestanding-headers
 /make_toolchain.sh
@@ -25,10 +25,7 @@
 /.vscode
 /test_image
 !/common/font.bin
-/toolchain-detect/configure
-/toolchain-detect/configure.ac.save
-/toolchain-detect/*~
-/toolchain-detect/autom4te.cache
+/cross-detect
 /configure
 /configure.ac.save
 /build-aux

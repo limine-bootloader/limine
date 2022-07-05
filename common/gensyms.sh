@@ -28,7 +28,7 @@ TMP4="$(mktemp)"
 
 trap "rm -f '$TMP1' '$TMP2' '$TMP3' '$TMP4'; trap - EXIT; exit" EXIT INT TERM QUIT HUP
 
-"$LIMINE_OBJDUMP" -t "$1" | ( "$SED" '/[[:<:]]d[[:>:]]/d' 2>/dev/null || "$SED" '/\bd\b/d' ) | sort > "$TMP1"
+"$CROSS_OBJDUMP" -t "$1" | ( "$SED" '/[[:<:]]d[[:>:]]/d' 2>/dev/null || "$SED" '/\bd\b/d' ) | sort > "$TMP1"
 "$GREP" "$4" < "$TMP1" | cut -d' ' -f1 > "$TMP2"
 "$GREP" "$4" < "$TMP1" | "$AWK" 'NF{ print $NF }' > "$TMP3"
 

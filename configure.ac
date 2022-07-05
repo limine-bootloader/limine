@@ -3,7 +3,7 @@ AC_INIT([Limine], m4_esyscmd([./version.sh]), [https://github.com/limine-bootloa
 AC_PREREQ(2.69)
 
 AC_CONFIG_AUX_DIR([build-aux])
-AC_CONFIG_SUBDIRS([toolchain-detect])
+AC_CONFIG_SUBDIRS([cross-detect])
 
 SRCDIR="$(cd "$srcdir" && pwd -P)"
 BUILDDIR="$(pwd -P)"
@@ -47,7 +47,7 @@ if ! test "x$GZIP_FOUND" = "xyes"; then
     AC_MSG_ERROR([gzip not found, please install gzip before configuring])
 fi
 
-rm -rf "$BUILDDIR/toolchain-files"
+rm -rf "$BUILDDIR/cross-files"
 
 BUILD_ALL="no"
 
@@ -65,9 +65,9 @@ if test "x$BUILD_BIOS" = "xno"; then
     BUILD_BIOS=""
 else
     (
-    mkdir -p "$BUILDDIR/toolchain-files"
-    cd "$BUILDDIR/toolchain-files"
-    ARCHITECTURE=i686 "$SRCDIR/toolchain-detect/configure"
+    mkdir -p "$BUILDDIR/cross-files"
+    cd "$BUILDDIR/cross-files"
+    TRIPLET=i686-elf "$SRCDIR/cross-detect/configure"
     ) || exit 1
     BUILD_BIOS="limine-bios"
 fi
@@ -108,9 +108,9 @@ if test "x$BUILD_UEFI_IA32" = "xno"; then
     BUILD_UEFI_IA32=""
 else
     (
-    mkdir -p "$BUILDDIR/toolchain-files"
-    cd "$BUILDDIR/toolchain-files"
-    ARCHITECTURE=i686 "$SRCDIR/toolchain-detect/configure"
+    mkdir -p "$BUILDDIR/cross-files"
+    cd "$BUILDDIR/cross-files"
+    TRIPLET=i686-elf "$SRCDIR/cross-detect/configure"
     ) || exit 1
     BUILD_UEFI_IA32="limine-uefi-ia32"
 fi
@@ -127,9 +127,9 @@ if test "x$BUILD_UEFI_X86_64" = "xno"; then
     BUILD_UEFI_X86_64=""
 else
     (
-    mkdir -p "$BUILDDIR/toolchain-files"
-    cd "$BUILDDIR/toolchain-files"
-    ARCHITECTURE=x86_64 "$SRCDIR/toolchain-detect/configure"
+    mkdir -p "$BUILDDIR/cross-files"
+    cd "$BUILDDIR/cross-files"
+    TRIPLET=x86_64-elf "$SRCDIR/cross-detect/configure"
     ) || exit 1
     BUILD_UEFI_X86_64="limine-uefi-x86-64"
 fi
@@ -155,20 +155,20 @@ fi
 
 AC_SUBST(BUILD_CD_EFI, [$BUILD_CD_EFI])
 
-AC_ARG_VAR(TOOLCHAIN, [alternative toolchain prefix (or 'llvm')])
-AC_ARG_VAR(LIMINE_CC, [C compiler command for Limine])
-AC_ARG_VAR(LIMINE_LD, [linker command for Limine])
-AC_ARG_VAR(LIMINE_OBJCOPY, [objcopy command for Limine])
-AC_ARG_VAR(LIMINE_OBJDUMP, [objdump command for Limine])
-AC_ARG_VAR(LIMINE_READELF, [readelf command for Limine])
+AC_ARG_VAR(CROSS_TOOLCHAIN, [alternative toolchain prefix (or 'llvm')])
+AC_ARG_VAR(CROSS_CC, [C compiler command for Limine])
+AC_ARG_VAR(CROSS_LD, [linker command for Limine])
+AC_ARG_VAR(CROSS_OBJCOPY, [objcopy command for Limine])
+AC_ARG_VAR(CROSS_OBJDUMP, [objdump command for Limine])
+AC_ARG_VAR(CROSS_READELF, [readelf command for Limine])
 
-m4_define([DEFAULT_LIMINE_CFLAGS], [-O3 -pipe -Wall -Wextra])
-AC_ARG_VAR(LIMINE_CFLAGS, [C flags for Limine @<:@default: ]DEFAULT_LIMINE_CFLAGS[@:>@])
-test "x$LIMINE_CFLAGS" = "x" && LIMINE_CFLAGS="DEFAULT_LIMINE_CFLAGS"
+m4_define([DEFAULT_CROSS_CFLAGS], [-O3 -pipe -Wall -Wextra])
+AC_ARG_VAR(CROSS_CFLAGS, [C flags for Limine @<:@default: ]DEFAULT_CROSS_CFLAGS[@:>@])
+test "x$CROSS_CFLAGS" = "x" && CROSS_CFLAGS="DEFAULT_CROSS_CFLAGS"
 
-m4_define([DEFAULT_LIMINE_LDFLAGS], [])
-AC_ARG_VAR(LIMINE_LDFLAGS, [Linker flags for Limine @<:@default: ]DEFAULT_LIMINE_LDFLAGS[@:>@])
-test "x$LIMINE_LDFLAGS" = "x" && LIMINE_LDFLAGS="DEFAULT_LIMINE_LDFLAGS"
+m4_define([DEFAULT_CROSS_LDFLAGS], [])
+AC_ARG_VAR(CROSS_LDFLAGS, [Linker flags for Limine @<:@default: ]DEFAULT_CROSS_LDFLAGS[@:>@])
+test "x$CROSS_LDFLAGS" = "x" && CROSS_LDFLAGS="DEFAULT_CROSS_LDFLAGS"
 
 LIMINE_COPYRIGHT=$($GREP Copyright "$SRCDIR/LICENSE.md")
 AC_SUBST(LIMINE_COPYRIGHT, [$LIMINE_COPYRIGHT])

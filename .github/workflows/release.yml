@@ -36,7 +36,7 @@ jobs:
         run: mkdir -p build
 
       - name: Configure
-        run: cd build && ../configure --enable-all TOOLCHAIN=llvm
+        run: cd build && ../configure --enable-all CROSS_TOOLCHAIN=llvm
 
       - name: Build the bootloader
         run: make -C build

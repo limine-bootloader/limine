@@ -10,8 +10,8 @@ void list_volumes(void) {
         print("partition: %u\n", v->partition);
         print("sector_size: %u\n", v->sector_size);
         print("max_partition: %d\n", v->max_partition);
-        print("first_sect: %X\n", v->first_sect);
-        print("sect_count: %X\n", v->sect_count);
+        print("first_sect: %U\n", v->first_sect);
+        print("sect_count: %U\n", v->sect_count);
         print("---\n");
     }
 }

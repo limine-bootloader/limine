@@ -30,7 +30,7 @@ static bool cache_block(struct volume *volume, uint64_t block) {
         return false;
     }
 
-    size_t first_sect = volume->first_sect / (volume->sector_size / 512);
+    uint64_t first_sect = volume->first_sect / (volume->sector_size / 512);
 
     uint64_t xfer_size = volume->fastest_xfer_size;
 
@@ -304,20 +304,21 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
                                 int partition) {
     struct mbr_entry entry;
 
-    size_t ebr_sector = 0;
+    uint64_t ebr_sector = 0;
 
     for (int i = 0; i < partition; i++) {
-        size_t entry_offset = ebr_sector * 512 + 0x1ce;
+        uint64_t entry_offset = ebr_sector * 512 + 0x1ce;
 
         volume_read(extended_part, &entry, entry_offset, sizeof(struct mbr_entry));
 
-        if (entry.type != 0x0f && entry.type != 0x05)
+        if (entry.type != 0x0f && entry.type != 0x05) {
             return END_OF_TABLE;
+        }
 
         ebr_sector = entry.first_sect;
     }
 
-    size_t entry_offset = ebr_sector * 512 + 0x1be;
+    uint64_t entry_offset = ebr_sector * 512 + 0x1be;
 
     volume_read(extended_part, &entry, entry_offset, sizeof(struct mbr_entry));
 
@@ -369,11 +370,11 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
 
     if (partition > 3) {
         for (int i = 0; i < 4; i++) {
-            size_t entry_offset = 0x1be + sizeof(struct mbr_entry) * i;
+            uint64_t entry_offset = 0x1be + sizeof(struct mbr_entry) * i;
 
             volume_read(volume, &entry, entry_offset, sizeof(struct mbr_entry));
 
-            if (entry.type != 0x0f)
+            if (entry.type != 0x0f && entry.type != 0x05)
                 continue;
 
             struct volume extended_part = {0};
@@ -399,7 +400,7 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
         return END_OF_TABLE;
     }
 
-    size_t entry_offset = 0x1be + sizeof(struct mbr_entry) * partition;
+    uint64_t entry_offset = 0x1be + sizeof(struct mbr_entry) * partition;
 
     volume_read(volume, &entry, entry_offset, sizeof(struct mbr_entry));
 

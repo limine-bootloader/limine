@@ -638,6 +638,9 @@ char *ext2_get_label(struct volume *part) {
     }
 
     size_t label_len = strlen((char *)sb.s_volume_name);
+    if (label_len == 0) {
+        return NULL;
+    }
     char *ret = ext_mem_alloc(label_len + 1);
     strcpy(ret, (char *)sb.s_volume_name);
 

@@ -34,9 +34,17 @@ bool fs_get_guid(struct guid *guid, struct volume *part) {
 }
 
 struct file_handle *fopen(struct volume *part, const char *filename) {
-    if (strlen(filename) + 2 > PATH_MAX) {
-        panic(true, "fopen: Path too long");
+    size_t filename_new_len = strlen(filename) + 2;
+    char *filename_new = ext_mem_alloc(filename_new_len);
+
+    if (filename[0] != '/') {
+        filename_new[0] = '/';
+        strcpy(&filename_new[1], filename);
+    } else {
+        strcpy(filename_new, filename);
     }
+
+    filename = filename_new;
 
     struct file_handle *ret;
 
@@ -45,24 +53,29 @@ struct file_handle *fopen(struct volume *part, const char *filename) {
         if ((ret = tftp_open(0, 69, filename)) == NULL) {
             return NULL;
         }
-        return ret;
+        goto success;
     }
 #endif
 
     if ((ret = ext2_open(part, filename)) != NULL) {
-        return ret;
+        goto success;
     }
     if ((ret = fat32_open(part, filename)) != NULL) {
-        return ret;
+        goto success;
     }
     if ((ret = iso9660_open(part, filename)) != NULL) {
-        return ret;
+        goto success;
     }
     if ((ret = ntfs_open(part, filename)) != NULL) {
-        return ret;
+        goto success;
     }
 
     return NULL;
+
+success:
+    ret->path = (char *)filename;
+
+    return ret;
 }
 
 void fclose(struct file_handle *fd) {

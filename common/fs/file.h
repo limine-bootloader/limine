@@ -9,8 +9,6 @@
 #  include <efi.h>
 #endif
 
-#define PATH_MAX 4096
-
 bool fs_get_guid(struct guid *guid, struct volume *part);
 char *fs_get_label(struct volume *part);
 
@@ -18,7 +16,7 @@ struct file_handle {
     bool       is_memfile;
     bool       readall;
     struct volume *vol;
-    char       path[PATH_MAX];
+    char      *path;
     void      *fd;
     void     (*read)(void *fd, void *buf, uint64_t loc, uint64_t count);
     void     (*close)(void *fd);

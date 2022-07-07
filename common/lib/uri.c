@@ -238,7 +238,7 @@ struct file_handle *uri_open(char *uri) {
 		}
         ret = uri_fwcfg_dispatch(path);
     } else {
-        panic("Resource `%s` not valid.", resource);
+        panic(true, "Resource `%s` not valid.", resource);
     }
 
     if (compressed && ret != NULL) {

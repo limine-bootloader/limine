@@ -11,11 +11,12 @@
 
 #define FAT32_ATTRIBUTE_SUBDIRECTORY 0x10
 #define FAT32_LFN_ATTRIBUTE 0x0F
+#define FAT32_ATTRIBUTE_VOLLABEL 0x08
 
 struct fat32_context {
     struct volume *part;
     int type;
-    char label[12];
+    char *label;
     uint16_t bytes_per_sector;
     uint8_t sectors_per_cluster;
     uint16_t reserved_sectors;
@@ -95,6 +96,8 @@ struct fat32_lfn_entry {
     char name3[4];
 } __attribute__((packed));
 
+static int fat32_open_in(struct fat32_context* context, struct fat32_directory_entry* directory, struct fat32_directory_entry* file, const char* name);
+
 static int fat32_init_context(struct fat32_context* context, struct volume *part) {
     context->part = part;
 
@@ -151,15 +154,6 @@ valid:;
         context->type = 32;
     }
 
-    memcpy(context->label, bpb.label, 11);
-    context->label[11] = 0;
-    // remove trailing spaces
-    for (int i = 10; i >= 0; i--) {
-        if (context->label[i] == ' ') {
-            context->label[i] = 0;
-        }
-    }
-
     context->bytes_per_sector = bpb.bytes_per_sector;
     context->sectors_per_cluster = bpb.sectors_per_cluster;
     context->reserved_sectors = bpb.reserved_sectors;
@@ -181,6 +175,31 @@ valid:;
             break;
         default:
             __builtin_unreachable();
+    }
+
+    // get the volume label
+    struct fat32_directory_entry _current_directory;
+    struct fat32_directory_entry *current_directory;
+
+    switch (context->type) {
+        case 12:
+        case 16:
+            current_directory = NULL;
+            break;
+        case 32:
+            _current_directory.cluster_num_low = context->root_directory_cluster & 0xFFFF;
+            _current_directory.cluster_num_high = context->root_directory_cluster >> 16;
+            current_directory = &_current_directory;
+            break;
+        default:
+            __builtin_unreachable();
+    }
+
+    char *vol_label;
+    if (fat32_open_in(context, current_directory, (struct fat32_directory_entry *)&vol_label, NULL) == 0) {
+        context->label = vol_label;
+    } else {
+        context->label = NULL;
     }
 
     return 0;
@@ -334,6 +353,25 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
             break;
         }
 
+        if (name == NULL) {
+            if (directory_entries[i].attribute != FAT32_ATTRIBUTE_VOLLABEL) {
+                continue;
+            }
+            char *r = ext_mem_alloc(12);
+            memcpy(r, directory_entries[i].file_name_and_ext, 11);
+            // remove trailing spaces
+            for (int j = 10; j >= 0; j--) {
+                if (r[j] == ' ') {
+                    r[j] = 0;
+                    continue;
+                }
+                break;
+            }
+            *((char **)file) = r;
+            ret = 0;
+            goto out;
+        }
+
         if (directory_entries[i].attribute == FAT32_LFN_ATTRIBUTE) {
             struct fat32_lfn_entry* lfn = (struct fat32_lfn_entry*) &directory_entries[i];
 
@@ -399,15 +437,7 @@ char *fat32_get_label(struct volume *part) {
         return NULL;
     }
 
-    size_t label_len = strlen(context.label);
-    if (label_len == 0) {
-        return NULL;
-    }
-
-    char *ret = ext_mem_alloc(label_len + 1);
-    strcpy(ret, context.label);
-
-    return ret;
+    return context.label;
 }
 
 static void fat32_read(struct file_handle *handle, void *buf, uint64_t loc, uint64_t count);

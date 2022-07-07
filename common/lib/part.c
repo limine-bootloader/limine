@@ -8,6 +8,7 @@ void list_volumes(void) {
         print("index: %u\n", v->index);
         print("is_optical: %u\n", v->is_optical);
         print("partition: %u\n", v->partition);
+        print("fslabel: %s\n", v->fslabel);
         print("sector_size: %u\n", v->sector_size);
         print("max_partition: %d\n", v->max_partition);
         print("first_sect: %U\n", v->first_sect);

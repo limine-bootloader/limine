@@ -10,6 +10,7 @@
 #include <lib/blib.h>
 #include <lib/term.h>
 #include <lib/part.h>
+#include <lib/config.h>
 
 static void console_help(void) {
     print(
@@ -45,6 +46,7 @@ void console(void) {
         } else if (editor_enabled && strcmp(prompt, "editor") == 0) {
             char *new_entry = config_entry_editor("New Entry", "");
             if (new_entry != NULL) {
+                config_ready = true;
                 boot(new_entry);
             }
         } else if (strcmp(prompt, "version") == 0) {

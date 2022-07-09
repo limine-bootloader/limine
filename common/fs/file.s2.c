@@ -60,13 +60,13 @@ struct file_handle *fopen(struct volume *part, const char *filename) {
     if ((ret = ext2_open(part, filename)) != NULL) {
         goto success;
     }
-    if ((ret = fat32_open(part, filename)) != NULL) {
-        goto success;
-    }
     if ((ret = iso9660_open(part, filename)) != NULL) {
         goto success;
     }
     if ((ret = ntfs_open(part, filename)) != NULL) {
+        goto success;
+    }
+    if ((ret = fat32_open(part, filename)) != NULL) {
         goto success;
     }
 

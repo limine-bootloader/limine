@@ -111,22 +111,20 @@ static int fat32_init_context(struct fat32_context* context, struct volume *part
 
     // Checks for FAT12/16
     if (strncmp((((void *)&bpb) + 0x36), "FAT", 3) == 0) {
-        if (*(((uint8_t *)&bpb) + 0x26) != 0x29) {
-            return 1;
-        }
+        uint8_t sig = *(((uint8_t *)&bpb) + 0x26);
 
-        goto valid;
+        if (sig == 0x29 || sig == 0xd0) {
+            goto valid;
+        }
     }
 
     // Checks for FAT32
     if (strncmp((((void *)&bpb) + 0x52), "FAT", 3) == 0) {
         uint8_t sig = *(((uint8_t *)&bpb) + 0x42);
 
-        if (sig != 0x29 && sig != 0x28 && sig != 0xd0) {
-            return 1;
+        if (sig == 0x29 || sig == 0x28 || sig == 0xd0) {
+            goto valid;
         }
-
-        goto valid;
     }
 
     return 1;

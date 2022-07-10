@@ -133,7 +133,9 @@ Editor control options.
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
 
 * chainload_next protocol:
-  This protocol does not specify any locally assignable key. Will boot the next bootable drive found in the system, if there is one.
+  This protocol does not specify any locally assignable key on BIOS. Will boot the next bootable drive found in the system, if there is one.
+
+  * `RESOLUTION` - For UEFI, the resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
 
 * multiboot1 and multiboot2 protocols:
   * `KERNEL_PATH` - The URI path of the kernel.

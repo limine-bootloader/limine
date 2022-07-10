@@ -7,13 +7,14 @@
 #include <lib/part.h>
 
 #if bios == 1
-static void try(struct volume *v) {
+static void try(char *config, struct volume *v) {
+    (void)config;
     bios_chainload_volume(v);
 }
 #endif
 
 #if uefi == 1
-static void try(struct volume *v) {
+static void try(char *config, struct volume *v) {
     for (int i = 0; i < v->max_partition + 1; i++) {
         struct file_handle *image;
 
@@ -23,14 +24,12 @@ static void try(struct volume *v) {
             continue;
         }
 
-        efi_chainload_file(image);
+        efi_chainload_file(config, image);
     }
 }
 #endif
 
 void chainload_next(char *config) {
-    (void)config;
-
     bool wrap = false;
     for (int i = boot_volume->is_optical ? 0 : (wrap = true, boot_volume->index + 1);
          boot_volume->is_optical ? true : i != boot_volume->index; i++) {
@@ -44,7 +43,7 @@ void chainload_next(char *config) {
             }
         }
 
-        try(v);
+        try(config, v);
     }
 
     wrap = false;
@@ -60,7 +59,7 @@ void chainload_next(char *config) {
             }
         }
 
-        try(v);
+        try(config, v);
     }
 
     panic(true, "chainload_next: No other bootable device");

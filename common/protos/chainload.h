@@ -5,7 +5,7 @@ void chainload(char *config);
 
 #if uefi == 1
 #include <fs/file.h>
-void efi_chainload_file(struct file_handle *image);
+void efi_chainload_file(char *config, struct file_handle *image);
 #endif
 
 #if bios == 1

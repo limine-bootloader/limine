@@ -104,27 +104,19 @@ static int fat32_init_context(struct fat32_context* context, struct volume *part
     struct fat32_bpb bpb;
     volume_read(context->part, &bpb, 0, sizeof(struct fat32_bpb));
 
-    // Generic check
-    if (*(uint16_t *)(((void *)&bpb) + 510) != 0xaa55) {
-        return 1;
-    }
-
     // Checks for FAT12/16
     if (strncmp((((void *)&bpb) + 0x36), "FAT", 3) == 0) {
-        uint8_t sig = *(((uint8_t *)&bpb) + 0x26);
-
-        if (sig == 0x29 || sig == 0xd0) {
-            goto valid;
-        }
+        goto valid;
     }
 
     // Checks for FAT32
     if (strncmp((((void *)&bpb) + 0x52), "FAT", 3) == 0) {
-        uint8_t sig = *(((uint8_t *)&bpb) + 0x42);
+        goto valid;
+    }
 
-        if (sig == 0x29 || sig == 0x28 || sig == 0xd0) {
-            goto valid;
-        }
+    // Checks for FAT32 (with 64-bit sector count)
+    if (strncmp((((void *)&bpb) + 0x03), "FAT32", 5) == 0) {
+        goto valid;
     }
 
     return 1;

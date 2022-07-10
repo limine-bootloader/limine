@@ -23,7 +23,7 @@ static void try(struct volume *v) {
             continue;
         }
 
-        uefi_chainload_file(image);
+        efi_chainload_file(image);
     }
 }
 #endif

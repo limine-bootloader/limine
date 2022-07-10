@@ -15,12 +15,13 @@ static void try(char *config, struct volume *v) {
 
 #if uefi == 1
 static void try(char *config, struct volume *v) {
-    for (int i = 0; i < v->max_partition + 1; i++) {
+    for (int i = 0; i <= v->max_partition + 1; i++) {
         struct file_handle *image;
+        struct volume *p = volume_get_by_coord(v->is_optical, v->index, i);
 
-        if ((image = fopen(v, "/EFI/BOOT/BOOTX64.EFI")) == NULL
-         && (image = fopen(v, "/efi/boot/bootx64.efi")) == NULL
-         && (image = fopen(v, "/EFI/BOOT/BOOTx64.efi")) == NULL) {
+        if ((image = fopen(p, "/EFI/BOOT/BOOTX64.EFI")) == NULL
+         && (image = fopen(p, "/efi/boot/bootx64.efi")) == NULL
+         && (image = fopen(p, "/EFI/BOOT/BOOTx64.EFI")) == NULL) {
             continue;
         }
 

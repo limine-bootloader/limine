@@ -130,10 +130,10 @@ void chainload(char *config) {
     if ((image = uri_open(image_path)) == NULL)
         panic(true, "chainload: Failed to open image with path `%s`. Is the path correct?", image_path);
 
-    efi_chainload_file(image);
+    efi_chainload_file(config, image);
 }
 
-void efi_chainload_file(struct file_handle *image) {
+void efi_chainload_file(char *config, struct file_handle *image) {
     EFI_STATUS status;
 
     EFI_HANDLE efi_part_handle = image->efi_part_handle;

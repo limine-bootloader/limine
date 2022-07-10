@@ -99,6 +99,29 @@ void chainload(char *config) {
 
     struct volume *p = volume_get_by_coord(false, drive, part);
 
+    char *mbr_id_s = config_get_value(config, 0, "MBR_ID");
+    if (mbr_id_s != NULL) {
+        uint32_t mbr_id = strtoui(mbr_id_s, NULL, 16);
+
+        for (size_t i = 0; i < volume_index_i; i++) {
+            p = volume_index[i];
+
+            if (!is_valid_mbr(p)) {
+                continue;
+            }
+
+            uint32_t mbr_id_1;
+            volume_read(p, &mbr_id_1, 0x1b8, sizeof(uint32_t));
+
+            if (mbr_id_1 == mbr_id) {
+                goto load;
+            }
+        }
+
+        panic(true, "chainload: No matching MBR ID found");
+    }
+
+load:
     bios_chainload_volume(p);
 
     panic(true, "chainload: Volume is not bootable");

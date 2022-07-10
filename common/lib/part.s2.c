@@ -244,7 +244,7 @@ struct mbr_entry {
 	uint32_t sect_count;
 } __attribute__((packed));
 
-static bool is_valid_mbr(struct volume *volume) {
+bool is_valid_mbr(struct volume *volume) {
     // Check if actually valid mbr
     uint16_t hint = 0;
     volume_read(volume, &hint, 218, sizeof(uint16_t));

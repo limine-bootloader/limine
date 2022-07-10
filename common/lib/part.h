@@ -55,6 +55,7 @@ struct volume {
 };
 
 void list_volumes(void);
+bool is_valid_mbr(struct volume *volume);
 
 extern struct volume **volume_index;
 extern size_t volume_index_i;

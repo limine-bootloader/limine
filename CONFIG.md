@@ -97,7 +97,7 @@ Editor control options.
 
 *Locally assignable (non protocol specific)* keys are:
 * `COMMENT` - An optional comment string that will be displayed by the bootloader on the menu when an entry is selected.
-* `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `limine`, `stivale`, `stivale2`, `chainload`, `multiboot` or `multiboot1` and `multiboot2`. If the protocol is omitted, Limine will try to autodetect it, following this list of protocols, in this order: `stivale2 -> stivale1 -> multiboot2 -> multiboot1 -> limine -> linux -> failure`.
+* `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `limine`, `stivale`, `stivale2`, `chainload`, `chainload_next`, `multiboot` or `multiboot1` and `multiboot2`. If the protocol is omitted, Limine will try to autodetect it, following this list of protocols, in this order: `stivale2 -> stivale1 -> multiboot2 -> multiboot1 -> limine -> linux -> failure`.
 * `CMDLINE` - The command line string to be passed to the kernel. Can be omitted.
 * `KERNEL_CMDLINE` - Alias of `CMDLINE`.
 
@@ -110,6 +110,7 @@ Editor control options.
   modules.
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
   * `TEXTMODE` - If set to `yes`, prefer text mode. (BIOS only)
+
 * Limine protocol:
   * `KERNEL_PATH` - The URI path of the kernel.
   * `MODULE_PATH` - The URI path to a module.
@@ -122,21 +123,28 @@ Editor control options.
 
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
   * `KASLR` - For relocatable kernels, if set to `no`, disable kernel address space layout randomisation. KASLR is enabled by default.
+
 * Chainload protocol on BIOS:
   * `DRIVE` - The 1-based BIOS drive to chainload, if omitted, assume boot drive.
   * `PARTITION` - The 1-based BIOS partition to chainload, if omitted, chainload drive (MBR).
+
 * Chainload protocol on UEFI:
   * `IMAGE_PATH` - URI of the EFI application to chainload.
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
+
+* chainload_next protocol:
+  This protocol does not specify any locally assignable key. Will boot the next bootable drive found in the system, if there is one.
+
 * multiboot1 and multiboot2 protocols:
   * `KERNEL_PATH` - The URI path of the kernel.
   * `MODULE_PATH` - The URI path to a module.
   * `MODULE_STRING` - A string to be passed to a module.
 
-  Note that one can define these 2 last variable multiple times to specify multiple
+  **Note:** One can define these 2 last variable multiple times to specify multiple
   modules.
   The entries will be matched in order. E.g.: the 1st module path entry will be matched
   to the 1st module string entry that appear, and so on.
+
   * `RESOLUTION` - The resolution to be used should the kernel request a graphical framebuffer. This setting takes the form of `<width>x<height>x<bpp>` and *overrides* any resolution requested by the kernel. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
 
 ## URIs

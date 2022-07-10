@@ -19,6 +19,7 @@
 #include <protos/stivale2.h>
 #include <protos/linux.h>
 #include <protos/chainload.h>
+#include <protos/chainload_next.h>
 #include <protos/multiboot1.h>
 #include <protos/multiboot2.h>
 #include <protos/limine.h>
@@ -941,6 +942,8 @@ autodetect:
         ret = multiboot1_load(config, cmdline);
     } else if (!strcmp(proto, "multiboot2")) {
         ret = multiboot2_load(config, cmdline);
+    } else if (!strcmp(proto, "chainload_next")) {
+        chainload_next(config);
     } else if (!strcmp(proto, "chainload")) {
         chainload(config);
     }

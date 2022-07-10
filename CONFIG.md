@@ -127,6 +127,7 @@ Editor control options.
 * Chainload protocol on BIOS:
   * `DRIVE` - The 1-based BIOS drive to chainload, if omitted, assume boot drive.
   * `PARTITION` - The 1-based BIOS partition to chainload, if omitted, chainload drive (MBR).
+  * `MBR_ID` - Optional. If passed, use an MBR ID (32-bit hex value) to identify the volume to chainload.
 
 * Chainload protocol on UEFI:
   * `IMAGE_PATH` - URI of the EFI application to chainload.

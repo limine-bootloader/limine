@@ -496,6 +496,15 @@ int main(int argc, char *argv[]) {
                 device_write(hintc, 4, 8);
             }
         }
+        device_read(hintc, 3, 4);
+        if (memcmp(hintc, "NTFS", 4) == 0) {
+            if (!force_mbr) {
+                mbr = 0;
+            } else {
+                memset(hintc, 0, 4);
+                device_write(hintc, 3, 4);
+            }
+        }
         device_read(hintc, 54, 3);
         if (memcmp(hintc, "FAT", 3) == 0) {
             if (!force_mbr) {
@@ -512,6 +521,15 @@ int main(int argc, char *argv[]) {
             } else {
                 memset(hintc, 0, 5);
                 device_write(hintc, 82, 5);
+            }
+        }
+        device_read(hintc, 3, 5);
+        if (memcmp(hintc, "FAT32", 5) == 0) {
+            if (!force_mbr) {
+                mbr = 0;
+            } else {
+                memset(hintc, 0, 5);
+                device_write(hintc, 3, 5);
             }
         }
         device_read(&hint16, 1080, sizeof(uint16_t));
@@ -537,8 +555,8 @@ int main(int argc, char *argv[]) {
     if (gpt == 0 && mbr == 0) {
         fprintf(stderr, "ERROR: Could not determine if the device has a valid partition table.\n");
         fprintf(stderr, "       Please ensure the device has a valid MBR or GPT.\n");
-        fprintf(stderr, "       Alternatively, pass `--force-mbr` to override these checks. ONLY\n");
-        fprintf(stderr, "        DO THIS AT YOUR OWN RISK, DATA LOSS MAY OCCUR!\n");
+        fprintf(stderr, "       Alternatively, pass `--force-mbr` to override these checks.\n");
+        fprintf(stderr, "       **ONLY DO THIS AT YOUR OWN RISK, DATA LOSS MAY OCCUR!**\n");
         goto cleanup;
     }
 

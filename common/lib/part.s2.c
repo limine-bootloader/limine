@@ -276,11 +276,17 @@ static bool is_valid_mbr(struct volume *volume) {
     volume_read(volume, hintc, 4, 8);
     if (memcmp(hintc, "_ECH_FS_", 8) == 0)
         return false;
+    volume_read(volume, hintc, 3, 4);
+    if (memcmp(hintc, "NTFS", 4) == 0)
+        return false;
     volume_read(volume, hintc, 54, 3);
     if (memcmp(hintc, "FAT", 3) == 0)
         return false;
     volume_read(volume, hintc, 82, 3);
     if (memcmp(hintc, "FAT", 3) == 0)
+        return false;
+    volume_read(volume, hintc, 3, 5);
+    if (memcmp(hintc, "FAT32", 5) == 0)
         return false;
     volume_read(volume, &hint, 1080, sizeof(uint16_t));
     if (hint == 0xef53)

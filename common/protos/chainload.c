@@ -99,10 +99,22 @@ void chainload(char *config) {
 
     struct volume *p = volume_get_by_coord(false, drive, part);
 
+    bios_chainload_volume(p);
+
+    panic(true, "chainload: Volume is not bootable");
+}
+
+void bios_chainload_volume(struct volume *p) {
     size_t rows, cols;
     init_vga_textmode(&rows, &cols, false);
 
     volume_read(p, (void *)0x7c00, 0, 512);
+
+    volatile uint16_t *boot_sig = (volatile uint16_t *)0x7dfe;
+
+    if (*boot_sig != 0xaa55) {
+        return;
+    }
 
     spinup(p->drive);
 }
@@ -110,8 +122,6 @@ void chainload(char *config) {
 #elif uefi == 1
 
 void chainload(char *config) {
-    EFI_STATUS status;
-
     char *image_path = config_get_value(config, 0, "IMAGE_PATH");
     if (image_path == NULL)
         panic(true, "chainload: IMAGE_PATH not specified");
@@ -119,6 +129,12 @@ void chainload(char *config) {
     struct file_handle *image;
     if ((image = uri_open(image_path)) == NULL)
         panic(true, "chainload: Failed to open image with path `%s`. Is the path correct?", image_path);
+
+    efi_chainload_file(image);
+}
+
+void efi_chainload_file(struct file_handle *image) {
+    EFI_STATUS status;
 
     EFI_HANDLE efi_part_handle = image->efi_part_handle;
 

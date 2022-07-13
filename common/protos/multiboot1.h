@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <stdbool.h>
+#include <stdnoreturn.h>
 
 #define MULTIBOOT1_HEADER_MAGIC 0x1BADB002
 
@@ -94,6 +94,6 @@ struct multiboot1_mmap_entry {
     uint32_t type;
 } __attribute__((packed));
 
-bool multiboot1_load(char *config, char *cmdline);
+noreturn void multiboot1_load(char *config, char *cmdline);
 
 #endif

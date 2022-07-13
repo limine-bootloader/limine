@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
+#include <stdnoreturn.h>
 #include <protos/chainload_next.h>
 #include <protos/chainload.h>
 #include <lib/blib.h>
@@ -30,7 +31,7 @@ static void try(char *config, struct volume *v) {
 }
 #endif
 
-void chainload_next(char *config) {
+noreturn void chainload_next(char *config) {
     bool wrap = false;
     for (int i = boot_volume->is_optical ? 0 : (wrap = true, boot_volume->index + 1);
          boot_volume->is_optical ? true : i != boot_volume->index; i++) {
@@ -64,6 +65,4 @@ void chainload_next(char *config) {
     }
 
     panic(true, "chainload_next: No other bootable device");
-
-    __builtin_unreachable();
 }

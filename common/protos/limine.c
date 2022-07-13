@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdnoreturn.h>
 #include <config.h>
 #include <lib/elf.h>
 #include <lib/blib.h>
@@ -33,9 +34,9 @@
 #define MAX_REQUESTS 128
 #define MAX_MEMMAP 256
 
-pagemap_t build_pagemap(bool level5pg, struct elf_range *ranges, size_t ranges_count,
-                        uint64_t physical_base, uint64_t virtual_base,
-                        uint64_t direct_map_offset) {
+static pagemap_t build_pagemap(bool level5pg, struct elf_range *ranges, size_t ranges_count,
+                               uint64_t physical_base, uint64_t virtual_base,
+                               uint64_t direct_map_offset) {
     pagemap_t pagemap = new_pagemap(level5pg ? 5 : 4);
 
     if (ranges_count == 0) {
@@ -132,33 +133,6 @@ extern symbol ImageBase;
 
 extern symbol limine_spinup_32;
 
-static noreturn void spinup(bool level5pg, pagemap_t *pagemap,
-                            uint64_t entry_point, uint64_t stack,
-                            uint32_t local_gdt) {
-#if bios == 1
-    // If we're going 64, we might as well call this BIOS interrupt
-    // to tell the BIOS that we are entering Long Mode, since it is in
-    // the specification.
-    struct rm_regs r = {0};
-    r.eax = 0xec00;
-    r.ebx = 0x02;   // Long mode only
-    rm_int(0x15, &r, &r);
-#endif
-
-    vmm_assert_nx();
-
-    pic_mask_all();
-    io_apic_mask_all();
-
-    irq_flush_type = IRQ_PIC_APIC_FLUSH;
-
-    common_spinup(limine_spinup_32, 7,
-        level5pg, (uint32_t)(uintptr_t)pagemap->top_level,
-        (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
-        (uint32_t)stack, (uint32_t)(stack >> 32),
-        local_gdt);
-}
-
 static uint64_t physical_base, virtual_base, slide, direct_map_offset;
 static size_t requests_count;
 static void **requests;
@@ -250,7 +224,7 @@ static noreturn void fb_too_big(void) {
                 "               Please update kernel to the new requests, or file a bug report to the upstream kernel if necessary.");
 }
 
-bool limine_load(char *config, char *cmdline) {
+noreturn void limine_load(char *config, char *cmdline) {
     uint32_t eax, ebx, ecx, edx;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
@@ -271,8 +245,7 @@ bool limine_load(char *config, char *cmdline) {
     int bits = elf_bits(kernel);
 
     if (bits == -1 || bits == 32) {
-        printv("limine: Kernel in unrecognised format");
-        return false;
+        panic(true, "limine: Kernel in unrecognised format");
     }
 
     // ELF loading
@@ -288,7 +261,7 @@ bool limine_load(char *config, char *cmdline) {
                    &ranges, &ranges_count,
                    true, &physical_base, &virtual_base, &image_size,
                    &is_reloc)) {
-        return false;
+        panic(true, "limine: ELF64 load failure");
     }
 
     kaslr = kaslr && is_reloc;
@@ -328,10 +301,6 @@ bool limine_load(char *config, char *cmdline) {
 
             requests[requests_count++] = p;
         }
-    }
-
-    if (requests_count == 0) {
-        return false;
     }
 
     // Check if 64 bit CPU
@@ -988,8 +957,28 @@ FEAT_END
 
     term_runtime = true;
 
-    spinup(want_5lv, &pagemap, entry_point,
-           reported_addr(stack), (uintptr_t)local_gdt);
+#if bios == 1
+    // If we're going 64, we might as well call this BIOS interrupt
+    // to tell the BIOS that we are entering Long Mode, since it is in
+    // the specification.
+    struct rm_regs r = {0};
+    r.eax = 0xec00;
+    r.ebx = 0x02;   // Long mode only
+    rm_int(0x15, &r, &r);
+#endif
 
-    __builtin_unreachable();
+    vmm_assert_nx();
+
+    pic_mask_all();
+    io_apic_mask_all();
+
+    irq_flush_type = IRQ_PIC_APIC_FLUSH;
+
+    uint64_t reported_stack = reported_addr(stack);
+
+    common_spinup(limine_spinup_32, 7,
+        want_5lv, (uint32_t)(uintptr_t)pagemap.top_level,
+        (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
+        (uint32_t)reported_stack, (uint32_t)(reported_stack >> 32),
+        (uint32_t)(uintptr_t)local_gdt);
 }

@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <stdnoreturn.h>
 #include <protos/multiboot1.h>
 #include <protos/multiboot.h>
 #include <config.h>
@@ -43,7 +44,7 @@ static void *mb1_info_alloc(void **mb1_info_raw, size_t size) {
     return ret;
 }
 
-bool multiboot1_load(char *config, char *cmdline) {
+noreturn void multiboot1_load(char *config, char *cmdline) {
     struct file_handle *kernel_file;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
@@ -72,8 +73,7 @@ bool multiboot1_load(char *config, char *cmdline) {
     }
 
     if (header.magic != MULTIBOOT1_HEADER_MAGIC) {
-        pmm_free(kernel_file, kernel_file_size);
-        return false;
+        panic(true, "multiboot1: Invalid magic");
     }
 
     print("multiboot1: Loading kernel `%s`...\n", kernel_path);

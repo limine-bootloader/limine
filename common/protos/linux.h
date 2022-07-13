@@ -1,8 +1,8 @@
 #ifndef __PROTOS__LINUX_H__
 #define __PROTOS__LINUX_H__
 
-#include <stdbool.h>
+#include <stdnoreturn.h>
 
-bool linux_load(char *config, char *cmdline);
+noreturn void linux_load(char *config, char *cmdline);
 
 #endif

@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
+#include <stdnoreturn.h>
 #include <protos/chainload.h>
 #include <lib/part.h>
 #include <lib/config.h>
@@ -20,7 +21,7 @@
 #if bios == 1
 
 __attribute__((noinline, section(".realmode")))
-static void spinup(uint8_t drive) {
+noreturn static void spinup(uint8_t drive) {
     struct idtr real_mode_idt;
     real_mode_idt.limit = 0x3ff;
     real_mode_idt.ptr   = 0;
@@ -67,9 +68,11 @@ static void spinup(uint8_t drive) {
         : "a" (&real_mode_idt), "d" (drive)
         : "memory"
     );
+
+    __builtin_unreachable();
 }
 
-void chainload(char *config) {
+noreturn void chainload(char *config) {
     uint64_t val;
 
     int part; {
@@ -144,7 +147,7 @@ void bios_chainload_volume(struct volume *p) {
 
 #elif uefi == 1
 
-void chainload(char *config) {
+noreturn void chainload(char *config) {
     char *image_path = config_get_value(config, 0, "IMAGE_PATH");
     if (image_path == NULL)
         panic(true, "chainload: IMAGE_PATH not specified");
@@ -156,7 +159,7 @@ void chainload(char *config) {
     efi_chainload_file(config, image);
 }
 
-void efi_chainload_file(char *config, struct file_handle *image) {
+noreturn void efi_chainload_file(char *config, struct file_handle *image) {
     EFI_STATUS status;
 
     EFI_HANDLE efi_part_handle = image->efi_part_handle;

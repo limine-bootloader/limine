@@ -66,6 +66,8 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     if (kernel_path == NULL)
         panic(true, "multiboot2: KERNEL_PATH not specified");
 
+    print("multiboot2: Loading kernel `%s`...\n", kernel_path);
+
     if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic(true, "multiboot2: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
@@ -88,8 +90,6 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     if (header->magic != MULTIBOOT2_HEADER_MAGIC) {
         panic(true, "multiboot2: Invalid magic");
     }
-
-    print("multiboot2: Loading kernel `%s`...\n", kernel_path);
 
     if (header->magic + header->architecture + header->checksum + header->header_length) {
         panic(true, "multiboot2: Header checksum is invalid");

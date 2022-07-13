@@ -355,6 +355,8 @@ noreturn void linux_load(char *config, char *cmdline) {
     if (kernel_path == NULL)
         panic(true, "linux: KERNEL_PATH not specified");
 
+    print("linux: Loading kernel `%s`...\n", kernel_path);
+
     if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic(true, "linux: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
@@ -419,7 +421,6 @@ noreturn void linux_load(char *config, char *cmdline) {
 
     // load kernel
     uintptr_t kernel_load_addr = 0x100000;
-    print("linux: Loading kernel `%s`...\n", kernel_path);
     for (;;) {
         if (memmap_alloc_range(kernel_load_addr,
                 ALIGN_UP(kernel_file->size - real_mode_code_size, 4096),

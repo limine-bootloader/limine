@@ -231,6 +231,8 @@ noreturn void limine_load(char *config, char *cmdline) {
     if (kernel_path == NULL)
         panic(true, "limine: KERNEL_PATH not specified");
 
+    print("limine: Loading kernel `%s`...\n", kernel_path);
+
     struct file_handle *kernel_file;
     if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic(true, "limine: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
@@ -307,8 +309,6 @@ noreturn void limine_load(char *config, char *cmdline) {
     if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
         panic(true, "limine: This CPU does not support 64-bit mode.");
     }
-
-    print("limine: Loading kernel `%s`...\n", kernel_path);
 
     printv("limine: Physical base:   %X\n", physical_base);
     printv("limine: Virtual base:    %X\n", virtual_base);

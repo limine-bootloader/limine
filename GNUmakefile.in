@@ -62,18 +62,32 @@ override LIMINE_VERSION := @PACKAGE_VERSION@
 override STAGE1_FILES := $(shell find '$(call SHESCAPE,$(SRCDIR))/stage1' -type f -name '*.asm')
 
 .PHONY: all
-all: @BUILD_UEFI_X86_64@ @BUILD_UEFI_IA32@ @BUILD_BIOS@
+all: limine-version @BUILD_UEFI_X86_64@ @BUILD_UEFI_IA32@ @BUILD_BIOS@
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'
 
-$(call MKESCAPE,$(BINDIR))/limine-deploy: $(call MKESCAPE,$(SRCDIR))/limine-deploy/limine-deploy.c $(call MKESCAPE,$(BINDIR))/limine-hdd.bin
+$(call MKESCAPE,$(BINDIR))/limine-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-hdd.bin
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
-	cd '$(call SHESCAPE,$(BINDIR))' && '$(call SHESCAPE,$(SRCDIR))/limine-deploy/hgen.sh' >limine-hdd.h
-	cp '$(call SHESCAPE,$(SRCDIR))/limine-deploy/Makefile' '$(call SHESCAPE,$(SRCDIR))/limine-deploy/limine-deploy.c' '$(call SHESCAPE,$(SRCDIR))/limine-deploy/.gitignore' '$(call SHESCAPE,$(BINDIR))/'
-	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))'
+	cd '$(call SHESCAPE,$(BINDIR))' && '$(call SHESCAPE,$(SRCDIR))/host/hgen.sh' >limine-hdd.h
+
+$(call MKESCAPE,$(BINDIR))/limine-deploy: $(call MKESCAPE,$(BINDIR))/Makefile $(call MKESCAPE,$(SRCDIR))/host/limine-deploy.c $(call MKESCAPE,$(BINDIR))/limine-hdd.h
+	cp '$(call SHESCAPE,$(SRCDIR))/host/limine-deploy.c' '$(call SHESCAPE,$(BINDIR))/'
+	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))' limine-deploy
+
+$(call MKESCAPE,$(BINDIR))/limine-version: $(call MKESCAPE,$(BINDIR))/Makefile $(call MKESCAPE,$(SRCDIR))/host/limine-version.c
+	$(SED) 's/@LIMINE_VERSION@/@PACKAGE_VERSION@/g' <'$(call SHESCAPE,$(SRCDIR))/host/limine-version.c' >'$(call SHESCAPE,$(BINDIR))/limine-version.c'
+	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))' limine-version
+
+$(call MKESCAPE,$(BINDIR))/Makefile: $(call MKESCAPE,$(SRCDIR))/host/Makefile $(call MKESCAPE,$(SRCDIR))/host/.gitignore
+	mkdir -p '$(call SHESCAPE,$(BINDIR))'
+	cp '$(call SHESCAPE,$(SRCDIR))/host/Makefile' '$(call SHESCAPE,$(SRCDIR))/host/.gitignore' '$(call SHESCAPE,$(BINDIR))/'
 
 .PHONY: limine-deploy
 limine-deploy:
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-deploy'
+
+.PHONY: limine-version
+limine-version:
+	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-version'
 
 .PHONY: clean
 clean: limine-bios-clean limine-uefi-ia32-clean limine-uefi-x86-64-clean
@@ -95,15 +109,18 @@ install-data: all
 .PHONY: install-strip
 install-strip: install-data
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))'
+	$(INSTALL) -s '$(call SHESCAPE,$(BINDIR))/limine-version' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
 	$(INSTALL) -s '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/' || true
 
 .PHONY: install
 install: install-data
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))'
+	$(INSTALL) '$(call SHESCAPE,$(BINDIR))/limine-version' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
 	$(INSTALL) '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/' || true
 
 .PHONY: uninstall
 uninstall:
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/limine-version'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/limine-deploy'
 	rm -rf '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))/limine.h'

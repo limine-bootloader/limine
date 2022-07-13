@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <stdnoreturn.h>
 #include <protos/multiboot2.h>
 #include <protos/multiboot.h>
 #include <config.h>
@@ -58,7 +59,7 @@ static size_t get_multiboot2_info_size(
 
 #define append_tag(P, TAG) ({ (P) += ALIGN_UP((TAG)->size, MULTIBOOT_TAG_ALIGN); })
 
-bool multiboot2_load(char *config, char* cmdline) {
+noreturn void multiboot2_load(char *config, char* cmdline) {
     struct file_handle *kernel_file;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
@@ -85,8 +86,7 @@ bool multiboot2_load(char *config, char* cmdline) {
     }
 
     if (header->magic != MULTIBOOT2_HEADER_MAGIC) {
-        pmm_free(kernel_file, kernel_file_size);
-        return false;
+        panic(true, "multiboot2: Invalid magic");
     }
 
     print("multiboot2: Loading kernel `%s`...\n", kernel_path);

@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdnoreturn.h>
 #include <config.h>
 #include <protos/stivale.h>
 #include <protos/stivale2.h>
@@ -121,7 +122,7 @@ static void term_write_shim(uint64_t context, uint64_t buf, uint64_t count) {
     term_write(buf, count);
 }
 
-bool limine_load(char *config, char *cmdline) {
+noreturn void limine_load(char *config, char *cmdline) {
     uint32_t eax, ebx, ecx, edx;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
@@ -142,8 +143,7 @@ bool limine_load(char *config, char *cmdline) {
     int bits = elf_bits(kernel);
 
     if (bits == -1 || bits == 32) {
-        printv("limine: Kernel in unrecognised format");
-        return false;
+        panic(true, "limine: Kernel in unrecognised format");
     }
 
     // ELF loading
@@ -159,7 +159,7 @@ bool limine_load(char *config, char *cmdline) {
                    &ranges, &ranges_count,
                    true, &physical_base, &virtual_base, &image_size,
                    &is_reloc)) {
-        return false;
+        panic(true, "limine: ELF64 load failure");
     }
 
     kaslr = kaslr && is_reloc;
@@ -199,10 +199,6 @@ bool limine_load(char *config, char *cmdline) {
 
             requests[requests_count++] = p;
         }
-    }
-
-    if (requests_count == 0) {
-        return false;
     }
 
     // Check if 64 bit CPU
@@ -741,6 +737,4 @@ FEAT_END
 
     stivale_spinup(64, want_5lv, &pagemap, entry_point, 0,
                    reported_addr(stack), true, true, (uintptr_t)local_gdt);
-
-    __builtin_unreachable();
 }

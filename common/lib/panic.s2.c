@@ -69,7 +69,6 @@ nested:
         getchar();
 
         menu(false);
-        __builtin_unreachable();
 /*
         fb_clear(&fbinfo);
 

@@ -939,6 +939,4 @@ noreturn void boot(char *config) {
     }
 
     panic(true, "Incorrect protocol specified for kernel.");
-
-    __builtin_unreachable();
 }

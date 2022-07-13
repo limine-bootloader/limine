@@ -348,7 +348,7 @@ struct boot_params {
 
 // End of Linux code
 
-bool linux_load(char *config, char *cmdline) {
+noreturn void linux_load(char *config, char *cmdline) {
     struct file_handle *kernel_file;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
@@ -363,8 +363,7 @@ bool linux_load(char *config, char *cmdline) {
 
     // validate signature
     if (signature != 0x53726448) {
-        fclose(kernel_file);
-        return false;
+        panic(true, "linux: Invalid kernel signature");
     }
 
     size_t setup_code_size = 0;
@@ -626,5 +625,6 @@ set_textmode:;
 
     irq_flush_type = IRQ_PIC_ONLY_FLUSH;
 
-    common_spinup(linux_spinup, 2, (void *)kernel_load_addr, boot_params);
+    common_spinup(linux_spinup, 2, (uint32_t)kernel_load_addr,
+                                   (uint32_t)(uintptr_t)boot_params);
 }

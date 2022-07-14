@@ -257,6 +257,108 @@ static bool device_cache_block(uint64_t block) {
     return true;
 }
 
+struct undeploy_data {
+    void *data;
+    uint64_t loc;
+    uint64_t count;
+};
+
+#define UNDEPLOY_DATA_MAX 256
+
+static bool undeploying = false;
+static struct undeploy_data undeploy_data[UNDEPLOY_DATA_MAX];
+static struct undeploy_data undeploy_data_rev[UNDEPLOY_DATA_MAX];
+static uint64_t undeploy_data_i = 0;
+static const char *undeploy_file = NULL;
+
+static void reverse_undeploy_data(void) {
+    for (size_t i = 0, j = undeploy_data_i - 1; i < undeploy_data_i; i++, j--) {
+        undeploy_data_rev[j] = undeploy_data[i];
+    }
+
+    memcpy(undeploy_data, undeploy_data_rev, undeploy_data_i * sizeof(struct undeploy_data));
+}
+
+static void free_undeploy_data(void) {
+    for (size_t i = 0; i < undeploy_data_i; i++) {
+        free(undeploy_data[i].data);
+    }
+}
+
+static bool store_undeploy_data(const char *filename) {
+    fprintf(stderr, "Storing undeploy data to file: `%s`...\n", filename);
+
+    FILE *udfile = fopen(filename, "wb");
+    if (udfile == NULL) {
+        goto error;
+    }
+
+    if (fwrite(&undeploy_data_i, sizeof(uint64_t), 1, udfile) != 1) {
+        goto error;
+    }
+
+    for (size_t i = 0; i < undeploy_data_i; i++) {
+        if (fwrite(&undeploy_data[i].loc, sizeof(uint64_t), 1, udfile) != 1) {
+            goto error;
+        }
+        if (fwrite(&undeploy_data[i].count, sizeof(uint64_t), 1, udfile) != 1) {
+            goto error;
+        }
+        if (fwrite(undeploy_data[i].data, undeploy_data[i].count, 1, udfile) != 1) {
+            goto error;
+        }
+    }
+
+    fclose(udfile);
+    return true;
+
+error:
+    perror("ERROR");
+    if (udfile != NULL) {
+        fclose(udfile);
+    }
+    return false;
+}
+
+static bool load_undeploy_data(const char *filename) {
+    fprintf(stderr, "Loading undeploy data from file: `%s`...\n", filename);
+
+    FILE *udfile = fopen(filename, "rb");
+    if (udfile == NULL) {
+        goto error;
+    }
+
+    if (fread(&undeploy_data_i, sizeof(uint64_t), 1, udfile) != 1) {
+        goto error;
+    }
+
+    for (size_t i = 0; i < undeploy_data_i; i++) {
+        if (fread(&undeploy_data[i].loc, sizeof(uint64_t), 1, udfile) != 1) {
+            goto error;
+        }
+        if (fread(&undeploy_data[i].count, sizeof(uint64_t), 1, udfile) != 1) {
+            goto error;
+        }
+        undeploy_data[i].data = malloc(undeploy_data[i].count);
+        if (undeploy_data[i].data == NULL) {
+            goto error;
+        }
+        if (fread(undeploy_data[i].data, undeploy_data[i].count, 1, udfile) != 1) {
+            goto error;
+        }
+    }
+
+    fclose(udfile);
+    return true;
+
+error:
+    perror("ERROR");
+    if (udfile != NULL) {
+        fclose(udfile);
+    }
+    return false;
+}
+
 static bool _device_read(void *_buffer, uint64_t loc, size_t count) {
     uint8_t *buffer = _buffer;
     uint64_t progress = 0;
@@ -281,6 +383,32 @@ static bool _device_read(void *_buffer, uint64_t loc, size_t count) {
 }
 
 static bool _device_write(const void *_buffer, uint64_t loc, size_t count) {
+    if (undeploying) {
+        goto skip_save;
+    }
+
+    if (undeploy_data_i >= UNDEPLOY_DATA_MAX) {
+        fprintf(stderr, "Internal error: Too many undeploy data entries!\n");
+        return false;
+    }
+
+    struct undeploy_data *ud = &undeploy_data[undeploy_data_i];
+
+    ud->data = malloc(count);
+    if (ud->data == NULL) {
+        fprintf(stderr, "ERROR: Memory allocation failure.\n");
+        return false;
+    }
+
+    if (!_device_read(ud->data, loc, count)) {
+        fprintf(stderr, "ERROR: Device read failure.\n");
+        return false;
+    }
+
+    ud->loc = loc;
+    ud->count = count;
+
+skip_save:;
     const uint8_t *buffer = _buffer;
     uint64_t progress = 0;
     while (progress < count) {
@@ -301,7 +429,41 @@ static bool _device_write(const void *_buffer, uint64_t loc, size_t count) {
         progress += chunk;
     }
 
+    if (!undeploying) {
+        undeploy_data_i++;
+    }
     return true;
+}
+
+static void undeploy(void) {
+    undeploying = true;
+
+    cache_state = CACHE_CLEAN;
+    cached_block = (uint64_t)-1;
+
+    for (size_t i = 0; i < undeploy_data_i; i++) {
+        struct undeploy_data *ud = &undeploy_data[i];
+        bool retry = false;
+        while (!_device_write(ud->data, ud->loc, ud->count)) {
+            if (retry) {
+                fprintf(stderr, "ERROR: Undeploy data index %zu failed to write. Undeploy may be incomplete!\n", i);
+                break;
+            }
+            fprintf(stderr, "Warning: Undeploy data index %zu failed to write, retrying...\n", i);
+            if (!device_flush_cache()) {
+                fprintf(stderr, "ERROR: Device cache flush failure. Undeploy may be incomplete!\n");
+            }
+            cache_state = CACHE_CLEAN;
+            cached_block = (uint64_t)-1;
+            retry = true;
+        }
+    }
+
+    if (!device_flush_cache()) {
+        fprintf(stderr, "ERROR: Device cache flush failure. Undeploy may be incomplete!\n");
+    }
+
+    fprintf(stderr, "Undeploy data restored successfully. Limine undeployed!\n");
 }
 
 #define device_read(BUFFER, LOC, COUNT)        \
@@ -318,6 +480,18 @@ static bool _device_write(const void *_buffer, uint64_t loc, size_t count) {
 
 static void usage(const char *name) {
     printf("Usage: %s <device> [GPT partition index]\n", name);
+    printf("\n");
+    printf("    --force-mbr     Force MBR detection to work even if the\n");
+    printf("                    safety checks fail (DANGEROUS!)\n");
+    printf("\n");
+    printf("    --undeploy      Reverse the entire deployment procedure\n");
+    printf("\n");
+    printf("    --undeploy-data-file=<filename>\n");
+    printf("                    Set the input (for --undeploy) or output file\n");
+    printf("                    name of the file which contains undeploy data\n");
+    printf("\n");
+    printf("    --help | -h     Display this help message\n");
+    printf("\n");
 #ifdef IS_WINDOWS
     system("pause");
 #endif
@@ -326,6 +500,7 @@ static void usage(const char *name) {
 int main(int argc, char *argv[]) {
     int      ok = EXIT_FAILURE;
     int      force_mbr = 0;
+    bool undeploy_mode = false;
     const uint8_t *bootloader_img = binary_limine_hdd_bin_data;
     size_t   bootloader_file_size = sizeof(binary_limine_hdd_bin_data);
     uint8_t  orig_mbr[70], timestamp[6];
@@ -337,21 +512,38 @@ int main(int argc, char *argv[]) {
 
     if (argc < 2) {
         usage(argv[0]);
-        goto cleanup;
+        return EXIT_FAILURE;
     }
 
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--force-mbr") == 0) { // TODO: add to usage
+        if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+            usage(argv[0]);
+            return EXIT_SUCCESS;
+        } else if (strcmp(argv[i], "--force-mbr") == 0) {
             if (force_mbr) {
-                puts("Warning: --force-mbr already set");
+                fprintf(stderr, "Warning: --force-mbr already set.\n");
             }
             force_mbr = 1;
+        } else if (strcmp(argv[i], "--undeploy") == 0) {
+            if (undeploy_mode) {
+                fprintf(stderr, "Warning: --undeploy already set.\n");
+            }
+            undeploy_mode = true;
+        } else if (memcmp(argv[i], "--undeploy-data-file=", 21) == 0) {
+            if (undeploy_file != NULL) {
+                fprintf(stderr, "Warning: --undeploy-data-file already set. Overriding...\n");
+            }
+            undeploy_file = argv[i] + 21;
+            if (strlen(undeploy_file) == 0) {
+                fprintf(stderr, "ERROR: Undeploy data file has a zero-length name!\n");
+                return EXIT_FAILURE;
+            }
         } else {
             if (device != NULL) { // [GPT partition index]
                 part_ndx = argv[i]; // TODO: Make this non-positional?
             } else if ((device = fopen(argv[i], "r+b")) == NULL) { // <device>
                 perror("ERROR");
-                goto cleanup;
+                return EXIT_FAILURE;
             }
         }
     }
@@ -359,11 +551,27 @@ int main(int argc, char *argv[]) {
     if (device == NULL) {
         fprintf(stderr, "ERROR: No device specified\n");
         usage(argv[0]);
-        goto cleanup;
+        return EXIT_FAILURE;
     }
 
     if (!device_init())
         goto cleanup;
+
+    if (undeploy_mode) {
+        if (undeploy_file == NULL) {
+            fprintf(stderr, "ERROR: Undeploy mode set but no --undeploy-data-file=... passed.\n");
+            goto undeploy_mode_cleanup;
+        }
+
+        if (!load_undeploy_data(undeploy_file)) {
+            goto undeploy_mode_cleanup;
+        }
+
+        undeploy();
+
+        ok = EXIT_SUCCESS;
+        goto undeploy_mode_cleanup;
+    }
 
     // Probe for GPT and logical block size
     int gpt = 0;
@@ -379,8 +587,8 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Deploying to GPT. Logical block size of %" PRIu64 " bytes.\n",
                         lb_guesses[i]);
             } else {
-                memset(&gpt_header, 0, sizeof(struct gpt_table_header));
-                device_write(&gpt_header, lb_guesses[i], sizeof(struct gpt_table_header));
+                fprintf(stderr, "Device has a valid GPT, refusing to force MBR.\n");
+                goto cleanup;
             }
             break;
         }
@@ -584,7 +792,7 @@ int main(int argc, char *argv[]) {
             struct gpt_entry gpt_entry;
             device_read(&gpt_entry,
                 (ENDSWAP(gpt_header.partition_entry_lba) * lb_size)
-                + (partition_num * sizeof(struct gpt_entry)),
+                + (partition_num * ENDSWAP(gpt_header.size_of_partition_entry)),
                 sizeof(struct gpt_entry));
 
             if (gpt_entry.unique_partition_guid[0] == 0 &&
@@ -607,7 +815,7 @@ int main(int argc, char *argv[]) {
                 struct gpt_entry gpt_entry;
                 device_read(&gpt_entry,
                     (ENDSWAP(gpt_header.partition_entry_lba) * lb_size)
-                      + (i * sizeof(struct gpt_entry)),
+                      + (i * ENDSWAP(gpt_header.size_of_partition_entry)),
                     sizeof(struct gpt_entry));
 
                 if (gpt_entry.unique_partition_guid[0] != 0 ||
@@ -737,6 +945,15 @@ int main(int argc, char *argv[]) {
     ok = EXIT_SUCCESS;
 
 cleanup:
+    reverse_undeploy_data();
+    if (ok != EXIT_SUCCESS) {
+        // If we failed, attempt to reverse deploy process
+        undeploy();
+    } else if (undeploy_file != NULL) {
+        store_undeploy_data(undeploy_file);
+    }
+undeploy_mode_cleanup:
+    free_undeploy_data();
     if (cache)
         free(cache);
     if (device != NULL)

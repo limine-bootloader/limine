@@ -480,6 +480,18 @@ static void undeploy(void) {
 
 static void usage(const char *name) {
     printf("Usage: %s <device> [GPT partition index]\n", name);
+    printf("\n");
+    printf("    --force-mbr     Force MBR detection to work even if the\n");
+    printf("                    safety checks fail (DANGEROUS!)\n");
+    printf("\n");
+    printf("    --undeploy      Reverse the entire deployment procedure\n");
+    printf("\n");
+    printf("    --undeploy-data-file=<filename>\n");
+    printf("                    Set the input (for --undeploy) or output file\n");
+    printf("                    name of the file which contains undeploy data\n");
+    printf("\n");
+    printf("    --help | -h     Display this help message\n");
+    printf("\n");
 #ifdef IS_WINDOWS
     system("pause");
 #endif
@@ -500,11 +512,14 @@ int main(int argc, char *argv[]) {
 
     if (argc < 2) {
         usage(argv[0]);
-        goto cleanup;
+        return EXIT_FAILURE;
     }
 
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--force-mbr") == 0) { // TODO: add to usage
+        if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+            usage(argv[0]);
+            return EXIT_SUCCESS;
+        } else if (strcmp(argv[i], "--force-mbr") == 0) {
             if (force_mbr) {
                 fprintf(stderr, "Warning: --force-mbr already set.\n");
             }
@@ -521,15 +536,14 @@ int main(int argc, char *argv[]) {
             undeploy_file = argv[i] + 21;
             if (strlen(undeploy_file) == 0) {
                 fprintf(stderr, "ERROR: Undeploy data file has a zero-length name!\n");
-                undeploy_file = NULL;
-                goto cleanup;
+                return EXIT_FAILURE;
             }
         } else {
             if (device != NULL) { // [GPT partition index]
                 part_ndx = argv[i]; // TODO: Make this non-positional?
             } else if ((device = fopen(argv[i], "r+b")) == NULL) { // <device>
                 perror("ERROR");
-                goto cleanup;
+                return EXIT_FAILURE;
             }
         }
     }
@@ -537,7 +551,7 @@ int main(int argc, char *argv[]) {
     if (device == NULL) {
         fprintf(stderr, "ERROR: No device specified\n");
         usage(argv[0]);
-        goto cleanup;
+        return EXIT_FAILURE;
     }
 
     if (!device_init())

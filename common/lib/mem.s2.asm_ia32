@@ -60,7 +60,7 @@ memcmp:
     mov esi, dword [esp+16]
     mov ecx, dword [esp+20]
     repe cmpsb
-    jecxz .equal
+    je .equal
     mov al, byte [edi-1]
     sub al, byte [esi-1]
     movsx eax, al

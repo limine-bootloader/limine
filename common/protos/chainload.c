@@ -117,6 +117,7 @@ noreturn void chainload(char *config) {
             volume_read(p, &mbr_id_1, 0x1b8, sizeof(uint32_t));
 
             if (mbr_id_1 == mbr_id) {
+                p = volume_get_by_coord(false, p->index, part);
                 goto load;
             }
         }

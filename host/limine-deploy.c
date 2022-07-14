@@ -792,7 +792,7 @@ int main(int argc, char *argv[]) {
             struct gpt_entry gpt_entry;
             device_read(&gpt_entry,
                 (ENDSWAP(gpt_header.partition_entry_lba) * lb_size)
-                + (partition_num * sizeof(struct gpt_entry)),
+                + (partition_num * ENDSWAP(gpt_header.size_of_partition_entry)),
                 sizeof(struct gpt_entry));
 
             if (gpt_entry.unique_partition_guid[0] == 0 &&
@@ -815,7 +815,7 @@ int main(int argc, char *argv[]) {
                 struct gpt_entry gpt_entry;
                 device_read(&gpt_entry,
                     (ENDSWAP(gpt_header.partition_entry_lba) * lb_size)
-                      + (i * sizeof(struct gpt_entry)),
+                      + (i * ENDSWAP(gpt_header.size_of_partition_entry)),
                     sizeof(struct gpt_entry));
 
                 if (gpt_entry.unique_partition_guid[0] != 0 ||

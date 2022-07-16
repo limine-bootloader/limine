@@ -615,29 +615,6 @@ int main(int argc, char *argv[]) {
 
         uint8_t hint8 = 0;
         uint16_t hint16 = 0;
-        device_read(&hint16, 218, sizeof(uint16_t));
-        hint16 = ENDSWAP(hint16);
-        if (hint16 != 0) {
-            if (!force_mbr) {
-                mbr = 0;
-            } else {
-                hint16 = 0;
-                hint16 = ENDSWAP(hint16);
-                device_write(&hint16, 218, sizeof(uint16_t));
-            }
-        }
-
-        device_read(&hint16, 444, sizeof(uint16_t));
-        hint16 = ENDSWAP(hint16);
-        if (hint16 != 0 && hint16 != 0x5a5a) {
-            if (!force_mbr) {
-                mbr = 0;
-            } else {
-                hint16 = 0;
-                hint16 = ENDSWAP(hint16);
-                device_write(&hint16, 444, sizeof(uint16_t));
-            }
-        }
 
         device_read(&hint16, 510, sizeof(uint16_t));
         hint16 = ENDSWAP(hint16);

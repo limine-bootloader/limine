@@ -38,14 +38,11 @@ SECTIONS
         stage3_common = .;
         build_id_s3 = .;
         full_map = .;
-        getchar_internal = .;
         getchar = .;
         menu = .;
         term_write = .;
-        term_textmode = .;
         term_vbe = .;
         stage3_addr = .;
-        data_begin = .;
 #else
         *(.stage2_map)
 #endif

@@ -87,7 +87,6 @@ SECTIONS
     } :data_s3
 
     /DISCARD/ : {
-        *.a:*(*)
-        *.o(*)
+        *(.note .note.*)
     }
 }

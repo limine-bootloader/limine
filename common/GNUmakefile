@@ -280,14 +280,7 @@ $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nom
 $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.elf
 	$(CROSS_OBJCOPY) -O binary '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.o: limine-efi
-	true
-
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_x86_64.o: limine-efi
-	true
-
-.PHONY: limine-efi
-limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_x86_64.o: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	unset CPPFLAGS; \
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
 		CC="$(CROSS_CC) -m64 -march=x86-64 -mtune=generic" \
@@ -328,14 +321,7 @@ $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nom
 $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.elf
 	$(CROSS_OBJCOPY) -O binary '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.o: limine-efi
-	true
-
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_ia32.o: limine-efi
-	true
-
-.PHONY: limine-efi
-limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_ia32.o: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	unset CPPFLAGS; \
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
 		CC="$(CROSS_CC) -m32 -march=i686 -mtune=generic" \

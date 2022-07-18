@@ -2,6 +2,9 @@
 #define __LIB__PRINT_H__
 
 #include <stdarg.h>
+#include <stdbool.h>
+
+extern bool verbose;
 
 void print(const char *fmt, ...);
 void vprint(const char *fmt, va_list args);

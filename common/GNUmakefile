@@ -73,6 +73,7 @@ endif
 ifeq ($(TARGET), uefi-x86-64)
 override INTERNAL_CFLAGS32 := \
 		$(INTERNAL_CFLAGS) \
+		-g0 \
 		-Dbios=0 \
 		-Duefi=1 \
 		-m32 \

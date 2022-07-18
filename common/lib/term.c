@@ -13,8 +13,6 @@
 extern void reset_term(void);
 extern void set_cursor_pos_helper(size_t x, size_t y);
 
-bool early_term = false;
-
 void term_deinit(void) {
     switch (term_backend) {
         case VBE:
@@ -81,39 +79,6 @@ void term_vbe(size_t width, size_t height) {
 
 // Tries to implement this standard for terminfo
 // https://man7.org/linux/man-pages/man4/console_codes.4.html
-
-no_unwind int current_video_mode = -1;
-int term_backend = NOT_READY;
-size_t term_rows, term_cols;
-bool term_runtime = false;
-
-void (*raw_putchar)(uint8_t c);
-void (*clear)(bool move);
-void (*enable_cursor)(void);
-bool (*disable_cursor)(void);
-void (*set_cursor_pos)(size_t x, size_t y);
-void (*get_cursor_pos)(size_t *x, size_t *y);
-void (*set_text_fg)(size_t fg);
-void (*set_text_bg)(size_t bg);
-void (*set_text_fg_bright)(size_t fg);
-void (*set_text_bg_bright)(size_t bg);
-void (*set_text_fg_default)(void);
-void (*set_text_bg_default)(void);
-bool (*scroll_disable)(void);
-void (*scroll_enable)(void);
-void (*term_move_character)(size_t new_x, size_t new_y, size_t old_x, size_t old_y);
-void (*term_scroll)(void);
-void (*term_revscroll)(void);
-void (*term_swap_palette)(void);
-void (*term_save_state)(void);
-void (*term_restore_state)(void);
-
-void (*term_double_buffer_flush)(void);
-
-uint64_t (*term_context_size)(void);
-void (*term_context_save)(uint64_t ptr);
-void (*term_context_restore)(uint64_t ptr);
-void (*term_full_refresh)(void);
 
 uint64_t term_arg = 0;
 void (*term_callback)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) = NULL;

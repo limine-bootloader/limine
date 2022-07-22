@@ -606,7 +606,8 @@ jump to the written address, on a 64KiB (or Stack Size Request size) stack. A po
 `struct limine_smp_info` structure of the CPU is passed in `RDI`. Other than
 that, the CPU state will be the same as described for the bootstrap
 processor. This field is unused for the structure describing the bootstrap
-processor.
+processor. For all CPUs, this field is guaranteed to be NULL when control is first passed
+to the bootstrap processor.
 * `extra_argument` - A free for use field.
 
 ### Memory Map Feature

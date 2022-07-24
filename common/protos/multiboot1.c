@@ -194,9 +194,11 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
     void *mb1_info_raw = ext_mem_alloc(mb1_info_size);
     uint64_t mb1_info_final_loc = 0x10000;
 
-    elsewhere_append(true /* flexible target */,
+    if (!elsewhere_append(true /* flexible target */,
             ranges, &ranges_count,
-            mb1_info_raw, &mb1_info_final_loc, mb1_info_size);
+            mb1_info_raw, &mb1_info_final_loc, mb1_info_size)) {
+        panic(true, "multiboot1: Cannot allocate mb1 info");
+    }
 
     size_t mb1_info_slide = (size_t)mb1_info_raw - mb1_info_final_loc;
 
@@ -224,9 +226,11 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
 
             uint64_t section = (uint64_t)-1; /* no target preference, use top */
 
-            elsewhere_append(true /* flexible target */,
+            if (!elsewhere_append(true /* flexible target */,
                     ranges, &ranges_count,
-                    kernel + shdr->sh_offset, &section, shdr->sh_size);
+                    kernel + shdr->sh_offset, &section, shdr->sh_size)) {
+                panic(true, "multiboot1: Cannot allocate elf sections");
+            }
 
             shdr->sh_addr = section;
         }
@@ -265,9 +269,11 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
             void *module_addr = freadall(f, MEMMAP_BOOTLOADER_RECLAIMABLE);
             uint64_t module_target = (uint64_t)-1; /* no target preference, use top */
 
-            elsewhere_append(true /* flexible target */,
+            if (!elsewhere_append(true /* flexible target */,
                     ranges, &ranges_count,
-                    module_addr, &module_target, f->size);
+                    module_addr, &module_target, f->size)) {
+                panic(true, "multiboot1: Cannot allocate module");
+            }
 
             m->begin   = module_target;
             m->end     = m->begin + f->size;

@@ -327,9 +327,11 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     uint8_t *mb2_info = ext_mem_alloc(mb2_info_size);
     uint64_t mb2_info_final_loc = 0x10000;
 
-    elsewhere_append(true /* flexible target */,
+    if (!elsewhere_append(true /* flexible target */,
             ranges, &ranges_count,
-            mb2_info, &mb2_info_final_loc, mb2_info_size);
+            mb2_info, &mb2_info_final_loc, mb2_info_size)) {
+        panic(true, "multiboot2: Cannot allocate mb2 info");
+    }
 
     struct multiboot2_start_tag *mbi_start = (struct multiboot2_start_tag *)mb2_info;
     info_idx += sizeof(struct multiboot2_start_tag);
@@ -363,9 +365,11 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
 
             uint64_t section = (uint64_t)-1; /* no target preference, use top */
 
-            elsewhere_append(true /* flexible target */,
+            if (!elsewhere_append(true /* flexible target */,
                     ranges, &ranges_count,
-                    kernel + shdr->sh_offset, &section, shdr->sh_size);
+                    kernel + shdr->sh_offset, &section, shdr->sh_size)) {
+                panic(true, "multiboot2: Cannot allocate elf sections");
+            }
 
             shdr->sh_addr = section;
         }
@@ -402,7 +406,6 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
         if ((f = uri_open(module_path)) == NULL)
             panic(true, "multiboot2: Failed to open module with path `%s`. Is the path correct?", module_path);
 
-
         // Module commandline can be null, so we guard against that and make the
         // string "".
         char *module_cmdline = conf_tuple.value2;
@@ -411,9 +414,11 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
         void *module_addr = freadall(f, MEMMAP_BOOTLOADER_RECLAIMABLE);
         uint64_t module_target = (uint64_t)-1;
 
-        elsewhere_append(true /* flexible target */,
+        if (!elsewhere_append(true /* flexible target */,
                 ranges, &ranges_count,
-                module_addr, &module_target, f->size);
+                module_addr, &module_target, f->size)) {
+            panic(true, "multiboot2: Cannot allocate module");
+        }
 
         struct multiboot_tag_module *module_tag = (struct multiboot_tag_module *)(mb2_info + info_idx);
 

@@ -299,7 +299,6 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     // Realloc elsewhere ranges to include mb2 info, modules, and elf sections
     struct elsewhere_range *new_ranges = ext_mem_alloc(sizeof(struct elsewhere_range) *
         (ranges_count
-       + 1 /* relocation stub range */
        + 1 /* mb2 info range */
        + n_modules
        + (section_hdr_info ? section_hdr_info->num : 0)));
@@ -307,15 +306,6 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     memcpy(new_ranges, ranges, sizeof(struct elsewhere_range) * ranges_count);
     pmm_free(ranges, sizeof(struct elsewhere_range) * ranges_count);
     ranges = new_ranges;
-
-    // Load relocation stub where it won't get overwritten (dummy elsewhere range)
-    size_t reloc_stub_size = (size_t)multiboot_reloc_stub_end - (size_t)multiboot_reloc_stub;
-    void *reloc_stub = ext_mem_alloc(reloc_stub_size);
-    memcpy(reloc_stub, multiboot_reloc_stub, reloc_stub_size);
-    ranges[ranges_count].elsewhere = (uintptr_t)reloc_stub;
-    ranges[ranges_count].target = (uintptr_t)reloc_stub;
-    ranges[ranges_count].length = reloc_stub_size;
-    ranges_count++;
 
     // GRUB allocates boot info at 0x10000, *except* if the kernel happens
     // to overlap this region, then it gets moved to right after the
@@ -679,6 +669,11 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
         append_tag(info_idx, tag);
     }
 #endif
+
+    // Load relocation stub where it won't get overwritten (hopefully)
+    size_t reloc_stub_size = (size_t)multiboot_reloc_stub_end - (size_t)multiboot_reloc_stub;
+    void *reloc_stub = ext_mem_alloc(reloc_stub_size);
+    memcpy(reloc_stub, multiboot_reloc_stub, reloc_stub_size);
 
 #if uefi == 1
     efi_exit_boot_services();

@@ -32,7 +32,13 @@ bool elsewhere_append(
         *target = ALIGN_UP(top, 4096);
     }
 
+    uint64_t max_retries = 0x10000;
+
 retry:
+    if (max_retries-- == 0) {
+        return false;
+    }
+
     for (size_t i = 0; i < *ranges_count; i++) {
         uint64_t t_top = *target + t_length;
 

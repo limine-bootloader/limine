@@ -244,7 +244,9 @@ del_mm1:
     *_count = count;
 }
 
+#if uefi == 1
 static void pmm_reclaim_uefi_mem(struct e820_entry_t *m, size_t *_count);
+#endif
 
 struct e820_entry_t *get_memmap(size_t *entries) {
 #if uefi == 1
@@ -517,6 +519,9 @@ static void pmm_reclaim_uefi_mem(struct e820_entry_t *m, size_t *_count) {
     }
 
     struct e820_entry_t *recl = ext_mem_alloc(recl_i * sizeof(struct e820_entry_t));
+    if (m == memmap) {
+        count = memmap_entries;
+    }
 
     {
         size_t recl_j = 0;
@@ -584,8 +589,10 @@ another_recl:;
 
         count = memmap_entries;
 
-        memmap = memmap_save;
-        memmap_entries = memmap_entries_save;
+        if (memmap_save != memmap) {
+            memmap = memmap_save;
+            memmap_entries = memmap_entries_save;
+        }
     }
 
     if (--recl_i > 0) {

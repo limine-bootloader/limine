@@ -474,42 +474,6 @@ fail:
 static void pmm_reclaim_uefi_mem(struct e820_entry_t *m, size_t *_count) {
     size_t count = *_count;
 
-    // First, ensure the boot services are still boot services, or free, in
-    // the EFI memmap
-    for (size_t i = 0; i < count; i++) {
-        if (m[i].type != MEMMAP_EFI_BOOTSERVICES)
-            continue;
-
-        // Go through EFI memmap and ensure this entry fits within a boot services
-        // or conventional entry
-        size_t entry_count = efi_mmap_size / efi_desc_size;
-
-        for (size_t j = 0; j < entry_count; j++) {
-            EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + j * efi_desc_size;
-
-            switch (entry->Type) {
-                case EfiBootServicesCode:
-                case EfiBootServicesData:
-                case EfiConventionalMemory:
-                    break;
-                default:
-                    continue;
-            }
-
-            uintptr_t base = m[i].base;
-            uintptr_t top = base + m[i].length;
-            uintptr_t efi_base = entry->PhysicalStart;
-            uintptr_t efi_size = entry->NumberOfPages * 4096;
-            uintptr_t efi_top = efi_base + efi_size;
-
-            if (!(base >= efi_base && base <  efi_top
-               && top  >  efi_base && top  <= efi_top))
-                continue;
-
-            m[i].type = MEMMAP_USABLE;
-        }
-    }
-
     size_t recl_i = 0;
 
     for (size_t i = 0; i < count; i++) {
@@ -599,6 +563,45 @@ another_recl:;
         recl++;
         goto another_recl;
     }
+
+    // Ensure the boot services are still boot services, or free, in
+    // the EFI memmap, and disallow allocations since our stack and page tables
+    // are placed in this newly freed memory.
+    for (size_t i = 0; i < count; i++) {
+        if (m[i].type != MEMMAP_EFI_BOOTSERVICES)
+            continue;
+
+        // Go through EFI memmap and ensure this entry fits within a boot services
+        // or conventional entry
+        size_t entry_count = efi_mmap_size / efi_desc_size;
+
+        for (size_t j = 0; j < entry_count; j++) {
+            EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + j * efi_desc_size;
+
+            switch (entry->Type) {
+                case EfiBootServicesCode:
+                case EfiBootServicesData:
+                case EfiConventionalMemory:
+                    break;
+                default:
+                    continue;
+            }
+
+            uintptr_t base = m[i].base;
+            uintptr_t top = base + m[i].length;
+            uintptr_t efi_base = entry->PhysicalStart;
+            uintptr_t efi_size = entry->NumberOfPages * 4096;
+            uintptr_t efi_top = efi_base + efi_size;
+
+            if (!(base >= efi_base && base <  efi_top
+               && top  >  efi_base && top  <= efi_top))
+                continue;
+
+            m[i].type = MEMMAP_USABLE;
+        }
+    }
+
+    allocations_disallowed = true;
 
     sanitise_entries(m, &count, false);
 

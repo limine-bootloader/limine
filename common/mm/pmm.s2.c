@@ -61,8 +61,8 @@ static size_t memmap_max_entries;
 struct e820_entry_t *memmap;
 size_t memmap_entries = 0;
 
-struct e820_entry_t *untouched_memmap;
-size_t untouched_memmap_entries = 0;
+static struct e820_entry_t *untouched_memmap;
+static size_t untouched_memmap_entries = 0;
 #endif
 
 static const char *memmap_type(uint32_t type) {
@@ -118,8 +118,6 @@ static bool align_entry(uint64_t *base, uint64_t *length) {
 
     return true;
 }
-
-static bool sanitiser_keep_first_page = false;
 
 #define MEMMAP_DROP_LATER ((uint32_t)-1)
 
@@ -192,7 +190,7 @@ static void sanitise_entries(struct e820_entry_t *m, size_t *_count, bool align_
         if (m[i].type != MEMMAP_USABLE)
             continue;
 
-        if (!sanitiser_keep_first_page && m[i].base < 0x1000) {
+        if (bios && m[i].base < 0x1000) {
             if (m[i].base + m[i].length <= 0x1000) {
                 goto del_mm1;
             }
@@ -246,6 +244,8 @@ del_mm1:
     *_count = count;
 }
 
+static void pmm_reclaim_uefi_mem(struct e820_entry_t *m, size_t *_count);
+
 struct e820_entry_t *get_memmap(size_t *entries) {
 #if uefi == 1
 
@@ -294,7 +294,7 @@ struct e820_entry_t *get_memmap(size_t *entries) {
     );
 #endif
 
-    pmm_reclaim_uefi_mem();
+    pmm_reclaim_uefi_mem(memmap, &memmap_entries);
 #endif
     sanitise_entries(memmap, &memmap_entries, true);
 
@@ -469,11 +469,13 @@ fail:
     panic(false, "pmm: Failure initialising memory map");
 }
 
-void pmm_reclaim_uefi_mem(void) {
+static void pmm_reclaim_uefi_mem(struct e820_entry_t *m, size_t *_count) {
+    size_t count = *_count;
+
     // First, ensure the boot services are still boot services, or free, in
     // the EFI memmap
-    for (size_t i = 0; i < memmap_entries; i++) {
-        if (memmap[i].type != MEMMAP_EFI_BOOTSERVICES)
+    for (size_t i = 0; i < count; i++) {
+        if (m[i].type != MEMMAP_EFI_BOOTSERVICES)
             continue;
 
         // Go through EFI memmap and ensure this entry fits within a boot services
@@ -492,8 +494,8 @@ void pmm_reclaim_uefi_mem(void) {
                     continue;
             }
 
-            uintptr_t base = memmap[i].base;
-            uintptr_t top = base + memmap[i].length;
+            uintptr_t base = m[i].base;
+            uintptr_t top = base + m[i].length;
             uintptr_t efi_base = entry->PhysicalStart;
             uintptr_t efi_size = entry->NumberOfPages * 4096;
             uintptr_t efi_top = efi_base + efi_size;
@@ -502,14 +504,14 @@ void pmm_reclaim_uefi_mem(void) {
                && top  >  efi_base && top  <= efi_top))
                 continue;
 
-            memmap[i].type = MEMMAP_USABLE;
+            m[i].type = MEMMAP_USABLE;
         }
     }
 
     size_t recl_i = 0;
 
-    for (size_t i = 0; i < memmap_entries; i++) {
-        if (memmap[i].type == MEMMAP_EFI_RECLAIMABLE) {
+    for (size_t i = 0; i < count; i++) {
+        if (m[i].type == MEMMAP_EFI_RECLAIMABLE) {
             recl_i++;
         }
     }
@@ -518,9 +520,9 @@ void pmm_reclaim_uefi_mem(void) {
 
     {
         size_t recl_j = 0;
-        for (size_t i = 0; i < memmap_entries; i++) {
-            if (memmap[i].type == MEMMAP_EFI_RECLAIMABLE) {
-                recl[recl_j++] = memmap[i];
+        for (size_t i = 0; i < count; i++) {
+            if (m[i].type == MEMMAP_EFI_RECLAIMABLE) {
+                recl[recl_j++] = m[i];
             }
         }
     }
@@ -572,7 +574,18 @@ another_recl:;
                 our_type = MEMMAP_RESERVED; break;
         }
 
+        struct e820_entry_t *memmap_save = memmap;
+        size_t memmap_entries_save = memmap_entries;
+
+        memmap = m;
+        memmap_entries = count;
+
         memmap_alloc_range(efi_base, efi_size, our_type, false, true, false, true);
+
+        count = memmap_entries;
+
+        memmap = memmap_save;
+        memmap_entries = memmap_entries_save;
     }
 
     if (--recl_i > 0) {
@@ -580,7 +593,9 @@ another_recl:;
         goto another_recl;
     }
 
-    sanitise_entries(memmap, &memmap_entries, false);
+    sanitise_entries(m, &count, false);
+
+    *_count = count;
 }
 
 void pmm_release_uefi_mem(void) {
@@ -612,49 +627,9 @@ struct e820_entry_t *get_raw_memmap(size_t *entry_count) {
 
 #if uefi == 1
 struct e820_entry_t *get_raw_memmap(size_t *entry_count) {
-    size_t mmap_count = efi_mmap_size / efi_desc_size;
-    size_t mmap_len = mmap_count * sizeof(struct e820_entry_t);
-
-    struct e820_entry_t *mmap = ext_mem_alloc(mmap_len);
-
-    for (size_t i = 0; i < mmap_count; i++) {
-        EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
-
-        uint32_t our_type;
-        switch (entry->Type) {
-            case EfiReservedMemoryType:
-            case EfiRuntimeServicesCode:
-            case EfiRuntimeServicesData:
-            case EfiUnusableMemory:
-            case EfiMemoryMappedIO:
-            case EfiMemoryMappedIOPortSpace:
-            case EfiPalCode:
-            case EfiLoaderCode:
-            case EfiLoaderData:
-            default:
-                our_type = MEMMAP_RESERVED; break;
-            case EfiACPIReclaimMemory:
-                our_type = MEMMAP_ACPI_RECLAIMABLE; break;
-            case EfiACPIMemoryNVS:
-                our_type = MEMMAP_ACPI_NVS; break;
-            case EfiBootServicesCode:
-            case EfiBootServicesData:
-            case EfiConventionalMemory:
-                our_type = MEMMAP_USABLE; break;
-        }
-
-        mmap[i].base   = entry->PhysicalStart;
-        mmap[i].length = entry->NumberOfPages * 4096;
-        mmap[i].type   = our_type;
-    }
-
-    bool s_old = sanitiser_keep_first_page;
-    sanitiser_keep_first_page = true;
-    sanitise_entries(mmap, &mmap_count, false);
-    sanitiser_keep_first_page = s_old;
-
-    *entry_count = mmap_count;
-    return mmap;
+    pmm_reclaim_uefi_mem(untouched_memmap, &untouched_memmap_entries);
+    *entry_count = untouched_memmap_entries;
+    return untouched_memmap;
 }
 #endif
 

@@ -32,9 +32,6 @@ extern size_t memmap_entries;
 #if uefi == 1
 extern struct e820_entry_t *memmap;
 extern size_t memmap_entries;
-
-extern struct e820_entry_t *untouched_memmap;
-extern size_t untouched_memmap_entries;
 #endif
 
 extern bool allocations_disallowed;
@@ -55,7 +52,6 @@ void *conv_mem_alloc(size_t count);
 void pmm_free(void *ptr, size_t length);
 
 #if uefi == 1
-void pmm_reclaim_uefi_mem(void);
 void pmm_release_uefi_mem(void);
 #endif
 

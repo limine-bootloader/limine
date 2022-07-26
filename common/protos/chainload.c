@@ -102,6 +102,42 @@ noreturn void chainload(char *config) {
 
     struct volume *p = volume_get_by_coord(false, drive, part);
 
+    char *gpt_guid_s = config_get_value(config, 0, "GPT_GUID");
+    if (gpt_guid_s == NULL) {
+        gpt_guid_s = config_get_value(config, 0, "GPT_UUID");
+    }
+    if (gpt_guid_s != NULL) {
+        struct guid guid;
+        if (!string_to_guid_be(&guid, gpt_guid_s)) {
+            panic(true, "chainload: Malformed GUID");
+        }
+
+        p = volume_get_by_guid(&guid);
+        if (p == NULL) {
+            if (!string_to_guid_mixed(&guid, gpt_guid_s)) {
+                panic(true, "chainload: Malformed GUID");
+            }
+
+            p = volume_get_by_guid(&guid);
+        }
+
+        if (p == NULL) {
+            panic(true, "chainload: No matching GPT drive for GPT_GUID found");
+        }
+
+        if (p->partition != 0) {
+            panic(true, "chainload: GPT_GUID is that of a partition, not a drive");
+        }
+
+        p = volume_get_by_coord(false, p->index, part);
+
+        if (p == NULL) {
+            panic(true, "chainload: Partition specified is not valid");
+        }
+
+        goto load;
+    }
+
     char *mbr_id_s = config_get_value(config, 0, "MBR_ID");
     if (mbr_id_s != NULL) {
         uint32_t mbr_id = strtoui(mbr_id_s, NULL, 16);
@@ -118,6 +154,11 @@ noreturn void chainload(char *config) {
 
             if (mbr_id_1 == mbr_id) {
                 p = volume_get_by_coord(false, p->index, part);
+
+                if (p == NULL) {
+                    panic(true, "chainload: Partition specified is not valid");
+                }
+
                 goto load;
             }
         }

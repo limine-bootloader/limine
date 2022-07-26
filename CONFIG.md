@@ -119,9 +119,10 @@ Editor control options.
   * `KASLR` - For relocatable kernels, if set to `no`, disable kernel address space layout randomisation. KASLR is enabled by default.
 
 * Chainload protocol on BIOS:
-  * `DRIVE` - The 1-based BIOS drive to chainload, if omitted, assume boot drive.
-  * `PARTITION` - The 1-based BIOS partition to chainload, if omitted, chainload drive (MBR).
-  * `MBR_ID` - Optional. If passed, use an MBR ID (32-bit hex value) to identify the volume to chainload.
+  * `DRIVE` - The 1-based drive to chainload, if omitted, assume boot drive.
+  * `PARTITION` - The 1-based partition to chainload, if omitted, or set to 0, chainload drive (MBR).
+  * `MBR_ID` - Optional. If passed, use an MBR ID (32-bit hex value) to identify the drive containing the volume to chainload. Overrides `DRIVE`, if present, but does *not* override `PARTITION`.
+  * `GPT_UUID` or `GPT_GUID` - Optional. If passed, use the GPT GUID to identify the drive containing the volume to chainload. Overrides `DRIVE` and `MBR_ID`, if present, but does *not* override `PARTITION`.
 
 * Chainload protocol on UEFI:
   * `IMAGE_PATH` - URI of the EFI application to chainload.

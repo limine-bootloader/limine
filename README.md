@@ -46,9 +46,9 @@ For example, to clone the latest binary release of the `v3.x` branch one can do
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example `v3.13.2`)
+or, to clone a specific binary point release (for example `v3.14`)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v3.13.2-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v3.14-binary --depth=1
 ```
 
 In order to rebuild `limine-deploy`, simply run `make` in the binary

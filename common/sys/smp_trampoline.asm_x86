@@ -1,22 +1,24 @@
-org 0
-
 bits 16
-smp_trampoline:
+
+section .rodata
+
+global _binary_smp_trampoline_bin_start
+_binary_smp_trampoline_bin_start:
     cli
     cld
 
     mov ebx, cs
     shl ebx, 4
 
-    o32 lidt [cs:invalid_idt]
-    o32 lgdt [cs:passed_info.gdtr]
+    o32 lidt [cs:(invalid_idt - _binary_smp_trampoline_bin_start)]
+    o32 lgdt [cs:(passed_info.gdtr - _binary_smp_trampoline_bin_start)]
 
-    lea eax, [ebx + .mode32]
-    mov [cs:.farjmp_off], eax
+    lea eax, [ebx + (.mode32 - _binary_smp_trampoline_bin_start)]
+    mov [cs:(.farjmp_off - _binary_smp_trampoline_bin_start)], eax
 
     mov eax, 0x00000011
     mov cr0, eax
-    o32 jmp far [cs:.farjmp]
+    o32 jmp far [cs:(.farjmp - _binary_smp_trampoline_bin_start)]
 
   .farjmp:
     .farjmp_off: dd 0
@@ -37,7 +39,7 @@ smp_trampoline:
     xor eax, eax
     mov cr4, eax
 
-    test dword [ebx + passed_info.target_mode], (1 << 2)
+    test dword [ebx + (passed_info.target_mode - _binary_smp_trampoline_bin_start)], (1 << 2)
     jz .nox2apic
 
     mov ecx, 0x1b
@@ -47,9 +49,9 @@ smp_trampoline:
     wrmsr
 
   .nox2apic:
-    lea esp, [ebx + temp_stack.top]
+    lea esp, [ebx + (temp_stack.top - _binary_smp_trampoline_bin_start)]
 
-    test dword [ebx + passed_info.target_mode], (1 << 0)
+    test dword [ebx + (passed_info.target_mode - _binary_smp_trampoline_bin_start)], (1 << 0)
     jz parking32
 
     mov eax, cr4
@@ -61,7 +63,7 @@ smp_trampoline:
     xor edx, edx
     wrmsr
 
-    test dword [ebx + passed_info.target_mode], (1 << 1)
+    test dword [ebx + (passed_info.target_mode - _binary_smp_trampoline_bin_start)], (1 << 1)
     jz .no5lv
 
     mov eax, cr4
@@ -69,15 +71,14 @@ smp_trampoline:
     mov cr4, eax
 
   .no5lv:
-    mov eax, dword [ebx + passed_info.pagemap]
+    mov eax, dword [ebx + (passed_info.pagemap - _binary_smp_trampoline_bin_start)]
     mov cr3, eax
 
     mov eax, cr0
     bts eax, 31
     mov cr0, eax
 
-    mov eax, .mode64
-    add eax, ebx
+    lea eax, [ebx + (.mode64 - _binary_smp_trampoline_bin_start)]
     push 0x28
     push eax
     retf
@@ -92,7 +93,7 @@ smp_trampoline:
     mov ss, ax
 
     mov ebx, ebx
-    test dword [rbx + passed_info.target_mode], (1 << 3)
+    test dword [rbx + (passed_info.target_mode - _binary_smp_trampoline_bin_start)], (1 << 3)
     jz .nonx
 
     mov ecx, 0xc0000080
@@ -101,7 +102,7 @@ smp_trampoline:
     wrmsr
 
   .nonx:
-    test dword [rbx + passed_info.target_mode], (1 << 4)
+    test dword [rbx + (passed_info.target_mode - _binary_smp_trampoline_bin_start)], (1 << 4)
     jz .nowp
 
     mov rax, cr0
@@ -109,19 +110,19 @@ smp_trampoline:
     mov cr0, rax
 
   .nowp:
-    mov rax, qword [rbx + passed_info.hhdm]
-    add qword [rbx + passed_info.gdtr + 2], rax
-    lgdt [rbx + passed_info.gdtr]
+    mov rax, qword [rbx + (passed_info.hhdm - _binary_smp_trampoline_bin_start)]
+    add qword [rbx + (passed_info.gdtr - _binary_smp_trampoline_bin_start) + 2], rax
+    lgdt [rbx + (passed_info.gdtr - _binary_smp_trampoline_bin_start)]
 
-    lea rax, [rax + rbx + parking64]
+    lea rax, [rax + rbx + (parking64 - _binary_smp_trampoline_bin_start)]
 
     jmp rax
 
 bits 32
 parking32:
-    mov edi, dword [ebx + passed_info.smp_info_struct]
+    mov edi, dword [ebx + (passed_info.smp_info_struct - _binary_smp_trampoline_bin_start)]
     mov eax, 1
-    lock xchg dword [ebx + passed_info.booted_flag], eax
+    lock xchg dword [ebx + (passed_info.booted_flag - _binary_smp_trampoline_bin_start)], eax
 
     xor eax, eax
   .loop:
@@ -148,10 +149,10 @@ parking32:
 bits 64
 parking64:
     mov ebx, ebx
-    mov edi, dword [rbx + passed_info.smp_info_struct]
-    add rdi, qword [rbx + passed_info.hhdm]
+    mov edi, dword [rbx + (passed_info.smp_info_struct - _binary_smp_trampoline_bin_start)]
+    add rdi, qword [rbx + (passed_info.hhdm - _binary_smp_trampoline_bin_start)]
     mov eax, 1
-    lock xchg dword [rbx + passed_info.booted_flag], eax
+    lock xchg dword [rbx + (passed_info.booted_flag - _binary_smp_trampoline_bin_start)], eax
 
     xor eax, eax
   .loop:
@@ -200,3 +201,6 @@ passed_info:
         dq 0
     .hhdm:
         dq 0
+
+global _binary_smp_trampoline_bin_end
+_binary_smp_trampoline_bin_end:

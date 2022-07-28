@@ -205,4 +205,4 @@ passed_info:
 smp_trampoline_end:
 
 global smp_trampoline_size
-smp_trampoline_size equ smp_trampoline_end - smp_trampoline_start
+smp_trampoline_size dq smp_trampoline_end - smp_trampoline_start

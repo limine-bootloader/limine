@@ -40,7 +40,7 @@ struct madt_x2apic {
 } __attribute__((packed));
 
 extern symbol smp_trampoline_start;
-extern symbol smp_trampoline_size;
+extern size_t smp_trampoline_size;
 
 struct trampoline_passed_info {
     uint8_t  smp_tpl_booted_flag;
@@ -58,14 +58,14 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
     // Prepare the trampoline
     static void *trampoline = NULL;
     if (trampoline == NULL) {
-        trampoline = conv_mem_alloc((size_t)smp_trampoline_size);
+        trampoline = conv_mem_alloc(smp_trampoline_size);
 
-        memcpy(trampoline, smp_trampoline_start, (size_t)smp_trampoline_size);
+        memcpy(trampoline, smp_trampoline_start, smp_trampoline_size);
     }
 
     static struct trampoline_passed_info *passed_info = NULL;
     if (passed_info == NULL) {
-        passed_info = (void *)(((uintptr_t)trampoline + (size_t)smp_trampoline_size)
+        passed_info = (void *)(((uintptr_t)trampoline + smp_trampoline_size)
                                - sizeof(struct trampoline_passed_info));
     }
 

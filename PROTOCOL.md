@@ -657,7 +657,8 @@ struct limine_memmap_entry {
 };
 ```
 
-Note: The kernel and modules loaded are not marked as usable memory.
+Note: Memory between 0 and 0x1000 is never marked as usable memory.
+The kernel and modules loaded are not marked as usable memory.
 They are marked as Kernel/Modules. The entries are guaranteed to be sorted by
 base address, lowest to highest. Usable and bootloader reclaimable entries
 are guaranteed to be 4096 byte aligned for both base and length. Usable and

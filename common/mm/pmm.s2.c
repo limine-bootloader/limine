@@ -251,6 +251,9 @@ struct e820_entry_t *get_memmap(size_t *entries) {
 #if uefi == 1
     pmm_reclaim_uefi_mem(memmap, &memmap_entries);
 #endif
+
+    memmap_alloc_range(0, 0x1000, MEMMAP_RESERVED, MEMMAP_USABLE, false, false, false);
+
     sanitise_entries(memmap, &memmap_entries, true);
 
     *entries = memmap_entries;

@@ -616,18 +616,6 @@ int main(int argc, char *argv[]) {
         uint8_t hint8 = 0;
         uint16_t hint16 = 0;
 
-        device_read(&hint16, 510, sizeof(uint16_t));
-        hint16 = ENDSWAP(hint16);
-        if (hint16 != 0xaa55) {
-            if (!force_mbr) {
-                mbr = 0;
-            } else {
-                hint16 = 0xaa55;
-                hint16 = ENDSWAP(hint16);
-                device_write(&hint16, 510, sizeof(uint16_t));
-            }
-        }
-
         bool any_active = false;
 
         device_read(&hint8, 446, sizeof(uint8_t));

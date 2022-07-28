@@ -127,40 +127,6 @@ struct limine_framebuffer_request {
     LIMINE_PTR(struct limine_framebuffer_response *) response;
 };
 
-/* Framebuffer (legacy) */
-
-#define LIMINE_FRAMEBUFFER_LEGACY_REQUEST { LIMINE_COMMON_MAGIC, 0xcbfe81d7dd2d1977, 0x063150319ebc9b71 }
-
-struct limine_framebuffer_legacy {
-    LIMINE_PTR(void *) address;
-    uint16_t width;
-    uint16_t height;
-    uint16_t pitch;
-    uint16_t bpp;
-    uint8_t memory_model;
-    uint8_t red_mask_size;
-    uint8_t red_mask_shift;
-    uint8_t green_mask_size;
-    uint8_t green_mask_shift;
-    uint8_t blue_mask_size;
-    uint8_t blue_mask_shift;
-    uint8_t unused;
-    uint64_t edid_size;
-    LIMINE_PTR(void *) edid;
-};
-
-struct limine_framebuffer_legacy_response {
-    uint64_t revision;
-    uint64_t framebuffer_count;
-    LIMINE_PTR(struct limine_framebuffer_legacy **) framebuffers;
-};
-
-struct limine_framebuffer_legacy_request {
-    uint64_t id[4];
-    uint64_t revision;
-    LIMINE_PTR(struct limine_framebuffer_legacy_response *) response;
-};
-
 /* Terminal */
 
 #define LIMINE_TERMINAL_REQUEST { LIMINE_COMMON_MAGIC, 0xc8ac59310c2b0844, 0xa68d0c7265d38878 }
@@ -202,35 +168,6 @@ struct limine_terminal_request {
     uint64_t revision;
     LIMINE_PTR(struct limine_terminal_response *) response;
     LIMINE_PTR(limine_terminal_callback) callback;
-};
-
-/* Terminal (legacy) */
-
-#define LIMINE_TERMINAL_LEGACY_REQUEST { LIMINE_COMMON_MAGIC, 0x0785a0aea5d0750f, 0x1c1936fee0d6cf6e }
-
-struct limine_terminal_legacy;
-
-typedef void (*limine_terminal_legacy_write)(struct limine_terminal_legacy *, const char *, uint64_t);
-typedef void (*limine_terminal_legacy_callback)(struct limine_terminal_legacy *, uint64_t, uint64_t, uint64_t, uint64_t);
-
-struct limine_terminal_legacy {
-    uint32_t columns;
-    uint32_t rows;
-    LIMINE_PTR(struct limine_framebuffer_legacy *) framebuffer;
-};
-
-struct limine_terminal_legacy_response {
-    uint64_t revision;
-    uint64_t terminal_count;
-    LIMINE_PTR(struct limine_terminal_legacy **) terminals;
-    LIMINE_PTR(limine_terminal_legacy_write) write;
-};
-
-struct limine_terminal_legacy_request {
-    uint64_t id[4];
-    uint64_t revision;
-    LIMINE_PTR(struct limine_terminal_legacy_response *) response;
-    LIMINE_PTR(limine_terminal_legacy_callback) callback;
 };
 
 /* 5-level paging */

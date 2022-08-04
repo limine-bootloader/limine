@@ -33,7 +33,7 @@ void *conv_mem_alloc(size_t count) {
             panic(false, "Conventional memory allocation failed");
 
         if (memmap_alloc_range(base, count, MEMMAP_BOOTLOADER_RECLAIMABLE, true, false, false, false)) {
-            void *ret = (void *)base;
+            void *ret = (void *)(uintptr_t)base;
             // Zero out allocated space
             memset(ret, 0, count);
             base += count;
@@ -295,7 +295,7 @@ void init_memmap(void) {
 
     // Allocate bootloader itself
     memmap_alloc_range(4096,
-        ALIGN_UP((uint64_t)bss_end, 4096) - 4096, MEMMAP_BOOTLOADER_RECLAIMABLE, true, true, false, false);
+        ALIGN_UP((uintptr_t)bss_end, 4096) - 4096, MEMMAP_BOOTLOADER_RECLAIMABLE, true, true, false, false);
 
     sanitise_entries(memmap, &memmap_entries, false);
 
@@ -413,10 +413,10 @@ void init_memmap(void) {
     memcpy(untouched_memmap, memmap, memmap_entries * sizeof(struct e820_entry_t));
     untouched_memmap_entries = memmap_entries;
 
-    size_t bootloader_size = ALIGN_UP((uint64_t)__image_end - (uint64_t)__image_base, 4096);
+    size_t bootloader_size = ALIGN_UP((uintptr_t)__image_end - (uintptr_t)__image_base, 4096);
 
     // Allocate bootloader itself
-    memmap_alloc_range((uint64_t)__image_base, bootloader_size,
+    memmap_alloc_range((uintptr_t)__image_base, bootloader_size,
                        MEMMAP_BOOTLOADER_RECLAIMABLE, false, true, false, true);
 
     sanitise_entries(memmap, &memmap_entries, false);
@@ -603,7 +603,7 @@ void pmm_free(void *ptr, size_t count) {
     count = ALIGN_UP(count, 4096);
     if (allocations_disallowed)
         panic(false, "Memory allocations disallowed");
-    memmap_alloc_range((uint64_t)ptr, count, MEMMAP_USABLE, false, false, false, true);
+    memmap_alloc_range((uintptr_t)ptr, count, MEMMAP_USABLE, false, false, false, true);
 }
 
 void *ext_mem_alloc(size_t count) {

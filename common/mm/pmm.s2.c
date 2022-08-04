@@ -21,7 +21,7 @@ bool allocations_disallowed = true;
 static void sanitise_entries(struct e820_entry_t *, size_t *, bool);
 
 void *conv_mem_alloc(size_t count) {
-    static uintptr_t base = 4096;
+    static uint64_t base = 4096;
 
     if (allocations_disallowed)
         panic(false, "Memory allocations disallowed");
@@ -295,7 +295,7 @@ void init_memmap(void) {
 
     // Allocate bootloader itself
     memmap_alloc_range(4096,
-        ALIGN_UP((uintptr_t)bss_end, 4096) - 4096, MEMMAP_BOOTLOADER_RECLAIMABLE, true, true, false, false);
+        ALIGN_UP((uint64_t)bss_end, 4096) - 4096, MEMMAP_BOOTLOADER_RECLAIMABLE, true, true, false, false);
 
     sanitise_entries(memmap, &memmap_entries, false);
 
@@ -413,10 +413,10 @@ void init_memmap(void) {
     memcpy(untouched_memmap, memmap, memmap_entries * sizeof(struct e820_entry_t));
     untouched_memmap_entries = memmap_entries;
 
-    size_t bootloader_size = ALIGN_UP((uintptr_t)__image_end - (uintptr_t)__image_base, 4096);
+    size_t bootloader_size = ALIGN_UP((uint64_t)__image_end - (uint64_t)__image_base, 4096);
 
     // Allocate bootloader itself
-    memmap_alloc_range((uintptr_t)__image_base, bootloader_size,
+    memmap_alloc_range((uint64_t)__image_base, bootloader_size,
                        MEMMAP_BOOTLOADER_RECLAIMABLE, false, true, false, true);
 
     sanitise_entries(memmap, &memmap_entries, false);
@@ -459,10 +459,10 @@ another_recl:;
     for (size_t i = 0; i < efi_mmap_entry_count; i++) {
         EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
 
-        uintptr_t base = recl->base;
-        uintptr_t top = base + recl->length;
-        uintptr_t efi_base = entry->PhysicalStart;
-        uintptr_t efi_size = entry->NumberOfPages * 4096;
+        uint64_t base = recl->base;
+        uint64_t top = base + recl->length;
+        uint64_t efi_base = entry->PhysicalStart;
+        uint64_t efi_size = entry->NumberOfPages * 4096;
 
         if (efi_base < base) {
             if (efi_size <= base - efi_base)
@@ -471,7 +471,7 @@ another_recl:;
             efi_base = base;
         }
 
-        uintptr_t efi_top = efi_base + efi_size;
+        uint64_t efi_top = efi_base + efi_size;
 
         if (efi_top > top) {
             if (efi_size <= efi_top - top)
@@ -543,11 +543,11 @@ another_recl:;
                     continue;
             }
 
-            uintptr_t base = m[i].base;
-            uintptr_t top = base + m[i].length;
-            uintptr_t efi_base = entry->PhysicalStart;
-            uintptr_t efi_size = entry->NumberOfPages * 4096;
-            uintptr_t efi_top = efi_base + efi_size;
+            uint64_t base = m[i].base;
+            uint64_t top = base + m[i].length;
+            uint64_t efi_base = entry->PhysicalStart;
+            uint64_t efi_size = entry->NumberOfPages * 4096;
+            uint64_t efi_top = efi_base + efi_size;
 
             if (!(base >= efi_base && base <  efi_top
                && top  >  efi_base && top  <= efi_top))
@@ -603,7 +603,7 @@ void pmm_free(void *ptr, size_t count) {
     count = ALIGN_UP(count, 4096);
     if (allocations_disallowed)
         panic(false, "Memory allocations disallowed");
-    memmap_alloc_range((uintptr_t)ptr, count, MEMMAP_USABLE, false, false, false, true);
+    memmap_alloc_range((uint64_t)ptr, count, MEMMAP_USABLE, false, false, false, true);
 }
 
 void *ext_mem_alloc(size_t count) {

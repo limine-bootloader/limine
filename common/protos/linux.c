@@ -575,11 +575,8 @@ set_textmode:;
 #if uefi == 1
     efi_exit_boot_services();
 
-    #if defined (__i386__)
-        memcpy(&boot_params->efi_info.efi_loader_signature, "EL32", 4);
-    #elif defined (__x86_64__)
-        memcpy(&boot_params->efi_info.efi_loader_signature, "EL64", 4);
-    #endif
+#if defined (__x86_64__)
+    memcpy(&boot_params->efi_info.efi_loader_signature, "EL64", 4);
 
     boot_params->efi_info.efi_systab    = (uint32_t)(uint64_t)(uintptr_t)gST;
     boot_params->efi_info.efi_systab_hi = (uint32_t)((uint64_t)(uintptr_t)gST >> 32);
@@ -588,6 +585,7 @@ set_textmode:;
     boot_params->efi_info.efi_memmap_size     = efi_mmap_size;
     boot_params->efi_info.efi_memdesc_size    = efi_desc_size;
     boot_params->efi_info.efi_memdesc_version = efi_desc_ver;
+#endif
 #endif
 
     ///////////////////////////////////////
@@ -599,12 +597,15 @@ set_textmode:;
     size_t mmap_entries;
     struct e820_entry_t *mmap = get_raw_memmap(&mmap_entries);
 
-    boot_params->e820_entries = mmap_entries;
-
-    for (size_t i = 0; i < mmap_entries; i++) {
-        e820_table[i].addr = mmap[i].base;
-        e820_table[i].size = mmap[i].length;
-        e820_table[i].type = mmap[i].type;
+    for (size_t i = 0, j = 0; i < mmap_entries; i++) {
+        if (mmap[i].type >= 0x1000) {
+            continue;
+        }
+        e820_table[j].addr = mmap[i].base;
+        e820_table[j].size = mmap[i].length;
+        e820_table[j].type = mmap[i].type;
+        j++;
+        boot_params->e820_entries = j;
     }
 
     ///////////////////////////////////////

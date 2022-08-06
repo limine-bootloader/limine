@@ -1,4 +1,3 @@
-#include "lib/uri.h"
 #include <stddef.h>
 #include <stdbool.h>
 #include <lib/config.h>

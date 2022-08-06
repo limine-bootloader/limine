@@ -534,7 +534,7 @@ set_textmode:;
         screen_info->orig_video_isVGA = VIDEO_TYPE_VGAC;
 #endif
     } else {
-        screen_info->capabilities   = VIDEO_CAPABILITY_64BIT_BASE | VIDEO_CAPABILITY_SKIP_QUIRKS;
+        screen_info->capabilities   = VIDEO_CAPABILITY_SKIP_QUIRKS;
         screen_info->flags          = VIDEO_FLAGS_NOCURSOR;
         screen_info->lfb_base       = (uint32_t)fbinfo.framebuffer_addr;
         screen_info->ext_lfb_base   = (uint32_t)(fbinfo.framebuffer_addr >> 32);
@@ -550,11 +550,14 @@ set_textmode:;
         screen_info->blue_size      = fbinfo.blue_mask_size;
         screen_info->blue_pos       = fbinfo.blue_mask_shift;
 
-#if bios == 1
         screen_info->orig_video_isVGA = VIDEO_TYPE_VLFB;
-#elif uefi == 1
-        screen_info->orig_video_isVGA = VIDEO_TYPE_EFI;
+
+        if (fbinfo.framebuffer_addr > (uint64_t)0xffffffff) {
+            screen_info->capabilities |= VIDEO_CAPABILITY_64BIT_BASE;
+#if uefi == 1
+            screen_info->orig_video_isVGA = VIDEO_TYPE_EFI;
 #endif
+        }
     }
 
     struct edid_info_struct *edid_info = get_edid_info();

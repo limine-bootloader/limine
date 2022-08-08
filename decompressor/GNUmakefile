@@ -61,24 +61,24 @@ $(call MKESCAPE,$(BUILDDIR))/decompressor.bin: $(OBJ) ../libgcc-binaries/libgcc-
 
 $(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))/tinf'
-	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'
+	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	cp -r ../tinf '$(call SHESCAPE,$(BUILDDIR))/'
 	touch '$(call SHESCAPE,$(BUILDDIR))/tinf-copied'
 
 $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
-	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
+	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CROSS_CC) $(CROSS_CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
-	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
+	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CROSS_CC) $(CROSS_CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
 
 -include $(HEADER_DEPS)
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied
-	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
+	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CROSS_CC) $(CROSS_CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm
-	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
+	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' -f elf32 -o '$(call SHESCAPE,$@)'

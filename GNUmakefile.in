@@ -35,6 +35,9 @@ CC := @CC@
 endif
 export CC
 
+MKDIR_P ?= @MKDIR_P@
+export MKDIR_P
+
 INSTALL ?= @INSTALL@
 export INSTALL
 
@@ -66,7 +69,7 @@ all: limine-version @BUILD_UEFI_X86_64@ @BUILD_UEFI_IA32@ @BUILD_BIOS@
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'
 
 $(call MKESCAPE,$(BINDIR))/limine-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-hdd.bin
-	mkdir -p '$(call SHESCAPE,$(BINDIR))'
+	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	cd '$(call SHESCAPE,$(BINDIR))' && '$(call SHESCAPE,$(SRCDIR))/host/hgen.sh' >limine-hdd.h
 
 $(call MKESCAPE,$(BINDIR))/limine-deploy: $(call MKESCAPE,$(BINDIR))/Makefile $(call MKESCAPE,$(SRCDIR))/host/limine-deploy.c $(call MKESCAPE,$(BINDIR))/limine-hdd.h
@@ -78,7 +81,7 @@ $(call MKESCAPE,$(BINDIR))/limine-version: $(call MKESCAPE,$(BINDIR))/Makefile $
 	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))' limine-version
 
 $(call MKESCAPE,$(BINDIR))/Makefile: $(call MKESCAPE,$(SRCDIR))/host/Makefile $(call MKESCAPE,$(SRCDIR))/host/.gitignore
-	mkdir -p '$(call SHESCAPE,$(BINDIR))'
+	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(SRCDIR))/host/Makefile' '$(call SHESCAPE,$(SRCDIR))/host/.gitignore' '$(call SHESCAPE,$(BINDIR))/'
 
 .PHONY: limine-deploy
@@ -126,7 +129,7 @@ uninstall:
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))/limine.h'
 
 $(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/common-bios/stage2.bin.gz
-	mkdir -p '$(call SHESCAPE,$(BINDIR))'
+	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm @WERROR@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
 ifneq ($(BUILD_CD), no)
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm @WERROR@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
@@ -146,7 +149,7 @@ endif
 
 $(call MKESCAPE,$(BINDIR))/limine-cd-efi.bin: $(if @BUILD_UEFI_IA32@, $(call MKESCAPE,$(BUILDDIR))/common-uefi-ia32/BOOTIA32.EFI) $(if @BUILD_UEFI_X86_64@, $(call MKESCAPE,$(BUILDDIR))/common-uefi-x86-64/BOOTX64.EFI)
 ifneq ($(BUILD_CD_EFI), no)
-	mkdir -p '$(call SHESCAPE,$(BINDIR))'
+	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	rm -f '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'
 	dd if=/dev/zero of='$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' bs=512 count=2880 2>/dev/null
 	( mformat -i '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' -f 1440 :: && \
@@ -166,13 +169,13 @@ limine-cd-efi:
 .PHONY: limine-uefi-x86-64
 limine-uefi-x86-64: $(call MKESCAPE,$(SRCDIR))/limine-efi
 	$(MAKE) common-uefi-x86-64
-	mkdir -p '$(call SHESCAPE,$(BINDIR))'
+	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64/BOOTX64.EFI' '$(call SHESCAPE,$(BINDIR))/'
 
 .PHONY: limine-uefi-ia32
 limine-uefi-ia32: $(call MKESCAPE,$(SRCDIR))/limine-efi
 	$(MAKE) common-uefi-ia32
-	mkdir -p '$(call SHESCAPE,$(BINDIR))'
+	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32/BOOTIA32.EFI' '$(call SHESCAPE,$(BINDIR))/'
 
 .PHONY: limine-bios-clean
@@ -187,7 +190,7 @@ limine-uefi-ia32-clean: common-uefi-ia32-clean
 .PHONY: dist
 dist:
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"
-	mkdir -p '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"
+	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"
 	cp -r '$(call SHESCAPE,$(SRCDIR))'/.git '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"/
 	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && git checkout .
 	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && ./bootstrap
@@ -268,11 +271,11 @@ test-clean:
 	rm -rf test_image test.hdd test.iso
 
 ovmf-x64:
-	mkdir -p ovmf-x64
+	$(MKDIR_P) ovmf-x64
 	cd ovmf-x64 && curl -o OVMF-X64.zip https://efi.akeo.ie/OVMF/OVMF-X64.zip && 7z x OVMF-X64.zip
 
 ovmf-ia32:
-	mkdir -p ovmf-ia32
+	$(MKDIR_P) ovmf-ia32
 	cd ovmf-ia32 && curl -o OVMF-IA32.zip https://efi.akeo.ie/OVMF/OVMF-IA32.zip && 7z x OVMF-IA32.zip
 
 .PHONY: test.hdd
@@ -411,7 +414,7 @@ iso9660-test:
 	$(MAKE) limine-bios
 	$(MAKE) -C test
 	rm -rf test_image/
-	mkdir -p test_image/boot
+	$(MKDIR_P) test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
 	sudo cp -rv test/* test_image/boot/
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table test_image/ -o test.iso
@@ -448,7 +451,7 @@ full-hybrid-test:
 	$(MAKE) all
 	$(MAKE) -C test
 	rm -rf test_image/
-	mkdir -p test_image/boot
+	$(MKDIR_P) test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
 	sudo cp -rv test/* test_image/boot/
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine-cd-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label test_image/ -o test.iso
@@ -466,7 +469,7 @@ pxe-test:
 	$(MAKE) limine-bios
 	$(MAKE) -C test
 	rm -rf test_image/
-	mkdir -p test_image/boot
+	$(MKDIR_P) test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
 	sudo cp -rv test/* test_image/boot/
 	qemu-system-x86_64  -smp 4  -netdev user,id=n0,tftp=./test_image,bootfile=boot/limine-pxe.bin -device rtl8139,netdev=n0,mac=00:00:00:11:11:11 -debugcon stdio
@@ -487,7 +490,7 @@ uefi-test:
 	sudo mkdir test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
 	sudo cp -rv test/* test_image/boot/
-	sudo mkdir -p test_image/EFI/BOOT
+	sudo $(MKDIR_P) test_image/EFI/BOOT
 	sudo cp $(BINDIR)/BOOTX64.EFI test_image/EFI/BOOT/
 	sync
 	sudo umount test_image/
@@ -511,7 +514,7 @@ uefi-ia32-test:
 	sudo mkdir test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
 	sudo cp -rv test/* test_image/boot/
-	sudo mkdir -p test_image/EFI/BOOT
+	sudo $(MKDIR_P) test_image/EFI/BOOT
 	sudo cp $(BINDIR)/BOOTIA32.EFI test_image/EFI/BOOT/
 	sync
 	sudo umount test_image/

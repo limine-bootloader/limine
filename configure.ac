@@ -27,6 +27,7 @@ if test "$werror_state" = "yes"; then
     CFLAGS="$CFLAGS -Werror"
 fi
 
+AC_PROG_MKDIR_P
 AC_PROG_INSTALL
 AC_PROG_GREP
 AC_PROG_SED
@@ -65,7 +66,7 @@ if test "x$BUILD_BIOS" = "xno"; then
     BUILD_BIOS=""
 else
     (
-    mkdir -p "$BUILDDIR/cross-files"
+    $MKDIR_P "$BUILDDIR/cross-files"
     cd "$BUILDDIR/cross-files"
     TRIPLET=i686-elf "$SRCDIR/cross-detect/configure"
     ) || exit 1
@@ -108,7 +109,7 @@ if test "x$BUILD_UEFI_IA32" = "xno"; then
     BUILD_UEFI_IA32=""
 else
     (
-    mkdir -p "$BUILDDIR/cross-files"
+    $MKDIR_P "$BUILDDIR/cross-files"
     cd "$BUILDDIR/cross-files"
     TRIPLET=i686-elf "$SRCDIR/cross-detect/configure"
     ) || exit 1
@@ -127,7 +128,7 @@ if test "x$BUILD_UEFI_X86_64" = "xno"; then
     BUILD_UEFI_X86_64=""
 else
     (
-    mkdir -p "$BUILDDIR/cross-files"
+    $MKDIR_P "$BUILDDIR/cross-files"
     cd "$BUILDDIR/cross-files"
     TRIPLET=x86_64-elf "$SRCDIR/cross-detect/configure"
     ) || exit 1

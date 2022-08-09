@@ -66,8 +66,8 @@ override INTERNAL_CFLAGS += \
 		-march=i686 \
 		-mtune=generic \
 		-mabi=sysv \
-		-fno-pic \
-		-fno-pie
+		-fno-pie \
+		-fno-pic
 endif
 
 ifeq ($(TARGET), uefi-x86-64)

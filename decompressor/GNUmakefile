@@ -24,8 +24,8 @@ override INTERNAL_CFLAGS := \
 	-fno-stack-check \
 	-fno-strict-aliasing \
 	-fno-lto \
-	-fno-pic \
 	-fno-pie \
+	-fno-pic \
 	-fomit-frame-pointer \
 	-nostdinc \
 	-Wno-address-of-packed-member \

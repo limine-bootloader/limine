@@ -87,6 +87,8 @@ noreturn void stivale2_load(char *config, char *cmdline) {
     if (kernel_path == NULL)
         panic(true, "stivale2: KERNEL_PATH not specified");
 
+    print("stivale2: Loading kernel `%s`...\n", kernel_path);
+
     if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic(true, "stivale2: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
@@ -142,8 +144,6 @@ noreturn void stivale2_load(char *config, char *cmdline) {
                 break;
         }
     }
-
-    print("stivale2: Loading kernel `%s`...\n", kernel_path);
 
     bool want_pmrs = false;
     bool want_fully_virtual = false;

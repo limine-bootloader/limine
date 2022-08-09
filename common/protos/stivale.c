@@ -74,6 +74,8 @@ noreturn void stivale_load(char *config, char *cmdline) {
     if (kernel_path == NULL)
         panic(true, "stivale: KERNEL_PATH not specified");
 
+    print("stivale: Loading kernel `%s`...\n", kernel_path);
+
     if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic(true, "stivale: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
 
@@ -124,8 +126,6 @@ noreturn void stivale_load(char *config, char *cmdline) {
                 break;
         }
     }
-
-    print("stivale: Loading kernel `%s`...\n", kernel_path);
 
     int ret = 0;
     switch (bits) {

@@ -481,10 +481,6 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
     return pagemap;
 }
 
-#if uefi == 1
-extern symbol ImageBase;
-#endif
-
 noreturn void stivale_spinup_32(
                  int bits, bool level5pg, uint32_t pagemap_top_lv,
                  uint32_t entry_point_lo, uint32_t entry_point_hi,

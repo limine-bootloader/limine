@@ -58,6 +58,16 @@ bool stivale_load_by_anchor(void **_anchor, const char *magic,
 }
 
 noreturn void stivale_load(char *config, char *cmdline) {
+    char *depr_warn = config_get_value(config, 0, "DEPRECATION_WARNING");
+    if (depr_warn == NULL || strcmp(depr_warn, "no") != 0) {
+        print("WARNING: The stivale protocol is deprecated in Limine and will be removed as of version 4.x.\n");
+        print("         It is recommended to move to either the Limine boot protocol or multiboot2.\n");
+        print("         To silence this warning add DEPRECATION_WARNING=no to the boot entry.\n");
+        print("\n");
+        print("Press any key or wait 5 seconds to continue booting...\n");
+        pit_sleep_and_quit_on_keypress(5);
+    }
+
     struct stivale_struct *stivale_struct = ext_mem_alloc(sizeof(struct stivale_struct));
 
     // BIOS or UEFI?

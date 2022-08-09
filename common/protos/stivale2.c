@@ -79,6 +79,16 @@ void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 #endif
 
 noreturn void stivale2_load(char *config, char *cmdline) {
+    char *depr_warn = config_get_value(config, 0, "DEPRECATION_WARNING");
+    if (depr_warn == NULL || strcmp(depr_warn, "no") != 0) {
+        print("WARNING: The stivale2 protocol is deprecated in Limine and will be removed as of version 4.x.\n");
+        print("         It is recommended to move to either the Limine boot protocol or multiboot2.\n");
+        print("         To silence this warning add DEPRECATION_WARNING=no to the boot entry.\n");
+        print("\n");
+        print("Press any key or wait 5 seconds to continue booting...\n");
+        pit_sleep_and_quit_on_keypress(5);
+    }
+
     struct stivale2_struct *stivale2_struct = ext_mem_alloc(sizeof(struct stivale2_struct));
 
     struct file_handle *kernel_file;

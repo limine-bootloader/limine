@@ -100,6 +100,7 @@ static const char *VALID_KEYS[] = {
     "DRIVE",
     "PARTITION",
     "IMAGE_PATH",
+    "DEPRECATION_WARNING",
     NULL
 };
 

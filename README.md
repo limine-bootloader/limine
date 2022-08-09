@@ -44,9 +44,9 @@ For example, to clone the latest binary release of the `v3.x` branch one can do
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example `v3.14`)
+or, to clone a specific binary point release (for example `v3.15`)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v3.14-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v3.15-binary --depth=1
 ```
 
 In order to rebuild `limine-deploy`, simply run `make` in the binary
@@ -59,30 +59,12 @@ release directory.
 *The following steps are not necessary if cloning a binary release. If so, skip to*
 *"Installing Limine binaries".*
 
-### Building the toolchain
-
-This step can take a long time, but it will ensure that the toolchain will work
-with Limine. If on an x86_64 host, with GCC or Clang installed, it is possible
-that the host toolchain will suffice. You can skip to the next paragraph in order
-to use the system's toolchain instead. If that fails, you can still come back here
-later (remember to `make clean` and re-run `./configure` after building the toolchain).
-
-The toolchain's build process depends on the following packages: `GNU make`,
-`GNU tar`, `texinfo`, `curl`, `gzip`, `bzip2`, `gcc/clang`, `g++/clang++`.
-
-Building the toolchain can be accomplished by running:
-```bash
-TARGET=<target architecture> ./make_toolchain.sh
-```
-where `<target architecture>` is something like `i686` or `x86_64`.
-
 ### Prerequisites
 
 In order to build Limine, the following programs have to be installed:
 `GNU make`, `grep`, `sed`, `find`, `awk`, `gzip`, `nasm`, `mtools`
 (optional, necessary to build `limine-cd-efi.bin`).
-Furthermore, either the toolchain must have been built in the previous
-paragraph, or `gcc` or `llvm/clang` must also be installed, alongside
+Furthermore, `gcc` or `llvm/clang` must also be installed, alongside
 the respective binutils.
 
 ### Configure

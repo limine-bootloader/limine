@@ -1,11 +1,9 @@
 /libgcc-*
 /bin
 /build
-/toolchain
 /cross-files
 /limine-efi
 /freestanding-headers
-/make_toolchain.sh
 /ovmf*
 *.o
 *.d

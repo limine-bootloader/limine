@@ -19,9 +19,6 @@ MKESCAPE = $(subst $(SPACE),\ ,$(1))
 SHESCAPE = $(subst ','\'',$(1))
 NASMESCAPE = $(subst ','"'$(COMMA) \"'\"$(COMMA) '"',$(1))
 
-override PATH := @PATH@
-export PATH
-
 override BUILD_CD_EFI := @BUILD_CD_EFI@
 override BUILD_PXE := @BUILD_PXE@
 override BUILD_CD := @BUILD_CD@
@@ -216,11 +213,11 @@ dist:
 
 .PHONY: distclean
 distclean: clean
-	rm -rf toolchain ovmf* config.log config.status GNUmakefile config.h cross-files
+	rm -rf ovmf* config.log config.status GNUmakefile config.h cross-files
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding-headers libgcc-binaries make_toolchain.sh limine-efi cross-detect configure build-aux *'~' autom4te.cache *.tar.xz *.tar.gz
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding-headers libgcc-binaries limine-efi cross-detect configure build-aux *'~' autom4te.cache *.tar.xz *.tar.gz
 
 .PHONY: common-uefi-x86-64
 common-uefi-x86-64:

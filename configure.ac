@@ -7,12 +7,9 @@ AC_CONFIG_SUBDIRS([cross-detect])
 
 SRCDIR="$(cd "$srcdir" && pwd -P)"
 BUILDDIR="$(pwd -P)"
-PATH="$BUILDDIR/toolchain/bin:$SRCDIR/toolchain/bin:$PATH"
-export PATH
 
 AC_SUBST(SRCDIR, [$SRCDIR])
 AC_SUBST(BUILDDIR, [$BUILDDIR])
-AC_SUBST(PATH, [$PATH])
 
 test "x$CFLAGS" = "x" && CFLAGS='-g -O2 -pipe -Wall -Wextra'
 AC_PROG_CC

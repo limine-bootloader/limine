@@ -78,7 +78,7 @@ uint64_t stivale2_term_write_ptr = 0;
 void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 #endif
 
-bool stivale2_load(char *config, char *cmdline) {
+noreturn void stivale2_load(char *config, char *cmdline) {
     struct stivale2_struct *stivale2_struct = ext_mem_alloc(sizeof(struct stivale2_struct));
 
     struct file_handle *kernel_file;
@@ -117,7 +117,7 @@ bool stivale2_load(char *config, char *cmdline) {
     if (bits == -1) {
         struct stivale2_anchor *anchor;
         if (!stivale_load_by_anchor((void **)&anchor, "STIVALE2 ANCHOR", kernel, kernel_file_size)) {
-            goto fail;
+            panic(true, "stivale2: Failed to load kernel by anchor");
         }
 
         bits = anchor->bits;
@@ -131,13 +131,13 @@ bool stivale2_load(char *config, char *cmdline) {
             case 64:
                 if (elf64_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
                                        sizeof(struct stivale2_header), slide)) {
-                    goto fail;
+                    panic(true, "stivale2: Failed to load .stivale2hdr section");
                 }
                 break;
             case 32:
                 if (elf32_load_section(kernel, &stivale2_hdr, ".stivale2hdr",
                                        sizeof(struct stivale2_header))) {
-                    goto fail;
+                    panic(true, "stivale2: Failed to load .stivale2hdr section");
                 }
                 break;
         }
@@ -846,11 +846,4 @@ have_tm_tag:;
     stivale_spinup(bits, want_5lv, &pagemap, entry_point,
                    REPORTED_ADDR((uint64_t)(uintptr_t)stivale2_struct),
                    stivale2_hdr.stack, want_pmrs, want_pmrs, (uintptr_t)local_gdt);
-
-    __builtin_unreachable();
-
-fail:
-    pmm_free(kernel, kernel_file_size);
-    pmm_free(stivale2_struct, sizeof(struct stivale2_struct));
-    return false;
 }

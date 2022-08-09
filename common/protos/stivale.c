@@ -57,7 +57,7 @@ bool stivale_load_by_anchor(void **_anchor, const char *magic,
     return true;
 }
 
-bool stivale_load(char *config, char *cmdline) {
+noreturn void stivale_load(char *config, char *cmdline) {
     struct stivale_struct *stivale_struct = ext_mem_alloc(sizeof(struct stivale_struct));
 
     // BIOS or UEFI?
@@ -99,7 +99,7 @@ bool stivale_load(char *config, char *cmdline) {
     if (bits == -1) {
         struct stivale_anchor *anchor;
         if (!stivale_load_by_anchor((void **)&anchor, "STIVALE1 ANCHOR", kernel, kernel_file_size)) {
-            goto fail;
+            panic(true, "stivale: Failed to load kernel by anchor");
         }
 
         bits = anchor->bits;
@@ -113,13 +113,13 @@ bool stivale_load(char *config, char *cmdline) {
             case 64:
                 if (elf64_load_section(kernel, &stivale_hdr, ".stivalehdr",
                                        sizeof(struct stivale_header), slide)) {
-                    goto fail;
+                    panic(true, "stivale: Failed to load .stivalehdr section");
                 }
                 break;
             case 32:
                 if (elf32_load_section(kernel, &stivale_hdr, ".stivalehdr",
                                        sizeof(struct stivale_header))) {
-                    goto fail;
+                    panic(true, "stivale: Failed to load .stivalehdr section");
                 }
                 break;
         }
@@ -373,13 +373,6 @@ bool stivale_load(char *config, char *cmdline) {
     stivale_spinup(bits, want_5lv, &pagemap,
                    entry_point, REPORTED_ADDR((uint64_t)(uintptr_t)stivale_struct),
                    stivale_hdr.stack, false, false, (uintptr_t)local_gdt);
-
-    __builtin_unreachable();
-
-fail:
-    pmm_free(kernel, kernel_file_size);
-    pmm_free(stivale_struct, sizeof(struct stivale_struct));
-    return false;
 }
 
 pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range *ranges, size_t ranges_count,

@@ -15,7 +15,6 @@
 #define MEMMAP_KERNEL_AND_MODULES     0x1001
 #define MEMMAP_FRAMEBUFFER            0x1002
 #define MEMMAP_EFI_RECLAIMABLE        0x2000
-#define MEMMAP_EFI_BOOTSERVICES       0x2001
 
 struct meminfo {
     size_t uppermem;

@@ -116,8 +116,6 @@ static bool align_entry(uint64_t *base, uint64_t *length) {
     return true;
 }
 
-#define MEMMAP_DROP_LATER ((uint32_t)-1)
-
 static void sanitise_entries(struct e820_entry_t *m, size_t *_count, bool align_entries) {
     size_t count = *_count;
 
@@ -140,14 +138,6 @@ static void sanitise_entries(struct e820_entry_t *m, size_t *_count, bool align_
 
             if ( (res_base >= base && res_base < top)
               && (res_top  >= base && res_top  < top) ) {
-                // Drop the entry entirely if usable
-                if (m[j].type == MEMMAP_USABLE) {
-                    m[j].type = MEMMAP_DROP_LATER;
-                }
-                if (m[j].type == MEMMAP_DROP_LATER) {
-                    continue;
-                }
-
                 // TODO actually handle splitting off usable chunks
                 panic(false, "A non-usable memory map entry is inside a usable section.");
             }
@@ -170,16 +160,6 @@ static void sanitise_entries(struct e820_entry_t *m, size_t *_count, bool align_
             m[i] = m[count - 1];
             count--; i--;
         }
-    }
-
-    // Collect "drop later" entries
-    for (size_t i = 0; i < count; i++) {
-        if (m[i].type != MEMMAP_DROP_LATER) {
-            continue;
-        }
-
-        m[i] = m[count - 1];
-        count--; i--;
     }
 
     // Remove 0 length usable entries and usable entries below 0x1000
@@ -493,20 +473,7 @@ static void pmm_reclaim_uefi_mem(struct e820_entry_t *m, size_t *_count) {
                     our_type = MEMMAP_RESERVED; break;
             }
 
-            struct e820_entry_t *memmap_save = memmap;
-            size_t memmap_entries_save = memmap_entries;
-
-            memmap = m;
-            memmap_entries = count;
-
-            memmap_alloc_range(efi_base, efi_size, our_type, 0, true, false, false);
-
-            count = memmap_entries;
-
-            if (memmap_save != memmap) {
-                memmap = memmap_save;
-                memmap_entries = memmap_entries_save;
-            }
+            memmap_alloc_range_in(m, &count, efi_base, efi_size, our_type, 0, true, false, false);
         }
     }
 
@@ -639,19 +606,22 @@ struct meminfo mmap_get_info(size_t mmap_count, struct e820_entry_t *mmap) {
     return info;
 }
 
-static bool pmm_new_entry(uint64_t base, uint64_t length, uint32_t type) {
+static bool pmm_new_entry(struct e820_entry_t *m, size_t *_count,
+                          uint64_t base, uint64_t length, uint32_t type) {
+    size_t count = *_count;
+
     uint64_t top = base + length;
 
     // Handle overlapping new entries.
-    for (size_t i = 0; i < memmap_entries; i++) {
-        uint64_t entry_base = memmap[i].base;
-        uint64_t entry_top  = memmap[i].base + memmap[i].length;
+    for (size_t i = 0; i < count; i++) {
+        uint64_t entry_base = m[i].base;
+        uint64_t entry_top  = m[i].base + m[i].length;
 
         // Full overlap
         if (base <= entry_base && top >= entry_top) {
             // Remove overlapped entry
-            memmap[i] = memmap[memmap_entries - 1];
-            memmap_entries--;
+            m[i] = m[count - 1];
+            count--;
             i--;
             continue;
         }
@@ -659,30 +629,30 @@ static bool pmm_new_entry(uint64_t base, uint64_t length, uint32_t type) {
         // Partial overlap (bottom)
         if (base <= entry_base && top < entry_top && top > entry_base) {
             // Entry gets bottom shaved off
-            memmap[i].base += top - entry_base;
-            memmap[i].length -= top - entry_base;
+            m[i].base += top - entry_base;
+            m[i].length -= top - entry_base;
             continue;
         }
 
         // Partial overlap (top)
         if (base > entry_base && base < entry_top && top >= entry_top) {
             // Entry gets top shaved off
-            memmap[i].length -= entry_top - base;
+            m[i].length -= entry_top - base;
             continue;
         }
 
         // Nested (pain)
         if (base > entry_base && top < entry_top) {
             // Entry gets top shaved off first
-            memmap[i].length -= entry_top - base;
+            m[i].length -= entry_top - base;
 
             // Now we need to create a new entry
-            if (memmap_entries >= memmap_max_entries)
+            if (count >= memmap_max_entries)
                 panic(false, "Memory map exhausted.");
 
-            struct e820_entry_t *new_entry = &memmap[memmap_entries++];
+            struct e820_entry_t *new_entry = &m[count++];
 
-            new_entry->type = memmap[i].type;
+            new_entry->type = m[i].type;
             new_entry->base = top;
             new_entry->length = entry_top - top;
 
@@ -690,19 +660,23 @@ static bool pmm_new_entry(uint64_t base, uint64_t length, uint32_t type) {
         }
     }
 
-    if (memmap_entries >= memmap_max_entries)
+    if (count >= memmap_max_entries)
         panic(false, "Memory map exhausted.");
 
-    struct e820_entry_t *target = &memmap[memmap_entries++];
+    struct e820_entry_t *target = &m[count++];
 
     target->type = type;
     target->base = base;
     target->length = length;
 
+    *_count = count;
     return true;
 }
 
-bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, uint32_t overlay_type, bool do_panic, bool simulation, bool new_entry) {
+bool memmap_alloc_range_in(struct e820_entry_t *m, size_t *_count,
+                           uint64_t base, uint64_t length, uint32_t type, uint32_t overlay_type, bool do_panic, bool simulation, bool new_entry) {
+    size_t count = *_count;
+
     if (length == 0)
         return true;
 
@@ -712,18 +686,18 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, uint32_t 
 
     uint64_t top = base + length;
 
-    for (size_t i = 0; i < memmap_entries; i++) {
-        if (overlay_type != 0 && memmap[i].type != overlay_type)
+    for (size_t i = 0; i < count; i++) {
+        if (overlay_type != 0 && m[i].type != overlay_type)
             continue;
 
-        uint64_t entry_base = memmap[i].base;
-        uint64_t entry_top  = memmap[i].base + memmap[i].length;
+        uint64_t entry_base = m[i].base;
+        uint64_t entry_top  = m[i].base + m[i].length;
 
         if (base >= entry_base && base < entry_top && top <= entry_top) {
             if (simulation)
                 return true;
 
-            if (pmm_new_entry(base, length, type) == true) {
+            if (pmm_new_entry(m, &count, base, length, type) == true) {
                 goto success;
             }
         }
@@ -736,11 +710,16 @@ bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, uint32_t 
         return false;
     }
 
-    if (pmm_new_entry(base, length, type) == false) {
+    if (pmm_new_entry(m, &count, base, length, type) == false) {
         return false;
     }
 
 success:
-    sanitise_entries(memmap, &memmap_entries, false);
+    sanitise_entries(m, &count, false);
+    *_count = count;
     return true;
+}
+
+bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, uint32_t overlay_type, bool do_panic, bool simulation, bool new_entry) {
+    return memmap_alloc_range_in(memmap, &memmap_entries, base, length, type, overlay_type, do_panic, simulation, new_entry);
 }

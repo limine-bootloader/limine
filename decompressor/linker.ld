@@ -17,7 +17,7 @@ SECTIONS
         *(.text .text.*)
     } :text
 
-    .rodata : {
+    .data : {
         *(.rodata .rodata.*)
         *(.data .data.*)
     } :data
@@ -30,6 +30,6 @@ SECTIONS
     } :data
 
     /DISCARD/ : {
-        *.o(*)
+        *(.note .note.*)
     }
 }

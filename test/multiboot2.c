@@ -45,6 +45,20 @@ void multiboot2_main(uint32_t magic, struct multiboot_info* mb_info_addr) {
                 break;
             }
 
+            case MULTIBOOT_TAG_TYPE_ACPI_OLD: {
+                struct multiboot_tag_old_acpi *old_acpi = (struct multiboot_tag_old_acpi *)tag;
+                e9_printf("\t acpi_old:");
+                e9_printf("\t\t rsdp=%s", old_acpi->rsdp);
+                break;
+            }
+
+            case MULTIBOOT_TAG_TYPE_ACPI_NEW: {
+                struct multiboot_tag_new_acpi *new_acpi = (struct multiboot_tag_new_acpi *)tag;
+                e9_printf("\t acpi_new:");
+                e9_printf("\t\t rsdp=%s", new_acpi->rsdp);
+                break;
+            }
+
             case MULTIBOOT_TAG_TYPE_MODULE: {
                 struct multiboot_tag_module *module = (struct multiboot_tag_module *)tag;
                 e9_printf("\t module:");

@@ -43,7 +43,7 @@ void *acpi_get_rsdp_v1(void) {
     // revision, return it.
     struct rsdp *rsdp = acpi_get_rsdp();
 
-    if (rsdp != NULL && rsdp->rev == 1)
+    if (rsdp != NULL && rsdp->rev < 2)
         return rsdp;
 
     return NULL;

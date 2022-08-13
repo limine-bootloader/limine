@@ -32,18 +32,18 @@ trap "rm -f '$TMP1' '$TMP2' '$TMP3' '$TMP4'; trap - EXIT; exit" EXIT INT TERM QU
 "$GREP" "$4" < "$TMP1" | cut -d' ' -f1 > "$TMP2"
 "$GREP" "$4" < "$TMP1" | "$AWK" 'NF{ print $NF }' > "$TMP3"
 
-echo "section .$2_map" > "$TMP4"
-echo "global $2_map" >> "$TMP4"
+echo ".section .$2_map" > "$TMP4"
+echo ".globl $2_map" >> "$TMP4"
 echo "$2_map:" >> "$TMP4"
 
 if [ "$3" = "32" ]; then
-    paste -d'$' "$TMP2" "$TMP3" | "$SED" 's/^/dd 0x/g;s/$/", 0/g;s/\$/\
-db "/g' >> "$TMP4"
-    echo "dd 0xffffffff" >> "$TMP4"
-    nasm -f elf32 "$TMP4" -o $2.map.o
+    paste -d'$' "$TMP2" "$TMP3" | "$SED" 's/^/.long 0x/g;s/$/"/g;s/\$/\
+.asciz "/g' >> "$TMP4"
+    echo ".long 0xffffffff" >> "$TMP4"
 elif [ "$3" = "64" ]; then
-    paste -d'$' "$TMP2" "$TMP3" | "$SED" 's/^/dq 0x/g;s/$/", 0/g;s/\$/\
-db "/g' >> "$TMP4"
-    echo "dq 0xffffffffffffffff" >> "$TMP4"
-    nasm -f elf64 "$TMP4" -o $2.map.o
+    paste -d'$' "$TMP2" "$TMP3" | "$SED" 's/^/.quad 0x/g;s/$/"/g;s/\$/\
+.asciz "/g' >> "$TMP4"
+    echo ".quad 0xffffffffffffffff" >> "$TMP4"
 fi
+
+mv "$TMP4" "$2.map.S"

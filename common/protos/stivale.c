@@ -366,16 +366,16 @@ noreturn void stivale_load(char *config, char *cmdline) {
         }
     }
 
-    struct e820_entry_t *mmap_copy = ext_mem_alloc(256 * sizeof(struct e820_entry_t));
+    struct memmap_entry *mmap_copy = ext_mem_alloc(256 * sizeof(struct memmap_entry));
 
     size_t mmap_entries;
-    struct e820_entry_t *mmap = get_memmap(&mmap_entries);
+    struct memmap_entry *mmap = get_memmap(&mmap_entries);
 
     if (mmap_entries > 256) {
         panic(false, "stivale: Too many memory map entries!");
     }
 
-    memcpy(mmap_copy, mmap, mmap_entries * sizeof(struct e820_entry_t));
+    memcpy(mmap_copy, mmap, mmap_entries * sizeof(struct memmap_entry));
 
     stivale_struct->memory_map_entries = (uint64_t)mmap_entries;
     stivale_struct->memory_map_addr    = REPORTED_ADDR((uint64_t)(size_t)mmap_copy);
@@ -450,8 +450,8 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
     }
 
     size_t _memmap_entries = memmap_entries;
-    struct e820_entry_t *_memmap =
-        ext_mem_alloc(_memmap_entries * sizeof(struct e820_entry_t));
+    struct memmap_entry *_memmap =
+        ext_mem_alloc(_memmap_entries * sizeof(struct memmap_entry));
     for (size_t i = 0; i < _memmap_entries; i++)
         _memmap[i] = memmap[i];
 

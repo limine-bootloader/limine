@@ -390,7 +390,7 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
 #endif
 
     size_t mb_mmap_count;
-    struct e820_entry_t *raw_memmap = get_raw_memmap(&mb_mmap_count);
+    struct memmap_entry *raw_memmap = get_raw_memmap(&mb_mmap_count);
 
     size_t mb_mmap_len = mb_mmap_count * sizeof(struct multiboot1_mmap_entry);
     struct multiboot1_mmap_entry *mmap = mb1_info_alloc(&mb1_info_raw, mb_mmap_len);

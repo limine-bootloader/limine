@@ -806,7 +806,7 @@ have_tm_tag:;
     {
     struct stivale2_struct_tag_memmap *tag =
         ext_mem_alloc(sizeof(struct stivale2_struct_tag_memmap) +
-                       sizeof(struct e820_entry_t) * 256);
+                       sizeof(struct memmap_entry) * 256);
 
     // Reserve 32K at 0x70000, if possible
     if (!memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, false, false, false)) {
@@ -816,7 +816,7 @@ have_tm_tag:;
     }
 
     size_t mmap_entries;
-    struct e820_entry_t *mmap = get_memmap(&mmap_entries);
+    struct memmap_entry *mmap = get_memmap(&mmap_entries);
 
     if (mmap_entries > 256) {
         panic(false, "stivale2: Too many memory map entries!");
@@ -826,7 +826,7 @@ have_tm_tag:;
     tag->entries = (uint64_t)mmap_entries;
 
     memcpy((void*)tag + sizeof(struct stivale2_struct_tag_memmap),
-           mmap, sizeof(struct e820_entry_t) * mmap_entries);
+           mmap, sizeof(struct memmap_entry) * mmap_entries);
 
     append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }

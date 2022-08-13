@@ -18,7 +18,7 @@ extern symbol bss_end;
 #endif
 
 bool allocations_disallowed = true;
-static void sanitise_entries(struct e820_entry_t *, size_t *, bool);
+static void sanitise_entries(struct memmap_entry *, size_t *, bool);
 
 void *conv_mem_alloc(size_t count) {
     static uint64_t base = 4096;
@@ -50,17 +50,17 @@ void *conv_mem_alloc(size_t count) {
 #if bios == 1
 #define memmap_max_entries ((size_t)512)
 
-struct e820_entry_t memmap[memmap_max_entries];
+struct memmap_entry memmap[memmap_max_entries];
 size_t memmap_entries = 0;
 #endif
 
 #if uefi == 1
 static size_t memmap_max_entries;
 
-struct e820_entry_t *memmap;
+struct memmap_entry *memmap;
 size_t memmap_entries = 0;
 
-static struct e820_entry_t *untouched_memmap;
+static struct memmap_entry *untouched_memmap;
 static size_t untouched_memmap_entries = 0;
 #endif
 
@@ -89,7 +89,7 @@ static const char *memmap_type(uint32_t type) {
     }
 }
 
-void print_memmap(struct e820_entry_t *mm, size_t size) {
+void print_memmap(struct memmap_entry *mm, size_t size) {
     for (size_t i = 0; i < size; i++) {
         printv("[%X -> %X] : %X  <%s (%x)>\n",
                mm[i].base,
@@ -116,7 +116,7 @@ static bool align_entry(uint64_t *base, uint64_t *length) {
     return true;
 }
 
-static void sanitise_entries(struct e820_entry_t *m, size_t *_count, bool align_entries) {
+static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_entries) {
     size_t count = *_count;
 
     for (size_t i = 0; i < count; i++) {
@@ -194,7 +194,7 @@ del_mm1:
                 min_index = i;
             }
         }
-        struct e820_entry_t min_e = m[min_index];
+        struct memmap_entry min_e = m[min_index];
         m[min_index] = m[p];
         m[p] = min_e;
     }
@@ -222,10 +222,10 @@ del_mm1:
 }
 
 #if uefi == 1
-static void pmm_reclaim_uefi_mem(struct e820_entry_t *m, size_t *_count);
+static void pmm_reclaim_uefi_mem(struct memmap_entry *m, size_t *_count);
 #endif
 
-struct e820_entry_t *get_memmap(size_t *entries) {
+struct memmap_entry *get_memmap(size_t *entries) {
 #if uefi == 1
     pmm_reclaim_uefi_mem(memmap, &memmap_entries);
 #endif
@@ -303,12 +303,12 @@ void init_memmap(void) {
         goto fail;
     }
 
-    status = gBS->AllocatePool(EfiLoaderData, memmap_max_entries * sizeof(struct e820_entry_t), (void **)&memmap);
+    status = gBS->AllocatePool(EfiLoaderData, memmap_max_entries * sizeof(struct memmap_entry), (void **)&memmap);
     if (status) {
         goto fail;
     }
 
-    status = gBS->AllocatePool(EfiLoaderData, memmap_max_entries * sizeof(struct e820_entry_t), (void **)&untouched_memmap);
+    status = gBS->AllocatePool(EfiLoaderData, memmap_max_entries * sizeof(struct memmap_entry), (void **)&untouched_memmap);
     if (status) {
         goto fail;
     }
@@ -401,7 +401,7 @@ void init_memmap(void) {
         }
     }
 
-    memcpy(untouched_memmap, memmap, memmap_entries * sizeof(struct e820_entry_t));
+    memcpy(untouched_memmap, memmap, memmap_entries * sizeof(struct memmap_entry));
     untouched_memmap_entries = memmap_entries;
 
     size_t bootloader_size = ALIGN_UP((uintptr_t)__image_end - (uintptr_t)__image_base, 4096);
@@ -418,7 +418,7 @@ fail:
     panic(false, "pmm: Failure initialising memory map");
 }
 
-static void pmm_reclaim_uefi_mem(struct e820_entry_t *m, size_t *_count) {
+static void pmm_reclaim_uefi_mem(struct memmap_entry *m, size_t *_count) {
     size_t count = *_count;
 
     size_t recl_i = 0;
@@ -429,7 +429,7 @@ static void pmm_reclaim_uefi_mem(struct e820_entry_t *m, size_t *_count) {
         }
     }
 
-    struct e820_entry_t *recl = ext_mem_alloc(recl_i * sizeof(struct e820_entry_t));
+    struct memmap_entry *recl = ext_mem_alloc(recl_i * sizeof(struct memmap_entry));
 
     for (size_t i = 0, j = 0; i < count; i++) {
         if (m[i].type == MEMMAP_EFI_RECLAIMABLE) {
@@ -438,7 +438,7 @@ static void pmm_reclaim_uefi_mem(struct e820_entry_t *m, size_t *_count) {
     }
 
     for (size_t ri = 0; ri < recl_i; ri++) {
-        struct e820_entry_t *r = &recl[ri];
+        struct memmap_entry *r = &recl[ri];
 
         // Punch holes in our EFI reclaimable entry for every EFI area which is
         // boot services or conventional that fits within
@@ -518,14 +518,14 @@ void pmm_release_uefi_mem(void) {
 #endif
 
 #if bios == 1
-struct e820_entry_t *get_raw_memmap(size_t *entry_count) {
+struct memmap_entry *get_raw_memmap(size_t *entry_count) {
     *entry_count = e820_entries;
     return e820_map;
 }
 #endif
 
 #if uefi == 1
-struct e820_entry_t *get_raw_memmap(size_t *entry_count) {
+struct memmap_entry *get_raw_memmap(size_t *entry_count) {
     pmm_reclaim_uefi_mem(untouched_memmap, &untouched_memmap_entries);
     *entry_count = untouched_memmap_entries;
     return untouched_memmap;
@@ -593,7 +593,7 @@ void *ext_mem_alloc_type_aligned(size_t count, uint32_t type, size_t alignment) 
 
 /// Compute and returns the amount of upper and lower memory till
 /// the first hole.
-struct meminfo mmap_get_info(size_t mmap_count, struct e820_entry_t *mmap) {
+struct meminfo mmap_get_info(size_t mmap_count, struct memmap_entry *mmap) {
     struct meminfo info = {0};
 
     for (size_t i = 0; i < mmap_count; i++) {
@@ -619,7 +619,7 @@ struct meminfo mmap_get_info(size_t mmap_count, struct e820_entry_t *mmap) {
     return info;
 }
 
-static bool pmm_new_entry(struct e820_entry_t *m, size_t *_count,
+static bool pmm_new_entry(struct memmap_entry *m, size_t *_count,
                           uint64_t base, uint64_t length, uint32_t type) {
     size_t count = *_count;
 
@@ -663,7 +663,7 @@ static bool pmm_new_entry(struct e820_entry_t *m, size_t *_count,
             if (count >= memmap_max_entries)
                 panic(false, "Memory map exhausted.");
 
-            struct e820_entry_t *new_entry = &m[count++];
+            struct memmap_entry *new_entry = &m[count++];
 
             new_entry->type = m[i].type;
             new_entry->base = top;
@@ -676,7 +676,7 @@ static bool pmm_new_entry(struct e820_entry_t *m, size_t *_count,
     if (count >= memmap_max_entries)
         panic(false, "Memory map exhausted.");
 
-    struct e820_entry_t *target = &m[count++];
+    struct memmap_entry *target = &m[count++];
 
     target->type = type;
     target->base = base;
@@ -686,7 +686,7 @@ static bool pmm_new_entry(struct e820_entry_t *m, size_t *_count,
     return true;
 }
 
-bool memmap_alloc_range_in(struct e820_entry_t *m, size_t *_count,
+bool memmap_alloc_range_in(struct memmap_entry *m, size_t *_count,
                            uint64_t base, uint64_t length, uint32_t type, uint32_t overlay_type, bool do_panic, bool simulation, bool new_entry) {
     size_t count = *_count;
 

@@ -607,7 +607,7 @@ set_textmode:;
     struct boot_e820_entry *e820_table = boot_params->e820_table;
 
     size_t mmap_entries;
-    struct e820_entry_t *mmap = get_raw_memmap(&mmap_entries);
+    struct memmap_entry *mmap = get_raw_memmap(&mmap_entries);
 
     for (size_t i = 0, j = 0; i < mmap_entries; i++) {
         if (mmap[i].type >= 0x1000) {

@@ -677,7 +677,7 @@ FEAT_START
     }
 
     size_t mmap_entries;
-    struct e820_entry_t *mmap = get_memmap(&mmap_entries);
+    struct memmap_entry *mmap = get_memmap(&mmap_entries);
 
     if (memmap_request == NULL) {
         break; // next feature

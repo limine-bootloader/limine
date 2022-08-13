@@ -25,3 +25,4 @@ extern size_t icache_line_size(void);
 extern size_t dcache_line_size(void);
 extern void clean_inval_dcache_poc(uintptr_t start, uintptr_t end);
 extern void inval_icache_pou(uintptr_t start, uintptr_t end);
+extern int current_el(void);

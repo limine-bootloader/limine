@@ -124,6 +124,28 @@ static pagemap_t build_pagemap(bool level5pg, struct elf_range *ranges, size_t r
         }
     }
 
+    // Map the framebuffer as uncacheable
+#if defined (__aarch64__)
+    for (size_t i = 0; i < _memmap_entries; i++) {
+        uint64_t base   = _memmap[i].base;
+        uint64_t length = _memmap[i].length;
+        uint64_t top    = base + length;
+
+        if (_memmap[i].type != MEMMAP_FRAMEBUFFER)
+            continue;
+
+        uint64_t aligned_base   = ALIGN_DOWN(base, 0x1000);
+        uint64_t aligned_top    = ALIGN_UP(top, 0x1000);
+        uint64_t aligned_length = aligned_top - aligned_base;
+
+        for (uint64_t j = 0; j < aligned_length; j += 0x1000) {
+            uint64_t page = aligned_base + j;
+            map_page(pagemap, page, page, VMM_FLAG_WRITE | VMM_FLAG_FB, Size4KiB);
+            map_page(pagemap, direct_map_offset + page, page, VMM_FLAG_WRITE | VMM_FLAG_FB, Size4KiB);
+        }
+    }
+#endif
+
     return pagemap;
 }
 
@@ -145,8 +167,8 @@ extern symbol limine_spinup_32;
                     | (1 << 2)  /* D-Cache */             \
                     | (1 << 0)) /* MMU */                 \
 
-#define LIMINE_MAIR ( (0b11111111 << 0)   /* Normal WB RW-allocate non-transient */ \
-                    | (0b01000100 << 8) ) /* Normal NC */
+#define LIMINE_MAIR(fb) ( ((uint64_t)0b11111111 << 0) /* Normal WB RW-allocate non-transient */ \
+                        | ((uint64_t)(fb) << 8) )     /* Framebuffer type */
 
 #define LIMINE_TCR(tsz, pa) ( ((uint64_t)(pa) << 32)         /* Intermediate address size */  \
                             | ((uint64_t)2 << 30)            /* TTBR1 4K granule */           \
@@ -797,6 +819,39 @@ FEAT_END
 #endif
 #endif
 
+#if defined (__aarch64__)
+    uint64_t fb_attr = 0x00;
+    if (fb.framebuffer_addr) {
+        int el = current_el();
+        uint64_t res;
+
+        if (el == 1) {
+            asm volatile (
+                    "at s1e1w, %1\n\t"
+                    "isb\n\t"
+                    "mrs %0, par_el1"
+                    : "=r"(res)
+                    : "r"(fb.framebuffer_addr)
+                    : "memory");
+        } else if (el == 2) {
+            asm volatile (
+                    "at s1e2w, %1\n\t"
+                    "isb\n\t"
+                    "mrs %0, par_el1"
+                    : "=r"(res)
+                    : "r"(fb.framebuffer_addr)
+                    : "memory");
+        } else {
+            panic(false, "Unexpected EL in limine_load");
+        }
+
+        if (res & 1)
+            panic(false, "Address translation for framebuffer failed");
+
+        fb_attr = res >> 56;
+    }
+#endif
+
     void *stack = ext_mem_alloc(stack_size) + stack_size;
 
     pagemap_t pagemap = {0};
@@ -829,7 +884,7 @@ FEAT_START
 
     smp_info = init_smp(0, (void **)&smp_array,
                         &cpu_count, &bsp_mpidr,
-                        pagemap, LIMINE_MAIR, LIMINE_TCR(tsz, pa), LIMINE_SCTLR);
+                        pagemap, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa), LIMINE_SCTLR);
 #else
 #error Unknown architecture
 #endif
@@ -966,7 +1021,7 @@ FEAT_END
 #elif defined (__aarch64__)
     vmm_assert_4k_pages();
 
-    enter_in_el1(entry_point, (uint64_t)stack, LIMINE_SCTLR, LIMINE_MAIR, LIMINE_TCR(tsz, pa),
+    enter_in_el1(entry_point, (uint64_t)stack, LIMINE_SCTLR, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa),
                  (uint64_t)pagemap.top_level[0],
                  (uint64_t)pagemap.top_level[1], 0);
 #else

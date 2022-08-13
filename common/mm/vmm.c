@@ -144,6 +144,7 @@ void vmm_assert_4k_pages(void) {
 #define PT_FLAG_ACCESS   ((uint64_t)1 << 10)
 #define PT_FLAG_XN       ((uint64_t)1 << 54)
 #define PT_FLAG_WB       ((uint64_t)0 << 2)
+#define PT_FLAG_FB       ((uint64_t)1 << 2)
 #define PT_PADDR_MASK    ((uint64_t)0x0000FFFFFFFFF000)
 
 #define PT_TABLE_FLAGS   (PT_FLAG_VALID | PT_FLAG_TABLE)
@@ -159,6 +160,8 @@ static uint64_t pt_to_vmm_flags_internal(pt_entry_t entry) {
         flags |= VMM_FLAG_WRITE;
     if (entry & PT_FLAG_XN)
         flags |= VMM_FLAG_NOEXEC;
+    if (entry & PT_FLAG_FB)
+        flags |= VMM_FLAG_FB;
 
     return flags;
 }
@@ -188,6 +191,8 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
         real_flags |= PT_FLAG_READONLY;
     if (flags & VMM_FLAG_NOEXEC)
         real_flags |= PT_FLAG_XN;
+    if (flags & VMM_FLAG_FB)
+        real_flags |= PT_FLAG_FB;
 
     // Paging levels
     switch (pagemap.levels) {

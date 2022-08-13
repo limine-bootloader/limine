@@ -279,6 +279,15 @@ inline void inval_icache_pou(uintptr_t start, uintptr_t end) {
     asm volatile ("dsb sy\n\tisb");
 }
 
+inline int current_el(void) {
+    uint64_t v;
+
+    asm volatile ("mrs %0, currentel" : "=r"(v));
+    v = (v >> 2) & 0b11;
+
+    return v;
+}
+
 #else
 #error Unknown architecture
 #endif

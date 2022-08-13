@@ -8,6 +8,7 @@
 
 #define VMM_FLAG_WRITE   ((uint64_t)1 << 1)
 #define VMM_FLAG_NOEXEC  ((uint64_t)1 << 63)
+#define VMM_FLAG_FB      ((uint64_t)0)
 
 typedef struct {
     int   levels;
@@ -30,6 +31,7 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
 // aarch64 flags.
 #define VMM_FLAG_WRITE   ((uint64_t)1 << 0)
 #define VMM_FLAG_NOEXEC  ((uint64_t)1 << 1)
+#define VMM_FLAG_FB      ((uint64_t)1 << 2)
 
 typedef struct {
     int   levels;

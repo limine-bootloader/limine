@@ -708,7 +708,7 @@ static noreturn void _menu(bool timeout_enabled) {
 #endif
 
 reterm:
-    if (graphics == NULL || strcmp(graphics, "no") == 1) {
+    if (graphics == NULL || strcmp(graphics, "no") != 0) {
         size_t req_width = 0, req_height = 0, req_bpp = 0;
 
         char *menu_resolution = config_get_value(NULL, 0, "INTERFACE_RESOLUTION");

@@ -3,15 +3,9 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <mm/pmm.h>
 
-struct e820_entry_t {
-    uint64_t base;
-    uint64_t length;
-    uint32_t type;
-    uint32_t unused;
-};
-
-extern struct e820_entry_t e820_map[];
+extern struct memmap_entry e820_map[];
 extern size_t e820_entries;
 
 void init_e820(void);

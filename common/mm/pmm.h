@@ -4,7 +4,13 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <sys/e820.h>
+
+struct memmap_entry {
+    uint64_t base;
+    uint64_t length;
+    uint32_t type;
+    uint32_t unused;
+};
 
 #define MEMMAP_USABLE                 1
 #define MEMMAP_RESERVED               2
@@ -21,25 +27,25 @@ struct meminfo {
     size_t lowermem;
 };
 
-struct meminfo mmap_get_info(size_t mmap_count, struct e820_entry_t *mmap);
+struct meminfo mmap_get_info(size_t mmap_count, struct memmap_entry *mmap);
 
 #if bios == 1
-extern struct e820_entry_t memmap[];
+extern struct memmap_entry memmap[];
 extern size_t memmap_entries;
 #endif
 
 #if uefi == 1
-extern struct e820_entry_t *memmap;
+extern struct memmap_entry *memmap;
 extern size_t memmap_entries;
 #endif
 
 extern bool allocations_disallowed;
 
 void init_memmap(void);
-struct e820_entry_t *get_memmap(size_t *entries);
-struct e820_entry_t *get_raw_memmap(size_t *entry_count);
-void print_memmap(struct e820_entry_t *mm, size_t size);
-bool memmap_alloc_range_in(struct e820_entry_t *m, size_t *_count,
+struct memmap_entry *get_memmap(size_t *entries);
+struct memmap_entry *get_raw_memmap(size_t *entry_count);
+void print_memmap(struct memmap_entry *mm, size_t size);
+bool memmap_alloc_range_in(struct memmap_entry *m, size_t *_count,
                            uint64_t base, uint64_t length, uint32_t type, uint32_t overlay_type, bool do_panic, bool simulation, bool new_entry);
 bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, uint32_t overlay_type, bool panic, bool simulation, bool new_entry);
 void pmm_randomise_memory(void);

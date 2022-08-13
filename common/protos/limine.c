@@ -96,8 +96,8 @@ static pagemap_t build_pagemap(bool level5pg, struct elf_range *ranges, size_t r
     }
 
     size_t _memmap_entries = memmap_entries;
-    struct e820_entry_t *_memmap =
-        ext_mem_alloc(_memmap_entries * sizeof(struct e820_entry_t));
+    struct memmap_entry *_memmap =
+        ext_mem_alloc(_memmap_entries * sizeof(struct memmap_entry));
     for (size_t i = 0; i < _memmap_entries; i++)
         _memmap[i] = memmap[i];
 
@@ -774,7 +774,7 @@ FEAT_START
     }
 
     size_t mmap_entries;
-    struct e820_entry_t *mmap = get_memmap(&mmap_entries);
+    struct memmap_entry *mmap = get_memmap(&mmap_entries);
 
     if (memmap_request == NULL) {
         break; // next feature

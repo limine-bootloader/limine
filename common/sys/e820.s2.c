@@ -10,14 +10,14 @@
 
 #define MAX_E820_ENTRIES 256
 
-struct e820_entry_t e820_map[MAX_E820_ENTRIES];
+struct memmap_entry e820_map[MAX_E820_ENTRIES];
 size_t e820_entries = 0;
 
 void init_e820(void) {
     struct rm_regs r = {0};
 
     for (size_t i = 0; i < MAX_E820_ENTRIES; i++) {
-        struct e820_entry_t entry;
+        struct memmap_entry entry;
 
         r.eax = 0xe820;
         r.ecx = 24;

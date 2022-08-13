@@ -579,7 +579,7 @@ noreturn void menu(__attribute__((unused)) bool timeout_enabled) {
 #endif
 }
 
-static struct e820_entry_t *rewound_memmap = NULL;
+static struct memmap_entry *rewound_memmap = NULL;
 static size_t rewound_memmap_entries = 0;
 static uint8_t *rewound_data;
 #if bios == 1
@@ -605,15 +605,15 @@ static noreturn void _menu(bool timeout_enabled) {
 #if bios == 1
         memcpy(s2_data_begin, rewound_s2_data, s2_data_size);
 #endif
-        memcpy(memmap, rewound_memmap, rewound_memmap_entries * sizeof(struct e820_entry_t));
+        memcpy(memmap, rewound_memmap, rewound_memmap_entries * sizeof(struct memmap_entry));
         memmap_entries = rewound_memmap_entries;
     } else {
         rewound_data = ext_mem_alloc(data_size);
 #if bios == 1
         rewound_s2_data = ext_mem_alloc(s2_data_size);
 #endif
-        rewound_memmap = ext_mem_alloc(256 * sizeof(struct e820_entry_t));
-        memcpy(rewound_memmap, memmap, memmap_entries * sizeof(struct e820_entry_t));
+        rewound_memmap = ext_mem_alloc(256 * sizeof(struct memmap_entry));
+        memcpy(rewound_memmap, memmap, memmap_entries * sizeof(struct memmap_entry));
         rewound_memmap_entries = memmap_entries;
         memcpy(rewound_data, data_begin, data_size);
 #if bios == 1

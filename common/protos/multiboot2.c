@@ -680,7 +680,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
 #endif
 
     size_t mb_mmap_count;
-    struct e820_entry_t *raw_memmap = get_raw_memmap(&mb_mmap_count);
+    struct memmap_entry *raw_memmap = get_raw_memmap(&mb_mmap_count);
 
     //////////////////////////////////////////////
     // Create memory map tag

@@ -350,8 +350,21 @@ void init_memmap(void) {
         uint64_t base = entry->PhysicalStart;
         uint64_t length = entry->NumberOfPages * 4096;
 
+        // We only manage memory below 4GiB. For anything above that, make it
+        // EFI reclaimable.
         if (our_type == MEMMAP_USABLE) {
-            if (base + length >= 0x100000000) {
+            if (base + length > 0x100000000) {
+                if (base < 0x100000000) {
+                    memmap[memmap_entries].base = base;
+                    memmap[memmap_entries].length = 0x100000000 - base;
+                    memmap[memmap_entries].type = our_type;
+
+                    base = 0x100000000;
+                    length -= memmap[memmap_entries].length;
+
+                    memmap_entries++;
+                }
+
                 our_type = MEMMAP_EFI_RECLAIMABLE;
             }
         }

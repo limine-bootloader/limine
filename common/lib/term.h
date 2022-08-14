@@ -55,7 +55,7 @@ void term_fallback(void);
 
 void term_reinit(void);
 void term_deinit(void);
-void term_vbe(size_t width, size_t height);
+void term_vbe(char *config, size_t width, size_t height);
 void term_textmode(void);
 void term_notready(void);
 void term_putchar(uint8_t c);

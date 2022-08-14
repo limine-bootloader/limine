@@ -644,7 +644,7 @@ static noreturn void _menu(bool timeout_enabled) {
         randomise_mem_str = config_get_value(NULL, 0, "RANDOMIZE_MEMORY");
     bool randomise_mem = randomise_mem_str != NULL && strcmp(randomise_mem_str, "yes") == 0;
     if (randomise_mem) {
-        term_vbe(0, 0);
+        term_vbe(NULL, 0, 0);
         early_term = true;
         pmm_randomise_memory();
     }
@@ -715,7 +715,7 @@ reterm:
         if (menu_resolution != NULL)
             parse_resolution(&req_width, &req_height, &req_bpp, menu_resolution);
 
-        term_vbe(req_width, req_height);
+        term_vbe(NULL, req_width, req_height);
     } else {
 #if bios == 1
         term_textmode();
@@ -870,7 +870,7 @@ timeout_aborted:
                     goto refresh;
                 }
                 if (term_backend == NOT_READY) {
-                    term_vbe(0, 0);
+                    term_vbe(NULL, 0, 0);
 #if bios == 1
                     if (term_backend == NOT_READY) {
                         term_textmode();

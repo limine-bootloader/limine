@@ -598,8 +598,9 @@ void gterm_putchar(uint8_t c) {
 }
 
 static bool last_serial = false;
+static char *last_config = NULL;
 
-bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
+bool gterm_init(char *config, size_t *_rows, size_t *_cols, size_t width, size_t height) {
     if (current_video_mode >= 0
 #if bios == 1
      && current_video_mode != 0x03
@@ -609,7 +610,8 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
      && height == 0
      && fbinfo.framebuffer_bpp == 32
      && !early_term
-     && serial == last_serial) {
+     && serial == last_serial
+     && config == last_config) {
         *_rows = rows;
         *_cols = cols;
         gterm_clear(true);
@@ -624,7 +626,8 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
      && fbinfo.framebuffer_height == height
      && fbinfo.framebuffer_bpp == 32
      && !early_term
-     && serial == last_serial) {
+     && serial == last_serial
+     && config == last_config) {
         *_rows = rows;
         *_cols = cols;
         gterm_clear(true);
@@ -655,7 +658,7 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     ansi_colours[6] = 0x0000aaaa; // cyan
     ansi_colours[7] = 0x00aaaaaa; // grey
 
-    char *colours = config_get_value(NULL, 0, "TERM_PALETTE");
+    char *colours = config_get_value(config, 0, "TERM_PALETTE");
     if (colours != NULL) {
         const char *first = colours;
         size_t i;
@@ -680,7 +683,7 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     ansi_bright_colours[6] = 0x0055ffff; // cyan
     ansi_bright_colours[7] = 0x00ffffff; // grey
 
-    char *bright_colours = config_get_value(NULL, 0, "TERM_PALETTE_BRIGHT");
+    char *bright_colours = config_get_value(config, 0, "TERM_PALETTE_BRIGHT");
     if (bright_colours != NULL) {
         const char *first = bright_colours;
         size_t i;
@@ -699,12 +702,12 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     default_bg = 0x00000000; // background (black)
     default_fg = 0x00aaaaaa; // foreground (grey)
 
-    char *theme_background = config_get_value(NULL, 0, "TERM_BACKGROUND");
+    char *theme_background = config_get_value(config, 0, "TERM_BACKGROUND");
     if (theme_background != NULL) {
         default_bg = strtoui(theme_background, NULL, 16);
     }
 
-    char *theme_foreground = config_get_value(NULL, 0, "TERM_FOREGROUND");
+    char *theme_foreground = config_get_value(config, 0, "TERM_FOREGROUND");
     if (theme_foreground != NULL) {
         default_fg = strtoui(theme_foreground, NULL, 16) & 0xffffff;
     }
@@ -713,7 +716,7 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
     text_bg = 0xffffffff;
 
     background = NULL;
-    char *background_path = config_get_value(NULL, 0, "TERM_WALLPAPER");
+    char *background_path = config_get_value(config, 0, "TERM_WALLPAPER");
     if (background_path != NULL) {
         struct file_handle *bg_file;
         if ((bg_file = uri_open(background_path)) != NULL) {
@@ -731,20 +734,20 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
         }
     }
 
-    char *theme_margin = config_get_value(NULL, 0, "TERM_MARGIN");
+    char *theme_margin = config_get_value(config, 0, "TERM_MARGIN");
     if (theme_margin != NULL) {
         margin = strtoui(theme_margin, NULL, 10);
     }
 
-    char *theme_margin_gradient = config_get_value(NULL, 0, "TERM_MARGIN_GRADIENT");
+    char *theme_margin_gradient = config_get_value(config, 0, "TERM_MARGIN_GRADIENT");
     if (theme_margin_gradient != NULL) {
         margin_gradient = strtoui(theme_margin_gradient, NULL, 10);
     }
 
     if (background != NULL) {
-        char *background_layout = config_get_value(NULL, 0, "TERM_WALLPAPER_STYLE");
+        char *background_layout = config_get_value(config, 0, "TERM_WALLPAPER_STYLE");
         if (background_layout != NULL && strcmp(background_layout, "centered") == 0) {
-            char *background_colour = config_get_value(NULL, 0, "TERM_BACKDROP");
+            char *background_colour = config_get_value(config, 0, "TERM_BACKDROP");
             if (background_colour == NULL)
                 background_colour = "0";
             uint32_t bg_col = strtoui(background_colour, NULL, 16);
@@ -779,7 +782,7 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
 
     size_t tmp_font_width, tmp_font_height;
 
-    char *menu_font_size = config_get_value(NULL, 0, "TERM_FONT_SIZE");
+    char *menu_font_size = config_get_value(config, 0, "TERM_FONT_SIZE");
     if (menu_font_size != NULL) {
         parse_resolution(&tmp_font_width, &tmp_font_height, NULL, menu_font_size);
 
@@ -793,7 +796,7 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
         font_bytes = tmp_font_bytes;
     }
 
-    char *menu_font = config_get_value(NULL, 0, "TERM_FONT");
+    char *menu_font = config_get_value(config, 0, "TERM_FONT");
     if (menu_font != NULL) {
         struct file_handle *f;
         if ((f = uri_open(menu_font)) == NULL) {
@@ -810,7 +813,7 @@ bool gterm_init(size_t *_rows, size_t *_cols, size_t width, size_t height) {
 
 no_load_font:;
     size_t font_spacing = 1;
-    char *font_spacing_str = config_get_value(NULL, 0, "TERM_FONT_SPACING");
+    char *font_spacing_str = config_get_value(config, 0, "TERM_FONT_SPACING");
     if (font_spacing_str != NULL) {
         font_spacing = strtoui(font_spacing_str, NULL, 10);
     }
@@ -852,7 +855,7 @@ no_load_font:;
     vga_font_scale_x = 1;
     vga_font_scale_y = 1;
 
-    char *menu_font_scale = config_get_value(NULL, 0, "TERM_FONT_SCALE");
+    char *menu_font_scale = config_get_value(config, 0, "TERM_FONT_SCALE");
     if (menu_font_scale != NULL) {
         parse_resolution(&vga_font_scale_x, &vga_font_scale_y, NULL, menu_font_scale);
         if (vga_font_scale_x > 8 || vga_font_scale_y > 8) {

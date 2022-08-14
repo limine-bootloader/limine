@@ -56,7 +56,7 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 
     status = gBS->SetWatchdogTimer(0, 0x10000, 0, NULL);
     if (status) {
-        term_vbe(0, 0);
+        term_vbe(NULL, 0, 0);
         early_term = true;
         print("WARNING: Failed to disable watchdog timer!\n");
     }
@@ -74,7 +74,7 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
     EFI_HANDLE current_handle = ImageHandle;
     for (;;) {
         if (current_handle == NULL) {
-            term_vbe(0, 0);
+            term_vbe(NULL, 0, 0);
             early_term = true;
 
             print("WARNING: Could not meaningfully match the boot device handle with a volume.\n");

@@ -35,7 +35,7 @@ noreturn void panic(bool allow_menu, const char *fmt, ...) {
 #endif
       term_backend == NOT_READY) {
         early_term = true;
-        term_vbe(0, 0);
+        term_vbe(NULL, 0, 0);
     }
 
 nested:

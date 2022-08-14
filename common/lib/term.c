@@ -22,7 +22,7 @@ void term_deinit(void) {
     term_notready();
 }
 
-void term_vbe(size_t width, size_t height) {
+void term_vbe(char *config, size_t width, size_t height) {
     if (term_backend != VBE) {
         term_deinit();
     }
@@ -31,7 +31,7 @@ void term_vbe(size_t width, size_t height) {
         return;
     }
 
-    if (!gterm_init(&term_rows, &term_cols, width, height)) {
+    if (!gterm_init(config, &term_rows, &term_cols, width, height)) {
 #if bios == 1
         // Failed to set VBE properly, default to text mode
         term_textmode();

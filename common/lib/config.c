@@ -8,7 +8,8 @@
 #include <lib/print.h>
 #include <pxe/tftp.h>
 
-#include <sys/cpu.h>
+static bool config_get_entry_name(char *ret, size_t index, size_t limit);
+static char *config_get_entry(size_t *size, size_t index);
 
 #define SEPARATOR '\n'
 
@@ -285,10 +286,19 @@ overflow:
 
     menu_tree = create_menu_tree(NULL, 1, 0);
 
+    size_t s;
+    char *c = config_get_entry(&s, 0);
+    while (*c != ':') {
+        c--;
+    }
+    if (c > config_addr) {
+        c[-1] = 0;
+    }
+
     return 0;
 }
 
-bool config_get_entry_name(char *ret, size_t index, size_t limit) {
+static bool config_get_entry_name(char *ret, size_t index, size_t limit) {
     if (!config_ready)
         return false;
 
@@ -318,7 +328,7 @@ bool config_get_entry_name(char *ret, size_t index, size_t limit) {
     return true;
 }
 
-char *config_get_entry(size_t *size, size_t index) {
+static char *config_get_entry(size_t *size, size_t index) {
     if (!config_ready)
         return NULL;
 

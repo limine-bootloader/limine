@@ -552,7 +552,12 @@ failed_to_load_header_section:
 #if uefi == 1
             gop_force_16 = true;
 #endif
-            term_vbe(req_width, req_height);
+            char *term_conf_override_s = config_get_value(config, 0, "TERM_CONFIG_OVERRIDE");
+            if (term_conf_override_s != NULL && strcmp(term_conf_override_s, "yes") == 0) {
+                term_vbe(config, req_width, req_height);
+            } else {
+                term_vbe(NULL, req_width, req_height);
+            }
 
             if (current_video_mode < 0) {
                 panic(true, "stivale2: Failed to initialise terminal");

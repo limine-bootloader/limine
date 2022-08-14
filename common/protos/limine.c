@@ -127,10 +127,6 @@ static pagemap_t build_pagemap(bool level5pg, struct elf_range *ranges, size_t r
     return pagemap;
 }
 
-#if uefi == 1
-extern symbol ImageBase;
-#endif
-
 extern symbol limine_spinup_32;
 
 static uint64_t physical_base, virtual_base, slide, direct_map_offset;

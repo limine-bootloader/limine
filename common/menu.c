@@ -101,6 +101,7 @@ static const char *VALID_KEYS[] = {
     "PARTITION",
     "IMAGE_PATH",
     "DEPRECATION_WARNING",
+    "TERM_CONFIG_OVERRIDE",
     NULL
 };
 

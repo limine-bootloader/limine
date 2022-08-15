@@ -84,6 +84,7 @@ SECTIONS
     } :data_s3
 
     /DISCARD/ : {
+        *(.eh_frame)
         *(.note .note.*)
     }
 }

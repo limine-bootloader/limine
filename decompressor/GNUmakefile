@@ -12,8 +12,9 @@ ifeq ($(call MKESCAPE,$(BUILDDIR)), )
 	$(error BUILDDIR not specified)
 endif
 
-override INTERNAL_CFLAGS := \
+override CROSS_CFLAGS += \
 	$(WERROR) \
+    -Os \
 	-m32 \
 	-march=i686 \
 	-mtune=generic \
@@ -40,7 +41,7 @@ override INTERNAL_CFLAGS := \
 	-I. \
 	-I'$(call SHESCAPE,$(BUILDDIR))/tinf'
 
-override INTERNAL_LDFLAGS := \
+override CROSS_LDFLAGS += \
 	-melf_i386 \
 	-nostdlib \
 	-z max-page-size=0x1000 \
@@ -56,7 +57,7 @@ override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=
 all: $(call MKESCAPE,$(BUILDDIR))/decompressor.bin
 
 $(call MKESCAPE,$(BUILDDIR))/decompressor.bin: $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o
-	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) $(INTERNAL_LDFLAGS) -o '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf'
+	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) -o '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf'
 	$(CROSS_OBJCOPY) -O binary '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf' '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
@@ -67,17 +68,17 @@ $(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
 
 $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
 
 -include $(HEADER_DEPS)
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) -Os $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"

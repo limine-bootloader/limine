@@ -28,9 +28,9 @@ endif
 COM_OUTPUT ?= false
 E9_OUTPUT ?= false
 
-override S2CFLAGS := $(CROSS_CFLAGS) -Os
+override S2CFLAGS := -Os
 
-override INTERNAL_CFLAGS := \
+override CROSS_CFLAGS += \
 	-g \
 	$(WERROR) \
 	-std=gnu11 \
@@ -58,7 +58,7 @@ override INTERNAL_CFLAGS := \
 	-I'$(call SHESCAPE,$(BUILDDIR))/tinf'
 
 ifeq ($(TARGET), bios)
-override INTERNAL_CFLAGS += \
+override CROSS_CFLAGS += \
 		-Dbios=1 \
 		-Duefi=0 \
 		-m32 \
@@ -70,18 +70,7 @@ override INTERNAL_CFLAGS += \
 endif
 
 ifeq ($(TARGET), uefi-x86-64)
-override INTERNAL_CFLAGS32 := \
-		$(INTERNAL_CFLAGS) \
-		-Dbios=0 \
-		-Duefi=1 \
-		-m32 \
-		-march=i686 \
-		-mtune=generic \
-		-mabi=sysv \
-		-DGNU_EFI_USE_MS_ABI \
-		-fpie
-
-override INTERNAL_CFLAGS += \
+override CROSS_CFLAGS += \
 		-Dbios=0 \
 		-Duefi=1 \
 		-m64 \
@@ -96,7 +85,7 @@ override INTERNAL_CFLAGS += \
 endif
 
 ifeq ($(TARGET), uefi-ia32)
-override INTERNAL_CFLAGS += \
+override CROSS_CFLAGS += \
 		-Dbios=0 \
 		-Duefi=1 \
 		-m32 \
@@ -109,19 +98,19 @@ override INTERNAL_CFLAGS += \
 		-fpie
 endif
 
-override INTERNAL_LDFLAGS := \
+override CROSS_LDFLAGS += \
 	-nostdlib \
 	-z max-page-size=0x1000
 
 ifeq ($(TARGET), bios)
-override INTERNAL_LDFLAGS += \
+override CROSS_LDFLAGS += \
 		-melf_i386 \
 		-static \
 		--build-id=sha1
 endif
 
 ifeq ($(TARGET), uefi-x86-64)
-override INTERNAL_LDFLAGS += \
+override CROSS_LDFLAGS += \
 		-melf_x86_64 \
 		-static \
 		-pie \
@@ -130,7 +119,7 @@ override INTERNAL_LDFLAGS += \
 endif
 
 ifeq ($(TARGET), uefi-ia32)
-override INTERNAL_LDFLAGS += \
+override CROSS_LDFLAGS += \
 		-melf_i386 \
 		-static \
 		-pie \
@@ -185,11 +174,11 @@ $(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
 
 $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
 
 ifeq ($(TARGET), bios)
 
@@ -202,13 +191,13 @@ $(call MKESCAPE,$(BUILDDIR))/stage2.bin: $(call MKESCAPE,$(BUILDDIR))/limine.sys
 $(call MKESCAPE,$(BUILDDIR))/stage2.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_stage2only.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' stage2 32 '\.text'
-	$(CROSS_CC) $(CROSS_CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/stage2.map.S' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/stage2.map.S' -o '$(call SHESCAPE,$@)'
 	rm -f '$(call SHESCAPE,$(BUILDDIR))/stage2.map.S' '$(call SHESCAPE,$(BUILDDIR))/stage2.map.d'
 
 $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' full 32 '\.text'
-	$(CROSS_CC) $(CROSS_CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
 	rm -f '$(call SHESCAPE,$(BUILDDIR))/full.map.S' '$(call SHESCAPE,$(BUILDDIR))/full.map.d'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.sys: $(call MKESCAPE,$(BUILDDIR))/limine.elf
@@ -220,7 +209,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_stage2only.ld: linker_bios.ld.in
 
 $(call MKESCAPE,$(BUILDDIR))/limine_stage2only.elf: $(OBJ_S2) ../libgcc-binaries/libgcc-i686.a
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_stage2only.ld'
-	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) $(INTERNAL_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker_stage2only.ld' -o '$(call SHESCAPE,$@)' || \
+	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker_stage2only.ld' -o '$(call SHESCAPE,$@)' || \
 		( echo "This error may mean that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
 		  false )
 
@@ -230,14 +219,14 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_bios.ld.in
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/stage2.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
-	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) $(INTERNAL_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' -o '$(call SHESCAPE,$@)'
+	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' -o '$(call SHESCAPE,$@)'
 	$(CROSS_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		$(CROSS_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s2.bin build-id.s2.o
 	$(CROSS_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		$(CROSS_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s3.bin build-id.s3.o
-	$(CROSS_LD) '$(call OBJESCAPE,$^)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' $(CROSS_LDFLAGS) $(INTERNAL_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' -o '$(call SHESCAPE,$@)'
+	$(CROSS_LD) '$(call OBJESCAPE,$^)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' $(CROSS_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_bios.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
@@ -245,14 +234,14 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_bios.ld.in
 
 $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o $(call MKESCAPE,$(BUILDDIR))/font.o $(call MKESCAPE,$(BUILDDIR))/stage2.map.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
-	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) $(INTERNAL_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' -o '$(call SHESCAPE,$@)'
+	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' -o '$(call SHESCAPE,$@)'
 	$(CROSS_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		$(CROSS_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s2.bin build-id.s2.o
 	$(CROSS_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		$(CROSS_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) build-id.s3.bin build-id.s3.o
-	$(CROSS_LD) '$(call OBJESCAPE,$^)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' $(CROSS_LDFLAGS) $(INTERNAL_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' -o '$(call SHESCAPE,$@)'
+	$(CROSS_LD) '$(call OBJESCAPE,$^)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' $(CROSS_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' -o '$(call SHESCAPE,$@)'
 
 endif
 
@@ -265,7 +254,7 @@ ifeq ($(TARGET), uefi-x86-64)
 $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' full 64 '\.text'
-	$(CROSS_CC) $(CROSS_CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
 	rm -f '$(call SHESCAPE,$(BUILDDIR))/full.map.S' '$(call SHESCAPE,$(BUILDDIR))/full.map.d'
 
 $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.elf
@@ -287,7 +276,7 @@ $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limi
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(CROSS_LD) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
-		'$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) $(INTERNAL_LDFLAGS) -o '$(call SHESCAPE,$@)'
+		'$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_x86_64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
@@ -297,7 +286,7 @@ $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(CROSS_LD) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
-		'$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) $(INTERNAL_LDFLAGS) -o '$(call SHESCAPE,$@)'
+		'$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) -o '$(call SHESCAPE,$@)'
 
 endif
 
@@ -306,7 +295,7 @@ ifeq ($(TARGET), uefi-ia32)
 $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' full 32 '\.text'
-	$(CROSS_CC) $(CROSS_CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
 	rm -f '$(call SHESCAPE,$(BUILDDIR))/full.map.S' '$(call SHESCAPE,$(BUILDDIR))/full.map.d'
 
 $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.elf
@@ -328,7 +317,7 @@ $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limi
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(CROSS_LD) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
-		'$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) $(INTERNAL_LDFLAGS) -o '$(call SHESCAPE,$@)'
+		'$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_ia32.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
@@ -338,7 +327,7 @@ $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(CROSS_LD) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
-		'$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) $(INTERNAL_LDFLAGS) -o '$(call SHESCAPE,$@)'
+		'$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) -o '$(call SHESCAPE,$@)'
 
 endif
 
@@ -347,19 +336,19 @@ endif
 ifeq ($(TARGET), uefi-x86-64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET), uefi-ia32)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET), bios)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 -include $(HEADER_DEPS)
@@ -367,7 +356,7 @@ endif
 ifeq ($(TARGET), bios)
 $(call MKESCAPE,$(BUILDDIR))/%.s2.o: %.s2.c
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(S2CFLAGS) $(INTERNAL_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) $(S2CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 -include $(HEADER_DEPS)

@@ -27,8 +27,8 @@ override BUILD_LIMINE_DEPLOY := @BUILD_LIMINE_DEPLOY@
 WERROR ?= @WERROR@
 export WERROR
 
-ifeq ($(origin CC), default)
-CC := @CC@
+ifeq ($(origin CC),default)
+    CC := @CC@
 endif
 export CC
 
@@ -128,10 +128,10 @@ uninstall:
 $(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/common-bios/stage2.bin.gz
 	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm @WERROR@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
-ifneq ($(BUILD_CD), no)
+ifneq ($(BUILD_CD),no)
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm @WERROR@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
 endif
-ifneq ($(BUILD_PXE), no)
+ifneq ($(BUILD_PXE),no)
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/pxe' && nasm bootsect.asm @WERROR@ -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin'
 endif
 	cp '$(call SHESCAPE,$(BUILDDIR))/common-bios/limine.sys' '$(call SHESCAPE,$(BINDIR))/'
@@ -140,12 +140,12 @@ endif
 .PHONY: limine-bios
 limine-bios: common-bios decompressor
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
-ifneq ($(BUILD_LIMINE_DEPLOY), no)
+ifneq ($(BUILD_LIMINE_DEPLOY),no)
 	$(MAKE) limine-deploy
 endif
 
 $(call MKESCAPE,$(BINDIR))/limine-cd-efi.bin: $(if @BUILD_UEFI_IA32@, $(call MKESCAPE,$(BUILDDIR))/common-uefi-ia32/BOOTIA32.EFI) $(if @BUILD_UEFI_X86_64@, $(call MKESCAPE,$(BUILDDIR))/common-uefi-x86-64/BOOTX64.EFI)
-ifneq ($(BUILD_CD_EFI), no)
+ifneq ($(BUILD_CD_EFI),no)
 	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	rm -f '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'
 	dd if=/dev/zero of='$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' bs=512 count=2880 2>/dev/null
@@ -163,17 +163,23 @@ endif
 limine-cd-efi:
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'
 
-.PHONY: limine-uefi-x86-64
-limine-uefi-x86-64: $(call MKESCAPE,$(SRCDIR))/limine-efi
-	$(MAKE) common-uefi-x86-64
+$(call MKESCAPE,$(BINDIR))/BOOTX64.EFI: $(call MKESCAPE,$(BUILDDIR))/common-uefi-x86-64/BOOTX64.EFI
 	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64/BOOTX64.EFI' '$(call SHESCAPE,$(BINDIR))/'
 
-.PHONY: limine-uefi-ia32
-limine-uefi-ia32: $(call MKESCAPE,$(SRCDIR))/limine-efi
-	$(MAKE) common-uefi-ia32
+.PHONY: limine-uefi-x86-64
+limine-uefi-x86-64:
+	$(MAKE) common-uefi-x86-64
+	$(MAKE) '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI'
+
+$(call MKESCAPE,$(BINDIR))/BOOTIA32.EFI: $(call MKESCAPE,$(BUILDDIR))/common-uefi-ia32/BOOTIA32.EFI
 	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32/BOOTIA32.EFI' '$(call SHESCAPE,$(BINDIR))/'
+
+.PHONY: limine-uefi-ia32
+limine-uefi-ia32:
+	$(MAKE) common-uefi-ia32
+	$(MAKE) '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI'
 
 .PHONY: limine-bios-clean
 limine-bios-clean: common-bios-clean decompressor-clean

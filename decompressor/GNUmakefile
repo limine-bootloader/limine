@@ -8,45 +8,45 @@ MKESCAPE = $(subst $(SPACE),\ ,$(1))
 SHESCAPE = $(subst ','\'',$(1))
 OBJESCAPE = $(subst .a ,.a' ',$(subst .o ,.o' ',$(call SHESCAPE,$(1))))
 
-ifeq ($(call MKESCAPE,$(BUILDDIR)), )
-	$(error BUILDDIR not specified)
+ifeq ($(call MKESCAPE,$(BUILDDIR)),)
+    $(error BUILDDIR not specified)
 endif
 
 override CROSS_CFLAGS += \
-	$(WERROR) \
+    $(WERROR) \
     -Os \
-	-m32 \
-	-march=i686 \
-	-mtune=generic \
-	-mabi=sysv \
-	-std=gnu11 \
-	-ffreestanding \
-	-fno-stack-protector \
-	-fno-stack-check \
-	-fno-strict-aliasing \
-	-fno-lto \
-	-fno-pie \
-	-fno-pic \
-	-fomit-frame-pointer \
-	-nostdinc \
-	-Wno-address-of-packed-member \
-	-Wshadow \
-	-Wvla \
-	-mno-80387 \
-	-mno-mmx \
-	-mno-sse \
-	-mno-sse2 \
-	-MMD \
-	-I../freestanding-headers \
-	-I. \
-	-I'$(call SHESCAPE,$(BUILDDIR))/tinf'
+    -m32 \
+    -march=i686 \
+    -mtune=generic \
+    -mabi=sysv \
+    -std=gnu11 \
+    -ffreestanding \
+    -fno-stack-protector \
+    -fno-stack-check \
+    -fno-strict-aliasing \
+    -fno-lto \
+    -fno-pie \
+    -fno-pic \
+    -fomit-frame-pointer \
+    -nostdinc \
+    -Wno-address-of-packed-member \
+    -Wshadow \
+    -Wvla \
+    -mno-80387 \
+    -mno-mmx \
+    -mno-sse \
+    -mno-sse2 \
+    -MMD \
+    -I../freestanding-headers \
+    -I. \
+    -I'$(call SHESCAPE,$(BUILDDIR))/tinf'
 
 override CROSS_LDFLAGS += \
-	-melf_i386 \
-	-nostdlib \
-	-z max-page-size=0x1000 \
-	-static \
-	-Tlinker.ld
+    -melf_i386 \
+    -nostdlib \
+    -z max-page-size=0x1000 \
+    -static \
+    -Tlinker.ld
 
 override C_FILES := $(shell find ./ -type f -name '*.c')
 override ASM_FILES := $(shell find ./ -type f -name '*.asm')

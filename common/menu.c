@@ -98,6 +98,7 @@ static const char *VALID_KEYS[] = {
     "DRIVE",
     "PARTITION",
     "IMAGE_PATH",
+    "TERM_CONFIG_OVERRIDE",
     NULL
 };
 

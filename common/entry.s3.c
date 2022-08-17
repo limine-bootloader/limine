@@ -26,34 +26,6 @@
 void stage3_common(void);
 
 #if uefi == 1
-__attribute__((naked))
-EFI_STATUS efi_main(
-    __attribute__((unused)) EFI_HANDLE ImageHandle,
-    __attribute__((unused)) EFI_SYSTEM_TABLE *SystemTable) {
-    // Invalid return address of 0 to end stacktraces here
-#if defined (__x86_64__)
-    asm (
-        "xorl %eax, %eax\n\t"
-        "movq %rax, (%rsp)\n\t"
-        "jmp uefi_entry\n\t"
-    );
-#elif defined (__i386__)
-    asm (
-        "xorl %eax, %eax\n\t"
-        "movl %eax, (%esp)\n\t"
-        "jmp uefi_entry\n\t"
-    );
-#elif defined (__aarch64__)
-    asm (
-        "mov x30, xzr\n\t"
-        "mov x29, xzr\n\t"
-        "b uefi_entry\n\t"
-    );
-#else
-#error Unknown architecture
-#endif
-}
-
 noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     gST = SystemTable;
     gBS = SystemTable->BootServices;

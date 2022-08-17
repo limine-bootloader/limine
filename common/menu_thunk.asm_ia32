@@ -1,0 +1,26 @@
+global menu
+extern _menu
+menu:
+    pop eax
+    call .L1
+.L1:
+    pop eax
+    add eax, .L3 - .L1
+    cmp dword [eax], 0
+    jne .L2
+    mov [eax], esp
+    jmp .L4
+
+.L2:
+    mov edi, [esp]
+    mov esp, [eax]
+    push edi
+    jmp .L4
+
+.L3:
+    dq 0
+
+.L4:
+    push 0
+    jmp _menu
+

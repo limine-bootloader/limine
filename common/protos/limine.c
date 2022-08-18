@@ -42,7 +42,7 @@ static pagemap_t build_pagemap(bool level5pg, struct elf_range *ranges, size_t r
     if (ranges_count == 0) {
         // Map 0 to 2GiB at 0xffffffff80000000
         for (uint64_t i = 0; i < 0x80000000; i += 0x40000000) {
-            map_page(pagemap, 0xffffffff80000000 + i, i, 0x03, Size1GiB);
+            map_page(pagemap, 0xffffffff80000000 + i, i, VMM_FLAG_WRITE, Size1GiB);
         }
     } else {
         for (size_t i = 0; i < ranges_count; i++) {
@@ -55,7 +55,7 @@ static pagemap_t build_pagemap(bool level5pg, struct elf_range *ranges, size_t r
                 panic(false, "limine: Protected memory ranges are only supported for higher half kernels");
             }
 
-            uint64_t pf = VMM_FLAG_PRESENT |
+            uint64_t pf =
                 (ranges[i].permissions & ELF_PF_X ? 0 : VMM_FLAG_NOEXEC) |
                 (ranges[i].permissions & ELF_PF_W ? VMM_FLAG_WRITE : 0);
 
@@ -68,9 +68,9 @@ static pagemap_t build_pagemap(bool level5pg, struct elf_range *ranges, size_t r
     // Sub 2MiB mappings
     for (uint64_t i = 0; i < 0x200000; i += 0x1000) {
         if (i != 0) {
-            map_page(pagemap, i, i, 0x03, Size4KiB);
+            map_page(pagemap, i, i, VMM_FLAG_WRITE, Size4KiB);
         }
-        map_page(pagemap, direct_map_offset + i, i, 0x03, Size4KiB);
+        map_page(pagemap, direct_map_offset + i, i, VMM_FLAG_WRITE, Size4KiB);
     }
 
     // Map 2MiB to 4GiB at higher half base and 0
@@ -86,13 +86,13 @@ static pagemap_t build_pagemap(bool level5pg, struct elf_range *ranges, size_t r
     // So we map 2MiB to 1GiB with 2MiB pages and then map the rest
     // with 1GiB pages :^)
     for (uint64_t i = 0x200000; i < 0x40000000; i += 0x200000) {
-        map_page(pagemap, i, i, 0x03, Size2MiB);
-        map_page(pagemap, direct_map_offset + i, i, 0x03, Size2MiB);
+        map_page(pagemap, i, i, VMM_FLAG_WRITE, Size2MiB);
+        map_page(pagemap, direct_map_offset + i, i, VMM_FLAG_WRITE, Size2MiB);
     }
 
     for (uint64_t i = 0x40000000; i < 0x100000000; i += 0x40000000) {
-        map_page(pagemap, i, i, 0x03, Size1GiB);
-        map_page(pagemap, direct_map_offset + i, i, 0x03, Size1GiB);
+        map_page(pagemap, i, i, VMM_FLAG_WRITE, Size1GiB);
+        map_page(pagemap, direct_map_offset + i, i, VMM_FLAG_WRITE, Size1GiB);
     }
 
     size_t _memmap_entries = memmap_entries;
@@ -119,15 +119,72 @@ static pagemap_t build_pagemap(bool level5pg, struct elf_range *ranges, size_t r
 
         for (uint64_t j = 0; j < aligned_length; j += 0x40000000) {
             uint64_t page = aligned_base + j;
-            map_page(pagemap, page, page, 0x03, Size1GiB);
-            map_page(pagemap, direct_map_offset + page, page, 0x03, Size1GiB);
+            map_page(pagemap, page, page, VMM_FLAG_WRITE, Size1GiB);
+            map_page(pagemap, direct_map_offset + page, page, VMM_FLAG_WRITE, Size1GiB);
         }
     }
+
+    // Map the framebuffer as uncacheable
+#if defined (__aarch64__)
+    for (size_t i = 0; i < _memmap_entries; i++) {
+        uint64_t base   = _memmap[i].base;
+        uint64_t length = _memmap[i].length;
+        uint64_t top    = base + length;
+
+        if (_memmap[i].type != MEMMAP_FRAMEBUFFER)
+            continue;
+
+        uint64_t aligned_base   = ALIGN_DOWN(base, 0x1000);
+        uint64_t aligned_top    = ALIGN_UP(top, 0x1000);
+        uint64_t aligned_length = aligned_top - aligned_base;
+
+        for (uint64_t j = 0; j < aligned_length; j += 0x1000) {
+            uint64_t page = aligned_base + j;
+            map_page(pagemap, page, page, VMM_FLAG_WRITE | VMM_FLAG_FB, Size4KiB);
+            map_page(pagemap, direct_map_offset + page, page, VMM_FLAG_WRITE | VMM_FLAG_FB, Size4KiB);
+        }
+    }
+#endif
 
     return pagemap;
 }
 
+#if defined (__x86_64__) || defined (__i386__)
 extern symbol limine_spinup_32;
+#elif defined (__aarch64__)
+
+#define LIMINE_SCTLR ((1 << 29) /* Res1 */                \
+                    | (1 << 28) /* Res1 */                \
+                    | (1 << 23) /* Res1 */                \
+                    | (1 << 22) /* Res1 */                \
+                    | (1 << 20) /* Res1 */                \
+                    | (1 << 12) /* I-Cache */             \
+                    | (1 << 11) /* Res1 */                \
+                    | (1 << 8)  /* Res1 */                \
+                    | (1 << 7)  /* Res1 */                \
+                    | (1 << 4)  /* SP0 Alignment check */ \
+                    | (1 << 3)  /* SP Alignment check */  \
+                    | (1 << 2)  /* D-Cache */             \
+                    | (1 << 0)) /* MMU */                 \
+
+#define LIMINE_MAIR(fb) ( ((uint64_t)0b11111111 << 0) /* Normal WB RW-allocate non-transient */ \
+                        | ((uint64_t)(fb) << 8) )     /* Framebuffer type */
+
+#define LIMINE_TCR(tsz, pa) ( ((uint64_t)(pa) << 32)         /* Intermediate address size */  \
+                            | ((uint64_t)2 << 30)            /* TTBR1 4K granule */           \
+                            | ((uint64_t)2 << 28)            /* TTBR1 Inner shareable */      \
+                            | ((uint64_t)1 << 26)            /* TTBR1 Outer WB RW-Allocate */ \
+                            | ((uint64_t)1 << 24)            /* TTBR1 Inner WB RW-Allocate */ \
+                            | ((uint64_t)(tsz) << 16)        /* Address bits in TTBR1 */      \
+                                                             /* TTBR0 4K granule */           \
+                            | ((uint64_t)2 << 12)            /* TTBR0 Inner shareable */      \
+                            | ((uint64_t)1 << 10)            /* TTBR0 Outer WB RW-Allocate */ \
+                            | ((uint64_t)1 << 8)             /* TTBR0 Inner WB RW-Allocate */ \
+                            | ((uint64_t)(tsz) << 0))        /* Address bits in TTBR0 */
+
+#else
+#error Unknown architecture
+#endif
 
 static uint64_t physical_base, virtual_base, slide, direct_map_offset;
 static size_t requests_count;
@@ -216,7 +273,9 @@ static void term_write_shim(uint64_t context, uint64_t buf, uint64_t count) {
 }
 
 noreturn void limine_load(char *config, char *cmdline) {
+#if defined (__x86_64__) || defined (__i386__)
     uint32_t eax, ebx, ecx, edx;
+#endif
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
     if (kernel_path == NULL)
@@ -296,10 +355,12 @@ noreturn void limine_load(char *config, char *cmdline) {
         }
     }
 
+#if defined (__x86_64__) || defined (__i386__)
     // Check if 64 bit CPU
     if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
         panic(true, "limine: This CPU does not support 64-bit mode.");
     }
+#endif
 
     printv("limine: Physical base:   %X\n", physical_base);
     printv("limine: Virtual base:    %X\n", virtual_base);
@@ -312,10 +373,13 @@ noreturn void limine_load(char *config, char *cmdline) {
 FEAT_START
     // Check if 5-level paging is available
     bool level5pg = false;
+    // TODO(qookie): aarch64 also has optional 5 level paging when using 4K pages
+#if defined (__x86_64__) || defined (__i386__)
     if (cpuid(0x00000007, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 16))) {
         printv("limine: CPU has 5-level paging support\n");
         level5pg = true;
     }
+#endif
 
     struct limine_5_level_paging_request *lv5pg_request = get_request(LIMINE_5_LEVEL_PAGING_REQUEST);
     want_5lv = lv5pg_request != NULL && level5pg;
@@ -331,6 +395,15 @@ FEAT_START
         lv5pg_request->response = reported_addr(lv5pg_response);
     }
 FEAT_END
+
+#if defined (__aarch64__)
+    uint64_t aa64mmfr0;
+    asm volatile ("mrs %0, id_aa64mmfr0_el1" : "=r" (aa64mmfr0));
+
+    uint64_t pa = aa64mmfr0 & 0xF;
+
+    uint64_t tsz = 64 - (want_5lv ? 57 : 48);
+#endif
 
     struct limine_file *kf = ext_mem_alloc(sizeof(struct limine_file));
     *kf = get_file(kernel_file, cmdline);
@@ -458,6 +531,38 @@ FEAT_START
     est_request->response = reported_addr(est_response);
 FEAT_END
 #endif
+
+    // Device tree blob feature
+FEAT_START
+    struct limine_dtb_request *dtb_request = get_request(LIMINE_DTB_REQUEST);
+    if (dtb_request == NULL) {
+        break; // next feature
+    }
+
+#if uefi == 1
+    struct limine_dtb_response *dtb_response =
+        ext_mem_alloc(sizeof(struct limine_dtb_response));
+
+    // TODO: Looking for the DTB should be moved out of here and into lib/, because:
+    // 1. We will need it for core bring-up for the SMP request.
+    // 2. We will need to patch it for the Linux boot protocol to set the initramfs
+    //    and boot arguments.
+    // 3. If Limine is ported to platforms that use a DTB but do not use UEFI, it will
+    //    need to be found in a different way.
+    const EFI_GUID dtb_guid = EFI_DTB_TABLE_GUID;
+
+    // Look for the DTB in the configuration tables
+    for (size_t i = 0; i < gST->NumberOfTableEntries; i++) {
+        EFI_CONFIGURATION_TABLE *cur_table = &gST->ConfigurationTable[i];
+
+        if (memcmp(&cur_table->VendorGuid, &dtb_guid, sizeof(EFI_GUID)) == 0)
+            dtb_response->dtb_ptr = (uint64_t)(uintptr_t)cur_table->VendorTable;
+    }
+
+    dtb_request->response = reported_addr(dtb_response);
+#endif
+
+FEAT_END
 
     // Stack size
     uint64_t stack_size = 65536;
@@ -593,8 +698,10 @@ FEAT_START
 #if defined (__i386__)
         term_callback = limine_term_callback;
         limine_term_callback_ptr = terminal_request->callback;
-#elif defined (__x86_64__)
+#elif defined (__x86_64__) || defined (__aarch64__)
         term_callback = (void *)terminal_request->callback;
+#else
+#error Unknown architecture
 #endif
     }
 
@@ -607,8 +714,10 @@ FEAT_START
 
     limine_term_write_ptr = (uintptr_t)term_write_shim;
     terminal_response->write = (uintptr_t)(void *)limine_term_write_entry;
-#elif defined (__x86_64__)
+#elif defined (__x86_64__) || defined (__aarch64__)
     terminal_response->write = (uintptr_t)term_write_shim;
+#else
+#error Unknown architecture
 #endif
 
     term_fb_ptr = &terminal->framebuffer;
@@ -699,6 +808,7 @@ FEAT_START
 FEAT_END
 
     // Wrap-up stuff before memmap close
+#if defined (__x86_64__) || defined (__i386__)
     struct gdtr *local_gdt = ext_mem_alloc(sizeof(struct gdtr));
     local_gdt->limit = gdt.limit;
     uint64_t local_gdt_base = (uint64_t)gdt.ptr;
@@ -706,6 +816,40 @@ FEAT_END
     local_gdt->ptr = local_gdt_base;
 #if defined (__i386__)
     local_gdt->ptr_hi = local_gdt_base >> 32;
+#endif
+#endif
+
+#if defined (__aarch64__)
+    uint64_t fb_attr = 0x00;
+    if (fb.framebuffer_addr) {
+        int el = current_el();
+        uint64_t res;
+
+        if (el == 1) {
+            asm volatile (
+                    "at s1e1w, %1\n\t"
+                    "isb\n\t"
+                    "mrs %0, par_el1"
+                    : "=r"(res)
+                    : "r"(fb.framebuffer_addr)
+                    : "memory");
+        } else if (el == 2) {
+            asm volatile (
+                    "at s1e2w, %1\n\t"
+                    "isb\n\t"
+                    "mrs %0, par_el1"
+                    : "=r"(res)
+                    : "r"(fb.framebuffer_addr)
+                    : "memory");
+        } else {
+            panic(false, "Unexpected EL in limine_load");
+        }
+
+        if (res & 1)
+            panic(false, "Address translation for framebuffer failed");
+
+        fb_attr = res >> 56;
+    }
 #endif
 
     void *stack = ext_mem_alloc(stack_size) + stack_size;
@@ -728,12 +872,22 @@ FEAT_START
     struct limine_smp_info *smp_array;
     struct smp_information *smp_info;
     size_t cpu_count;
+#if defined (__x86_64__) || defined (__i386__)
     uint32_t bsp_lapic_id;
     smp_info = init_smp(0, (void **)&smp_array,
                         &cpu_count, &bsp_lapic_id,
                         true, want_5lv,
                         pagemap, smp_request->flags & LIMINE_SMP_X2APIC, true,
                         direct_map_offset, true);
+#elif defined (__aarch64__)
+    uint64_t bsp_mpidr;
+
+    smp_info = init_smp(0, (void **)&smp_array,
+                        &cpu_count, &bsp_mpidr,
+                        pagemap, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa), LIMINE_SCTLR);
+#else
+#error Unknown architecture
+#endif
 
     if (smp_info == NULL) {
         break;
@@ -747,8 +901,14 @@ FEAT_START
     struct limine_smp_response *smp_response =
         ext_mem_alloc(sizeof(struct limine_smp_response));
 
+#if defined (__x86_64__) || defined (__i386__)
     smp_response->flags |= (smp_request->flags & LIMINE_SMP_X2APIC) && x2apic_check();
     smp_response->bsp_lapic_id = bsp_lapic_id;
+#elif defined (__aarch64__)
+    smp_response->bsp_mpidr = bsp_mpidr;
+#else
+#error Unknown architecture
+#endif
 
     uint64_t *smp_list = ext_mem_alloc(cpu_count * sizeof(uint64_t));
     for (size_t i = 0; i < cpu_count; i++) {
@@ -833,6 +993,7 @@ FEAT_END
 
     term_runtime = true;
 
+#if defined (__x86_64__) || defined (__i386__)
 #if bios == 1
     // If we're going 64, we might as well call this BIOS interrupt
     // to tell the BIOS that we are entering Long Mode, since it is in
@@ -857,4 +1018,13 @@ FEAT_END
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
         (uint32_t)reported_stack, (uint32_t)(reported_stack >> 32),
         (uint32_t)(uintptr_t)local_gdt);
+#elif defined (__aarch64__)
+    vmm_assert_4k_pages();
+
+    enter_in_el1(entry_point, (uint64_t)stack, LIMINE_SCTLR, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa),
+                 (uint64_t)pagemap.top_level[0],
+                 (uint64_t)pagemap.top_level[1], 0);
+#else
+#error Unknown architecture
+#endif
 }

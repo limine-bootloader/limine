@@ -62,7 +62,7 @@ override LIMINE_VERSION := @PACKAGE_VERSION@
 override STAGE1_FILES := $(shell find '$(call SHESCAPE,$(SRCDIR))/stage1' -type f -name '*.asm')
 
 .PHONY: all
-all: limine-version @BUILD_UEFI_X86_64@ @BUILD_UEFI_IA32@ @BUILD_BIOS@
+all: limine-version @BUILD_UEFI_X86_64@ @BUILD_UEFI_IA32@ @BUILD_UEFI_AARCH64@ @BUILD_BIOS@
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'
 
 $(call MKESCAPE,$(BINDIR))/limine-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-hdd.bin
@@ -90,7 +90,7 @@ limine-version:
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-version'
 
 .PHONY: clean
-clean: limine-bios-clean limine-uefi-ia32-clean limine-uefi-x86-64-clean
+clean: limine-bios-clean limine-uefi-ia32-clean limine-uefi-x86-64-clean limine-uefi-aarch64-clean
 	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 
 .PHONY: install-data
@@ -101,6 +101,7 @@ install-data: all
 	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-cd.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
 	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
 	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
+	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTAA64.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
 	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
 	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))'
@@ -181,6 +182,15 @@ limine-uefi-ia32:
 	$(MAKE) common-uefi-ia32
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI'
 
+$(call MKESCAPE,$(BINDIR))/BOOTAA64.EFI: $(call MKESCAPE,$(BUILDDIR))/common-uefi-aarch64/BOOTAA64.EFI
+	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
+	cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi-aarch64/BOOTAA64.EFI' '$(call SHESCAPE,$(BINDIR))/'
+
+.PHONY: limine-uefi-aarch64
+limine-uefi-aarch64:
+	$(MAKE) common-uefi-aarch64
+	$(MAKE) '$(call SHESCAPE,$(BINDIR))/BOOTAA64.EFI'
+
 .PHONY: limine-bios-clean
 limine-bios-clean: common-bios-clean decompressor-clean
 
@@ -189,6 +199,9 @@ limine-uefi-x86-64-clean: common-uefi-x86-64-clean
 
 .PHONY: limine-uefi-ia32-clean
 limine-uefi-ia32-clean: common-uefi-ia32-clean
+
+.PHONY: limine-uefi-aarch64-clean
+limine-uefi-aarch64-clean: common-uefi-aarch64-clean
 
 .PHONY: dist
 dist:
@@ -236,6 +249,17 @@ common-uefi-x86-64:
 common-uefi-x86-64-clean:
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64'
 
+.PHONY: common-uefi-aarch64
+common-uefi-aarch64:
+	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all \
+		CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/aarch64-toolchain.mk' \
+		TARGET=uefi-aarch64 \
+		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-aarch64'
+
+.PHONY: common-uefi-aarch64-clean
+common-uefi-aarch64-clean:
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))/common-uefi-aarch64'
+
 .PHONY: common-uefi-ia32
 common-uefi-ia32:
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all \
@@ -276,6 +300,10 @@ test-clean:
 ovmf-x64:
 	$(MKDIR_P) ovmf-x64
 	cd ovmf-x64 && curl -o OVMF-X64.zip https://efi.akeo.ie/OVMF/OVMF-X64.zip && 7z x OVMF-X64.zip
+
+ovmf-aa64:
+	mkdir -p ovmf-aa64
+	cd ovmf-aa64 && curl -o OVMF-AA64.zip https://efi.akeo.ie/OVMF/OVMF-AA64.zip && 7z x OVMF-AA64.zip
 
 ovmf-ia32:
 	$(MKDIR_P) ovmf-ia32
@@ -500,6 +528,30 @@ uefi-test:
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
 	qemu-system-x86_64 -m 512M -M q35 -L ovmf -bios ovmf-x64/OVMF.fd -net none -smp 4   -hda test.hdd -debugcon stdio
+
+.PHONY: uefi-aa64-test
+uefi-aa64-test:
+	$(MAKE) ovmf-aa64
+	$(MAKE) test-clean
+	$(MAKE) test.hdd
+	$(MAKE) limine-uefi-aarch64
+	$(MAKE) -C test
+	rm -rf test_image/
+	mkdir test_image
+	sudo losetup -Pf --show test.hdd > loopback_dev
+	sudo partprobe `cat loopback_dev`
+	sudo mkfs.fat -F 32 `cat loopback_dev`p1
+	sudo mount `cat loopback_dev`p1 test_image
+	sudo mkdir test_image/boot
+	sudo cp -rv $(BINDIR)/* test_image/boot/
+	sudo cp -rv test/* test_image/boot/
+	sudo mkdir -p test_image/EFI/BOOT
+	sudo cp $(BINDIR)/BOOTAA64.EFI test_image/EFI/BOOT/
+	sync
+	sudo umount test_image/
+	sudo losetup -d `cat loopback_dev`
+	rm -rf test_image loopback_dev
+	qemu-system-aarch64 -m 512M -M virt -cpu cortex-a72 -L ovmf -bios ovmf-aa64/OVMF.fd -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd  -hda test.hdd -serial stdio
 
 .PHONY: uefi-ia32-test
 uefi-ia32-test:

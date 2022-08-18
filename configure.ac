@@ -134,6 +134,25 @@ fi
 
 AC_SUBST(BUILD_UEFI_X86_64, [$BUILD_UEFI_X86_64])
 
+BUILD_UEFI_AARCH64="$BUILD_ALL"
+
+AC_ARG_ENABLE([uefi-aarch64],
+    AS_HELP_STRING([--enable-uefi-aarch64], [enable building the aarch64 UEFI port]),
+    BUILD_UEFI_AARCH64="$enableval")
+
+if test "x$BUILD_UEFI_AARCH64" = "xno"; then
+    BUILD_UEFI_AARCH64=""
+else
+    (
+    mkdir -p "$BUILDDIR/cross-files"
+    cd "$BUILDDIR/cross-files"
+    TRIPLET=aarch64-elf-none "$SRCDIR/cross-detect/configure" || exit 1
+    )
+    BUILD_UEFI_AARCH64="limine-uefi-aarch64"
+fi
+
+AC_SUBST(BUILD_UEFI_AARCH64, [$BUILD_UEFI_AARCH64])
+
 BUILD_CD_EFI="$BUILD_ALL"
 
 AC_ARG_ENABLE([cd-efi],

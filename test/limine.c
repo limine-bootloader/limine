@@ -119,6 +119,14 @@ struct limine_terminal_request _terminal_request = {
 __attribute__((section(".limine_reqs")))
 void *terminal_req = &_terminal_request;
 
+struct limine_dtb_request _dtb_request = {
+    .id = LIMINE_DTB_REQUEST,
+    .revision = 0, .response = NULL
+};
+
+__attribute__((section(".limine_reqs")))
+void *dtb_req = &_dtb_request;
+
 static char *get_memmap_type(uint64_t type) {
     switch (type) {
         case LIMINE_MEMMAP_USABLE:
@@ -172,6 +180,23 @@ static void print_file(struct limine_file *file) {
               file->part_uuid.b,
               file->part_uuid.c,
               *(uint64_t *)file->part_uuid.d);
+}
+
+uint32_t ctr = 0;
+
+void ap_entry(struct limine_smp_info *info) {
+    e9_printf("Hello from AP!");
+
+#if defined (__x86_64__)
+    e9_printf("My LAPIC ID: %x", info->lapic_id);
+#elif defined (__aarch64__)
+    e9_printf("My GIC CPU Interface no.: %x", info->gic_iface_no);
+    e9_printf("My MPIDR: %x", info->mpidr);
+#endif
+
+    __atomic_fetch_add(&ctr, 1, __ATOMIC_SEQ_CST);
+
+    while (1);
 }
 
 #define FEAT_START do {
@@ -355,12 +380,35 @@ FEAT_START
     struct limine_smp_response *smp_response = _smp_request.response;
     e9_printf("SMP feature, revision %d", smp_response->revision);
     e9_printf("Flags: %x", smp_response->flags);
+#if defined (__x86_64__)
     e9_printf("BSP LAPIC ID: %x", smp_response->bsp_lapic_id);
+#elif defined (__aarch64__)
+    e9_printf("BSP MPIDR: %x", smp_response->bsp_mpidr);
+#endif
     e9_printf("CPU count: %d", smp_response->cpu_count);
     for (size_t i = 0; i < smp_response->cpu_count; i++) {
         struct limine_smp_info *cpu = smp_response->cpus[i];
         e9_printf("Processor ID: %x", cpu->processor_id);
+#if defined (__x86_64__)
         e9_printf("LAPIC ID: %x", cpu->lapic_id);
+#elif defined (__aarch64__)
+        e9_printf("GIC CPU Interface no.: %x", cpu->gic_iface_no);
+        e9_printf("MPIDR: %x", cpu->mpidr);
+#endif
+
+
+#if defined (__x86_64__)
+        if (cpu->lapic_id != smp_response->bsp_lapic_id) {
+#elif defined (__aarch64__)
+        if (cpu->mpidr != smp_response->bsp_mpidr) {
+#endif
+            uint32_t old_ctr = __atomic_load_n(&ctr, __ATOMIC_SEQ_CST);
+
+            __atomic_store_n(&cpu->goto_address, ap_entry, __ATOMIC_SEQ_CST);
+
+            while (__atomic_load_n(&ctr, __ATOMIC_SEQ_CST) == old_ctr)
+                ;
+        }
     }
 FEAT_END
 
@@ -380,6 +428,17 @@ FEAT_START
         e9_printf("Using framebuffer: %x", terminal->framebuffer);
     }
     e9_printf("Write function at: %x", term_response->write);
+FEAT_END
+
+FEAT_START
+    e9_printf("");
+    if (_dtb_request.response == NULL) {
+        e9_printf("Device tree blob not passed");
+        break;
+    }
+    struct limine_dtb_response *dtb_response = _dtb_request.response;
+    e9_printf("Device tree blob feature, revision %d", dtb_response->revision);
+    e9_printf("Device tree blob pointer: %x", dtb_response->dtb_ptr);
 FEAT_END
 
     for (;;);

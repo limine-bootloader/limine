@@ -26,6 +26,8 @@ static void init_rand(void) {
                   * ((uint32_t)0xce86d624)
                   ^ ((uint32_t)0xee0da130 * (uint32_t)rdtsc());
 
+    // TODO(qookie): aarch64 also has an optional HW random number generator
+#if defined (__x86_64__) || defined(__i386__)
     uint32_t eax, ebx, ecx, edx;
 
     // Check for rdseed
@@ -34,6 +36,7 @@ static void init_rand(void) {
     } else if (cpuid(0x01, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 30))) {
         seed *= (seed ^ rdrand(uint32_t));
     }
+#endif
 
     status = ext_mem_alloc(n * sizeof(uint32_t));
 

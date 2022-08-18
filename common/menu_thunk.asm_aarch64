@@ -1,0 +1,24 @@
+.section .data
+
+stack_at_first_entry:
+    .quad 0
+
+.section .text
+
+.global menu
+.extern _menu
+
+menu:
+    adrp x8, stack_at_first_entry
+    ldr x9, [x8, :lo12:stack_at_first_entry]
+    cbz x9, 1f
+    mov sp, x9
+    b 2f
+1:
+    mov x9, sp
+    str x9, [x8, :lo12:stack_at_first_entry]
+2:
+    mov x30, xzr
+    mov x29, xzr
+
+    b _menu

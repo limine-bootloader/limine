@@ -19,7 +19,8 @@ languages.
 All pointers are 64-bit wide. All pointers point to the object with the
 higher half direct map offset already added to them, unless otherwise noted.
 
-The calling convention matches the SysV C ABI for the specific architecture.
+The calling convention matches the C ABI for the specific architecture
+(SysV for x86, AAPCS for aarch64).
 
 ## Features
 
@@ -154,6 +155,46 @@ Size Request (see below). An invalid return address of 0 is pushed
 to the stack before jumping to the kernel.
 
 All other general purpose registers are set to 0.
+
+### aarch64
+
+`PC` will be the entry point as defined as part of the executable file format,
+unless the an Entry Point feature is requested (see below), in which case,
+the value of `PC` is going to be taken from there.
+
+The contents of the `VBAR_EL1` register are undefined, and the kernel must load it's own.
+
+The `MAIR_EL1` register will contain at least these entries, in an unspecified order:
+ - Normal, Write-back RW-Allocate non-transient (`0b11111111`),
+ - Unspecified, correct for use with the framebuffer.
+
+The kernel and the lower-half identity mapping will be mapped with Normal write-back memory,
+while the framebuffer is mappeed with the correct caching mode. The kernel must ensure that
+MMIO it wants to access is mapped with the correct caching mode.
+
+All interrupts are masked (`PSTATE.{D, A, I, F}` are set to 1).
+
+The kernel is entered in little-endian AArch64 EL1t (EL1 with `PSTATE.SP` set to 0, `PSTATE.E` set to 0, and `PSTATE.nRW` set to 0).
+
+Other fields of `PSTATE` are undefined.
+
+At entry: the MMU (`SCTLR_EL1.M`) is enabled, the I-Cache and D-Cache (`SCTLR_EL1.{I, C}`) are enabled,
+data alignment checking (`SCTLR_EL1.A`) is disabled. SP alignment checking (`SCTLR_EL1.{SA, SA0}`) is enabled.
+Other fields of `SCTLR_EL1` are reset to 0 or to their reserved value.
+
+Higher ELs do not interfere with accesses to vector or floating point instructions or registers.
+
+Higher ELs do not interfere with accesses to the generic timer and counter.
+
+The used translation granule size is undefined.
+
+If booted by EFI/UEFI, boot services are exited.
+
+`SP` is set to point to a stack, in bootloader-reserved memory, which is
+at least 64KiB (65536 bytes) in size, or the size specified in the Stack
+Size Request (see below).
+
+All other general purpose registers (including `X29` and `X30`) are set to 0. Vector registers are in an undefined state.
 
 ## Feature List
 
@@ -463,6 +504,29 @@ No registers other than the segment registers and general purpose registers
 are going to be used. Especially, this means that there is no need to save
 and restore FPU, SSE, or AVX state when calling the terminal write function.
 
+#### aarch64
+
+Additionally, the kernel must ensure, when calling `write()`, that:
+
+* The currently loaded virtual address space is still the one provided at
+entry by the bootloader, or a custom virtual address space is loaded which
+identity maps the framebuffer memory region associated with the terminal, and
+all the bootloader reclaimable memory regions, with read, write, and execute
+permissions.
+
+* The routine is called *by its physical address* (the value of the function
+pointer is already physical), which should be identity mapped.
+
+* Bootloader-reclaimable memory entries are left untouched until after the
+kernel is done utilising bootloader-provided facilities (this terminal being
+one of them).
+
+Notes regarding the usage of registers:
+
+No registers other than the general purpose registers are going to be used.
+Especially, this means that there is no need to save and restore SIMD state
+when calling the terminal write function.
+
 #### Terminal characteristics
 
 The terminal should strive for Linux console compatibility.
@@ -563,9 +627,12 @@ struct limine_smp_request {
 };
 ```
 
-* `flags` - Bit 0: Enable X2APIC, if possible.
+* `flags` - Bit 0: Enable X2APIC, if possible. (x86_64-only)
+
+#### x86_64:
 
 Response:
+
 ```c
 struct limine_smp_response {
     uint64_t revision;
@@ -608,6 +675,55 @@ that, the CPU state will be the same as described for the bootstrap
 processor. This field is unused for the structure describing the bootstrap
 processor. For all CPUs, this field is guaranteed to be NULL when control is first passed
 to the bootstrap processor.
+* `extra_argument` - A free for use field.
+
+#### aarch64:
+
+Response:
+
+```c
+struct limine_smp_response {
+    uint64_t revision;
+    uint32_t flags;
+    uint64_t bsp_mpidr;
+    uint64_t cpu_count;
+    struct limine_smp_info **cpus;
+};
+```
+
+* `flags` - Always zero
+* `bsp_mpidr` - MPIDR of the bootstrap processor (as read from `MPIDR_EL1`, with Res1 masked off).
+* `cpu_count` - How many CPUs are present. It includes the bootstrap processor.
+* `cpus` - Pointer to an array of `cpu_count` pointers to
+`struct limine_smp_info` structures.
+
+Notes: The presence of this request will prompt the bootloader to bootstrap
+the secondary processors. This will not be done if this request is not present.
+
+```c
+struct limine_smp_info;
+
+typedef void (*limine_goto_address)(struct limine_smp_info *);
+
+struct limine_smp_info {
+    uint32_t processor_id;
+    uint32_t gic_iface_no;
+    uint64_t mpidr;
+    uint64_t reserved;
+    limine_goto_address goto_address;
+    uint64_t extra_argument;
+};
+```
+
+* `processor_id` - ACPI Processor UID as specified by the MADT
+* `gic_iface_no` - GIC CPU Interface number of the processor as specified by the MADT (possibly always 0)
+* `mpidr` - MPIDR of the processor as specified by the MADT or device tree
+* `goto_address` - An atomic write to this field causes the parked CPU to
+jump to the written address, on a 64KiB (or Stack Size Request size) stack. A pointer to the
+`struct limine_smp_info` structure of the CPU is passed in `X0`. Other than
+that, the CPU state will be the same as described for the bootstrap
+processor. This field is unused for the structure describing the bootstrap
+processor.
 * `extra_argument` - A free for use field.
 
 ### Memory Map Feature
@@ -936,3 +1052,32 @@ struct limine_kernel_address_response {
 
 * `physical_base` - The physical base address of the kernel.
 * `virtual_base` - The virtual base address of the kernel.
+
+### Device Tree Blob Feature
+
+ID:
+```c
+#define LIMINE_DTB_REQUEST { LIMINE_COMMON_MAGIC, 0xb40ddb48fb54bac7, 0x545081493f81ffb7 }
+```
+
+Request:
+```c
+struct limine_dtb_request {
+    uint64_t id[4];
+    uint64_t revision;
+    struct limine_dtb_response *response;
+};
+```
+
+Response:
+```c
+struct limine_dtb_response {
+    uint64_t revision;
+    void *dtb_ptr;
+};
+```
+
+* `dtb_ptr` - Physical pointer to the device tree blob.
+
+Note: Information contained in the `/chosen` node may not reflect the information
+given by bootloader tags, and as such the `/chosen` node properties should be ignored.

@@ -1,0 +1,21 @@
+section .data
+
+stack_at_first_entry:
+    dq 0
+
+section .text
+
+global menu
+extern _menu
+menu:
+    xor eax, eax
+    cmp [rel stack_at_first_entry], rax
+    jne .L1
+    mov [rel stack_at_first_entry], rsp
+    jmp .L2
+.L1:
+    mov rsp, [rel stack_at_first_entry]
+.L2:
+    push 0
+    push 0
+    jmp _menu

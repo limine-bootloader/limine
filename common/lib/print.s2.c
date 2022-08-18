@@ -210,9 +210,11 @@ out:
 #endif
 
     for (size_t i = 0; i < print_buf_i; i++) {
+#if defined (__x86_64__) || defined (__i386__)
         if (E9_OUTPUT) {
             outb(0xe9, print_buf[i]);
         }
+#endif
         if ((term_backend != NOT_READY && serial) || COM_OUTPUT) {
             switch (print_buf[i]) {
                 case '\n':

@@ -1,0 +1,108 @@
+#include <lib/macros.aarch64_asm.h>
+
+// noreturn void enter_in_current_el(uint64_t entry, uint64_t sp, uint64_t sctlr,
+//                                   uint64_t target_x0)
+// Configure current EL state and jump to kernel. Used for Linux hence
+// no paging register configuration (which requires SCTLR.M = 0).
+
+.global enter_in_current_el
+enter_in_current_el:
+    msr sp_el0, x1
+
+    // Sanity check that SCTLR.M = 0
+    and x8, x2, #0b1
+    cbnz x8, 99f
+99:
+    wfi
+    b 99b
+
+    PICK_EL x8, 0f, 1f
+0:
+    msr sctlr_el1, x2
+    dsb sy
+    isb
+
+    // Enter kernel in EL1
+    mov x8, #0x3c4
+    msr spsr_el1, x8
+    msr elr_el1, x0
+
+    mov x0, x3
+    ZERO_REGS_EXCEPT_X0
+
+    eret
+
+1:
+    msr sctlr_el2, x2
+    dsb sy
+    isb
+
+    // Enter kernel in EL2
+    mov x8, #0x3c8
+    msr spsr_el2, x8
+    msr elr_el2, x0
+
+    mov x0, x3
+    ZERO_REGS_EXCEPT_X0
+
+    eret
+
+// noreturn void enter_in_el1(uint64_t entry, uint64_t sp, uint64_t sctlr,
+//                            uint64_t mair, uint64_t tcr, uint64_t ttbr0,
+//                            uint64_t ttbr1, uint64_t target_x0)
+// Potentially drop to EL1 from EL2 (and also disable trapping to EL2), then
+// configure EL1 state and jump to kernel.
+
+.global enter_in_el1
+enter_in_el1:
+    msr spsel, #0
+    mov sp, x1
+
+    // Configure EL1 state
+    msr mair_el1, x3
+    msr tcr_el1, x4
+    msr ttbr0_el1, x5
+    msr ttbr1_el1, x6
+    msr sctlr_el1, x2
+    dsb sy
+    isb
+
+    PICK_EL x8, 0f, 1f
+0:
+    // Enter kernel in EL1
+    mov x8, #0x3c4
+    msr spsr_el1, x8
+    msr elr_el1, x0
+
+    mov x0, x7
+    ZERO_REGS_EXCEPT_X0
+
+    eret
+
+1:
+    // Configure EL2-specific state for EL1
+
+    // Don't trap counters to EL2
+    mrs x8, cnthctl_el2
+    orr x8, x8, #3
+    msr cnthctl_el2, x8
+    msr cntvoff_el2, xzr
+
+    // Enable AArch64 in EL1
+    ldr x8, =0x80000002
+    msr hcr_el2, x8
+
+    // Don't trap FP/SIMD to EL2
+    mov x8, #0x33FF
+    msr cptr_el2, x8
+    msr hstr_el2, xzr
+
+    // Enter kernel in EL1
+    mov x8, #0x3c4
+    msr spsr_el2, x8
+    msr elr_el2, x0
+
+    mov x0, x7
+    ZERO_REGS_EXCEPT_X0
+
+    eret

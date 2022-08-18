@@ -26,26 +26,6 @@
 void stage3_common(void);
 
 #if uefi == 1
-__attribute__((naked))
-EFI_STATUS efi_main(
-    __attribute__((unused)) EFI_HANDLE ImageHandle,
-    __attribute__((unused)) EFI_SYSTEM_TABLE *SystemTable) {
-    // Invalid return address of 0 to end stacktraces here
-#if defined (__x86_64__)
-    asm (
-        "xorl %eax, %eax\n\t"
-        "movq %rax, (%rsp)\n\t"
-        "jmp uefi_entry\n\t"
-    );
-#elif defined (__i386__)
-    asm (
-        "xorl %eax, %eax\n\t"
-        "movl %eax, (%esp)\n\t"
-        "jmp uefi_entry\n\t"
-    );
-#endif
-}
-
 noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     gST = SystemTable;
     gBS = SystemTable->BootServices;
@@ -65,7 +45,9 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 
     init_memmap();
 
+#if defined (__x86_64__) || defined (__i386__)
     init_gdt();
+#endif
 
     disk_create_index();
 
@@ -129,8 +111,10 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 noreturn void stage3_common(void) {
     term_notready();
 
+#if defined (__x86_64__) || defined (__i386__)
     init_flush_irqs();
     init_io_apics();
+#endif
 
     menu(true);
 }

@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <lib/blib.h>
+#include <sys/cpu.h>
 #include <lib/libc.h>
 #include <lib/elf.h>
 #include <lib/print.h>
@@ -20,13 +21,15 @@
 #define DT_RELASZ   0x00000008
 #define DT_RELAENT  0x00000009
 
-#define ABI_SYSV    0x00
-#define ARCH_X86_64 0x3e
-#define ARCH_X86_32 0x03
-#define BITS_LE     0x01
-#define ET_DYN      0x0003
-#define SHT_RELA    0x00000004
-#define R_X86_64_RELATIVE 0x00000008
+#define ABI_SYSV     0x00
+#define ARCH_X86_64  0x3e
+#define ARCH_X86_32  0x03
+#define ARCH_AARCH64 0xb7
+#define BITS_LE      0x01
+#define ET_DYN       0x0003
+#define SHT_RELA     0x00000004
+#define R_X86_64_RELATIVE  0x00000008
+#define R_AARCH64_RELATIVE 0x00000403
 
 /* Indices into identification array */
 #define EI_CLASS    4
@@ -109,6 +112,7 @@ int elf_bits(uint8_t *elf) {
 
     switch (hdr.machine) {
         case ARCH_X86_64:
+        case ARCH_AARCH64:
             return 64;
         case ARCH_X86_32:
             return 32;
@@ -209,7 +213,14 @@ static int elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *bu
             memcpy(&relocation, elf + (rela_offset + offset), sizeof(struct elf64_rela));
 
             switch (relocation.r_info) {
-                case R_X86_64_RELATIVE: {
+#if defined (__x86_64__) || defined (__i386__)
+                case R_X86_64_RELATIVE:
+#elif defined (__aarch64__)
+                case R_AARCH64_RELATIVE:
+#else
+#error Unknown architecture
+#endif
+                {
                     // Relocation is before buffer
                     if (relocation.r_addr < vaddr)
                         continue;
@@ -251,10 +262,19 @@ int elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t limi
         return 1;
     }
 
+#if defined (__x86_64__) || defined (__i386__)
     if (hdr.machine != ARCH_X86_64) {
         printv("elf: Not an x86_64 ELF file.\n");
         return 1;
     }
+#elif defined (__aarch64__)
+    if (hdr.machine != ARCH_AARCH64) {
+        printv("elf: Not an aarch64 ELF file.\n");
+        return 1;
+    }
+#else
+#error Unknown architecture
+#endif
 
     if (hdr.shdr_size < sizeof(struct elf64_shdr)) {
         panic(true, "elf: shdr_size < sizeof(struct elf64_shdr)");
@@ -500,9 +520,17 @@ int elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *top, uint64_t *_sl
         panic(true, "elf: Not a Little-endian ELF file.\n");
     }
 
+#if defined (__x86_64__) || defined (__i386__)
     if (hdr.machine != ARCH_X86_64) {
         panic(true, "elf: Not an x86_64 ELF file.\n");
     }
+#elif defined (__aarch64__)
+    if (hdr.machine != ARCH_AARCH64) {
+        panic(true, "elf: Not an aarch64 ELF file.\n");
+    }
+#else
+#error Unknown architecture
+#endif
 
     if (is_reloc) {
         *is_reloc = false;
@@ -671,6 +699,11 @@ final:
         if (elf64_apply_relocations(elf, &hdr, (void *)(uintptr_t)load_addr, phdr.p_vaddr, phdr.p_memsz, slide)) {
             panic(true, "elf: Failed to apply relocations");
         }
+
+#if defined (__aarch64__)
+        clean_inval_dcache_poc(mem_base, mem_base + mem_size);
+        inval_icache_pou(mem_base, mem_base + mem_size);
+#endif
     }
 
     if (simulation) {

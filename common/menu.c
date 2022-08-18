@@ -534,52 +534,6 @@ static size_t print_tree(const char *shift, size_t level, size_t base_index, siz
     return max_entries;
 }
 
-#if defined (__x86_64__)
-__attribute__((used))
-static uintptr_t stack_at_first_entry = 0;
-#endif
-
-__attribute__((naked))
-noreturn void menu(__attribute__((unused)) bool timeout_enabled) {
-#if defined (__i386__)
-    asm volatile (
-        "pop %eax\n\t"
-        "call 1f\n\t"
-        "1:\n\t"
-        "pop %eax\n\t"
-        "add $(2f - 1b), %eax\n\t"
-        "cmpl $0, (%eax)\n\t"
-        "jne 1f\n\t"
-        "mov %esp, (%eax)\n\t"
-        "jmp 3f\n\t"
-        "1:\n\t"
-        "mov (%esp), %edi\n\t"
-        "mov (%eax), %esp\n\t"
-        "push %edi\n\t"
-        "jmp 3f\n\t"
-        "2:\n\t"
-        ".long 0\n\t"
-        "3:\n\t"
-        "push $0\n\t"
-        "jmp _menu"
-    );
-#elif defined (__x86_64__)
-    asm volatile (
-        "xor %eax, %eax\n\t"
-        "cmp %rax, stack_at_first_entry(%rip)\n\t"
-        "jne 1f\n\t"
-        "mov %rsp, stack_at_first_entry(%rip)\n\t"
-        "jmp 2f\n\t"
-        "1:\n\t"
-        "mov stack_at_first_entry(%rip), %rsp\n\t"
-        "2:\n\t"
-        "push $0\n\t"
-        "push $0\n\t"
-        "jmp _menu"
-    );
-#endif
-}
-
 static struct memmap_entry *rewound_memmap = NULL;
 static size_t rewound_memmap_entries = 0;
 static uint8_t *rewound_data;
@@ -594,8 +548,7 @@ extern symbol s2_data_begin;
 extern symbol s2_data_end;
 #endif
 
-__attribute__((used))
-static noreturn void _menu(bool timeout_enabled) {
+noreturn void _menu(bool timeout_enabled) {
     size_t data_size = (uintptr_t)data_end - (uintptr_t)data_begin;
 #if bios == 1
     size_t s2_data_size = (uintptr_t)s2_data_end - (uintptr_t)s2_data_begin;
@@ -926,11 +879,23 @@ noreturn void boot(char *config) {
     } else if (!strcmp(proto, "limine")) {
         limine_load(config, cmdline);
     } else if (!strcmp(proto, "linux")) {
+#if defined (__x86_64__) || defined (__i386__)
         linux_load(config, cmdline);
+#else
+        print("TODO: Linux is not available on aarch64.\n\n");
+#endif
     } else if (!strcmp(proto, "multiboot1") || !strcmp(proto, "multiboot")) {
+#if defined (__x86_64__) || defined (__i386__)
         multiboot1_load(config, cmdline);
+#else
+        print("Multiboot 1 is not available on aarch64.\n\n");
+#endif
     } else if (!strcmp(proto, "multiboot2")) {
+#if defined (__x86_64__) || defined (__i386__)
         multiboot2_load(config, cmdline);
+#else
+        print("Multiboot 2 is not available on aarch64.\n\n");
+#endif
     } else if (!strcmp(proto, "chainload_next")) {
         chainload_next(config);
     } else if (!strcmp(proto, "chainload")) {

@@ -1,3 +1,5 @@
+#if defined (__x86_64__) || defined (__i386__)
+
 #include <stdint.h>
 #include <sys/gdt.h>
 #include <mm/pmm.h>
@@ -78,4 +80,6 @@ void init_gdt(void) {
     memcpy(gdt_copy, gdt_descs, sizeof(gdt_descs));
     gdt.ptr = (uintptr_t)gdt_copy;
 }
+#endif
+
 #endif

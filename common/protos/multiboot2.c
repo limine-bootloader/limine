@@ -1,3 +1,5 @@
+#if defined (__x86_64__) || defined (__i386__)
+
 #include <stdint.h>
 #include <stddef.h>
 #include <stdnoreturn.h>
@@ -773,3 +775,5 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
                   (uint32_t)mb2_info_final_loc, (uint32_t)entry_point,
                   (uint32_t)(uintptr_t)ranges, (uint32_t)ranges_count);
 }
+
+#endif

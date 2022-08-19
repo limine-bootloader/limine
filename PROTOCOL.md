@@ -169,7 +169,7 @@ The `MAIR_EL1` register will contain at least these entries, in an unspecified o
  - Unspecified, correct for use with the framebuffer.
 
 The kernel and the lower-half identity mapping will be mapped with Normal write-back memory,
-while the framebuffer is mappeed with the correct caching mode. The kernel must ensure that
+while the framebuffer is mapped with the correct caching mode. The kernel must ensure that
 MMIO it wants to access is mapped with the correct caching mode.
 
 All interrupts are masked (`PSTATE.{D, A, I, F}` are set to 1).
@@ -327,7 +327,7 @@ This means multiple terminals may be called simultaneously, and multiple
 callbacks may be handled simultaneously.
 The `terminal` parameter points to the `struct limine_terminal` structure to
 use to output the string; the `string` parameter points to a
-string to print; the `length` paremeter contains the length, in bytes, of the
+string to print; the `length` parameter contains the length, in bytes, of the
 string to print.
 
 ```c

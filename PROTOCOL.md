@@ -286,7 +286,7 @@ This means multiple terminals may be called simultaneously, and multiple
 callbacks may be handled simultaneously.
 The `terminal` parameter points to the `struct limine_terminal` structure to
 use to output the string; the `string` parameter points to a
-string to print; the `length` paremeter contains the length, in bytes, of the
+string to print; the `length` parameter contains the length, in bytes, of the
 string to print.
 
 ```c

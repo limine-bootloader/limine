@@ -370,8 +370,11 @@ static bool symlink_to_inode(struct ext2_inode *inode, struct ext2_file_handle *
 }
 
 static bool ext2_parse_dirent(struct ext2_dir_entry *dir, struct ext2_file_handle *fd, const char *path) {
-    if (*path == '/')
-        path++;
+    if (*path != '/') {
+        panic(true, "ext2: Path does not start in /");
+    }
+
+    path++;
 
     struct ext2_inode current_inode = fd->root_inode;
 
@@ -380,8 +383,8 @@ static bool ext2_parse_dirent(struct ext2_dir_entry *dir, struct ext2_file_handl
 
     bool ret;
 
-    const char *cwd = path;
-    size_t cwd_len = 0;
+    const char *cwd = path - 1; // because /
+    size_t cwd_len = 1;
 
 next:
     memset(token, 0, 256);

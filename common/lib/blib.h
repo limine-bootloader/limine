@@ -37,6 +37,8 @@ extern bool quiet, serial, editor_enabled;
 
 bool parse_resolution(size_t *width, size_t *height, size_t *bpp, const char *buf);
 
+void get_absolute_path(char *path_ptr, const char *path, const char *pwd);
+
 uint32_t get_crc32(void *_stream, size_t len);
 
 uint32_t oct2bin(uint8_t *str, uint32_t max);

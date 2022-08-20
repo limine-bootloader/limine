@@ -339,15 +339,28 @@ static uint32_t *create_alloc_map(struct ext2_file_handle *fd,
     return alloc_map;
 }
 
-static bool symlink_to_inode(struct ext2_inode *inode, struct ext2_file_handle *fd) {
+static bool symlink_to_inode(struct ext2_inode *inode, struct ext2_file_handle *fd,
+                             const char *cwd, size_t cwd_len) {
     // I cannot find whether this is 0-terminated or not, so I'm gonna take the
     // safe route here and assume it is not.
     if (inode->i_size < 59) {
         struct ext2_dir_entry dir;
         char *symlink = (char *)inode->i_blocks;
         symlink[59] = 0;
-        if (!ext2_parse_dirent(&dir, fd, symlink))
+
+        char *abs = ext_mem_alloc(4096);
+        char *cwd_copy = ext_mem_alloc(cwd_len + 1);
+        memcpy(cwd_copy, cwd, cwd_len);
+        get_absolute_path(abs, symlink, cwd_copy);
+
+        pmm_free(cwd_copy, cwd_len + 1);
+
+        if (!ext2_parse_dirent(&dir, fd, abs)) {
+            pmm_free(abs, 4096);
             return false;
+        }
+        pmm_free(abs, 4096);
+
         ext2_get_inode(inode, fd, dir.inode);
         return true;
     } else {
@@ -367,10 +380,15 @@ static bool ext2_parse_dirent(struct ext2_dir_entry *dir, struct ext2_file_handl
 
     bool ret;
 
+    const char *cwd = path;
+    size_t cwd_len = 0;
+
 next:
     memset(token, 0, 256);
 
-    for (size_t i = 0; i < 255 && *path != '/' && *path != '\0'; i++, path++)
+    size_t next_cwd_len = cwd_len;
+
+    for (size_t i = 0; i < 255 && *path != '/' && *path != '\0'; i++, path++, next_cwd_len++)
         token[i] = *path;
 
     if (*path == '\0')
@@ -404,7 +422,7 @@ next:
                 ext2_get_inode(&current_inode, fd, dir->inode);
                 while ((current_inode.i_mode & FMT_MASK) != S_IFDIR) {
                     if ((current_inode.i_mode & FMT_MASK) == S_IFLNK) {
-                        if (!symlink_to_inode(&current_inode, fd)) {
+                        if (!symlink_to_inode(&current_inode, fd, cwd, cwd_len)) {
                             ret = false;
                             goto out;
                         }
@@ -415,6 +433,7 @@ next:
                     }
                 }
                 pmm_free(alloc_map, current_inode.i_blocks_count * sizeof(uint32_t));
+                cwd_len = next_cwd_len;
                 goto next;
             }
         }
@@ -471,7 +490,18 @@ struct file_handle *ext2_open(struct volume *part, const char *path) {
 
     struct ext2_dir_entry entry;
 
+    size_t cwd_len = 0;
+    char *cwd = ext_mem_alloc(4096);
+    for (int i = strlen(path) - 1; i > 0; i--) {
+        if (path[i] == '/' || path[i] == 0) {
+            cwd_len = i;
+            break;
+        }
+    }
+    memcpy(cwd, path, cwd_len);
+
     if (!ext2_parse_dirent(&entry, ret, path)) {
+        pmm_free(cwd, 4096);
         pmm_free(ret, sizeof(struct ext2_file_handle));
         return NULL;
     }
@@ -480,16 +510,20 @@ struct file_handle *ext2_open(struct volume *part, const char *path) {
 
     while ((ret->inode.i_mode & FMT_MASK) != S_IFREG) {
         if ((ret->inode.i_mode & FMT_MASK) == S_IFLNK) {
-            if (!symlink_to_inode(&ret->inode, ret)) {
+            if (!symlink_to_inode(&ret->inode, ret, cwd, cwd_len)) {
+                pmm_free(cwd, 4096);
                 pmm_free(ret, sizeof(struct ext2_file_handle));
                 return NULL;
             }
         } else {
             print("ext2: Entity is not regular file nor symlink\n");
+            pmm_free(cwd, 4096);
             pmm_free(ret, sizeof(struct ext2_file_handle));
             return NULL;
         }
     }
+
+    pmm_free(cwd, 4096);
 
     ret->size = ret->inode.i_size;
 

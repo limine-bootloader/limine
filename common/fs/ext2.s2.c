@@ -385,11 +385,10 @@ static bool ext2_parse_dirent(struct ext2_dir_entry *dir, struct ext2_file_handl
 
     const char *cwd = path - 1; // because /
     size_t cwd_len = 1;
+    size_t next_cwd_len = cwd_len;
 
 next:
     memset(token, 0, 256);
-
-    size_t next_cwd_len = cwd_len;
 
     for (size_t i = 0; i < 255 && *path != '/' && *path != '\0'; i++, path++, next_cwd_len++)
         token[i] = *path;
@@ -397,7 +396,7 @@ next:
     if (*path == '\0')
         escape = true;
     else
-        path++;
+        path++, next_cwd_len++;
 
     uint32_t *alloc_map = create_alloc_map(fd, &current_inode);
 

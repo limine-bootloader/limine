@@ -19,32 +19,39 @@ MKESCAPE = $(subst $(SPACE),\ ,$(1))
 SHESCAPE = $(subst ','\'',$(1))
 NASMESCAPE = $(subst ','"'$(COMMA) \"'\"$(COMMA) '"',$(1))
 
+define DEFAULT_VAR =
+    ifeq ($(origin $1),default)
+        override $(1) := $(2)
+    endif
+    ifeq ($(origin $1),undefined)
+        override $(1) := $(2)
+    endif
+endef
+
 override BUILD_CD_EFI := @BUILD_CD_EFI@
 override BUILD_PXE := @BUILD_PXE@
 override BUILD_CD := @BUILD_CD@
 override BUILD_LIMINE_DEPLOY := @BUILD_LIMINE_DEPLOY@
 
-WERROR ?= @WERROR@
+override WERROR := @WERROR@
 export WERROR
 
-ifeq ($(origin CC), default)
-CC := @CC@
-endif
+$(eval $(call DEFAULT_VAR,CC,cc))
 export CC
 
-MKDIR_P ?= @MKDIR_P@
+override MKDIR_P := @MKDIR_P@
 export MKDIR_P
 
-INSTALL ?= @INSTALL@
+override INSTALL := @INSTALL@
 export INSTALL
 
-GREP ?= @GREP@
+override GREP := @GREP@
 export GREP
 
-SED ?= @SED@
+override SED := @SED@
 export SED
 
-AWK ?= @AWK@
+override AWK := @AWK@
 export AWK
 
 CFLAGS ?= @CFLAGS@

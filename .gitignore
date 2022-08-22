@@ -1,9 +1,9 @@
-/libgcc-*
 /bin
 /build
 /cross-files
 /limine-efi
 /freestanding-headers
+/libgcc-binaries
 /ovmf*
 *.o
 *.d
@@ -36,5 +36,6 @@
 /common-bios
 /common-uefi-ia32
 /common-uefi-x86-64
+/common-uefi-aarch64
 /decompressor-build
 /stage1.stamp

@@ -152,7 +152,7 @@ else
     (
     mkdir -p "$BUILDDIR/cross-files"
     cd "$BUILDDIR/cross-files"
-    TRIPLET=aarch64-elf-none "$SRCDIR/cross-detect/configure" || exit 1
+    TRIPLET=aarch64-elf "$SRCDIR/cross-detect/configure" || exit 1
     )
     BUILD_UEFI_AARCH64="limine-uefi-aarch64"
 fi

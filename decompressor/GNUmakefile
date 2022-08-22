@@ -28,7 +28,6 @@ override INTERNAL_CFLAGS := \
 	-fno-pic \
 	-fomit-frame-pointer \
 	-nostdinc \
-	-Wno-address-of-packed-member \
 	-Wshadow \
 	-Wvla \
 	-mno-80387 \

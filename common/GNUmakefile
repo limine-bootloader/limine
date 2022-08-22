@@ -41,7 +41,6 @@ override INTERNAL_CFLAGS := \
 	-fno-strict-aliasing \
 	-fno-lto \
 	-nostdinc \
-	-Wno-address-of-packed-member \
 	-Wshadow \
 	-Wvla \
 	-mno-80387 \

@@ -82,11 +82,6 @@ SECTIONS
     __data_size = SIZEOF(.data) + SIZEOF(.rela) + SIZEOF(.got) + SIZEOF(.dynamic);
     __data_end = __data_start + __data_size;
 
-    // for GNU-EFI crt0:
-    _data = __data_start;
-    _data_size = __data_size;
-    _edata = __data_end;
-
     __image_end = __data_end;
 
     /DISCARD/ : {

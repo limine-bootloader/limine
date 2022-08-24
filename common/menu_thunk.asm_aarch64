@@ -1,5 +1,6 @@
 .section .data
 
+.align 3
 stack_at_first_entry:
     .quad 0
 

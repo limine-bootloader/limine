@@ -2,7 +2,7 @@
 
 ### What is Limine?
 
-Limine is a modern, advanced x86/x86_64 BIOS/UEFI multiprotocol bootloader, used
+Limine is a modern, advanced, portable, multiprotocol bootloader, also used
 as the reference implementation for the [Limine boot protocol](/PROTOCOL.md).
 
 ### Limine's boot menu
@@ -10,6 +10,11 @@ as the reference implementation for the [Limine boot protocol](/PROTOCOL.md).
 ![Reference screenshot](/screenshot.png?raw=true "Reference screenshot")
 
 [Photo by Martin Damboldt from Pexels](https://www.pexels.com/photo/gray-bridge-and-trees-814499/)
+
+### Supported architectures
+* IA-32 (32-bit x86)
+* x86_64
+* aarch64 (arm64)
 
 ### Supported boot protocols
 * Linux
@@ -30,8 +35,10 @@ as the reference implementation for the [Limine boot protocol](/PROTOCOL.md).
 * Unpartitioned media
 
 ### Minimum system requirements
-While Limine is made with modern, 64-bit, PCs in mind, it supports 32-bit
-ones as well, starting with PCs with Pentium Pro class CPUs.
+For 32-bit x86 systems, support is only ensured starting with those with
+Pentium Pro (i686) class CPUs.
+
+All x86_64 and aarch64 (UEFI) systems are supported.
 
 ## Binary releases
 
@@ -40,13 +47,13 @@ are shipped in the `-binary` branches and tags of this repository
 (see [branches](https://github.com/limine-bootloader/limine/branches/all) and
 [tags](https://github.com/limine-bootloader/limine/tags)).
 
-For example, to clone the latest binary release of the `v3.x` branch one can do
+For example, to clone the latest binary release of the `v4.x` branch one can do
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-branch-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v4.x-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example `v3.15`)
+or, to clone a specific binary point release (for example `v4.0`)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v3.15-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v4.0-binary --depth=1
 ```
 
 In order to rebuild `limine-deploy`, simply run `make` in the binary
@@ -62,6 +69,7 @@ release directory.
 ### Prerequisites
 
 In order to build Limine, the following programs have to be installed:
+common UNIX tools (also known as `coreutils`),
 `GNU make`, `grep`, `sed`, `find`, `awk`, `gzip`, `nasm`, `mtools`
 (optional, necessary to build `limine-cd-efi.bin`).
 Furthermore, `gcc` or `llvm/clang` must also be installed, alongside
@@ -94,11 +102,11 @@ To build Limine, run:
 make    # (or gmake where applicable)
 ```
 
-The generated bootloader files are going to be in `bin`.
+The generated bootloader files are going to be in `./bin`.
 
 ## Installing Limine binaries
 
-This step is optional as the bootloader binaries can be used from the `bin` or
+This step is optional as the bootloader binaries can be used from the `./bin` or
 release directory just fine. This step will only install them to `share`, `include`, and
 `bin` directories in the specified prefix (default is `/usr/local`, see
 `./configure --help`, or the `PREFIX` variable if installing from a binary release).
@@ -111,8 +119,8 @@ make install    # (or gmake where applicable)
 ## How to use
 
 ### UEFI
-The `BOOTX64.EFI` file is a vaild EFI application that can be simply copied to
-the `/EFI/BOOT` directory of a FAT formatted EFI system partition. This file can
+The `BOOT{IA32,X64,AA64}.EFI` files are vaild EFI applications that can be simply copied to
+the `/EFI/BOOT` directory of a FAT formatted EFI system partition. These files can
 be installed there and coexist with a BIOS installation of Limine (see below) so
 that the disk will be bootable on both BIOS and UEFI systems.
 

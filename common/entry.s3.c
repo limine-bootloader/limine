@@ -51,9 +51,11 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
     init_gdt();
 #endif
 
+#if defined (__x86_64__)
     if ((uintptr_t)__image_base > 0x100000000) {
         panic(false, "Limine does not support being loaded above 4GiB");
     }
+#endif
 
     disk_create_index();
 

@@ -16,13 +16,13 @@ ifeq ($(call MKESCAPE,$(BUILDDIR)),)
 endif
 
 ifeq ($(TARGET),bios)
-    override OBJCOPY_ARCH := elf32-i386
+    override OBJCOPY2ELF_FLAGS := -B i386 -O elf32-i386
 else ifeq ($(TARGET),uefi-x86-64)
-    override OBJCOPY_ARCH := elf64-x86-64
+    override OBJCOPY2ELF_FLAGS := -B i386 -O elf64-x86-64
 else ifeq ($(TARGET),uefi-ia32)
-    override OBJCOPY_ARCH := elf32-i386
+    override OBJCOPY2ELF_FLAGS := -B i386 -O elf32-i386
 else ifeq ($(TARGET),uefi-aarch64)
-    override OBJCOPY_ARCH := elf64-littleaarch64
+    override OBJCOPY2ELF_FLAGS := -B aarch64 -O elf64-littleaarch64
 else
     $(error Invalid target)
 endif
@@ -199,7 +199,7 @@ endif
 
 $(call MKESCAPE,$(BUILDDIR))/font.o: font.bin
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_OBJCOPY) -I binary -O $(OBJCOPY_ARCH) font.bin '$(call SHESCAPE,$@)'
+	$(CROSS_OBJCOPY) -I binary $(OBJCOPY2ELF_FLAGS) font.bin '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))/tinf'
@@ -257,10 +257,10 @@ $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(OBJ) ../libgcc-binaries/libgcc-
 	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' -o '$(call SHESCAPE,$@)'
 	$(CROSS_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(CROSS_OBJCOPY) -I binary -O $(OBJCOPY_ARCH) build-id.s2.bin build-id.s2.o
+		$(CROSS_OBJCOPY) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s2.bin build-id.s2.o
 	$(CROSS_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(CROSS_OBJCOPY) -I binary -O $(OBJCOPY_ARCH) build-id.s3.bin build-id.s3.o
+		$(CROSS_OBJCOPY) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s3.bin build-id.s3.o
 	$(CROSS_LD) '$(call OBJESCAPE,$^)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' $(CROSS_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_bios.ld.in
@@ -272,10 +272,10 @@ $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(OBJ) ../libgcc-binaries/libgcc-i686.a
 	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' -o '$(call SHESCAPE,$@)'
 	$(CROSS_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(CROSS_OBJCOPY) -I binary -O $(OBJCOPY_ARCH) build-id.s2.bin build-id.s2.o
+		$(CROSS_OBJCOPY) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s2.bin build-id.s2.o
 	$(CROSS_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(CROSS_OBJCOPY) -I binary -O $(OBJCOPY_ARCH) build-id.s3.bin build-id.s3.o
+		$(CROSS_OBJCOPY) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s3.bin build-id.s3.o
 	$(CROSS_LD) '$(call OBJESCAPE,$^)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' $(CROSS_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' -o '$(call SHESCAPE,$@)'
 
 endif

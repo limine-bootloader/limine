@@ -26,8 +26,11 @@ as the reference implementation for the [Limine boot protocol](/PROTOCOL.md).
 ### Supported filesystems
 * ext2/3/4
 * FAT12/16/32
-* NTFS
 * ISO9660 (CDs/DVDs)
+
+Even though these are the filesystems Limine supports directly, *any*
+filesystem can be utilised by the kernel provided that the kernel (and any
+needed modules) are on a directly supported filesystem.
 
 ### Supported partitioning schemes
 * MBR

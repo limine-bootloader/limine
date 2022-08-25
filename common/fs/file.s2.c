@@ -4,7 +4,6 @@
 #include <fs/ext2.h>
 #include <fs/fat32.h>
 #include <fs/iso9660.h>
-#include <fs/ntfs.h>
 #include <lib/print.h>
 #include <lib/blib.h>
 #include <mm/pmm.h>
@@ -61,9 +60,6 @@ struct file_handle *fopen(struct volume *part, const char *filename) {
         goto success;
     }
     if ((ret = iso9660_open(part, filename)) != NULL) {
-        goto success;
-    }
-    if ((ret = ntfs_open(part, filename)) != NULL) {
         goto success;
     }
     if ((ret = fat32_open(part, filename)) != NULL) {

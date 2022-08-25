@@ -39,9 +39,8 @@ rm_hcf:
 global rm_int
 rm_int:
     ; Self-modifying code: int $int_no
-    mov eax, dword [esp+4]
-    mov eax, dword [0 + eax*4]
-    mov dword [.int_offset], eax
+    mov al, byte [esp+4]
+    mov byte [.int_no], al
 
     ; Save out_regs
     mov eax, dword [esp+8]
@@ -101,9 +100,14 @@ rm_int:
     pop eax
     mov esp, dword [ss:.esp]
 
+    sti
+
     ; Indirect interrupt call
-    pushf
-    call far [ss:.int_offset]
+    db 0xcd
+  .int_no:
+    db 0
+
+    cli
 
     ; Load out_regs
     mov dword [ss:.esp], esp
@@ -160,5 +164,3 @@ align 16
   .idt:      dq 0
   .rm_idt:   dw 0x3ff
              dd 0
-             dw 0
-  .int_offset: dd 0

@@ -46,6 +46,8 @@ EFI_STATUS efi_main(
 #endif
 }
 
+extern symbol __image_base;
+
 noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     gST = SystemTable;
     gBS = SystemTable->BootServices;
@@ -66,6 +68,10 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
     init_memmap();
 
     init_gdt();
+
+    if ((uintptr_t)__image_base > 0x100000000) {
+        panic(false, "Limine does not support being loaded above 4GiB");
+    }
 
     disk_create_index();
 

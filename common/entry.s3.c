@@ -26,6 +26,8 @@
 void stage3_common(void);
 
 #if uefi == 1
+extern symbol __image_base;
+
 noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     gST = SystemTable;
     gBS = SystemTable->BootServices;
@@ -48,6 +50,10 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 #if defined (__x86_64__) || defined (__i386__)
     init_gdt();
 #endif
+
+    if ((uintptr_t)__image_base > 0x100000000) {
+        panic(false, "Limine does not support being loaded above 4GiB");
+    }
 
     disk_create_index();
 

@@ -176,7 +176,7 @@ endif
 
 $(call MKESCAPE,$(BUILDDIR))/font.o: font.bin
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_OBJCOPY) -I binary -O $(OBJCOPY_ARCH) font.bin '$(call SHESCAPE,$@)'
+	$(CROSS_OBJCOPY) -B i8086 -I binary -O $(OBJCOPY_ARCH) font.bin '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))/tinf'

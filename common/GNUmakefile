@@ -119,6 +119,10 @@ ifeq ($(TARGET),bios)
         -melf_i386 \
         -static \
         --build-id=sha1
+
+    ifneq ($(CROSS_LD_NO_PIE_BUG),1)
+        override CROSS_LDFLAGS += -no-pie
+    endif
 endif
 
 ifeq ($(TARGET),uefi-x86-64)

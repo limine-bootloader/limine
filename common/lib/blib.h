@@ -65,20 +65,24 @@ void memcpy32to64(uint64_t, uint64_t, uint64_t);
 #error Unknown architecture
 #endif
 
-#define DIV_ROUNDUP(a, b) (((a) + ((b) - 1)) / (b))
+#define DIV_ROUNDUP(a, b) ({ \
+    __auto_type DIV_ROUNDUP_a = (a); \
+    __auto_type DIV_ROUNDUP_b = (b); \
+    (DIV_ROUNDUP_a + (DIV_ROUNDUP_b - 1)) / DIV_ROUNDUP_b; \
+})
 
 #define ALIGN_UP(x, a) ({ \
-    typeof(x) value = x; \
-    typeof(a) align = a; \
-    value = DIV_ROUNDUP(value, align) * align; \
-    value; \
+    __auto_type ALIGN_UP_value = (x); \
+    __auto_type ALIGN_UP_align = (a); \
+    ALIGN_UP_value = DIV_ROUNDUP(ALIGN_UP_value, ALIGN_UP_align) * ALIGN_UP_align; \
+    ALIGN_UP_value; \
 })
 
 #define ALIGN_DOWN(x, a) ({ \
-    typeof(x) value = x; \
-    typeof(a) align = a; \
-    value = (value / align) * align; \
-    value; \
+    __auto_type ALIGN_DOWN_value = (x); \
+    __auto_type ALIGN_DOWN_align = (a); \
+    ALIGN_DOWN_value = (ALIGN_DOWN_value / ALIGN_DOWN_align) * ALIGN_DOWN_align; \
+    ALIGN_DOWN_value; \
 })
 
 #define SIZEOF_ARRAY(array) (sizeof(array) / sizeof(array[0]))

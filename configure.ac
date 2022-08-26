@@ -8,8 +8,8 @@ AC_CONFIG_SUBDIRS([cross-detect])
 SRCDIR="$(cd "$srcdir" && pwd -P)"
 BUILDDIR="$(pwd -P)"
 
-AC_SUBST(SRCDIR, [$SRCDIR])
-AC_SUBST(BUILDDIR, [$BUILDDIR])
+AC_SUBST(SRCDIR)
+AC_SUBST(BUILDDIR)
 
 test "x$CFLAGS" = "x" && CFLAGS='-g -O2 -pipe -Wall -Wextra'
 AC_PROG_CC
@@ -76,7 +76,7 @@ else
     BUILD_BIOS="limine-bios"
 fi
 
-AC_SUBST(BUILD_BIOS, [$BUILD_BIOS])
+AC_SUBST(BUILD_BIOS)
 
 BUILD_LIMINE_DEPLOY="$BUILD_ALL"
 
@@ -84,7 +84,7 @@ AC_ARG_ENABLE([limine-deploy],
     AS_HELP_STRING([--enable-limine-deploy], [enable building limine-deploy]),
     BUILD_LIMINE_DEPLOY="$enableval")
 
-AC_SUBST(BUILD_LIMINE_DEPLOY, [$BUILD_LIMINE_DEPLOY])
+AC_SUBST(BUILD_LIMINE_DEPLOY)
 
 BUILD_CD="$BUILD_ALL"
 
@@ -92,7 +92,7 @@ AC_ARG_ENABLE([bios-cd],
     AS_HELP_STRING([--enable-bios-cd], [enable building the x86 BIOS CD image]),
     BUILD_CD="$enableval")
 
-AC_SUBST(BUILD_CD, [$BUILD_CD])
+AC_SUBST(BUILD_CD)
 
 BUILD_PXE="$BUILD_ALL"
 
@@ -100,7 +100,7 @@ AC_ARG_ENABLE([bios-pxe],
     AS_HELP_STRING([--enable-bios-pxe], [enable building the x86 BIOS PXE image]),
     BUILD_PXE="$enableval")
 
-AC_SUBST(BUILD_PXE, [$BUILD_PXE])
+AC_SUBST(BUILD_PXE)
 
 BUILD_UEFI_IA32="$BUILD_ALL"
 
@@ -119,7 +119,7 @@ else
     BUILD_UEFI_IA32="limine-uefi-ia32"
 fi
 
-AC_SUBST(BUILD_UEFI_IA32, [$BUILD_UEFI_IA32])
+AC_SUBST(BUILD_UEFI_IA32)
 
 BUILD_UEFI_X86_64="$BUILD_ALL"
 
@@ -138,7 +138,7 @@ else
     BUILD_UEFI_X86_64="limine-uefi-x86-64"
 fi
 
-AC_SUBST(BUILD_UEFI_X86_64, [$BUILD_UEFI_X86_64])
+AC_SUBST(BUILD_UEFI_X86_64)
 
 BUILD_UEFI_AARCH64="$BUILD_ALL"
 
@@ -157,7 +157,7 @@ else
     BUILD_UEFI_AARCH64="limine-uefi-aarch64"
 fi
 
-AC_SUBST(BUILD_UEFI_AARCH64, [$BUILD_UEFI_AARCH64])
+AC_SUBST(BUILD_UEFI_AARCH64)
 
 BUILD_CD_EFI="$BUILD_ALL"
 
@@ -176,7 +176,7 @@ if ! test "x$BUILD_CD_EFI" = "xno"; then
     fi
 fi
 
-AC_SUBST(BUILD_CD_EFI, [$BUILD_CD_EFI])
+AC_SUBST(BUILD_CD_EFI)
 
 AC_ARG_VAR(CROSS_TOOLCHAIN, [alternative toolchain prefix (or 'llvm')])
 AC_ARG_VAR(CROSS_CC, [C compiler command for Limine])
@@ -194,7 +194,7 @@ AC_ARG_VAR(CROSS_LDFLAGS, [Linker flags for Limine @<:@default: ]DEFAULT_CROSS_L
 test "x$CROSS_LDFLAGS" = "x" && CROSS_LDFLAGS="DEFAULT_CROSS_LDFLAGS"
 
 LIMINE_COPYRIGHT=$($GREP Copyright "$SRCDIR/LICENSE.md")
-AC_SUBST(LIMINE_COPYRIGHT, [$LIMINE_COPYRIGHT])
+AC_SUBST(LIMINE_COPYRIGHT)
 
 AC_PREFIX_DEFAULT(/usr/local)
 

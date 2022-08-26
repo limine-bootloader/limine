@@ -47,6 +47,10 @@ override CROSS_LDFLAGS += \
     -static \
     -Tlinker.ld
 
+ifneq ($(CROSS_LD_NO_PIE_BUG),1)
+    override CROSS_LDFLAGS += -no-pie
+endif
+
 override C_FILES := $(shell find ./ -type f -name '*.c')
 override ASM_FILES := $(shell find ./ -type f -name '*.asm')
 override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o))

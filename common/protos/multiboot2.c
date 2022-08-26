@@ -59,7 +59,9 @@ static size_t get_multiboot2_info_size(
         ALIGN_UP(sizeof(struct multiboot_tag), MULTIBOOT_TAG_ALIGN);                                                    // end
 }
 
-#define append_tag(P, TAG) ({ (P) += ALIGN_UP((TAG)->size, MULTIBOOT_TAG_ALIGN); })
+#define append_tag(P, TAG) do { \
+    (P) += ALIGN_UP((TAG)->size, MULTIBOOT_TAG_ALIGN); \
+} while (0)
 
 noreturn void multiboot2_load(char *config, char* cmdline) {
     struct file_handle *kernel_file;

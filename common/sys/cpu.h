@@ -167,58 +167,57 @@ inline void delay(uint64_t cycles) {
 }
 
 #define rdrand(type) ({ \
-    type ret; \
+    type rdrand__ret; \
     asm volatile ( \
         "1: " \
         "rdrand %0;" \
         "jnc 1b;" \
-        : "=r" (ret) \
+        : "=r" (rdrand__ret) \
     ); \
-    ret; \
+    rdrand__ret; \
 })
 
 #define rdseed(type) ({ \
-    type ret; \
+    type rdseed__ret; \
     asm volatile ( \
         "1: " \
         "rdseed %0;" \
         "jnc 1b;" \
-        : "=r" (ret) \
+        : "=r" (rdseed__ret) \
     ); \
-    ret; \
+    rdseed__ret; \
 })
 
-#define write_cr(reg, val) ({ \
+#define write_cr(reg, val) do { \
     asm volatile ("mov %0, %%cr" reg :: "r" (val) : "memory"); \
-})
+} while (0)
 
 #define read_cr(reg) ({ \
-    size_t cr; \
-    asm volatile ("mov %%cr" reg ", %0" : "=r" (cr) :: "memory"); \
-    cr; \
+    size_t read_cr__cr; \
+    asm volatile ("mov %%cr" reg ", %0" : "=r" (read_cr__cr) :: "memory"); \
+    read_cr__cr; \
 })
 
 #define locked_read(var) ({ \
-    typeof(*var) ret = 0; \
+    typeof(*var) locked_read__ret = 0; \
     asm volatile ( \
         "lock xadd %0, %1" \
-        : "+r" (ret) \
+        : "+r" (locked_read__ret) \
         : "m" (*(var)) \
         : "memory" \
     ); \
-    ret; \
+    locked_read__ret; \
 })
 
-#define locked_write(var, val) ({ \
-    typeof(*var) ret = val; \
+#define locked_write(var, val) do { \
+    __auto_type locked_write__ret = val; \
     asm volatile ( \
         "lock xchg %0, %1" \
-        : "+r" ((ret)) \
+        : "+r" ((locked_write__ret)) \
         : "m" (*(var)) \
         : "memory" \
     ); \
-    ret; \
-})
+} while (0)
 
 #elif defined (__aarch64__)
 
@@ -229,14 +228,14 @@ inline uint64_t rdtsc(void) {
 }
 
 #define locked_read(var) ({ \
-    typeof(*var) ret = 0; \
+    typeof(*var) locked_read__ret = 0; \
     asm volatile ( \
         "ldar %0, %1" \
-        : "=r" (ret) \
+        : "=r" (locked_read__ret) \
         : "m" (*(var)) \
         : "memory" \
     ); \
-    ret; \
+    locked_read__ret; \
 })
 
 inline size_t icache_line_size(void) {

@@ -4,7 +4,7 @@
 #include <fs/ext2.h>
 #include <drivers/disk.h>
 #include <lib/libc.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/print.h>
 #include <mm/pmm.h>
 

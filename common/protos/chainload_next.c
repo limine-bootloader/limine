@@ -3,7 +3,7 @@
 #include <stdnoreturn.h>
 #include <protos/chainload_next.h>
 #include <protos/chainload.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/print.h>
 #include <lib/part.h>
 

@@ -4,7 +4,7 @@
 #include <lib/real.h>
 #include <pxe/pxe.h>
 #include <lib/libc.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <mm/pmm.h>
 
 void set_pxe_fp(uint32_t fp);

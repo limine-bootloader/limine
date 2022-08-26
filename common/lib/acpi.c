@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <lib/acpi.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/libc.h>
 #include <lib/print.h>
 

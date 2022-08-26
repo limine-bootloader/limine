@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <lib/trace.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/config.h>
 #include <lib/print.h>
 #include <lib/uri.h>

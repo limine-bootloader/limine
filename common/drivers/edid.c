@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <drivers/edid.h>
 #include <mm/pmm.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/libc.h>
 #include <lib/print.h>
 

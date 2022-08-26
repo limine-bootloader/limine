@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <lib/libc.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/print.h>
 #include <lib/trace.h>
 #include <lib/real.h>

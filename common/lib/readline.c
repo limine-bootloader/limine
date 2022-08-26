@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <lib/readline.h>
 #include <lib/libc.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/term.h>
 #include <lib/print.h>
 #if bios == 1

@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <lib/config.h>
 #include <lib/libc.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <mm/pmm.h>
 #include <fs/file.h>
 #include <lib/print.h>

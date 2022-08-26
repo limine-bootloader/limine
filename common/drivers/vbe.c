@@ -6,7 +6,7 @@
 #include <drivers/vbe.h>
 #include <drivers/edid.h>
 #include <lib/libc.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/real.h>
 #include <lib/print.h>
 #include <lib/image.h>

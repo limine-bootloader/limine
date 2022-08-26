@@ -2,7 +2,7 @@
 #define __PROTOS__MULTIBOOT_H__
 
 #include <stdint.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 
 struct mb_reloc_stub {
     char jmp[4];

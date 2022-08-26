@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <sys/lapic.h>
 #include <sys/cpu.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/acpi.h>
 #include <mm/pmm.h>
 

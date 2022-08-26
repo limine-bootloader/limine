@@ -6,7 +6,7 @@
 #  include <lib/real.h>
 #endif
 #include <lib/libc.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/print.h>
 #include <mm/pmm.h>
 #include <fs/file.h>

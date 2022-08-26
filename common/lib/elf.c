@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/libc.h>
 #include <lib/elf.h>
 #include <lib/print.h>

@@ -4,7 +4,7 @@
 #include <protos/chainload.h>
 #include <lib/part.h>
 #include <lib/config.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <drivers/disk.h>
 #include <lib/term.h>
 #include <lib/fb.h>

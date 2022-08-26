@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <drivers/serial.h>
 #include <sys/cpu.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #if uefi == 1
 #  include <efi.h>
 #endif

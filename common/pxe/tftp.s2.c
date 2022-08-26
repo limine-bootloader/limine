@@ -6,7 +6,7 @@
 #include <lib/print.h>
 #include <lib/libc.h>
 #include <mm/pmm.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 
 uint32_t get_boot_server_info(void) {
     struct pxenv_get_cached_info cachedinfo = { 0 };

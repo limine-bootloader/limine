@@ -7,7 +7,7 @@
 #include <fs/iso9660.h>
 #include <fs/ntfs.h>
 #include <lib/print.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <mm/pmm.h>
 #include <lib/part.h>
 #include <lib/libc.h>

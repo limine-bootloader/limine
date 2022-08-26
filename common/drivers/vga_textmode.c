@@ -7,7 +7,7 @@
 #include <sys/cpu.h>
 #include <lib/real.h>
 #include <lib/libc.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/term.h>
 #include <mm/pmm.h>
 

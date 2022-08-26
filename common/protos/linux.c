@@ -4,7 +4,7 @@
 #include <protos/linux.h>
 #include <fs/file.h>
 #include <lib/libc.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/real.h>
 #include <lib/term.h>
 #include <lib/config.h>

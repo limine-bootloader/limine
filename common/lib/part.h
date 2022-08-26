@@ -74,7 +74,7 @@ struct volume *volume_get_by_bios_drive(int drive);
 
 bool volume_read(struct volume *part, void *buffer, uint64_t loc, uint64_t count);
 
-#define volume_iterate_parts(_VOLUME_, _BODY_) ({   \
+#define volume_iterate_parts(_VOLUME_, _BODY_) do {   \
     struct volume *_VOLUME = _VOLUME_;   \
     if (_VOLUME->pxe) { \
         do { \
@@ -101,6 +101,6 @@ bool volume_read(struct volume *part, void *buffer, uint64_t loc, uint64_t count
             _BODY_ \
         } \
     } \
-})
+} while (0)
 
 #endif

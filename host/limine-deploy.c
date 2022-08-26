@@ -554,8 +554,9 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    if (!device_init())
-        goto cleanup;
+    if (!device_init()) {
+        goto undeploy_mode_cleanup;
+    }
 
     if (undeploy_mode) {
         if (undeploy_file == NULL) {

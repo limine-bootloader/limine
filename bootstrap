@@ -13,6 +13,16 @@ cd "$srcdir"
 [ -d libgcc-binaries ] || git clone https://github.com/mintsuki/libgcc-binaries.git
 [ -d limine-efi ] || git clone https://github.com/limine-bootloader/limine-efi.git
 
+# Remove the libgcc files we don't need
+libgcc_needed="i686 x86_64-no-red-zone"
+for f in $libgcc_needed; do
+    mv libgcc-binaries/libgcc-$f.a libgcc-binaries/libgcc-$f.a.save
+done
+rm libgcc-binaries/*.a
+for f in $libgcc_needed; do
+    mv libgcc-binaries/libgcc-$f.a.save libgcc-binaries/libgcc-$f.a
+done
+
 automake_libdir="$(automake --print-libdir)"
 
 mkdir -p build-aux

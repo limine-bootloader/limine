@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <sys/e820.h>
 #include <lib/real.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/print.h>
 #include <mm/pmm.h>
 

@@ -8,7 +8,7 @@
 #include <config.h>
 #include <lib/libc.h>
 #include <lib/elf.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/config.h>
 #include <lib/print.h>
 #include <lib/uri.h>

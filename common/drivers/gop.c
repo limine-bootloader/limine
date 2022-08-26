@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <efi.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/term.h>
 #include <drivers/gop.h>
 #include <drivers/edid.h>

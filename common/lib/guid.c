@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <lib/guid.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 
 bool is_valid_guid(const char *s) {
     for (size_t i = 0; ; i++) {

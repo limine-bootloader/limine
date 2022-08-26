@@ -3,7 +3,7 @@
 #include <lib/image.h>
 #include <lib/bmp.h>
 #include <lib/libc.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <mm/pmm.h>
 
 struct bmp_header {

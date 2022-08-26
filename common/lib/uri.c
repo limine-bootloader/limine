@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <lib/uri.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/part.h>
 #include <lib/libc.h>
 #include <fs/file.h>

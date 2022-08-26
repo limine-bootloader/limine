@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <lib/term.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/real.h>
 
 bool early_term = false;

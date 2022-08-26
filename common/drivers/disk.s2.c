@@ -8,7 +8,7 @@
 #elif uefi == 1
 #  include <efi.h>
 #endif
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/print.h>
 #include <lib/rand.h>
 #include <mm/pmm.h>

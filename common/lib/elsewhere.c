@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <lib/elsewhere.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <mm/pmm.h>
 
 static bool elsewhere_overlap_check(uint64_t base1, uint64_t top1,

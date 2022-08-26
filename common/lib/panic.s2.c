@@ -7,7 +7,7 @@
 #if uefi == 1
 #   include <efi.h>
 #endif
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/readline.h>
 #include <lib/gterm.h>
 #include <lib/term.h>

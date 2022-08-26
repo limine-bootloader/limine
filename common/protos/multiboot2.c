@@ -8,7 +8,7 @@
 #include <config.h>
 #include <lib/libc.h>
 #include <lib/elf.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/config.h>
 #include <lib/print.h>
 #include <lib/uri.h>
@@ -22,7 +22,7 @@
 #include <mm/vmm.h>
 #include <lib/acpi.h>
 #include <mm/pmm.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <drivers/vga_textmode.h>
 
 #define LIMINE_BRAND "Limine " LIMINE_VERSION

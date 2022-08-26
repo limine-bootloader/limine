@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/idt.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 
 #if bios == 1
 

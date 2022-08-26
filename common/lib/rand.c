@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/print.h>
 #include <lib/rand.h>
 #include <sys/cpu.h>

@@ -4,7 +4,7 @@
 #include <lib/libc.h>
 #include <lib/acpi.h>
 #include <sys/cpu.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/print.h>
 #include <sys/smp.h>
 #include <sys/lapic.h>

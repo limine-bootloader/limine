@@ -1,5 +1,5 @@
 #include <fs/iso9660.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/libc.h>
 #include <mm/pmm.h>
 

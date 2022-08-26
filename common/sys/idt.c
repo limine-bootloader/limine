@@ -7,7 +7,7 @@
 #include <sys/pic.h>
 #include <sys/lapic.h>
 #include <mm/pmm.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 
 static struct idt_entry *dummy_idt = NULL;
 

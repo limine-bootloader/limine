@@ -6,7 +6,7 @@
 #elif uefi == 1
 #  include <efi.h>
 #endif
-#include <lib/blib.h>
+#include <lib/misc.h>
 
 // Julian date calculation from https://en.wikipedia.org/wiki/Julian_day
 static uint64_t get_jdn(uint8_t days, uint8_t months, uint16_t years) {

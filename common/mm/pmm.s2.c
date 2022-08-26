@@ -4,7 +4,7 @@
 #include <mm/pmm.h>
 #include <sys/e820.h>
 #include <lib/acpi.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/libc.h>
 #include <lib/print.h>
 #if uefi == 1

@@ -1,5 +1,5 @@
 #include <fs/fat32.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <drivers/disk.h>
 #include <lib/libc.h>
 #include <lib/print.h>

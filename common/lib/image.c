@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <lib/config.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <mm/pmm.h>
 #include <lib/bmp.h>
 

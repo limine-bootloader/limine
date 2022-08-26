@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/print.h>
 #include <sys/cpu.h>
 

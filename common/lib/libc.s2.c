@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <lib/libc.h>
 #include <stdbool.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 
 bool isprint(int c) {
     return c >= ' ' && c <= '~';

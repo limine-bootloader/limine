@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/trace.h>
 #include <lib/print.h>
 

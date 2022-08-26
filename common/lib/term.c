@@ -4,7 +4,7 @@
 #include <lib/term.h>
 #include <lib/real.h>
 #include <lib/image.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/gterm.h>
 #include <drivers/vga_textmode.h>
 #include <lib/print.h>

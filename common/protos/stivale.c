@@ -5,7 +5,7 @@
 #include <protos/stivale.h>
 #include <lib/libc.h>
 #include <lib/elf.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/acpi.h>
 #include <lib/config.h>
 #include <lib/time.h>

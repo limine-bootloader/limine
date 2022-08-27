@@ -5,7 +5,7 @@
 #include <mm/pmm.h>
 #include <lib/print.h>
 #include <lib/libc.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 
 // created using documentation from:
 //  https://dubeyko.com/development/FileSystems/NTFS/ntfsdoc.pdf

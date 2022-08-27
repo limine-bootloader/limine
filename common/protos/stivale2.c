@@ -5,7 +5,7 @@
 #include <protos/stivale.h>
 #include <protos/stivale2.h>
 #include <lib/elf.h>
-#include <lib/blib.h>
+#include <lib/misc.h>
 #include <lib/acpi.h>
 #include <lib/config.h>
 #include <lib/time.h>
@@ -65,10 +65,10 @@
     r; \
 })
 
-#define append_tag(S, TAG) ({                              \
+#define append_tag(S, TAG) do {                            \
     (TAG)->next = (S)->tags;                               \
     (S)->tags   = REPORTED_ADDR((uint64_t)(uintptr_t)TAG); \
-})
+} while (0)
 
 #if defined (__i386__)
 extern symbol stivale2_term_write_entry;

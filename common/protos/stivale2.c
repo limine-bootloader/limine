@@ -35,39 +35,44 @@
     direct_map_offset : 0))
 
 #define get_phys_addr(addr) ({ \
-    uintptr_t r1; \
-    if ((addr) & ((uint64_t)1 << 63)) { \
+    __auto_type get_phys_addr__addr = (addr); \
+    uintptr_t get_phys_addr__r; \
+    if (get_phys_addr__addr & ((uint64_t)1 << 63)) { \
         if (want_fully_virtual) { \
-            r1 = physical_base + ((addr) - virtual_base); \
+            get_phys_addr__r = physical_base + (get_phys_addr__addr - virtual_base); \
         } else { \
-            r1 = (addr) - FIXED_HIGHER_HALF_OFFSET_64; \
+            get_phys_addr__r = get_phys_addr__addr - FIXED_HIGHER_HALF_OFFSET_64; \
         } \
     } else { \
-        r1 = addr; \
+        get_phys_addr__r = get_phys_addr__addr; \
     } \
-    r1; \
+    get_phys_addr__r; \
 })
 
 #define get_tag(s, id) ({ \
-    void *r; \
-    struct stivale2_tag *tag = (void *)get_phys_addr((s)->tags); \
+    __auto_type get_tag__s = (s); \
+    __auto_type get_tag__id = (uint64_t)(id); \
+    void *get_tag__r; \
+    struct stivale2_tag *get_tag__tag = (void *)get_phys_addr(get_tag__s->tags); \
     for (;;) { \
-        if (tag == NULL) { \
-            r = NULL; \
+        if (get_tag__tag == NULL) { \
+            get_tag__r = NULL; \
             break; \
         } \
-        if (tag->identifier == (id)) { \
-            r = tag; \
+        if (get_tag__tag->identifier == get_tag__id) { \
+            get_tag__r = get_tag__tag; \
             break; \
         } \
-        tag = (void *)get_phys_addr(tag->next); \
+        get_tag__tag = (void *)get_phys_addr(get_tag__tag->next); \
     } \
-    r; \
+    get_tag__r; \
 })
 
-#define append_tag(S, TAG) do {                            \
-    (TAG)->next = (S)->tags;                               \
-    (S)->tags   = REPORTED_ADDR((uint64_t)(uintptr_t)TAG); \
+#define append_tag(S, TAG) do {                                                  \
+    __auto_type append_tag__S = (S);                                             \
+    __auto_type append_tag__TAG = (TAG);                                         \
+    append_tag__TAG->next = append_tag__S->tags;                                 \
+    append_tag__S->tags   = REPORTED_ADDR((uint64_t)(uintptr_t)append_tag__TAG); \
 } while (0)
 
 #if defined (__i386__)

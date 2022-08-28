@@ -16,11 +16,6 @@ override CROSS_CFLAGS += \
     -Os \
     -std=gnu11 \
     -nostdinc \
-    -m32 \
-    -march=i686 \
-    -mtune=generic \
-    -mabi=sysv \
-    -mno-80387 \
     -ffreestanding \
     -fno-stack-protector \
     -fno-stack-check \
@@ -29,6 +24,11 @@ override CROSS_CFLAGS += \
     -fno-lto \
     -fno-pie \
     -fno-pic \
+    -m32 \
+    -march=i686 \
+    -mtune=generic \
+    -mabi=sysv \
+    -mno-80387 \
     -Wshadow \
     -Wvla \
     $(WERROR) \

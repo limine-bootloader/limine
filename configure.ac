@@ -185,7 +185,7 @@ AC_ARG_VAR(CROSS_OBJCOPY, [objcopy command for Limine])
 AC_ARG_VAR(CROSS_OBJDUMP, [objdump command for Limine])
 AC_ARG_VAR(CROSS_READELF, [readelf command for Limine])
 
-m4_define([DEFAULT_CROSS_CFLAGS], [-O3 -pipe -Wall -Wextra])
+m4_define([DEFAULT_CROSS_CFLAGS], [-g -O2 -pipe -Wall -Wextra])
 AC_ARG_VAR(CROSS_CFLAGS, [C flags for Limine @<:@default: ]DEFAULT_CROSS_CFLAGS[@:>@])
 test "x$CROSS_CFLAGS" = "x" && CROSS_CFLAGS="DEFAULT_CROSS_CFLAGS"
 

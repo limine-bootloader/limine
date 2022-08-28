@@ -34,85 +34,83 @@ override S2CFLAGS := -Os
 
 override CROSS_CFLAGS += \
     -g \
-    $(WERROR) \
     -std=gnu11 \
+    -nostdinc \
     -ffreestanding \
     -fno-stack-protector \
     -fno-stack-check \
     -fno-omit-frame-pointer \
     -fno-strict-aliasing \
     -fno-lto \
-    -nostdinc \
     -Wshadow \
     -Wvla \
+    $(WERROR) \
     -MMD \
     -DCOM_OUTPUT=$(COM_OUTPUT) \
     -DE9_OUTPUT=$(E9_OUTPUT) \
     -I../freestanding-headers \
+    -I'$(call SHESCAPE,$(BUILDDIR))/tinf' \
     -I'$(call SHESCAPE,$(BUILDDIR))/..' \
     -I. \
-    -I.. \
-    -I'$(call SHESCAPE,$(BUILDDIR))/tinf'
+    -I..
 
 ifeq ($(TARGET),bios)
     override CROSS_CFLAGS += \
-        -Dbios=1 \
-        -Duefi=0 \
+        -fno-pie \
+        -fno-pic \
         -m32 \
         -march=i686 \
         -mtune=generic \
         -mabi=sysv \
-        -fno-pie \
-        -fno-pic
-endif
-
-ifeq ($(TARGET),$(filter $(TARGET),bios uefi-ia32 uefi-x86_64))
-    override CROSS_CFLAGS += \
         -mno-80387 \
-        -mno-mmx \
-        -mno-sse \
-        -mno-sse2
+        -Dbios=1 \
+        -Duefi=0
 endif
 
 ifeq ($(TARGET),uefi-x86-64)
     override CROSS_CFLAGS += \
-        -Dbios=0 \
-        -Duefi=1 \
+        -fpie \
         -m64 \
         -march=x86-64 \
         -mtune=generic \
         -mabi=sysv \
+        -mno-80387 \
+        -mno-mmx \
+        -mno-sse \
+        -mno-sse2 \
+        -mno-red-zone \
+        -Dbios=0 \
+        -Duefi=1 \
         -DGNU_EFI_USE_MS_ABI \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
-        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/x86_64' \
-        -fpie \
-        -mno-red-zone
+        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/x86_64'
 endif
 
 ifeq ($(TARGET),uefi-ia32)
     override CROSS_CFLAGS += \
-        -Dbios=0 \
-        -Duefi=1 \
+        -fpie \
         -m32 \
         -march=i686 \
         -mtune=generic \
         -mabi=sysv \
+        -mno-80387 \
+        -Dbios=0 \
+        -Duefi=1 \
         -DGNU_EFI_USE_MS_ABI \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
-        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/ia32' \
-        -fpie
+        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/ia32'
 endif
 
 ifeq ($(TARGET),uefi-aarch64)
     override CROSS_CFLAGS += \
+        -fpie \
+        -mtune=generic \
+        -mgeneral-regs-only \
         -Dbios=0 \
         -Duefi=1 \
-        -mtune=generic \
         -DGNU_EFI_USE_MS_ABI \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
-        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/aarch64' \
-        -fpie \
-        -mgeneral-regs-only
+        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/aarch64'
 endif
 
 override CROSS_LDFLAGS += \
@@ -121,7 +119,7 @@ override CROSS_LDFLAGS += \
 
 ifeq ($(TARGET),bios)
     override CROSS_LDFLAGS += \
-        -melf_i386 \
+        -m elf_i386 \
         -static \
         --build-id=sha1
 
@@ -132,29 +130,29 @@ endif
 
 ifeq ($(TARGET),uefi-x86-64)
     override CROSS_LDFLAGS += \
-        -melf_x86_64 \
+        -m elf_x86_64 \
         -static \
         -pie \
         --no-dynamic-linker \
-        -ztext
+        -z text
 endif
 
 ifeq ($(TARGET),uefi-ia32)
     override CROSS_LDFLAGS += \
-        -melf_i386 \
+        -m elf_i386 \
         -static \
         -pie \
         --no-dynamic-linker \
-        -ztext
+        -z text
 endif
 
 ifeq ($(TARGET),uefi-aarch64)
     override CROSS_LDFLAGS += \
-        -maarch64elf \
+        -m aarch64elf \
         -static \
         -pie \
         --no-dynamic-linker \
-        -ztext
+        -z text
 endif
 
 override C_FILES := $(shell find . -type f -name '*.c')

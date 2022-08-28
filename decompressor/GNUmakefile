@@ -15,37 +15,34 @@ endif
 override CROSS_CFLAGS += \
     $(WERROR) \
     -Os \
+    -std=gnu11 \
+    -nostdinc \
     -m32 \
     -march=i686 \
     -mtune=generic \
     -mabi=sysv \
-    -std=gnu11 \
+    -mno-80387 \
     -ffreestanding \
     -fno-stack-protector \
     -fno-stack-check \
+    -fomit-frame-pointer \
     -fno-strict-aliasing \
     -fno-lto \
     -fno-pie \
     -fno-pic \
-    -fomit-frame-pointer \
-    -nostdinc \
     -Wshadow \
     -Wvla \
-    -mno-80387 \
-    -mno-mmx \
-    -mno-sse \
-    -mno-sse2 \
     -MMD \
     -I../freestanding-headers \
-    -I. \
-    -I'$(call SHESCAPE,$(BUILDDIR))/tinf'
+    -I'$(call SHESCAPE,$(BUILDDIR))/tinf' \
+    -I.
 
 override CROSS_LDFLAGS += \
-    -melf_i386 \
+    -m elf_i386 \
     -nostdlib \
     -z max-page-size=0x1000 \
     -static \
-    -Tlinker.ld
+    -T linker.ld
 
 ifneq ($(CROSS_LD_NO_PIE_BUG),1)
     override CROSS_LDFLAGS += -no-pie

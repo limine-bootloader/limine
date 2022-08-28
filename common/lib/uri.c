@@ -148,7 +148,7 @@ static struct file_handle *uri_tftp_dispatch(char *root, char *path) {
         ip = 0;
     } else {
         if (inet_pton(root, &ip)) {
-            panic("tftp: Invalid ipv4 address: %s", root);
+            panic(true, "tftp: Invalid ipv4 address: %s", root);
         }
     }
 
@@ -194,7 +194,7 @@ struct file_handle *uri_open(char *uri) {
     uri_resolve(uri, &resource, &root, &path);
 
     if (resource == NULL) {
-        panic("No resource specified for URI `%s`.", uri);
+        panic(true, "No resource specified for URI `%s`.", uri);
     }
 
     bool compressed = false;

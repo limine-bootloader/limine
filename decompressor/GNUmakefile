@@ -13,7 +13,6 @@ ifeq ($(call MKESCAPE,$(BUILDDIR)),)
 endif
 
 override CROSS_CFLAGS += \
-    $(WERROR) \
     -Os \
     -std=gnu11 \
     -nostdinc \
@@ -32,6 +31,7 @@ override CROSS_CFLAGS += \
     -fno-pic \
     -Wshadow \
     -Wvla \
+    $(WERROR) \
     -MMD \
     -I../freestanding-headers \
     -I'$(call SHESCAPE,$(BUILDDIR))/tinf' \

@@ -120,7 +120,7 @@ ifeq ($(TARGET),bios)
         -static \
         --build-id=sha1
 
-    ifneq ($(CROSS_LD_NO_PIE_BUG),1)
+    ifeq ($(CROSS_LD_HAS_NO_PIE),yes)
         override CROSS_LDFLAGS += -no-pie
     endif
 endif

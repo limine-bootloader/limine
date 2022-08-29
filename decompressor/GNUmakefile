@@ -44,7 +44,7 @@ override CROSS_LDFLAGS += \
     -static \
     -T linker.ld
 
-ifneq ($(CROSS_LD_NO_PIE_BUG),1)
+ifeq ($(CROSS_LD_HAS_NO_PIE),yes)
     override CROSS_LDFLAGS += -no-pie
 endif
 

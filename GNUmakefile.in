@@ -36,7 +36,7 @@ override BUILD_LIMINE_DEPLOY := @BUILD_LIMINE_DEPLOY@
 override WERROR := @WERROR@
 export WERROR
 
-$(eval $(call DEFAULT_VAR,CC,cc))
+$(eval $(call DEFAULT_VAR,CC,@CC@))
 export CC
 
 override MKDIR_P := @MKDIR_P@

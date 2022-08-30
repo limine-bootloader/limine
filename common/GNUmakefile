@@ -195,7 +195,7 @@ else ifeq ($(TARGET),uefi-x86-64)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI
 else ifeq ($(TARGET),uefi-ia32)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI
-else ifeq ($(TARGET), uefi-aarch64)
+else ifeq ($(TARGET),uefi-aarch64)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTAA64.EFI
 endif
 
@@ -416,7 +416,7 @@ $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $
 	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
-ifeq ($(TARGET), uefi-aarch64)
+ifeq ($(TARGET),uefi-aarch64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
@@ -472,7 +472,7 @@ $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_x86
 	nasm '$(call SHESCAPE,$<)' -F dwarf -g $(WERROR) -f elf64 -o '$(call SHESCAPE,$@)'
 endif
 
-ifeq ($(TARGET), uefi-aarch64)
+ifeq ($(TARGET),uefi-aarch64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_aarch64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CROSS_CC) $(CROSS_CFLAGS) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'

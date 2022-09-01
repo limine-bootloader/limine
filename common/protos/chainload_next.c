@@ -20,11 +20,13 @@ static void try(char *config, struct volume *v) {
         struct file_handle *image;
         struct volume *p = volume_get_by_coord(v->is_optical, v->index, i);
 
-        if ((image = fopen(p, "/EFI/BOOT/BOOTX64.EFI")) == NULL
-         && (image = fopen(p, "/efi/boot/bootx64.efi")) == NULL
-         && (image = fopen(p, "/EFI/BOOT/BOOTx64.EFI")) == NULL) {
+        bool old_cif = case_insensitive_fopen;
+        case_insensitive_fopen = true;
+        if ((image = fopen(p, "/EFI/BOOT/BOOTX64.EFI")) == NULL) {
+            case_insensitive_fopen = old_cif;
             continue;
         }
+        case_insensitive_fopen = old_cif;
 
         efi_chainload_file(config, image);
     }

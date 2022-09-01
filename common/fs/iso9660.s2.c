@@ -195,7 +195,7 @@ static struct iso9660_directory_entry *iso9660_find(void *buffer, uint32_t size,
         char entry_filename[128];
         bool rr = load_name(entry_filename, entry);
 
-        if (rr) {
+        if (rr && !case_insensitive_fopen) {
             if (strcmp(filename, entry_filename) == 0) {
                 return buffer;
             }

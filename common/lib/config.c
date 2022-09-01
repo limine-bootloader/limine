@@ -21,11 +21,15 @@ static char *config_addr;
 int init_config_disk(struct volume *part) {
     struct file_handle *f;
 
+    bool old_cif = case_insensitive_fopen;
+    case_insensitive_fopen = true;
     if ((f = fopen(part, "/limine.cfg")) == NULL
      && (f = fopen(part, "/boot/limine.cfg")) == NULL
      && (f = fopen(part, "/EFI/BOOT/limine.cfg")) == NULL) {
+        case_insensitive_fopen = old_cif;
         return -1;
     }
+    case_insensitive_fopen = old_cif;
 
     size_t config_size = f->size + 2;
     config_addr = ext_mem_alloc(config_size);

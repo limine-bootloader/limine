@@ -134,7 +134,9 @@ next:;
             break;
         }
 
-        if (!strcmp(wanted_name, ret->dir_entry.name) &&
+        int (*strcmpfn)(const char *, const char *) = case_insensitive_fopen ? strcasecmp : strcmp;
+
+        if (strcmpfn(wanted_name, ret->dir_entry.name) == 0 &&
             ret->dir_entry.parent_id == wanted_parent &&
             ret->dir_entry.type == (last_elem ? FILE_TYPE : DIR_TYPE)) {
             if (last_elem) {

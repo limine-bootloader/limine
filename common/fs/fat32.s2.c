@@ -384,7 +384,9 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
                 }
             }
 
-            if (!strcmp(current_lfn, name)) {
+            int (*strcmpfn)(const char *, const char *) = case_insensitive_fopen ? strcasecmp : strcmp;
+
+            if (strcmpfn(current_lfn, name) == 0) {
                 *file = directory_entries[i+1];
                 ret = 0;
                 goto out;

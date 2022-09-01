@@ -73,11 +73,15 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
             for (size_t i = 0; i < volume_index_i; i++) {
                 struct file_handle *f;
 
+                bool old_cif = case_insensitive_fopen;
+                case_insensitive_fopen = true;
                 if ((f = fopen(volume_index[i], "/limine.cfg")) == NULL
                  && (f = fopen(volume_index[i], "/boot/limine.cfg")) == NULL
                  && (f = fopen(volume_index[i], "/EFI/BOOT/limine.cfg")) == NULL) {
+                    case_insensitive_fopen = old_cif;
                     continue;
                 }
+                case_insensitive_fopen = old_cif;
 
                 fclose(f);
 

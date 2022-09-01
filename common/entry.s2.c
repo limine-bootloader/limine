@@ -39,10 +39,14 @@ extern symbol build_id_s3;
 static bool stage3_init(struct volume *part) {
     struct file_handle *stage3;
 
+    bool old_cif = case_insensitive_fopen;
+    case_insensitive_fopen = true;
     if ((stage3 = fopen(part, "/limine.sys")) == NULL
      && (stage3 = fopen(part, "/boot/limine.sys")) == NULL) {
+        case_insensitive_fopen = old_cif;
         return false;
     }
+    case_insensitive_fopen = old_cif;
 
     stage3_found = true;
 

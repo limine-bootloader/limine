@@ -412,7 +412,9 @@ next:
         inode_read(name, i + sizeof(struct ext2_dir_entry), dir->name_len,
                    &current_inode, fd, alloc_map);
 
-        int test = strcmp(token, name);
+        int (*strcmpfn)(const char *, const char *) = case_insensitive_fopen ? strcasecmp : strcmp;
+
+        int test = strcmpfn(token, name);
         pmm_free(name, dir->name_len + 1);
 
         if (test == 0) {

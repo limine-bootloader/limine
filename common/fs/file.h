@@ -9,6 +9,8 @@
 #  include <efi.h>
 #endif
 
+extern bool case_insensitive_fopen;
+
 bool fs_get_guid(struct guid *guid, struct volume *part);
 char *fs_get_label(struct volume *part);
 

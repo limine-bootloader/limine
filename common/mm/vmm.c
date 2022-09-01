@@ -89,7 +89,6 @@ level4:
         // Check if 1GiB pages are avaliable.
         if (is_1gib_page_supported()) {
             pml3[pml3_entry] = (pt_entry_t)(phys_addr | flags | (1 << 7));
-            return;
         } else {
             // If 1GiB pages are not supported then emulate it by splitting them into
             // 2MiB pages.
@@ -97,6 +96,8 @@ level4:
                 map_page(pagemap, virt_addr + i, phys_addr + i, flags, Size2MiB);
             }
         }
+
+        return;
     }
 
     pml2 = get_next_level(pml3, pml3_entry);

@@ -167,7 +167,7 @@ static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_
         if (m[i].type != MEMMAP_USABLE)
             continue;
 
-        if (bios && m[i].base < 0x1000) {
+        if (m[i].base < 0x1000) {
             if (m[i].base + m[i].length <= 0x1000) {
                 goto del_mm1;
             }
@@ -229,8 +229,6 @@ struct memmap_entry *get_memmap(size_t *entries) {
 #if uefi == 1
     pmm_reclaim_uefi_mem(memmap, &memmap_entries);
 #endif
-
-    memmap_alloc_range(0, 0x1000, MEMMAP_RESERVED, MEMMAP_USABLE, false, false, false);
 
     sanitise_entries(memmap, &memmap_entries, true);
 

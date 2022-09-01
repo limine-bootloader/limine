@@ -42,10 +42,6 @@ override CROSS_CFLAGS += \
     -fno-lto \
     -Wshadow \
     -Wvla \
-    -mno-80387 \
-    -mno-mmx \
-    -mno-sse \
-    -mno-sse2 \
     $(WERROR) \
     -MMD \
     -DCOM_OUTPUT=$(COM_OUTPUT) \
@@ -65,6 +61,7 @@ ifeq ($(TARGET),bios)
         -march=i686 \
         -mtune=generic \
         -mabi=sysv \
+        -mno-80387 \
         -Dbios=1 \
         -Duefi=0
 endif
@@ -78,6 +75,7 @@ ifeq ($(TARGET),uefi-x86-64)
         -march=i686 \
         -mtune=generic \
         -mabi=sysv \
+        -mno-80387 \
         -Dbios=0 \
         -Duefi=1 \
         -DGNU_EFI_USE_MS_ABI
@@ -88,6 +86,10 @@ ifeq ($(TARGET),uefi-x86-64)
         -march=x86-64 \
         -mtune=generic \
         -mabi=sysv \
+        -mno-80387 \
+        -mno-mmx \
+        -mno-sse \
+        -mno-sse2 \
         -mno-red-zone \
         -Dbios=0 \
         -Duefi=1 \
@@ -103,6 +105,7 @@ ifeq ($(TARGET),uefi-ia32)
         -march=i686 \
         -mtune=generic \
         -mabi=sysv \
+        -mno-80387 \
         -Dbios=0 \
         -Duefi=1 \
         -DGNU_EFI_USE_MS_ABI \

@@ -155,7 +155,7 @@ static bool detect_sector_size(struct volume *volume) {
     }
 
     size_t sector_size_a = 0;
-    for (size_t i = XFER_BUF_SIZE - 1; i >= 0; i--) {
+    for (long i = XFER_BUF_SIZE - 1; i >= 0; i--) {
         if (xfer_buf[i] != 0) {
             sector_size_a = i + 1;
             break;
@@ -174,7 +174,7 @@ static bool detect_sector_size(struct volume *volume) {
     }
 
     size_t sector_size_b = 0;
-    for (size_t i = XFER_BUF_SIZE - 1; i >= 0; i--) {
+    for (long i = XFER_BUF_SIZE - 1; i >= 0; i--) {
         if (xfer_buf[i] != 0xff) {
             sector_size_b = i + 1;
             break;

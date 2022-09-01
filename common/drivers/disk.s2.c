@@ -42,7 +42,7 @@ struct dap {
 
 #define XFER_BUF_SIZE (xfer_sizes[SIZEOF_ARRAY(xfer_sizes) - 1] * 512)
 static const size_t xfer_sizes[] = { 1, 2, 4, 8, 16, 24, 32, 48, 64 };
-static void *xfer_buf = NULL;
+static uint8_t *xfer_buf = NULL;
 
 static size_t fastest_xfer_size(struct volume *volume) {
     struct dap dap = {0};
@@ -125,6 +125,67 @@ int disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t c
     return DISK_SUCCESS;
 }
 
+static bool detect_sector_size(struct volume *volume) {
+    struct dap dap = {0};
+
+    if (xfer_buf == NULL)
+        xfer_buf = conv_mem_alloc(XFER_BUF_SIZE);
+
+    dap.size    = 16;
+    dap.count   = 1;
+    dap.segment = rm_seg(xfer_buf);
+    dap.offset  = rm_off(xfer_buf);
+    dap.lba     = 0;
+
+    struct rm_regs r = {0};
+    r.eax = 0x4200;
+    r.edx = volume->drive;
+    r.esi = (uint32_t)rm_off(&dap);
+    r.ds  = rm_seg(&dap);
+
+    struct rm_regs r_copy = r;
+    struct dap dap_copy = dap;
+
+    memset(xfer_buf, 0, XFER_BUF_SIZE);
+
+    rm_int(0x13, &r, &r);
+
+    if (r.eflags & EFLAGS_CF) {
+        return false;
+    }
+
+    size_t sector_size_a = 0;
+    for (size_t i = XFER_BUF_SIZE - 1; i >= 0; i--) {
+        if (xfer_buf[i] != 0) {
+            sector_size_a = i + 1;
+            break;
+        }
+    }
+
+    r = r_copy;
+    dap = dap_copy;
+
+    memset(xfer_buf, 0xff, XFER_BUF_SIZE);
+
+    rm_int(0x13, &r, &r);
+
+    if (r.eflags & EFLAGS_CF) {
+        return false;
+    }
+
+    size_t sector_size_b = 0;
+    for (size_t i = XFER_BUF_SIZE - 1; i >= 0; i--) {
+        if (xfer_buf[i] != 0xff) {
+            sector_size_b = i + 1;
+            break;
+        }
+    }
+
+    volume->sector_size = sector_size_a > sector_size_b ? sector_size_a : sector_size_b;
+
+    return true;
+}
+
 void disk_create_index(void) {
     volume_index = ext_mem_alloc(sizeof(struct volume) * MAX_VOLUMES);
 
@@ -148,20 +209,21 @@ void disk_create_index(void) {
 
         rm_int(0x13, &r, &r);
 
-        if (r.eflags & EFLAGS_CF)
+        if (r.eflags & EFLAGS_CF) {
             continue;
-
-        if (drive_params.bytes_per_sect == 0)
-            continue;
+        }
 
         struct volume *block = ext_mem_alloc(sizeof(struct volume));
 
         block->drive = drive;
         block->partition = 0;
-        block->sector_size = drive_params.bytes_per_sect;
         block->first_sect = 0;
         block->sect_count = drive_params.lba_count;
         block->max_partition = -1;
+
+        if (!detect_sector_size(block)) {
+            continue;
+        }
 
         if (drive_params.info_flags & (1 << 2) && drive > 0x8f) {
             // The medium could not be present (e.g.: CD-ROMs)

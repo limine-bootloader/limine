@@ -10,20 +10,7 @@ cd "$srcdir"
 [ -d cross-detect ] || git clone https://github.com/mintsuki/cross-detect.git
 [ -d freestanding-headers ] || git clone https://github.com/mintsuki/freestanding-headers.git
 [ -d limine-efi ] || git clone https://github.com/limine-bootloader/limine-efi.git
-
-if ! [ -d libgcc-binaries ]; then
-    git clone https://github.com/mintsuki/libgcc-binaries.git
-
-    # Remove the libgcc files we don't need
-    libgcc_needed="i686 x86_64-no-red-zone aarch64"
-    for f in $libgcc_needed; do
-        mv libgcc-binaries/libgcc-$f.a libgcc-binaries/libgcc-$f.a.save
-    done
-    rm libgcc-binaries/*.a
-    for f in $libgcc_needed; do
-        mv libgcc-binaries/libgcc-$f.a.save libgcc-binaries/libgcc-$f.a
-    done
-fi
+[ -d libgcc-binaries ] || git clone https://github.com/mintsuki/libgcc-binaries.git
 
 automake_libdir="$(automake --print-libdir)"
 

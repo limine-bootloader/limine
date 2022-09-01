@@ -207,6 +207,16 @@ dist:
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/freestanding-headers/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/libgcc-binaries/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/libgcc-binaries/.gitignore"
+
+	libgcc_needed="i686 x86_64-no-red-zone"; \
+	for f in $$libgcc_needed; do \
+		mv '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/libgcc-binaries/libgcc-$$f.a" '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/libgcc-binaries/libgcc-$$f.a.save"; \
+	done; \
+	rm '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/libgcc-binaries"/*.a; \
+	for f in $$libgcc_needed; do \
+		mv '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/libgcc-binaries/libgcc-$$f.a.save" '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/libgcc-binaries/libgcc-$$f.a"; \
+	done
+
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/limine-efi/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/limine-efi/.gitignore"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/stivale/.git"

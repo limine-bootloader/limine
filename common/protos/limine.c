@@ -617,20 +617,20 @@ FEAT_END
 
     void *stack = ext_mem_alloc(stack_size) + stack_size;
 
+    bool nx_available = true;
+#if defined (__x86_64__) || defined (__i386__)
+    // Check if we have NX
+    if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 20))) {
+        nx_available = false;
+    }
+#endif
+
     pagemap_t pagemap = {0};
-    pagemap = stivale_build_pagemap(want_5lv, true, ranges, ranges_count, true,
+    pagemap = stivale_build_pagemap(want_5lv, nx_available, ranges, ranges_count, true,
                                     physical_base, virtual_base, direct_map_offset);
 
 #if defined (UEFI)
     efi_exit_boot_services();
-#endif
-
-#if defined (__x86_64__) || defined (__i386__)
-    // Check if we have NX
-    bool nx_available = false;
-    if (cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) && (edx & (1 << 20))) {
-        nx_available = true;
-    }
 #endif
 
     // SMP

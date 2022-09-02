@@ -26,7 +26,6 @@ override CROSS_CFLAGS += \
     -fno-pic \
     -m32 \
     -march=i686 \
-    -mtune=generic \
     -mabi=sysv \
     -mno-80387 \
     -Wshadow \

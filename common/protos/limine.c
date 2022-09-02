@@ -34,7 +34,7 @@
 #define MAX_REQUESTS 128
 #define MAX_MEMMAP 256
 
-static pagemap_t build_pagemap(bool level5pg, struct elf_range *ranges, size_t ranges_count,
+static pagemap_t build_pagemap(bool level5pg, bool nx, struct elf_range *ranges, size_t ranges_count,
                                uint64_t physical_base, uint64_t virtual_base,
                                uint64_t direct_map_offset) {
     pagemap_t pagemap = new_pagemap(level5pg ? 5 : 4);
@@ -56,7 +56,7 @@ static pagemap_t build_pagemap(bool level5pg, struct elf_range *ranges, size_t r
             }
 
             uint64_t pf =
-                (ranges[i].permissions & ELF_PF_X ? 0 : VMM_FLAG_NOEXEC) |
+                (ranges[i].permissions & ELF_PF_X ? 0 : (nx ? VMM_FLAG_NOEXEC : 0)) |
                 (ranges[i].permissions & ELF_PF_W ? VMM_FLAG_WRITE : 0);
 
             for (uint64_t j = 0; j < ranges[i].length; j += 0x1000) {
@@ -854,20 +854,20 @@ FEAT_END
 
     void *stack = ext_mem_alloc(stack_size) + stack_size;
 
+    bool nx_available = true;
+#if defined (__x86_64__) || defined (__i386__)
+    // Check if we have NX
+    if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 20))) {
+        nx_available = false;
+    }
+#endif
+
     pagemap_t pagemap = {0};
-    pagemap = build_pagemap(want_5lv, ranges, ranges_count,
+    pagemap = build_pagemap(want_5lv, nx_available, ranges, ranges_count,
                             physical_base, virtual_base, direct_map_offset);
 
 #if defined (UEFI)
     efi_exit_boot_services();
-#endif
-
-#if defined (__x86_64__) || defined (__i386__)
-    // Check if we have NX
-    bool nx_available = false;
-    if (cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) && (edx & (1 << 20))) {
-        nx_available = true;
-    }
 #endif
 
     // SMP

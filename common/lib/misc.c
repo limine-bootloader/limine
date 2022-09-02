@@ -9,7 +9,7 @@
 #include <fs/file.h>
 #include <mm/pmm.h>
 
-#if uefi == 1
+#if defined (UEFI)
 EFI_SYSTEM_TABLE *gST;
 EFI_BOOT_SERVICES *gBS;
 EFI_RUNTIME_SERVICES *gRT;
@@ -166,7 +166,7 @@ uint32_t hex2bin(uint8_t *str, uint32_t size) {
     return value;
 }
 
-#if uefi == 1
+#if defined (UEFI)
 
 no_unwind bool efi_boot_services_exited = false;
 

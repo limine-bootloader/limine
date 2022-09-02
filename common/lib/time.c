@@ -1,9 +1,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <lib/time.h>
-#if bios == 1
+#if defined (BIOS)
 #  include <lib/real.h>
-#elif uefi == 1
+#elif defined (UEFI)
 #  include <efi.h>
 #endif
 #include <lib/misc.h>
@@ -26,7 +26,7 @@ static uint64_t get_unix_epoch(uint8_t seconds, uint8_t minutes, uint8_t  hours,
     return (jdn_diff * (60 * 60 * 24)) + hours * 3600 + minutes * 60 + seconds;
 }
 
-#if bios == 1
+#if defined (BIOS)
 uint64_t time(void) {
     struct rm_regs r;
 
@@ -60,7 +60,7 @@ again:
 }
 #endif
 
-#if uefi == 1
+#if defined (UEFI)
 uint64_t time(void) {
     EFI_TIME time;
     gRT->GetTime(&time, NULL);

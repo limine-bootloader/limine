@@ -1,4 +1,4 @@
-#if bios == 1
+#if defined (BIOS)
 
 #include <lib/print.h>
 #include <lib/real.h>

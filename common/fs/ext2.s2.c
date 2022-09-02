@@ -540,7 +540,7 @@ struct file_handle *ext2_open(struct volume *part, const char *path) {
     handle->close = (void *)ext2_close;
     handle->size = ret->size;
     handle->vol = part;
-#if uefi == 1
+#if defined (UEFI)
     handle->efi_part_handle = part->efi_part_handle;
 #endif
 

@@ -4,13 +4,13 @@
 #include <drivers/serial.h>
 #include <sys/cpu.h>
 #include <lib/misc.h>
-#if uefi == 1
+#if defined (UEFI)
 #  include <efi.h>
 #endif
 
 static bool serial_initialised = false;
 
-#if uefi == 1
+#if defined (UEFI)
 static EFI_SERIAL_IO_PROTOCOL *serial_protocol;
 #endif
 
@@ -19,7 +19,7 @@ static void serial_initialise(void) {
         return;
     }
 
-#if uefi == 1
+#if defined (UEFI)
     EFI_STATUS status;
 
     EFI_GUID serial_guid = EFI_SERIAL_IO_PROTOCOL_GUID;
@@ -32,7 +32,7 @@ static void serial_initialise(void) {
     serial_protocol->Reset(serial_protocol);
 #endif
 
-#if bios == 1
+#if defined (BIOS)
     // Init com1
     outb(0x3f8 + 3, 0x00);
     outb(0x3f8 + 1, 0x00);
@@ -48,7 +48,7 @@ static void serial_initialise(void) {
 }
 
 void serial_out(uint8_t b) {
-#if uefi == 1
+#if defined (UEFI)
     if (efi_boot_services_exited) {
         return;
     }
@@ -56,16 +56,16 @@ void serial_out(uint8_t b) {
 
     serial_initialise();
 
-#if uefi == 1
+#if defined (UEFI)
     UINTN bsize = 1;
     serial_protocol->Write(serial_protocol, &bsize, &b);
-#elif bios == 1
+#elif defined (BIOS)
     while ((inb(0x3f8 + 5) & 0x20) == 0);
     outb(0x3f8, b);
 #endif
 }
 
-#if bios == 1
+#if defined (BIOS)
 int serial_in(void) {
     serial_initialise();
 

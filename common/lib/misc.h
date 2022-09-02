@@ -8,11 +8,11 @@
 #include <fs/file.h>
 #include <lib/part.h>
 #include <lib/libc.h>
-#if uefi == 1
+#if defined (UEFI)
 #  include <efi.h>
 #endif
 
-#if uefi == 1
+#if defined (UEFI)
 extern EFI_SYSTEM_TABLE *gST;
 extern EFI_BOOT_SERVICES *gBS;
 extern EFI_RUNTIME_SERVICES *gRT;
@@ -29,7 +29,7 @@ extern const char bsd_2_clause[];
 
 extern struct volume *boot_volume;
 
-#if bios == 1
+#if defined (BIOS)
 extern bool stage3_loaded;
 #endif
 

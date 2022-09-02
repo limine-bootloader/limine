@@ -7,14 +7,14 @@
 #include <lib/print.h>
 #include <lib/part.h>
 
-#if bios == 1
+#if defined (BIOS)
 static void try(char *config, struct volume *v) {
     (void)config;
     bios_chainload_volume(v);
 }
 #endif
 
-#if uefi == 1
+#if defined (UEFI)
 static void try(char *config, struct volume *v) {
     for (int i = 0; i <= v->max_partition + 1; i++) {
         struct file_handle *image;

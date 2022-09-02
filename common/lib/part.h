@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <lib/guid.h>
-#if uefi == 1
+#if defined (UEFI)
 #  include <efi.h>
 #endif
 
@@ -14,7 +14,7 @@
 #define END_OF_TABLE  (-3)
 
 struct volume {
-#if uefi == 1
+#if defined (UEFI)
     EFI_HANDLE efi_handle;
     EFI_HANDLE efi_part_handle;
     EFI_BLOCK_IO *block_io;
@@ -22,7 +22,7 @@ struct volume {
     bool unique_sector_valid;
     uint64_t unique_sector;
     uint32_t unique_sector_crc32;
-#elif bios == 1
+#elif defined (BIOS)
     int drive;
 #endif
 
@@ -68,7 +68,7 @@ int part_get(struct volume *part, struct volume *volume, int partition);
 struct volume *volume_get_by_guid(struct guid *guid);
 struct volume *volume_get_by_fslabel(char *fslabel);
 struct volume *volume_get_by_coord(bool optical, int drive, int partition);
-#if bios == 1
+#if defined (BIOS)
 struct volume *volume_get_by_bios_drive(int drive);
 #endif
 

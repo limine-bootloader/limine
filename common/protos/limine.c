@@ -349,7 +349,7 @@ FEAT_START
 FEAT_END
 
 
-#if uefi == 1
+#if defined (UEFI)
     // EFI system table feature
 FEAT_START
     struct limine_efi_system_table_request *est_request = get_request(LIMINE_EFI_SYSTEM_TABLE_REQUEST);
@@ -621,7 +621,7 @@ FEAT_END
     pagemap = stivale_build_pagemap(want_5lv, true, ranges, ranges_count, true,
                                     physical_base, virtual_base, direct_map_offset);
 
-#if uefi == 1
+#if defined (UEFI)
     efi_exit_boot_services();
 #endif
 

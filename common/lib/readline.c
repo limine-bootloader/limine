@@ -5,9 +5,9 @@
 #include <lib/misc.h>
 #include <lib/term.h>
 #include <lib/print.h>
-#if bios == 1
+#if defined (BIOS)
 #  include <lib/real.h>
-#elif uefi == 1
+#elif defined (UEFI)
 #  include <efi.h>
 #endif
 #include <drivers/serial.h>
@@ -24,7 +24,7 @@ int getchar(void) {
 
 int getchar_internal(uint8_t scancode, uint8_t ascii, uint32_t shift_state) {
     switch (scancode) {
-#if bios == 1
+#if defined (BIOS)
         case 0x44:
             return GETCHAR_F10;
         case 0x4b:
@@ -47,7 +47,7 @@ int getchar_internal(uint8_t scancode, uint8_t ascii, uint32_t shift_state) {
             return GETCHAR_PGDOWN;
         case 0x01:
             return GETCHAR_ESCAPE;
-#elif uefi == 1
+#elif defined (UEFI)
         case SCAN_F10:
             return GETCHAR_F10;
         case SCAN_LEFT:
@@ -98,7 +98,7 @@ int getchar_internal(uint8_t scancode, uint8_t ascii, uint32_t shift_state) {
     return ascii;
 }
 
-#if bios == 1
+#if defined (BIOS)
 int _pit_sleep_and_quit_on_keypress(uint32_t ticks);
 
 static int input_sequence(void) {
@@ -194,7 +194,7 @@ again:
 }
 #endif
 
-#if uefi == 1
+#if defined (UEFI)
 static int input_sequence(bool ext,
                    EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *exproto,
                    EFI_SIMPLE_TEXT_IN_PROTOCOL *sproto) {

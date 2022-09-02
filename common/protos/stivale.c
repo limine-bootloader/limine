@@ -71,7 +71,7 @@ noreturn void stivale_load(char *config, char *cmdline) {
     struct stivale_struct *stivale_struct = ext_mem_alloc(sizeof(struct stivale_struct));
 
     // BIOS or UEFI?
-#if bios == 1
+#if defined (BIOS)
     stivale_struct->flags |= (1 << 0);
 #endif
 
@@ -320,7 +320,7 @@ noreturn void stivale_load(char *config, char *cmdline) {
             parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
         struct fb_info fbinfo;
-#if uefi == 1
+#if defined (UEFI)
         gop_force_16 = true;
 #endif
         if (!fb_init(&fbinfo, req_width, req_height, req_bpp))
@@ -343,15 +343,15 @@ noreturn void stivale_load(char *config, char *cmdline) {
         stivale_struct->fb_blue_mask_size   = fbinfo.blue_mask_size;
         stivale_struct->fb_blue_mask_shift  = fbinfo.blue_mask_shift;
     } else {
-#if uefi == 1
+#if defined (UEFI)
         panic(true, "stivale: Cannot use text mode with UEFI.");
-#elif bios == 1
+#elif defined (BIOS)
         size_t rows, cols;
         init_vga_textmode(&rows, &cols, false);
 #endif
     }
 
-#if uefi == 1
+#if defined (UEFI)
     efi_exit_boot_services();
 #endif
 
@@ -491,7 +491,7 @@ noreturn void stivale_spinup(
                  int bits, bool level5pg, pagemap_t *pagemap,
                  uint64_t entry_point, uint64_t _stivale_struct, uint64_t stack,
                  bool enable_nx, bool wp, uint32_t local_gdt) {
-#if bios == 1
+#if defined (BIOS)
     if (bits == 64) {
         // If we're going 64, we might as well call this BIOS interrupt
         // to tell the BIOS that we are entering Long Mode, since it is in

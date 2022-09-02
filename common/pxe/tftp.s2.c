@@ -1,4 +1,4 @@
-#if bios == 1
+#if defined (BIOS)
 
 #include <pxe/tftp.h>
 #include <pxe/pxe.h>

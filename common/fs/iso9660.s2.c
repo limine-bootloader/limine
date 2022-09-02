@@ -280,7 +280,7 @@ struct file_handle *iso9660_open(struct volume *vol, const char *path) {
     handle->close = (void *)iso9660_close;
     handle->size = ret->size;
     handle->vol = vol;
-#if uefi == 1
+#if defined (UEFI)
     handle->efi_part_handle = vol->efi_part_handle;
 #endif
 

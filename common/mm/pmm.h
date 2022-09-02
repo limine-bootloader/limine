@@ -29,12 +29,12 @@ struct meminfo {
 
 struct meminfo mmap_get_info(size_t mmap_count, struct memmap_entry *mmap);
 
-#if bios == 1
+#if defined (BIOS)
 extern struct memmap_entry memmap[];
 extern size_t memmap_entries;
 #endif
 
-#if uefi == 1
+#if defined (UEFI)
 extern struct memmap_entry *memmap;
 extern size_t memmap_entries;
 #endif
@@ -58,7 +58,7 @@ void *conv_mem_alloc(size_t count);
 
 void pmm_free(void *ptr, size_t length);
 
-#if uefi == 1
+#if defined (UEFI)
 void pmm_release_uefi_mem(void);
 #endif
 

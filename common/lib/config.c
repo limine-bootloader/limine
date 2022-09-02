@@ -41,7 +41,7 @@ int init_config_disk(struct volume *part) {
     return init_config(config_size);
 }
 
-#if bios == 1
+#if defined (BIOS)
 int init_config_pxe(void) {
     struct file_handle *f;
     if ((f = tftp_open(0, 69, "limine.cfg")) == NULL) {

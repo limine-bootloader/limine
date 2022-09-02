@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stdnoreturn.h>
-#if bios == 1
+#if defined (BIOS)
 #  include <sys/idt.h>
 #endif
 
@@ -9,7 +9,7 @@ noreturn void multiboot_spinup_32(
                   uint32_t magic, uint32_t protocol_info,
                   uint32_t entry_point,
                   uint32_t elf_ranges, uint32_t elf_ranges_count) {
-#if bios == 1
+#if defined (BIOS)
     struct idtr idtr;
 
     idtr.limit = 0x3ff;

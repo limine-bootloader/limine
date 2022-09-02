@@ -311,9 +311,9 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
 
             struct fb_info fbinfo;
             if (!fb_init(&fbinfo, req_width, req_height, req_bpp)) {
-#if uefi == 1
+#if defined (UEFI)
                 panic(true, "multiboot1: Failed to set video mode");
-#elif bios == 1
+#elif defined (BIOS)
                 size_t rows, cols;
                 init_vga_textmode(&rows, &cols, false);
 
@@ -339,7 +339,7 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
                 multiboot1_info->fb_blue_mask_shift  = fbinfo.blue_mask_shift;
             }
         } else {
-#if uefi == 1
+#if defined (UEFI)
             print("multiboot1: Warning: Cannot use text mode with UEFI\n");
             struct fb_info fbinfo;
             if (!fb_init(&fbinfo, 0, 0, 0)) {
@@ -357,7 +357,7 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
             multiboot1_info->fb_green_mask_shift = fbinfo.green_mask_shift;
             multiboot1_info->fb_blue_mask_size   = fbinfo.blue_mask_size;
             multiboot1_info->fb_blue_mask_shift  = fbinfo.blue_mask_shift;
-#elif bios == 1
+#elif defined (BIOS)
             size_t rows, cols;
             init_vga_textmode(&rows, &cols, false);
 
@@ -372,9 +372,9 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
 
         multiboot1_info->flags |= (1 << 12);
     } else {
-#if uefi == 1
+#if defined (UEFI)
         panic(true, "multiboot1: Cannot use text mode with UEFI.");
-#elif bios == 1
+#elif defined (BIOS)
         size_t rows, cols;
         init_vga_textmode(&rows, &cols, false);
 #endif
@@ -385,7 +385,7 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
     void *reloc_stub = ext_mem_alloc(reloc_stub_size);
     memcpy(reloc_stub, multiboot_reloc_stub, reloc_stub_size);
 
-#if uefi == 1
+#if defined (UEFI)
     efi_exit_boot_services();
 #endif
 

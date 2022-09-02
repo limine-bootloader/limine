@@ -5,13 +5,13 @@
 #include <lib/misc.h>
 #include <lib/term.h>
 #include <lib/libc.h>
-#if bios == 1
+#if defined (BIOS)
 #include <lib/real.h>
 #endif
 #include <sys/cpu.h>
 #include <drivers/serial.h>
 
-#if bios == 1
+#if defined (BIOS)
 static void s2_print(const char *s, size_t len) {
     for (size_t i = 0; i < len; i++) {
         struct rm_regs r = {0};
@@ -199,11 +199,11 @@ void vprint(const char *fmt, va_list args) {
     }
 
 out:
-#if bios == 1
+#if defined (BIOS)
     if (stage3_loaded) {
 #endif
         term_write((uint64_t)(uintptr_t)print_buf, print_buf_i);
-#if bios == 1
+#if defined (BIOS)
     } else {
         s2_print(print_buf, print_buf_i);
     }

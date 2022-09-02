@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <lib/part.h>
-#if uefi == 1
+#if defined (UEFI)
 #  include <efi.h>
 #endif
 
@@ -23,7 +23,7 @@ struct file_handle {
     void     (*read)(void *fd, void *buf, uint64_t loc, uint64_t count);
     void     (*close)(void *fd);
     uint64_t   size;
-#if uefi == 1
+#if defined (UEFI)
     EFI_HANDLE efi_part_handle;
 #endif
     bool pxe;

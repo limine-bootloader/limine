@@ -42,7 +42,7 @@ void (*term_full_refresh)(void);
 
 // --- fallback ---
 
-#if bios == 1
+#if defined (BIOS)
 static void fallback_raw_putchar(uint8_t c) {
     struct rm_regs r = {0};
     r.eax = 0x0e00 | c;
@@ -87,7 +87,7 @@ static void fallback_get_cursor_pos(size_t *x, size_t *y) {
     *y = r.edx >> 8;
 }
 
-#elif uefi == 1
+#elif defined (UEFI)
 static int cursor_x = 0, cursor_y = 0;
 
 static void fallback_raw_putchar(uint8_t c) {
@@ -137,12 +137,12 @@ static void fallback_get_cursor_pos(size_t *x, size_t *y) {
 #endif
 
 void term_fallback(void) {
-#if uefi == 1
+#if defined (UEFI)
     if (!efi_boot_services_exited) {
         gST->ConOut->Reset(gST->ConOut, false);
         gST->ConOut->SetMode(gST->ConOut, 0);
         cursor_x = cursor_y = 0;
-#elif bios == 1
+#elif defined (BIOS)
         fallback_clear(true);
 #endif
         term_notready();
@@ -151,7 +151,7 @@ void term_fallback(void) {
         set_cursor_pos = fallback_set_cursor_pos;
         get_cursor_pos = fallback_get_cursor_pos;
         term_backend = FALLBACK;
-#if uefi == 1
+#if defined (UEFI)
     }
 #endif
 }

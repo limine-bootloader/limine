@@ -372,7 +372,7 @@ failed_to_load_header_section:
     struct stivale2_struct_tag_firmware *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_firmware));
     tag->tag.identifier = STIVALE2_STRUCT_TAG_FIRMWARE_ID;
 
-#if bios == 1
+#if defined (BIOS)
     tag->flags = 1 << 0;   // bit 0 = BIOS boot
 #endif
 
@@ -529,7 +529,7 @@ failed_to_load_header_section:
 
     struct stivale2_header_tag_any_video *avtag = get_tag(&stivale2_hdr, STIVALE2_HEADER_TAG_ANY_VIDEO_ID);
 
-#if uefi == 1
+#if defined (UEFI)
     if (hdrtag == NULL && avtag == NULL) {
         panic(true, "stivale2: Cannot use text mode with UEFI.");
     }
@@ -549,12 +549,13 @@ failed_to_load_header_section:
         quiet = false;
         serial = false;
 
-        if (bios &&
-          ((avtag == NULL && hdrtag == NULL) || (avtag != NULL && preference == 1))) {
+#if defined (BIOS)
+        if ((avtag == NULL && hdrtag == NULL) || (avtag != NULL && preference == 1)) {
             term_textmode();
             textmode = true;
         } else {
-#if uefi == 1
+#endif
+#if defined (UEFI)
             gop_force_16 = true;
 #endif
             char *term_conf_override_s = config_get_value(config, 0, "TERM_CONFIG_OVERRIDE");
@@ -571,7 +572,9 @@ failed_to_load_header_section:
             fb = &fbinfo;
 
             textmode = false;
+#if defined (BIOS)
         }
+#endif
 
         struct stivale2_struct_tag_terminal *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_terminal));
         tag->tag.identifier = STIVALE2_STRUCT_TAG_TERMINAL_ID;
@@ -615,7 +618,7 @@ failed_to_load_header_section:
         append_tag(stivale2_struct, (struct stivale2_tag *)tag);
 
         if (textmode) {
-#if bios == 1
+#if defined (BIOS)
             goto have_tm_tag;
 #endif
         } else {
@@ -627,10 +630,14 @@ failed_to_load_header_section:
 
     term_deinit();
 
-    if (hdrtag != NULL || (avtag != NULL && uefi) || (avtag != NULL && preference == 0)) {
+    if (hdrtag != NULL
+#if defined (UEFI)
+     || avtag != NULL
+#endif
+     || (avtag != NULL && preference == 0)) {
         term_deinit();
 
-#if uefi == 1
+#if defined (UEFI)
         gop_force_16 = true;
 #endif
         if (fb_init(fb, req_width, req_height, req_bpp)) {
@@ -658,7 +665,7 @@ have_fb_tag:;
             append_tag(stivale2_struct, (struct stivale2_tag *)tag);
         }
     } else {
-#if bios == 1
+#if defined (BIOS)
         size_t rows, cols;
         init_vga_textmode(&rows, &cols, false);
 
@@ -706,7 +713,7 @@ have_tm_tag:;
     append_tag(stivale2_struct, (struct stivale2_tag *)tag);
     }
 
-#if bios == 1
+#if defined (BIOS)
     //////////////////////////////////////////////
     // Create PXE struct tag
     //////////////////////////////////////////////
@@ -757,7 +764,7 @@ have_tm_tag:;
     //////////////////////////////////////////////
     // Create EFI system table struct tag
     //////////////////////////////////////////////
-#if uefi == 1
+#if defined (UEFI)
     {
         struct stivale2_struct_tag_efi_system_table *tag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_efi_system_table));
         tag->tag.identifier = STIVALE2_STRUCT_TAG_EFI_SYSTEM_TABLE_ID;
@@ -778,7 +785,7 @@ have_tm_tag:;
                                         want_fully_virtual, physical_base, virtual_base,
                                         direct_map_offset);
 
-#if uefi == 1
+#if defined (UEFI)
     efi_exit_boot_services();
 #endif
 

@@ -44,7 +44,7 @@ static size_t get_multiboot2_info_size(
         ALIGN_UP(smbios_tag_size, MULTIBOOT_TAG_ALIGN) +                                                                // SMBIOS
         ALIGN_UP(sizeof(struct multiboot_tag_basic_meminfo), MULTIBOOT_TAG_ALIGN) +                                     // basic memory info
         ALIGN_UP(sizeof(struct multiboot_tag_mmap) + sizeof(struct multiboot_mmap_entry) * 256, MULTIBOOT_TAG_ALIGN) +  // MMAP
-        #if uefi == 1
+        #if defined (UEFI)
             ALIGN_UP(sizeof(struct multiboot_tag_efi_mmap) + (efi_desc_size * 256), MULTIBOOT_TAG_ALIGN) +              // EFI MMAP
             #if defined (__i386__)
                 ALIGN_UP(sizeof(struct multiboot_tag_efi32), MULTIBOOT_TAG_ALIGN) +                                     // EFI system table 32
@@ -131,7 +131,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
                         case MULTIBOOT_TAG_TYPE_MMAP:
                         case MULTIBOOT_TAG_TYPE_SMBIOS:
                         case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO:
-                        #if uefi == 1
+                        #if defined (UEFI)
                             case MULTIBOOT_TAG_TYPE_EFI_MMAP:
                             #if defined (__i386__)
                                 case MULTIBOOT_TAG_TYPE_EFI32:
@@ -464,7 +464,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     //////////////////////////////////////////////
     // Create EFI image handle tag
     //////////////////////////////////////////////
-#if uefi == 1
+#if defined (UEFI)
     {
     #if defined (__i386__)
         struct multiboot_tag_efi64_ih *tag = (struct multiboot_tag_efi64_ih *)(mb2_info + info_idx);
@@ -505,7 +505,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
 
             struct fb_info fbinfo;
             if (!fb_init(&fbinfo, req_width, req_height, req_bpp)) {
-#if bios == 1
+#if defined (BIOS)
                 size_t rows, cols;
                 init_vga_textmode(&rows, &cols, false);
 
@@ -515,7 +515,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
                 tag->common.framebuffer_height = rows;
                 tag->common.framebuffer_bpp = 16;
                 tag->common.framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT;
-#elif uefi == 1
+#elif defined (UEFI)
                 panic(true, "multiboot2: Failed to set video mode");
 #endif
             } else {
@@ -534,7 +534,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
                 tag->framebuffer_blue_mask_size = fbinfo.blue_mask_size;
             }
         } else {
-#if uefi == 1
+#if defined (UEFI)
             print("multiboot2: Warning: Cannot use text mode with UEFI\n");
             struct fb_info fbinfo;
             if (!fb_init(&fbinfo, 0, 0, 0)) {
@@ -553,7 +553,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
             tag->framebuffer_green_mask_size = fbinfo.green_mask_size;
             tag->framebuffer_blue_field_position = fbinfo.blue_mask_shift;
             tag->framebuffer_blue_mask_size = fbinfo.blue_mask_size;
-#elif bios == 1
+#elif defined (BIOS)
             size_t rows, cols;
             init_vga_textmode(&rows, &cols, false);
 
@@ -651,7 +651,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     //////////////////////////////////////////////
     // Create EFI system table info tag
     //////////////////////////////////////////////
-#if uefi == 1
+#if defined (UEFI)
     {
     #if defined (__i386__)
         uint32_t size = sizeof(struct multiboot_tag_efi32);
@@ -677,7 +677,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     void *reloc_stub = ext_mem_alloc(reloc_stub_size);
     memcpy(reloc_stub, multiboot_reloc_stub, reloc_stub_size);
 
-#if uefi == 1
+#if defined (UEFI)
     efi_exit_boot_services();
 #endif
 
@@ -733,7 +733,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     //////////////////////////////////////////////
     // Create EFI memory map tag
     //////////////////////////////////////////////
-#if uefi == 1
+#if defined (UEFI)
     {
         if ((efi_mmap_size / efi_desc_size) > 256) {
             panic(false, "multiboot2: too many EFI memory map entries");

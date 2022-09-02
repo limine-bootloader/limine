@@ -25,7 +25,7 @@
 
 void stage3_common(void);
 
-#if uefi == 1
+#if defined (UEFI)
 extern symbol __image_base;
 
 noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {

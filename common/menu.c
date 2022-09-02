@@ -540,40 +540,40 @@ static size_t print_tree(const char *shift, size_t level, size_t base_index, siz
 static struct memmap_entry *rewound_memmap = NULL;
 static size_t rewound_memmap_entries = 0;
 static uint8_t *rewound_data;
-#if bios == 1
+#if defined (BIOS)
 static uint8_t *rewound_s2_data;
 #endif
 
 extern symbol data_begin;
 extern symbol data_end;
-#if bios == 1
+#if defined (BIOS)
 extern symbol s2_data_begin;
 extern symbol s2_data_end;
 #endif
 
 noreturn void _menu(bool timeout_enabled) {
     size_t data_size = (uintptr_t)data_end - (uintptr_t)data_begin;
-#if bios == 1
+#if defined (BIOS)
     size_t s2_data_size = (uintptr_t)s2_data_end - (uintptr_t)s2_data_begin;
 #endif
 
     if (rewound_memmap != NULL) {
         memcpy(data_begin, rewound_data, data_size);
-#if bios == 1
+#if defined (BIOS)
         memcpy(s2_data_begin, rewound_s2_data, s2_data_size);
 #endif
         memcpy(memmap, rewound_memmap, rewound_memmap_entries * sizeof(struct memmap_entry));
         memmap_entries = rewound_memmap_entries;
     } else {
         rewound_data = ext_mem_alloc(data_size);
-#if bios == 1
+#if defined (BIOS)
         rewound_s2_data = ext_mem_alloc(s2_data_size);
 #endif
         rewound_memmap = ext_mem_alloc(256 * sizeof(struct memmap_entry));
         memcpy(rewound_memmap, memmap, memmap_entries * sizeof(struct memmap_entry));
         rewound_memmap_entries = memmap_entries;
         memcpy(rewound_data, data_begin, data_size);
-#if bios == 1
+#if defined (BIOS)
         memcpy(rewound_s2_data, s2_data_begin, s2_data_size);
 #endif
     }
@@ -658,9 +658,9 @@ noreturn void _menu(bool timeout_enabled) {
     }
 
     // If there is GRAPHICS config key and the value is "yes", enable graphics
-#if bios == 1
+#if defined (BIOS)
     char *graphics = config_get_value(NULL, 0, "GRAPHICS");
-#elif uefi == 1
+#elif defined (UEFI)
     char *graphics = "yes";
 #endif
 
@@ -674,7 +674,7 @@ reterm:
 
         term_vbe(NULL, req_width, req_height);
     } else {
-#if bios == 1
+#if defined (BIOS)
         term_textmode();
 #endif
     }
@@ -828,7 +828,7 @@ timeout_aborted:
                 }
                 if (term_backend == NOT_READY) {
                     term_vbe(NULL, 0, 0);
-#if bios == 1
+#if defined (BIOS)
                     if (term_backend == NOT_READY) {
                         term_textmode();
                     }

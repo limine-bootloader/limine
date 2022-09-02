@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <lib/part.h>
 #include <drivers/disk.h>
-#if bios == 1
+#if defined (BIOS)
 #  include <lib/real.h>
 #endif
 #include <lib/libc.h>
@@ -198,10 +198,10 @@ static int gpt_get_part(struct volume *ret, struct volume *volume, int partition
     if (!memcmp(&entry.unique_partition_guid, &empty_guid, sizeof(struct guid)))
         return NO_PARTITION;
 
-#if uefi == 1
+#if defined (UEFI)
     ret->efi_handle  = volume->efi_handle;
     ret->block_io    = volume->block_io;
-#elif bios == 1
+#elif defined (BIOS)
     ret->drive       = volume->drive;
 #endif
     ret->fastest_xfer_size = volume->fastest_xfer_size;
@@ -320,10 +320,10 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
     if (entry.type == 0)
         return NO_PARTITION;
 
-#if uefi == 1
+#if defined (UEFI)
     ret->efi_handle  = extended_part->efi_handle;
     ret->block_io    = extended_part->block_io;
-#elif bios == 1
+#elif defined (BIOS)
     ret->drive       = extended_part->drive;
 #endif
     ret->fastest_xfer_size = extended_part->fastest_xfer_size;
@@ -374,10 +374,10 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
 
             struct volume extended_part = {0};
 
-#if uefi == 1
+#if defined (UEFI)
             extended_part.efi_handle  = volume->efi_handle;
             extended_part.block_io    = volume->block_io;
-#elif bios == 1
+#elif defined (BIOS)
             extended_part.drive       = volume->drive;
 #endif
             extended_part.fastest_xfer_size = volume->fastest_xfer_size;
@@ -402,10 +402,10 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
     if (entry.type == 0)
         return NO_PARTITION;
 
-#if uefi == 1
+#if defined (UEFI)
     ret->efi_handle  = volume->efi_handle;
     ret->block_io    = volume->block_io;
-#elif bios == 1
+#elif defined (BIOS)
     ret->drive       = volume->drive;
 #endif
     ret->fastest_xfer_size = volume->fastest_xfer_size;
@@ -493,7 +493,7 @@ struct volume *volume_get_by_coord(bool optical, int drive, int partition) {
     return NULL;
 }
 
-#if bios == 1
+#if defined (BIOS)
 struct volume *volume_get_by_bios_drive(int drive) {
     for (size_t i = 0; i < volume_index_i; i++) {
         if (volume_index[i]->drive == drive) {

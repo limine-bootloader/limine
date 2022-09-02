@@ -9,7 +9,7 @@ void pmm_randomise_memory(void) {
         if (memmap[i].type != MEMMAP_USABLE)
             continue;
 
-#if bios == 1
+#if defined (BIOS)
         // We're not going to randomise memory above 4GiB from protected mode,
         // are we?
         if (memmap[i].base >= 0x100000000) {

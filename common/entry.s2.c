@@ -28,7 +28,7 @@
 
 struct volume *boot_volume;
 
-#if bios == 1
+#if defined (BIOS)
 
 bool stage3_loaded = false;
 static bool stage3_found = false;

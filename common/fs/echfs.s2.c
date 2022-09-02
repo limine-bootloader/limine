@@ -173,7 +173,7 @@ found:;
     handle->close = (void *)echfs_close;
     handle->size = ret->dir_entry.size;
     handle->vol = part;
-#if uefi == 1
+#if defined (UEFI)
     handle->efi_part_handle = part->efi_part_handle;
 #endif
 

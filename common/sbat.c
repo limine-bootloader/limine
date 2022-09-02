@@ -1,4 +1,4 @@
-#if uefi == 1
+#if defined (UEFI)
 
 #include <config.h>
 

@@ -602,7 +602,7 @@ static char *last_config = NULL;
 
 bool gterm_init(char *config, size_t *_rows, size_t *_cols, size_t width, size_t height) {
     if (current_video_mode >= 0
-#if bios == 1
+#if defined (BIOS)
      && current_video_mode != 0x03
 #endif
      && fbinfo.default_res == true
@@ -619,7 +619,7 @@ bool gterm_init(char *config, size_t *_rows, size_t *_cols, size_t width, size_t
     }
 
     if (current_video_mode >= 0
-#if bios == 1
+#if defined (BIOS)
      && current_video_mode != 0x03
 #endif
      && fbinfo.framebuffer_width == width

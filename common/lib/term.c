@@ -32,7 +32,7 @@ void term_vbe(char *config, size_t width, size_t height) {
     }
 
     if (!gterm_init(config, &term_rows, &term_cols, width, height)) {
-#if bios == 1
+#if defined (BIOS)
         // Failed to set VBE properly, default to text mode
         term_textmode();
 #endif
@@ -138,7 +138,7 @@ void term_reinit(void) {
     term_autoflush = true;
 }
 
-#if bios == 1
+#if defined (BIOS)
 void term_textmode(void) {
     term_deinit();
 

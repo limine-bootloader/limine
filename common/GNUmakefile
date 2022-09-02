@@ -30,6 +30,8 @@ E9_OUTPUT ?= false
 
 override S2CFLAGS := -Os
 
+override BASE_CFLAGS := $(CROSS_CFLAGS)
+
 override CROSS_CFLAGS += \
     -g \
     -std=gnu11 \
@@ -59,7 +61,6 @@ ifeq ($(TARGET),bios)
         -fno-pic \
         -m32 \
         -march=i686 \
-        -mtune=generic \
         -mabi=sysv \
         -mno-80387 \
         -DBIOS
@@ -72,17 +73,14 @@ ifeq ($(TARGET),uefi-x86-64)
         -fpie \
         -m32 \
         -march=i686 \
-        -mtune=generic \
         -mabi=sysv \
         -mno-80387 \
-        -DUEFI \
-        -DGNU_EFI_USE_MS_ABI
+        -DUEFI
 
     override CROSS_CFLAGS += \
         -fpie \
         -m64 \
         -march=x86-64 \
-        -mtune=generic \
         -mabi=sysv \
         -mno-80387 \
         -mno-mmx \
@@ -100,11 +98,9 @@ ifeq ($(TARGET),uefi-ia32)
         -fpie \
         -m32 \
         -march=i686 \
-        -mtune=generic \
         -mabi=sysv \
         -mno-80387 \
         -DUEFI \
-        -DGNU_EFI_USE_MS_ABI \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/ia32'
 endif
@@ -278,9 +274,9 @@ $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.el
 $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_x86_64.o: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	unset CPPFLAGS; \
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
-		CC="$(CROSS_CC) -m64 -march=x86-64 -mtune=generic" \
-		CFLAGS='-nostdinc' \
-		INCDIR='-I$(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
+		CC="$(CROSS_CC)" \
+		CFLAGS="$(BASE_CFLAGS)" \
+		CPPFLAGS='-nostdinc -I$(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
 		ARCH=x86_64
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_x86_64.ld.in
@@ -319,9 +315,9 @@ $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.e
 $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_ia32.o: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	unset CPPFLAGS; \
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
-		CC="$(CROSS_CC) -m32 -march=i686 -mtune=generic" \
-		CFLAGS='-nostdinc' \
-		INCDIR='-I$(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
+		CC="$(CROSS_CC)" \
+		CFLAGS="$(BASE_CFLAGS)" \
+		CPPFLAGS='-nostdinc -I$(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
 		ARCH=ia32
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_ia32.ld.in

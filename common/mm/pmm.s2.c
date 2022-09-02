@@ -7,13 +7,13 @@
 #include <lib/misc.h>
 #include <lib/libc.h>
 #include <lib/print.h>
-#if uefi == 1
+#if defined (UEFI)
 #  include <efi.h>
 #endif
 
 #define PAGE_SIZE   4096
 
-#if bios == 1
+#if defined (BIOS)
 extern symbol bss_end;
 #endif
 
@@ -47,14 +47,14 @@ void *conv_mem_alloc(size_t count) {
     }
 }
 
-#if bios == 1
+#if defined (BIOS)
 #define memmap_max_entries ((size_t)512)
 
 struct memmap_entry memmap[memmap_max_entries];
 size_t memmap_entries = 0;
 #endif
 
-#if uefi == 1
+#if defined (UEFI)
 static size_t memmap_max_entries;
 
 struct memmap_entry *memmap;
@@ -221,12 +221,12 @@ del_mm1:
     *_count = count;
 }
 
-#if uefi == 1
+#if defined (UEFI)
 static void pmm_reclaim_uefi_mem(struct memmap_entry *m, size_t *_count);
 #endif
 
 struct memmap_entry *get_memmap(size_t *entries) {
-#if uefi == 1
+#if defined (UEFI)
     pmm_reclaim_uefi_mem(memmap, &memmap_entries);
 #endif
 
@@ -239,7 +239,7 @@ struct memmap_entry *get_memmap(size_t *entries) {
     return memmap;
 }
 
-#if bios == 1
+#if defined (BIOS)
 void init_memmap(void) {
     for (size_t i = 0; i < e820_entries; i++) {
         if (memmap_entries == memmap_max_entries) {
@@ -279,7 +279,7 @@ void init_memmap(void) {
 }
 #endif
 
-#if uefi == 1
+#if defined (UEFI)
 extern symbol __image_base;
 extern symbol __image_end;
 
@@ -515,14 +515,14 @@ void pmm_release_uefi_mem(void) {
 }
 #endif
 
-#if bios == 1
+#if defined (BIOS)
 struct memmap_entry *get_raw_memmap(size_t *entry_count) {
     *entry_count = e820_entries;
     return e820_map;
 }
 #endif
 
-#if uefi == 1
+#if defined (UEFI)
 struct memmap_entry *get_raw_memmap(size_t *entry_count) {
     pmm_reclaim_uefi_mem(untouched_memmap, &untouched_memmap_entries);
     *entry_count = untouched_memmap_entries;

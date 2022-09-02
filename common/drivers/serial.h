@@ -5,7 +5,7 @@
 
 void serial_out(uint8_t b);
 
-#if bios == 1
+#if defined (BIOS)
 int serial_in(void);
 #endif
 

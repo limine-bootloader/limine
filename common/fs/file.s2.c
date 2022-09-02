@@ -49,7 +49,7 @@ struct file_handle *fopen(struct volume *part, const char *filename) {
 
     struct file_handle *ret;
 
-#if bios == 1
+#if defined (BIOS)
     if (part->pxe) {
         if ((ret = tftp_open(0, 69, filename)) == NULL) {
             return NULL;

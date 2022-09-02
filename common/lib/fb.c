@@ -10,9 +10,9 @@ bool fb_init(struct fb_info *ret,
              uint64_t target_width, uint64_t target_height, uint16_t target_bpp) {
     bool r;
 
-#if bios == 1
+#if defined (BIOS)
     r = init_vbe(ret, target_width, target_height, target_bpp);
-#elif uefi == 1
+#elif defined (UEFI)
     r = init_gop(ret, target_width, target_height, target_bpp);
 #endif
 

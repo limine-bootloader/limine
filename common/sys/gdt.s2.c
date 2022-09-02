@@ -63,7 +63,7 @@ static struct gdt_desc gdt_descs[] = {
     }
 };
 
-#if bios == 1
+#if defined (BIOS)
 __attribute__((section(".realmode")))
 #endif
 struct gdtr gdt = {
@@ -74,7 +74,7 @@ struct gdtr gdt = {
 #endif
 };
 
-#if uefi == 1
+#if defined (UEFI)
 void init_gdt(void) {
     struct gdt_desc *gdt_copy = ext_mem_alloc(sizeof(gdt_descs));
     memcpy(gdt_copy, gdt_descs, sizeof(gdt_descs));

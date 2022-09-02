@@ -499,7 +499,7 @@ noreturn void linux_load(char *config, char *cmdline) {
 
     struct screen_info *screen_info = &boot_params->screen_info;
 
-#if bios == 1
+#if defined (BIOS)
     {
     char *textmode_str = config_get_value(config, 0, "TEXTMODE");
     bool textmode = textmode_str != NULL && strcmp(textmode_str, "yes") == 0;
@@ -516,13 +516,13 @@ noreturn void linux_load(char *config, char *cmdline) {
         parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
     struct fb_info fbinfo;
-#if uefi == 1
+#if defined (UEFI)
     gop_force_16 = true;
 #endif
     if (!fb_init(&fbinfo, req_width, req_height, req_bpp)) {
-#if uefi == 1
+#if defined (UEFI)
         panic(true, "linux: Unable to set video mode");
-#elif bios == 1
+#elif defined (BIOS)
 set_textmode:;
         size_t rows, cols;
         init_vga_textmode(&rows, &cols, false);
@@ -556,7 +556,7 @@ set_textmode:;
 
         if (fbinfo.framebuffer_addr > (uint64_t)0xffffffff) {
             screen_info->capabilities |= VIDEO_CAPABILITY_64BIT_BASE;
-#if uefi == 1
+#if defined (UEFI)
             screen_info->orig_video_isVGA = VIDEO_TYPE_EFI;
 #endif
         }
@@ -577,7 +577,7 @@ set_textmode:;
     ///////////////////////////////////////
     // UEFI
     ///////////////////////////////////////
-#if uefi == 1
+#if defined (UEFI)
     efi_exit_boot_services();
 
 #if defined (__x86_64__)

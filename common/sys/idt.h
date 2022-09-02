@@ -37,7 +37,7 @@ struct idt_entry {
 
 #endif
 
-#if bios == 1
+#if defined (BIOS)
 
 extern struct idtr idt;
 

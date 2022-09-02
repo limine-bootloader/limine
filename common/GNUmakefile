@@ -63,8 +63,7 @@ ifeq ($(TARGET),bios)
         -mtune=generic \
         -mabi=sysv \
         -mno-80387 \
-        -Dbios=1 \
-        -Duefi=0
+        -DBIOS
 endif
 
 ifeq ($(TARGET),uefi-x86-64)
@@ -79,8 +78,7 @@ ifeq ($(TARGET),uefi-x86-64)
         -mno-sse \
         -mno-sse2 \
         -mno-red-zone \
-        -Dbios=0 \
-        -Duefi=1 \
+        -DUEFI \
         -DGNU_EFI_USE_MS_ABI \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/x86_64'
@@ -94,8 +92,7 @@ ifeq ($(TARGET),uefi-ia32)
         -mtune=generic \
         -mabi=sysv \
         -mno-80387 \
-        -Dbios=0 \
-        -Duefi=1 \
+        -DUEFI \
         -DGNU_EFI_USE_MS_ABI \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/ia32'
@@ -106,8 +103,7 @@ ifeq ($(TARGET),uefi-aarch64)
         -fpie \
         -mtune=generic \
         -mgeneral-regs-only \
-        -Dbios=0 \
-        -Duefi=1 \
+        -DUEFI \
         -DGNU_EFI_USE_MS_ABI \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/aarch64'

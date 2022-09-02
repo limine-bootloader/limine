@@ -3,9 +3,9 @@
 #include <stdalign.h>
 #include <drivers/disk.h>
 #include <lib/libc.h>
-#if bios == 1
+#if defined (BIOS)
 #  include <lib/real.h>
-#elif uefi == 1
+#elif defined (UEFI)
 #  include <efi.h>
 #endif
 #include <lib/misc.h>
@@ -19,7 +19,7 @@
 
 #define MAX_VOLUMES 64
 
-#if bios == 1
+#if defined (BIOS)
 
 struct bios_drive_params {
     uint16_t buf_size;
@@ -263,7 +263,7 @@ void disk_create_index(void) {
 
 #endif
 
-#if uefi == 1
+#if defined (UEFI)
 
 int disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t count) {
     EFI_STATUS status;

@@ -8,9 +8,9 @@
 #include <fs/file.h>
 #include <mm/pmm.h>
 
-#if bios == 1
+#if defined (BIOS)
 extern symbol stage2_map;
-#elif uefi == 1
+#elif defined (UEFI)
 extern symbol __image_base;
 #endif
 
@@ -19,12 +19,12 @@ extern symbol full_map;
 static char *trace_address(size_t *off, size_t addr) {
     char *limine_map;
 
-#if bios == 1
+#if defined (BIOS)
     if (!stage3_loaded)
         limine_map = stage2_map;
     else
         limine_map = full_map;
-#elif uefi == 1
+#elif defined (UEFI)
     limine_map = full_map;
 
     addr -= (size_t)__image_base;

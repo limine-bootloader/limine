@@ -14,11 +14,11 @@
 #include <sys/idt.h>
 #include <drivers/vga_textmode.h>
 #include <mm/pmm.h>
-#if uefi == 1
+#if defined (UEFI)
 #  include <efi.h>
 #endif
 
-#if bios == 1
+#if defined (BIOS)
 
 __attribute__((noinline, section(".realmode")))
 noreturn static void spinup(uint8_t drive) {
@@ -187,7 +187,7 @@ void bios_chainload_volume(struct volume *p) {
     spinup(p->drive);
 }
 
-#elif uefi == 1
+#elif defined (UEFI)
 
 noreturn void chainload(char *config) {
     char *image_path = config_get_value(config, 0, "IMAGE_PATH");

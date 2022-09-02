@@ -14,7 +14,7 @@ uint8_t acpi_checksum(void *ptr, size_t size) {
     return sum;
 }
 
-#if bios == 1
+#if defined (BIOS)
 
 void *acpi_get_rsdp(void) {
     size_t ebda = EBDA;
@@ -78,7 +78,7 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
 
 #endif
 
-#if uefi == 1
+#if defined (UEFI)
 
 #include <efi.h>
 

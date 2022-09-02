@@ -5,12 +5,12 @@
 
 noreturn void chainload(char *config);
 
-#if uefi == 1
+#if defined (UEFI)
 #include <fs/file.h>
 noreturn void efi_chainload_file(char *config, struct file_handle *image);
 #endif
 
-#if bios == 1
+#if defined (BIOS)
 #include <lib/part.h>
 void bios_chainload_volume(struct volume *v);
 #endif

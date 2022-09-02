@@ -7,7 +7,7 @@
 
 #define EBDA (ebda_get())
 
-#if bios == 1
+#if defined (BIOS)
 static inline uintptr_t ebda_get(void) {
     uintptr_t ebda = (uintptr_t)mminw(0x40e) << 4;
 

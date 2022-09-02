@@ -4,7 +4,7 @@
 #include <lib/print.h>
 #include <lib/real.h>
 #include <lib/trace.h>
-#if uefi == 1
+#if defined (UEFI)
 #   include <efi.h>
 #endif
 #include <lib/misc.h>
@@ -30,7 +30,7 @@ noreturn void panic(bool allow_menu, const char *fmt, ...) {
     is_nested = true;
 
     if (
-#if bios == 1
+#if defined (BIOS)
       stage3_loaded == true &&
 #endif
       term_backend == NOT_READY) {
@@ -43,11 +43,11 @@ nested:
         term_fallback();
     }
 
-#if bios == 1
+#if defined (BIOS)
     if (stage3_loaded) {
 #endif
         print("\033[31mPANIC\033[37;1m\033[0m: ");
-#if bios == 1
+#if defined (BIOS)
     } else {
         print("PANIC: ");
     }
@@ -60,7 +60,7 @@ nested:
     print_stacktrace(NULL);
 
     if (
-#if bios == 1
+#if defined (BIOS)
       stage3_loaded == true &&
 #endif
       allow_menu == true) {
@@ -77,10 +77,10 @@ nested:
         gBS->Exit(efi_image_handle, EFI_ABORTED, 0, NULL);
 */
     } else {
-#if bios == 1
+#if defined (BIOS)
         print("Press CTRL+ALT+DEL to reboot.");
         rm_hcf();
-#elif uefi == 1
+#elif defined (UEFI)
         print("System halted.");
         for (;;) {
 #if defined (__x86_64__) || defined (__i386__)

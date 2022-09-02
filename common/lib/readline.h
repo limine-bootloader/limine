@@ -15,10 +15,10 @@
 #define GETCHAR_F10          (-19)
 #define GETCHAR_ESCAPE       (-20)
 
-#if bios == 1
+#if defined (BIOS)
 #   define GETCHAR_RCTRL 0x4
 #   define GETCHAR_LCTRL GETCHAR_RCTRL
-#elif uefi == 1
+#elif defined (UEFI)
 #   define GETCHAR_RCTRL EFI_RIGHT_CONTROL_PRESSED
 #   define GETCHAR_LCTRL EFI_LEFT_CONTROL_PRESSED
 #endif

@@ -515,7 +515,7 @@ FEAT_START
 FEAT_END
 
 
-#if uefi == 1
+#if defined (UEFI)
     // EFI system table feature
 FEAT_START
     struct limine_efi_system_table_request *est_request = get_request(LIMINE_EFI_SYSTEM_TABLE_REQUEST);
@@ -539,7 +539,7 @@ FEAT_START
         break; // next feature
     }
 
-#if uefi == 1
+#if defined (UEFI)
     struct limine_dtb_response *dtb_response =
         ext_mem_alloc(sizeof(struct limine_dtb_response));
 
@@ -858,7 +858,7 @@ FEAT_END
     pagemap = build_pagemap(want_5lv, ranges, ranges_count,
                             physical_base, virtual_base, direct_map_offset);
 
-#if uefi == 1
+#if defined (UEFI)
     efi_exit_boot_services();
 #endif
 
@@ -994,7 +994,7 @@ FEAT_END
     term_runtime = true;
 
 #if defined (__x86_64__) || defined (__i386__)
-#if bios == 1
+#if defined (BIOS)
     // If we're going 64, we might as well call this BIOS interrupt
     // to tell the BIOS that we are entering Long Mode, since it is in
     // the specification.

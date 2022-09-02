@@ -5,10 +5,13 @@ section .text
 global limine_spinup_32
 limine_spinup_32:
     ; Enable EFER.NXE
+    cmp dword [esp+32], 0 ; nx_available
+    je .no_nx
     mov ecx, 0xc0000080
     rdmsr
     bts eax, 11
     wrmsr
+  .no_nx:
 
     ; Enable CR4.LA57
     cmp dword [esp+4], 0 ; level5pg

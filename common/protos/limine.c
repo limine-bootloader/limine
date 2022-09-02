@@ -862,6 +862,14 @@ FEAT_END
     efi_exit_boot_services();
 #endif
 
+#if defined (__x86_64__) || defined (__i386__)
+    // Check if we have NX
+    bool nx_available = false;
+    if (cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) && (edx & (1 << 20))) {
+        nx_available = true;
+    }
+#endif
+
     // SMP
 FEAT_START
     struct limine_smp_request *smp_request = get_request(LIMINE_SMP_REQUEST);
@@ -877,7 +885,7 @@ FEAT_START
     smp_info = init_smp(0, (void **)&smp_array,
                         &cpu_count, &bsp_lapic_id,
                         true, want_5lv,
-                        pagemap, smp_request->flags & LIMINE_SMP_X2APIC, true,
+                        pagemap, smp_request->flags & LIMINE_SMP_X2APIC, nx_available,
                         direct_map_offset, true);
 #elif defined (__aarch64__)
     uint64_t bsp_mpidr;
@@ -1004,8 +1012,6 @@ FEAT_END
     rm_int(0x15, &r, &r);
 #endif
 
-    vmm_assert_nx();
-
     pic_mask_all();
     io_apic_mask_all();
 
@@ -1013,11 +1019,11 @@ FEAT_END
 
     uint64_t reported_stack = reported_addr(stack);
 
-    common_spinup(limine_spinup_32, 7,
+    common_spinup(limine_spinup_32, 8,
         want_5lv, (uint32_t)(uintptr_t)pagemap.top_level,
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
         (uint32_t)reported_stack, (uint32_t)(reported_stack >> 32),
-        (uint32_t)(uintptr_t)local_gdt);
+        (uint32_t)(uintptr_t)local_gdt, nx_available);
 #elif defined (__aarch64__)
     vmm_assert_4k_pages();
 

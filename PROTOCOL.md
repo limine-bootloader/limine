@@ -139,7 +139,7 @@ IF flag, VM flag, and direction flag are cleared on entry. Other flags
 undefined.
 
 PG is enabled (`cr0`), PE is enabled (`cr0`), PAE is enabled (`cr4`),
-WP is enabled (`cr0`), LME is enabled (`EFER`), NX is enabled (`EFER`).
+WP is enabled (`cr0`), LME is enabled (`EFER`), NX is enabled (`EFER`) if available.
 If 5-level paging is requested and available, then 5-level paging is enabled
 (LA57 bit in `cr4`).
 

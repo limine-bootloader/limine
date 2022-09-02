@@ -28,13 +28,6 @@ static pt_entry_t *get_next_level(pagemap_t pagemap, pt_entry_t *current_level,
 #define PT_IS_LARGE(x) (((x) & (PT_FLAG_VALID | PT_FLAG_LARGE)) == (PT_FLAG_VALID | PT_FLAG_LARGE))
 #define PT_TO_VMM_FLAGS(x) ((x) & (PT_FLAG_WRITE | PT_FLAG_NX))
 
-void vmm_assert_nx(void) {
-    uint32_t a, b, c, d;
-    if (!cpuid(0x80000001, 0, &a, &b, &c, &d) || !(d & (1 << 20))) {
-        panic(false, "vmm: NX functionality not available on this CPU.");
-    }
-}
-
 pagemap_t new_pagemap(int lv) {
     pagemap_t pagemap;
     pagemap.levels    = lv;

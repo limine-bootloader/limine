@@ -625,6 +625,14 @@ FEAT_END
     efi_exit_boot_services();
 #endif
 
+#if defined (__x86_64__) || defined (__i386__)
+    // Check if we have NX
+    bool nx_available = false;
+    if (cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) && (edx & (1 << 20))) {
+        nx_available = true;
+    }
+#endif
+
     // SMP
 FEAT_START
     struct limine_smp_request *smp_request = get_request(LIMINE_SMP_REQUEST);
@@ -639,7 +647,7 @@ FEAT_START
     smp_info = init_smp(0, (void **)&smp_array,
                         &cpu_count, &bsp_lapic_id,
                         true, want_5lv,
-                        pagemap, smp_request->flags & LIMINE_SMP_X2APIC, true,
+                        pagemap, smp_request->flags & LIMINE_SMP_X2APIC, nx_available,
                         direct_map_offset, true);
 
     if (smp_info == NULL) {
@@ -741,5 +749,5 @@ FEAT_END
     term_runtime = true;
 
     stivale_spinup(64, want_5lv, &pagemap, entry_point, 0,
-                   reported_addr(stack), true, true, (uintptr_t)local_gdt);
+                   reported_addr(stack), nx_available, true, (uintptr_t)local_gdt);
 }

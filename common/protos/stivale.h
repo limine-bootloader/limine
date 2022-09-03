@@ -11,7 +11,7 @@ noreturn void stivale_load(char *config, char *cmdline);
 
 bool stivale_load_by_anchor(void **_anchor, const char *magic,
                             uint8_t *file, uint64_t filesize);
-pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range *ranges, size_t ranges_count,
+pagemap_t stivale_build_pagemap(bool level5pg, bool nx, bool unmap_null, struct elf_range *ranges, size_t ranges_count,
                                 bool want_fully_virtual, uint64_t physical_base, uint64_t virtual_base,
                                 uint64_t direct_map_offset);
 noreturn void stivale_spinup(

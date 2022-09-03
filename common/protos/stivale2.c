@@ -779,7 +779,7 @@ have_tm_tag:;
 
     pagemap_t pagemap = {0};
     if (bits == 64)
-        pagemap = stivale_build_pagemap(want_5lv, unmap_null,
+        pagemap = stivale_build_pagemap(want_5lv, true, unmap_null,
                                         want_pmrs ? ranges : NULL,
                                         want_pmrs ? ranges_count : 0,
                                         want_fully_virtual, physical_base, virtual_base,

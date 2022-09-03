@@ -357,7 +357,7 @@ noreturn void stivale_load(char *config, char *cmdline) {
 
     pagemap_t pagemap = {0};
     if (bits == 64)
-        pagemap = stivale_build_pagemap(want_5lv, false, NULL, 0, false, 0, 0, direct_map_offset);
+        pagemap = stivale_build_pagemap(want_5lv, false, false, NULL, 0, false, 0, 0, direct_map_offset);
 
     // Reserve 32K at 0x70000 if possible
     if (!memmap_alloc_range(0x70000, 0x8000, MEMMAP_USABLE, true, false, false, false)) {
@@ -385,7 +385,7 @@ noreturn void stivale_load(char *config, char *cmdline) {
                    stivale_hdr.stack, false, false, (uintptr_t)local_gdt);
 }
 
-pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range *ranges, size_t ranges_count,
+pagemap_t stivale_build_pagemap(bool level5pg, bool nx, bool unmap_null, struct elf_range *ranges, size_t ranges_count,
                                 bool want_fully_virtual, uint64_t physical_base, uint64_t virtual_base,
                                 uint64_t direct_map_offset) {
     pagemap_t pagemap = new_pagemap(level5pg ? 5 : 4);
@@ -411,7 +411,7 @@ pagemap_t stivale_build_pagemap(bool level5pg, bool unmap_null, struct elf_range
             }
 
             uint64_t pf = VMM_FLAG_PRESENT |
-                (ranges[i].permissions & ELF_PF_X ? 0 : VMM_FLAG_NOEXEC) |
+                (ranges[i].permissions & ELF_PF_X ? 0 : (nx ? VMM_FLAG_NOEXEC : 0)) |
                 (ranges[i].permissions & ELF_PF_W ? VMM_FLAG_WRITE : 0);
 
             for (uint64_t j = 0; j < ranges[i].length; j += 0x1000) {

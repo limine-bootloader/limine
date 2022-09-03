@@ -626,7 +626,7 @@ FEAT_END
 #endif
 
     pagemap_t pagemap = {0};
-    pagemap = stivale_build_pagemap(want_5lv, nx_available, ranges, ranges_count, true,
+    pagemap = stivale_build_pagemap(want_5lv, nx_available, true, ranges, ranges_count, true,
                                     physical_base, virtual_base, direct_map_offset);
 
 #if defined (UEFI)

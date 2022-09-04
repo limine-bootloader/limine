@@ -730,7 +730,7 @@ bool gterm_init(char *config, size_t *_rows, size_t *_cols, size_t width, size_t
         margin_gradient = 0;
     } else {
         if (theme_background == NULL) {
-            default_bg = 0x68000000;
+            default_bg = 0x80000000;
         }
     }
 

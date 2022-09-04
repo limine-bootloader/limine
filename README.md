@@ -9,7 +9,7 @@ as the reference implementation for the [Limine boot protocol](/PROTOCOL.md).
 
 ![Reference screenshot](/screenshot.png?raw=true "Reference screenshot")
 
-[Photo by Martin Damboldt from Pexels](https://www.pexels.com/photo/gray-bridge-and-trees-814499/)
+[Photo by Lívia Bittencourt](https://www.pexels.com/photo/big-sea-waves-under-rainbow-and-cloudy-sky-4636525/)
 
 ### Supported boot protocols
 * Linux

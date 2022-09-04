@@ -21,6 +21,8 @@ void gterm_set_text_fg(size_t fg);
 void gterm_set_text_bg(size_t bg);
 void gterm_set_text_fg_bright(size_t fg);
 void gterm_set_text_bg_bright(size_t bg);
+void gterm_set_text_fg_rgb(uint32_t fg);
+void gterm_set_text_bg_rgb(uint32_t bg);
 void gterm_set_text_fg_default(void);
 void gterm_set_text_bg_default(void);
 bool gterm_scroll_disable(void);

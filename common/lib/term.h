@@ -71,6 +71,8 @@ extern void (*set_text_fg)(size_t fg);
 extern void (*set_text_bg)(size_t bg);
 extern void (*set_text_fg_bright)(size_t fg);
 extern void (*set_text_bg_bright)(size_t bg);
+extern void (*set_text_fg_rgb)(uint32_t fg);
+extern void (*set_text_bg_rgb)(uint32_t bg);
 extern void (*set_text_fg_default)(void);
 extern void (*set_text_bg_default)(void);
 extern bool (*scroll_disable)(void);

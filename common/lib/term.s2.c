@@ -22,6 +22,8 @@ void (*set_text_fg)(size_t fg);
 void (*set_text_bg)(size_t bg);
 void (*set_text_fg_bright)(size_t fg);
 void (*set_text_bg_bright)(size_t bg);
+void (*set_text_fg_rgb)(uint32_t fg);
+void (*set_text_bg_rgb)(uint32_t bg);
 void (*set_text_fg_default)(void);
 void (*set_text_bg_default)(void);
 bool (*scroll_disable)(void);
@@ -184,6 +186,9 @@ static void notready_move_character(size_t a, size_t b, size_t c, size_t d) {
 static uint64_t notready_context_size(void) {
     return 0;
 }
+static void notready_uint32_t(uint32_t n) {
+    (void)n;
+}
 static void notready_uint64_t(uint64_t n) {
     (void)n;
 }
@@ -201,6 +206,8 @@ void term_notready(void) {
     set_text_bg = notready_size_t;
     set_text_fg_bright = notready_size_t;
     set_text_bg_bright = notready_size_t;
+    set_text_fg_rgb = notready_uint32_t;
+    set_text_bg_rgb = notready_uint32_t;
     set_text_fg_default = notready_void;
     set_text_bg_default = notready_void;
     scroll_disable = notready_disable;

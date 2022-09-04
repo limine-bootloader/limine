@@ -523,6 +523,14 @@ void gterm_set_text_bg_bright(size_t bg) {
     text_bg = ansi_bright_colours[bg];
 }
 
+void gterm_set_text_fg_rgb(uint32_t fg) {
+    text_fg = fg;
+}
+
+void gterm_set_text_bg_rgb(uint32_t bg) {
+    text_bg = bg;
+}
+
 void gterm_set_text_fg_default(void) {
     text_fg = default_fg;
 }

@@ -56,6 +56,8 @@ void term_vbe(char *config, size_t width, size_t height) {
     set_text_bg    = gterm_set_text_bg;
     set_text_fg_bright = gterm_set_text_fg_bright;
     set_text_bg_bright = gterm_set_text_bg_bright;
+    set_text_fg_rgb = gterm_set_text_fg_rgb;
+    set_text_bg_rgb = gterm_set_text_bg_rgb;
     set_text_fg_default = gterm_set_text_fg_default;
     set_text_bg_default = gterm_set_text_bg_default;
     scroll_disable = gterm_scroll_disable;
@@ -154,6 +156,8 @@ void term_textmode(void) {
     }
 
     term_reinit();
+
+    term_notready();
 
     raw_putchar    = text_putchar;
     clear          = text_clear;
@@ -427,7 +431,40 @@ set_bg_bright:
             }
             continue;
         }
+
+        // 256/RGB
+        else if (esc_values[i] == 38 || esc_values[i] == 48) {
+            bool fg = esc_values[i] == 38;
+
+            i++;
+            if (i >= esc_values_i) {
+                break;
+            }
+
+            switch (esc_values[i]) {
+                case 2: { // RGB
+                    if (i + 3 >= esc_values_i) {
+                        goto out;
+                    }
+
+                    uint32_t rgb_value = 0;
+
+                    rgb_value |= esc_values[i + 1] << 16;
+                    rgb_value |= esc_values[i + 2] << 8;
+                    rgb_value |= esc_values[i + 3];
+
+                    i += 3;
+
+                    fg ? set_text_fg_rgb(rgb_value) : set_text_bg_rgb(rgb_value);
+
+                    break;
+                }
+                default: continue;
+            }
+        }
     }
+
+out:;
 }
 
 static void dec_private_parse(uint8_t c) {

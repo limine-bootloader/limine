@@ -1,7 +1,7 @@
 ENTRY(_start)
 
 SECTIONS {
-    . = 0x10000;
+    . = 1M;
 
     .boot :
     {
@@ -18,7 +18,7 @@ SECTIONS {
     . = ALIGN(4K);
     .rodata :
     {
-        *(.rodata.*)
+        *(.rodata .rodata.*)
     }
 
     . = ALIGN(4K);

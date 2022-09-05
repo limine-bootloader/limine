@@ -93,7 +93,6 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          prerelease: true
           body_path: rel_notes.txt
           files: |
             limine-*.tar.*

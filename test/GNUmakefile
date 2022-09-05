@@ -1,11 +1,13 @@
-CC              = cc
-CFLAGS          = -O2 -g -Wall -Wextra -Wpedantic
-LDFLAGS         =
-LD              = ld
-QEMU            = qemu-system-x86_64
-QEMUFLAGS       = -m 1G -enable-kvm -cpu host
+include $(CROSS_FILE)
 
-INTERNALLDFLAGS :=         \
+override CC := $(CROSS_CC)
+CFLAGS = -O2 -g -Wall -Wextra
+LDFLAGS =
+override LD := $(CROSS_LD)
+override QEMU := qemu-system-x86_64
+QEMUFLAGS = -m 1G -enable-kvm -cpu host
+
+override INTERNALLDFLAGS :=         \
 	-Tlinker.ld            \
 	-nostdlib              \
 	-zmax-page-size=0x1000 \
@@ -14,51 +16,53 @@ INTERNALLDFLAGS :=         \
 	--no-dynamic-linker    \
 	-ztext
 
-INTERNAL_LD_FLAGS_MULTIBOOT2 := \
+override INTERNAL_LD_FLAGS_MULTIBOOT2 := \
+	-m elf_i386                 \
 	-Tmultiboot2.ld             \
 	-nostdlib                   \
 	-zmax-page-size=0x1000      \
 	-static
 
-INTERNAL_LD_FLAGS_MULTIBOOT1 := \
+override INTERNAL_LD_FLAGS_MULTIBOOT1 := \
+	-m elf_i386                 \
 	-Tmultiboot.ld              \
 	-nostdlib                   \
 	-zmax-page-size=0x1000      \
 	-static
 
-INTERNALCFLAGS  :=       \
-	-I.                  \
-	-I..                 \
+override INTERNALCFLAGS  :=       \
 	-std=c11             \
-	-g                   \
 	-ffreestanding       \
 	-fno-stack-protector \
+	-fno-stack-check     \
+	-fno-lto             \
 	-fpie                \
-	-mabi=sysv           \
-	-mno-80387           \
-	-mno-mmx             \
-	-mno-sse             \
-	-mno-sse2            \
-	-mno-red-zone
-
-INTERNALCFLAGS_MB  :=    \
+	-mgeneral-regs-only  \
+	-mno-red-zone        \
 	-I.                  \
-	-I..                 \
-	-I../common/protos   \
+	-I..
+
+override INTERNALCFLAGS_MB  :=    \
 	-std=c11             \
-	-m32                 \
-	-g                   \
 	-ffreestanding       \
 	-fno-stack-protector \
+	-fno-stack-check     \
+	-fno-lto             \
 	-fno-pie             \
 	-fno-pic             \
+	-m32                 \
+	-march=i686          \
 	-mabi=sysv           \
 	-mno-80387           \
-	-mno-mmx             \
-	-mno-sse             \
-	-mno-sse2
+	-I.                  \
+	-I..                 \
+	-I../common/protos
 
+ifneq ($(findstring 86,$(CROSS_CC)),)
 all: test.elf multiboot2.elf multiboot.elf
+else
+all: test.elf
+endif
 
 test.elf: limine.o e9print.o memory.o
 	$(LD) $^ $(LDFLAGS) $(INTERNALLDFLAGS) -o $@

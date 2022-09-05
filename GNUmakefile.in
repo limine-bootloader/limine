@@ -335,7 +335,7 @@ ext2-test:
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
 	$(MAKE) limine-deploy
-	$(MAKE) -C test
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -358,7 +358,7 @@ fat12-test:
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
 	$(MAKE) limine-deploy
-	$(MAKE) -C test
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -381,7 +381,7 @@ fat16-test:
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
 	$(MAKE) limine-deploy
-	$(MAKE) -C test
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -405,7 +405,7 @@ legacy-fat16-test:
 	fdisk -l mbrtest.hdd
 	$(MAKE) limine-bios
 	$(MAKE) limine-deploy
-	$(MAKE) -C test
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show mbrtest.hdd > loopback_dev
@@ -428,7 +428,7 @@ fat32-test:
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
 	$(MAKE) limine-deploy
-	$(MAKE) -C test
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -450,7 +450,7 @@ iso9660-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) -C test
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
 	rm -rf test_image/
 	$(MKDIR_P) test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
@@ -487,7 +487,7 @@ full-hybrid-test:
 	$(MAKE) ovmf-ia32
 	$(MAKE) test-clean
 	$(MAKE) all
-	$(MAKE) -C test
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
 	rm -rf test_image/
 	$(MKDIR_P) test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
@@ -505,7 +505,7 @@ full-hybrid-test:
 pxe-test:
 	$(MAKE) test-clean
 	$(MAKE) limine-bios
-	$(MAKE) -C test
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
 	rm -rf test_image/
 	$(MKDIR_P) test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
@@ -534,7 +534,7 @@ uefi-x86-64-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-x86_64 -m 512M -M q35 -L ovmf -bios ovmf-x64/OVMF.fd -net none -smp 4   -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: uefi-ia32-test
 uefi-ia32-test:
@@ -558,4 +558,4 @@ uefi-ia32-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-x86_64 -m 512M -M q35 -L ovmf -bios ovmf-ia32/OVMF.fd -net none -smp 4   -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4   -hda test.hdd -debugcon stdio

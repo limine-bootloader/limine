@@ -181,6 +181,8 @@ void term_textmode(void) {
         return;
     }
 
+    term_notready();
+
     init_vga_textmode(&term_rows, &term_cols, true);
 
     if (serial) {
@@ -189,8 +191,6 @@ void term_textmode(void) {
     }
 
     term_reinit();
-
-    term_notready();
 
     raw_putchar    = text_putchar;
     clear          = text_clear;

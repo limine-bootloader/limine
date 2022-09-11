@@ -70,10 +70,10 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     if (kernel_path == NULL)
         panic(true, "multiboot2: KERNEL_PATH not specified");
 
-    print("multiboot2: Loading kernel `%s`...\n", kernel_path);
+    print("multiboot2: Loading kernel `%#`...\n", kernel_path);
 
     if ((kernel_file = uri_open(kernel_path)) == NULL)
-        panic(true, "multiboot2: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
+        panic(true, "multiboot2: Failed to open kernel with path `%#`. Is the path correct?", kernel_path);
 
     uint8_t *kernel = freadall(kernel_file, MEMMAP_KERNEL_AND_MODULES);
 
@@ -405,11 +405,11 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
         char *module_path = conf_tuple.value1;
         if (!module_path) panic(true, "multiboot2: Module disappeared unexpectedly");
 
-        print("multiboot2: Loading module `%s`...\n", module_path);
+        print("multiboot2: Loading module `%#`...\n", module_path);
 
         struct file_handle *f;
         if ((f = uri_open(module_path)) == NULL)
-            panic(true, "multiboot2: Failed to open module with path `%s`. Is the path correct?", module_path);
+            panic(true, "multiboot2: Failed to open module with path `%#`. Is the path correct?", module_path);
 
         // Module commandline can be null, so we guard against that and make the
         // string "".

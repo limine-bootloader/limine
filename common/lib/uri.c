@@ -194,7 +194,7 @@ struct file_handle *uri_open(char *uri) {
     uri_resolve(uri, &resource, &root, &path);
 
     if (resource == NULL) {
-        panic(true, "No resource specified for URI `%s`.", uri);
+        panic(true, "No resource specified for URI `%#`.", uri);
     }
 
     bool compressed = false;

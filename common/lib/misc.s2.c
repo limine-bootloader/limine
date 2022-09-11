@@ -6,6 +6,7 @@
 bool verbose = false;
 bool quiet = false;
 bool serial = false;
+bool hash_mismatch_panic = false;
 
 uint8_t bcd_to_int(uint8_t val) {
     return (val & 0x0f) + ((val & 0xf0) >> 4) * 10;

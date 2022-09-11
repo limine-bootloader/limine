@@ -653,6 +653,9 @@ noreturn void _menu(bool first_run) {
     char *serial_str = config_get_value(NULL, 0, "SERIAL");
     serial = serial_str != NULL && strcmp(serial_str, "yes") == 0;
 
+    char *hash_mismatch_panic_str = config_get_value(NULL, 0, "HASH_MISMATCH_PANIC");
+    hash_mismatch_panic = hash_mismatch_panic_str == NULL || strcmp(hash_mismatch_panic_str, "yes") == 0;
+
     char *randomise_mem_str = config_get_value(NULL, 0, "RANDOMISE_MEMORY");
     if (randomise_mem_str == NULL)
         randomise_mem_str = config_get_value(NULL, 0, "RANDOMIZE_MEMORY");

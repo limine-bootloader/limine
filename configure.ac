@@ -71,7 +71,7 @@ else
     (
     $MKDIR_P "$BUILDDIR/cross-files"
     cd "$BUILDDIR/cross-files"
-    TRIPLET=i686-elf "$SRCDIR/cross-detect/configure"
+    TRIPLET=i686-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes WANT_CROSS_READELF=yes "$SRCDIR/cross-detect/configure"
     ) || exit 1
     BUILD_BIOS="limine-bios"
 fi
@@ -114,7 +114,7 @@ else
     (
     $MKDIR_P "$BUILDDIR/cross-files"
     cd "$BUILDDIR/cross-files"
-    TRIPLET=i686-elf "$SRCDIR/cross-detect/configure"
+    TRIPLET=i686-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes WANT_CROSS_READELF=yes "$SRCDIR/cross-detect/configure"
     ) || exit 1
     BUILD_UEFI_IA32="limine-uefi-ia32"
 fi
@@ -133,7 +133,7 @@ else
     (
     $MKDIR_P "$BUILDDIR/cross-files"
     cd "$BUILDDIR/cross-files"
-    TRIPLET=x86_64-elf "$SRCDIR/cross-detect/configure"
+    TRIPLET=x86_64-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes WANT_CROSS_READELF=yes "$SRCDIR/cross-detect/configure"
     ) || exit 1
     BUILD_UEFI_X86_64="limine-uefi-x86-64"
 fi
@@ -152,7 +152,7 @@ else
     (
     mkdir -p "$BUILDDIR/cross-files"
     cd "$BUILDDIR/cross-files"
-    TRIPLET=aarch64-elf "$SRCDIR/cross-detect/configure"
+    TRIPLET=aarch64-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes WANT_CROSS_READELF=yes "$SRCDIR/cross-detect/configure"
     ) || exit 1
     BUILD_UEFI_AARCH64="limine-uefi-aarch64"
 fi

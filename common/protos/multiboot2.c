@@ -188,8 +188,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
         }
     }
 
-    bool section_hdr_info_valid = false;
-    struct elf_section_hdr_info section_hdr_info = {0};
+    struct elf_section_hdr_info *section_hdr_info = NULL;
 
     struct elsewhere_range *ranges;
     uint64_t ranges_count;
@@ -242,14 +241,12 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
                     panic(true, "multiboot2: ELF32 load failure");
 
                 section_hdr_info = elf32_section_hdr_info(kernel);
-                section_hdr_info_valid = true;
                 break;
             case 64: {
                 if (!elf64_load_elsewhere(kernel, &e, &ranges, &ranges_count))
                     panic(true, "multiboot2: ELF64 load failure");
 
                 section_hdr_info = elf64_section_hdr_info(kernel);
-                section_hdr_info_valid = true;
                 break;
             }
             default:
@@ -296,8 +293,8 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     size_t mb2_info_size = get_multiboot2_info_size(
         cmdline,
         modules_size,
-        section_hdr_info_valid ? section_hdr_info.section_entry_size : 0,
-        section_hdr_info_valid ? section_hdr_info.num : 0,
+        section_hdr_info ? section_hdr_info->section_entry_size : 0,
+        section_hdr_info ? section_hdr_info->num : 0,
         smbios_tag_size
     );
 
@@ -308,7 +305,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
         (ranges_count
        + 1 /* mb2 info range */
        + n_modules
-       + (section_hdr_info_valid ? section_hdr_info.num : 0)));
+       + (section_hdr_info ? section_hdr_info->num : 0)));
 
     memcpy(new_ranges, ranges, sizeof(struct elsewhere_range) * ranges_count);
     pmm_free(ranges, sizeof(struct elsewhere_range) * ranges_count);
@@ -336,25 +333,25 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     //////////////////////////////////////////////
     // Create ELF info tag
     //////////////////////////////////////////////
-    if (section_hdr_info_valid == false) {
+    if (section_hdr_info == NULL) {
         if (is_elf_info_requested) {
             panic(true, "multiboot2: Cannot return ELF file information");
         }
     } else {
-        uint32_t size = sizeof(struct multiboot_tag_elf_sections) + section_hdr_info.section_entry_size * section_hdr_info.num;
+        uint32_t size = sizeof(struct multiboot_tag_elf_sections) + section_hdr_info->section_entry_size * section_hdr_info->num;
         struct multiboot_tag_elf_sections *tag = (struct multiboot_tag_elf_sections*)(mb2_info + info_idx);
 
         tag->type = MULTIBOOT_TAG_TYPE_ELF_SECTIONS;
         tag->size = size;
 
-        tag->num = section_hdr_info.num;
-        tag->entsize = section_hdr_info.section_entry_size;
-        tag->shndx = section_hdr_info.str_section_idx;
+        tag->num = section_hdr_info->num;
+        tag->entsize = section_hdr_info->section_entry_size;
+        tag->shndx = section_hdr_info->str_section_idx;
 
-        memcpy(tag->sections, kernel + section_hdr_info.section_offset, section_hdr_info.section_entry_size * section_hdr_info.num);
+        memcpy(tag->sections, kernel + section_hdr_info->section_offset, section_hdr_info->section_entry_size * section_hdr_info->num);
 
-        for (size_t i = 0; i < section_hdr_info.num; i++) {
-            struct elf64_shdr *shdr = (void *)tag->sections + i * section_hdr_info.section_entry_size;
+        for (size_t i = 0; i < section_hdr_info->num; i++) {
+            struct elf64_shdr *shdr = (void *)tag->sections + i * section_hdr_info->section_entry_size;
 
             if (shdr->sh_addr != 0 || shdr->sh_size == 0) {
                 continue;

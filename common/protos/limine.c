@@ -308,10 +308,10 @@ noreturn void limine_load(char *config, char *cmdline) {
     uint64_t image_size;
     bool is_reloc;
 
-    if (!elf64_load(kernel, &entry_point, &slide,
+    if (elf64_load(kernel, &entry_point, NULL, &slide,
                    MEMMAP_KERNEL_AND_MODULES, kaslr,
                    &ranges, &ranges_count,
-                   &physical_base, &virtual_base, &image_size,
+                   true, &physical_base, &virtual_base, &image_size,
                    &is_reloc)) {
         panic(true, "limine: ELF64 load failure");
     }
@@ -319,7 +319,7 @@ noreturn void limine_load(char *config, char *cmdline) {
     kaslr = kaslr && is_reloc;
 
     // Load requests
-    if (elf64_load_section(kernel, &requests, ".limine_reqs", 0, slide)) {
+    if (elf64_load_section(kernel, &requests, ".limine_reqs", 0, slide) == 0) {
         for (size_t i = 0; ; i++) {
             if (requests[i] == NULL) {
                 break;

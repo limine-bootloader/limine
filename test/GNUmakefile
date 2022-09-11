@@ -39,7 +39,7 @@ override INTERNALCFLAGS  :=       \
 	-fpie                \
 	-mgeneral-regs-only  \
 	-mno-red-zone        \
-	-Istivale            \
+	-I../stivale         \
 	-I.                  \
 	-I..
 

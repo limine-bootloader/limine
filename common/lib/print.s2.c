@@ -192,6 +192,25 @@ void vprint(const char *fmt, va_list args) {
                 char c = (char)va_arg(args, int);
                 prn_char(print_buf, &print_buf_i, c); }
                 break;
+            case '#': {
+                bool printed = false;
+                char *str = (char *)va_arg(args, const char *);
+                for (int i = (int)strlen(str) - 1; i >= 0; i--) {
+                    if (str[i] != '#') {
+                        continue;
+                    }
+
+                    prn_nstr(print_buf, &print_buf_i, str, i);
+                    printed = true;
+                    break;
+                }
+
+                if (!printed) {
+                    prn_str(print_buf, &print_buf_i, str);
+                }
+
+                break;
+            }
             default:
                 prn_char(print_buf, &print_buf_i, '?');
                 break;

@@ -486,7 +486,7 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
     }
 
 again:
-    if (kaslr) {
+    if (*is_reloc && kaslr) {
         slide = rand32() & ~(max_align - 1);
 
         if ((*virtual_base - FIXED_HIGHER_HALF_OFFSET_64) + slide + image_size >= 0x80000000) {

@@ -540,9 +540,6 @@ FEAT_START
     }
 
 #if defined (UEFI)
-    struct limine_dtb_response *dtb_response =
-        ext_mem_alloc(sizeof(struct limine_dtb_response));
-
     // TODO: Looking for the DTB should be moved out of here and into lib/, because:
     // 1. We will need it for core bring-up for the SMP request.
     // 2. We will need to patch it for the Linux boot protocol to set the initramfs
@@ -555,11 +552,15 @@ FEAT_START
     for (size_t i = 0; i < gST->NumberOfTableEntries; i++) {
         EFI_CONFIGURATION_TABLE *cur_table = &gST->ConfigurationTable[i];
 
-        if (memcmp(&cur_table->VendorGuid, &dtb_guid, sizeof(EFI_GUID)) == 0)
-            dtb_response->dtb_ptr = (uint64_t)(uintptr_t)cur_table->VendorTable;
+        if (memcmp(&cur_table->VendorGuid, &dtb_guid, sizeof(EFI_GUID)) == 0) {
+            struct limine_dtb_response *dtb_response = 
+                ext_mem_alloc(sizeof(struct limine_dtb_response));
+            dtb_response->dtb_ptr = reported_addr((void *)cur_table->VendorTable);
+            dtb_request->response = reported_addr(dtb_response);
+            break;
+        }
     }
 
-    dtb_request->response = reported_addr(dtb_response);
 #endif
 
 FEAT_END

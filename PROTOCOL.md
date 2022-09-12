@@ -1079,5 +1079,7 @@ struct limine_dtb_response {
 
 * `dtb_ptr` - Virtual pointer to the device tree blob.
 
+Note: If the DTB cannot be found, the response will *not* be generated.
+
 Note: Information contained in the `/chosen` node may not reflect the information
 given by bootloader tags, and as such the `/chosen` node properties should be ignored.

@@ -83,7 +83,8 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
     if (header.magic + header.flags + header.checksum)
         panic(true, "multiboot1: Header checksum is invalid");
 
-    struct elf_section_hdr_info *section_hdr_info = NULL;
+    bool section_hdr_info_valid = false;
+    struct elf_section_hdr_info section_hdr_info = {0};
 
     uint64_t entry_point;
     struct elsewhere_range *ranges;
@@ -132,12 +133,14 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
                     panic(true, "multiboot1: ELF32 load failure");
 
                 section_hdr_info = elf32_section_hdr_info(kernel);
+                section_hdr_info_valid = true;
                 break;
             case 64: {
                 if (!elf64_load_elsewhere(kernel, &entry_point, &ranges, &ranges_count))
                     panic(true, "multiboot1: ELF64 load failure");
 
                 section_hdr_info = elf64_section_hdr_info(kernel);
+                section_hdr_info_valid = true;
                 break;
             }
             default:
@@ -161,8 +164,8 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
         cmdline,
         n_modules,
         modules_cmdlines_size,
-        section_hdr_info ? section_hdr_info->section_entry_size : 0,
-        section_hdr_info ? section_hdr_info->num : 0
+        section_hdr_info_valid ? section_hdr_info.section_entry_size : 0,
+        section_hdr_info_valid ? section_hdr_info.num : 0
     );
 
     // Realloc elsewhere ranges to include mb1 info, modules, and elf sections
@@ -170,7 +173,7 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
         (ranges_count
        + 1 /* mb1 info range */
        + n_modules
-       + (section_hdr_info ? section_hdr_info->num : 0)));
+       + (section_hdr_info_valid ? section_hdr_info.num : 0)));
 
     memcpy(new_ranges, ranges, sizeof(struct elsewhere_range) * ranges_count);
     pmm_free(ranges, sizeof(struct elsewhere_range) * ranges_count);
@@ -197,20 +200,20 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
     struct multiboot1_info *multiboot1_info =
         mb1_info_alloc(&mb1_info_raw, sizeof(struct multiboot1_info));
 
-    if (section_hdr_info != NULL) {
-        multiboot1_info->elf_sect.num = section_hdr_info->num;
-        multiboot1_info->elf_sect.size = section_hdr_info->section_entry_size;
-        multiboot1_info->elf_sect.shndx = section_hdr_info->str_section_idx;
+    if (section_hdr_info_valid == true) {
+        multiboot1_info->elf_sect.num = section_hdr_info.num;
+        multiboot1_info->elf_sect.size = section_hdr_info.section_entry_size;
+        multiboot1_info->elf_sect.shndx = section_hdr_info.str_section_idx;
 
         void *sections = mb1_info_alloc(&mb1_info_raw,
-            section_hdr_info->section_entry_size * section_hdr_info->num);
+            section_hdr_info.section_entry_size * section_hdr_info.num);
 
         multiboot1_info->elf_sect.addr = (uintptr_t)sections - mb1_info_slide;
 
-        memcpy(sections, kernel + section_hdr_info->section_offset, section_hdr_info->section_entry_size * section_hdr_info->num);
+        memcpy(sections, kernel + section_hdr_info.section_offset, section_hdr_info.section_entry_size * section_hdr_info.num);
 
-        for (size_t i = 0; i < section_hdr_info->num; i++) {
-            struct elf64_shdr *shdr = (void *)sections + i * section_hdr_info->section_entry_size;
+        for (size_t i = 0; i < section_hdr_info.num; i++) {
+            struct elf64_shdr *shdr = (void *)sections + i * section_hdr_info.section_entry_size;
 
             if (shdr->sh_addr != 0 || shdr->sh_size == 0) {
                 continue;

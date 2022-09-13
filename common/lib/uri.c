@@ -74,11 +74,6 @@ bool uri_resolve(char *uri, char **resource, char **root, char **path, char **ha
         break;
     }
 
-    for (size_t i = 0; ; i++) {
-        if (uri[i] == 0)
-            break;
-    }
-
     return true;
 }
 
@@ -270,7 +265,7 @@ struct file_handle *uri_open(char *uri) {
                 panic(true, "Blake2b hash for URI `%#` does not match!", uri);
             } else {
                 print("WARNING: Blake2b hash for URI `%#` does not match!\n"
-                        "         Press Y to continue, press any other key otherwise...", uri);
+                      "         Press Y to continue, press any other key to return to menu...", uri);
 
                 char ch = getchar();
                 if (ch != 'Y' && ch != 'y') {

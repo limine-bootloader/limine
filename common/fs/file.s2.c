@@ -106,6 +106,10 @@ void *freadall(struct file_handle *fd, uint32_t type) {
     } else {
         void *ret = ext_mem_alloc_type(fd->size, type);
         fd->read(fd, ret, 0, fd->size);
+        fd->close(fd);
+        fd->is_memfile = true;
+        fd->readall = true;
+        fd->fd = ret;
         return ret;
     }
 }

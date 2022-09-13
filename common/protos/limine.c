@@ -281,11 +281,11 @@ noreturn void limine_load(char *config, char *cmdline) {
     if (kernel_path == NULL)
         panic(true, "limine: KERNEL_PATH not specified");
 
-    print("limine: Loading kernel `%s`...\n", kernel_path);
+    print("limine: Loading kernel `%#`...\n", kernel_path);
 
     struct file_handle *kernel_file;
     if ((kernel_file = uri_open(kernel_path)) == NULL)
-        panic(true, "limine: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
+        panic(true, "limine: Failed to open kernel with path `%#`. Is the path correct?", kernel_path);
 
     uint8_t *kernel = freadall(kernel_file, MEMMAP_BOOTLOADER_RECLAIMABLE);
 
@@ -633,11 +633,11 @@ FEAT_START
             module_cmdline = "";
         }
 
-        print("limine: Loading module `%s`...\n", module_path);
+        print("limine: Loading module `%#`...\n", module_path);
 
         struct file_handle *f;
         if ((f = uri_open(module_path)) == NULL)
-            panic(true, "limine: Failed to open module with path `%s`. Is the path correct?", module_path);
+            panic(true, "limine: Failed to open module with path `%#`. Is the path correct?", module_path);
 
         struct limine_file *l = &modules[i];
         *l = get_file(f, module_cmdline);

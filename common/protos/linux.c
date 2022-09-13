@@ -357,10 +357,10 @@ noreturn void linux_load(char *config, char *cmdline) {
     if (kernel_path == NULL)
         panic(true, "linux: KERNEL_PATH not specified");
 
-    print("linux: Loading kernel `%s`...\n", kernel_path);
+    print("linux: Loading kernel `%#`...\n", kernel_path);
 
     if ((kernel_file = uri_open(kernel_path)) == NULL)
-        panic(true, "linux: Failed to open kernel with path `%s`. Is the path correct?", kernel_path);
+        panic(true, "linux: Failed to open kernel with path `%#`. Is the path correct?", kernel_path);
 
     uint32_t signature;
     fread(kernel_file, &signature, 0x202, sizeof(uint32_t));
@@ -475,11 +475,11 @@ noreturn void linux_load(char *config, char *cmdline) {
         if (module_path == NULL)
             break;
 
-        print("linux: Loading module `%s`...\n", module_path);
+        print("linux: Loading module `%#`...\n", module_path);
 
         struct file_handle *module;
         if ((module = uri_open(module_path)) == NULL)
-            panic(true, "linux: Could not open `%s`", module_path);
+            panic(true, "linux: Could not open `%#`", module_path);
 
         fread(module, (void *)_modules_mem_base, 0, module->size);
 

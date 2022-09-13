@@ -9,10 +9,13 @@
 #include <lib/print.h>
 #include <pxe/tftp.h>
 #include <tinf.h>
+#include <menu.h>
+#include <lib/readline.h>
+#include <crypt/blake2b.h>
 
-// A URI takes the form of: resource://root/path
+// A URI takes the form of: resource://root/path#hash
 // The following function splits up a URI into its componenets
-bool uri_resolve(char *uri, char **resource, char **root, char **path) {
+bool uri_resolve(char *uri, char **resource, char **root, char **path, char **hash) {
     size_t length = strlen(uri) + 1;
     char *buf = ext_mem_alloc(length);
     memcpy(buf, uri, length);
@@ -50,6 +53,31 @@ bool uri_resolve(char *uri, char **resource, char **root, char **path) {
     if (*uri == 0)
         return false;
     *path = uri;
+
+    // Get hash
+    for (int i = (int)strlen(uri) - 1; i >= 0; i--) {
+        if (uri[i] != '#') {
+            continue;
+        }
+
+        uri[i++] = 0;
+
+        if (hash != NULL) {
+            *hash = uri + i;
+        }
+
+        if (strlen(uri + i) != 128) {
+            panic(true, "Blake2b hash must be 128 characters long");
+            return false;
+        }
+
+        break;
+    }
+
+    for (size_t i = 0; ; i++) {
+        if (uri[i] == 0)
+            break;
+    }
 
     return true;
 }
@@ -190,11 +218,13 @@ static struct file_handle *uri_boot_dispatch(char *s_part, char *path) {
 struct file_handle *uri_open(char *uri) {
     struct file_handle *ret;
 
-    char *resource, *root, *path;
-    uri_resolve(uri, &resource, &root, &path);
+    char *resource = NULL, *root = NULL, *path = NULL, *hash = NULL;
+    if (!uri_resolve(uri, &resource, &root, &path, &hash)) {
+        return NULL;
+    }
 
     if (resource == NULL) {
-        panic(true, "No resource specified for URI `%s`.", uri);
+        panic(true, "No resource specified for URI `%#`.", uri);
     }
 
     bool compressed = false;
@@ -223,6 +253,32 @@ struct file_handle *uri_open(char *uri) {
 #endif
     } else {
         panic(true, "Resource `%s` not valid.", resource);
+    }
+
+    if (hash != NULL && ret != NULL) {
+        uint8_t out_buf[BLAKE2B_OUT_BYTES];
+        void *file_buf = freadall(ret, MEMMAP_BOOTLOADER_RECLAIMABLE);
+        blake2b(out_buf, file_buf, ret->size);
+        uint8_t hash_buf[BLAKE2B_OUT_BYTES];
+
+        for (size_t i = 0; i < sizeof(hash_buf); i++) {
+            hash_buf[i] = digit_to_int(hash[i * 2]) << 4 | digit_to_int(hash[i * 2 + 1]);
+        }
+
+        if (memcmp(hash_buf, out_buf, sizeof(out_buf)) != 0) {
+            if (hash_mismatch_panic) {
+                panic(true, "Blake2b hash for URI `%#` does not match!", uri);
+            } else {
+                print("WARNING: Blake2b hash for URI `%#` does not match!\n"
+                        "         Press Y to continue, press any other key otherwise...", uri);
+
+                char ch = getchar();
+                if (ch != 'Y' && ch != 'y') {
+                    menu(false);
+                }
+                print("\n");
+            }
+        }
     }
 
     if (compressed && ret != NULL) {

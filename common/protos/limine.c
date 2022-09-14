@@ -553,7 +553,7 @@ FEAT_START
         EFI_CONFIGURATION_TABLE *cur_table = &gST->ConfigurationTable[i];
 
         if (memcmp(&cur_table->VendorGuid, &dtb_guid, sizeof(EFI_GUID)) == 0) {
-            struct limine_dtb_response *dtb_response = 
+            struct limine_dtb_response *dtb_response =
                 ext_mem_alloc(sizeof(struct limine_dtb_response));
             dtb_response->dtb_ptr = reported_addr((void *)cur_table->VendorTable);
             dtb_request->response = reported_addr(dtb_response);
@@ -878,21 +878,18 @@ FEAT_START
         break; // next feature
     }
 
-    struct limine_smp_info *smp_array;
-    struct smp_information *smp_info;
+    struct limine_smp_info *smp_info;
     size_t cpu_count;
 #if defined (__x86_64__) || defined (__i386__)
     uint32_t bsp_lapic_id;
-    smp_info = init_smp(0, (void **)&smp_array,
-                        &cpu_count, &bsp_lapic_id,
+    smp_info = init_smp(&cpu_count, &bsp_lapic_id,
                         true, want_5lv,
                         pagemap, smp_request->flags & LIMINE_SMP_X2APIC, nx_available,
                         direct_map_offset, true);
 #elif defined (__aarch64__)
     uint64_t bsp_mpidr;
 
-    smp_info = init_smp(0, (void **)&smp_array,
-                        &cpu_count, &bsp_mpidr,
+    smp_info = init_smp(&cpu_count, &bsp_mpidr,
                         pagemap, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa), LIMINE_SCTLR);
 #else
 #error Unknown architecture
@@ -904,7 +901,7 @@ FEAT_START
 
     for (size_t i = 0; i < cpu_count; i++) {
         void *cpu_stack = ext_mem_alloc(stack_size) + stack_size;
-        smp_info[i].stack_addr = reported_addr(cpu_stack + stack_size);
+        smp_info[i].reserved = reported_addr(cpu_stack + stack_size);
     }
 
     struct limine_smp_response *smp_response =
@@ -921,7 +918,7 @@ FEAT_START
 
     uint64_t *smp_list = ext_mem_alloc(cpu_count * sizeof(uint64_t));
     for (size_t i = 0; i < cpu_count; i++) {
-        smp_list[i] = reported_addr(&smp_array[i]);
+        smp_list[i] = reported_addr(&smp_info[i]);
     }
 
     smp_response->cpu_count = cpu_count;

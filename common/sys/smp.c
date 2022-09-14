@@ -11,6 +11,8 @@
 #include <sys/gdt.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>
+#define LIMINE_NO_POINTERS
+#include <limine.h>
 
 struct madt {
     struct sdt header;
@@ -74,7 +76,7 @@ struct trampoline_passed_info {
 } __attribute__((packed));
 
 static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
-                         struct smp_information *info_struct,
+                         struct limine_smp_info *info_struct,
                          bool longmode, bool lv5, uint32_t pagemap,
                          bool x2apic, bool nx, uint64_t hhdm, bool wp) {
     // Prepare the trampoline
@@ -132,9 +134,7 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
     return false;
 }
 
-struct smp_information *init_smp(size_t    header_hack_size,
-                                 void    **header_ptr,
-                                 size_t   *cpu_count,
+struct limine_smp_info *init_smp(size_t   *cpu_count,
                                  uint32_t *_bsp_lapic_id,
                                  bool      longmode,
                                  bool      lv5,
@@ -213,9 +213,7 @@ struct smp_information *init_smp(size_t    header_hack_size,
         }
     }
 
-    *header_ptr = ext_mem_alloc(
-                  header_hack_size + max_cpus * sizeof(struct smp_information));
-    struct smp_information *ret = *header_ptr + header_hack_size;
+    struct limine_smp_info *ret = ext_mem_alloc(max_cpus * sizeof(struct limine_smp_info));
     *cpu_count = 0;
 
     // Try to start all APs
@@ -231,10 +229,10 @@ struct smp_information *init_smp(size_t    header_hack_size,
                 if (!((lapic->flags & 1) ^ ((lapic->flags >> 1) & 1)))
                     continue;
 
-                struct smp_information *info_struct = &ret[*cpu_count];
+                struct limine_smp_info *info_struct = &ret[*cpu_count];
 
-                info_struct->acpi_processor_uid = lapic->acpi_processor_uid;
-                info_struct->lapic_id           = lapic->lapic_id;
+                info_struct->processor_id = lapic->acpi_processor_uid;
+                info_struct->lapic_id = lapic->lapic_id;
 
                 // Do not try to restart the BSP
                 if (lapic->lapic_id == bsp_lapic_id) {
@@ -268,10 +266,10 @@ struct smp_information *init_smp(size_t    header_hack_size,
                 if (!((x2lapic->flags & 1) ^ ((x2lapic->flags >> 1) & 1)))
                     continue;
 
-                struct smp_information *info_struct = &ret[*cpu_count];
+                struct limine_smp_info *info_struct = &ret[*cpu_count];
 
-                info_struct->acpi_processor_uid = x2lapic->acpi_processor_uid;
-                info_struct->lapic_id           = x2lapic->x2apic_id;
+                info_struct->processor_id = x2lapic->acpi_processor_uid;
+                info_struct->lapic_id = x2lapic->x2apic_id;
 
                 // Do not try to restart the BSP
                 if (x2lapic->x2apic_id == bsp_x2apic_id) {
@@ -325,7 +323,7 @@ enum {
 static uint32_t psci_cpu_on = 0xC4000003;
 
 static bool try_start_ap(int boot_method, uint64_t method_ptr,
-                         struct smp_information *info_struct,
+                         struct limine_smp_info *info_struct,
                          uint64_t ttbr0, uint64_t ttbr1, uint64_t mair,
                          uint64_t tcr, uint64_t sctlr) {
     // Prepare the trampoline
@@ -350,7 +348,7 @@ static bool try_start_ap(int boot_method, uint64_t method_ptr,
     passed_info->smp_tpl_tcr         = tcr;
     passed_info->smp_tpl_sctlr       = sctlr;
 
-    // Cache coherency between the I-Cache and D-Cache is not guaranteed by the 
+    // Cache coherency between the I-Cache and D-Cache is not guaranteed by the
     // architecture and as such we must perform I-Cache invalidation.
     // Additionally, the newly-booted AP may have caches disabled which implies
     // it possibly does not see our cache contents either.
@@ -427,9 +425,7 @@ static bool try_start_ap(int boot_method, uint64_t method_ptr,
     return false;
 }
 
-static struct smp_information *try_acpi_smp(size_t    header_hack_size,
-                                            void    **header_ptr,
-                                            size_t   *cpu_count,
+static struct limine_smp_info *try_acpi_smp(size_t   *cpu_count,
                                             uint64_t *_bsp_mpidr,
                                             pagemap_t pagemap,
                                             uint64_t  mair,
@@ -459,7 +455,7 @@ static struct smp_information *try_acpi_smp(size_t    header_hack_size,
     uint64_t bsp_mpidr;
     asm volatile ("mrs %0, mpidr_el1" : "=r"(bsp_mpidr));
 
-    // This bit is Res1 in the system reg, but not included in the MPIDR from MADT 
+    // This bit is Res1 in the system reg, but not included in the MPIDR from MADT
     bsp_mpidr &= ~((uint64_t)1 << 31);
 
     *_bsp_mpidr = bsp_mpidr;
@@ -488,9 +484,7 @@ static struct smp_information *try_acpi_smp(size_t    header_hack_size,
         }
     }
 
-    *header_ptr = ext_mem_alloc(
-                  header_hack_size + max_cpus * sizeof(struct smp_information));
-    struct smp_information *ret = *header_ptr + header_hack_size;
+    struct limine_smp_info *ret = ext_mem_alloc(max_cpus * sizeof(struct limine_smp_info));
     *cpu_count = 0;
 
     // Try to start all APs
@@ -506,7 +500,7 @@ static struct smp_information *try_acpi_smp(size_t    header_hack_size,
                 if (!(gicc->flags & 1))
                     continue;
 
-                struct smp_information *info_struct = &ret[*cpu_count];
+                struct limine_smp_info *info_struct = &ret[*cpu_count];
 
                 info_struct->acpi_processor_uid = gicc->acpi_uid;
                 info_struct->gic_iface_no       = gicc->iface_no;
@@ -540,22 +534,20 @@ static struct smp_information *try_acpi_smp(size_t    header_hack_size,
     return ret;
 }
 
-struct smp_information *init_smp(size_t    header_hack_size,
-                                 void    **header_ptr,
-                                 size_t   *cpu_count,
+struct limine_smp_info *init_smp(size_t   *cpu_count,
                                  uint64_t *bsp_mpidr,
                                  pagemap_t pagemap,
                                  uint64_t  mair,
                                  uint64_t  tcr,
                                  uint64_t  sctlr) {
-    struct smp_information *info = NULL;
+    struct limine_smp_info *info = NULL;
 
-    //if (dtb_is_present() && (info = try_dtb_smp(header_hack_size, header_ptr, cpu_count,
+    //if (dtb_is_present() && (info = try_dtb_smp(cpu_count,
     //                _bsp_iface_no, pagemap, mair, tcr, sctlr)))
     //    return info;
 
     // No RSDP means no ACPI
-    if (acpi_get_rsdp() && (info = try_acpi_smp(header_hack_size, header_ptr, cpu_count,
+    if (acpi_get_rsdp() && (info = try_acpi_smp(cpu_count,
                     bsp_mpidr, pagemap, mair, tcr, sctlr)))
         return info;
 

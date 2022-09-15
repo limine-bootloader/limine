@@ -50,6 +50,7 @@ extern int term_backend;
 extern size_t term_rows, term_cols;
 extern bool term_runtime;
 extern bool early_term;
+extern bool term_enabled_once;
 
 void term_fallback(void);
 

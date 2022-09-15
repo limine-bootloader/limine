@@ -117,7 +117,7 @@ AC_SUBST(BUILD_UEFI_IA32)
 BUILD_UEFI_X86_64="$BUILD_ALL"
 
 AC_ARG_ENABLE([uefi-x86-64],
-    AS_HELP_STRING([--enable-uefi-x86_64], [enable building the x86_64 UEFI port]),
+    AS_HELP_STRING([--enable-uefi-x86-64], [enable building the x86-64 UEFI port]),
     BUILD_UEFI_X86_64="$enableval")
 
 if test "x$BUILD_UEFI_X86_64" = "xno"; then

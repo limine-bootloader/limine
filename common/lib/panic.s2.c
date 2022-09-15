@@ -29,14 +29,22 @@ noreturn void panic(bool allow_menu, const char *fmt, ...) {
 
     is_nested = true;
 
-    if (
 #if defined (BIOS)
-      stage3_loaded == true &&
-#endif
-      term_backend == NOT_READY) {
+    if (stage3_loaded == true && term_backend == NOT_READY) {
         early_term = true;
         term_vbe(NULL, 0, 0);
     }
+#endif
+
+#if defined (UEFI)
+    if (term_backend == NOT_READY) {
+        if (term_enabled_once) {
+            term_vbe(NULL, 0, 0);
+        } else {
+            term_fallback();
+        }
+    }
+#endif
 
 nested:
     if (term_backend == NOT_READY) {

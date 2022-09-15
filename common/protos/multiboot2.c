@@ -740,7 +740,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
         }
 
         // Create the EFI memory map tag.
-        uint32_t size = sizeof(struct multiboot_tag_efi_mmap) * efi_mmap_size;
+        uint32_t size = sizeof(struct multiboot_tag_efi_mmap) + efi_mmap_size;
         struct multiboot_tag_efi_mmap *mmap_tag = (struct multiboot_tag_efi_mmap *)(mb2_info + info_idx);
 
         mmap_tag->type = MULTIBOOT_TAG_TYPE_EFI_MMAP;

@@ -7,6 +7,7 @@
 #  include <lib/real.h>
 #elif defined (UEFI)
 #  include <efi.h>
+#  include <crypt/blake2b.h>
 #endif
 #include <lib/misc.h>
 #include <lib/print.h>
@@ -311,9 +312,10 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
             continue;
         }
 
-        uint32_t crc32 = get_crc32(unique_sector_pool, 4096);
+        uint8_t b2b[BLAKE2B_OUT_BYTES];
+        blake2b(b2b, unique_sector_pool, 4096);
 
-        if (crc32 == volume_index[i]->unique_sector_crc32) {
+        if (memcmp(b2b, volume_index[i]->unique_sector_b2b, BLAKE2B_OUT_BYTES) == 0) {
             return volume_index[i];
         }
     }
@@ -386,14 +388,14 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
     return NULL;
 }
 
-static struct volume *volume_by_unique_sector(uint64_t sect, uint32_t crc32) {
+static struct volume *volume_by_unique_sector(uint64_t sect, void *b2b) {
     for (size_t i = 0; i < volume_index_i; i++) {
         if (volume_index[i]->unique_sector_valid == false) {
             continue;
         }
 
         if (volume_index[i]->unique_sector == sect
-         && volume_index[i]->unique_sector_crc32 == crc32) {
+         && memcmp(volume_index[i]->unique_sector_b2b, b2b, BLAKE2B_OUT_BYTES) == 0) {
             return volume_index[i];
         }
     }
@@ -424,14 +426,15 @@ static void find_unique_sectors(void) {
                 break;
             }
 
-            uint32_t crc32 = get_crc32(unique_sector_pool, 4096);
+            uint8_t b2b[BLAKE2B_OUT_BYTES];
+            blake2b(b2b, unique_sector_pool, 4096);
 
             uint64_t uniq = (uint64_t)j * volume_index[i]->block_io->Media->BlockSize;
 
-            if (volume_by_unique_sector(uniq, crc32) == NULL) {
+            if (volume_by_unique_sector(uniq, b2b) == NULL) {
                 volume_index[i]->unique_sector_valid = true;
                 volume_index[i]->unique_sector = uniq;
-                volume_index[i]->unique_sector_crc32 = crc32;
+                memcpy(volume_index[i]->unique_sector_b2b, b2b, BLAKE2B_OUT_BYTES);
                 break;
             }
         }

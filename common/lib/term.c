@@ -109,6 +109,8 @@ void term_vbe(char *config, size_t width, size_t height) {
     term_context_restore = gterm_context_restore;
     term_full_refresh = gterm_full_refresh;
 
+    term_enabled_once = true;
+
     term_backend = VBE;
 }
 
@@ -219,6 +221,8 @@ void term_textmode(void) {
     term_context_save = text_context_save;
     term_context_restore = text_context_restore;
     term_full_refresh = text_full_refresh;
+
+    term_enabled_once = true;
 
     term_backend = TEXTMODE;
 }

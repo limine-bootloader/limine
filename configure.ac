@@ -41,16 +41,6 @@ if ! test "x$FIND_FOUND" = "xyes"; then
     AC_MSG_ERROR([find not found, please install find before configuring])
 fi
 
-AC_CHECK_PROG([NASM_FOUND], [nasm], [yes])
-if ! test "x$NASM_FOUND" = "xyes"; then
-    AC_MSG_ERROR([nasm not found, please install nasm before configuring])
-fi
-
-AC_CHECK_PROG([GZIP_FOUND], [gzip], [yes])
-if ! test "x$GZIP_FOUND" = "xyes"; then
-    AC_MSG_ERROR([gzip not found, please install gzip before configuring])
-fi
-
 rm -rf "$BUILDDIR/cross-files"
 
 BUILD_ALL="no"
@@ -74,6 +64,8 @@ else
     TRIPLET=i686-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes WANT_CROSS_READELF=yes "$SRCDIR/cross-detect/configure"
     ) || exit 1
     BUILD_BIOS="limine-bios"
+    NEED_NASM=yes
+    NEED_GZIP=yes
 fi
 
 AC_SUBST(BUILD_BIOS)
@@ -117,6 +109,7 @@ else
     TRIPLET=i686-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes WANT_CROSS_READELF=yes "$SRCDIR/cross-detect/configure"
     ) || exit 1
     BUILD_UEFI_IA32="limine-uefi-ia32"
+    NEED_NASM=yes
 fi
 
 AC_SUBST(BUILD_UEFI_IA32)
@@ -136,6 +129,7 @@ else
     TRIPLET=x86_64-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes WANT_CROSS_READELF=yes "$SRCDIR/cross-detect/configure"
     ) || exit 1
     BUILD_UEFI_X86_64="limine-uefi-x86-64"
+    NEED_NASM=yes
 fi
 
 AC_SUBST(BUILD_UEFI_X86_64)
@@ -158,6 +152,20 @@ if ! test "x$BUILD_CD_EFI" = "xno"; then
 fi
 
 AC_SUBST(BUILD_CD_EFI)
+
+if test "x$NEED_NASM" = "xyes"; then
+    AC_CHECK_PROG([NASM_FOUND], [nasm], [yes])
+    if ! test "x$NASM_FOUND" = "xyes"; then
+        AC_MSG_ERROR([nasm not found, please install nasm before configuring])
+    fi
+fi
+
+if test "x$NEED_GZIP" = "xyes"; then
+    AC_CHECK_PROG([GZIP_FOUND], [gzip], [yes])
+    if ! test "x$GZIP_FOUND" = "xyes"; then
+        AC_MSG_ERROR([gzip not found, please install gzip before configuring])
+    fi
+fi
 
 AC_ARG_VAR(CROSS_TOOLCHAIN, [alternative toolchain prefix (or 'llvm')])
 AC_ARG_VAR(CROSS_CC, [C compiler command for Limine])

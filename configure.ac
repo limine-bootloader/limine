@@ -32,8 +32,8 @@ AC_PROG_INSTALL
 case "$INSTALL" in
     .*) INSTALL="$(cd "$(dirname "$INSTALL")" && pwd -P)/$(basename "$INSTALL")" ;;
 esac
-AC_PROG_GREP
 AC_PROG_SED
+AC_PROG_GREP
 AC_PROG_AWK
 
 AC_CHECK_PROG([FIND_FOUND], [find], [yes])
@@ -106,7 +106,7 @@ else
     (
     $MKDIR_P "$BUILDDIR/cross-files"
     cd "$BUILDDIR/cross-files"
-    TRIPLET=i686-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes WANT_CROSS_READELF=yes "$SRCDIR/cross-detect/configure"
+    TRIPLET=i686-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes "$SRCDIR/cross-detect/configure"
     ) || exit 1
     BUILD_UEFI_IA32="limine-uefi-ia32"
     NEED_NASM=yes
@@ -126,7 +126,7 @@ else
     (
     $MKDIR_P "$BUILDDIR/cross-files"
     cd "$BUILDDIR/cross-files"
-    TRIPLET=x86_64-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes WANT_CROSS_READELF=yes "$SRCDIR/cross-detect/configure"
+    TRIPLET=x86_64-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes "$SRCDIR/cross-detect/configure"
     ) || exit 1
     BUILD_UEFI_X86_64="limine-uefi-x86-64"
     NEED_NASM=yes

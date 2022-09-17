@@ -617,7 +617,6 @@ bool gterm_init(char *config, size_t *_rows, size_t *_cols, size_t width, size_t
      && width == 0
      && height == 0
      && fbinfo.framebuffer_bpp == 32
-     && !early_term
      && serial == last_serial
      && config == last_config) {
         *_rows = rows;
@@ -633,7 +632,6 @@ bool gterm_init(char *config, size_t *_rows, size_t *_cols, size_t width, size_t
      && fbinfo.framebuffer_width == width
      && fbinfo.framebuffer_height == height
      && fbinfo.framebuffer_bpp == 32
-     && !early_term
      && serial == last_serial
      && config == last_config) {
         *_rows = rows;
@@ -641,8 +639,6 @@ bool gterm_init(char *config, size_t *_rows, size_t *_cols, size_t width, size_t
         gterm_clear(true);
         return true;
     }
-
-    early_term = false;
 
     // We force bpp to 32
     if (!fb_init(&fbinfo, width, height, 32))

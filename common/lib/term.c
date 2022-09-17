@@ -52,7 +52,7 @@ void term_deinit(void) {
             gterm_deinit();
     }
 
-    term_notready();
+    term_fallback();
 }
 
 void term_vbe(char *config, size_t width, size_t height) {
@@ -108,8 +108,6 @@ void term_vbe(char *config, size_t width, size_t height) {
     term_context_save = gterm_context_save;
     term_context_restore = gterm_context_restore;
     term_full_refresh = gterm_full_refresh;
-
-    term_enabled_once = true;
 
     term_backend = VBE;
 }
@@ -183,8 +181,6 @@ void term_textmode(void) {
         return;
     }
 
-    term_notready();
-
     init_vga_textmode(&term_rows, &term_cols, true);
 
     if (serial) {
@@ -222,8 +218,6 @@ void term_textmode(void) {
     term_context_restore = text_context_restore;
     term_full_refresh = text_full_refresh;
 
-    term_enabled_once = true;
-
     term_backend = TEXTMODE;
 }
 #endif
@@ -260,9 +254,6 @@ static uint8_t xfer_buf[TERM_XFER_CHUNK];
 bool term_autoflush = true;
 
 void term_write(uint64_t buf, uint64_t count) {
-    if (term_backend == NOT_READY)
-        return;
-
     switch (count) {
         case TERM_CTX_SIZE: {
             uint64_t ret = context_size();

@@ -5,13 +5,10 @@
 #include <lib/misc.h>
 #include <lib/real.h>
 
-bool early_term = false;
-
 no_unwind int current_video_mode = -1;
-int term_backend = NOT_READY;
+int term_backend = _NOT_READY;
 size_t term_rows, term_cols;
 bool term_runtime = false;
-bool term_enabled_once = false;
 
 void (*raw_putchar)(uint8_t c);
 void (*clear)(bool move);
@@ -139,6 +136,8 @@ static void fallback_get_cursor_pos(size_t *x, size_t *y) {
 }
 #endif
 
+static void term_notready(void);
+
 void term_fallback(void) {
 #if defined (UEFI)
     if (!efi_boot_services_exited) {
@@ -194,9 +193,7 @@ static void notready_uint64_t(uint64_t n) {
     (void)n;
 }
 
-void term_notready(void) {
-    term_backend = NOT_READY;
-
+static void term_notready(void) {
     raw_putchar = notready_raw_putchar;
     clear = notready_clear;
     enable_cursor = notready_void;

@@ -601,8 +601,6 @@ noreturn void _menu(bool timeout_enabled) {
         randomise_mem_str = config_get_value(NULL, 0, "RANDOMIZE_MEMORY");
     bool randomise_mem = randomise_mem_str != NULL && strcmp(randomise_mem_str, "yes") == 0;
     if (randomise_mem) {
-        term_vbe(NULL, 0, 0);
-        early_term = true;
         pmm_randomise_memory();
     }
 
@@ -650,6 +648,7 @@ noreturn void _menu(bool timeout_enabled) {
         // default entry is valid.
         print_tree(NULL, 0, 0, selected_entry, menu_tree, &selected_menu_entry);
         if (selected_menu_entry == NULL || selected_menu_entry->sub != NULL) {
+            quiet = false;
             print("Default entry is not valid or directory, booting to menu.\n");
             skip_timeout = true;
         } else {
@@ -664,7 +663,6 @@ noreturn void _menu(bool timeout_enabled) {
     char *graphics = "yes";
 #endif
 
-reterm:
     if (graphics == NULL || strcmp(graphics, "no") != 0) {
         size_t req_width = 0, req_height = 0, req_bpp = 0;
 
@@ -695,6 +693,7 @@ refresh:
     }
 
     while (menu_tree == NULL) {
+        quiet = false;
         print("Config file %s.\n\n", config_ready ? "contains no valid entries" : "not found");
         print("For information on the format of Limine config entries, consult CONFIG.md in\n");
         print("the root of the Limine source repository.\n\n");
@@ -765,14 +764,10 @@ refresh:
             term_double_buffer_flush();
             if ((c = pit_sleep_and_quit_on_keypress(1))) {
                 skip_timeout = true;
-                if (quiet) {
-                    quiet = false;
-                    goto reterm;
-                } else {
-                    print("\e[2K");
-                    term_double_buffer_flush();
-                    goto timeout_aborted;
-                }
+                quiet = false;
+                print("\e[2K");
+                term_double_buffer_flush();
+                goto timeout_aborted;
             }
         }
         goto autoboot;
@@ -826,10 +821,10 @@ timeout_aborted:
                     selected_menu_entry->expanded = !selected_menu_entry->expanded;
                     goto refresh;
                 }
-                if (term_backend == NOT_READY) {
+                if (term_backend == FALLBACK) {
                     term_vbe(NULL, 0, 0);
 #if defined (BIOS)
-                    if (term_backend == NOT_READY) {
+                    if (term_backend == FALLBACK) {
                         term_textmode();
                     }
 #endif
@@ -893,5 +888,5 @@ noreturn void boot(char *config) {
         chainload(config);
     }
 
-    panic(true, "Incorrect protocol specified for kernel.");
+    panic(true, "Unsupported protocol specified for kernel.");
 }

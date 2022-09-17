@@ -36,14 +36,12 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 
     EFI_STATUS status;
 
+    term_fallback();
+
     status = gBS->SetWatchdogTimer(0, 0x10000, 0, NULL);
     if (status) {
-        term_vbe(NULL, 0, 0);
-        early_term = true;
         print("WARNING: Failed to disable watchdog timer!\n");
     }
-
-    term_notready();
 
     init_memmap();
 
@@ -62,9 +60,6 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
     EFI_HANDLE current_handle = ImageHandle;
     for (;;) {
         if (current_handle == NULL) {
-            term_vbe(NULL, 0, 0);
-            early_term = true;
-
             print("WARNING: Could not meaningfully match the boot device handle with a volume.\n");
             print("         Using the first volume containing a Limine configuration!\n");
 
@@ -92,8 +87,9 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
                 break;
             }
 
-            if (boot_volume != NULL)
+            if (boot_volume != NULL) {
                 stage3_common();
+            }
 
             panic(false, "No volume contained a Limine configuration file");
         }
@@ -110,8 +106,9 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 
         boot_volume = disk_volume_from_efi_handle(loaded_image->DeviceHandle);
 
-        if (boot_volume != NULL)
+        if (boot_volume != NULL) {
             stage3_common();
+        }
 
         current_handle = loaded_image->ParentHandle;
     }
@@ -119,8 +116,6 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 #endif
 
 noreturn void stage3_common(void) {
-    term_notready();
-
     init_flush_irqs();
     init_io_apics();
 

@@ -11,6 +11,29 @@
 #include <sys/cpu.h>
 #include <drivers/serial.h>
 
+#if defined (BIOS)
+static void s2_print(const char *s, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        struct rm_regs r = {0};
+        char c = s[i];
+
+        switch (c) {
+            case '\n':
+                r.eax = 0x0e00 | '\r';
+                rm_int(0x10, &r, &r);
+                r = (struct rm_regs){0};
+                r.eax = 0x0e00 | '\n';
+                rm_int(0x10, &r, &r);
+                break;
+            default:
+                r.eax = 0x0e00 | s[i];
+                rm_int(0x10, &r, &r);
+                break;
+        }
+    }
+}
+#endif
+
 static const char *base_digits = "0123456789abcdef";
 
 #define PRINT_BUF_MAX 4096
@@ -199,7 +222,15 @@ void vprint(const char *fmt, va_list args) {
     }
 
 out:
-    term_write((uint64_t)(uintptr_t)print_buf, print_buf_i);
+#if defined (BIOS)
+    if (stage3_loaded) {
+#endif
+        term_write((uint64_t)(uintptr_t)print_buf, print_buf_i);
+#if defined (BIOS)
+    } else {
+        s2_print(print_buf, print_buf_i);
+    }
+#endif
 
     for (size_t i = 0; i < print_buf_i; i++) {
 #if defined (__x86_64__) || defined (__i386__)

@@ -3,7 +3,7 @@
 #include <lib/misc.h>
 #include <lib/print.h>
 
-bool verbose = true;
+bool verbose = false;
 bool quiet = false;
 bool serial = false;
 bool hash_mismatch_panic = false;

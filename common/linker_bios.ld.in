@@ -41,10 +41,9 @@ SECTIONS
         getchar = .;
         menu = .;
         term_write = .;
-        term_vbe = .;
         stage3_addr = .;
 #else
-#ifdef LINKER_NOMAP
+#ifdef LINKER_NOS2MAP
         stage2_map = .;
 #else
         *(.stage2_map)

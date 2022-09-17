@@ -21,45 +21,11 @@ noreturn void panic(bool allow_menu, const char *fmt, ...) {
 
     quiet = false;
 
-    static bool is_nested = false;
-
-    if (is_nested) {
-        goto nested;
-    }
-
-    is_nested = true;
-
-#if defined (BIOS)
-    if (stage3_loaded == true && term_backend == NOT_READY) {
-        early_term = true;
-        term_vbe(NULL, 0, 0);
-    }
-#endif
-
-#if defined (UEFI)
-    if (term_backend == NOT_READY) {
-        if (term_enabled_once) {
-            term_vbe(NULL, 0, 0);
-        } else {
-            term_fallback();
-        }
-    }
-#endif
-
-nested:
-    if (term_backend == NOT_READY) {
-        term_fallback();
-    }
-
-#if defined (BIOS)
-    if (stage3_loaded) {
-#endif
+    if (term_backend != FALLBACK) {
         print("\033[31mPANIC\033[37;1m\033[0m: ");
-#if defined (BIOS)
     } else {
         print("PANIC: ");
     }
-#endif
     vprint(fmt, args);
 
     va_end(args);

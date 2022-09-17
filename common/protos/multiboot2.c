@@ -498,6 +498,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
         tag->common.size = sizeof(struct multiboot_tag_framebuffer);
 
         term_deinit();
+        quiet = true;
 
         if (fbtag) {
             size_t req_width = fbtag->width;

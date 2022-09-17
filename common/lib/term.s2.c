@@ -5,7 +5,7 @@
 #include <lib/misc.h>
 #include <lib/real.h>
 
-no_unwind int current_video_mode = -1;
+int current_video_mode = -1;
 int term_backend = _NOT_READY;
 size_t term_rows, term_cols;
 bool term_runtime = false;

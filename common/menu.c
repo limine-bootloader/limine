@@ -539,9 +539,9 @@ static size_t print_tree(const char *shift, size_t level, size_t base_index, siz
 
 static struct memmap_entry *rewound_memmap = NULL;
 static size_t rewound_memmap_entries = 0;
-static uint8_t *rewound_data;
+static no_unwind uint8_t *rewound_data;
 #if defined (BIOS)
-static uint8_t *rewound_s2_data;
+static no_unwind uint8_t *rewound_s2_data;
 #endif
 
 extern symbol data_begin;
@@ -577,6 +577,8 @@ noreturn void _menu(bool timeout_enabled) {
         memcpy(rewound_s2_data, s2_data_begin, s2_data_size);
 #endif
     }
+
+    term_fallback();
 
     if (bad_config == false) {
         volume_iterate_parts(boot_volume,

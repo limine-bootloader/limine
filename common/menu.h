@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdnoreturn.h>
 
-noreturn void menu(bool timeout_enabled);
+noreturn void menu(bool first_run);
 
 noreturn void boot(char *config);
 

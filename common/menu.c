@@ -548,7 +548,7 @@ extern symbol s2_data_begin;
 extern symbol s2_data_end;
 #endif
 
-noreturn void _menu(bool timeout_enabled) {
+noreturn void _menu(bool first_run) {
     size_t data_size = (uintptr_t)data_end - (uintptr_t)data_begin;
 #if defined (BIOS)
     size_t s2_data_size = (uintptr_t)s2_data_end - (uintptr_t)s2_data_begin;
@@ -575,7 +575,9 @@ noreturn void _menu(bool timeout_enabled) {
 #endif
     }
 
-    term_fallback();
+    if (!first_run) {
+        term_fallback();
+    }
 
     if (bad_config == false) {
         volume_iterate_parts(boot_volume,
@@ -641,7 +643,7 @@ noreturn void _menu(bool timeout_enabled) {
             timeout = strtoui(timeout_config, NULL, 10);
     }
 
-    if (!timeout_enabled) {
+    if (!first_run) {
         skip_timeout = true;
     }
 

@@ -73,12 +73,11 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
     passed_info->smp_tpl_booted_flag = 0;
     passed_info->smp_tpl_pagemap     = pagemap;
     passed_info->smp_tpl_target_mode = ((uint32_t)x2apic << 2)
-                        | ((uint32_t)lv5 << 1)
-                        | ((uint32_t)nx << 3)
-                        | ((uint32_t)wp << 4)
-                        | (uint32_t)longmode;
-    passed_info->smp_tpl_gdt         = *gdtr;
-    passed_info->smp_tpl_booted_flag = 0;
+                                     | ((uint32_t)lv5 << 1)
+                                     | ((uint32_t)nx << 3)
+                                     | ((uint32_t)wp << 4)
+                                     | ((uint32_t)longmode << 0);
+    passed_info->smp_tpl_gdt = *gdtr;
     passed_info->smp_tpl_hhdm = hhdm;
 
     asm volatile ("" ::: "memory");

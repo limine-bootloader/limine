@@ -60,8 +60,9 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
     boot_volume = NULL;
 
     EFI_HANDLE current_handle = ImageHandle;
-    for (;;) {
+    for (size_t j = 0; j < 25; j++) {
         if (current_handle == NULL) {
+could_not_match:
             print("WARNING: Could not meaningfully match the boot device handle with a volume.\n");
             print("         Using the first volume containing a Limine configuration!\n");
 
@@ -114,6 +115,8 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 
         current_handle = loaded_image->ParentHandle;
     }
+
+    goto could_not_match;
 }
 #endif
 

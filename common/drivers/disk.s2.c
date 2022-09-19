@@ -350,22 +350,36 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
 
         EFI_DISK_IO *cur_disk_io = NULL;
 
-        gBS->HandleProtocol(volume_index[i]->efi_handle,
+        status = gBS->HandleProtocol(volume_index[i]->efi_handle,
                           &disk_io_guid, (void **)&cur_disk_io);
 
-        cur_disk_io->ReadDisk(cur_disk_io,
+        if (status) {
+            continue;
+        }
+
+        status = cur_disk_io->ReadDisk(cur_disk_io,
                           volume_index[i]->block_io->Media->MediaId,
                           0 + volume_index[i]->first_sect * 512,
                           sizeof(uint64_t), &compare);
+
+        if (status) {
+            continue;
+        }
 
         if (compare == signature) {
             // Double check
             status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &new_signature);
+            if (status) {
+                break;
+            }
 
-            cur_disk_io->ReadDisk(cur_disk_io,
+            status = cur_disk_io->ReadDisk(cur_disk_io,
                           volume_index[i]->block_io->Media->MediaId,
                           0 + volume_index[i]->first_sect * 512,
                           sizeof(uint64_t), &compare);
+            if (status) {
+                continue;
+            }
 
             if (compare == new_signature) {
                 ret = volume_index[i];
@@ -373,6 +387,9 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
             }
 
             status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &signature);
+            if (status) {
+                break;
+            }
         }
     }
 
@@ -490,7 +507,10 @@ fail:
         EFI_GUID disk_io_guid = DISK_IO_PROTOCOL;
         EFI_DISK_IO *disk_io = NULL;
 
-        gBS->HandleProtocol(handles[i], &disk_io_guid, (void **)&disk_io);
+        status = gBS->HandleProtocol(handles[i], &disk_io_guid, (void **)&disk_io);
+        if (status) {
+            continue;
+        }
 
         EFI_BLOCK_IO *drive = NULL;
 
@@ -503,7 +523,11 @@ fail:
             continue;
 
         uint64_t orig;
-        disk_io->ReadDisk(disk_io, drive->Media->MediaId, 0, sizeof(uint64_t), &orig);
+        status = disk_io->ReadDisk(disk_io, drive->Media->MediaId, 0, sizeof(uint64_t), &orig);
+        if (status) {
+            continue;
+        }
+
         status = disk_io->WriteDisk(disk_io, drive->Media->MediaId, 0, sizeof(uint64_t), &orig);
 
         struct volume *block = ext_mem_alloc(sizeof(struct volume));

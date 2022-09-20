@@ -54,6 +54,8 @@ export SED
 override AWK := @AWK@
 export AWK
 
+CPPFLAGS ?= @CPPFLAGS@
+export CPPFLAGS
 CFLAGS ?= @CFLAGS@
 export CFLAGS
 LDFLAGS ?= @LDFLAGS@

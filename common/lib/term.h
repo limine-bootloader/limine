@@ -50,13 +50,13 @@ extern int term_backend;
 extern size_t term_rows, term_cols;
 extern bool term_runtime;
 
+void term_notready(void);
 void term_fallback(void);
 
 void term_reinit(void);
 void term_deinit(void);
 void term_vbe(char *config, size_t width, size_t height);
 void term_textmode(void);
-void term_putchar(uint8_t c);
 void term_write(uint64_t buf, uint64_t count);
 
 extern void (*raw_putchar)(uint8_t c);

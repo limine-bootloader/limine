@@ -496,7 +496,6 @@ noreturn void linux_load(char *config, char *cmdline) {
     ///////////////////////////////////////
 
     term_deinit();
-    quiet = true;
 
     struct screen_info *screen_info = &boot_params->screen_info;
 

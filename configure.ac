@@ -186,7 +186,7 @@ if test "x$NEED_GZIP" = "xyes"; then
     fi
 fi
 
-AC_ARG_VAR(CROSS_TOOLCHAIN, [alternative toolchain prefix (or 'llvm')])
+AC_ARG_VAR(CROSS_TOOLCHAIN, [alternative toolchain prefix for Limine (or 'llvm')])
 AC_ARG_VAR(CROSS_CC, [C compiler command for Limine])
 AC_ARG_VAR(CROSS_LD, [linker command for Limine])
 AC_ARG_VAR(CROSS_OBJCOPY, [objcopy command for Limine])

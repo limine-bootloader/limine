@@ -39,7 +39,7 @@ clean:
 	rm -f limine-version limine-version.exe
 
 limine-deploy: limine-deploy.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -std=c99 -D__USE_MINGW_ANSI_STDIO limine-deploy.c -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -std=c99 -D__USE_MINGW_ANSI_STDIO limine-deploy.c -o $@
 
 limine-version: limine-version.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -std=c99 -D__USE_MINGW_ANSI_STDIO limine-version.c -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -std=c99 -D__USE_MINGW_ANSI_STDIO limine-version.c -o $@

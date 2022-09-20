@@ -52,7 +52,7 @@ void term_deinit(void) {
             gterm_deinit();
     }
 
-    term_fallback();
+    term_notready();
 }
 
 void term_vbe(char *config, size_t width, size_t height) {
@@ -252,6 +252,8 @@ static uint8_t xfer_buf[TERM_XFER_CHUNK];
 #endif
 
 bool term_autoflush = true;
+
+static void term_putchar(uint8_t c);
 
 void term_write(uint64_t buf, uint64_t count) {
     switch (count) {
@@ -1024,7 +1026,7 @@ static uint8_t dec_special_to_cp437(uint8_t c) {
     return c;
 }
 
-void term_putchar(uint8_t c) {
+static void term_putchar(uint8_t c) {
     if (discard_next || (term_runtime == true && (c == 0x18 || c == 0x1a))) {
         discard_next = false;
         escape = false;

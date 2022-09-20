@@ -21,6 +21,10 @@ noreturn void panic(bool allow_menu, const char *fmt, ...) {
 
     quiet = false;
 
+    if (term_backend == _NOT_READY) {
+        term_fallback();
+    }
+
     if (term_backend != FALLBACK) {
         print("\033[31mPANIC\033[37;1m\033[0m: ");
     } else {

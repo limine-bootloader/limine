@@ -142,10 +142,6 @@ void print(const char *fmt, ...) {
 static char print_buf[PRINT_BUF_MAX];
 
 void vprint(const char *fmt, va_list args) {
-    if (quiet) {
-        return;
-    }
-
     size_t print_buf_i = 0;
 
     for (;;) {
@@ -203,21 +199,23 @@ void vprint(const char *fmt, va_list args) {
     }
 
 out:
+    if (!quiet) {
 #if defined (BIOS)
-    if (stage3_loaded) {
+        if (stage3_loaded) {
 #endif
-        term_write((uint64_t)(uintptr_t)print_buf, print_buf_i);
+            term_write((uint64_t)(uintptr_t)print_buf, print_buf_i);
 #if defined (BIOS)
-    } else {
-        s2_print(print_buf, print_buf_i);
+        } else {
+            s2_print(print_buf, print_buf_i);
+        }
+#endif
     }
-#endif
 
     for (size_t i = 0; i < print_buf_i; i++) {
         if (E9_OUTPUT) {
             outb(0xe9, print_buf[i]);
         }
-        if (serial || COM_OUTPUT) {
+        if ((!quiet && serial) || COM_OUTPUT) {
             switch (print_buf[i]) {
                 case '\n':
                     serial_out('\r');

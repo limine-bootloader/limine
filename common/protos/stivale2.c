@@ -629,7 +629,6 @@ failed_to_load_header_section:
     }
 
     term_deinit();
-    quiet = true;
 
     if (hdrtag != NULL
 #if defined (UEFI)
@@ -637,7 +636,6 @@ failed_to_load_header_section:
 #endif
      || (avtag != NULL && preference == 0)) {
         term_deinit();
-        quiet = true;
 
 #if defined (UEFI)
         gop_force_16 = true;

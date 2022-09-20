@@ -535,7 +535,6 @@ FEAT_START
 FEAT_END
 
     term_deinit();
-    quiet = true;
 
     if (!fb_init(&fb, req_width, req_height, req_bpp)) {
         panic(true, "limine: Could not acquire framebuffer");

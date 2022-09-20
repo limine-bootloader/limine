@@ -136,8 +136,6 @@ static void fallback_get_cursor_pos(size_t *x, size_t *y) {
 }
 #endif
 
-static void term_notready(void);
-
 void term_fallback(void) {
 #if defined (UEFI)
     if (!efi_boot_services_exited) {
@@ -193,7 +191,7 @@ static void notready_uint64_t(uint64_t n) {
     (void)n;
 }
 
-static void term_notready(void) {
+void term_notready(void) {
     raw_putchar = notready_raw_putchar;
     clear = notready_clear;
     enable_cursor = notready_void;
@@ -224,4 +222,6 @@ static void term_notready(void) {
 
     term_cols = 80;
     term_rows = 24;
+
+    term_backend = _NOT_READY;
 }

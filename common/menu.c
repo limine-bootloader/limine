@@ -551,6 +551,29 @@ extern symbol s2_data_begin;
 extern symbol s2_data_end;
 #endif
 
+static void menu_init_term(void) {
+    // If there is GRAPHICS config key and the value is "yes", enable graphics
+#if defined (BIOS)
+    char *graphics = config_get_value(NULL, 0, "GRAPHICS");
+#elif defined (UEFI)
+    char *graphics = "yes";
+#endif
+
+    if (graphics == NULL || strcmp(graphics, "no") != 0) {
+        size_t req_width = 0, req_height = 0, req_bpp = 0;
+
+        char *menu_resolution = config_get_value(NULL, 0, "INTERFACE_RESOLUTION");
+        if (menu_resolution != NULL)
+            parse_resolution(&req_width, &req_height, &req_bpp, menu_resolution);
+
+        term_vbe(NULL, req_width, req_height);
+    } else {
+#if defined (BIOS)
+        term_textmode();
+#endif
+    }
+}
+
 noreturn void _menu(bool first_run) {
     size_t data_size = (uintptr_t)data_end - (uintptr_t)data_begin;
 #if defined (BIOS)
@@ -660,26 +683,7 @@ noreturn void _menu(bool first_run) {
         }
     }
 
-    // If there is GRAPHICS config key and the value is "yes", enable graphics
-#if defined (BIOS)
-    char *graphics = config_get_value(NULL, 0, "GRAPHICS");
-#elif defined (UEFI)
-    char *graphics = "yes";
-#endif
-
-    if (graphics == NULL || strcmp(graphics, "no") != 0) {
-        size_t req_width = 0, req_height = 0, req_bpp = 0;
-
-        char *menu_resolution = config_get_value(NULL, 0, "INTERFACE_RESOLUTION");
-        if (menu_resolution != NULL)
-            parse_resolution(&req_width, &req_height, &req_bpp, menu_resolution);
-
-        term_vbe(NULL, req_width, req_height);
-    } else {
-#if defined (BIOS)
-        term_textmode();
-#endif
-    }
+    menu_init_term();
 
 refresh:
     term_autoflush = false;
@@ -697,7 +701,12 @@ refresh:
     }
 
     while (menu_tree == NULL) {
-        quiet = false;
+        if (quiet) {
+            quiet = false;
+            menu_init_term();
+            term_autoflush = false;
+            disable_cursor();
+        }
         print("Config file %s.\n\n", config_ready ? "contains no valid entries" : "not found");
         print("For information on the format of Limine config entries, consult CONFIG.md in\n");
         print("the root of the Limine source repository.\n\n");
@@ -768,7 +777,11 @@ refresh:
             term_double_buffer_flush();
             if ((c = pit_sleep_and_quit_on_keypress(1))) {
                 skip_timeout = true;
-                quiet = false;
+                if (quiet) {
+                    quiet = false;
+                    menu_init_term();
+                    goto timeout_aborted;
+                }
                 print("\e[2K");
                 term_double_buffer_flush();
                 goto timeout_aborted;

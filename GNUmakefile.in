@@ -45,6 +45,12 @@ export MKDIR_P
 override INSTALL := @INSTALL@
 export INSTALL
 
+override INSTALL_PROGRAM := @INSTALL_PROGRAM@
+export INSTALL_PROGRAM
+
+override INSTALL_DATA := @INSTALL_DATA@
+export INSTALL_DATA
+
 override GREP := @GREP@
 export GREP
 
@@ -108,27 +114,27 @@ clean: limine-bios-clean limine-uefi-ia32-clean limine-uefi-x86-64-clean limine-
 install-data: all
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))'
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine'
-	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
-	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-cd.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
-	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
-	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
-	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTAA64.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
-	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
-	$(INSTALL) -m 644 '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' || true
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' 2>/dev/null || true
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-cd.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' 2>/dev/null || true
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' 2>/dev/null || true
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' 2>/dev/null || true
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/BOOTAA64.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' 2>/dev/null || true
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' 2>/dev/null || true
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' 2>/dev/null || true
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))'
-	$(INSTALL) -m 644 '$(call SHESCAPE,$(SRCDIR))/limine.h' '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/limine.h' '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))/'
 
 .PHONY: install-strip
 install-strip: install-data
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))'
-	$(INSTALL) -s '$(call SHESCAPE,$(BINDIR))/limine-version' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
-	$(INSTALL) -s '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/' || true
+	$(INSTALL_PROGRAM) -s '$(call SHESCAPE,$(BINDIR))/limine-version' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
+	$(INSTALL_PROGRAM) -s '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/' 2>/dev/null || true
 
 .PHONY: install
 install: install-data
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))'
-	$(INSTALL) '$(call SHESCAPE,$(BINDIR))/limine-version' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
-	$(INSTALL) '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/' || true
+	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-version' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
+	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/' 2>/dev/null || true
 
 .PHONY: uninstall
 uninstall:

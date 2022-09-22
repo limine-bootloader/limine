@@ -28,8 +28,6 @@ noreturn void linux_spinup(void *entry, void *boot_params);
 #define E820_MAX_ENTRIES_ZEROPAGE 128
 #define EDDMAXNR 6
 
-#define XLF_KERNEL_64 (1 << 0)
-
 struct setup_header {
     uint8_t    setup_sects;
     uint16_t    root_flags;
@@ -591,18 +589,13 @@ set_textmode:;
     boot_params->efi_info.efi_memmap    = (uint32_t)(uint64_t)(uintptr_t)efi_mmap;
     boot_params->efi_info.efi_memmap_hi = (uint32_t)((uint64_t)(uintptr_t)efi_mmap >> 32);
 #if defined (__x86_64__)
-    if ((setup_header->xloadflags & XLF_KERNEL_64) == 0) {
+    boot_params->efi_info.efi_memmap_size     = efi_mmap_size;
 #elif defined (__i386__)
-    if ((setup_header->xloadflags & XLF_KERNEL_64) != 0) {
+    // A memmap size of 0 will cause Linux to force bail out of trying to use
+    // 32-bit EFI runtime services without ignoring other EFI info.
+    // XXX: Figure out why 64-bit Linux hangs if trying to use 32-bit boot services.
+    boot_params->efi_info.efi_memmap_size     = 0;
 #endif
-        // A memmap size of 0 will cause Linux to force bail out of trying to use
-        // mismatched bitness EFI runtime services without ignoring other EFI info.
-        // XXX: Figure out why 64-bit Linux hangs if trying to use 32-bit boot services,
-        //      and vice versa.
-        boot_params->efi_info.efi_memmap_size = 0;
-    } else {
-        boot_params->efi_info.efi_memmap_size = efi_mmap_size;
-    }
     boot_params->efi_info.efi_memdesc_size    = efi_desc_size;
     boot_params->efi_info.efi_memdesc_version = efi_desc_ver;
 #endif

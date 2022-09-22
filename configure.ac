@@ -46,37 +46,8 @@ rm -rf "$BUILDDIR/cross-files"
 BUILD_ALL="no"
 
 AC_ARG_ENABLE([all],
-    AS_HELP_STRING([--enable-all], [enable ALL ports]),
+    AS_HELP_STRING([--enable-all], [enable ALL options]),
     BUILD_ALL="$enableval")
-
-BUILD_BIOS="$BUILD_ALL"
-
-AC_ARG_ENABLE([bios],
-    AS_HELP_STRING([--enable-bios], [enable building the x86 BIOS port]),
-    BUILD_BIOS="$enableval")
-
-if test "x$BUILD_BIOS" = "xno"; then
-    BUILD_BIOS=""
-else
-    (
-    $MKDIR_P "$BUILDDIR/cross-files"
-    cd "$BUILDDIR/cross-files"
-    TRIPLET=i686-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes WANT_CROSS_READELF=yes "$SRCDIR/cross-detect/configure"
-    ) || exit 1
-    BUILD_BIOS="limine-bios"
-    NEED_NASM=yes
-    NEED_GZIP=yes
-fi
-
-AC_SUBST(BUILD_BIOS)
-
-BUILD_LIMINE_DEPLOY="$BUILD_ALL"
-
-AC_ARG_ENABLE([limine-deploy],
-    AS_HELP_STRING([--enable-limine-deploy], [enable building limine-deploy]),
-    BUILD_LIMINE_DEPLOY="$enableval")
-
-AC_SUBST(BUILD_LIMINE_DEPLOY)
 
 BUILD_CD="$BUILD_ALL"
 
@@ -93,6 +64,39 @@ AC_ARG_ENABLE([bios-pxe],
     BUILD_PXE="$enableval")
 
 AC_SUBST(BUILD_PXE)
+
+BUILD_BIOS="$BUILD_ALL"
+
+AC_ARG_ENABLE([bios],
+    AS_HELP_STRING([--enable-bios], [enable building the x86 BIOS port]),
+    BUILD_BIOS="$enableval")
+
+BUILD_LIMINE_DEPLOY="$BUILD_BIOS"
+
+if test "x$BUILD_BIOS" = "xno"; then
+    if test "x$BUILD_CD" = "xyes"; then
+        BUILD_BIOS="yes"
+    fi
+    if test "x$BUILD_PXE" = "xyes"; then
+        BUILD_BIOS="yes"
+    fi
+fi
+
+if test "x$BUILD_BIOS" = "xno"; then
+    BUILD_BIOS=""
+else
+    (
+    $MKDIR_P "$BUILDDIR/cross-files"
+    cd "$BUILDDIR/cross-files"
+    TRIPLET=i686-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes WANT_CROSS_READELF=yes "$SRCDIR/cross-detect/configure"
+    ) || exit 1
+    BUILD_BIOS="limine-bios"
+    NEED_NASM=yes
+    NEED_GZIP=yes
+fi
+
+AC_SUBST(BUILD_BIOS)
+AC_SUBST(BUILD_LIMINE_DEPLOY)
 
 BUILD_UEFI_IA32="$BUILD_ALL"
 
@@ -136,8 +140,8 @@ AC_SUBST(BUILD_UEFI_X86_64)
 
 BUILD_CD_EFI="$BUILD_ALL"
 
-AC_ARG_ENABLE([cd-efi],
-    AS_HELP_STRING([--enable-cd-efi], [enable building limine-cd-efi.bin]),
+AC_ARG_ENABLE([uefi-cd],
+    AS_HELP_STRING([--enable-uefi-cd], [enable building limine-cd-efi.bin]),
     BUILD_CD_EFI="$enableval")
 
 if ! test "x$BUILD_CD_EFI" = "xno"; then

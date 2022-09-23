@@ -41,6 +41,8 @@ SECTIONS
         getchar = .;
         menu = .;
         term_write = .;
+        term_backend = .;
+        term_fallback = .;
         stage3_addr = .;
 #else
 #ifdef LINKER_NOS2MAP

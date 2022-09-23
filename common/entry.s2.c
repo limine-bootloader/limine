@@ -78,8 +78,6 @@ enum {
 };
 
 noreturn void entry(uint8_t boot_drive, int boot_from) {
-    term_fallback();
-
     // XXX DO NOT MOVE A20 ENABLE CALL
     if (!a20_enable()) {
         panic(false, "Could not enable A20 line");
@@ -119,6 +117,8 @@ noreturn void entry(uint8_t boot_drive, int boot_from) {
     if (!stage3_loaded) {
         panic(false, "Failed to load stage 3.");
     }
+
+    term_fallback();
 
     stage3_common();
 }

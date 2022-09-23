@@ -21,11 +21,19 @@ noreturn void panic(bool allow_menu, const char *fmt, ...) {
 
     quiet = false;
 
-    if (stage3_loaded && term_backend == _NOT_READY) {
+    if (
+#if defined (BIOS)
+      stage3_loaded == true &&
+#endif
+      term_backend == _NOT_READY) {
         term_fallback();
     }
 
-    if (stage3_loaded && term_backend != FALLBACK) {
+    if (
+#if defined (BIOS)
+      stage3_loaded == true &&
+#endif
+      term_backend != FALLBACK) {
         print("\033[31mPANIC\033[37;1m\033[0m: ");
     } else {
         print("PANIC: ");

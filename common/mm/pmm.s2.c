@@ -60,8 +60,8 @@ static size_t memmap_max_entries;
 struct memmap_entry *memmap;
 size_t memmap_entries = 0;
 
-static struct memmap_entry *untouched_memmap;
-static size_t untouched_memmap_entries = 0;
+struct memmap_entry *untouched_memmap;
+size_t untouched_memmap_entries = 0;
 #endif
 
 static const char *memmap_type(uint32_t type) {
@@ -84,6 +84,8 @@ static const char *memmap_type(uint32_t type) {
             return "Kernel/Modules";
         case MEMMAP_EFI_RECLAIMABLE:
             return "EFI reclaimable";
+        case MEMMAP_EFI_BOOTSERVICES:
+            return "EFI boot services";
         default:
             return "???";
     }
@@ -116,6 +118,10 @@ static bool align_entry(uint64_t *base, uint64_t *length) {
     return true;
 }
 
+static bool sanitiser_keep_first_page = false;
+
+#define MEMMAP_DROP_LATER ((uint32_t)-1)
+
 static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_entries) {
     size_t count = *_count;
 
@@ -138,6 +144,14 @@ static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_
 
             if ( (res_base >= base && res_base < top)
               && (res_top  >= base && res_top  < top) ) {
+                // Drop the entry entirely if usable
+                if (m[j].type == MEMMAP_USABLE) {
+                    m[j].type = MEMMAP_DROP_LATER;
+                }
+                if (m[j].type == MEMMAP_DROP_LATER) {
+                    continue;
+                }
+
                 // TODO actually handle splitting off usable chunks
                 panic(false, "A non-usable memory map entry is inside a usable section.");
             }
@@ -162,12 +176,22 @@ static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_
         }
     }
 
+    // Collect "drop later" entries
+    for (size_t i = 0; i < count; i++) {
+        if (m[i].type != MEMMAP_DROP_LATER) {
+            continue;
+        }
+
+        m[i] = m[count - 1];
+        count--; i--;
+    }
+
     // Remove 0 length usable entries and usable entries below 0x1000
     for (size_t i = 0; i < count; i++) {
         if (m[i].type != MEMMAP_USABLE)
             continue;
 
-        if (m[i].base < 0x1000) {
+        if (!sanitiser_keep_first_page && m[i].base < 0x1000) {
             if (m[i].base + m[i].length <= 0x1000) {
                 goto del_mm1;
             }
@@ -221,13 +245,9 @@ del_mm1:
     *_count = count;
 }
 
-#if defined (UEFI)
-static void pmm_reclaim_uefi_mem(struct memmap_entry *m, size_t *_count);
-#endif
-
 struct memmap_entry *get_memmap(size_t *entries) {
 #if defined (UEFI)
-    pmm_reclaim_uefi_mem(memmap, &memmap_entries);
+    pmm_reclaim_uefi_mem();
 #endif
 
     sanitise_entries(memmap, &memmap_entries, true);
@@ -336,7 +356,7 @@ void init_memmap(void) {
                 our_type = MEMMAP_RESERVED; break;
             case EfiBootServicesCode:
             case EfiBootServicesData:
-                our_type = MEMMAP_EFI_RECLAIMABLE; break;
+                our_type = MEMMAP_EFI_BOOTSERVICES; break;
             case EfiACPIReclaimMemory:
                 our_type = MEMMAP_ACPI_RECLAIMABLE; break;
             case EfiACPIMemoryNVS:
@@ -416,83 +436,121 @@ fail:
     panic(false, "pmm: Failure initialising memory map");
 }
 
-static void pmm_reclaim_uefi_mem(struct memmap_entry *m, size_t *_count) {
-    size_t count = *_count;
-
+void pmm_reclaim_uefi_mem(void) {
     size_t recl_i = 0;
 
-    for (size_t i = 0; i < count; i++) {
-        if (m[i].type == MEMMAP_EFI_RECLAIMABLE) {
+    for (size_t i = 0; i < memmap_entries; i++) {
+        if (memmap[i].type == MEMMAP_EFI_RECLAIMABLE) {
             recl_i++;
         }
     }
 
     struct memmap_entry *recl = ext_mem_alloc(recl_i * sizeof(struct memmap_entry));
 
-    for (size_t i = 0, j = 0; i < count; i++) {
-        if (m[i].type == MEMMAP_EFI_RECLAIMABLE) {
-            recl[j++] = m[i];
+    {
+        size_t recl_j = 0;
+        for (size_t i = 0; i < memmap_entries; i++) {
+            if (memmap[i].type == MEMMAP_EFI_RECLAIMABLE) {
+                recl[recl_j++] = memmap[i];
+            }
         }
     }
 
-    for (size_t ri = 0; ri < recl_i; ri++) {
-        struct memmap_entry *r = &recl[ri];
+another_recl:;
+    // Punch holes in our EFI reclaimable entry for every EFI area which is
+    // boot services or conventional that fits within
+    size_t efi_mmap_entry_count = efi_mmap_size / efi_desc_size;
+    for (size_t i = 0; i < efi_mmap_entry_count; i++) {
+        EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
 
-        // Punch holes in our EFI reclaimable entry for every EFI area which is
-        // boot services or conventional that fits within
-        size_t efi_mmap_entry_count = efi_mmap_size / efi_desc_size;
-        for (size_t i = 0; i < efi_mmap_entry_count; i++) {
-            EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
+        uint64_t base = recl->base;
+        uint64_t top = base + recl->length;
+        uint64_t efi_base = entry->PhysicalStart;
+        uint64_t efi_size = entry->NumberOfPages * 4096;
 
-            uint64_t base = r->base;
-            uint64_t top = base + r->length;
-            uint64_t efi_base = entry->PhysicalStart;
-            uint64_t efi_size = entry->NumberOfPages * 4096;
-
-            if (efi_base < base) {
-                if (efi_size <= base - efi_base)
-                    continue;
-                efi_size -= base - efi_base;
-                efi_base = base;
-            }
-
-            uint64_t efi_top = efi_base + efi_size;
-
-            if (efi_top > top) {
-                if (efi_size <= efi_top - top)
-                    continue;
-                efi_size -= efi_top - top;
-                efi_top = top;
-            }
-
-            // Sanity check
-            if (!(efi_base >= base && efi_base <  top
-               && efi_top  >  base && efi_top  <= top))
+        if (efi_base < base) {
+            if (efi_size <= base - efi_base)
                 continue;
+            efi_size -= base - efi_base;
+            efi_base = base;
+        }
 
-            uint32_t our_type;
+        uint64_t efi_top = efi_base + efi_size;
+
+        if (efi_top > top) {
+            if (efi_size <= efi_top - top)
+                continue;
+            efi_size -= efi_top - top;
+            efi_top = top;
+        }
+
+        // Sanity check
+        if (!(efi_base >= base && efi_base <  top
+           && efi_top  >  base && efi_top  <= top))
+            continue;
+
+        uint32_t our_type;
+        switch (entry->Type) {
+            case EfiBootServicesCode:
+            case EfiBootServicesData:
+            case EfiConventionalMemory:
+                our_type = MEMMAP_USABLE; break;
+            case EfiACPIReclaimMemory:
+                our_type = MEMMAP_ACPI_RECLAIMABLE; break;
+            case EfiACPIMemoryNVS:
+                our_type = MEMMAP_ACPI_NVS; break;
+            default:
+                our_type = MEMMAP_RESERVED; break;
+        }
+
+        memmap_alloc_range(efi_base, efi_size, our_type, false, true, false, true);
+    }
+
+    if (--recl_i > 0) {
+        recl++;
+        goto another_recl;
+    }
+
+    // Ensure the boot services are still boot services, or free, in
+    // the EFI memmap, and disallow allocations since our stack and page tables
+    // are placed in this newly freed memory.
+    for (size_t i = 0; i < memmap_entries; i++) {
+        if (memmap[i].type != MEMMAP_EFI_BOOTSERVICES)
+            continue;
+
+        // Go through EFI memmap and ensure this entry fits within a boot services
+        // or conventional entry
+        size_t entry_count = efi_mmap_size / efi_desc_size;
+
+        for (size_t j = 0; j < entry_count; j++) {
+            EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + j * efi_desc_size;
+
             switch (entry->Type) {
                 case EfiBootServicesCode:
                 case EfiBootServicesData:
                 case EfiConventionalMemory:
-                    our_type = MEMMAP_USABLE; break;
-                case EfiACPIReclaimMemory:
-                    our_type = MEMMAP_ACPI_RECLAIMABLE; break;
-                case EfiACPIMemoryNVS:
-                    our_type = MEMMAP_ACPI_NVS; break;
+                    break;
                 default:
-                    our_type = MEMMAP_RESERVED; break;
+                    continue;
             }
 
-            memmap_alloc_range_in(m, &count, efi_base, efi_size, our_type, 0, true, false, false);
+            uintptr_t base = memmap[i].base;
+            uintptr_t top = base + memmap[i].length;
+            uintptr_t efi_base = entry->PhysicalStart;
+            uintptr_t efi_size = entry->NumberOfPages * 4096;
+            uintptr_t efi_top = efi_base + efi_size;
+
+            if (!(base >= efi_base && base <  efi_top
+               && top  >  efi_base && top  <= efi_top))
+                continue;
+
+            memmap[i].type = MEMMAP_USABLE;
         }
     }
 
     allocations_disallowed = true;
 
-    sanitise_entries(m, &count, false);
-
-    *_count = count;
+    sanitise_entries(memmap, &memmap_entries, false);
 }
 
 void pmm_release_uefi_mem(void) {
@@ -524,9 +582,49 @@ struct memmap_entry *get_raw_memmap(size_t *entry_count) {
 
 #if defined (UEFI)
 struct memmap_entry *get_raw_memmap(size_t *entry_count) {
-    pmm_reclaim_uefi_mem(untouched_memmap, &untouched_memmap_entries);
-    *entry_count = untouched_memmap_entries;
-    return untouched_memmap;
+    size_t mmap_count = efi_mmap_size / efi_desc_size;
+    size_t mmap_len = mmap_count * sizeof(struct memmap_entry);
+
+    struct memmap_entry *mmap = ext_mem_alloc(mmap_len);
+
+    for (size_t i = 0; i < mmap_count; i++) {
+        EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
+
+        uint32_t our_type;
+        switch (entry->Type) {
+            case EfiReservedMemoryType:
+            case EfiRuntimeServicesCode:
+            case EfiRuntimeServicesData:
+            case EfiUnusableMemory:
+            case EfiMemoryMappedIO:
+            case EfiMemoryMappedIOPortSpace:
+            case EfiPalCode:
+            case EfiLoaderCode:
+            case EfiLoaderData:
+            default:
+                our_type = MEMMAP_RESERVED; break;
+            case EfiACPIReclaimMemory:
+                our_type = MEMMAP_ACPI_RECLAIMABLE; break;
+            case EfiACPIMemoryNVS:
+                our_type = MEMMAP_ACPI_NVS; break;
+            case EfiBootServicesCode:
+            case EfiBootServicesData:
+            case EfiConventionalMemory:
+                our_type = MEMMAP_USABLE; break;
+        }
+
+        mmap[i].base   = entry->PhysicalStart;
+        mmap[i].length = entry->NumberOfPages * 4096;
+        mmap[i].type   = our_type;
+    }
+
+    bool s_old = sanitiser_keep_first_page;
+    sanitiser_keep_first_page = true;
+    sanitise_entries(mmap, &mmap_count, false);
+    sanitiser_keep_first_page = s_old;
+
+    *entry_count = mmap_count;
+    return mmap;
 }
 #endif
 
@@ -617,22 +715,19 @@ struct meminfo mmap_get_info(size_t mmap_count, struct memmap_entry *mmap) {
     return info;
 }
 
-static bool pmm_new_entry(struct memmap_entry *m, size_t *_count,
-                          uint64_t base, uint64_t length, uint32_t type) {
-    size_t count = *_count;
-
+static bool pmm_new_entry(uint64_t base, uint64_t length, uint32_t type) {
     uint64_t top = base + length;
 
     // Handle overlapping new entries.
-    for (size_t i = 0; i < count; i++) {
-        uint64_t entry_base = m[i].base;
-        uint64_t entry_top  = m[i].base + m[i].length;
+    for (size_t i = 0; i < memmap_entries; i++) {
+        uint64_t entry_base = memmap[i].base;
+        uint64_t entry_top  = memmap[i].base + memmap[i].length;
 
         // Full overlap
         if (base <= entry_base && top >= entry_top) {
             // Remove overlapped entry
-            m[i] = m[count - 1];
-            count--;
+            memmap[i] = memmap[memmap_entries - 1];
+            memmap_entries--;
             i--;
             continue;
         }
@@ -640,30 +735,30 @@ static bool pmm_new_entry(struct memmap_entry *m, size_t *_count,
         // Partial overlap (bottom)
         if (base <= entry_base && top < entry_top && top > entry_base) {
             // Entry gets bottom shaved off
-            m[i].base += top - entry_base;
-            m[i].length -= top - entry_base;
+            memmap[i].base += top - entry_base;
+            memmap[i].length -= top - entry_base;
             continue;
         }
 
         // Partial overlap (top)
         if (base > entry_base && base < entry_top && top >= entry_top) {
             // Entry gets top shaved off
-            m[i].length -= entry_top - base;
+            memmap[i].length -= entry_top - base;
             continue;
         }
 
         // Nested (pain)
         if (base > entry_base && top < entry_top) {
             // Entry gets top shaved off first
-            m[i].length -= entry_top - base;
+            memmap[i].length -= entry_top - base;
 
             // Now we need to create a new entry
-            if (count >= memmap_max_entries)
+            if (memmap_entries >= memmap_max_entries)
                 panic(false, "Memory map exhausted.");
 
-            struct memmap_entry *new_entry = &m[count++];
+            struct memmap_entry *new_entry = &memmap[memmap_entries++];
 
-            new_entry->type = m[i].type;
+            new_entry->type = memmap[i].type;
             new_entry->base = top;
             new_entry->length = entry_top - top;
 
@@ -671,23 +766,19 @@ static bool pmm_new_entry(struct memmap_entry *m, size_t *_count,
         }
     }
 
-    if (count >= memmap_max_entries)
+    if (memmap_entries >= memmap_max_entries)
         panic(false, "Memory map exhausted.");
 
-    struct memmap_entry *target = &m[count++];
+    struct memmap_entry *target = &memmap[memmap_entries++];
 
     target->type = type;
     target->base = base;
     target->length = length;
 
-    *_count = count;
     return true;
 }
 
-bool memmap_alloc_range_in(struct memmap_entry *m, size_t *_count,
-                           uint64_t base, uint64_t length, uint32_t type, uint32_t overlay_type, bool do_panic, bool simulation, bool new_entry) {
-    size_t count = *_count;
-
+bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, uint32_t overlay_type, bool do_panic, bool simulation, bool new_entry) {
     if (length == 0)
         return true;
 
@@ -697,18 +788,18 @@ bool memmap_alloc_range_in(struct memmap_entry *m, size_t *_count,
 
     uint64_t top = base + length;
 
-    for (size_t i = 0; i < count; i++) {
-        if (overlay_type != 0 && m[i].type != overlay_type)
+    for (size_t i = 0; i < memmap_entries; i++) {
+        if (overlay_type != 0 && memmap[i].type != overlay_type)
             continue;
 
-        uint64_t entry_base = m[i].base;
-        uint64_t entry_top  = m[i].base + m[i].length;
+        uint64_t entry_base = memmap[i].base;
+        uint64_t entry_top  = memmap[i].base + memmap[i].length;
 
         if (base >= entry_base && base < entry_top && top <= entry_top) {
             if (simulation)
                 return true;
 
-            if (pmm_new_entry(m, &count, base, length, type) == true) {
+            if (pmm_new_entry(base, length, type) == true) {
                 goto success;
             }
         }
@@ -721,16 +812,11 @@ bool memmap_alloc_range_in(struct memmap_entry *m, size_t *_count,
         return false;
     }
 
-    if (pmm_new_entry(m, &count, base, length, type) == false) {
+    if (pmm_new_entry(base, length, type) == false) {
         return false;
     }
 
 success:
-    sanitise_entries(m, &count, false);
-    *_count = count;
+    sanitise_entries(memmap, &memmap_entries, false);
     return true;
-}
-
-bool memmap_alloc_range(uint64_t base, uint64_t length, uint32_t type, uint32_t overlay_type, bool do_panic, bool simulation, bool new_entry) {
-    return memmap_alloc_range_in(memmap, &memmap_entries, base, length, type, overlay_type, do_panic, simulation, new_entry);
 }

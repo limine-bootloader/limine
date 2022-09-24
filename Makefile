@@ -38,7 +38,7 @@ clean:
 	rm -f limine-deploy limine-deploy.exe
 	rm -f limine-version limine-version.exe
 
-limine-deploy: limine-deploy.c
+limine-deploy: limine-deploy.c limine-hdd.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -std=c99 -D__USE_MINGW_ANSI_STDIO limine-deploy.c $(LIBS) -o $@
 
 limine-version: limine-version.c

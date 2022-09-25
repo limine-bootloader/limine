@@ -116,6 +116,8 @@ static bool align_entry(uint64_t *base, uint64_t *length) {
     return true;
 }
 
+static bool sanitiser_keep_first_page = false;
+
 static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_entries) {
     size_t count = *_count;
 
@@ -167,7 +169,7 @@ static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_
         if (m[i].type != MEMMAP_USABLE)
             continue;
 
-        if (m[i].base < 0x1000) {
+        if (!sanitiser_keep_first_page && m[i].base < 0x1000) {
             if (m[i].base + m[i].length <= 0x1000) {
                 goto del_mm1;
             }
@@ -221,9 +223,17 @@ del_mm1:
     *_count = count;
 }
 
+#if defined (UEFI)
+static void pmm_reclaim_uefi_mem(struct memmap_entry *m, size_t *_count);
+#endif
+
 struct memmap_entry *get_memmap(size_t *entries) {
 #if defined (UEFI)
-    pmm_reclaim_uefi_mem();
+    if (efi_boot_services_exited == false) {
+        panic(true, "get_memmap called whilst in boot services");
+    }
+
+    pmm_reclaim_uefi_mem(memmap, &memmap_entries);
 #endif
 
     sanitise_entries(memmap, &memmap_entries, true);
@@ -370,7 +380,10 @@ void init_memmap(void) {
         memmap_entries++;
     }
 
+    bool old_skfp = sanitiser_keep_first_page;
+    sanitiser_keep_first_page = true;
     sanitise_entries(memmap, &memmap_entries, false);
+    sanitiser_keep_first_page = old_skfp;
 
     allocations_disallowed = false;
 
@@ -412,20 +425,22 @@ fail:
     panic(false, "pmm: Failure initialising memory map");
 }
 
-void pmm_reclaim_uefi_mem(void) {
+static void pmm_reclaim_uefi_mem(struct memmap_entry *m, size_t *_count) {
+    size_t count = *_count;
+
     size_t recl_i = 0;
 
-    for (size_t i = 0; i < memmap_entries; i++) {
-        if (memmap[i].type == MEMMAP_EFI_RECLAIMABLE) {
+    for (size_t i = 0; i < count; i++) {
+        if (m[i].type == MEMMAP_EFI_RECLAIMABLE) {
             recl_i++;
         }
     }
 
     struct memmap_entry *recl = ext_mem_alloc(recl_i * sizeof(struct memmap_entry));
 
-    for (size_t i = 0, j = 0; i < memmap_entries; i++) {
-        if (memmap[i].type == MEMMAP_EFI_RECLAIMABLE) {
-            recl[j++] = memmap[i];
+    for (size_t i = 0, j = 0; i < count; i++) {
+        if (m[i].type == MEMMAP_EFI_RECLAIMABLE) {
+            recl[j++] = m[i];
         }
     }
 
@@ -478,13 +493,15 @@ void pmm_reclaim_uefi_mem(void) {
                     our_type = MEMMAP_RESERVED; break;
             }
 
-            memmap_alloc_range_in(memmap, &memmap_entries, efi_base, efi_size, our_type, 0, true, false, false);
+            memmap_alloc_range_in(m, &count, efi_base, efi_size, our_type, 0, true, false, false);
         }
     }
 
     allocations_disallowed = true;
 
-    sanitise_entries(memmap, &memmap_entries, false);
+    sanitise_entries(m, &count, false);
+
+    *_count = count;
 }
 
 void pmm_release_uefi_mem(void) {
@@ -516,6 +533,10 @@ struct memmap_entry *get_raw_memmap(size_t *entry_count) {
 
 #if defined (UEFI)
 struct memmap_entry *get_raw_memmap(size_t *entry_count) {
+    if (efi_boot_services_exited == false) {
+        panic(true, "get_raw_memmap called whilst in boot services");
+    }
+
     size_t mmap_count = efi_mmap_size / efi_desc_size;
     size_t mmap_len = mmap_count * sizeof(struct memmap_entry);
 

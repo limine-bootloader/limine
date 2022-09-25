@@ -62,7 +62,6 @@ void *conv_mem_alloc(size_t count);
 void pmm_free(void *ptr, size_t length);
 
 #if defined (UEFI)
-void pmm_reclaim_uefi_mem(void);
 void pmm_release_uefi_mem(void);
 #endif
 

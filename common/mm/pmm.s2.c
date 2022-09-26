@@ -573,7 +573,10 @@ struct memmap_entry *get_raw_memmap(size_t *entry_count) {
         mmap[i].type   = our_type;
     }
 
+    bool old_skfp = sanitiser_keep_first_page;
+    sanitiser_keep_first_page = true;
     sanitise_entries(mmap, &mmap_count, false);
+    sanitiser_keep_first_page = old_skfp;
 
     *entry_count = mmap_count;
     return mmap;

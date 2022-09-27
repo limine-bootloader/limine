@@ -109,7 +109,9 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
 
     bool is_elf_info_requested = false;
 
+#if defined (UEFI)
     bool is_framebuffer_required = false;
+#endif
 
     uint64_t entry_point = 0xffffffff;
 
@@ -147,7 +149,9 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
                         #endif
                             break;
                         case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
+                        #if defined (UEFI)
                             is_framebuffer_required = is_required;
+                        #endif
                             break;
                         case MULTIBOOT_TAG_TYPE_ACPI_NEW:
                             is_new_acpi_required = is_required;
@@ -586,7 +590,9 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
 
         append_tag(info_idx, &tag->common);
 
+#if defined (UEFI)
 skip_modeset:;
+#endif
     }
 
     //////////////////////////////////////////////

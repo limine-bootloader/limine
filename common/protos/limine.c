@@ -746,7 +746,7 @@ FEAT_END
 skip_fb_init:
     memmap_alloc_range(fb.framebuffer_addr,
                        (uint64_t)fb.framebuffer_pitch * fb.framebuffer_height,
-                       MEMMAP_FRAMEBUFFER, false, false, false, true);
+                       MEMMAP_FRAMEBUFFER, 0, false, false, true);
 
     // Framebuffer feature
 FEAT_START

@@ -32,7 +32,7 @@ void *conv_mem_alloc(size_t count) {
         if (base + count > 0x100000)
             panic(false, "Conventional memory allocation failed");
 
-        if (memmap_alloc_range(base, count, MEMMAP_BOOTLOADER_RECLAIMABLE, true, false, false, false)) {
+        if (memmap_alloc_range(base, count, MEMMAP_BOOTLOADER_RECLAIMABLE, MEMMAP_USABLE, false, false, false)) {
             void *ret = (void *)(uintptr_t)base;
             // Zero out allocated space
             memset(ret, 0, count);
@@ -91,11 +91,11 @@ static const char *memmap_type(uint32_t type) {
 
 void print_memmap(struct memmap_entry *mm, size_t size) {
     for (size_t i = 0; i < size; i++) {
-        printv("[%X -> %X] : %X  <%s (%x)>\n",
-               mm[i].base,
-               mm[i].base + mm[i].length,
-               mm[i].length,
-               memmap_type(mm[i].type), mm[i].type);
+        print("[%X -> %X] : %X  <%s (%x)>\n",
+              mm[i].base,
+              mm[i].base + mm[i].length,
+              mm[i].length,
+              memmap_type(mm[i].type), mm[i].type);
     }
 }
 
@@ -277,7 +277,7 @@ void init_memmap(void) {
 
     // Allocate bootloader itself
     memmap_alloc_range(4096,
-        ALIGN_UP((uintptr_t)bss_end, 4096) - 4096, MEMMAP_BOOTLOADER_RECLAIMABLE, true, true, false, false);
+        ALIGN_UP((uintptr_t)bss_end, 4096) - 4096, MEMMAP_BOOTLOADER_RECLAIMABLE, 0, true, false, false);
 
     sanitise_entries(memmap, &memmap_entries, false);
 
@@ -383,7 +383,6 @@ void init_memmap(void) {
     bool old_skfp = sanitiser_keep_first_page;
     sanitiser_keep_first_page = true;
     sanitise_entries(memmap, &memmap_entries, false);
-    sanitiser_keep_first_page = old_skfp;
 
     allocations_disallowed = false;
 
@@ -404,18 +403,20 @@ void init_memmap(void) {
 
         if (status) {
             print("pmm: WARNING: AllocatePages failure (%d)\n", status);
-            memmap_alloc_range(memmap[i].base, memmap[i].length, MEMMAP_RESERVED, true, true, false, false);
+            memmap_alloc_range(memmap[i].base, memmap[i].length, MEMMAP_RESERVED, MEMMAP_USABLE, true, false, false);
         }
     }
 
     memcpy(untouched_memmap, memmap, memmap_entries * sizeof(struct memmap_entry));
     untouched_memmap_entries = memmap_entries;
 
+    sanitiser_keep_first_page = old_skfp;
+
     size_t bootloader_size = ALIGN_UP((uintptr_t)__image_end - (uintptr_t)__image_base, 4096);
 
     // Allocate bootloader itself
     memmap_alloc_range((uintptr_t)__image_base, bootloader_size,
-                       MEMMAP_BOOTLOADER_RECLAIMABLE, false, true, false, true);
+                       MEMMAP_BOOTLOADER_RECLAIMABLE, 0, true, false, true);
 
     sanitise_entries(memmap, &memmap_entries, false);
 
@@ -551,7 +552,7 @@ void pmm_free(void *ptr, size_t count) {
     count = ALIGN_UP(count, 4096);
     if (allocations_disallowed)
         panic(false, "Memory allocations disallowed");
-    memmap_alloc_range((uintptr_t)ptr, count, MEMMAP_USABLE, false, false, false, true);
+    memmap_alloc_range((uintptr_t)ptr, count, MEMMAP_USABLE, 0, false, false, true);
 }
 
 void *ext_mem_alloc(size_t count) {
@@ -591,7 +592,7 @@ void *ext_mem_alloc_type_aligned(size_t count, uint32_t type, size_t alignment) 
 
         // We now reserve the range we need.
         int64_t aligned_length = entry_top - alloc_base;
-        memmap_alloc_range((uint64_t)alloc_base, (uint64_t)aligned_length, type, true, true, false, false);
+        memmap_alloc_range((uint64_t)alloc_base, (uint64_t)aligned_length, type, MEMMAP_USABLE, true, false, false);
 
         void *ret = (void *)(size_t)alloc_base;
 

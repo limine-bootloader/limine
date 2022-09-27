@@ -312,7 +312,7 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
             struct fb_info fbinfo;
             if (!fb_init(&fbinfo, req_width, req_height, req_bpp)) {
 #if defined (UEFI)
-                panic(true, "multiboot1: Failed to set video mode");
+                goto skip_modeset;
 #elif defined (BIOS)
                 size_t rows, cols;
                 init_vga_textmode(&rows, &cols, false);
@@ -343,7 +343,7 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
             print("multiboot1: Warning: Cannot use text mode with UEFI\n");
             struct fb_info fbinfo;
             if (!fb_init(&fbinfo, 0, 0, 0)) {
-                panic(true, "multiboot1: Failed to set video mode");
+                goto skip_modeset;
             }
             multiboot1_info->fb_addr    = (uint64_t)fbinfo.framebuffer_addr;
             multiboot1_info->fb_width   = fbinfo.framebuffer_width;
@@ -371,6 +371,8 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
         }
 
         multiboot1_info->flags |= (1 << 12);
+
+skip_modeset:;
     } else {
 #if defined (UEFI)
         panic(true, "multiboot1: Cannot use text mode with UEFI.");

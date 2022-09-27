@@ -23,7 +23,7 @@ void multiboot_main(uint32_t magic, struct multiboot1_info *info) {
     {
         struct multiboot1_module *start = (struct multiboot1_module *)info->mods_addr;
         struct multiboot1_module *end = (struct multiboot1_module *)(info->mods_addr + info->mods_count);
-    
+
         e9_printf("\t modules:");
         for (struct multiboot1_module* entry = start; entry < end; entry++) {
             e9_printf("\t\t begin=%x", entry->begin);
@@ -32,29 +32,27 @@ void multiboot_main(uint32_t magic, struct multiboot1_info *info) {
         }
     }
 
-    // TODO(Andy-Python-Programmer): ELF sections are unimplemented
-
     {
         struct multiboot1_mmap_entry *start = (struct multiboot1_mmap_entry *)info->mmap_addr;
         struct multiboot1_mmap_entry *end = (struct multiboot1_mmap_entry *)(info->mmap_addr + info->mmap_length);
 
-        e9_printf("\t useable_entries_mmap:");
+        e9_printf("\t usable_entries_mmap:");
 
         size_t total_mem = 0;
 
-        // For now we only print the useable memory map entries since
+        // For now we only print the usable memory map entries since
         // printing the whole memory map blows my terminal up. We also
         // iterate through the avaliable memory map entries and add up
-        // to find the total amount of useable memory.
+        // to find the total amount of usable memory.
         for (struct multiboot1_mmap_entry* entry = start; entry < end; entry++) {
-            // Check if the memory map entry is marked as useable!
+            // Check if the memory map entry is marked as usable!
             if (entry->type != 1) {
                 continue;
             }
 
             e9_printf("\t\t addr=%x", entry->addr);
             e9_printf("\t\t length=%x", entry->len);
-            e9_printf("\t\t type=Useable");
+            e9_printf("\t\t type=Usable");
 
             // Now this might be a bit confusing since but `entry->size` represents the
             // is the size of the associated structure in bytes and `entry->len` represents the

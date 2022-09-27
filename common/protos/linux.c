@@ -424,7 +424,7 @@ noreturn void linux_load(char *config, char *cmdline) {
     for (;;) {
         if (memmap_alloc_range(kernel_load_addr,
                 ALIGN_UP(kernel_file->size - real_mode_code_size, 4096),
-                MEMMAP_BOOTLOADER_RECLAIMABLE, true, false, false, false))
+                MEMMAP_BOOTLOADER_RECLAIMABLE, MEMMAP_USABLE, false, false, false))
             break;
 
         kernel_load_addr += 0x100000;
@@ -462,7 +462,7 @@ noreturn void linux_load(char *config, char *cmdline) {
 
     for (;;) {
         if (memmap_alloc_range(modules_mem_base, ALIGN_UP(size_of_all_modules, 4096),
-                               MEMMAP_BOOTLOADER_RECLAIMABLE, true, false, false, false))
+                               MEMMAP_BOOTLOADER_RECLAIMABLE, MEMMAP_USABLE, false, false, false))
             break;
         modules_mem_base -= 4096;
     }

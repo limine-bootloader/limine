@@ -109,6 +109,8 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
 
     bool is_elf_info_requested = false;
 
+    bool is_framebuffer_required = false;
+
     uint64_t entry_point = 0xffffffff;
 
     // Iterate through the entries...
@@ -143,7 +145,9 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
                                 case MULTIBOOT_TAG_TYPE_EFI64_IH:
                             #endif
                         #endif
+                            break;
                         case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
+                            is_framebuffer_required = is_required;
                             break;
                         case MULTIBOOT_TAG_TYPE_ACPI_NEW:
                             is_new_acpi_required = is_required;
@@ -521,7 +525,11 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
                 tag->common.framebuffer_bpp = 16;
                 tag->common.framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT;
 #elif defined (UEFI)
-                panic(true, "multiboot2: Failed to set video mode");
+                if (is_framebuffer_required) {
+                    panic(true, "multiboot2: Failed to set video mode");
+                } else {
+                    goto skip_modeset;
+                }
 #endif
             } else {
                 tag->common.framebuffer_addr = fbinfo.framebuffer_addr;
@@ -543,8 +551,13 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
             print("multiboot2: Warning: Cannot use text mode with UEFI\n");
             struct fb_info fbinfo;
             if (!fb_init(&fbinfo, 0, 0, 0)) {
-                panic(true, "multiboot2: Failed to set video mode");
+                if (is_framebuffer_required) {
+                    panic(true, "multiboot2: Failed to set video mode");
+                } else {
+                    goto skip_modeset;
+                }
             }
+
             tag->common.framebuffer_addr = fbinfo.framebuffer_addr;
             tag->common.framebuffer_pitch = fbinfo.framebuffer_pitch;
             tag->common.framebuffer_width = fbinfo.framebuffer_width;
@@ -572,6 +585,8 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
         }
 
         append_tag(info_idx, &tag->common);
+
+skip_modeset:;
     }
 
     //////////////////////////////////////////////

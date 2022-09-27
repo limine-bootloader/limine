@@ -142,15 +142,12 @@ static void fallback_get_cursor_pos(size_t *x, size_t *y) {
 #endif
 
 void term_fallback(void) {
+    term_notready();
+
 #if defined (UEFI)
     if (!efi_boot_services_exited) {
-        gST->ConOut->Reset(gST->ConOut, false);
-        gST->ConOut->SetMode(gST->ConOut, 0);
-        cursor_x = cursor_y = 0;
-#elif defined (BIOS)
-        fallback_clear(true);
 #endif
-        term_notready();
+        fallback_clear(true);
         raw_putchar = fallback_raw_putchar;
         clear = fallback_clear;
         set_cursor_pos = fallback_set_cursor_pos;

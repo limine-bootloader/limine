@@ -28,6 +28,10 @@ define DEFAULT_VAR =
     endif
 endef
 
+override BUILD_BIOS := @BUILD_BIOS@
+override BUILD_UEFI_X86_64 := @BUILD_UEFI_X86_64@
+override BUILD_UEFI_IA32 := @BUILD_UEFI_IA32@
+override BUILD_UEFI_AARCH64 := @BUILD_UEFI_AARCH64@
 override BUILD_CD_EFI := @BUILD_CD_EFI@
 override BUILD_PXE := @BUILD_PXE@
 override BUILD_CD := @BUILD_CD@
@@ -79,7 +83,7 @@ override LIMINE_VERSION := @PACKAGE_VERSION@
 override STAGE1_FILES := $(shell find '$(call SHESCAPE,$(SRCDIR))/stage1' -type f -name '*.asm')
 
 .PHONY: all
-all: limine-version @BUILD_UEFI_X86_64@ @BUILD_UEFI_IA32@ @BUILD_UEFI_AARCH64@ @BUILD_BIOS@
+all: limine-version $(BUILD_UEFI_X86_64) $(BUILD_UEFI_IA32) $(BUILD_UEFI_AARCH64) $(BUILD_BIOS)
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'
 
 $(call MKESCAPE,$(BINDIR))/limine-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-hdd.bin
@@ -114,13 +118,27 @@ clean: limine-bios-clean limine-uefi-ia32-clean limine-uefi-x86-64-clean limine-
 install-data: all
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))'
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine'
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' 2>/dev/null || true
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-cd.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' 2>/dev/null || true
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' 2>/dev/null || true
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' 2>/dev/null || true
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/BOOTAA64.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' 2>/dev/null || true
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' 2>/dev/null || true
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/' 2>/dev/null || true
+ifeq ($(BUILD_BIOS),limine-bios)
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/'
+endif
+ifneq ($(BUILD_CD),no)
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-cd.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/'
+endif
+ifneq ($(BUILD_CD_EFI),no)
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/'
+endif
+ifneq ($(BUILD_PXE),no)
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/'
+endif
+ifeq ($(BUILD_UEFI_AARCH64),limine-uefi-aarch64)
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/BOOTAA64.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/'
+endif
+ifeq ($(BUILD_UEFI_X86_64),limine-uefi-x86-64)
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/'
+endif
+ifeq ($(BUILD_UEFI_IA32),limine-uefi-ia32)
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/'
+endif
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))'
 	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/limine.h' '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))/'
 
@@ -128,13 +146,17 @@ install-data: all
 install-strip: install-data
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))'
 	$(INSTALL_PROGRAM) -s '$(call SHESCAPE,$(BINDIR))/limine-version' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
-	$(INSTALL_PROGRAM) -s '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/' 2>/dev/null || true
+ifneq ($(BUILD_LIMINE_DEPLOY),no)
+	$(INSTALL_PROGRAM) -s '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
+endif
 
 .PHONY: install
 install: install-data
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))'
 	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-version' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
-	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/' 2>/dev/null || true
+ifneq ($(BUILD_LIMINE_DEPLOY),no)
+	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
+endif
 
 .PHONY: uninstall
 uninstall:
@@ -162,7 +184,7 @@ ifneq ($(BUILD_LIMINE_DEPLOY),no)
 	$(MAKE) limine-deploy
 endif
 
-$(call MKESCAPE,$(BINDIR))/limine-cd-efi.bin: $(if @BUILD_UEFI_IA32@, $(call MKESCAPE,$(BUILDDIR))/common-uefi-ia32/BOOTIA32.EFI) $(if @BUILD_UEFI_X86_64@, $(call MKESCAPE,$(BUILDDIR))/common-uefi-x86-64/BOOTX64.EFI) $(if @BUILD_UEFI_AARCH64@, $(call MKESCAPE,$(BUILDDIR))/common-uefi-aarch64/BOOTAA64.EFI)
+$(call MKESCAPE,$(BINDIR))/limine-cd-efi.bin: $(if $(BUILD_UEFI_IA32),$(call MKESCAPE,$(BUILDDIR))/common-uefi-ia32/BOOTIA32.EFI) $(if $(BUILD_UEFI_X86_64),$(call MKESCAPE,$(BUILDDIR))/common-uefi-x86-64/BOOTX64.EFI) $(if $(BUILD_UEFI_AARCH64),$(call MKESCAPE,$(BUILDDIR))/common-uefi-aarch64/BOOTAA64.EFI)
 ifneq ($(BUILD_CD_EFI),no)
 	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	rm -f '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'

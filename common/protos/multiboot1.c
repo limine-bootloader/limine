@@ -372,7 +372,9 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
 
         multiboot1_info->flags |= (1 << 12);
 
+#if defined (UEFI)
 skip_modeset:;
+#endif
     } else {
 #if defined (UEFI)
         panic(true, "multiboot1: Cannot use text mode with UEFI.");

@@ -537,49 +537,13 @@ struct memmap_entry *get_raw_memmap(size_t *entry_count) {
         panic(true, "get_raw_memmap called whilst in boot services");
     }
 
-    size_t mmap_count = efi_mmap_size / efi_desc_size;
-    size_t mmap_len = mmap_count * sizeof(struct memmap_entry);
-
-    struct memmap_entry *mmap = ext_mem_alloc(mmap_len);
-
-    for (size_t i = 0; i < mmap_count; i++) {
-        EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
-
-        uint32_t our_type;
-        switch (entry->Type) {
-            case EfiReservedMemoryType:
-            case EfiRuntimeServicesCode:
-            case EfiRuntimeServicesData:
-            case EfiUnusableMemory:
-            case EfiMemoryMappedIO:
-            case EfiMemoryMappedIOPortSpace:
-            case EfiPalCode:
-            case EfiLoaderCode:
-            case EfiLoaderData:
-            default:
-                our_type = MEMMAP_RESERVED; break;
-            case EfiACPIReclaimMemory:
-                our_type = MEMMAP_ACPI_RECLAIMABLE; break;
-            case EfiACPIMemoryNVS:
-                our_type = MEMMAP_ACPI_NVS; break;
-            case EfiBootServicesCode:
-            case EfiBootServicesData:
-            case EfiConventionalMemory:
-                our_type = MEMMAP_USABLE; break;
-        }
-
-        mmap[i].base   = entry->PhysicalStart;
-        mmap[i].length = entry->NumberOfPages * 4096;
-        mmap[i].type   = our_type;
-    }
-
     bool old_skfp = sanitiser_keep_first_page;
     sanitiser_keep_first_page = true;
-    sanitise_entries(mmap, &mmap_count, false);
+    pmm_reclaim_uefi_mem(untouched_memmap, &untouched_memmap_entries);
     sanitiser_keep_first_page = old_skfp;
 
-    *entry_count = mmap_count;
-    return mmap;
+    *entry_count = untouched_memmap_entries;
+    return untouched_memmap;
 }
 #endif
 

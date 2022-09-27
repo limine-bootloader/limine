@@ -54,8 +54,12 @@ static void fallback_raw_putchar(uint8_t c) {
     rm_int(0x10, &r, &r);
 }
 
+static void fallback_set_cursor_pos(size_t x, size_t y);
+static void fallback_get_cursor_pos(size_t *x, size_t *y);
+
 static void fallback_clear(bool move) {
-    (void)move;
+    size_t x, y;
+    fallback_get_cursor_pos(&x, &y);
     struct rm_regs r = {0};
     rm_int(0x11, &r, &r);
     switch ((r.eax >> 4) & 3) {
@@ -73,6 +77,10 @@ static void fallback_clear(bool move) {
             break;
     }
     rm_int(0x10, &r, &r);
+    if (move) {
+        x = y = 0;
+    }
+    fallback_set_cursor_pos(x, y);
 }
 
 static void fallback_set_cursor_pos(size_t x, size_t y) {
@@ -92,44 +100,53 @@ static void fallback_get_cursor_pos(size_t *x, size_t *y) {
     *y = r.edx >> 8;
 }
 
+static void fallback_scroll(void) {
+    size_t x, y;
+    fallback_get_cursor_pos(&x, &y);
+    fallback_set_cursor_pos(term_cols - 1, term_rows - 1);
+    fallback_raw_putchar(' ');
+    fallback_set_cursor_pos(x, y);
+}
+
 #elif defined (UEFI)
-static int cursor_x = 0, cursor_y = 0;
+
+static size_t cursor_x = 0, cursor_y = 0;
+
+static void fallback_scroll(void) {
+    gST->ConOut->SetCursorPosition(gST->ConOut, term_cols - 1, term_rows - 1);
+    CHAR16 string[2];
+    string[0] = ' ';
+    string[1] = 0;
+    gST->ConOut->OutputString(gST->ConOut, string);
+    gST->ConOut->SetCursorPosition(gST->ConOut, cursor_x, cursor_y);
+}
 
 static void fallback_raw_putchar(uint8_t c) {
     CHAR16 string[2];
     string[0] = c;
     string[1] = 0;
     gST->ConOut->OutputString(gST->ConOut, string);
-    switch (c) {
-        case 0x08:
-            if (cursor_x > 0)
-                cursor_x--;
-            break;
-        case 0x0A:
-            cursor_x = 0;
-            break;
-        case 0x0D:
-            if (cursor_y < 24)
-                cursor_y++;
-            break;
-        default:
-            if (++cursor_x > 80) {
-                cursor_x = 0;
-                if (cursor_y < 24)
-                    cursor_y++;
-            }
+    if (++cursor_x >= term_cols) {
+        cursor_x = 0;
+        if (++cursor_y >= term_rows) {
+            cursor_y--;
+        }
     }
+    gST->ConOut->SetCursorPosition(gST->ConOut, cursor_x, cursor_y);
 }
 
 static void fallback_clear(bool move) {
-    (void)move;
     gST->ConOut->ClearScreen(gST->ConOut);
-    cursor_x = cursor_y = 0;
+    if (move) {
+        cursor_x = cursor_y = 0;
+    }
+    gST->ConOut->SetCursorPosition(gST->ConOut, cursor_x, cursor_y);
 }
 
 static void fallback_set_cursor_pos(size_t x, size_t y) {
-    if (x >= 80 || y >= 25)
+    if (x >= term_cols || y >= term_rows) {
         return;
+    }
     gST->ConOut->SetCursorPosition(gST->ConOut, x, y);
     cursor_x = x;
     cursor_y = y;
@@ -148,11 +165,25 @@ void term_fallback(void) {
     if (!efi_boot_services_exited) {
 #endif
         fallback_clear(true);
+#if defined (UEFI)
+        gST->ConOut->EnableCursor(gST->ConOut, false);
+#endif
         raw_putchar = fallback_raw_putchar;
         clear = fallback_clear;
         set_cursor_pos = fallback_set_cursor_pos;
         get_cursor_pos = fallback_get_cursor_pos;
+        term_scroll = fallback_scroll;
+#if defined (UEFI)
+        UINTN uefi_term_x_size, uefi_term_y_size;
+        gST->ConOut->QueryMode(gST->ConOut, gST->ConOut->Mode->Mode, &uefi_term_x_size, &uefi_term_y_size);
+        term_cols = uefi_term_x_size;
+        term_rows = uefi_term_y_size;
+#elif defined (BIOS)
+        term_cols = 80;
+        term_rows = 25;
+#endif
         term_backend = FALLBACK;
+        term_reinit();
 #if defined (UEFI)
     }
 #endif

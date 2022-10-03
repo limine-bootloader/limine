@@ -119,7 +119,7 @@ void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 
 static void term_write_shim(uint64_t context, uint64_t buf, uint64_t count) {
     (void)context;
-    term_write(buf, count);
+    _term_write(buf, count);
 }
 
 noreturn void limine_load(char *config, char *cmdline) {
@@ -498,14 +498,12 @@ FEAT_START
 
     if (terminal_request->callback != 0) {
 #if defined (__i386__)
-        term_callback = stivale2_term_callback;
+        term->callback = (void *)stivale2_term_callback;
         stivale2_term_callback_ptr = terminal_request->callback;
 #elif defined (__x86_64__)
-        term_callback = (void *)terminal_request->callback;
+        term->callback = (void *)terminal_request->callback;
 #endif
     }
-
-    term_arg = reported_addr(terminal);
 
 #if defined (__i386__)
     if (stivale2_rt_stack == NULL) {
@@ -520,8 +518,8 @@ FEAT_START
 
     term_fb_ptr = &terminal->framebuffer;
 
-    terminal->columns = term_cols;
-    terminal->rows = term_rows;
+    terminal->columns = term->cols;
+    terminal->rows = term->rows;
 
     uint64_t *term_list = ext_mem_alloc(1 * sizeof(uint64_t));
     term_list[0] = reported_addr(terminal);
@@ -534,7 +532,7 @@ FEAT_START
     goto skip_fb_init;
 FEAT_END
 
-    term_deinit();
+    term->deinit(term, pmm_free);
 
     if (!fb_init(&fb, req_width, req_height, req_bpp)) {
         panic(true, "limine: Could not acquire framebuffer");
@@ -744,9 +742,9 @@ FEAT_START
 FEAT_END
 
     // Clear terminal for kernels that will use the Limine terminal
-    term_write((uint64_t)(uintptr_t)("\e[2J\e[H"), 7);
+    term_write(term, "\e[2J\e[H", 7);
 
-    term_runtime = true;
+    term->in_bootloader = false;
 
     stivale_spinup(64, want_5lv, &pagemap, entry_point, 0,
                    reported_addr(stack), nx_available, true, (uintptr_t)local_gdt);

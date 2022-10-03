@@ -4,6 +4,7 @@
 /limine-efi
 /freestanding-headers
 /libgcc-binaries
+/common/term
 /ovmf*
 *.o
 *.d

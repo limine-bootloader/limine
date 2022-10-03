@@ -193,6 +193,14 @@ static bool last_serial = false;
 static char *last_config = NULL;
 
 bool gterm_init(char *config, size_t width, size_t height) {
+    if (term_backend != GTERM) {
+        term->deinit(term, pmm_free);
+    }
+
+    if (quiet || allocations_disallowed) {
+        return false;
+    }
+
     if (current_video_mode >= 0
 #if defined (BIOS)
      && current_video_mode != 0x03
@@ -421,6 +429,17 @@ no_load_font:;
                 font, font_width, font_height, font_spacing,
                 font_scale_x, font_scale_y,
                 margin);
+
+    if (serial) {
+        term->cols = term->cols > 80 ? 80 : term->cols;
+        term->rows = term->rows > 24 ? 24 : term->rows;
+    }
+
+    term_context_reinit(term);
+
+    term_backend = GTERM;
+
+    term->in_bootloader = true;
 
     return true;
 }

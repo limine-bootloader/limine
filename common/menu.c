@@ -563,7 +563,7 @@ static void menu_init_term(void) {
         if (menu_resolution != NULL)
             parse_resolution(&req_width, &req_height, &req_bpp, menu_resolution);
 
-        term_vbe(NULL, req_width, req_height);
+        gterm_init(NULL, req_width, req_height);
     } else {
 #if defined (BIOS)
         term_textmode();
@@ -845,7 +845,7 @@ timeout_aborted:
                     goto refresh;
                 }
                 if (term_backend == FALLBACK) {
-                    term_vbe(NULL, 0, 0);
+                    gterm_init(NULL, 0, 0);
 #if defined (BIOS)
                     if (term_backend == FALLBACK) {
                         term_textmode();

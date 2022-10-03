@@ -348,32 +348,32 @@ again:
 
 static void reprint_string(int x, int y, const char *s) {
     size_t orig_x, orig_y;
-    disable_cursor();
-    get_cursor_pos(&orig_x, &orig_y);
+    term->disable_cursor(term);
+    term->get_cursor_pos(term, &orig_x, &orig_y);
     set_cursor_pos_helper(x, y);
     print("%s", s);
     set_cursor_pos_helper(orig_x, orig_y);
-    enable_cursor();
+    term->enable_cursor(term);
 }
 
 static void cursor_back(void) {
     size_t x, y;
-    get_cursor_pos(&x, &y);
+    term->get_cursor_pos(term, &x, &y);
     if (x) {
         x--;
     } else if (y) {
         y--;
-        x = term_cols - 1;
+        x = term->cols - 1;
     }
     set_cursor_pos_helper(x, y);
 }
 
 static void cursor_fwd(void) {
     size_t x, y;
-    get_cursor_pos(&x, &y);
-    if (x < term_cols - 1) {
+    term->get_cursor_pos(term, &x, &y);
+    if (x < term->cols - 1) {
         x++;
-    } else if (y < term_rows - 1) {
+    } else if (y < term->rows - 1) {
         y++;
         x = 0;
     }
@@ -381,20 +381,20 @@ static void cursor_fwd(void) {
 }
 
 void readline(const char *orig_str, char *buf, size_t limit) {
-    bool prev_autoflush = term_autoflush;
-    term_autoflush = false;
+    bool prev_autoflush = term->autoflush;
+    term->autoflush = false;
 
     size_t orig_str_len = strlen(orig_str);
     memmove(buf, orig_str, orig_str_len);
     buf[orig_str_len] = 0;
 
     size_t orig_x, orig_y;
-    get_cursor_pos(&orig_x, &orig_y);
+    term->get_cursor_pos(term, &orig_x, &orig_y);
 
     print("%s", orig_str);
 
     for (size_t i = orig_str_len; ; ) {
-        term_double_buffer_flush();
+        term->double_buffer_flush(term);
         int c = getchar();
         switch (c) {
             case GETCHAR_CURSOR_LEFT:
@@ -461,6 +461,6 @@ void readline(const char *orig_str, char *buf, size_t limit) {
     }
 
 out:
-    term_double_buffer_flush();
-    term_autoflush = prev_autoflush;
+    term->double_buffer_flush(term);
+    term->autoflush = prev_autoflush;
 }

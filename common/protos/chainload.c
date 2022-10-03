@@ -217,7 +217,7 @@ noreturn void efi_chainload_file(char *config, struct file_handle *image) {
     pmm_free(_ptr, image->size);
     fclose(image);
 
-    term_deinit();
+    term->deinit(term, pmm_free);
 
     size_t req_width = 0, req_height = 0, req_bpp = 0;
 

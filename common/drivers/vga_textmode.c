@@ -15,149 +15,99 @@
 #define VD_COLS (80 * 2)
 #define VD_ROWS 25
 
-static volatile uint8_t *video_mem = (uint8_t *)0xb8000;
-
-static uint8_t *back_buffer = NULL;
-static uint8_t *front_buffer = NULL;
-
-static struct context {
-    size_t cursor_offset;
-#define cursor_offset context.cursor_offset
-    bool cursor_status;
-#define cursor_status context.cursor_status
-    uint8_t text_palette;
-#define text_palette context.text_palette
-    bool scroll_enabled;
-#define scroll_enabled context.scroll_enabled
-
-    uint8_t saved_state_text_palette;
-#define saved_state_text_palette context.saved_state_text_palette
-    size_t saved_state_cursor_offset;
-#define saved_state_cursor_offset context.saved_state_cursor_offset
-} context;
-
-static size_t old_cursor_offset = 0;
-
-static void draw_cursor(void) {
-    uint8_t pal = back_buffer[cursor_offset + 1];
-    video_mem[cursor_offset + 1] = ((pal & 0xf0) >> 4) | ((pal & 0x0f) << 4);
+static void draw_cursor(struct textmode_context *ctx) {
+    uint8_t pal = ctx->back_buffer[ctx->cursor_offset + 1];
+    ctx->video_mem[ctx->cursor_offset + 1] = ((pal & 0xf0) >> 4) | ((pal & 0x0f) << 4);
 }
 
-void text_save_state(void) {
-    saved_state_text_palette = text_palette;
-    saved_state_cursor_offset = cursor_offset;
+void text_save_state(struct term_context *_ctx) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->saved_state_text_palette = ctx->text_palette;
+    ctx->saved_state_cursor_offset = ctx->cursor_offset;
 }
 
-void text_restore_state(void) {
-    text_palette = saved_state_text_palette;
-    cursor_offset = saved_state_cursor_offset;
+void text_restore_state(struct term_context *_ctx) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->text_palette = ctx->saved_state_text_palette;
+    ctx->cursor_offset = ctx->saved_state_cursor_offset;
 }
 
-void text_swap_palette(void) {
-    text_palette = (text_palette << 4) | (text_palette >> 4);
+void text_swap_palette(struct term_context *_ctx) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->text_palette = (ctx->text_palette << 4) | (ctx->text_palette >> 4);
 }
 
-bool text_scroll_disable(void) {
-    bool ret = scroll_enabled;
-    scroll_enabled = false;
-    return ret;
-}
+void text_scroll(struct term_context *_ctx) {
+    struct textmode_context *ctx = (void *)_ctx;
 
-void text_scroll_enable(void) {
-    scroll_enabled = true;
-}
-
-void text_scroll(void) {
     // move the text up by one row
-    for (size_t i = term_context.scroll_top_margin * VD_COLS;
-         i < (term_context.scroll_bottom_margin - 1) * VD_COLS; i++) {
-        back_buffer[i] = back_buffer[i + VD_COLS];
+    for (size_t i = _ctx->scroll_top_margin * VD_COLS;
+         i < (_ctx->scroll_bottom_margin - 1) * VD_COLS; i++) {
+        ctx->back_buffer[i] = ctx->back_buffer[i + VD_COLS];
     }
     // clear the last line of the screen
-    for (size_t i = (term_context.scroll_bottom_margin - 1) * VD_COLS;
-         i < term_context.scroll_bottom_margin * VD_COLS; i += 2) {
-        back_buffer[i] = ' ';
-        back_buffer[i + 1] = text_palette;
+    for (size_t i = (_ctx->scroll_bottom_margin - 1) * VD_COLS;
+         i < _ctx->scroll_bottom_margin * VD_COLS; i += 2) {
+        ctx->back_buffer[i] = ' ';
+        ctx->back_buffer[i + 1] = ctx->text_palette;
     }
 }
 
-void text_revscroll(void) {
+void text_revscroll(struct term_context *_ctx) {
+    struct textmode_context *ctx = (void *)_ctx;
+
     // move the text up by one row
-    for (size_t i = (term_context.scroll_bottom_margin - 1) * VD_COLS - 2; ; i--) {
-        back_buffer[i + VD_COLS] = back_buffer[i];
-        if (i == term_context.scroll_top_margin * VD_COLS) {
+    for (size_t i = (_ctx->scroll_bottom_margin - 1) * VD_COLS - 2; ; i--) {
+        ctx->back_buffer[i + VD_COLS] = ctx->back_buffer[i];
+        if (i == _ctx->scroll_top_margin * VD_COLS) {
             break;
         }
     }
     // clear the first line of the screen
-    for (size_t i = term_context.scroll_top_margin * VD_COLS;
-         i < (term_context.scroll_top_margin + 1) * VD_COLS; i += 2) {
-        back_buffer[i] = ' ';
-        back_buffer[i + 1] = text_palette;
+    for (size_t i = _ctx->scroll_top_margin * VD_COLS;
+         i < (_ctx->scroll_top_margin + 1) * VD_COLS; i += 2) {
+        ctx->back_buffer[i] = ' ';
+        ctx->back_buffer[i + 1] = ctx->text_palette;
     }
 }
 
-void text_clear(bool move) {
+void text_clear(struct term_context *_ctx, bool move) {
+    struct textmode_context *ctx = (void *)_ctx;
+
     for (size_t i = 0; i < VIDEO_BOTTOM; i += 2) {
-        back_buffer[i] = ' ';
-        back_buffer[i + 1] = text_palette;
+        ctx->back_buffer[i] = ' ';
+        ctx->back_buffer[i + 1] = ctx->text_palette;
     }
-    if (move)
-        cursor_offset = 0;
+    if (move) {
+        ctx->cursor_offset = 0;
+    }
 }
 
-void text_enable_cursor(void) {
-    cursor_status = true;
+void text_enable_cursor(struct term_context *_ctx) {
+    struct textmode_context *ctx = (void *)_ctx;
+
+    ctx->cursor_status = true;
 }
 
-bool text_disable_cursor(void) {
-    bool ret = cursor_status;
-    cursor_status = false;
+bool text_disable_cursor(struct term_context *_ctx) {
+    struct textmode_context *ctx = (void *)_ctx;
+
+    bool ret = ctx->cursor_status;
+    ctx->cursor_status = false;
     return ret;
 }
 
-uint64_t text_context_size(void) {
-    uint64_t ret = 0;
-
-    ret += sizeof(struct context);
-    ret += VD_ROWS * VD_COLS; // front buffer
-
-    return ret;
-}
-
-void text_context_save(uint64_t ptr) {
-    memcpy32to64(ptr, (uint64_t)(uintptr_t)&context, sizeof(struct context));
-    ptr += sizeof(struct context);
-
-    memcpy32to64(ptr, (uint64_t)(uintptr_t)front_buffer, VD_ROWS * VD_COLS);
-}
-
-void text_context_restore(uint64_t ptr) {
-    memcpy32to64((uint64_t)(uintptr_t)&context, ptr, sizeof(struct context));
-    ptr += sizeof(struct context);
-
-    memcpy32to64((uint64_t)(uintptr_t)front_buffer, ptr, VD_ROWS * VD_COLS);
+void text_full_refresh(struct term_context *_ctx) {
+    struct textmode_context *ctx = (void *)_ctx;
 
     for (size_t i = 0; i < VD_ROWS * VD_COLS; i++) {
-        video_mem[i] = front_buffer[i];
-        back_buffer[i] = front_buffer[i];
+        ctx->video_mem[i] = ctx->front_buffer[i];
+        ctx->back_buffer[i] = ctx->front_buffer[i];
     }
 
-    if (cursor_status) {
-        draw_cursor();
-        old_cursor_offset = cursor_offset;
-    }
-}
-
-void text_full_refresh(void) {
-    for (size_t i = 0; i < VD_ROWS * VD_COLS; i++) {
-        video_mem[i] = front_buffer[i];
-        back_buffer[i] = front_buffer[i];
-    }
-
-    if (cursor_status) {
-        draw_cursor();
-        old_cursor_offset = cursor_offset;
+    if (ctx->cursor_status) {
+        draw_cursor(ctx);
+        ctx->old_cursor_offset = ctx->cursor_offset;
     }
 }
 
@@ -170,23 +120,26 @@ void init_vga_textmode(size_t *_rows, size_t *_cols, bool managed) {
         current_video_mode = 0x3;
     }
 
-    if (back_buffer == NULL) {
-        back_buffer = ext_mem_alloc(VD_ROWS * VD_COLS);
+    struct textmode_context *ctx = (void *)term;
+
+    if (ctx->back_buffer == NULL) {
+        ctx->back_buffer = ext_mem_alloc(VD_ROWS * VD_COLS);
     } else {
-        memset(back_buffer, 0, VD_ROWS * VD_COLS);
+        memset(ctx->back_buffer, 0, VD_ROWS * VD_COLS);
     }
-    if (front_buffer == NULL) {
-        front_buffer = ext_mem_alloc(VD_ROWS * VD_COLS);
+    if (ctx->front_buffer == NULL) {
+        ctx->front_buffer = ext_mem_alloc(VD_ROWS * VD_COLS);
     } else {
-        memset(front_buffer, 0, VD_ROWS * VD_COLS);
+        memset(ctx->front_buffer, 0, VD_ROWS * VD_COLS);
     }
 
-    cursor_offset = 0;
-    cursor_status = true;
-    text_palette = 0x07;
-    scroll_enabled = true;
+    ctx->cursor_offset = 0;
+    ctx->cursor_status = true;
+    ctx->text_palette = 0x07;
 
-    text_clear(false);
+    ctx->video_mem = (volatile uint8_t *)0xb8000;
+
+    text_clear(term, false);
 
     *_rows = VD_ROWS;
     *_cols = VD_COLS / 2;
@@ -194,7 +147,7 @@ void init_vga_textmode(size_t *_rows, size_t *_cols, bool managed) {
     // VGA cursor code taken from: https://wiki.osdev.org/Text_Mode_Cursor
 
     if (!managed) {
-        text_disable_cursor();
+        text_disable_cursor(term);
 
         outb(0x3d4, 0x0a);
         outb(0x3d5, (inb(0x3d5) & 0xc0) | 14);
@@ -213,51 +166,59 @@ void init_vga_textmode(size_t *_rows, size_t *_cols, bool managed) {
         outb(0x3d5, 0x20);
     }
 
-    text_double_buffer_flush();
+    text_double_buffer_flush(term);
 }
 
-void text_double_buffer_flush(void) {
-    if (cursor_status) {
-        draw_cursor();
+void text_double_buffer_flush(struct term_context *_ctx) {
+    struct textmode_context *ctx = (void *)_ctx;
+
+    if (ctx->cursor_status) {
+        draw_cursor(ctx);
     }
 
-    if (cursor_offset != old_cursor_offset || cursor_status == false) {
-        video_mem[old_cursor_offset + 1] = back_buffer[old_cursor_offset + 1];
+    if (ctx->cursor_offset != ctx->old_cursor_offset || ctx->cursor_status == false) {
+        ctx->video_mem[ctx->old_cursor_offset + 1] = ctx->back_buffer[ctx->old_cursor_offset + 1];
     }
 
     for (size_t i = 0; i < VD_ROWS * VD_COLS; i++) {
-        if (back_buffer[i] == front_buffer[i]) {
+        if (ctx->back_buffer[i] == ctx->front_buffer[i]) {
             continue;
         }
 
-        if (cursor_status && i == cursor_offset + 1) {
+        if (ctx->cursor_status && i == ctx->cursor_offset + 1) {
             continue;
         }
 
-        front_buffer[i] = back_buffer[i];
-        video_mem[i]    = back_buffer[i];
+        ctx->front_buffer[i] = ctx->back_buffer[i];
+        ctx->video_mem[i]    = ctx->back_buffer[i];
     }
 
-    if (cursor_status) {
-        old_cursor_offset = cursor_offset;
+    if (ctx->cursor_status) {
+        ctx->old_cursor_offset = ctx->cursor_offset;
     }
 }
 
-void text_get_cursor_pos(size_t *x, size_t *y) {
-    *x = (cursor_offset % VD_COLS) / 2;
-    *y = cursor_offset / VD_COLS;
+void text_get_cursor_pos(struct term_context *_ctx, size_t *x, size_t *y) {
+    struct textmode_context *ctx = (void *)_ctx;
+
+    *x = (ctx->cursor_offset % VD_COLS) / 2;
+    *y = ctx->cursor_offset / VD_COLS;
 }
 
-void text_move_character(size_t new_x, size_t new_y, size_t old_x, size_t old_y) {
+void text_move_character(struct term_context *_ctx, size_t new_x, size_t new_y, size_t old_x, size_t old_y) {
+    struct textmode_context *ctx = (void *)_ctx;
+
     if (old_x >= VD_COLS / 2 || old_y >= VD_ROWS
      || new_x >= VD_COLS / 2 || new_y >= VD_ROWS) {
         return;
     }
 
-    back_buffer[new_y * VD_COLS + new_x * 2] = back_buffer[old_y * VD_COLS + old_x * 2];
+    ctx->back_buffer[new_y * VD_COLS + new_x * 2] = ctx->back_buffer[old_y * VD_COLS + old_x * 2];
 }
 
-void text_set_cursor_pos(size_t x, size_t y) {
+void text_set_cursor_pos(struct term_context *_ctx, size_t x, size_t y) {
+    struct textmode_context *ctx = (void *)_ctx;
+
     if (x >= VD_COLS / 2) {
         if ((int)x < 0) {
             x = 0;
@@ -272,48 +233,56 @@ void text_set_cursor_pos(size_t x, size_t y) {
             y = VD_ROWS - 1;
         }
     }
-    cursor_offset = y * VD_COLS + x * 2;
+    ctx->cursor_offset = y * VD_COLS + x * 2;
 }
 
 static uint8_t ansi_colours[] = { 0, 4, 2, 6, 1, 5, 3, 7 };
 
-void text_set_text_fg(size_t fg) {
-    text_palette = (text_palette & 0xf0) | ansi_colours[fg];
+void text_set_text_fg(struct term_context *_ctx, size_t fg) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->text_palette = (ctx->text_palette & 0xf0) | ansi_colours[fg];
 }
 
-void text_set_text_bg(size_t bg) {
-    text_palette = (text_palette & 0x0f) | (ansi_colours[bg] << 4);
+void text_set_text_bg(struct term_context *_ctx, size_t bg) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->text_palette = (ctx->text_palette & 0x0f) | (ansi_colours[bg] << 4);
 }
 
-void text_set_text_fg_bright(size_t fg) {
-    text_palette = (text_palette & 0xf0) | (ansi_colours[fg] | (1 << 3));
+void text_set_text_fg_bright(struct term_context *_ctx, size_t fg) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->text_palette = (ctx->text_palette & 0xf0) | (ansi_colours[fg] | (1 << 3));
 }
 
-void text_set_text_bg_bright(size_t bg) {
-    text_palette = (text_palette & 0x0f) | ((ansi_colours[bg] | (1 << 3)) << 4);
+void text_set_text_bg_bright(struct term_context *_ctx, size_t bg) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->text_palette = (ctx->text_palette & 0x0f) | ((ansi_colours[bg] | (1 << 3)) << 4);
 }
 
-void text_set_text_fg_default(void) {
-    text_palette = (text_palette & 0xf0) | 7;
+void text_set_text_fg_default(struct term_context *_ctx) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->text_palette = (ctx->text_palette & 0xf0) | 7;
 }
 
-void text_set_text_bg_default(void) {
-    text_palette &= 0x0f;
+void text_set_text_bg_default(struct term_context *_ctx) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->text_palette &= 0x0f;
 }
 
-void text_putchar(uint8_t c) {
-    back_buffer[cursor_offset] = c;
-    back_buffer[cursor_offset + 1] = text_palette;
-    if (cursor_offset / VD_COLS == term_context.scroll_bottom_margin - 1
-     && cursor_offset % VD_COLS == VD_COLS - 2) {
-        if (scroll_enabled) {
-            text_scroll();
-            cursor_offset -= cursor_offset % VD_COLS;
+void text_putchar(struct term_context *_ctx, uint8_t c) {
+    struct textmode_context *ctx = (void *)_ctx;
+
+    ctx->back_buffer[ctx->cursor_offset] = c;
+    ctx->back_buffer[ctx->cursor_offset + 1] = ctx->text_palette;
+    if (ctx->cursor_offset / VD_COLS == _ctx->scroll_bottom_margin - 1
+     && ctx->cursor_offset % VD_COLS == VD_COLS - 2) {
+        if (_ctx->scroll_enabled) {
+            text_scroll(_ctx);
+            ctx->cursor_offset -= ctx->cursor_offset % VD_COLS;
         }
-    } else if (cursor_offset >= (VIDEO_BOTTOM - 1)) {
-        cursor_offset -= cursor_offset % VD_COLS;
+    } else if (ctx->cursor_offset >= (VIDEO_BOTTOM - 1)) {
+        ctx->cursor_offset -= ctx->cursor_offset % VD_COLS;
     } else {
-        cursor_offset += 2;
+        ctx->cursor_offset += 2;
     }
 }
 

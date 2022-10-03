@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <lib/gterm.h>
-#include <lib/term.h>
 #include <lib/misc.h>
 #include <lib/libc.h>
 #include <lib/config.h>
@@ -9,121 +8,23 @@
 #include <lib/uri.h>
 #include <lib/fb.h>
 #include <mm/pmm.h>
-
-// Maximum allowed font size in bytes. 16kB should be enough as 9x32 is the
-// largest font I've seen, and that would take 9*32 * 256 * 1/8 byte =
-// 9216 bytes.
-#define VGA_FONT_MAX 16384
-#define VGA_FONT_GLYPHS 256
-
-#define DEFAULT_FONT_WIDTH 8
-#define DEFAULT_FONT_HEIGHT 16
-
-static size_t vga_font_width;
-static size_t vga_font_height;
-static size_t glyph_width = 8;
-static size_t glyph_height = 16;
-
-static size_t vga_font_scale_x = 1;
-static size_t vga_font_scale_y = 1;
-
-static size_t offset_x, offset_y;
+#include <term/term.h>
+#include <term/backends/framebuffer.h>
+#include <lib/term.h>
 
 struct fb_info fbinfo;
-static volatile uint32_t *gterm_framebuffer;
-static uint16_t  gterm_pitch;
-static uint16_t  gterm_width;
-static uint16_t  gterm_height;
-static uint16_t  gterm_bpp;
 
-extern symbol _binary_font_bin_start;
-
-static uint8_t *vga_font_bits = NULL;
-static size_t vga_font_bool_size = 0;
-static bool *vga_font_bool = NULL;
-
-static uint32_t ansi_colours[8];
-static uint32_t ansi_bright_colours[8];
-static uint32_t default_fg, default_bg;
+extern symbol _binary_font_bin_start, _binary_font_bin_size;
 
 static struct image *background;
 
-static size_t bg_canvas_size = 0;
-static uint32_t *bg_canvas = NULL;
+static size_t margin = 64;
+static size_t margin_gradient = 4;
 
-static size_t rows;
-static size_t cols;
-static size_t margin;
-static size_t margin_gradient;
+static uint32_t default_bg, default_fg;
 
-static size_t grid_size = 0;
-static size_t queue_size = 0;
-static size_t map_size = 0;
-
-struct gterm_char {
-    uint32_t c;
-    uint32_t fg;
-    uint32_t bg;
-};
-
-static struct gterm_char *grid = NULL;
-
-struct queue_item {
-    size_t x, y;
-    struct gterm_char c;
-};
-
-static struct queue_item *queue = NULL;
-static size_t queue_i = 0;
-
-static struct queue_item **map = NULL;
-
-static struct context {
-    uint32_t text_fg;
-#define text_fg context.text_fg
-    uint32_t text_bg;
-#define text_bg context.text_bg
-    bool cursor_status;
-#define cursor_status context.cursor_status
-    size_t cursor_x;
-#define cursor_x context.cursor_x
-    size_t cursor_y;
-#define cursor_y context.cursor_y
-    bool scroll_enabled;
-#define scroll_enabled context.scroll_enabled
-
-    uint32_t saved_state_text_fg;
-#define saved_state_text_fg context.saved_state_text_fg
-    uint32_t saved_state_text_bg;
-#define saved_state_text_bg context.saved_state_text_bg
-    size_t saved_state_cursor_x;
-#define saved_state_cursor_x context.saved_state_cursor_x
-    size_t saved_state_cursor_y;
-#define saved_state_cursor_y context.saved_state_cursor_y
-} context;
-
-static size_t old_cursor_x = 0;
-static size_t old_cursor_y = 0;
-
-void gterm_save_state(void) {
-    saved_state_text_fg = text_fg;
-    saved_state_text_bg = text_bg;
-    saved_state_cursor_x = cursor_x;
-    saved_state_cursor_y = cursor_y;
-}
-
-void gterm_restore_state(void) {
-    text_fg = saved_state_text_fg;
-    text_bg = saved_state_text_bg;
-    cursor_x = saved_state_cursor_x;
-    cursor_y = saved_state_cursor_y;
-}
-
-void gterm_swap_palette(void) {
-    uint32_t tmp = text_bg;
-    text_bg = text_fg;
-    text_fg = tmp;
-}
+static size_t bg_canvas_size;
+static uint32_t *bg_canvas;
 
 #define A(rgb) (uint8_t)(rgb >> 24)
 #define R(rgb) (uint8_t)(rgb >> 16)
@@ -142,20 +43,10 @@ static inline uint32_t colour_blend(uint32_t fg, uint32_t bg) {
     return ARGB(0, r, g, b);
 }
 
-static inline void gterm_plot_px(size_t x, size_t y, uint32_t hex) {
-    if (x >= gterm_width || y >= gterm_height) {
-        return;
-    }
-
-    size_t fb_i = x + (gterm_pitch / sizeof(uint32_t)) * y;
-
-    gterm_framebuffer[fb_i] = hex;
-}
-
 static uint32_t blend_gradient_from_box(size_t x, size_t y, uint32_t bg_px, uint32_t hex) {
     size_t distance, x_distance, y_distance;
-    size_t gradient_stop_x = gterm_width - margin;
-    size_t gradient_stop_y = gterm_height - margin;
+    size_t gradient_stop_x = fbinfo.framebuffer_width - margin;
+    size_t gradient_stop_y = fbinfo.framebuffer_height - margin;
 
     if (x < margin)
         x_distance = margin - x;
@@ -199,11 +90,11 @@ __attribute__((always_inline)) static inline void genloop(size_t xstart, size_t 
         for (size_t y = ystart; y < yend; y++) {
             size_t image_y = y % img_height, image_x = xstart % img_width;
             const size_t off = img_pitch * (img_height - 1 - image_y);
-            size_t canvas_off = gterm_width * y, fb_off = gterm_pitch / 4 * y;
+            size_t canvas_off = fbinfo.framebuffer_width * y;
             for (size_t x = xstart; x < xend; x++) {
                 uint32_t img_pixel = *(uint32_t*)(img + image_x * colsize + off);
                 uint32_t i = blend(x, y, img_pixel);
-                bg_canvas[canvas_off + x] = i; gterm_framebuffer[fb_off + x] = i;
+                bg_canvas[canvas_off + x] = i;
                 if (image_x++ == img_width) image_x = 0; // image_x = x % img_width, but modulo is too expensive
             }
         }
@@ -213,11 +104,11 @@ __attribute__((always_inline)) static inline void genloop(size_t xstart, size_t 
         for (size_t y = ystart; y < yend; y++) {
             size_t image_y = y - background->y_displacement;
             const size_t off = img_pitch * (img_height - 1 - image_y);
-            size_t canvas_off = gterm_width * y, fb_off = gterm_pitch / 4 * y;
+            size_t canvas_off = fbinfo.framebuffer_width * y;
             if (image_y >= background->y_size) { /* external part */
                 for (size_t x = xstart; x < xend; x++) {
                     uint32_t i = blend(x, y, background->back_colour);
-                    bg_canvas[canvas_off + x] = i; gterm_framebuffer[fb_off + x] = i;
+                    bg_canvas[canvas_off + x] = i;
                 }
             }
             else { /* internal part */
@@ -226,7 +117,7 @@ __attribute__((always_inline)) static inline void genloop(size_t xstart, size_t 
                     bool x_external = image_x >= background->x_size;
                     uint32_t img_pixel = *(uint32_t*)(img + image_x * colsize + off);
                     uint32_t i = blend(x, y, x_external ? background->back_colour : img_pixel);
-                    bg_canvas[canvas_off + x] = i; gterm_framebuffer[fb_off + x] = i;
+                    bg_canvas[canvas_off + x] = i;
                 }
             }
         }
@@ -236,16 +127,16 @@ __attribute__((always_inline)) static inline void genloop(size_t xstart, size_t 
     // so you can set x = xstart * ratio, and increment by ratio at each iteration
     case IMAGE_STRETCHED:
         for (size_t y = ystart; y < yend; y++) {
-            size_t img_y = (y * img_height) / gterm_height; // calculate Y with full precision
+            size_t img_y = (y * img_height) / fbinfo.framebuffer_height; // calculate Y with full precision
             size_t off = img_pitch * (img_height - 1 - img_y);
-            size_t canvas_off = gterm_width * y, fb_off = gterm_pitch / 4 * y;
+            size_t canvas_off = fbinfo.framebuffer_width * y;
 
-            size_t ratio = int_to_fixedp6(img_width) / gterm_width;
+            size_t ratio = int_to_fixedp6(img_width) / fbinfo.framebuffer_width;
             fixedp6 img_x = ratio * xstart;
             for (size_t x = xstart; x < xend; x++) {
                 uint32_t img_pixel = *(uint32_t*)(img + fixedp6_to_int(img_x) * colsize + off);
                 uint32_t i = blend(x, y, img_pixel);
-                bg_canvas[canvas_off + x] = i; gterm_framebuffer[fb_off + x] = i;
+                bg_canvas[canvas_off + x] = i;
                 img_x += ratio;
             }
         }
@@ -261,24 +152,27 @@ static void loop_external(size_t xstart, size_t xend, size_t ystart, size_t yend
 static void loop_margin(size_t xstart, size_t xend, size_t ystart, size_t yend) { genloop(xstart, xend, ystart, yend, blend_margin); }
 static void loop_internal(size_t xstart, size_t xend, size_t ystart, size_t yend) { genloop(xstart, xend, ystart, yend, blend_internal); }
 
-static void gterm_generate_canvas(void) {
+static void *generate_canvas(void) {
     if (background) {
+        bg_canvas_size = fbinfo.framebuffer_width * fbinfo.framebuffer_height * sizeof(uint32_t);
+        bg_canvas = ext_mem_alloc(bg_canvas_size);
+
         int64_t margin_no_gradient = (int64_t)margin - margin_gradient;
 
         if (margin_no_gradient < 0) {
             margin_no_gradient = 0;
         }
 
-        size_t scan_stop_x = gterm_width - margin_no_gradient;
-        size_t scan_stop_y = gterm_height - margin_no_gradient;
+        size_t scan_stop_x = fbinfo.framebuffer_width - margin_no_gradient;
+        size_t scan_stop_y = fbinfo.framebuffer_height - margin_no_gradient;
 
-        loop_external(0, gterm_width, 0, margin_no_gradient);
-        loop_external(0, gterm_width, scan_stop_y, gterm_height);
+        loop_external(0, fbinfo.framebuffer_width, 0, margin_no_gradient);
+        loop_external(0, fbinfo.framebuffer_width, scan_stop_y, fbinfo.framebuffer_height);
         loop_external(0, margin_no_gradient, margin_no_gradient, scan_stop_y);
-        loop_external(scan_stop_x, gterm_width, margin_no_gradient, scan_stop_y);
+        loop_external(scan_stop_x, fbinfo.framebuffer_width, margin_no_gradient, scan_stop_y);
 
-        size_t gradient_stop_x = gterm_width - margin;
-        size_t gradient_stop_y = gterm_height - margin;
+        size_t gradient_stop_x = fbinfo.framebuffer_width - margin;
+        size_t gradient_stop_y = fbinfo.framebuffer_height - margin;
 
         if (margin_gradient) {
             loop_margin(margin_no_gradient, scan_stop_x, margin_no_gradient, margin);
@@ -288,327 +182,17 @@ static void gterm_generate_canvas(void) {
         }
 
         loop_internal(margin, gradient_stop_x, margin, gradient_stop_y);
-    } else {
-        for (size_t y = 0; y < gterm_height; y++) {
-            for (size_t x = 0; x < gterm_width; x++) {
-                bg_canvas[y * gterm_width + x] = default_bg;
-                gterm_plot_px(x, y, default_bg);
-            }
-        }
-    }
-}
 
-static void plot_char(struct gterm_char *c, size_t x, size_t y) {
-    if (x >= cols || y >= rows) {
-        return;
+        return bg_canvas;
     }
 
-    x = offset_x + x * glyph_width;
-    y = offset_y + y * glyph_height;
-
-    bool *glyph = &vga_font_bool[c->c * vga_font_height * vga_font_width];
-    // naming: fx,fy for font coordinates, gx,gy for glyph coordinates
-    for (size_t gy = 0; gy < glyph_height; gy++) {
-        uint8_t fy = gy / vga_font_scale_y;
-        volatile uint32_t *fb_line = gterm_framebuffer + x + (y + gy) * (gterm_pitch / 4);
-        uint32_t *canvas_line = bg_canvas + x + (y + gy) * gterm_width;
-        for (size_t fx = 0; fx < vga_font_width; fx++) {
-            bool draw = glyph[fy * vga_font_width + fx];
-            for (size_t i = 0; i < vga_font_scale_x; i++) {
-                size_t gx = vga_font_scale_x * fx + i;
-                uint32_t bg = c->bg == 0xffffffff ? canvas_line[gx] : c->bg;
-                uint32_t fg = c->fg == 0xffffffff ? canvas_line[gx] : c->fg;
-                fb_line[gx] = draw ? fg : bg;
-            }
-        }
-    }
-}
-
-static void plot_char_fast(struct gterm_char *old, struct gterm_char *c, size_t x, size_t y) {
-    if (x >= cols || y >= rows) {
-        return;
-    }
-
-    x = offset_x + x * glyph_width;
-    y = offset_y + y * glyph_height;
-
-    bool *new_glyph = &vga_font_bool[c->c * vga_font_height * vga_font_width];
-    bool *old_glyph = &vga_font_bool[old->c * vga_font_height * vga_font_width];
-    for (size_t gy = 0; gy < glyph_height; gy++) {
-        uint8_t fy = gy / vga_font_scale_y;
-        volatile uint32_t *fb_line = gterm_framebuffer + x + (y + gy) * (gterm_pitch / 4);
-        uint32_t *canvas_line = bg_canvas + x + (y + gy) * gterm_width;
-        for (size_t fx = 0; fx < vga_font_width; fx++) {
-            bool old_draw = old_glyph[fy * vga_font_width + fx];
-            bool new_draw = new_glyph[fy * vga_font_width + fx];
-            if (old_draw == new_draw)
-                continue;
-            for (size_t i = 0; i < vga_font_scale_x; i++) {
-                size_t gx = vga_font_scale_x * fx + i;
-                uint32_t bg = c->bg == 0xffffffff ? canvas_line[gx] : c->bg;
-                uint32_t fg = c->fg == 0xffffffff ? canvas_line[gx] : c->fg;
-                fb_line[gx] = new_draw ? fg : bg;
-            }
-        }
-    }
-}
-
-static inline bool compare_char(struct gterm_char *a, struct gterm_char *b) {
-    return !(a->c != b->c || a->bg != b->bg || a->fg != b->fg);
-}
-
-static void push_to_queue(struct gterm_char *c, size_t x, size_t y) {
-    if (x >= cols || y >= rows) {
-        return;
-    }
-
-    size_t i = y * cols + x;
-
-    struct queue_item *q = map[i];
-
-    if (q == NULL) {
-        if (compare_char(&grid[i], c)) {
-            return;
-        }
-        q = &queue[queue_i++];
-        q->x = x;
-        q->y = y;
-        map[i] = q;
-    }
-
-    q->c = *c;
-}
-
-bool gterm_scroll_disable(void) {
-    bool ret = scroll_enabled;
-    scroll_enabled = false;
-    return ret;
-}
-
-void gterm_scroll_enable(void) {
-    scroll_enabled = true;
-}
-
-void gterm_revscroll(void) {
-    for (size_t i = (term_context.scroll_bottom_margin - 1) * cols - 1; ; i--) {
-        struct gterm_char *c;
-        struct queue_item *q = map[i];
-        if (q != NULL) {
-            c = &q->c;
-        } else {
-            c = &grid[i];
-        }
-        push_to_queue(c, (i + cols) % cols, (i + cols) / cols);
-        if (i == term_context.scroll_top_margin * cols) {
-            break;
-        }
-    }
-
-    // Clear the first line of the screen.
-    struct gterm_char empty;
-    empty.c  = ' ';
-    empty.fg = text_fg;
-    empty.bg = text_bg;
-    for (size_t i = term_context.scroll_top_margin * cols;
-         i < (term_context.scroll_top_margin + 1) * cols; i++) {
-        push_to_queue(&empty, i % cols, i / cols);
-    }
-}
-
-void gterm_scroll(void) {
-    for (size_t i = (term_context.scroll_top_margin + 1) * cols;
-         i < term_context.scroll_bottom_margin * cols; i++) {
-        struct gterm_char *c;
-        struct queue_item *q = map[i];
-        if (q != NULL) {
-            c = &q->c;
-        } else {
-            c = &grid[i];
-        }
-        push_to_queue(c, (i - cols) % cols, (i - cols) / cols);
-    }
-
-    // Clear the last line of the screen.
-    struct gterm_char empty;
-    empty.c  = ' ';
-    empty.fg = text_fg;
-    empty.bg = text_bg;
-    for (size_t i = (term_context.scroll_bottom_margin - 1) * cols;
-         i < term_context.scroll_bottom_margin * cols; i++) {
-        push_to_queue(&empty, i % cols, i / cols);
-    }
-}
-
-void gterm_clear(bool move) {
-    struct gterm_char empty;
-    empty.c  = ' ';
-    empty.fg = text_fg;
-    empty.bg = text_bg;
-    for (size_t i = 0; i < rows * cols; i++) {
-        push_to_queue(&empty, i % cols, i / cols);
-    }
-
-    if (move) {
-        cursor_x = 0;
-        cursor_y = 0;
-    }
-}
-
-void gterm_enable_cursor(void) {
-    cursor_status = true;
-}
-
-bool gterm_disable_cursor(void) {
-    bool ret = cursor_status;
-    cursor_status = false;
-    return ret;
-}
-
-void gterm_set_cursor_pos(size_t x, size_t y) {
-    if (x >= cols) {
-        if ((int)x < 0) {
-            x = 0;
-        } else {
-            x = cols - 1;
-        }
-    }
-    if (y >= rows) {
-        if ((int)y < 0) {
-            y = 0;
-        } else {
-            y = rows - 1;
-        }
-    }
-    cursor_x = x;
-    cursor_y = y;
-}
-
-void gterm_get_cursor_pos(size_t *x, size_t *y) {
-    *x = cursor_x;
-    *y = cursor_y;
-}
-
-void gterm_move_character(size_t new_x, size_t new_y, size_t old_x, size_t old_y) {
-    if (old_x >= cols || old_y >= rows
-     || new_x >= cols || new_y >= rows) {
-        return;
-    }
-
-    size_t i = old_x + old_y * cols;
-
-    struct gterm_char *c;
-    struct queue_item *q = map[i];
-    if (q != NULL) {
-        c = &q->c;
-    } else {
-        c = &grid[i];
-    }
-
-    push_to_queue(c, new_x, new_y);
-}
-
-void gterm_set_text_fg(size_t fg) {
-    text_fg = ansi_colours[fg];
-}
-
-void gterm_set_text_bg(size_t bg) {
-    text_bg = ansi_colours[bg];
-}
-
-void gterm_set_text_fg_bright(size_t fg) {
-    text_fg = ansi_bright_colours[fg];
-}
-
-void gterm_set_text_bg_bright(size_t bg) {
-    text_bg = ansi_bright_colours[bg];
-}
-
-void gterm_set_text_fg_rgb(uint32_t fg) {
-    text_fg = fg;
-}
-
-void gterm_set_text_bg_rgb(uint32_t bg) {
-    text_bg = bg;
-}
-
-void gterm_set_text_fg_default(void) {
-    text_fg = default_fg;
-}
-
-void gterm_set_text_bg_default(void) {
-    text_bg = 0xffffffff;
-}
-
-static void draw_cursor(void) {
-    size_t i = cursor_x + cursor_y * cols;
-    struct gterm_char c;
-    struct queue_item *q = map[i];
-    if (q != NULL) {
-        c = q->c;
-    } else {
-        c = grid[i];
-    }
-    uint32_t tmp = c.fg;
-    c.fg = c.bg;
-    c.bg = tmp;
-    plot_char(&c, cursor_x, cursor_y);
-    if (q != NULL) {
-        grid[i] = q->c;
-        map[i] = NULL;
-    }
-}
-
-void gterm_double_buffer_flush(void) {
-    if (cursor_status) {
-        draw_cursor();
-    }
-
-    for (size_t i = 0; i < queue_i; i++) {
-        struct queue_item *q = &queue[i];
-        size_t offset = q->y * cols + q->x;
-        if (map[offset] == NULL) {
-            continue;
-        }
-        struct gterm_char *old = &grid[offset];
-        if (q->c.bg == old->bg && q->c.fg == old->fg) {
-            plot_char_fast(old, &q->c, q->x, q->y);
-        } else {
-            plot_char(&q->c, q->x, q->y);
-        }
-        grid[offset] = q->c;
-        map[offset] = NULL;
-    }
-
-    if ((old_cursor_x != cursor_x || old_cursor_y != cursor_y) || cursor_status == false) {
-        plot_char(&grid[old_cursor_x + old_cursor_y * cols], old_cursor_x, old_cursor_y);
-    }
-
-    old_cursor_x = cursor_x;
-    old_cursor_y = cursor_y;
-
-    queue_i = 0;
-}
-
-void gterm_putchar(uint8_t c) {
-    struct gterm_char ch;
-    ch.c  = c;
-    ch.fg = text_fg;
-    ch.bg = text_bg;
-    push_to_queue(&ch, cursor_x++, cursor_y);
-    if (cursor_x == cols && (cursor_y < term_context.scroll_bottom_margin - 1 || scroll_enabled)) {
-        cursor_x = 0;
-        cursor_y++;
-    }
-    if (cursor_y == term_context.scroll_bottom_margin) {
-        cursor_y--;
-        gterm_scroll();
-    }
+    return NULL;
 }
 
 static bool last_serial = false;
 static char *last_config = NULL;
 
-bool gterm_init(char *config, size_t *_rows, size_t *_cols, size_t width, size_t height) {
+bool gterm_init(char *config, size_t width, size_t height) {
     if (current_video_mode >= 0
 #if defined (BIOS)
      && current_video_mode != 0x03
@@ -619,9 +203,7 @@ bool gterm_init(char *config, size_t *_rows, size_t *_cols, size_t width, size_t
      && fbinfo.framebuffer_bpp == 32
      && serial == last_serial
      && config == last_config) {
-        *_rows = rows;
-        *_cols = cols;
-        gterm_clear(true);
+        term->clear(term, true);
         return true;
     }
 
@@ -634,9 +216,7 @@ bool gterm_init(char *config, size_t *_rows, size_t *_cols, size_t width, size_t
      && fbinfo.framebuffer_bpp == 32
      && serial == last_serial
      && config == last_config) {
-        *_rows = rows;
-        *_cols = cols;
-        gterm_clear(true);
+        term->clear(term, true);
         return true;
     }
 
@@ -644,14 +224,22 @@ bool gterm_init(char *config, size_t *_rows, size_t *_cols, size_t width, size_t
     if (!fb_init(&fbinfo, width, height, 32))
         return false;
 
-    last_serial = serial;
+    // Ensure this is xRGB8888, we only support that for the menu
+    if (fbinfo.red_mask_size    != 8
+     || fbinfo.red_mask_shift   != 16
+     || fbinfo.green_mask_size  != 8
+     || fbinfo.green_mask_shift != 8
+     || fbinfo.blue_mask_size   != 8
+     || fbinfo.blue_mask_shift  != 0)
+        return false;
 
-    cursor_status = true;
-    scroll_enabled = true;
+    last_serial = serial;
 
     // default scheme
     margin = 64;
     margin_gradient = 4;
+
+    uint32_t ansi_colours[8];
 
     ansi_colours[0] = 0x00000000; // black
     ansi_colours[1] = 0x00aa0000; // red
@@ -677,6 +265,8 @@ bool gterm_init(char *config, size_t *_rows, size_t *_cols, size_t width, size_t
             first = last + 1;
         }
     }
+
+    uint32_t ansi_bright_colours[8];
 
     ansi_bright_colours[0] = 0x00555555; // black
     ansi_bright_colours[1] = 0x00ff5555; // red
@@ -715,9 +305,6 @@ bool gterm_init(char *config, size_t *_rows, size_t *_cols, size_t width, size_t
     if (theme_foreground != NULL) {
         default_fg = strtoui(theme_foreground, NULL, 16) & 0xffffff;
     }
-
-    text_fg = default_fg;
-    text_bg = 0xffffffff;
 
     background = NULL;
     char *background_path = config_get_value(config, 0, "TERM_WALLPAPER");
@@ -762,27 +349,14 @@ bool gterm_init(char *config, size_t *_rows, size_t *_cols, size_t width, size_t
         }
     }
 
-    // Ensure this is xRGB8888, we only support that for the menu
-    if (fbinfo.red_mask_size    != 8
-     || fbinfo.red_mask_shift   != 16
-     || fbinfo.green_mask_size  != 8
-     || fbinfo.green_mask_shift != 8
-     || fbinfo.blue_mask_size   != 8
-     || fbinfo.blue_mask_shift  != 0)
-        return false;
+    size_t font_width = 8;
+    size_t font_height = 16;
+    size_t font_size = (font_width * font_height * FBTERM_FONT_GLYPHS) / 8;
 
-    gterm_framebuffer = (void *)(uintptr_t)fbinfo.framebuffer_addr;
-    gterm_width       = fbinfo.framebuffer_width;
-    gterm_height      = fbinfo.framebuffer_height;
-    gterm_bpp         = fbinfo.framebuffer_bpp;
-    gterm_pitch       = fbinfo.framebuffer_pitch;
+#define FONT_MAX 16384
+    uint8_t *font = ext_mem_alloc(FONT_MAX);
 
-    vga_font_width = DEFAULT_FONT_WIDTH, vga_font_height = DEFAULT_FONT_HEIGHT;
-    size_t font_bytes = (vga_font_width * vga_font_height * VGA_FONT_GLYPHS) / 8;
-
-    vga_font_bits = ext_mem_alloc(VGA_FONT_MAX);
-
-    memcpy(vga_font_bits, (void *)_binary_font_bin_start, VGA_FONT_MAX);
+    memcpy(font, (void *)_binary_font_bin_start, (uintptr_t)_binary_font_bin_size);
 
     size_t tmp_font_width, tmp_font_height;
 
@@ -790,14 +364,14 @@ bool gterm_init(char *config, size_t *_rows, size_t *_cols, size_t width, size_t
     if (menu_font_size != NULL) {
         parse_resolution(&tmp_font_width, &tmp_font_height, NULL, menu_font_size);
 
-        size_t tmp_font_bytes = (tmp_font_width * tmp_font_height * VGA_FONT_GLYPHS) / 8;
+        size_t tmp_font_size = (tmp_font_width * tmp_font_height * FBTERM_FONT_GLYPHS) / 8;
 
-        if (tmp_font_bytes > VGA_FONT_MAX) {
-            print("Font would be too large (%u bytes, %u bytes allowed). Not loading.\n", tmp_font_bytes, VGA_FONT_MAX);
+        if (tmp_font_size > FONT_MAX) {
+            print("Font would be too large (%u bytes, %u bytes allowed). Not loading.\n", tmp_font_size, FONT_MAX);
             goto no_load_font;
         }
 
-        font_bytes = tmp_font_bytes;
+        font_size = tmp_font_size;
     }
 
     char *menu_font = config_get_value(config, 0, "TERM_FONT");
@@ -806,10 +380,10 @@ bool gterm_init(char *config, size_t *_rows, size_t *_cols, size_t width, size_t
         if ((f = uri_open(menu_font)) == NULL) {
             print("menu: Could not open font file.\n");
         } else {
-            fread(f, vga_font_bits, 0, font_bytes);
+            fread(f, font, 0, font_size);
             if (menu_font_size != NULL) {
-                vga_font_width = tmp_font_width;
-                vga_font_height = tmp_font_height;
+                font_width = tmp_font_width;
+                font_height = tmp_font_height;
             }
             fclose(f);
         }
@@ -822,138 +396,31 @@ no_load_font:;
         font_spacing = strtoui(font_spacing_str, NULL, 10);
     }
 
-    vga_font_width += font_spacing;
-
-    vga_font_bool_size = VGA_FONT_GLYPHS * vga_font_height * vga_font_width * sizeof(bool);
-    vga_font_bool = ext_mem_alloc(vga_font_bool_size);
-
-    for (size_t i = 0; i < VGA_FONT_GLYPHS; i++) {
-        uint8_t *glyph = &vga_font_bits[i * vga_font_height];
-
-        for (size_t y = 0; y < vga_font_height; y++) {
-            // NOTE: the characters in VGA fonts are always one byte wide.
-            // 9 dot wide fonts have 8 dots and one empty column, except
-            // characters 0xC0-0xDF replicate column 9.
-            for (size_t x = 0; x < 8; x++) {
-                size_t offset = i * vga_font_height * vga_font_width + y * vga_font_width + x;
-
-                if ((glyph[y] & (0x80 >> x))) {
-                    vga_font_bool[offset] = true;
-                } else {
-                    vga_font_bool[offset] = false;
-                }
-            }
-            // fill columns above 8 like VGA Line Graphics Mode does
-            for (size_t x = 8; x < vga_font_width; x++) {
-                size_t offset = i * vga_font_height * vga_font_width + y *  vga_font_width + x;
-
-                if (i >= 0xC0 && i <= 0xDF) {
-                    vga_font_bool[offset] = (glyph[y] & 1);
-                } else {
-                    vga_font_bool[offset] = false;
-                }
-            }
-        }
-    }
-
-    vga_font_scale_x = 1;
-    vga_font_scale_y = 1;
+    size_t font_scale_x = 1;
+    size_t font_scale_y = 1;
 
     char *menu_font_scale = config_get_value(config, 0, "TERM_FONT_SCALE");
     if (menu_font_scale != NULL) {
-        parse_resolution(&vga_font_scale_x, &vga_font_scale_y, NULL, menu_font_scale);
-        if (vga_font_scale_x > 8 || vga_font_scale_y > 8) {
-            vga_font_scale_x = 1;
-            vga_font_scale_y = 1;
+        parse_resolution(&font_scale_x, &font_scale_y, NULL, menu_font_scale);
+        if (font_scale_x > 8 || font_scale_y > 8) {
+            font_scale_x = 1;
+            font_scale_y = 1;
         }
     }
 
-    glyph_width = vga_font_width * vga_font_scale_x;
-    glyph_height = vga_font_height * vga_font_scale_y;
+    uint32_t *canvas = generate_canvas();
 
-    *_cols = cols = (gterm_width - margin * 2) / glyph_width;
-    *_rows = rows = (gterm_height - margin * 2) / glyph_height;
+    term->deinit(term, pmm_free);
 
-    offset_x = margin + ((gterm_width - margin * 2) % glyph_width) / 2;
-    offset_y = margin + ((gterm_height - margin * 2) % glyph_height) / 2;
-
-    grid_size = rows * cols * sizeof(struct gterm_char);
-    grid = ext_mem_alloc(grid_size);
-
-    queue_size = rows * cols * sizeof(struct queue_item);
-    queue = ext_mem_alloc(queue_size);
-    queue_i = 0;
-
-    map_size = rows * cols * sizeof(struct queue_item *);
-    map = ext_mem_alloc(map_size);
-
-    bg_canvas_size = gterm_width * gterm_height * sizeof(uint32_t);
-    bg_canvas = ext_mem_alloc(bg_canvas_size);
-
-    gterm_generate_canvas();
-    gterm_clear(true);
-    gterm_double_buffer_flush();
+    term = fbterm_init(ext_mem_alloc,
+                (void *)(uintptr_t)fbinfo.framebuffer_addr,
+                fbinfo.framebuffer_width, fbinfo.framebuffer_height, fbinfo.framebuffer_pitch,
+                canvas,
+                ansi_colours, ansi_bright_colours,
+                &default_bg, &default_fg,
+                font, font_width, font_height, font_spacing,
+                font_scale_x, font_scale_y,
+                margin);
 
     return true;
-}
-
-void gterm_deinit(void) {
-    if (background != NULL) {
-        image_close(background);
-    }
-    pmm_free(vga_font_bits, VGA_FONT_MAX);
-    pmm_free(vga_font_bool, vga_font_bool_size);
-    pmm_free(grid, grid_size);
-    pmm_free(queue, queue_size);
-    pmm_free(map, map_size);
-    pmm_free(bg_canvas, bg_canvas_size);
-}
-
-uint64_t gterm_context_size(void) {
-    uint64_t ret = 0;
-
-    ret += sizeof(struct context);
-    ret += grid_size;
-
-    return ret;
-}
-
-void gterm_context_save(uint64_t ptr) {
-    memcpy32to64(ptr, (uint64_t)(uintptr_t)&context, sizeof(struct context));
-    ptr += sizeof(struct context);
-
-    memcpy32to64(ptr, (uint64_t)(uintptr_t)grid, grid_size);
-}
-
-void gterm_context_restore(uint64_t ptr) {
-    memcpy32to64((uint64_t)(uintptr_t)&context, ptr, sizeof(struct context));
-    ptr += sizeof(struct context);
-
-    memcpy32to64((uint64_t)(uintptr_t)grid, ptr, grid_size);
-
-    for (size_t i = 0; i < (size_t)rows * cols; i++) {
-        size_t x = i % cols;
-        size_t y = i / cols;
-
-        plot_char(&grid[i], x, y);
-    }
-
-    if (cursor_status) {
-        draw_cursor();
-    }
-}
-
-void gterm_full_refresh(void) {
-    gterm_generate_canvas();
-
-    for (size_t i = 0; i < (size_t)rows * cols; i++) {
-        size_t x = i % cols;
-        size_t y = i / cols;
-
-        plot_char(&grid[i], x, y);
-    }
-
-    if (cursor_status) {
-        draw_cursor();
-    }
 }

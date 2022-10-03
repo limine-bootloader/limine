@@ -259,33 +259,6 @@ void term_fallback(void) {
 extern void reset_term(void);
 extern void set_cursor_pos_helper(size_t x, size_t y);
 
-void term_vbe(char *config, size_t width, size_t height) {
-    if (term_backend != VBE) {
-        term->deinit(term, pmm_free);
-    }
-
-    if (quiet || allocations_disallowed) {
-        return;
-    }
-
-    if (!gterm_init(config, width, height)) {
-#if defined (BIOS)
-        // Failed to set VBE properly, default to text mode
-        term_textmode();
-#endif
-        return;
-    }
-
-    if (serial) {
-        term->cols = term->cols > 80 ? 80 : term->cols;
-        term->rows = term->rows > 24 ? 24 : term->rows;
-    }
-
-    term_backend = VBE;
-
-    term->in_bootloader = true;
-}
-
 #if defined (BIOS)
 void term_textmode(void) {
     term_notready();

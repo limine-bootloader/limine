@@ -495,7 +495,7 @@ noreturn void linux_load(char *config, char *cmdline) {
     // Video
     ///////////////////////////////////////
 
-    term_deinit();
+    term->deinit(term, pmm_free);
 
     struct screen_info *screen_info = &boot_params->screen_info;
 

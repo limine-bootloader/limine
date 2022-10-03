@@ -7,6 +7,7 @@ test -z "$srcdir" && srcdir=.
 
 cd "$srcdir"
 
+[ -d common/term ] || git clone https://github.com/limine-bootloader/terminal.git common/term
 [ -d cross-detect ] || git clone https://github.com/mintsuki/cross-detect.git
 [ -d freestanding-headers ] || git clone https://github.com/mintsuki/freestanding-headers.git
 [ -d limine-efi ] || git clone https://github.com/limine-bootloader/limine-efi.git

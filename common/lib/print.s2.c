@@ -203,7 +203,7 @@ out:
 #if defined (BIOS)
         if (stage3_loaded) {
 #endif
-            term_write((uint64_t)(uintptr_t)print_buf, print_buf_i);
+            term_write(term, print_buf, print_buf_i);
 #if defined (BIOS)
         } else {
             s2_print(print_buf, print_buf_i);

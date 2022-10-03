@@ -154,17 +154,17 @@ static void putchar_tokencol(int type, char c) {
 static bool editor_no_term_reset = false;
 
 char *config_entry_editor(const char *title, const char *orig_entry) {
-    term_autoflush = false;
+    term->autoflush = false;
 
-    enable_cursor();
+    term->enable_cursor(term);
 
     print("\e[2J\e[H");
 
     size_t cursor_offset  = 0;
     size_t entry_size     = strlen(orig_entry);
-    size_t _window_size   = term_rows - 8;
+    size_t _window_size   = term->rows - 8;
     size_t window_offset  = 0;
-    size_t line_size      = term_cols - 2;
+    size_t line_size      = term->cols - 2;
 
     bool display_overflow_error = false;
 
@@ -200,12 +200,12 @@ refresh:
     invalid_syntax = false;
 
     print("\e[2J\e[H");
-    disable_cursor();
+    term->disable_cursor(term);
     {
         size_t x, y;
         print("\n");
-        get_cursor_pos(&x, &y);
-        set_cursor_pos_helper(term_cols / 2 - DIV_ROUNDUP(strlen(menu_branding), 2), y);
+        term->get_cursor_pos(term, &x, &y);
+        set_cursor_pos_helper(term->cols / 2 - DIV_ROUNDUP(strlen(menu_branding), 2), y);
         print("\e[3%sm%s\e[37m", menu_branding_colour, menu_branding);
         print("\n\n");
     }
@@ -213,7 +213,7 @@ refresh:
     print("    \e[32mESC\e[0m Discard and Exit    \e[32mF10\e[0m Boot\n\n");
 
     print(serial ? "/" : "\xda");
-    for (size_t i = 0; i < term_cols - 2; i++) {
+    for (size_t i = 0; i < term->cols - 2; i++) {
         switch (i) {
             case 1: case 2: case 3:
                 if (window_offset > 0) {
@@ -223,7 +223,7 @@ refresh:
                 // FALLTHRU
             default: {
                 size_t title_length = strlen(title);
-                if (i == (term_cols / 2) - DIV_ROUNDUP(title_length, 2) - 1) {
+                if (i == (term->cols / 2) - DIV_ROUNDUP(title_length, 2) - 1) {
                     print("%s", title);
                     i += title_length - 1;
                 } else {
@@ -234,7 +234,7 @@ refresh:
     }
     size_t tmpx, tmpy;
 
-    get_cursor_pos(&tmpx, &tmpy);
+    term->get_cursor_pos(term, &tmpx, &tmpy);
     print(serial ? "\\" : "\xbf");
     set_cursor_pos_helper(0, tmpy + 1);
     print(serial ? "|" : "\xb3");
@@ -250,20 +250,20 @@ refresh:
          && current_line <  window_offset + window_size
          && current_line >= window_offset) {
             size_t x, y;
-            get_cursor_pos(&x, &y);
+            term->get_cursor_pos(term, &x, &y);
             if (i == cursor_offset) {
                 cursor_x = x;
                 cursor_y = y;
                 printed_cursor = true;
             }
-            set_cursor_pos_helper(term_cols - 1, y);
+            set_cursor_pos_helper(term->cols - 1, y);
             if (current_line == window_offset + window_size - 1) {
-                get_cursor_pos(&tmpx, &tmpy);
+                term->get_cursor_pos(term, &tmpx, &tmpy);
                 print(serial ? "|" : "\xb3");
                 set_cursor_pos_helper(0, tmpy + 1);
                 print(serial ? "\\" : "\xc0");
             } else {
-                get_cursor_pos(&tmpx, &tmpy);
+                term->get_cursor_pos(term, &tmpx, &tmpy);
                 print(serial ? "|" : "\xb3");
                 set_cursor_pos_helper(0, tmpy + 1);
                 print(serial ? "|" : "\xb3");
@@ -281,7 +281,7 @@ refresh:
             if (current_line <  window_offset + window_size
              && current_line >= window_offset) {
                 if (i == cursor_offset) {
-                    get_cursor_pos(&cursor_x, &cursor_y);
+                    term->get_cursor_pos(term, &cursor_x, &cursor_y);
                     printed_cursor = true;
                 }
                 if (syntax_highlighting_enabled) {
@@ -291,8 +291,8 @@ refresh:
                 }
                 printed_early = true;
                 size_t x, y;
-                get_cursor_pos(&x, &y);
-                if (y == term_rows - 3) {
+                term->get_cursor_pos(term, &x, &y);
+                if (y == term->rows - 3) {
                     print(serial ? ">" : "\x1a");
                     set_cursor_pos_helper(0, y + 1);
                     print(serial ? "\\" : "\xc0");
@@ -309,7 +309,7 @@ refresh:
          && current_line <  window_offset + window_size
          && current_line >= window_offset
          && !printed_cursor) {
-            get_cursor_pos(&cursor_x, &cursor_y);
+            term->get_cursor_pos(term, &cursor_x, &cursor_y);
             printed_cursor = true;
         }
 
@@ -356,35 +356,35 @@ refresh:
     // syntax error alert
     if (validation_enabled) {
         size_t x, y;
-        get_cursor_pos(&x, &y);
-        set_cursor_pos_helper(0, term_rows-1);
-        scroll_disable();
+        term->get_cursor_pos(term, &x, &y);
+        set_cursor_pos_helper(0, term->rows - 1);
+        term->scroll_enabled = false;
         if (invalid_syntax) {
             print("\e[31mConfiguration is INVALID.\e[0m");
         } else {
             print("\e[32mConfiguration is valid.\e[0m");
         }
-        scroll_enable();
+        term->scroll_enabled = true;
         set_cursor_pos_helper(x, y);
     }
 
     if (current_line - window_offset < window_size) {
         size_t x, y;
         for (size_t i = 0; i < (window_size - (current_line - window_offset)) - 1; i++) {
-            get_cursor_pos(&x, &y);
-            set_cursor_pos_helper(term_cols - 1, y);
+            term->get_cursor_pos(term, &x, &y);
+            set_cursor_pos_helper(term->cols - 1, y);
             print(serial ? "|" : "\xb3");
             set_cursor_pos_helper(0, y + 1);
             print(serial ? "|" : "\xb3");
         }
-        get_cursor_pos(&x, &y);
-        set_cursor_pos_helper(term_cols - 1, y);
+        term->get_cursor_pos(term, &x, &y);
+        set_cursor_pos_helper(term->cols - 1, y);
         print(serial ? "|" : "\xb3");
         set_cursor_pos_helper(0, y + 1);
         print(serial ? "\\" : "\xc0");
     }
 
-    for (size_t i = 0; i < term_cols - 2; i++) {
+    for (size_t i = 0; i < term->cols - 2; i++) {
         switch (i) {
             case 1: case 2: case 3:
                 if (current_line - window_offset >= window_size) {
@@ -396,22 +396,22 @@ refresh:
                 print(serial ? "-" : "\xc4");
         }
     }
-    get_cursor_pos(&tmpx, &tmpy);
+    term->get_cursor_pos(term, &tmpx, &tmpy);
     print(serial ? "/" : "\xd9");
     set_cursor_pos_helper(0, tmpy + 1);
 
     if (display_overflow_error) {
-        scroll_disable();
+        term->scroll_enabled = false;
         print("\e[31mText buffer not big enough, delete something instead.");
-        scroll_enable();
+        term->scroll_enabled = true;
         display_overflow_error = false;
     }
 
     // Hack to redraw the cursor
     set_cursor_pos_helper(cursor_x, cursor_y);
-    enable_cursor();
+    term->enable_cursor(term);
 
-    term_double_buffer_flush();
+    term->double_buffer_flush(term);
 
     int c = getchar();
     size_t buffer_len = strlen(buffer);
@@ -689,16 +689,16 @@ noreturn void _menu(bool first_run) {
     menu_init_term();
 
 refresh:
-    term_autoflush = false;
+    term->autoflush = false;
 
-    disable_cursor();
+    term->disable_cursor(term);
 
     print("\e[2J\e[H");
     {
         size_t x, y;
         print("\n");
-        get_cursor_pos(&x, &y);
-        set_cursor_pos_helper(term_cols / 2 - DIV_ROUNDUP(strlen(menu_branding), 2), y);
+        term->get_cursor_pos(term, &x, &y);
+        set_cursor_pos_helper(term->cols / 2 - DIV_ROUNDUP(strlen(menu_branding), 2), y);
         print("\e[3%sm%s\e[37m", menu_branding_colour, menu_branding);
         print("\n\n\n\n");
     }
@@ -707,14 +707,14 @@ refresh:
         if (quiet) {
             quiet = false;
             menu_init_term();
-            term_autoflush = false;
-            disable_cursor();
+            term->autoflush = false;
+            term->disable_cursor(term);
         }
         print("Config file %s.\n\n", config_ready ? "contains no valid entries" : "not found");
         print("For information on the format of Limine config entries, consult CONFIG.md in\n");
         print("the root of the Limine source repository.\n\n");
         print("Press a key to enter the Limine console...");
-        term_double_buffer_flush();
+        term->double_buffer_flush(term);
         getchar();
         reset_term();
         console();
@@ -722,24 +722,24 @@ refresh:
 
     {   // Draw box around boot menu
         size_t x, y;
-        get_cursor_pos(&x, &y);
+        term->get_cursor_pos(term, &x, &y);
 
         print(serial ? "/" : "\xda");
-        for (size_t i = 0; i < term_cols - 2; i++) {
+        for (size_t i = 0; i < term->cols - 2; i++) {
             print(serial ? "-" : "\xc4");
         }
         print(serial ? "\\" : "\xbf");
 
-        for (size_t i = y + 1; i < term_rows - 2; i++) {
+        for (size_t i = y + 1; i < term->rows - 2; i++) {
             set_cursor_pos_helper(0, i);
             print(serial ? "|" : "\xb3");
-            set_cursor_pos_helper(term_cols - 1, i);
+            set_cursor_pos_helper(term->cols - 1, i);
             print(serial ? "|" : "\xb3");
         }
-        set_cursor_pos_helper(0, term_rows - 2);
+        set_cursor_pos_helper(0, term->rows - 2);
 
         print(serial ? "\\" : "\xc0");
-        for (size_t i = 0; i < term_cols - 2; i++) {
+        for (size_t i = 0; i < term->cols - 2; i++) {
             print(serial ? "-" : "\xc4");
         }
         print(serial ? "/" : "\xd9");
@@ -752,7 +752,7 @@ refresh:
 
     {
         size_t x, y;
-        get_cursor_pos(&x, &y);
+        term->get_cursor_pos(term, &x, &y);
         set_cursor_pos_helper(0, 3);
         if (editor_enabled && selected_menu_entry->sub == NULL) {
             print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m Boot    \e[32mE\e[0m Edit");
@@ -760,7 +760,7 @@ refresh:
             print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m %s",
                   selected_menu_entry->expanded ? "Collapse" : "Expand");
         }
-        set_cursor_pos_helper(term_cols - 13, 3);
+        set_cursor_pos_helper(term->cols - 13, 3);
         print("\e[32mC\e[0m Console");
         set_cursor_pos_helper(x, y);
     }
@@ -773,11 +773,11 @@ refresh:
     if (skip_timeout == false) {
         print("\n\n");
         for (size_t i = timeout; i; i--) {
-            set_cursor_pos_helper(0, term_rows - 1);
-            scroll_disable();
+            set_cursor_pos_helper(0, term->rows - 1);
+            term->scroll_enabled = false;
             print("\e[2K\e[32mBooting automatically in \e[92m%u\e[32m, press any key to stop the countdown...\e[0m", i);
-            scroll_enable();
-            term_double_buffer_flush();
+            term->scroll_enabled = true;
+            term->double_buffer_flush(term);
             if ((c = pit_sleep_and_quit_on_keypress(1))) {
                 skip_timeout = true;
                 if (quiet) {
@@ -786,21 +786,21 @@ refresh:
                     goto timeout_aborted;
                 }
                 print("\e[2K");
-                term_double_buffer_flush();
+                term->double_buffer_flush(term);
                 goto timeout_aborted;
             }
         }
         goto autoboot;
     }
 
-    set_cursor_pos_helper(0, term_rows - 1);
+    set_cursor_pos_helper(0, term->rows - 1);
     if (selected_menu_entry->comment != NULL) {
-        scroll_disable();
+        term->scroll_enabled = false;
         print("\e[36m%s\e[0m", selected_menu_entry->comment);
-        scroll_enable();
+        term->scroll_enabled = true;
     }
 
-    term_double_buffer_flush();
+    term->double_buffer_flush(term);
 
     for (;;) {
         c = getchar();

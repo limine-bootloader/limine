@@ -319,14 +319,13 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
 #if defined (UEFI)
                 goto skip_modeset;
 #elif defined (BIOS)
-                size_t rows, cols;
-                init_vga_textmode(&rows, &cols, false);
+                vga_textmode_init(false);
 
                 multiboot1_info->fb_addr    = 0xb8000;
-                multiboot1_info->fb_width   = cols;
-                multiboot1_info->fb_height  = rows;
+                multiboot1_info->fb_width   = term->cols;
+                multiboot1_info->fb_height  = term->rows;
                 multiboot1_info->fb_bpp     = 16;
-                multiboot1_info->fb_pitch   = 2 * cols;
+                multiboot1_info->fb_pitch   = 2 * term->cols;
                 multiboot1_info->fb_type    = 2;
 #endif
             } else {
@@ -363,14 +362,13 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
             multiboot1_info->fb_blue_mask_size   = fbinfo.blue_mask_size;
             multiboot1_info->fb_blue_mask_shift  = fbinfo.blue_mask_shift;
 #elif defined (BIOS)
-            size_t rows, cols;
-            init_vga_textmode(&rows, &cols, false);
+            vga_textmode_init(false);
 
             multiboot1_info->fb_addr    = 0xb8000;
-            multiboot1_info->fb_width   = cols;
-            multiboot1_info->fb_height  = rows;
+            multiboot1_info->fb_width   = term->cols;
+            multiboot1_info->fb_height  = term->rows;
             multiboot1_info->fb_bpp     = 16;
-            multiboot1_info->fb_pitch   = 2 * cols;
+            multiboot1_info->fb_pitch   = 2 * term->cols;
             multiboot1_info->fb_type    = 2;
 #endif
         }
@@ -384,8 +382,7 @@ skip_modeset:;
 #if defined (UEFI)
         panic(true, "multiboot1: Cannot use text mode with UEFI.");
 #elif defined (BIOS)
-        size_t rows, cols;
-        init_vga_textmode(&rows, &cols, false);
+        vga_textmode_init(false);
 #endif
     }
 

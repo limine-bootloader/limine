@@ -11,6 +11,23 @@
 #include <lib/term.h>
 #include <mm/pmm.h>
 
+struct textmode_context {
+    struct term_context term;
+
+    volatile uint8_t *video_mem;
+
+    uint8_t *back_buffer;
+    uint8_t *front_buffer;
+
+    size_t cursor_offset;
+    size_t old_cursor_offset;
+    bool cursor_status;
+    uint8_t text_palette;
+
+    uint8_t saved_state_text_palette;
+    size_t saved_state_cursor_offset;
+};
+
 #define VIDEO_BOTTOM ((VD_ROWS * VD_COLS) - 1)
 #define VD_COLS (80 * 2)
 #define VD_ROWS 25
@@ -350,10 +367,12 @@ void vga_textmode_init(bool managed) {
     term->full_refresh = text_full_refresh;
     term->deinit = text_deinit;
 
-    term_backend = TEXTMODE;
-    term_context_reinit(term);
-
     term->in_bootloader = true;
+
+    term_context_reinit(term);
+    term->full_refresh(term);
+
+    term_backend = TEXTMODE;
 }
 
 #endif

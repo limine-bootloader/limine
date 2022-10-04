@@ -117,6 +117,14 @@ extern uint64_t stivale2_term_write_ptr;
 void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 #endif
 
+static uint64_t term_arg;
+static void (*actual_callback)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
+
+static void callback_shim(struct term_context *ctx, uint64_t a, uint64_t b, uint64_t c, uint64_t d) {
+    (void)ctx;
+    actual_callback(term_arg, a, b, c, d);
+}
+
 static void term_write_shim(uint64_t context, uint64_t buf, uint64_t count) {
     (void)context;
     _term_write(buf, count);
@@ -497,13 +505,17 @@ FEAT_START
     fb = fbinfo;
 
     if (terminal_request->callback != 0) {
+        term->callback = callback_shim;
+
 #if defined (__i386__)
-        term->callback = (void *)stivale2_term_callback;
+        actual_callback = (void *)stivale2_term_callback;
         stivale2_term_callback_ptr = terminal_request->callback;
 #elif defined (__x86_64__)
-        term->callback = (void *)terminal_request->callback;
+        actual_callback = (void *)terminal_request->callback;
 #endif
     }
+
+    term_arg = reported_addr(terminal);
 
 #if defined (__i386__)
     if (stivale2_rt_stack == NULL) {

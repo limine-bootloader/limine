@@ -83,6 +83,13 @@ uint64_t stivale2_term_write_ptr = 0;
 void stivale2_term_callback(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 #endif
 
+static void (*actual_callback)(uint64_t, uint64_t, uint64_t, uint64_t);
+
+static void callback_shim(struct term_context *ctx, uint64_t a, uint64_t b, uint64_t c, uint64_t d) {
+    (void)ctx;
+    actual_callback(a, b, c, d);
+}
+
 noreturn void stivale2_load(char *config, char *cmdline) {
     char *depr_warn = config_get_value(config, 0, "DEPRECATION_WARNING");
     if (depr_warn == NULL || strcmp(depr_warn, "no") != 0) {
@@ -583,11 +590,13 @@ failed_to_load_header_section:
             // We provide callback
             tag->flags |= (1 << 2);
             if (terminal_hdr_tag->callback != 0) {
+                term->callback = callback_shim;
+
 #if defined (__i386__)
-                term->callback = (void *)stivale2_term_callback;
+                actual_callback = (void *)stivale2_term_callback;
                 stivale2_term_callback_ptr = terminal_hdr_tag->callback;
 #elif defined (__x86_64__)
-                term->callback = (void *)terminal_hdr_tag->callback;
+                actual_callback = (void *)terminal_hdr_tag->callback;
 #endif
             }
         }

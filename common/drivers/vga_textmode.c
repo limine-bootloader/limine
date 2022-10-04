@@ -255,7 +255,7 @@ static void text_deinit(struct term_context *_ctx, void (*_free)(void *, size_t)
 static struct textmode_context term_local_struct;
 
 void vga_textmode_init(bool managed) {
-    if (quiet || allocations_disallowed) {
+    if (quiet) {
         return;
     }
 

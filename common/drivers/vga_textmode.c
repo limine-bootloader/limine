@@ -20,24 +20,24 @@ static void draw_cursor(struct textmode_context *ctx) {
     ctx->video_mem[ctx->cursor_offset + 1] = ((pal & 0xf0) >> 4) | ((pal & 0x0f) << 4);
 }
 
-void text_save_state(struct term_context *_ctx) {
+static void text_save_state(struct term_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
     ctx->saved_state_text_palette = ctx->text_palette;
     ctx->saved_state_cursor_offset = ctx->cursor_offset;
 }
 
-void text_restore_state(struct term_context *_ctx) {
+static void text_restore_state(struct term_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
     ctx->text_palette = ctx->saved_state_text_palette;
     ctx->cursor_offset = ctx->saved_state_cursor_offset;
 }
 
-void text_swap_palette(struct term_context *_ctx) {
+static void text_swap_palette(struct term_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
     ctx->text_palette = (ctx->text_palette << 4) | (ctx->text_palette >> 4);
 }
 
-void text_scroll(struct term_context *_ctx) {
+static void text_scroll(struct term_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
 
     // move the text up by one row
@@ -53,7 +53,7 @@ void text_scroll(struct term_context *_ctx) {
     }
 }
 
-void text_revscroll(struct term_context *_ctx) {
+static void text_revscroll(struct term_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
 
     // move the text up by one row
@@ -71,7 +71,7 @@ void text_revscroll(struct term_context *_ctx) {
     }
 }
 
-void text_clear(struct term_context *_ctx, bool move) {
+static void text_clear(struct term_context *_ctx, bool move) {
     struct textmode_context *ctx = (void *)_ctx;
 
     for (size_t i = 0; i < VIDEO_BOTTOM; i += 2) {
@@ -83,13 +83,13 @@ void text_clear(struct term_context *_ctx, bool move) {
     }
 }
 
-void text_enable_cursor(struct term_context *_ctx) {
+static void text_enable_cursor(struct term_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
 
     ctx->cursor_status = true;
 }
 
-bool text_disable_cursor(struct term_context *_ctx) {
+static bool text_disable_cursor(struct term_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
 
     bool ret = ctx->cursor_status;
@@ -97,7 +97,7 @@ bool text_disable_cursor(struct term_context *_ctx) {
     return ret;
 }
 
-void text_full_refresh(struct term_context *_ctx) {
+static void text_full_refresh(struct term_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
 
     for (size_t i = 0; i < VD_ROWS * VD_COLS; i++) {
@@ -111,7 +111,152 @@ void text_full_refresh(struct term_context *_ctx) {
     }
 }
 
-void init_vga_textmode(size_t *_rows, size_t *_cols, bool managed) {
+static void text_double_buffer_flush(struct term_context *_ctx) {
+    struct textmode_context *ctx = (void *)_ctx;
+
+    if (ctx->cursor_status) {
+        draw_cursor(ctx);
+    }
+
+    if (ctx->cursor_offset != ctx->old_cursor_offset || ctx->cursor_status == false) {
+        ctx->video_mem[ctx->old_cursor_offset + 1] = ctx->back_buffer[ctx->old_cursor_offset + 1];
+    }
+
+    for (size_t i = 0; i < VD_ROWS * VD_COLS; i++) {
+        if (ctx->back_buffer[i] == ctx->front_buffer[i]) {
+            continue;
+        }
+
+        if (ctx->cursor_status && i == ctx->cursor_offset + 1) {
+            continue;
+        }
+
+        ctx->front_buffer[i] = ctx->back_buffer[i];
+        ctx->video_mem[i]    = ctx->back_buffer[i];
+    }
+
+    if (ctx->cursor_status) {
+        ctx->old_cursor_offset = ctx->cursor_offset;
+    }
+}
+
+static void text_get_cursor_pos(struct term_context *_ctx, size_t *x, size_t *y) {
+    struct textmode_context *ctx = (void *)_ctx;
+
+    *x = (ctx->cursor_offset % VD_COLS) / 2;
+    *y = ctx->cursor_offset / VD_COLS;
+}
+
+static void text_move_character(struct term_context *_ctx, size_t new_x, size_t new_y, size_t old_x, size_t old_y) {
+    struct textmode_context *ctx = (void *)_ctx;
+
+    if (old_x >= VD_COLS / 2 || old_y >= VD_ROWS
+     || new_x >= VD_COLS / 2 || new_y >= VD_ROWS) {
+        return;
+    }
+
+    ctx->back_buffer[new_y * VD_COLS + new_x * 2] = ctx->back_buffer[old_y * VD_COLS + old_x * 2];
+}
+
+static void text_set_cursor_pos(struct term_context *_ctx, size_t x, size_t y) {
+    struct textmode_context *ctx = (void *)_ctx;
+
+    if (x >= VD_COLS / 2) {
+        if ((int)x < 0) {
+            x = 0;
+        } else {
+            x = VD_COLS / 2 - 1;
+        }
+    }
+    if (y >= VD_ROWS) {
+        if ((int)y < 0) {
+            y = 0;
+        } else {
+            y = VD_ROWS - 1;
+        }
+    }
+    ctx->cursor_offset = y * VD_COLS + x * 2;
+}
+
+static uint8_t ansi_colours[] = { 0, 4, 2, 6, 1, 5, 3, 7 };
+
+static void text_set_text_fg(struct term_context *_ctx, size_t fg) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->text_palette = (ctx->text_palette & 0xf0) | ansi_colours[fg];
+}
+
+static void text_set_text_bg(struct term_context *_ctx, size_t bg) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->text_palette = (ctx->text_palette & 0x0f) | (ansi_colours[bg] << 4);
+}
+
+static void text_set_text_fg_bright(struct term_context *_ctx, size_t fg) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->text_palette = (ctx->text_palette & 0xf0) | (ansi_colours[fg] | (1 << 3));
+}
+
+static void text_set_text_bg_bright(struct term_context *_ctx, size_t bg) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->text_palette = (ctx->text_palette & 0x0f) | ((ansi_colours[bg] | (1 << 3)) << 4);
+}
+
+static void text_set_text_fg_rgb(struct term_context *ctx, uint32_t n) {
+    (void)ctx;
+    (void)n;
+}
+
+static void text_set_text_bg_rgb(struct term_context *ctx, uint32_t n) {
+    (void)ctx;
+    (void)n;
+}
+
+static void text_set_text_fg_default(struct term_context *_ctx) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->text_palette = (ctx->text_palette & 0xf0) | 7;
+}
+
+static void text_set_text_bg_default(struct term_context *_ctx) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->text_palette &= 0x0f;
+}
+
+static void text_putchar(struct term_context *_ctx, uint8_t c) {
+    struct textmode_context *ctx = (void *)_ctx;
+
+    ctx->back_buffer[ctx->cursor_offset] = c;
+    ctx->back_buffer[ctx->cursor_offset + 1] = ctx->text_palette;
+    if (ctx->cursor_offset / VD_COLS == _ctx->scroll_bottom_margin - 1
+     && ctx->cursor_offset % VD_COLS == VD_COLS - 2) {
+        if (_ctx->scroll_enabled) {
+            text_scroll(_ctx);
+            ctx->cursor_offset -= ctx->cursor_offset % VD_COLS;
+        }
+    } else if (ctx->cursor_offset >= (VIDEO_BOTTOM - 1)) {
+        ctx->cursor_offset -= ctx->cursor_offset % VD_COLS;
+    } else {
+        ctx->cursor_offset += 2;
+    }
+}
+
+static void text_deinit(struct term_context *_ctx, void (*_free)(void *, size_t)) {
+    struct textmode_context *ctx = (void *)_ctx;
+
+    if (ctx->back_buffer != NULL) {
+        _free(ctx->back_buffer, VD_ROWS * VD_COLS);
+        ctx->back_buffer = NULL;
+    }
+
+    if (ctx->front_buffer != NULL) {
+        _free(ctx->front_buffer, VD_ROWS * VD_COLS);
+        ctx->front_buffer = NULL;
+    }
+}
+
+void vga_textmode_init(bool managed) {
+    if (quiet || allocations_disallowed) {
+        return;
+    }
+
     if (current_video_mode != 0x3) {
         struct rm_regs r = {0};
         r.eax = 0x0003;
@@ -141,9 +286,6 @@ void init_vga_textmode(size_t *_rows, size_t *_cols, bool managed) {
 
     text_clear(term, false);
 
-    *_rows = VD_ROWS;
-    *_cols = VD_COLS / 2;
-
     // VGA cursor code taken from: https://wiki.osdev.org/Text_Mode_Cursor
 
     if (!managed) {
@@ -167,123 +309,43 @@ void init_vga_textmode(size_t *_rows, size_t *_cols, bool managed) {
     }
 
     text_double_buffer_flush(term);
-}
 
-void text_double_buffer_flush(struct term_context *_ctx) {
-    struct textmode_context *ctx = (void *)_ctx;
-
-    if (ctx->cursor_status) {
-        draw_cursor(ctx);
-    }
-
-    if (ctx->cursor_offset != ctx->old_cursor_offset || ctx->cursor_status == false) {
-        ctx->video_mem[ctx->old_cursor_offset + 1] = ctx->back_buffer[ctx->old_cursor_offset + 1];
-    }
-
-    for (size_t i = 0; i < VD_ROWS * VD_COLS; i++) {
-        if (ctx->back_buffer[i] == ctx->front_buffer[i]) {
-            continue;
-        }
-
-        if (ctx->cursor_status && i == ctx->cursor_offset + 1) {
-            continue;
-        }
-
-        ctx->front_buffer[i] = ctx->back_buffer[i];
-        ctx->video_mem[i]    = ctx->back_buffer[i];
-    }
-
-    if (ctx->cursor_status) {
-        ctx->old_cursor_offset = ctx->cursor_offset;
-    }
-}
-
-void text_get_cursor_pos(struct term_context *_ctx, size_t *x, size_t *y) {
-    struct textmode_context *ctx = (void *)_ctx;
-
-    *x = (ctx->cursor_offset % VD_COLS) / 2;
-    *y = ctx->cursor_offset / VD_COLS;
-}
-
-void text_move_character(struct term_context *_ctx, size_t new_x, size_t new_y, size_t old_x, size_t old_y) {
-    struct textmode_context *ctx = (void *)_ctx;
-
-    if (old_x >= VD_COLS / 2 || old_y >= VD_ROWS
-     || new_x >= VD_COLS / 2 || new_y >= VD_ROWS) {
-        return;
-    }
-
-    ctx->back_buffer[new_y * VD_COLS + new_x * 2] = ctx->back_buffer[old_y * VD_COLS + old_x * 2];
-}
-
-void text_set_cursor_pos(struct term_context *_ctx, size_t x, size_t y) {
-    struct textmode_context *ctx = (void *)_ctx;
-
-    if (x >= VD_COLS / 2) {
-        if ((int)x < 0) {
-            x = 0;
-        } else {
-            x = VD_COLS / 2 - 1;
-        }
-    }
-    if (y >= VD_ROWS) {
-        if ((int)y < 0) {
-            y = 0;
-        } else {
-            y = VD_ROWS - 1;
-        }
-    }
-    ctx->cursor_offset = y * VD_COLS + x * 2;
-}
-
-static uint8_t ansi_colours[] = { 0, 4, 2, 6, 1, 5, 3, 7 };
-
-void text_set_text_fg(struct term_context *_ctx, size_t fg) {
-    struct textmode_context *ctx = (void *)_ctx;
-    ctx->text_palette = (ctx->text_palette & 0xf0) | ansi_colours[fg];
-}
-
-void text_set_text_bg(struct term_context *_ctx, size_t bg) {
-    struct textmode_context *ctx = (void *)_ctx;
-    ctx->text_palette = (ctx->text_palette & 0x0f) | (ansi_colours[bg] << 4);
-}
-
-void text_set_text_fg_bright(struct term_context *_ctx, size_t fg) {
-    struct textmode_context *ctx = (void *)_ctx;
-    ctx->text_palette = (ctx->text_palette & 0xf0) | (ansi_colours[fg] | (1 << 3));
-}
-
-void text_set_text_bg_bright(struct term_context *_ctx, size_t bg) {
-    struct textmode_context *ctx = (void *)_ctx;
-    ctx->text_palette = (ctx->text_palette & 0x0f) | ((ansi_colours[bg] | (1 << 3)) << 4);
-}
-
-void text_set_text_fg_default(struct term_context *_ctx) {
-    struct textmode_context *ctx = (void *)_ctx;
-    ctx->text_palette = (ctx->text_palette & 0xf0) | 7;
-}
-
-void text_set_text_bg_default(struct term_context *_ctx) {
-    struct textmode_context *ctx = (void *)_ctx;
-    ctx->text_palette &= 0x0f;
-}
-
-void text_putchar(struct term_context *_ctx, uint8_t c) {
-    struct textmode_context *ctx = (void *)_ctx;
-
-    ctx->back_buffer[ctx->cursor_offset] = c;
-    ctx->back_buffer[ctx->cursor_offset + 1] = ctx->text_palette;
-    if (ctx->cursor_offset / VD_COLS == _ctx->scroll_bottom_margin - 1
-     && ctx->cursor_offset % VD_COLS == VD_COLS - 2) {
-        if (_ctx->scroll_enabled) {
-            text_scroll(_ctx);
-            ctx->cursor_offset -= ctx->cursor_offset % VD_COLS;
-        }
-    } else if (ctx->cursor_offset >= (VIDEO_BOTTOM - 1)) {
-        ctx->cursor_offset -= ctx->cursor_offset % VD_COLS;
+    if (serial) {
+        term->cols = term->cols > 80 ? 80 : term->cols;
+        term->rows = term->rows > 24 ? 24 : term->rows;
     } else {
-        ctx->cursor_offset += 2;
+        term->cols = 80;
+        term->rows = 25;
     }
+
+    term->raw_putchar = text_putchar;
+    term->clear = text_clear;
+    term->enable_cursor = text_enable_cursor;
+    term->disable_cursor = text_disable_cursor;
+    term->set_cursor_pos = text_set_cursor_pos;
+    term->get_cursor_pos = text_get_cursor_pos;
+    term->set_text_fg = text_set_text_fg;
+    term->set_text_bg = text_set_text_bg;
+    term->set_text_fg_bright = text_set_text_fg_bright;
+    term->set_text_bg_bright = text_set_text_bg_bright;
+    term->set_text_fg_rgb = text_set_text_fg_rgb;
+    term->set_text_bg_rgb = text_set_text_bg_rgb;
+    term->set_text_fg_default = text_set_text_fg_default;
+    term->set_text_bg_default = text_set_text_bg_default;
+    term->move_character = text_move_character;
+    term->scroll = text_scroll;
+    term->revscroll = text_revscroll;
+    term->swap_palette = text_swap_palette;
+    term->save_state = text_save_state;
+    term->restore_state = text_restore_state;
+    term->double_buffer_flush = text_double_buffer_flush;
+    term->full_refresh = text_full_refresh;
+    term->deinit = text_deinit;
+
+    term_backend = TEXTMODE;
+    term_context_reinit(term);
+
+    term->in_bootloader = true;
 }
 
 #endif

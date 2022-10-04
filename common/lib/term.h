@@ -37,7 +37,6 @@ inline void set_cursor_pos_helper(size_t x, size_t y) {
 }
 
 void term_fallback(void);
-void term_textmode(void);
 
 void _term_write(uint64_t buf, uint64_t count);
 

@@ -259,50 +259,6 @@ void term_fallback(void) {
 extern void reset_term(void);
 extern void set_cursor_pos_helper(size_t x, size_t y);
 
-#if defined (BIOS)
-void term_textmode(void) {
-    term_notready();
-
-    if (quiet || allocations_disallowed) {
-        return;
-    }
-
-    init_vga_textmode(&term->rows, &term->cols, true);
-
-    if (serial) {
-        term->cols = term->cols > 80 ? 80 : term->cols;
-        term->rows = term->rows > 24 ? 24 : term->rows;
-    }
-
-    term->raw_putchar    = text_putchar;
-    term->clear          = text_clear;
-    term->enable_cursor  = text_enable_cursor;
-    term->disable_cursor = text_disable_cursor;
-    term->set_cursor_pos = text_set_cursor_pos;
-    term->get_cursor_pos = text_get_cursor_pos;
-    term->set_text_fg    = text_set_text_fg;
-    term->set_text_bg    = text_set_text_bg;
-    term->set_text_fg_bright = text_set_text_fg_bright;
-    term->set_text_bg_bright = text_set_text_bg_bright;
-    term->set_text_fg_default = text_set_text_fg_default;
-    term->set_text_bg_default = text_set_text_bg_default;
-    term->move_character = text_move_character;
-    term->scroll = text_scroll;
-    term->revscroll = text_revscroll;
-    term->swap_palette = text_swap_palette;
-    term->save_state = text_save_state;
-    term->restore_state = text_restore_state;
-    term->double_buffer_flush = text_double_buffer_flush;
-    term->full_refresh = text_full_refresh;
-    //term->deinit = text_deinit;
-
-    term_backend = TEXTMODE;
-    term_context_reinit(term);
-
-    term->in_bootloader = true;
-}
-#endif
-
 #if defined (__i386__)
 #define TERM_XFER_CHUNK 8192
 

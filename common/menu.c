@@ -14,6 +14,7 @@
 #include <lib/uri.h>
 #include <mm/pmm.h>
 #include <drivers/vbe.h>
+#include <drivers/vga_textmode.h>
 #include <console.h>
 #include <protos/stivale.h>
 #include <protos/stivale2.h>
@@ -589,7 +590,7 @@ static void menu_init_term(void) {
         gterm_init(NULL, req_width, req_height);
     } else {
 #if defined (BIOS)
-        term_textmode();
+        vga_textmode_init(true);
 #endif
     }
 }
@@ -891,7 +892,7 @@ timeout_aborted:
                     gterm_init(NULL, 0, 0);
 #if defined (BIOS)
                     if (term_backend == FALLBACK) {
-                        term_textmode();
+                        vga_textmode_init(true);
                     }
 #endif
                 } else {

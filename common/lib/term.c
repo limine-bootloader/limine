@@ -6,6 +6,8 @@
 #include <lib/misc.h>
 #include <lib/print.h>
 #include <mm/pmm.h>
+#include <drivers/vga_textmode.h>
+#include <term/backends/framebuffer.h>
 
 int current_video_mode = -1;
 int term_backend = _NOT_READY;
@@ -263,19 +265,104 @@ extern void set_cursor_pos_helper(size_t x, size_t y);
 static uint8_t xfer_buf[TERM_XFER_CHUNK];
 #endif
 
+static uint64_t context_size(void) {
+    switch (term_backend) {
+        case TEXTMODE:
+            return sizeof(struct textmode_context) + (VD_ROWS * VD_COLS) * 2;
+        case GTERM: {
+            struct fbterm_context *ctx = (void *)term;
+            return sizeof(struct fbterm_context) +
+                   ctx->font_bits_size +
+                   ctx->font_bool_size +
+                   ctx->canvas_size +
+                   ctx->grid_size +
+                   ctx->queue_size +
+                   ctx->map_size;
+        }
+        default:
+            return 0;
+    }
+}
+
+static void context_save(uint64_t buf) {
+    switch (term_backend) {
+        case TEXTMODE: {
+            struct textmode_context *ctx = (void *)term;
+            memcpy32to64(buf, (uintptr_t)ctx, sizeof(struct textmode_context));
+            buf += sizeof(struct textmode_context);
+            memcpy32to64(buf, (uintptr_t)ctx->back_buffer, VD_ROWS * VD_COLS);
+            buf += VD_ROWS * VD_COLS;
+            memcpy32to64(buf, (uintptr_t)ctx->front_buffer, VD_ROWS * VD_COLS);
+            buf += VD_ROWS * VD_COLS;
+            break;
+        }
+        case GTERM: {
+            struct fbterm_context *ctx = (void *)term;
+            memcpy32to64(buf, (uintptr_t)ctx, sizeof(struct fbterm_context));
+            buf += sizeof(struct fbterm_context);
+            memcpy32to64(buf, (uintptr_t)ctx->font_bits, ctx->font_bits_size);
+            buf += ctx->font_bits_size;
+            memcpy32to64(buf, (uintptr_t)ctx->font_bool, ctx->font_bool_size);
+            buf += ctx->font_bool_size;
+            memcpy32to64(buf, (uintptr_t)ctx->canvas, ctx->canvas_size);
+            buf += ctx->canvas_size;
+            memcpy32to64(buf, (uintptr_t)ctx->grid, ctx->grid_size);
+            buf += ctx->grid_size;
+            memcpy32to64(buf, (uintptr_t)ctx->queue, ctx->queue_size);
+            buf += ctx->queue_size;
+            memcpy32to64(buf, (uintptr_t)ctx->map, ctx->map_size);
+            buf += ctx->map_size;
+            break;
+        }
+    }
+}
+
+static void context_restore(uint64_t buf) {
+    switch (term_backend) {
+        case TEXTMODE: {
+            struct textmode_context *ctx = (void *)term;
+            memcpy32to64((uintptr_t)ctx, buf, sizeof(struct textmode_context));
+            buf += sizeof(struct textmode_context);
+            memcpy32to64((uintptr_t)ctx->back_buffer, buf, VD_ROWS * VD_COLS);
+            buf += VD_ROWS * VD_COLS;
+            memcpy32to64((uintptr_t)ctx->front_buffer, buf, VD_ROWS * VD_COLS);
+            buf += VD_ROWS * VD_COLS;
+            break;
+        }
+        case GTERM: {
+            struct fbterm_context *ctx = (void *)term;
+            memcpy32to64((uintptr_t)ctx, buf, sizeof(struct fbterm_context));
+            buf += sizeof(struct fbterm_context);
+            memcpy32to64((uintptr_t)ctx->font_bits, buf, ctx->font_bits_size);
+            buf += ctx->font_bits_size;
+            memcpy32to64((uintptr_t)ctx->font_bool, buf, ctx->font_bool_size);
+            buf += ctx->font_bool_size;
+            memcpy32to64((uintptr_t)ctx->canvas, buf, ctx->canvas_size);
+            buf += ctx->canvas_size;
+            memcpy32to64((uintptr_t)ctx->grid, buf, ctx->grid_size);
+            buf += ctx->grid_size;
+            memcpy32to64((uintptr_t)ctx->queue, buf, ctx->queue_size);
+            buf += ctx->queue_size;
+            memcpy32to64((uintptr_t)ctx->map, buf, ctx->map_size);
+            buf += ctx->map_size;
+            break;
+        }
+    }
+}
+
 void _term_write(uint64_t buf, uint64_t count) {
     switch (count) {
         case TERM_CTX_SIZE: {
-            //uint64_t ret = context_size();
-            //memcpy32to64(buf, (uint64_t)(uintptr_t)&ret, sizeof(uint64_t));
+            uint64_t ret = context_size();
+            memcpy32to64(buf, (uint64_t)(uintptr_t)&ret, sizeof(uint64_t));
             return;
         }
         case TERM_CTX_SAVE: {
-            //context_save(buf);
+            context_save(buf);
             return;
         }
         case TERM_CTX_RESTORE: {
-            //context_restore(buf);
+            context_restore(buf);
             return;
         }
         case TERM_FULL_REFRESH: {

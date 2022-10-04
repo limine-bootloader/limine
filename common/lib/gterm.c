@@ -7,6 +7,7 @@
 #include <lib/print.h>
 #include <lib/uri.h>
 #include <lib/fb.h>
+#include <lib/image.h>
 #include <mm/pmm.h>
 #include <term/term.h>
 #include <term/backends/framebuffer.h>

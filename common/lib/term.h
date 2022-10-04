@@ -3,8 +3,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
-#include <lib/image.h>
 #include <lib/print.h>
 #include <term/term.h>
 
@@ -37,7 +35,6 @@ inline void set_cursor_pos_helper(size_t x, size_t y) {
 }
 
 void term_fallback(void);
-
 void _term_write(uint64_t buf, uint64_t count);
 
 #endif

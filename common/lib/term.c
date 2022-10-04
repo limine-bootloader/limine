@@ -267,8 +267,10 @@ static uint8_t xfer_buf[TERM_XFER_CHUNK];
 
 static uint64_t context_size(void) {
     switch (term_backend) {
+#if defined (BIOS)
         case TEXTMODE:
             return sizeof(struct textmode_context) + (VD_ROWS * VD_COLS) * 2;
+#endif
         case GTERM: {
             struct fbterm_context *ctx = (void *)term;
             return sizeof(struct fbterm_context) +
@@ -286,6 +288,7 @@ static uint64_t context_size(void) {
 
 static void context_save(uint64_t buf) {
     switch (term_backend) {
+#if defined (BIOS)
         case TEXTMODE: {
             struct textmode_context *ctx = (void *)term;
             memcpy32to64(buf, (uintptr_t)ctx, sizeof(struct textmode_context));
@@ -296,6 +299,7 @@ static void context_save(uint64_t buf) {
             buf += VD_ROWS * VD_COLS;
             break;
         }
+#endif
         case GTERM: {
             struct fbterm_context *ctx = (void *)term;
             memcpy32to64(buf, (uintptr_t)ctx, sizeof(struct fbterm_context));
@@ -319,6 +323,7 @@ static void context_save(uint64_t buf) {
 
 static void context_restore(uint64_t buf) {
     switch (term_backend) {
+#if defined (BIOS)
         case TEXTMODE: {
             struct textmode_context *ctx = (void *)term;
             memcpy32to64((uintptr_t)ctx, buf, sizeof(struct textmode_context));
@@ -329,6 +334,7 @@ static void context_restore(uint64_t buf) {
             buf += VD_ROWS * VD_COLS;
             break;
         }
+#endif
         case GTERM: {
             struct fbterm_context *ctx = (void *)term;
             memcpy32to64((uintptr_t)ctx, buf, sizeof(struct fbterm_context));

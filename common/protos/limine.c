@@ -689,7 +689,7 @@ FEAT_START
         gterm_init(NULL, req_width, req_height);
     }
 
-    if (current_video_mode < 0) {
+    if (term == NULL) {
         panic(true, "limine: Failed to initialise terminal");
     }
 

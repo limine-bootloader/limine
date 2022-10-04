@@ -564,7 +564,13 @@ static void menu_init_term(void) {
         if (menu_resolution != NULL)
             parse_resolution(&req_width, &req_height, &req_bpp, menu_resolution);
 
-        gterm_init(NULL, req_width, req_height);
+        if (!gterm_init(NULL, req_width, req_height)) {
+#if defined (BIOS)
+            vga_textmode_init(true);
+#elif defined (UEFI)
+            panic(true, "menu: Failed to initialise terminal");
+#endif
+        }
     } else {
 #if defined (BIOS)
         vga_textmode_init(true);
@@ -844,11 +850,13 @@ timeout_aborted:
                 }
                 if (term_backend == FALLBACK) {
                     gterm_init(NULL, 0, 0);
+                    if (term == NULL) {
 #if defined (BIOS)
-                    if (term_backend == FALLBACK) {
                         vga_textmode_init(true);
-                    }
+#elif defined (UEFI)
+                        panic(true, "menu: Failed to initialise terminal");
 #endif
+                    }
                 } else {
                     reset_term();
                 }

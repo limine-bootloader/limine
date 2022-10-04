@@ -536,14 +536,12 @@ static bool last_serial = false;
 static char *last_config = NULL;
 
 bool gterm_init(char *config, size_t width, size_t height) {
-    if (quiet || allocations_disallowed) {
+    if (quiet) {
         return false;
     }
 
-    if (current_video_mode >= 0
-#if defined (BIOS)
-     && current_video_mode != 0x03
-#endif
+    if (term != NULL
+     && term_backend == GTERM
      && fbinfo.default_res == true
      && width == 0
      && height == 0
@@ -554,10 +552,8 @@ bool gterm_init(char *config, size_t width, size_t height) {
         return true;
     }
 
-    if (current_video_mode >= 0
-#if defined (BIOS)
-     && current_video_mode != 0x03
-#endif
+    if (term != NULL
+     && term_backend == GTERM
      && fbinfo.framebuffer_width == width
      && fbinfo.framebuffer_height == height
      && fbinfo.framebuffer_bpp == 32

@@ -4,7 +4,6 @@
 #include <lib/term.h>
 #include <lib/real.h>
 #include <lib/misc.h>
-#include <lib/print.h>
 #include <mm/pmm.h>
 #include <drivers/vga_textmode.h>
 #include <term/backends/framebuffer.h>
@@ -59,7 +58,7 @@ static void notready_deinit(struct term_context *ctx, void (*_free)(void *, size
     (void)_free;
 }
 
-void term_notready(void) {
+static void term_notready(void) {
     if (term != NULL) {
         term->deinit(term, pmm_free);
         term = NULL;

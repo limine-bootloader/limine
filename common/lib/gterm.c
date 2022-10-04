@@ -242,6 +242,7 @@ bool gterm_init(char *config, size_t width, size_t height) {
         return false;
 
     last_serial = serial;
+    last_config = config;
 
     // default scheme
     margin = 64;
@@ -435,11 +436,13 @@ no_load_font:;
         term->rows = term->rows > 24 ? 24 : term->rows;
     }
 
+    term->in_bootloader = true;
+
     term_context_reinit(term);
 
-    term_backend = GTERM;
+    term->full_refresh(term);
 
-    term->in_bootloader = true;
+    term_backend = GTERM;
 
     return true;
 }

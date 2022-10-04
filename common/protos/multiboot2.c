@@ -519,13 +519,12 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
             struct fb_info fbinfo;
             if (!fb_init(&fbinfo, req_width, req_height, req_bpp)) {
 #if defined (BIOS)
-                size_t rows, cols;
-                init_vga_textmode(&rows, &cols, false);
+                vga_textmode_init(false);
 
                 tag->common.framebuffer_addr = 0xb8000;
-                tag->common.framebuffer_pitch = 2 * cols;
-                tag->common.framebuffer_width = cols;
-                tag->common.framebuffer_height = rows;
+                tag->common.framebuffer_pitch = 2 * term->cols;
+                tag->common.framebuffer_width = term->cols;
+                tag->common.framebuffer_height = term->rows;
                 tag->common.framebuffer_bpp = 16;
                 tag->common.framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT;
 #elif defined (UEFI)
@@ -576,14 +575,13 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
             tag->framebuffer_blue_field_position = fbinfo.blue_mask_shift;
             tag->framebuffer_blue_mask_size = fbinfo.blue_mask_size;
 #elif defined (BIOS)
-            size_t rows, cols;
-            init_vga_textmode(&rows, &cols, false);
+            vga_textmode_init(false);
 
             tag->common.framebuffer_addr = 0xb8000;
-            tag->common.framebuffer_width = cols;
-            tag->common.framebuffer_height = rows;
+            tag->common.framebuffer_width = term->cols;
+            tag->common.framebuffer_height = term->rows;
             tag->common.framebuffer_bpp = 16;
-            tag->common.framebuffer_pitch = 2 * cols;
+            tag->common.framebuffer_pitch = 2 * term->cols;
             tag->common.framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT;
 #endif
         }

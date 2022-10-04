@@ -524,13 +524,12 @@ noreturn void linux_load(char *config, char *cmdline) {
         panic(true, "linux: Unable to set video mode");
 #elif defined (BIOS)
 set_textmode:;
-        size_t rows, cols;
-        init_vga_textmode(&rows, &cols, false);
+        vga_textmode_init(false);
 
         screen_info->orig_video_mode = 3;
         screen_info->orig_video_ega_bx = 3;
-        screen_info->orig_video_lines = rows;
-        screen_info->orig_video_cols = cols;
+        screen_info->orig_video_lines = term->rows;
+        screen_info->orig_video_cols = term->cols;
         screen_info->orig_video_points = 16;
 
         screen_info->orig_video_isVGA = VIDEO_TYPE_VGAC;

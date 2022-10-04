@@ -173,8 +173,7 @@ load:
 }
 
 void bios_chainload_volume(struct volume *p) {
-    size_t rows, cols;
-    init_vga_textmode(&rows, &cols, false);
+    vga_textmode_init(false);
 
     volume_read(p, (void *)0x7c00, 0, 512);
 

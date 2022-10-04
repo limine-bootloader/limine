@@ -3,10 +3,7 @@
 #include <stdbool.h>
 #include <lib/term.h>
 #include <lib/real.h>
-#include <lib/image.h>
 #include <lib/misc.h>
-#include <lib/gterm.h>
-#include <drivers/vga_textmode.h>
 #include <lib/print.h>
 #include <mm/pmm.h>
 
@@ -15,7 +12,7 @@ int term_backend = _NOT_READY;
 
 struct term_context *term;
 
-static struct textmode_context term_local_struct;
+static struct term_context term_local_struct;
 
 // --- notready ---
 
@@ -63,9 +60,10 @@ static void notready_deinit(struct term_context *ctx, void (*_free)(void *, size
 void term_notready(void) {
     if (term != NULL) {
         term->deinit(term, pmm_free);
+        term = NULL;
     }
 
-    term = &term_local_struct.term;
+    term = &term_local_struct;
 
     term->raw_putchar = notready_raw_putchar;
     term->clear = notready_clear;

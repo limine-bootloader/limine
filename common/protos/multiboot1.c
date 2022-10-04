@@ -303,6 +303,7 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
     multiboot1_info->flags |= (1 << 9);
 
     term->deinit(term, pmm_free);
+    term = NULL;
 
     if (header.flags & (1 << 2)) {
         size_t req_width  = header.fb_width;

@@ -771,6 +771,10 @@ no_load_font:;
                 font_scale_x, font_scale_y,
                 margin);
 
+    if (term == NULL) {
+        return false;
+    }
+
     pmm_free(font, FONT_MAX);
     if (bg_canvas != NULL) {
         pmm_free(bg_canvas, bg_canvas_size);
@@ -784,7 +788,6 @@ no_load_font:;
     term->in_bootloader = true;
 
     term_context_reinit(term);
-
     term->full_refresh(term);
 
     term_backend = GTERM;

@@ -497,7 +497,7 @@ static void loop_external(size_t xstart, size_t xend, size_t ystart, size_t yend
 static void loop_margin(size_t xstart, size_t xend, size_t ystart, size_t yend) { genloop(xstart, xend, ystart, yend, blend_margin); }
 static void loop_internal(size_t xstart, size_t xend, size_t ystart, size_t yend) { genloop(xstart, xend, ystart, yend, blend_internal); }
 
-static void *generate_canvas(void) {
+static void generate_canvas(void) {
     if (background) {
         bg_canvas_size = fbinfo.framebuffer_width * fbinfo.framebuffer_height * sizeof(uint32_t);
         bg_canvas = ext_mem_alloc(bg_canvas_size);
@@ -527,21 +527,15 @@ static void *generate_canvas(void) {
         }
 
         loop_internal(margin, gradient_stop_x, margin, gradient_stop_y);
-
-        return bg_canvas;
+    } else {
+        bg_canvas = NULL;
     }
-
-    return NULL;
 }
 
 static bool last_serial = false;
 static char *last_config = NULL;
 
 bool gterm_init(char *config, size_t width, size_t height) {
-    if (term_backend != GTERM) {
-        term->deinit(term, pmm_free);
-    }
-
     if (quiet || allocations_disallowed) {
         return false;
     }
@@ -573,9 +567,15 @@ bool gterm_init(char *config, size_t width, size_t height) {
         return true;
     }
 
+    if (term != NULL) {
+        term->deinit(term, pmm_free);
+        term = NULL;
+    }
+
     // We force bpp to 32
-    if (!fb_init(&fbinfo, width, height, 32))
+    if (!fb_init(&fbinfo, width, height, 32)) {
         return false;
+    }
 
     // Ensure this is xRGB8888, we only support that for the menu
     if (fbinfo.red_mask_size    != 8
@@ -583,8 +583,9 @@ bool gterm_init(char *config, size_t width, size_t height) {
      || fbinfo.green_mask_size  != 8
      || fbinfo.green_mask_shift != 8
      || fbinfo.blue_mask_size   != 8
-     || fbinfo.blue_mask_shift  != 0)
+     || fbinfo.blue_mask_shift  != 0) {
         return false;
+    }
 
     last_serial = serial;
     last_config = config;
@@ -762,14 +763,12 @@ no_load_font:;
         }
     }
 
-    uint32_t *canvas = generate_canvas();
-
-    term->deinit(term, pmm_free);
+    generate_canvas();
 
     term = fbterm_init(ext_mem_alloc,
                 (void *)(uintptr_t)fbinfo.framebuffer_addr,
                 fbinfo.framebuffer_width, fbinfo.framebuffer_height, fbinfo.framebuffer_pitch,
-                canvas,
+                bg_canvas,
                 ansi_colours, ansi_bright_colours,
                 &default_bg, &default_fg,
                 font, font_width, font_height, font_spacing,
@@ -777,6 +776,9 @@ no_load_font:;
                 margin);
 
     pmm_free(font, FONT_MAX);
+    if (bg_canvas != NULL) {
+        pmm_free(bg_canvas, bg_canvas_size);
+    }
 
     if (serial) {
         term->cols = term->cols > 80 ? 80 : term->cols;

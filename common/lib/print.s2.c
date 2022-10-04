@@ -203,7 +203,9 @@ out:
 #if defined (BIOS)
         if (stage3_loaded) {
 #endif
-            term_write(term, print_buf, print_buf_i);
+            if (term != NULL) {
+                term_write(term, print_buf, print_buf_i);
+            }
 #if defined (BIOS)
         } else {
             s2_print(print_buf, print_buf_i);

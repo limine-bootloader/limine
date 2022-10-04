@@ -494,6 +494,7 @@ noreturn void linux_load(char *config, char *cmdline) {
     ///////////////////////////////////////
 
     term->deinit(term, pmm_free);
+    term = NULL;
 
     struct screen_info *screen_info = &boot_params->screen_info;
 

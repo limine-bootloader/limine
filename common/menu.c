@@ -568,7 +568,7 @@ static void menu_init_term(void) {
 #if defined (BIOS)
             vga_textmode_init(true);
 #elif defined (UEFI)
-            panic(true, "menu: Failed to initialise terminal");
+            term_fallback();
 #endif
         }
     } else {
@@ -857,7 +857,7 @@ timeout_aborted:
 #if defined (BIOS)
                             vga_textmode_init(true);
 #elif defined (UEFI)
-                            panic(true, "menu: Failed to initialise terminal");
+                            term_fallback();
 #endif
                         }
                     } else {

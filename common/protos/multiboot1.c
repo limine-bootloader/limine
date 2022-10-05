@@ -302,8 +302,10 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
     multiboot1_info->bootloader_name = (uint32_t)(size_t)lowmem_bootname - mb1_info_slide;
     multiboot1_info->flags |= (1 << 9);
 
-    term->deinit(term, pmm_free);
-    term = NULL;
+    if (term != NULL) {
+        term->deinit(term, pmm_free);
+        term = NULL;
+    }
 
     if (header.flags & (1 << 2)) {
         size_t req_width  = header.fb_width;

@@ -538,6 +538,10 @@ static char *last_config = NULL;
 
 bool gterm_init(char *config, size_t width, size_t height) {
     if (quiet) {
+        if (term != NULL) {
+            term->deinit(term, pmm_free);
+            term = NULL;
+        }
         return false;
     }
 

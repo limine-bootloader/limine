@@ -253,6 +253,11 @@ static void text_deinit(struct term_context *_ctx, void (*_free)(void *, size_t)
 static struct textmode_context term_local_struct;
 
 void vga_textmode_init(bool managed) {
+    if (term != NULL) {
+        term->deinit(term, pmm_free);
+        term = NULL;
+    }
+
     if (quiet) {
         return;
     }
@@ -263,11 +268,6 @@ void vga_textmode_init(bool managed) {
         rm_int(0x10, &r, &r);
 
         current_video_mode = 0x3;
-    }
-
-    if (term != NULL) {
-        term->deinit(term, pmm_free);
-        term = NULL;
     }
 
     struct textmode_context *ctx = &term_local_struct;

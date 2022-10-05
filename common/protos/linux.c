@@ -495,8 +495,10 @@ noreturn void linux_load(char *config, char *cmdline) {
     // Video
     ///////////////////////////////////////
 
-    term->deinit(term, pmm_free);
-    term = NULL;
+    if (term != NULL) {
+        term->deinit(term, pmm_free);
+        term = NULL;
+    }
 
     struct screen_info *screen_info = &boot_params->screen_info;
 
@@ -522,7 +524,7 @@ noreturn void linux_load(char *config, char *cmdline) {
 #endif
     if (!fb_init(&fbinfo, req_width, req_height, req_bpp)) {
 #if defined (UEFI)
-        panic(true, "linux: Unable to set video mode");
+        goto no_fb;
 #elif defined (BIOS)
 set_textmode:;
         vga_textmode_init(false);
@@ -562,6 +564,9 @@ set_textmode:;
         }
     }
 
+#if defined (UEFI)
+no_fb:;
+#endif
     struct edid_info_struct *edid_info = get_edid_info();
 
     if (edid_info != NULL) {

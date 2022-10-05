@@ -493,13 +493,20 @@ FEAT_START
 
     char *term_conf_override_s = config_get_value(config, 0, "TERM_CONFIG_OVERRIDE");
     if (term_conf_override_s != NULL && strcmp(term_conf_override_s, "yes") == 0) {
-        gterm_init(config, req_width, req_height);
+        if (!gterm_init(config, req_width, req_height)) {
+            goto term_fail;
+        }
     } else {
-        gterm_init(NULL, req_width, req_height);
+        if (!gterm_init(NULL, req_width, req_height)) {
+            goto term_fail;
+        }
     }
 
-    if (term == NULL) {
-        panic(true, "limine: Failed to initialise terminal");
+    if (0) {
+term_fail:
+        pmm_free(terminal, sizeof(struct limine_terminal));
+        pmm_free(terminal_response, sizeof(struct limine_terminal_response));
+        break; // next feature
     }
 
     fb = fbinfo;
@@ -548,7 +555,7 @@ FEAT_END
     term = NULL;
 
     if (!fb_init(&fb, req_width, req_height, req_bpp)) {
-        panic(true, "limine: Could not acquire framebuffer");
+        goto no_fb;
     }
 
 skip_fb_init:
@@ -601,6 +608,7 @@ FEAT_START
     framebuffer_request->response = reported_addr(framebuffer_response);
 FEAT_END
 
+no_fb:
     // Boot time feature
 FEAT_START
     struct limine_boot_time_request *boot_time_request = get_request(LIMINE_BOOT_TIME_REQUEST);

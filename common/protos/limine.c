@@ -755,9 +755,10 @@ FEAT_START
 FEAT_END
 
     // Clear terminal for kernels that will use the Limine terminal
-    term_write(term, "\e[2J\e[H", 7);
-
-    term->in_bootloader = false;
+    if (term != NULL) {
+        term_write(term, "\e[2J\e[H", 7);
+        term->in_bootloader = false;
+    }
 
     stivale_spinup(64, want_5lv, &pagemap, entry_point, 0,
                    reported_addr(stack), nx_available, true, (uintptr_t)local_gdt);

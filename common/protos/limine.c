@@ -1006,9 +1006,10 @@ FEAT_START
 FEAT_END
 
     // Clear terminal for kernels that will use the Limine terminal
-    term_write(term, "\e[2J\e[H", 7);
-
-    term->in_bootloader = false;
+    if (term != NULL) {
+        term_write(term, "\e[2J\e[H", 7);
+        term->in_bootloader = false;
+    }
 
 #if defined (__x86_64__) || defined (__i386__)
 #if defined (BIOS)

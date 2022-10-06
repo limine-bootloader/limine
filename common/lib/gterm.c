@@ -776,13 +776,13 @@ no_load_font:;
                 font_scale_x, font_scale_y,
                 margin);
 
-    if (term == NULL) {
-        return false;
-    }
-
     pmm_free(font, FONT_MAX);
     if (bg_canvas != NULL) {
         pmm_free(bg_canvas, bg_canvas_size);
+    }
+
+    if (term == NULL) {
+        return false;
     }
 
     if (serial) {

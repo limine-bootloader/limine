@@ -127,9 +127,9 @@ the `/EFI/BOOT` directory of a FAT formatted EFI system partition. These files c
 be installed there and coexist with a BIOS installation of Limine (see below) so
 that the disk will be bootable on both BIOS and UEFI systems.
 
-The boot device must to contain the `limine.cfg` file in
-either the root or the `boot` directory of one of the partitions, formatted
-with a supported file system (the ESP partition is recommended).
+The boot device must to contain the `limine.cfg` files in
+either the root, `limine`, `boot`, or `boot/limine` directory of one of the
+partitions, formatted with a supported file system (the ESP partition is recommended).
 
 ### BIOS/MBR
 In order to install Limine on a MBR device (which can just be a raw image file),
@@ -140,8 +140,8 @@ limine-deploy <path to device/image>
 ```
 
 The boot device must to contain the `limine.sys` and `limine.cfg` files in
-either the root or the `boot` directory of one of the partitions, formatted
-with a supported file system.
+either the root, `limine`, `boot`, or `boot/limine` directory of one of the
+partitions, formatted with a supported file system.
 
 ### BIOS/GPT
 If using a GPT formatted device, there are 2 options one can follow for
@@ -162,15 +162,15 @@ simply omit the partition number, and invoke `limine-deploy` the same as one
 would do for an MBR partitioned device.
 
 The boot device must to contain the `limine.sys` and `limine.cfg` files in
-either the root or the `boot` directory of one of the partitions, formatted
-with a supported file system.
+either the root, `limine`, `boot`, or `boot/limine` directory of one of the
+partitions, formatted with a supported file system.
 
 ### BIOS/UEFI hybrid ISO creation
 In order to create a hybrid ISO with Limine, place the
 `limine-cd-efi.bin`, `limine-cd.bin`, `limine.sys`, and `limine.cfg` files
 into a directory which will serve as the root of the created ISO.
-(`limine.sys` and `limine.cfg` must either be in the root or inside a `boot`
-subdirectory; `limine-cd-efi.bin` and `limine-cd.bin` can reside
+(`limine.sys` and `limine.cfg` must either be in the root, `limine`, `boot`, or
+`boot/limine` directory; `limine-cd-efi.bin` and `limine-cd.bin` can reside
 anywhere).
 
 Place any other file you want to be on the final ISO in said directory, then

@@ -72,7 +72,9 @@ could_not_match:
                 bool old_cif = case_insensitive_fopen;
                 case_insensitive_fopen = true;
                 if ((f = fopen(volume_index[i], "/limine.cfg")) == NULL
+                 && (f = fopen(volume_index[i], "/limine/limine.cfg")) == NULL
                  && (f = fopen(volume_index[i], "/boot/limine.cfg")) == NULL
+                 && (f = fopen(volume_index[i], "/boot/limine/limine.cfg")) == NULL
                  && (f = fopen(volume_index[i], "/EFI/BOOT/limine.cfg")) == NULL) {
                     case_insensitive_fopen = old_cif;
                     continue;

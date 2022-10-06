@@ -267,7 +267,11 @@ int pit_sleep_and_quit_on_keypress(int seconds) {
 
     if (gBS->HandleProtocol(gST->ConsoleInHandle, &exproto_guid, (void **)&exproto) != EFI_SUCCESS) {
         if (gBS->HandleProtocol(gST->ConsoleInHandle, &sproto_guid, (void **)&sproto) != EFI_SUCCESS) {
-            panic(false, "Your input device doesn't have an input protocol!");
+            if (gST->ConIn != NULL) {
+                sproto = gST->ConIn;
+            } else {
+                panic(false, "Your input device doesn't have an input protocol!");
+            }
         }
 
         events[0] = sproto->WaitForKey;

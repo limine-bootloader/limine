@@ -551,8 +551,10 @@ term_fail:
     goto skip_fb_init;
 FEAT_END
 
-    term->deinit(term, pmm_free);
-    term = NULL;
+    if (term != NULL) {
+        term->deinit(term, pmm_free);
+        term = NULL;
+    }
 
     if (!fb_init(&fb, req_width, req_height, req_bpp)) {
         goto no_fb;

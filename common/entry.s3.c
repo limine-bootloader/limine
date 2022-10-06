@@ -102,7 +102,7 @@ could_not_match:
                                      (void **)&loaded_image);
 
         if (status) {
-            panic(false, "HandleProtocol failure (%x)", status);
+            goto could_not_match;
         }
 
         boot_volume = disk_volume_from_efi_handle(loaded_image->DeviceHandle);

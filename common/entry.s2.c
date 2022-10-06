@@ -44,7 +44,9 @@ static bool stage3_init(struct volume *part) {
     bool old_cif = case_insensitive_fopen;
     case_insensitive_fopen = true;
     if ((stage3 = fopen(part, "/limine.sys")) == NULL
-     && (stage3 = fopen(part, "/boot/limine.sys")) == NULL) {
+     && (stage3 = fopen(part, "/limine/limine.sys")) == NULL
+     && (stage3 = fopen(part, "/boot/limine.sys")) == NULL
+     && (stage3 = fopen(part, "/boot/limine/limine.sys")) == NULL) {
         case_insensitive_fopen = old_cif;
         return false;
     }

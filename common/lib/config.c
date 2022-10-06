@@ -24,7 +24,9 @@ int init_config_disk(struct volume *part) {
     bool old_cif = case_insensitive_fopen;
     case_insensitive_fopen = true;
     if ((f = fopen(part, "/limine.cfg")) == NULL
+     && (f = fopen(part, "/limine/limine.cfg")) == NULL
      && (f = fopen(part, "/boot/limine.cfg")) == NULL
+     && (f = fopen(part, "/boot/limine/limine.cfg")) == NULL
      && (f = fopen(part, "/EFI/BOOT/limine.cfg")) == NULL) {
         case_insensitive_fopen = old_cif;
         return -1;

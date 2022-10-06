@@ -656,7 +656,7 @@ FEAT_START
 
     for (size_t i = 0; i < cpu_count; i++) {
         void *cpu_stack = ext_mem_alloc(stack_size) + stack_size;
-        smp_info[i].stack_addr = reported_addr(cpu_stack + stack_size);
+        smp_info[i].stack_addr = reported_addr(cpu_stack);
     }
 
     struct limine_smp_response *smp_response =

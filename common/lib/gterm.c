@@ -545,6 +545,17 @@ bool gterm_init(char *config, size_t width, size_t height) {
         return false;
     }
 
+#if defined (UEFI)
+    if (serial || COM_OUTPUT) {
+        if (term != NULL) {
+            term->deinit(term, pmm_free);
+            term = NULL;
+        }
+        term_fallback();
+        return true;
+    }
+#endif
+
     if (term != NULL
      && term_backend == GTERM
      && fbinfo.default_res == true

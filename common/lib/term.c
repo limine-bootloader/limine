@@ -182,7 +182,10 @@ static void fallback_scroll(struct term_context *ctx) {
 }
 
 static void fallback_raw_putchar(struct term_context *ctx, uint8_t c) {
-    (void)ctx;
+    if (!ctx->scroll_enabled && cursor_x == term->cols - 1 && cursor_y == term->rows - 1) {
+        return;
+    }
+    gST->ConOut->EnableCursor(gST->ConOut, true);
     CHAR16 string[2];
     string[0] = c;
     string[1] = 0;
@@ -229,9 +232,6 @@ void term_fallback(void) {
     if (!efi_boot_services_exited) {
 #endif
         fallback_clear(NULL, true);
-#if defined (UEFI)
-        gST->ConOut->EnableCursor(gST->ConOut, false);
-#endif
         term->raw_putchar = fallback_raw_putchar;
         term->clear = fallback_clear;
         term->set_cursor_pos = fallback_set_cursor_pos;

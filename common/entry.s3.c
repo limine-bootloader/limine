@@ -36,6 +36,8 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 
     EFI_STATUS status;
 
+    gST->ConOut->EnableCursor(gST->ConOut, false);
+
     term_fallback();
 
     status = gBS->SetWatchdogTimer(0, 0x10000, 0, NULL);

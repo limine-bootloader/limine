@@ -111,8 +111,6 @@ uint32_t hex2bin(uint8_t *str, uint32_t size) {
 
 no_unwind bool efi_boot_services_exited = false;
 
-#define EFI_COPY_MAX_ENTRIES 2048
-
 bool efi_exit_boot_services(void) {
     EFI_STATUS status;
 
@@ -133,6 +131,14 @@ bool efi_exit_boot_services(void) {
     if (status) {
         goto fail;
     }
+
+    EFI_MEMORY_DESCRIPTOR *efi_copy;
+    status = gBS->AllocatePool(EfiLoaderData, efi_mmap_size * 2, (void **)&efi_copy);
+    if (status) {
+        goto fail;
+    }
+
+    const size_t EFI_COPY_MAX_ENTRIES = (efi_mmap_size * 2) / efi_desc_size;
 
     size_t retries = 0;
 
@@ -157,7 +163,6 @@ retry:
     // Go through new EFI memmap and free up bootloader entries
     size_t entry_count = efi_mmap_size / efi_desc_size;
 
-    EFI_MEMORY_DESCRIPTOR *efi_copy = ext_mem_alloc(EFI_COPY_MAX_ENTRIES * efi_desc_size);
     size_t efi_copy_i = 0;
 
     for (size_t i = 0; i < entry_count; i++) {

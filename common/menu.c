@@ -495,7 +495,7 @@ refresh:
     goto refresh;
 }
 
-static size_t print_tree(const char *shift, size_t level, size_t base_index, size_t selected_entry,
+static size_t print_tree(size_t offset, size_t window, const char *shift, size_t level, size_t base_index, size_t selected_entry,
                       struct menu_entry *current_entry,
                       struct menu_entry **selected_menu_entry) {
     size_t max_entries = 0;
@@ -508,6 +508,12 @@ static size_t print_tree(const char *shift, size_t level, size_t base_index, siz
     for (;;) {
         if (current_entry == NULL)
             break;
+        if (!no_print && base_index + max_entries < offset) {
+            goto skip_line;
+        }
+        if (!no_print && base_index + max_entries >= offset + window) {
+            goto skip_line;
+        }
         if (!no_print) print("%s", shift);
         if (level) {
             for (size_t i = level - 1; i > 0; i--) {
@@ -538,8 +544,9 @@ static size_t print_tree(const char *shift, size_t level, size_t base_index, siz
             if (!no_print) print("\e[7m");
         }
         if (!no_print) print(" %s \e[27m\n", current_entry->name);
+skip_line:
         if (current_entry->sub && current_entry->expanded) {
-            max_entries += print_tree(shift, level + 1, base_index + max_entries + 1,
+            max_entries += print_tree(offset, window, shift, level + 1, base_index + max_entries + 1,
                                       selected_entry,
                                       current_entry->sub,
                                       selected_menu_entry);
@@ -692,7 +699,7 @@ noreturn void _menu(bool first_run) {
     if (!skip_timeout && !timeout) {
         // Use print tree to load up selected_menu_entry and determine if the
         // default entry is valid.
-        print_tree(NULL, 0, 0, selected_entry, menu_tree, &selected_menu_entry);
+        print_tree(0, 0, NULL, 0, 0, selected_entry, menu_tree, &selected_menu_entry);
         if (selected_menu_entry == NULL || selected_menu_entry->sub != NULL) {
             quiet = false;
             print("Default entry is not valid or directory, booting to menu.\n");
@@ -704,7 +711,16 @@ noreturn void _menu(bool first_run) {
 
     menu_init_term();
 
+    size_t tree_offset = 0;
+
 refresh:
+    if (selected_entry >= tree_offset + term_rows - 10) {
+        tree_offset = selected_entry - (term_rows - 11);
+    }
+    if (selected_entry < tree_offset) {
+        tree_offset = selected_entry;
+    }
+
     term_autoflush = false;
 
     disable_cursor();
@@ -763,7 +779,7 @@ refresh:
         set_cursor_pos_helper(x, y + 2);
     }
 
-    size_t max_entries = print_tree(serial ? "|   " : "\xb3   ", 0, 0, selected_entry, menu_tree,
+    size_t max_entries = print_tree(tree_offset, term_rows - 10, serial ? "|   " : "\xb3   ", 0, 0, selected_entry, menu_tree,
                                  &selected_menu_entry);
 
     {
@@ -827,7 +843,7 @@ timeout_aborted:
                 int ent = (c - '0') - 1;
                 if (ent < (int)max_entries) {
                     selected_entry = ent;
-                    print_tree(NULL, 0, 0, selected_entry, menu_tree,
+                    print_tree(0, 0, NULL, 0, 0, selected_entry, menu_tree,
                                &selected_menu_entry);
                     goto autoboot;
                 }

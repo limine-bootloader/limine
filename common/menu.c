@@ -758,7 +758,15 @@ refresh:
 
         print(serial ? "/" : "\xda");
         for (size_t i = 0; i < term_cols - 2; i++) {
-            print(serial ? "-" : "\xc4");
+            switch (i) {
+                case 1: case 2: case 3:
+                    if (tree_offset > 0) {
+                        print(serial ? "^" : "\x18"); break;
+                    }
+                    // FALLTHRU
+                default:
+                    print(serial ? "-" : "\xc4"); break;
+            }
         }
         print(serial ? "\\" : "\xbf");
 
@@ -785,6 +793,12 @@ refresh:
     {
         size_t x, y;
         get_cursor_pos(&x, &y);
+
+        if (tree_offset + (term_rows - 10) < max_entries) {
+            set_cursor_pos_helper(2, term_rows - 2);
+            print(serial ? "vvv" : "\x19\x19\x19");
+        }
+
         set_cursor_pos_helper(0, 3);
         if (editor_enabled && selected_menu_entry->sub == NULL) {
             print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m Boot    \e[32mE\e[0m Edit");

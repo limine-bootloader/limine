@@ -111,7 +111,7 @@ uint32_t hex2bin(uint8_t *str, uint32_t size) {
 
 no_unwind bool efi_boot_services_exited = false;
 
-#define EFI_COPY_MAX_ENTRIES 512
+#define EFI_COPY_MAX_ENTRIES 2048
 
 bool efi_exit_boot_services(void) {
     EFI_STATUS status;

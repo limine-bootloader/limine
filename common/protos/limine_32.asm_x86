@@ -37,7 +37,7 @@ limine_spinup_32:
     mov cr4, eax
 
     ; Enable EFER.LME
-    mov eax, 0xc0000080
+    mov ecx, 0xc0000080
     rdmsr
     bts eax, 8
     wrmsr

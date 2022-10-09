@@ -537,6 +537,14 @@ fail:
             break;
         }
 
+        EFI_GUID disk_io_guid = DISK_IO_PROTOCOL;
+        EFI_DISK_IO *disk_io = NULL;
+
+        status = gBS->HandleProtocol(handles[i], &disk_io_guid, (void **)&disk_io);
+        if (status) {
+            disk_io = NULL;
+        }
+
         EFI_BLOCK_IO *drive = NULL;
 
         status = gBS->HandleProtocol(handles[i], &block_io_guid, (void **)&drive);
@@ -547,12 +555,21 @@ fail:
         if (drive->Media->LogicalPartition)
             continue;
 
-        status = drive->ReadBlocks(drive, drive->Media->MediaId, 0, 4096, unique_sector_pool);
+        uint64_t orig;
+        if (disk_io != NULL) {
+            status = disk_io->ReadDisk(disk_io, drive->Media->MediaId, 0, sizeof(uint64_t), &orig);
+        } else {
+            status = drive->ReadBlocks(drive, drive->Media->MediaId, 0, 4096, unique_sector_pool);
+        }
         if (status) {
             continue;
         }
 
-        status = drive->WriteBlocks(drive, drive->Media->MediaId, 0, 4096, unique_sector_pool);
+        if (disk_io != NULL) {
+            status = disk_io->WriteDisk(disk_io, drive->Media->MediaId, 0, sizeof(uint64_t), &orig);
+        } else {
+            status = drive->WriteBlocks(drive, drive->Media->MediaId, 0, 4096, unique_sector_pool);
+        }
 
         struct volume *block = ext_mem_alloc(sizeof(struct volume));
 

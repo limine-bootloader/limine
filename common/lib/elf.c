@@ -457,6 +457,32 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
             continue;
         }
 
+        // check for overlapping phdrs
+        for (uint16_t j = 0; j < hdr->ph_num; j++) {
+            struct elf64_phdr *phdr_in = (void *)elf + (hdr->phoff + j * hdr->phdr_size);
+
+            if (phdr_in->p_type != PT_LOAD) {
+                continue;
+            }
+
+            // Drop entries not in the higher half
+            if (phdr_in->p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
+                continue;
+            }
+
+            if (phdr_in == phdr) {
+                continue;
+            }
+
+            if ((phdr_in->p_vaddr >= phdr->p_vaddr
+              && phdr_in->p_vaddr < phdr->p_vaddr + phdr->p_memsz)
+                ||
+                (phdr_in->p_vaddr + phdr_in->p_memsz > phdr->p_vaddr
+              && phdr_in->p_vaddr + phdr_in->p_memsz <= phdr->p_vaddr + phdr->p_memsz)) {
+                panic(true, "elf: Attempted to load ELF file with overlapping PHDRs (%u and %u overlap)", i, j);
+            }
+        }
+
         if (phdr->p_vaddr < min_vaddr) {
             min_vaddr = phdr->p_vaddr;
         }

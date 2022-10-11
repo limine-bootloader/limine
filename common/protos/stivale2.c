@@ -565,7 +565,7 @@ failed_to_load_header_section:
                 gterm_init(NULL, req_width, req_height);
             }
 
-            if (current_video_mode < 0) {
+            if (term == NULL) {
                 panic(true, "stivale2: Failed to initialise terminal");
             }
 

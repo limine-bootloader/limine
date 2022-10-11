@@ -551,7 +551,7 @@ failed_to_load_header_section:
 
 #if defined (BIOS)
         if ((avtag == NULL && hdrtag == NULL) || (avtag != NULL && preference == 1)) {
-            term_textmode();
+            vga_textmode_init(true);
             textmode = true;
         } else {
 #endif
@@ -672,8 +672,7 @@ have_fb_tag:;
         }
     } else {
 #if defined (BIOS)
-        size_t rows, cols;
-        init_vga_textmode(&rows, &cols, false);
+        vga_textmode_init(false);
 
 have_tm_tag:;
         struct stivale2_struct_tag_textmode *tmtag = ext_mem_alloc(sizeof(struct stivale2_struct_tag_textmode));

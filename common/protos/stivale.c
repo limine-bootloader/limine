@@ -349,8 +349,7 @@ noreturn void stivale_load(char *config, char *cmdline) {
 #if defined (UEFI)
         panic(true, "stivale: Cannot use text mode with UEFI.");
 #elif defined (BIOS)
-        size_t rows, cols;
-        init_vga_textmode(&rows, &cols, false);
+        vga_textmode_init(false);
 #endif
     }
 

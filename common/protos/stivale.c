@@ -308,7 +308,10 @@ noreturn void stivale_load(char *config, char *cmdline) {
     stivale_struct->epoch = time();
     printv("stivale: Current epoch: %U\n", stivale_struct->epoch);
 
-    term_deinit();
+    if (term != NULL) {
+        term->deinit(term, pmm_free);
+        term = NULL;
+    }
 
     if (stivale_hdr.flags & (1 << 0)) {
         size_t req_width  = stivale_hdr.framebuffer_width;

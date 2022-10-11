@@ -787,7 +787,7 @@ refresh:
         set_cursor_pos_helper(x, y + 2);
     }
 
-    size_t max_entries = print_tree(tree_offset, term_rows - 10, serial ? "|   " : "\xb3   ", 0, 0, selected_entry, menu_tree,
+    size_t max_entries = print_tree(tree_offset, term->rows - 10, serial ? "|   " : "\xb3   ", 0, 0, selected_entry, menu_tree,
                                  &selected_menu_entry);
 
     {
@@ -795,7 +795,7 @@ refresh:
         term->get_cursor_pos(term, &x, &y);
 
         if (tree_offset + (term->rows - 10) < max_entries) {
-            set_cursor_pos_helper(2, term_rows - 2);
+            set_cursor_pos_helper(2, term->rows - 2);
             print(serial ? "vvv" : "\x19\x19\x19");
         }
 

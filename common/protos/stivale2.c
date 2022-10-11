@@ -584,10 +584,10 @@ failed_to_load_header_section:
             tag->flags |= (1 << 2);
             if (terminal_hdr_tag->callback != 0) {
 #if defined (__i386__)
-                term_callback = stivale2_term_callback;
+                term->callback = (void *)stivale2_term_callback;
                 stivale2_term_callback_ptr = terminal_hdr_tag->callback;
 #elif defined (__x86_64__)
-                term_callback = (void *)terminal_hdr_tag->callback;
+                term->callback = (void *)terminal_hdr_tag->callback;
 #endif
             }
         }
@@ -604,16 +604,16 @@ failed_to_load_header_section:
             stivale2_rt_stack = ext_mem_alloc(8192) + 8192;
         }
 
-        stivale2_term_write_ptr = (uintptr_t)term_write;
+        stivale2_term_write_ptr = (uintptr_t)_term_write;
         tag->term_write = (uintptr_t)(void *)stivale2_term_write_entry;
 #elif defined (__x86_64__)
-        tag->term_write = (uintptr_t)term_write;
+        tag->term_write = (uintptr_t)_term_write;
 #endif
 
         // We provide rows and cols
         tag->flags |= (1 << 0);
-        tag->cols = term_cols;
-        tag->rows = term_rows;
+        tag->cols = term->cols;
+        tag->rows = term->rows;
 
         append_tag(stivale2_struct, (struct stivale2_tag *)tag);
 
@@ -628,14 +628,20 @@ failed_to_load_header_section:
         fb = &_fb;
     }
 
-    term_deinit();
+    if (term != NULL) {
+        term->deinit(term, pmm_free);
+        term = NULL;
+    }
 
     if (hdrtag != NULL
 #if defined (UEFI)
      || avtag != NULL
 #endif
      || (avtag != NULL && preference == 0)) {
-        term_deinit();
+        if (term != NULL) {
+            term->deinit(term, pmm_free);
+            term = NULL;
+        }
 
 #if defined (UEFI)
         gop_force_16 = true;
@@ -866,9 +872,10 @@ have_tm_tag:;
     }
 
     // Clear terminal for kernels that will use the stivale2 terminal
-    term_write((uint64_t)(uintptr_t)("\e[2J\e[H"), 7);
-
-    term_runtime = true;
+    if (term != NULL) {
+        term_write(term, "\e[2J\e[H", 7);
+        term->in_bootloader = false;
+    }
 
     stivale_spinup(bits, want_5lv, &pagemap, entry_point,
                    REPORTED_ADDR((uint64_t)(uintptr_t)stivale2_struct),

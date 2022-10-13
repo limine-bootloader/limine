@@ -555,6 +555,8 @@ fail:
         if (drive->Media->LogicalPartition)
             continue;
 
+        drive->Media->WriteCaching = false;
+
         uint64_t orig;
         if (disk_io != NULL) {
             status = disk_io->ReadDisk(disk_io, drive->Media->MediaId, 0, sizeof(uint64_t), &orig);
@@ -573,7 +575,7 @@ fail:
 
         struct volume *block = ext_mem_alloc(sizeof(struct volume));
 
-        if (status) {
+        if (status || drive->Media->ReadOnly) {
             block->index = optical_indices++;
             block->is_optical = true;
         } else {

@@ -903,8 +903,8 @@ int main(int argc, char *argv[]) {
         goto cleanup;
 
     fprintf(stderr, "Reminder: Remember to copy the limine.sys file in either\n"
-                    "          the root or /boot directories of one of the partitions\n"
-                    "          on the device, or boot will fail!\n");
+                    "          the root, /boot, /limine, or /boot/limine directories of\n"
+                    "          one of the partitions on the device, or boot will fail!\n");
 
     fprintf(stderr, "Limine deployed successfully!\n");
 

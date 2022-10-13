@@ -112,8 +112,8 @@ noreturn void entry(uint8_t boot_drive, int boot_from) {
     if (!stage3_found) {
         print("\n"
               "!! Stage 3 file not found!\n"
-              "!! Have you copied limine.sys to the root or /boot directories of\n"
-              "!! one of the partitions on the boot device?\n\n");
+              "!! Have you copied limine.sys to the root, /boot, /limine, or /boot/limine\n"
+              "!! directories of one of the partitions on the boot device?\n\n");
     }
 
     if (!stage3_loaded) {

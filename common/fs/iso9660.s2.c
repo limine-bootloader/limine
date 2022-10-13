@@ -294,5 +294,4 @@ static void iso9660_read(struct file_handle *file, void *buf, uint64_t loc, uint
 
 static void iso9660_close(struct file_handle *file) {
     pmm_free(file->fd, sizeof(struct iso9660_file_handle));
-    pmm_free(file, sizeof(struct file_handle));
 }

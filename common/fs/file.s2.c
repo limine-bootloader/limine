@@ -81,10 +81,10 @@ void fclose(struct file_handle *fd) {
         if (fd->readall == false) {
             pmm_free(fd->fd, fd->size);
         }
-        pmm_free(fd, sizeof(struct file_handle));
     } else {
         fd->close(fd);
     }
+    pmm_free(fd, sizeof(struct file_handle));
 }
 
 void fread(struct file_handle *fd, void *buf, uint64_t loc, uint64_t count) {
@@ -106,6 +106,10 @@ void *freadall(struct file_handle *fd, uint32_t type) {
     } else {
         void *ret = ext_mem_alloc_type(fd->size, type);
         fd->read(fd, ret, 0, fd->size);
+        fd->close(fd);
+        fd->fd = ret;
+        fd->readall = true;
+        fd->is_memfile = true;
         return ret;
     }
 }

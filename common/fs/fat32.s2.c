@@ -525,5 +525,4 @@ static void fat32_close(struct file_handle *file) {
     struct fat32_file_handle *f = file->fd;
     pmm_free(f->cluster_chain, f->chain_len * sizeof(uint32_t));
     pmm_free(f, sizeof(struct fat32_file_handle));
-    pmm_free(file, sizeof(struct file_handle));
 }

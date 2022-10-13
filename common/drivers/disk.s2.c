@@ -326,6 +326,8 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
         return NULL;
     }
 
+    block_io->Media->WriteCaching = false;
+
     for (size_t i = 0; i < volume_index_i; i++) {
         if (volume_index[i]->unique_sector_valid == false) {
             continue;
@@ -359,20 +361,31 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
     EFI_DISK_IO *disk_io = NULL;
 
     status = gBS->HandleProtocol(efi_handle, &disk_io_guid, (void **)&disk_io);
-    if (status)
-        return NULL;
+    if (status) {
+        disk_io = NULL;
+    }
 
     uint64_t signature = rand64();
     uint64_t new_signature;
     do { new_signature = rand64(); } while (new_signature == signature);
     uint64_t orig;
 
-    status = disk_io->ReadDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &orig);
+    if (disk_io != NULL) {
+        status = disk_io->ReadDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &orig);
+    } else {
+        status = block_io->ReadBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
+        orig = *(uint64_t *)unique_sector_pool;
+    }
     if (status) {
         return NULL;
     }
 
-    status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &signature);
+    if (disk_io != NULL) {
+        status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &signature);
+    } else {
+        *(uint64_t *)unique_sector_pool = signature;
+        status = block_io->WriteBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
+    }
     if (status) {
         return NULL;
     }
@@ -385,31 +398,50 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
 
         status = gBS->HandleProtocol(volume_index[i]->efi_handle,
                           &disk_io_guid, (void **)&cur_disk_io);
-
         if (status) {
-            continue;
+            cur_disk_io = NULL;
         }
 
-        status = cur_disk_io->ReadDisk(cur_disk_io,
-                          volume_index[i]->block_io->Media->MediaId,
-                          0 + volume_index[i]->first_sect * 512,
-                          sizeof(uint64_t), &compare);
-
+        if (cur_disk_io != NULL) {
+            status = cur_disk_io->ReadDisk(cur_disk_io,
+                              volume_index[i]->block_io->Media->MediaId,
+                              volume_index[i]->first_sect * 512,
+                              sizeof(uint64_t), &compare);
+        } else {
+            status = volume_index[i]->block_io->ReadBlocks(volume_index[i]->block_io,
+                              volume_index[i]->block_io->Media->MediaId,
+                              volume_index[i]->first_sect * 512,
+                              4096, unique_sector_pool);
+            compare = *(uint64_t *)unique_sector_pool;
+        }
         if (status) {
             continue;
         }
 
         if (compare == signature) {
             // Double check
-            status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &new_signature);
+            if (disk_io != NULL) {
+                status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &new_signature);
+            } else {
+                *(uint64_t *)unique_sector_pool = new_signature;
+                status = block_io->WriteBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
+            }
             if (status) {
                 break;
             }
 
-            status = cur_disk_io->ReadDisk(cur_disk_io,
-                          volume_index[i]->block_io->Media->MediaId,
-                          0 + volume_index[i]->first_sect * 512,
-                          sizeof(uint64_t), &compare);
+            if (cur_disk_io != NULL) {
+                status = cur_disk_io->ReadDisk(cur_disk_io,
+                              volume_index[i]->block_io->Media->MediaId,
+                              volume_index[i]->first_sect * 512,
+                              sizeof(uint64_t), &compare);
+            } else {
+                status = volume_index[i]->block_io->ReadBlocks(volume_index[i]->block_io,
+                              volume_index[i]->block_io->Media->MediaId,
+                              volume_index[i]->first_sect * 512,
+                              4096, unique_sector_pool);
+                compare = *(uint64_t *)unique_sector_pool;
+            }
             if (status) {
                 continue;
             }
@@ -419,14 +451,24 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
                 break;
             }
 
-            status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &signature);
+            if (disk_io != NULL) {
+                status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &signature);
+            } else {
+                *(uint64_t *)unique_sector_pool = signature;
+                status = block_io->WriteBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
+            }
             if (status) {
                 break;
             }
         }
     }
 
-    status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &orig);
+    if (disk_io != NULL) {
+        status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &orig);
+    } else {
+        *(uint64_t *)unique_sector_pool = orig;
+        status = block_io->WriteBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
+    }
     if (status) {
         return NULL;
     }

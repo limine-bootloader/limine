@@ -553,7 +553,6 @@ static void ext2_close(struct file_handle *file) {
         pmm_free(f->alloc_map, f->inode.i_blocks_count * sizeof(uint32_t));
     }
     pmm_free(f, sizeof(struct ext2_file_handle));
-    pmm_free(file, sizeof(struct file_handle));
 }
 
 static void ext2_read(struct file_handle *file, void *buf, uint64_t loc, uint64_t count) {

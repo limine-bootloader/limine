@@ -61,6 +61,7 @@ Some keys take *URIs* as values; these are described in the next section.
 * `VERBOSE` - If set to `yes`, print additional information during boot. Defaults to not verbose.
 * `RANDOMISE_MEMORY` - If set to `yes`, randomise the contents of RAM at bootup in order to find bugs related to non zeroed memory or for security reasons. This option will slow down boot time significantly. For the BIOS port of Limine, this will only randomise memory below 4GiB.
 * `RANDOMIZE_MEMORY` - Alias of `RANDOMISE_MEMORY`.
+* `HASH_MISMATCH_PANIC` - If set to `no`, do not panic if there is a hash mismatch for a file, but print a warning instead.
 
 Limine interface control options.
 
@@ -166,6 +167,10 @@ A resource can be one of the following:
 * `uuid` - Alias of `guid`.
 * `fslabel` - The `root` is the name of the filesystem label of a partition.
 * `tftp` - The `root` is the IP address of the tftp server to load the file from. If the root is left empty (`tftp:///...`) the file will be loaded from the server Limine booted from. This resource is only available when booting off PXE.
+
+A URI can optionally be suffixed with a blake2b hash for the referenced file,
+by appending a pound character (`#`) followed by the blake2b hash.
+E.g.: `boot:///somemodule.gz#ca6914d2...446b470a`.
 
 A URI can optionally be prefixed by a `$` character to indicate that the file
 pointed to be the URI is a gzip-compressed payload to be uncompressed on the

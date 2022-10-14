@@ -19,6 +19,14 @@ bool fb_init(struct fb_info *ret,
     return r;
 }
 
+struct fb_info *fb_get_mode_list(size_t *count) {
+#if defined (BIOS)
+    return vbe_get_mode_list(count);
+#elif defined (UEFI)
+    return gop_get_mode_list(count);
+#endif
+}
+
 void fb_clear(struct fb_info *fb) {
     for (size_t y = 0; y < fb->framebuffer_height; y++) {
         switch (fb->framebuffer_bpp) {

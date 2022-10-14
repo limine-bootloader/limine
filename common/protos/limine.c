@@ -356,7 +356,6 @@ FEAT_START
     smbios_request->response = reported_addr(smbios_response);
 FEAT_END
 
-
 #if defined (UEFI)
     // EFI system table feature
 FEAT_START
@@ -586,6 +585,20 @@ FEAT_START
     if (edid_info != NULL) {
         fbp->edid_size = sizeof(struct edid_info_struct);
         fbp->edid = reported_addr(edid_info);
+    }
+
+    framebuffer_response->revision = 1;
+
+    size_t modes_count;
+    struct fb_info *modes = fb_get_mode_list(&modes_count);
+    if (modes != NULL) {
+        uint64_t *modes_list = ext_mem_alloc(modes_count * sizeof(uint64_t));
+        for (size_t i = 0; i < modes_count; i++) {
+            modes[i].memory_model = LIMINE_FRAMEBUFFER_RGB;
+            modes_list[i] = reported_addr(&modes[i]);
+        }
+        fbp->modes = reported_addr(modes_list);
+        fbp->mode_count = modes_count;
     }
 
     fbp->memory_model     = LIMINE_FRAMEBUFFER_RGB;

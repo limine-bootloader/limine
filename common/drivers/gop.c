@@ -37,19 +37,19 @@ static void linear_mask_to_mask_shift(
 
 // Most of this code taken from https://wiki.osdev.org/GOP
 
-bool gop_force_16 = false;
-
-static bool try_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop,
-                     struct fb_info *ret, size_t mode, uint64_t width, uint64_t height, int bpp) {
+static bool mode_to_fb_info(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, struct fb_info *ret, size_t mode) {
     EFI_STATUS status;
+
+    ret->default_res = false;
 
     EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *mode_info;
     UINTN mode_info_size;
 
     status = gop->QueryMode(gop, mode, &mode_info_size, &mode_info);
 
-    if (status)
+    if (status) {
         return false;
+    }
 
     switch (mode_info->PixelFormat) {
         case PixelBlueGreenRedReserved8BitPerColor:
@@ -87,20 +87,39 @@ static bool try_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop,
                                       mode_info->PixelInformation.BlueMask);
             break;
         default:
-            panic(false, "gop: Invalid PixelFormat");
-    }
-
-    if (width != 0 && height != 0 && bpp != 0) {
-        if ((uint64_t)mode_info->HorizontalResolution != width
-         || (uint64_t)mode_info->VerticalResolution != height
-         || (int)ret->framebuffer_bpp != bpp)
             return false;
     }
 
+    ret->memory_model = 0x06;
+    ret->framebuffer_pitch = mode_info->PixelsPerScanLine * (ret->framebuffer_bpp / 8);
+    ret->framebuffer_width = mode_info->HorizontalResolution;
+    ret->framebuffer_height = mode_info->VerticalResolution;
+
+    return true;
+}
+
+bool gop_force_16 = false;
+
+static bool try_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop,
+                     struct fb_info *ret, size_t mode, uint64_t width, uint64_t height, int bpp) {
+    EFI_STATUS status;
+
+    if (!mode_to_fb_info(gop, ret, mode)) {
+        return false;
+    }
+
+    if (width != 0 && height != 0 && bpp != 0) {
+        if (ret->framebuffer_width != width
+         || ret->framebuffer_height != height
+         || ret->framebuffer_bpp != bpp) {
+            return false;
+        }
+    }
+
     if (gop_force_16) {
-        if (mode_info->HorizontalResolution >= 65536
-         || mode_info->VerticalResolution >= 65536
-         || mode_info->PixelsPerScanLine * (ret->framebuffer_bpp / 8) >= 65536) {
+        if (ret->framebuffer_width >= 65536
+         || ret->framebuffer_height >= 65536
+         || ret->framebuffer_pitch >= 65536) {
             return false;
         }
     }
@@ -121,15 +140,65 @@ static bool try_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop,
 
     current_video_mode = mode;
 
-    ret->memory_model = 0x06;
     ret->framebuffer_addr = gop->Mode->FrameBufferBase;
-    ret->framebuffer_pitch = gop->Mode->Info->PixelsPerScanLine * (ret->framebuffer_bpp / 8);
-    ret->framebuffer_width = gop->Mode->Info->HorizontalResolution;
-    ret->framebuffer_height = gop->Mode->Info->VerticalResolution;
 
     fb_clear(ret);
 
     return true;
+}
+
+struct fb_info *gop_get_mode_list(size_t *count) {
+    EFI_STATUS status;
+
+    EFI_HANDLE tmp_handles[1];
+
+    EFI_HANDLE *handles = tmp_handles;
+    UINTN handles_size = sizeof(EFI_HANDLE);
+    EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+
+    status = gBS->LocateHandle(ByProtocol, &gop_guid, NULL, &handles_size, handles);
+
+    if (status != EFI_SUCCESS && status != EFI_BUFFER_TOO_SMALL) {
+        return false;
+    }
+
+    handles = ext_mem_alloc(handles_size);
+
+    status = gBS->LocateHandle(ByProtocol, &gop_guid, NULL, &handles_size, handles);
+    if (status != EFI_SUCCESS) {
+        pmm_free(handles, handles_size);
+        return false;
+    }
+
+    EFI_HANDLE gop_handle = handles[0];
+    pmm_free(handles, handles_size);
+
+    EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
+
+    status = gBS->HandleProtocol(gop_handle, &gop_guid, (void **)&gop);
+    if (status != EFI_SUCCESS) {
+        return false;
+    }
+
+    UINTN modes_count = gop->Mode->MaxMode;
+
+    struct fb_info *ret = ext_mem_alloc(modes_count * sizeof(struct fb_info));
+
+    size_t actual_count = 0;
+    for (size_t i = 0; i < modes_count; i++) {
+        if (mode_to_fb_info(gop, &ret[actual_count], i)) {
+            actual_count++;
+        }
+    }
+
+    struct fb_info *tmp = ext_mem_alloc(actual_count * sizeof(struct fb_info));
+    memcpy(tmp, ret, actual_count * sizeof(struct fb_info));
+
+    pmm_free(ret, modes_count * sizeof(struct fb_info));
+    ret = tmp;
+
+    *count = modes_count;
+    return ret;
 }
 
 #define INVALID_PRESET_MODE 0xffffffff

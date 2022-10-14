@@ -40,8 +40,6 @@ static void linear_mask_to_mask_shift(
 static bool mode_to_fb_info(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, struct fb_info *ret, size_t mode) {
     EFI_STATUS status;
 
-    ret->default_res = false;
-
     EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *mode_info;
     UINTN mode_info_size;
 

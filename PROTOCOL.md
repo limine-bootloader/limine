@@ -585,6 +585,7 @@ struct limine_framebuffer {
     uint64_t mode_count;
     struct limine_video_mode **modes;
 };
+```
 
 `modes` is an array of `mode_count` pointers to `struct limine_video_mode` describing the
 available video modes for the given framebuffer.

@@ -116,6 +116,73 @@ static int set_vbe_mode(uint16_t mode) {
     return r.eax & 0xff;
 }
 
+struct fb_info *vbe_get_mode_list(size_t *count) {
+    struct vbe_info_struct vbe_info;
+    get_vbe_info(&vbe_info);
+
+    uint16_t *vid_modes = (uint16_t *)rm_desegment(vbe_info.vid_modes_seg,
+                                                   vbe_info.vid_modes_off);
+
+    size_t modes_count = 0;
+    for (size_t i = 0; vid_modes[i] != 0xffff; i++) {
+        struct vbe_mode_info_struct vbe_mode_info;
+        get_vbe_mode_info(&vbe_mode_info, vid_modes[i]);
+
+        // We only support RGB for now
+        if (vbe_mode_info.memory_model != 0x06)
+            continue;
+        // We only support linear modes
+        if (!(vbe_mode_info.mode_attributes & (1 << 7)))
+            continue;
+
+        modes_count++;
+    }
+
+    struct fb_info *ret = ext_mem_alloc(modes_count * sizeof(struct fb_info));
+
+    for (size_t i = 0, j = 0; vid_modes[i] != 0xffff; i++) {
+        struct vbe_mode_info_struct vbe_mode_info;
+        get_vbe_mode_info(&vbe_mode_info, vid_modes[i]);
+
+        // We only support RGB for now
+        if (vbe_mode_info.memory_model != 0x06)
+            continue;
+        // We only support linear modes
+        if (!(vbe_mode_info.mode_attributes & (1 << 7)))
+            continue;
+
+        ret[j].memory_model = vbe_mode_info.memory_model;
+
+        ret[j].framebuffer_width = vbe_mode_info.res_x;
+        ret[j].framebuffer_height = vbe_mode_info.res_y;
+        ret[j].framebuffer_bpp = vbe_mode_info.bpp;
+
+        if (vbe_info.version_maj < 3) {
+            ret[j].framebuffer_pitch  = vbe_mode_info.bytes_per_scanline;
+            ret[j].red_mask_size      = vbe_mode_info.red_mask_size;
+            ret[j].red_mask_shift     = vbe_mode_info.red_mask_shift;
+            ret[j].green_mask_size    = vbe_mode_info.green_mask_size;
+            ret[j].green_mask_shift   = vbe_mode_info.green_mask_shift;
+            ret[j].blue_mask_size     = vbe_mode_info.blue_mask_size;
+            ret[j].blue_mask_shift    = vbe_mode_info.blue_mask_shift;
+        } else {
+            ret[j].framebuffer_pitch  = vbe_mode_info.lin_bytes_per_scanline;
+            ret[j].red_mask_size      = vbe_mode_info.lin_red_mask_size;
+            ret[j].red_mask_shift     = vbe_mode_info.lin_red_mask_shift;
+            ret[j].green_mask_size    = vbe_mode_info.lin_green_mask_size;
+            ret[j].green_mask_shift   = vbe_mode_info.lin_green_mask_shift;
+            ret[j].blue_mask_size     = vbe_mode_info.lin_blue_mask_size;
+            ret[j].blue_mask_shift    = vbe_mode_info.lin_blue_mask_shift;
+        }
+
+        j++;
+    }
+
+    *count = modes_count;
+
+    return ret;
+}
+
 bool init_vbe(struct fb_info *ret,
               uint16_t target_width, uint16_t target_height, uint16_t target_bpp) {
     printv("vbe: Initialising...\n");

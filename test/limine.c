@@ -296,6 +296,10 @@ FEAT_START
         e9_printf("Blue mask shift: %d", fb->blue_mask_shift);
         e9_printf("EDID size: %d", fb->edid_size);
         e9_printf("EDID at: %x", fb->edid);
+        e9_printf("Video modes:");
+        for (size_t j = 0; j < fb->mode_count; j++) {
+            e9_printf("  %dx%dx%d", fb->modes[j]->width, fb->modes[j]->height, fb->modes[j]->bpp);
+        }
     }
 FEAT_END
 

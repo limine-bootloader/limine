@@ -410,7 +410,7 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
         } else {
             status = volume_index[i]->block_io->ReadBlocks(volume_index[i]->block_io,
                               volume_index[i]->block_io->Media->MediaId,
-                              volume_index[i]->first_sect * 512,
+                              (volume_index[i]->first_sect * 512) / volume_index[i]->sector_size,
                               4096, unique_sector_pool);
             compare = *(uint64_t *)unique_sector_pool;
         }
@@ -438,7 +438,7 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
             } else {
                 status = volume_index[i]->block_io->ReadBlocks(volume_index[i]->block_io,
                               volume_index[i]->block_io->Media->MediaId,
-                              volume_index[i]->first_sect * 512,
+                              (volume_index[i]->first_sect * 512) / volume_index[i]->sector_size,
                               4096, unique_sector_pool);
                 compare = *(uint64_t *)unique_sector_pool;
             }

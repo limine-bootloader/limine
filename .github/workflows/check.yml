@@ -6,14 +6,11 @@ jobs:
   build:
     name: Check for compilation failures
     runs-on: ubuntu-latest
-    container: alpine:edge
+    container: archlinux:latest
 
     steps:
-      - name: Upgrade container
-        run: apk update && apk upgrade
-
       - name: Install dependencies
-        run: apk add build-base git autoconf automake nasm mtools llvm clang lld
+        run: pacman --noconfirm -Syu && pacman --needed --noconfirm -S base-devel git autoconf automake nasm curl mtools llvm clang lld aarch64-linux-gnu-gcc
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -26,3 +23,6 @@ jobs:
 
       - name: Build the bootloader (GCC, x86)
         run: ./bootstrap && ./configure CROSS_CC=gcc CROSS_LD=ld CROSS_OBJCOPY=objcopy CROSS_OBJDUMP=objdump CROSS_READELF=readelf --enable-werror --enable-bios --enable-uefi-ia32 --enable-uefi-x86_64 && make all && make maintainer-clean
+
+      - name: Build the bootloader (GCC, aarch64)
+        run: ./bootstrap && ./configure CROSS_TOOLCHAIN=aarch64-linux-gnu --enable-werror --enable-uefi-aarch64 && make all && make maintainer-clean

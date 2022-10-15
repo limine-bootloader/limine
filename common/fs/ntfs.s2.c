@@ -825,5 +825,4 @@ static int ntfs_read(struct file_handle *handle, void *buf, uint64_t loc, uint64
 
 static void ntfs_close(struct file_handle *file) {
     pmm_free(file->fd, sizeof(struct ntfs_file_handle));
-    pmm_free(file, sizeof(struct file_handle));
 }

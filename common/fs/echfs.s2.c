@@ -87,7 +87,6 @@ static void echfs_close(struct file_handle *file) {
     struct echfs_file_handle *f = file->fd;
     pmm_free(f->alloc_map, f->file_block_count * sizeof(uint64_t));
     pmm_free(f, sizeof(struct echfs_file_handle));
-    pmm_free(file, sizeof(struct file_handle));
 }
 
 struct file_handle *echfs_open(struct volume *part, const char *path) {

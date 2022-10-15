@@ -6,14 +6,11 @@ jobs:
   build:
     name: Check for compilation failures
     runs-on: ubuntu-latest
-    container: alpine:edge
+    container: archlinux:latest
 
     steps:
-      - name: Upgrade container
-        run: apk update && apk upgrade
-
       - name: Install dependencies
-        run: apk add build-base git autoconf automake nasm mtools llvm clang lld
+        run: pacman --noconfirm -Syu && pacman --needed --noconfirm -S base-devel git autoconf automake nasm curl mtools llvm clang lld
 
       - name: Checkout code
         uses: actions/checkout@v3

@@ -60,7 +60,7 @@ bool stivale_load_by_anchor(void **_anchor, const char *magic,
 noreturn void stivale_load(char *config, char *cmdline) {
     char *depr_warn = config_get_value(config, 0, "DEPRECATION_WARNING");
     if (depr_warn == NULL || strcmp(depr_warn, "no") != 0) {
-        print("WARNING: The stivale protocol is deprecated in Limine and will be removed as of version 4.x.\n");
+        print("WARNING: The stivale protocol is deprecated in Limine and has been removed as of version 4.x.\n");
         print("         It is recommended to move to either the Limine boot protocol or multiboot2.\n");
         print("         To silence this warning add DEPRECATION_WARNING=no to the boot entry.\n");
         print("\n");

@@ -391,19 +391,22 @@ void init_memmap(void) {
         ext_mem_alloc_type(0x100000, MEMMAP_EFI_RECLAIMABLE);
     }
 
+    memcpy(untouched_memmap, memmap, memmap_entries * sizeof(struct memmap_entry));
+    untouched_memmap_entries = memmap_entries;
+
     // Now own all the usable entries
-    for (size_t i = 0; i < memmap_entries; i++) {
-        if (memmap[i].type != MEMMAP_USABLE)
+    for (size_t i = 0; i < untouched_memmap_entries; i++) {
+        if (untouched_memmap[i].type != MEMMAP_USABLE)
             continue;
 
-        EFI_PHYSICAL_ADDRESS base = memmap[i].base;
+        EFI_PHYSICAL_ADDRESS base = untouched_memmap[i].base;
 
         status = gBS->AllocatePages(AllocateAddress, EfiLoaderData,
-                                    memmap[i].length / 4096, &base);
+                                    untouched_memmap[i].length / 4096, &base);
 
         if (status) {
-            for (size_t j = 0; j < memmap[i].length; j += 4096) {
-                base = memmap[i].base + j;
+            for (size_t j = 0; j < untouched_memmap[i].length; j += 4096) {
+                base = untouched_memmap[i].base + j;
                 status = gBS->AllocatePages(AllocateAddress, EfiLoaderData, 1, &base);
                 if (status) {
                     memmap_alloc_range(base, 4096, MEMMAP_EFI_RECLAIMABLE, MEMMAP_USABLE, true, false, false);

@@ -403,11 +403,10 @@ void init_memmap(void) {
 
         if (status) {
             for (size_t j = 0; j < memmap[i].length; j += 4096) {
-                uint64_t length = memmap[i].length - j < 4096 ? memmap[i].length - j : 4096;
                 base = memmap[i].base + j;
-                status = gBS->AllocatePages(AllocateAddress, EfiLoaderData, length, &base);
+                status = gBS->AllocatePages(AllocateAddress, EfiLoaderData, 1, &base);
                 if (status) {
-                    memmap_alloc_range(base, length, MEMMAP_EFI_RECLAIMABLE, MEMMAP_USABLE, true, false, false);
+                    memmap_alloc_range(base, 4096, MEMMAP_EFI_RECLAIMABLE, MEMMAP_USABLE, true, false, false);
                 }
             }
         }

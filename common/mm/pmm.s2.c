@@ -402,8 +402,14 @@ void init_memmap(void) {
                                     memmap[i].length / 4096, &base);
 
         if (status) {
-            print("pmm: WARNING: AllocatePages failure (%d)\n", status);
-            memmap_alloc_range(memmap[i].base, memmap[i].length, MEMMAP_RESERVED, MEMMAP_USABLE, true, false, false);
+            for (size_t j = 0; j < memmap[i].length; j += 4096) {
+                uint64_t length = memmap[i].length - j < 4096 ? memmap[i].length - j : 4096;
+                base = memmap[i].base + j;
+                status = gBS->AllocatePages(AllocateAddress, EfiLoaderData, length, &base);
+                if (status) {
+                    memmap_alloc_range(base, length, MEMMAP_EFI_RECLAIMABLE, MEMMAP_USABLE, true, false, false);
+                }
+            }
         }
     }
 

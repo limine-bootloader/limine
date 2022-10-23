@@ -377,9 +377,11 @@ static void cursor_fwd(void) {
     term->get_cursor_pos(term, &x, &y);
     if (x < term->cols - 1) {
         x++;
-    } else if (y < term->rows - 1) {
-        y++;
+    } else {
         x = 0;
+        if (y < term->rows - 1) {
+            y++;
+        }
     }
     set_cursor_pos_helper(x, y);
 }
@@ -457,8 +459,15 @@ void readline(const char *orig_str, char *buf, size_t limit) {
                     }
                     buf[i] = c;
                     i++;
+                    size_t prev_x, prev_y;
+                    term->get_cursor_pos(term, &prev_x, &prev_y);
                     cursor_fwd();
                     reprint_string(orig_x, orig_y, buf);
+                    // If cursor has wrapped around, move the line start position up one row
+                    if (prev_x == term->cols - 1 && prev_y == term->rows - 1) {
+                        orig_y--;
+                        print("\e[J");  // Clear the bottom line
+                    }
                 }
             }
         }

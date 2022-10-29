@@ -64,6 +64,8 @@ struct madt_gicc {
     uint16_t spe_overflow_gsiv;
 } __attribute__((packed));
 
+static void *trampoline = NULL;
+
 #if defined (__x86_64__) || defined (__i386__)
 
 struct trampoline_passed_info {
@@ -79,14 +81,6 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
                          struct limine_smp_info *info_struct,
                          bool longmode, bool lv5, uint32_t pagemap,
                          bool x2apic, bool nx, uint64_t hhdm, bool wp) {
-    // Prepare the trampoline
-    static void *trampoline = NULL;
-    if (trampoline == NULL) {
-        trampoline = conv_mem_alloc(smp_trampoline_size);
-
-        memcpy(trampoline, smp_trampoline_start, smp_trampoline_size);
-    }
-
     static struct trampoline_passed_info *passed_info = NULL;
     if (passed_info == NULL) {
         passed_info = (void *)(((uintptr_t)trampoline + smp_trampoline_size)
@@ -217,6 +211,14 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
     *cpu_count = 0;
 
     // Try to start all APs
+
+    // Prepare the trampoline
+    if (trampoline == NULL) {
+        trampoline = conv_mem_alloc(smp_trampoline_size);
+
+        memcpy(trampoline, smp_trampoline_start, smp_trampoline_size);
+    }
+
     for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
       (uintptr_t)madt_ptr < (uintptr_t)madt + madt->header.length;
       madt_ptr += *(madt_ptr + 1)) {
@@ -295,6 +297,10 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
         }
     }
 
+    if (trampoline != NULL) {
+        pmm_free(trampoline, smp_trampoline_size);
+    }
+
     return ret;
 }
 
@@ -326,14 +332,6 @@ static bool try_start_ap(int boot_method, uint64_t method_ptr,
                          struct limine_smp_info *info_struct,
                          uint64_t ttbr0, uint64_t ttbr1, uint64_t mair,
                          uint64_t tcr, uint64_t sctlr) {
-    // Prepare the trampoline
-    static void *trampoline = NULL;
-    if (trampoline == NULL) {
-        trampoline = ext_mem_alloc(0x1000);
-
-        memcpy(trampoline, smp_trampoline_start, smp_trampoline_size);
-    }
-
     static struct trampoline_passed_info *passed_info = NULL;
     if (passed_info == NULL) {
         passed_info = (void *)(((uintptr_t)trampoline + 0x1000)
@@ -488,6 +486,14 @@ static struct limine_smp_info *try_acpi_smp(size_t   *cpu_count,
     *cpu_count = 0;
 
     // Try to start all APs
+
+    // Prepare the trampoline
+    if (trampoline == NULL) {
+        trampoline = ext_mem_alloc(0x1000);
+
+        memcpy(trampoline, smp_trampoline_start, smp_trampoline_size);
+    }
+
     for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
       (uintptr_t)madt_ptr < (uintptr_t)madt + madt->header.length;
       madt_ptr += *(madt_ptr + 1)) {

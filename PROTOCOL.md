@@ -923,7 +923,7 @@ struct limine_file {
 ```
 
 * `revision` - Revision of the `struct limine_file` structure.
-* `address` - The address of the file.
+* `address` - The address of the file. This is always at least 4KiB aligned.
 * `size` - The size of the file.
 * `path` - The path of the file within the volume, with a leading slash.
 * `cmdline` - A command line associated with the file.

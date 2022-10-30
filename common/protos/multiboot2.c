@@ -203,22 +203,34 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     uint64_t ranges_count;
 
     if (addresstag != NULL) {
-        if (addresstag->load_addr > addresstag->header_addr)
-            panic(true, "multiboot2: Illegal load address");
-
-        size_t load_size;
-        if (addresstag->load_end_addr)
-            load_size = addresstag->load_end_addr - addresstag->load_addr;
-        else
-            load_size = kernel_file_size;
-
         size_t header_offset = (size_t)header - (size_t)kernel;
 
-        uint32_t bss_size = 0;
-        if (addresstag->bss_end_addr) {
-            uintptr_t bss_addr = addresstag->load_addr + load_size;
-            if (addresstag->bss_end_addr < bss_addr)
+        uintptr_t load_src, load_addr;
+        if (addresstag->load_addr != (uint32_t)-1) {
+            if (addresstag->load_addr > addresstag->header_addr) {
+                panic(true, "multiboot2: Illegal load address");
+            }
+
+            load_src = header_offset - (addresstag->header_addr - addresstag->load_addr);
+            load_addr = addresstag->load_addr;
+        } else {
+            load_src = 0;
+            load_addr = addresstag->header_addr - header_offset;
+        }
+
+        size_t load_size;
+        if (addresstag->load_end_addr != 0) {
+            load_size = addresstag->load_end_addr - load_addr;
+        } else {
+            load_size = kernel_file_size - load_src;
+        }
+
+        size_t bss_size = 0;
+        if (addresstag->bss_end_addr != 0) {
+            uintptr_t bss_addr = load_addr + load_size;
+            if (addresstag->bss_end_addr < bss_addr) {
                 panic(true, "multiboot2: Illegal bss end address");
+            }
 
             bss_size = addresstag->bss_end_addr - bss_addr;
         }
@@ -227,8 +239,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
 
         void *elsewhere = ext_mem_alloc(full_size);
 
-        memcpy(elsewhere, kernel + (header_offset
-                - (addresstag->header_addr - addresstag->load_addr)), load_size);
+        memcpy(elsewhere, kernel + load_src, load_size);
 
         if (entry_point == 0xffffffff) {
             panic(true, "multiboot2: Using address tag but entry address tag missing");
@@ -238,7 +249,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
         ranges = ext_mem_alloc(sizeof(struct elsewhere_range));
 
         ranges->elsewhere = (uintptr_t)elsewhere;
-        ranges->target = addresstag->load_addr;
+        ranges->target = load_addr;
         ranges->length = full_size;
     } else {
         uint64_t e;

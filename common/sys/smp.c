@@ -42,8 +42,6 @@ struct madt_x2apic {
 extern symbol smp_trampoline_start;
 extern size_t smp_trampoline_size;
 
-static void *trampoline = NULL;
-
 struct trampoline_passed_info {
     uint8_t  smp_tpl_booted_flag;
     uint8_t  smp_tpl_target_mode;
@@ -57,6 +55,14 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
                          struct smp_information *info_struct,
                          bool longmode, bool lv5, uint32_t pagemap,
                          bool x2apic, bool nx, uint64_t hhdm, bool wp) {
+    // Prepare the trampoline
+    static void *trampoline = NULL;
+    if (trampoline == NULL) {
+        trampoline = conv_mem_alloc(smp_trampoline_size);
+
+        memcpy(trampoline, smp_trampoline_start, smp_trampoline_size);
+    }
+
     static struct trampoline_passed_info *passed_info = NULL;
     if (passed_info == NULL) {
         passed_info = (void *)(((uintptr_t)trampoline + smp_trampoline_size)
@@ -191,14 +197,6 @@ struct smp_information *init_smp(size_t    header_hack_size,
     *cpu_count = 0;
 
     // Try to start all APs
-
-    // Prepare the trampoline
-    if (trampoline == NULL) {
-        trampoline = conv_mem_alloc(smp_trampoline_size);
-
-        memcpy(trampoline, smp_trampoline_start, smp_trampoline_size);
-    }
-
     for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
       (uintptr_t)madt_ptr < (uintptr_t)madt + madt->header.length;
       madt_ptr += *(madt_ptr + 1)) {
@@ -275,10 +273,6 @@ struct smp_information *init_smp(size_t    header_hack_size,
                 continue;
             }
         }
-    }
-
-    if (trampoline != NULL) {
-        pmm_free(trampoline, smp_trampoline_size);
     }
 
     return ret;

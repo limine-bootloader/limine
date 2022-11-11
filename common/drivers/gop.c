@@ -162,13 +162,25 @@ struct fb_info *gop_get_mode_list(size_t *count) {
 
     handles = ext_mem_alloc(handles_size);
 
+    size_t handles_count = handles_size / sizeof(EFI_HANDLE);
+
     status = gBS->LocateHandle(ByProtocol, &gop_guid, NULL, &handles_size, handles);
     if (status != EFI_SUCCESS) {
         pmm_free(handles, handles_size);
         return false;
     }
 
-    EFI_HANDLE gop_handle = handles[0];
+    size_t gop_index = 0;
+    char *gop_index_s = config_get_value(NULL, 0, "GOP_INDEX");
+    if (gop_index_s != NULL) {
+        gop_index = strtoui(gop_index_s, NULL, 10);
+    }
+
+    if (gop_index > handles_count - 1) {
+        gop_index = handles_count - 1;
+    }
+
+    EFI_HANDLE gop_handle = handles[gop_index];
     pmm_free(handles, handles_size);
 
     EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;

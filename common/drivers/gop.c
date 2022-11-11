@@ -8,6 +8,7 @@
 #include <drivers/gop.h>
 #include <drivers/edid.h>
 #include <lib/print.h>
+#include <lib/config.h>
 #include <mm/pmm.h>
 
 static uint16_t linear_masks_to_bpp(uint32_t red_mask, uint32_t green_mask,

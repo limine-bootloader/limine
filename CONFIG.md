@@ -58,7 +58,6 @@ Some keys take *URIs* as values; these are described in the next section.
 * `SERIAL` - If set to `yes`, enable serial I/O for the bootloader.
 * `DEFAULT_ENTRY` - 1-based entry index of the entry which will be automatically selected at startup. If unspecified, it is `1`.
 * `GRAPHICS` - If set to `no`, force CGA text mode for the boot menu, else use a video mode. Ignored with Limine UEFI.
-* `GOP_INDEX` - Select which UEFI Graphics Output Protocol to use. Decimal, 0-based index. Ignored with Limine BIOS.
 * `VERBOSE` - If set to `yes`, print additional information during boot. Defaults to not verbose.
 * `RANDOMISE_MEMORY` - If set to `yes`, randomise the contents of RAM at bootup in order to find bugs related to non zeroed memory or for security reasons. This option will slow down boot time significantly. For the BIOS port of Limine, this will only randomise memory below 4GiB.
 * `RANDOMIZE_MEMORY` - Alias of `RANDOMISE_MEMORY`.

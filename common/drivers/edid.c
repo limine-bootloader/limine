@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <drivers/gop.h>
 #include <drivers/edid.h>
 #include <mm/pmm.h>
 #include <lib/misc.h>
@@ -50,32 +51,18 @@ success:
 #include <efi.h>
 
 struct edid_info_struct *get_edid_info(void) {
+    if (!gop_ready) {
+        goto fail;
+    }
+
     struct edid_info_struct *buf = ext_mem_alloc(sizeof(struct edid_info_struct));
 
     EFI_STATUS status;
 
-    EFI_HANDLE tmp_handles[1];
-
-    EFI_HANDLE *handles = tmp_handles;
-    UINTN handles_size = sizeof(EFI_HANDLE);
-    EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
-
-    status = gBS->LocateHandle(ByProtocol, &gop_guid, NULL, &handles_size, handles);
-
-    if (status != EFI_SUCCESS && status != EFI_BUFFER_TOO_SMALL)
-        goto fail_n;
-
-    handles = ext_mem_alloc(handles_size);
-
-    status = gBS->LocateHandle(ByProtocol, &gop_guid, NULL, &handles_size, handles);
-
-    if (status)
-        goto fail;
-
     EFI_EDID_ACTIVE_PROTOCOL *edid = NULL;
     EFI_GUID edid_guid = EFI_EDID_ACTIVE_PROTOCOL_GUID;
 
-    status = gBS->HandleProtocol(handles[0], &edid_guid, (void **)&edid);
+    status = gBS->HandleProtocol(gop_handle, &edid_guid, (void **)&edid);
 
     if (status)
         goto fail;
@@ -90,13 +77,10 @@ struct edid_info_struct *get_edid_info(void) {
             goto success;
 
 fail:
-    pmm_free(handles, handles_size);
-fail_n:
     printv("edid: Could not fetch EDID data.\n");
     return NULL;
 
 success:
-    pmm_free(handles, handles_size);
     printv("edid: Success.\n");
     return buf;
 }

@@ -37,7 +37,7 @@ static void linear_mask_to_mask_shift(
 
 // Most of this code taken from https://wiki.osdev.org/GOP
 
-static bool mode_to_fb_info(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, struct fb_info *ret, size_t mode) {
+static bool mode_to_fb_info(struct fb_info *ret, size_t mode) {
     EFI_STATUS status;
 
     EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *mode_info;
@@ -98,11 +98,10 @@ static bool mode_to_fb_info(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, struct fb_info *r
 
 bool gop_force_16 = false;
 
-static bool try_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop,
-                     struct fb_info *ret, size_t mode, uint64_t width, uint64_t height, int bpp) {
+static bool try_mode(struct fb_info *ret, size_t mode, uint64_t width, uint64_t height, int bpp) {
     EFI_STATUS status;
 
-    if (!mode_to_fb_info(gop, ret, mode)) {
+    if (!mode_to_fb_info(ret, mode)) {
         return false;
     }
 
@@ -146,36 +145,8 @@ static bool try_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop,
 }
 
 struct fb_info *gop_get_mode_list(size_t *count) {
-    EFI_STATUS status;
-
-    EFI_HANDLE tmp_handles[1];
-
-    EFI_HANDLE *handles = tmp_handles;
-    UINTN handles_size = sizeof(EFI_HANDLE);
-    EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
-
-    status = gBS->LocateHandle(ByProtocol, &gop_guid, NULL, &handles_size, handles);
-
-    if (status != EFI_SUCCESS && status != EFI_BUFFER_TOO_SMALL) {
-        return false;
-    }
-
-    handles = ext_mem_alloc(handles_size);
-
-    status = gBS->LocateHandle(ByProtocol, &gop_guid, NULL, &handles_size, handles);
-    if (status != EFI_SUCCESS) {
-        pmm_free(handles, handles_size);
-        return false;
-    }
-
-    EFI_HANDLE gop_handle = handles[0];
-    pmm_free(handles, handles_size);
-
-    EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
-
-    status = gBS->HandleProtocol(gop_handle, &gop_guid, (void **)&gop);
-    if (status != EFI_SUCCESS) {
-        return false;
+    if (!gop_ready) {
+        return NULL;
     }
 
     UINTN modes_count = gop->Mode->MaxMode;
@@ -184,7 +155,7 @@ struct fb_info *gop_get_mode_list(size_t *count) {
 
     size_t actual_count = 0;
     for (size_t i = 0; i < modes_count; i++) {
-        if (mode_to_fb_info(gop, &ret[actual_count], i)) {
+        if (mode_to_fb_info(&ret[actual_count], i)) {
             actual_count++;
         }
     }
@@ -204,8 +175,14 @@ struct fb_info *gop_get_mode_list(size_t *count) {
 static no_unwind size_t preset_mode = INVALID_PRESET_MODE;
 static no_unwind EFI_GRAPHICS_OUTPUT_MODE_INFORMATION preset_mode_info;
 
+bool gop_ready = false;
+EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
+EFI_HANDLE gop_handle;
+
 bool init_gop(struct fb_info *ret,
               uint64_t target_width, uint64_t target_height, uint16_t target_bpp) {
+    gop_ready = false;
+
     ret->default_res = false;
 
     EFI_STATUS status;
@@ -215,6 +192,19 @@ bool init_gop(struct fb_info *ret,
     EFI_HANDLE *handles = tmp_handles;
     UINTN handles_size = sizeof(EFI_HANDLE);
     EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+
+    bool using_conout = true;
+
+    status = gBS->HandleProtocol(gST->ConsoleOutHandle, &gop_guid, (void **)&gop);
+    if (status == EFI_SUCCESS) {
+        print("gop: ConOut provides GOP. Using that...\n");
+        gop_handle = gST->ConsoleOutHandle;
+        goto conout_gop;
+    }
+
+no_conout:
+    {
+    using_conout = false;
 
     status = gBS->LocateHandle(ByProtocol, &gop_guid, NULL, &handles_size, handles);
 
@@ -230,15 +220,17 @@ bool init_gop(struct fb_info *ret,
         return false;
     }
 
-    EFI_HANDLE gop_handle = handles[0];
+    gop_handle = handles[0];
     pmm_free(handles, handles_size);
-
-    EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
 
     status = gBS->HandleProtocol(gop_handle, &gop_guid, (void **)&gop);
     if (status != EFI_SUCCESS) {
         return false;
     }
+    }
+
+conout_gop:;
+    gop_ready = true;
 
     EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *mode_info;
     UINTN mode_info_size;
@@ -292,7 +284,7 @@ bool init_gop(struct fb_info *ret,
 
 retry:
     for (size_t i = 0; i < modes_count; i++) {
-        if (try_mode(gop, ret, i, target_width, target_height, target_bpp)) {
+        if (try_mode(ret, i, target_width, target_height, target_bpp)) {
             gop_force_16 = false;
             return true;
         }
@@ -323,7 +315,7 @@ fallback:
     if (current_fallback == 1) {
         current_fallback++;
 
-        if (try_mode(gop, ret, preset_mode, 0, 0, 0)) {
+        if (try_mode(ret, preset_mode, 0, 0, 0)) {
             gop_force_16 = false;
             return true;
         }
@@ -339,6 +331,9 @@ fallback:
     }
 
     gop_force_16 = false;
+    if (using_conout) {
+        goto no_conout;
+    }
     return false;
 }
 

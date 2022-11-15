@@ -35,6 +35,8 @@ as the reference implementation for the [Limine boot protocol](/PROTOCOL.md).
 While Limine is made with modern, 64-bit, PCs in mind, it supports 32-bit
 ones as well, starting with PCs with Pentium Pro class CPUs.
 
+[![Packaging status](https://repology.org/badge/vertical-allrepos/limine.svg)](https://repology.org/project/limine/versions)
+
 ## Binary releases
 
 For convenience, for point releases, binaries are distributed. These binaries

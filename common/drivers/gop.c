@@ -193,19 +193,6 @@ bool init_gop(struct fb_info *ret,
     UINTN handles_size = sizeof(EFI_HANDLE);
     EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
 
-    bool using_conout = true;
-
-    status = gBS->HandleProtocol(gST->ConsoleOutHandle, &gop_guid, (void **)&gop);
-    if (status == EFI_SUCCESS) {
-        print("gop: ConOut provides GOP. Using that...\n");
-        gop_handle = gST->ConsoleOutHandle;
-        goto conout_gop;
-    }
-
-no_conout:
-    {
-    using_conout = false;
-
     status = gBS->LocateHandle(ByProtocol, &gop_guid, NULL, &handles_size, handles);
 
     if (status != EFI_SUCCESS && status != EFI_BUFFER_TOO_SMALL) {
@@ -227,9 +214,7 @@ no_conout:
     if (status != EFI_SUCCESS) {
         return false;
     }
-    }
 
-conout_gop:;
     gop_ready = true;
 
     EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *mode_info;
@@ -331,9 +316,6 @@ fallback:
     }
 
     gop_force_16 = false;
-    if (using_conout) {
-        goto no_conout;
-    }
     return false;
 }
 

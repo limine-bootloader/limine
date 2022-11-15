@@ -43,6 +43,8 @@ Pentium Pro (i686) class CPUs.
 
 All x86_64 and aarch64 (UEFI) systems are supported.
 
+[![Packaging status](https://repology.org/badge/vertical-allrepos/limine.svg)](https://repology.org/project/limine/versions)
+
 ## Binary releases
 
 For convenience, for point releases, binaries are distributed. These binaries

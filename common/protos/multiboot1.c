@@ -302,77 +302,62 @@ noreturn void multiboot1_load(char *config, char *cmdline) {
     multiboot1_info->bootloader_name = (uint32_t)(size_t)lowmem_bootname - mb1_info_slide;
     multiboot1_info->flags |= (1 << 9);
 
-    if (term != NULL) {
-        term->deinit(term, pmm_free);
-        term = NULL;
-    }
+    term_notready();
+
+    size_t req_width = 0;
+    size_t req_height = 0;
+    size_t req_bpp = 0;
 
     if (header.flags & (1 << 2)) {
-        size_t req_width  = header.fb_width;
-        size_t req_height = header.fb_height;
-        size_t req_bpp    = header.fb_bpp;
+        req_width = header.fb_width;
+        req_height = header.fb_height;
+        req_bpp = header.fb_bpp;
 
         if (header.fb_mode == 0) {
+#if defined (UEFI)
+modeset:;
+#endif
             char *resolution = config_get_value(config, 0, "RESOLUTION");
             if (resolution != NULL)
                 parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
-            struct fb_info fbinfo;
-            if (!fb_init(&fbinfo, req_width, req_height, req_bpp)) {
+            struct fb_info *fbs;
+            size_t fbs_count;
+            fb_init(&fbs, &fbs_count, req_width, req_height, req_bpp);
+            if (fbs_count == 0) {
 #if defined (UEFI)
                 goto skip_modeset;
 #elif defined (BIOS)
+textmode:
                 vga_textmode_init(false);
 
                 multiboot1_info->fb_addr    = 0xb8000;
-                multiboot1_info->fb_width   = term->cols;
-                multiboot1_info->fb_height  = term->rows;
+                multiboot1_info->fb_width   = 80;
+                multiboot1_info->fb_height  = 25;
                 multiboot1_info->fb_bpp     = 16;
-                multiboot1_info->fb_pitch   = 2 * term->cols;
+                multiboot1_info->fb_pitch   = 2 * 80;
                 multiboot1_info->fb_type    = 2;
 #endif
             } else {
-                multiboot1_info->fb_addr    = (uint64_t)fbinfo.framebuffer_addr;
-                multiboot1_info->fb_width   = fbinfo.framebuffer_width;
-                multiboot1_info->fb_height  = fbinfo.framebuffer_height;
-                multiboot1_info->fb_bpp     = fbinfo.framebuffer_bpp;
-                multiboot1_info->fb_pitch   = fbinfo.framebuffer_pitch;
+                multiboot1_info->fb_addr    = (uint64_t)fbs[0].framebuffer_addr;
+                multiboot1_info->fb_width   = fbs[0].framebuffer_width;
+                multiboot1_info->fb_height  = fbs[0].framebuffer_height;
+                multiboot1_info->fb_bpp     = fbs[0].framebuffer_bpp;
+                multiboot1_info->fb_pitch   = fbs[0].framebuffer_pitch;
                 multiboot1_info->fb_type    = 1;
-                multiboot1_info->fb_red_mask_size    = fbinfo.red_mask_size;
-                multiboot1_info->fb_red_mask_shift   = fbinfo.red_mask_shift;
-                multiboot1_info->fb_green_mask_size  = fbinfo.green_mask_size;
-                multiboot1_info->fb_green_mask_shift = fbinfo.green_mask_shift;
-                multiboot1_info->fb_blue_mask_size   = fbinfo.blue_mask_size;
-                multiboot1_info->fb_blue_mask_shift  = fbinfo.blue_mask_shift;
+                multiboot1_info->fb_red_mask_size    = fbs[0].red_mask_size;
+                multiboot1_info->fb_red_mask_shift   = fbs[0].red_mask_shift;
+                multiboot1_info->fb_green_mask_size  = fbs[0].green_mask_size;
+                multiboot1_info->fb_green_mask_shift = fbs[0].green_mask_shift;
+                multiboot1_info->fb_blue_mask_size   = fbs[0].blue_mask_size;
+                multiboot1_info->fb_blue_mask_shift  = fbs[0].blue_mask_shift;
             }
         } else {
 #if defined (UEFI)
             print("multiboot1: Warning: Cannot use text mode with UEFI\n");
-            struct fb_info fbinfo;
-            if (!fb_init(&fbinfo, 0, 0, 0)) {
-                goto skip_modeset;
-            }
-            multiboot1_info->fb_addr    = (uint64_t)fbinfo.framebuffer_addr;
-            multiboot1_info->fb_width   = fbinfo.framebuffer_width;
-            multiboot1_info->fb_height  = fbinfo.framebuffer_height;
-            multiboot1_info->fb_bpp     = fbinfo.framebuffer_bpp;
-            multiboot1_info->fb_pitch   = fbinfo.framebuffer_pitch;
-            multiboot1_info->fb_type    = 1;
-            multiboot1_info->fb_red_mask_size    = fbinfo.red_mask_size;
-            multiboot1_info->fb_red_mask_shift   = fbinfo.red_mask_shift;
-            multiboot1_info->fb_green_mask_size  = fbinfo.green_mask_size;
-            multiboot1_info->fb_green_mask_shift = fbinfo.green_mask_shift;
-            multiboot1_info->fb_blue_mask_size   = fbinfo.blue_mask_size;
-            multiboot1_info->fb_blue_mask_shift  = fbinfo.blue_mask_shift;
+            goto modeset;
 #elif defined (BIOS)
-            vga_textmode_init(false);
-
-            multiboot1_info->fb_addr    = 0xb8000;
-            multiboot1_info->fb_width   = term->cols;
-            multiboot1_info->fb_height  = term->rows;
-            multiboot1_info->fb_bpp     = 16;
-            multiboot1_info->fb_pitch   = 2 * term->cols;
-            multiboot1_info->fb_type    = 2;
+            goto textmode;
 #endif
         }
 

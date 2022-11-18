@@ -50,11 +50,7 @@ success:
 
 #include <efi.h>
 
-struct edid_info_struct *get_edid_info(void) {
-    if (!gop_ready) {
-        goto fail;
-    }
-
+struct edid_info_struct *get_edid_info(EFI_HANDLE gop_handle) {
     struct edid_info_struct *buf = ext_mem_alloc(sizeof(struct edid_info_struct));
 
     EFI_STATUS status;

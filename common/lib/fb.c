@@ -6,24 +6,23 @@
 #include <drivers/gop.h>
 #include <mm/pmm.h>
 
-bool fb_init(struct fb_info *ret,
+void fb_init(struct fb_info **ret, size_t *_fbs_count,
              uint64_t target_width, uint64_t target_height, uint16_t target_bpp) {
-    bool r;
-
 #if defined (BIOS)
-    r = init_vbe(ret, target_width, target_height, target_bpp);
-#elif defined (UEFI)
-    r = init_gop(ret, target_width, target_height, target_bpp);
-#endif
+    *ret = ext_mem_alloc(sizeof(struct fb_info));
+    if (init_vbe(*ret, target_width, target_height, target_bpp)) {
+        *_fbs_count = 1;
 
-    return r;
-}
-
-struct fb_info *fb_get_mode_list(size_t *count) {
-#if defined (BIOS)
-    return vbe_get_mode_list(count);
+        (*ret)->edid = get_edid_info();
+        size_t mode_count;
+        (*ret)->mode_list = vbe_get_mode_list(&mode_count);
+        (*ret)->mode_count = mode_count;
+    } else {
+        *_fbs_count = 0;
+        pmm_free(*ret, sizeof(struct fb_info));
+    }
 #elif defined (UEFI)
-    return gop_get_mode_list(count);
+    init_gop(ret, _fbs_count, target_width, target_height, target_bpp);
 #endif
 }
 

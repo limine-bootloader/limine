@@ -37,7 +37,7 @@ static void linear_mask_to_mask_shift(
 
 // Most of this code taken from https://wiki.osdev.org/GOP
 
-static bool mode_to_fb_info(struct fb_info *ret, size_t mode) {
+static bool mode_to_fb_info(struct fb_info *ret, EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, size_t mode) {
     EFI_STATUS status;
 
     EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *mode_info;
@@ -98,10 +98,12 @@ static bool mode_to_fb_info(struct fb_info *ret, size_t mode) {
 
 bool gop_force_16 = false;
 
-static bool try_mode(struct fb_info *ret, size_t mode, uint64_t width, uint64_t height, int bpp) {
+static bool try_mode(struct fb_info *ret, EFI_GRAPHICS_OUTPUT_PROTOCOL *gop,
+                     size_t mode, uint64_t width, uint64_t height, int bpp,
+                     struct fb_info *fbs, size_t fbs_count) {
     EFI_STATUS status;
 
-    if (!mode_to_fb_info(ret, mode)) {
+    if (!mode_to_fb_info(ret, gop, mode)) {
         return false;
     }
 
@@ -121,21 +123,24 @@ static bool try_mode(struct fb_info *ret, size_t mode, uint64_t width, uint64_t 
         }
     }
 
+    for (size_t i = 0; i < fbs_count; i++) {
+        if (gop->Mode->FrameBufferBase == fbs[i].framebuffer_addr) {
+            return false;
+        }
+    }
+
     printv("gop: Found matching mode %x, attempting to set...\n", mode);
 
-    if ((int)mode == current_video_mode) {
+    if (mode == gop->Mode->Mode) {
         printv("gop: Mode was already set, perfect!\n");
     } else {
         status = gop->SetMode(gop, mode);
 
         if (status) {
-            current_video_mode = -1;
             printv("gop: Failed to set video mode %x, moving on...\n", mode);
             return false;
         }
     }
-
-    current_video_mode = mode;
 
     ret->framebuffer_addr = gop->Mode->FrameBufferBase;
 
@@ -144,18 +149,14 @@ static bool try_mode(struct fb_info *ret, size_t mode, uint64_t width, uint64_t 
     return true;
 }
 
-struct fb_info *gop_get_mode_list(size_t *count) {
-    if (!gop_ready) {
-        return NULL;
-    }
-
+static struct fb_info *get_mode_list(size_t *count, EFI_GRAPHICS_OUTPUT_PROTOCOL *gop) {
     UINTN modes_count = gop->Mode->MaxMode;
 
     struct fb_info *ret = ext_mem_alloc(modes_count * sizeof(struct fb_info));
 
     size_t actual_count = 0;
     for (size_t i = 0; i < modes_count; i++) {
-        if (mode_to_fb_info(&ret[actual_count], i)) {
+        if (mode_to_fb_info(&ret[actual_count], gop, i)) {
             actual_count++;
         }
     }
@@ -170,21 +171,8 @@ struct fb_info *gop_get_mode_list(size_t *count) {
     return ret;
 }
 
-#define INVALID_PRESET_MODE 0xffffffff
-
-static no_unwind size_t preset_mode = INVALID_PRESET_MODE;
-static no_unwind EFI_GRAPHICS_OUTPUT_MODE_INFORMATION preset_mode_info;
-
-bool gop_ready = false;
-EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
-EFI_HANDLE gop_handle;
-
-bool init_gop(struct fb_info *ret,
+void init_gop(struct fb_info **ret, size_t *_fbs_count,
               uint64_t target_width, uint64_t target_height, uint16_t target_bpp) {
-    gop_ready = false;
-
-    ret->default_res = false;
-
     EFI_STATUS status;
 
     EFI_HANDLE tmp_handles[1];
@@ -196,7 +184,8 @@ bool init_gop(struct fb_info *ret,
     status = gBS->LocateHandle(ByProtocol, &gop_guid, NULL, &handles_size, handles);
 
     if (status != EFI_SUCCESS && status != EFI_BUFFER_TOO_SMALL) {
-        return false;
+        *_fbs_count = 0;
+        return;
     }
 
     handles = ext_mem_alloc(handles_size);
@@ -204,45 +193,15 @@ bool init_gop(struct fb_info *ret,
     status = gBS->LocateHandle(ByProtocol, &gop_guid, NULL, &handles_size, handles);
     if (status != EFI_SUCCESS) {
         pmm_free(handles, handles_size);
-        return false;
+        *_fbs_count = 0;
+        return;
     }
 
-    gop_handle = handles[0];
-    pmm_free(handles, handles_size);
+    size_t handles_count = handles_size / sizeof(EFI_HANDLE);
 
-    status = gBS->HandleProtocol(gop_handle, &gop_guid, (void **)&gop);
-    if (status != EFI_SUCCESS) {
-        return false;
-    }
+    *ret = ext_mem_alloc(handles_count * sizeof(struct fb_info));
 
-    gop_ready = true;
-
-    EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *mode_info;
-    UINTN mode_info_size;
-
-    status = gop->QueryMode(gop, gop->Mode == NULL ? 0 : gop->Mode->Mode,
-                            &mode_info_size, &mode_info);
-
-    if (status == EFI_NOT_STARTED) {
-        status = gop->SetMode(gop, 0);
-        if (status) {
-            panic(false, "gop: Initialisation failed");
-        }
-        status = gop->QueryMode(gop, gop->Mode == NULL ? 0 : gop->Mode->Mode,
-                                &mode_info_size, &mode_info);
-    }
-
-    if (status) {
-        panic(false, "gop: Initialisation failed");
-    }
-
-    if (preset_mode == INVALID_PRESET_MODE) {
-        preset_mode = gop->Mode->Mode;
-        memcpy(&preset_mode_info, mode_info, mode_info_size);
-        current_video_mode = preset_mode;
-    }
-
-    struct resolution fallback_resolutions[] = {
+    const struct resolution fallback_resolutions[] = {
         { 0,    0,   0  },   // Overridden by EDID
         { 0,    0,   0  },   // Overridden by preset
         { 1024, 768, 32 },
@@ -256,67 +215,111 @@ bool init_gop(struct fb_info *ret,
         { 640,  480, 16 }
     };
 
-    UINTN modes_count = gop->Mode->MaxMode;
+    size_t fbs_count = 0;
+    for (size_t i = 0; i < handles_count; i++) {
+        struct fb_info *fb = &(*ret)[fbs_count];
 
-    size_t current_fallback = 0;
+        uint64_t _target_width = target_width;
+        uint64_t _target_height = target_height;
+        uint64_t _target_bpp = target_bpp;
 
-    if (!target_width || !target_height || !target_bpp) {
-        goto fallback;
-    } else {
-        printv("gop: Requested resolution of %ux%ux%u\n",
-               target_width, target_height, target_bpp);
-    }
+        EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
+
+        status = gBS->HandleProtocol(handles[i], &gop_guid, (void **)&gop);
+        if (status != EFI_SUCCESS) {
+            continue;
+        }
+
+        EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *mode_info;
+        UINTN mode_info_size;
+
+        status = gop->QueryMode(gop, gop->Mode == NULL ? 0 : gop->Mode->Mode,
+                                &mode_info_size, &mode_info);
+
+        if (status == EFI_NOT_STARTED) {
+            status = gop->SetMode(gop, 0);
+            if (status) {
+                continue;
+            }
+            status = gop->QueryMode(gop, gop->Mode == NULL ? 0 : gop->Mode->Mode,
+                                    &mode_info_size, &mode_info);
+        }
+
+        if (status) {
+            continue;
+        }
+
+        int preset_mode = gop->Mode->Mode;
+
+        fb->edid = get_edid_info(handles[i]);
+
+        UINTN modes_count = gop->Mode->MaxMode;
+
+        size_t current_fallback = 0;
+
+        if (!_target_width || !_target_height || !_target_bpp) {
+            goto fallback;
+        } else {
+            printv("gop: Requested resolution of %ux%ux%u\n",
+                   _target_width, _target_height, _target_bpp);
+        }
 
 retry:
-    for (size_t i = 0; i < modes_count; i++) {
-        if (try_mode(ret, i, target_width, target_height, target_bpp)) {
-            gop_force_16 = false;
-            return true;
-        }
-    }
-
-fallback:
-    ret->default_res = true;
-
-    if (current_fallback == 0) {
-        current_fallback++;
-
-        struct edid_info_struct *edid_info = get_edid_info();
-        if (edid_info != NULL) {
-            uint64_t edid_width = (uint64_t)edid_info->det_timing_desc1[2];
-                     edid_width += ((uint64_t)edid_info->det_timing_desc1[4] & 0xf0) << 4;
-            uint64_t edid_height = (uint64_t)edid_info->det_timing_desc1[5];
-                     edid_height += ((uint64_t)edid_info->det_timing_desc1[7] & 0xf0) << 4;
-            if (edid_width >= preset_mode_info.HorizontalResolution
-             && edid_height >= preset_mode_info.VerticalResolution) {
-                target_width  = edid_width;
-                target_height = edid_height;
-                target_bpp    = 32;
-                goto retry;
+        for (size_t j = 0; j < modes_count; j++) {
+            if (try_mode(fb, gop, j, _target_width, _target_height, _target_bpp, *ret, fbs_count)) {
+                goto success;
             }
         }
-    }
 
-    if (current_fallback == 1) {
-        current_fallback++;
+fallback:
+        if (current_fallback == 0) {
+            current_fallback++;
 
-        if (try_mode(ret, preset_mode, 0, 0, 0)) {
-            gop_force_16 = false;
-            return true;
+            if (fb->edid != NULL) {
+                uint64_t edid_width = (uint64_t)fb->edid->det_timing_desc1[2];
+                         edid_width += ((uint64_t)fb->edid->det_timing_desc1[4] & 0xf0) << 4;
+                uint64_t edid_height = (uint64_t)fb->edid->det_timing_desc1[5];
+                         edid_height += ((uint64_t)fb->edid->det_timing_desc1[7] & 0xf0) << 4;
+                if (edid_width >= mode_info->HorizontalResolution
+                 && edid_height >= mode_info->VerticalResolution) {
+                    _target_width = edid_width;
+                    _target_height = edid_height;
+                    _target_bpp = 32;
+                    goto retry;
+                }
+            }
         }
+
+        if (current_fallback == 1) {
+            current_fallback++;
+
+            if (try_mode(fb, gop, preset_mode, 0, 0, 0, *ret, fbs_count)) {
+                goto success;
+            }
+        }
+
+        if (current_fallback < SIZEOF_ARRAY(fallback_resolutions)) {
+            current_fallback++;
+
+            _target_width = fallback_resolutions[current_fallback].width;
+            _target_height = fallback_resolutions[current_fallback].height;
+            _target_bpp = fallback_resolutions[current_fallback].bpp;
+            goto retry;
+        }
+
+        continue;
+
+success:
+        fb->mode_list = get_mode_list(&fb->mode_count, gop);
+
+        fbs_count++;
     }
 
-    if (current_fallback < SIZEOF_ARRAY(fallback_resolutions)) {
-        current_fallback++;
-
-        target_width  = fallback_resolutions[current_fallback].width;
-        target_height = fallback_resolutions[current_fallback].height;
-        target_bpp    = fallback_resolutions[current_fallback].bpp;
-        goto retry;
-    }
+    pmm_free(handles, handles_size);
 
     gop_force_16 = false;
-    return false;
+
+    *_fbs_count = fbs_count;
 }
 
 #endif

@@ -275,9 +275,10 @@ static void callback_shim(struct term_context *ctx, uint64_t a, uint64_t b, uint
     actual_callback(term_arg, a, b, c, d);
 }
 
+// TODO pair with specific terminal
 static void term_write_shim(uint64_t context, uint64_t buf, uint64_t count) {
     (void)context;
-    _term_write(buf, count);
+    _term_write(terms[0], buf, count);
 }
 
 noreturn void limine_load(char *config, char *cmdline) {
@@ -670,9 +671,10 @@ FEAT_END
         parse_resolution(&req_width, &req_height, &req_bpp, resolution);
     }
 
-    struct fb_info fb;
-
     uint64_t *term_fb_ptr = NULL;
+
+    struct fb_info *fbs;
+    size_t fbs_count;
 
     // Terminal feature
 FEAT_START
@@ -691,11 +693,11 @@ FEAT_START
 
     char *term_conf_override_s = config_get_value(config, 0, "TERM_CONFIG_OVERRIDE");
     if (term_conf_override_s != NULL && strcmp(term_conf_override_s, "yes") == 0) {
-        if (!gterm_init(config, req_width, req_height)) {
+        if (!gterm_init(&fbs, &fbs_count, config, req_width, req_height)) {
             goto term_fail;
         }
     } else {
-        if (!gterm_init(NULL, req_width, req_height)) {
+        if (!gterm_init(&fbs, &fbs_count, NULL, req_width, req_height)) {
             goto term_fail;
         }
     }
@@ -707,10 +709,8 @@ term_fail:
         break; // next feature
     }
 
-    fb = fbinfo;
-
     if (terminal_request->callback != 0) {
-        term->callback = callback_shim;
+        terms[0]->callback = callback_shim;
 
 #if defined (__i386__)
         actual_callback = (void *)limine_term_callback;
@@ -739,8 +739,8 @@ term_fail:
 
     term_fb_ptr = &terminal->framebuffer;
 
-    terminal->columns = term->cols;
-    terminal->rows = term->rows;
+    terminal->columns = terms[0]->cols;
+    terminal->rows = terms[0]->rows;
 
     uint64_t *term_list = ext_mem_alloc(1 * sizeof(uint64_t));
     term_list[0] = reported_addr(terminal);
@@ -753,27 +753,26 @@ term_fail:
     goto skip_fb_init;
 FEAT_END
 
-    if (term != NULL) {
-        term->deinit(term, pmm_free);
-        term = NULL;
-    }
+    term_notready();
 
-    if (!fb_init(&fb, req_width, req_height, req_bpp)) {
+    fb_init(&fbs, &fbs_count, req_width, req_height, req_bpp);
+    if (fbs_count == 0) {
         goto no_fb;
     }
 
 skip_fb_init:
-    memmap_alloc_range(fb.framebuffer_addr,
-                       (uint64_t)fb.framebuffer_pitch * fb.framebuffer_height,
-                       MEMMAP_FRAMEBUFFER, 0, false, false, true);
+    for (size_t i = 0; i < fbs_count; i++) {
+        memmap_alloc_range(fbs[i].framebuffer_addr,
+                           (uint64_t)fbs[i].framebuffer_pitch * fbs[i].framebuffer_height,
+                           MEMMAP_FRAMEBUFFER, 0, false, false, true);
+    }
 
     // Framebuffer feature
 FEAT_START
-    // For now we only support 1 framebuffer
-    struct limine_framebuffer *fbp = ext_mem_alloc(sizeof(struct limine_framebuffer));
+    struct limine_framebuffer *fbp = ext_mem_alloc(fbs_count * sizeof(struct limine_framebuffer));
 
     if (term_fb_ptr != NULL) {
-        *term_fb_ptr = reported_addr(fbp);
+        *term_fb_ptr = reported_addr(&fbp[0]);
     }
 
     struct limine_framebuffer_request *framebuffer_request = get_request(LIMINE_FRAMEBUFFER_REQUEST);
@@ -784,43 +783,41 @@ FEAT_START
     struct limine_framebuffer_response *framebuffer_response =
         ext_mem_alloc(sizeof(struct limine_framebuffer_response));
 
-    struct edid_info_struct *edid_info = get_edid_info();
-    if (edid_info != NULL) {
-        fbp->edid_size = sizeof(struct edid_info_struct);
-        fbp->edid = reported_addr(edid_info);
-    }
-
     framebuffer_response->revision = 1;
 
-    size_t modes_count;
-    struct fb_info *modes = fb_get_mode_list(&modes_count);
-    if (modes != NULL) {
-        uint64_t *modes_list = ext_mem_alloc(modes_count * sizeof(uint64_t));
-        for (size_t i = 0; i < modes_count; i++) {
-            modes[i].memory_model = LIMINE_FRAMEBUFFER_RGB;
-            modes_list[i] = reported_addr(&modes[i]);
+    uint64_t *fb_list = ext_mem_alloc(fbs_count * sizeof(uint64_t));
+
+    for (size_t i = 0; i < fbs_count; i++) {
+        uint64_t *modes_list = ext_mem_alloc(fbs[i].mode_count * sizeof(uint64_t));
+        for (size_t j = 0; j < fbs[i].mode_count; j++) {
+            fbs[i].mode_list[j].memory_model = LIMINE_FRAMEBUFFER_RGB;
+            modes_list[j] = reported_addr(&fbs[i].mode_list[j]);
         }
-        fbp->modes = reported_addr(modes_list);
-        fbp->mode_count = modes_count;
+        fbp[i].modes = reported_addr(modes_list);
+        fbp[i].mode_count = fbs[i].mode_count;
+
+        if (fbs[i].edid != NULL) {
+            fbp[i].edid_size = sizeof(struct edid_info_struct);
+            fbp[i].edid = reported_addr(fbs[i].edid);
+        }
+
+        fbp[i].memory_model     = LIMINE_FRAMEBUFFER_RGB;
+        fbp[i].address          = reported_addr((void *)(uintptr_t)fbs[i].framebuffer_addr);
+        fbp[i].width            = fbs[i].framebuffer_width;
+        fbp[i].height           = fbs[i].framebuffer_height;
+        fbp[i].bpp              = fbs[i].framebuffer_bpp;
+        fbp[i].pitch            = fbs[i].framebuffer_pitch;
+        fbp[i].red_mask_size    = fbs[i].red_mask_size;
+        fbp[i].red_mask_shift   = fbs[i].red_mask_shift;
+        fbp[i].green_mask_size  = fbs[i].green_mask_size;
+        fbp[i].green_mask_shift = fbs[i].green_mask_shift;
+        fbp[i].blue_mask_size   = fbs[i].blue_mask_size;
+        fbp[i].blue_mask_shift  = fbs[i].blue_mask_shift;
+
+        fb_list[i] = reported_addr(&fbp[i]);
     }
 
-    fbp->memory_model     = LIMINE_FRAMEBUFFER_RGB;
-    fbp->address          = reported_addr((void *)(uintptr_t)fb.framebuffer_addr);
-    fbp->width            = fb.framebuffer_width;
-    fbp->height           = fb.framebuffer_height;
-    fbp->bpp              = fb.framebuffer_bpp;
-    fbp->pitch            = fb.framebuffer_pitch;
-    fbp->red_mask_size    = fb.red_mask_size;
-    fbp->red_mask_shift   = fb.red_mask_shift;
-    fbp->green_mask_size  = fb.green_mask_size;
-    fbp->green_mask_shift = fb.green_mask_shift;
-    fbp->blue_mask_size   = fb.blue_mask_size;
-    fbp->blue_mask_shift  = fb.blue_mask_shift;
-
-    uint64_t *fb_list = ext_mem_alloc(1 * sizeof(uint64_t));
-    fb_list[0] = reported_addr(fbp);
-
-    framebuffer_response->framebuffer_count = 1;
+    framebuffer_response->framebuffer_count = fbs_count;
     framebuffer_response->framebuffers = reported_addr(fb_list);
 
     framebuffer_request->response = reported_addr(framebuffer_response);
@@ -1029,10 +1026,8 @@ FEAT_START
 FEAT_END
 
     // Clear terminal for kernels that will use the Limine terminal
-    if (term != NULL) {
-        term_write(term, "\e[2J\e[H", 7);
-        term->in_bootloader = false;
-    }
+    FOR_TERM(term_write(TERM, "\e[2J\e[H", 7));
+    FOR_TERM(TERM->in_bootloader = false);
 
 #if defined (__x86_64__) || defined (__i386__)
 #if defined (BIOS)

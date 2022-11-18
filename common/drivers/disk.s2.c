@@ -648,15 +648,18 @@ fail:
 
         volume_index[volume_index_i++] = block;
 
+        struct volume _p;
         for (int part = 0; ; part++) {
-            struct volume *p = ext_mem_alloc(sizeof(struct volume));
-            int ret = part_get(p, block, part);
+
+            int ret = part_get(&_p, block, part);
 
             if (ret == END_OF_TABLE || ret == INVALID_TABLE)
                 break;
             if (ret == NO_PARTITION)
                 continue;
 
+            struct volume *p = ext_mem_alloc(sizeof(struct volume));
+            memcpy(p, &_p, sizeof(struct volume));
             volume_index[volume_index_i++] = p;
 
             block->max_partition++;

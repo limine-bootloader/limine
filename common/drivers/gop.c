@@ -309,8 +309,10 @@ fallback:
 
         continue;
 
-success:
-        fb->mode_list = get_mode_list(&fb->mode_count, gop);
+success:;
+        size_t mode_count;
+        fb->mode_list = get_mode_list(&mode_count, gop);
+        fb->mode_count = mode_count;
 
         fbs_count++;
     }

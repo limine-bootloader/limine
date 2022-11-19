@@ -466,7 +466,7 @@ void readline(const char *orig_str, char *buf, size_t limit) {
                     // If cursor has wrapped around, move the line start position up one row
                     if (prev_x == terms[0]->cols - 1 && prev_y == terms[0]->rows - 1) {
                         orig_y--;
-                        print("\e[J");  // Clear the bottom line
+                        print("\n\e[J");  // Clear the bottom line
                     }
                 }
             }

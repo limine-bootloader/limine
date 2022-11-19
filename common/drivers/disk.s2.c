@@ -648,8 +648,8 @@ fail:
 
         volume_index[volume_index_i++] = block;
 
-        struct volume _p;
         for (int part = 0; ; part++) {
+            struct volume _p = {0};
 
             int ret = part_get(&_p, block, part);
 

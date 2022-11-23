@@ -852,18 +852,21 @@ FEAT_END
 #endif
 
 #if defined (__aarch64__)
-    uint64_t fb_attr = 0x00;
-    if (fb.framebuffer_addr) {
+    // Find the most restrictive caching mode from all framebuffers to use
+    uint64_t fb_attr = (uint64_t)-1;
+
+    for (size_t i = 0; i < fbs_count; i++) {
         int el = current_el();
         uint64_t res;
 
+        // Figure out the caching mode used for this particular framebuffer
         if (el == 1) {
             asm volatile (
                     "at s1e1w, %1\n\t"
                     "isb\n\t"
                     "mrs %0, par_el1"
                     : "=r"(res)
-                    : "r"(fb.framebuffer_addr)
+                    : "r"(fbs[i].framebuffer_addr)
                     : "memory");
         } else if (el == 2) {
             asm volatile (
@@ -871,7 +874,7 @@ FEAT_END
                     "isb\n\t"
                     "mrs %0, par_el1"
                     : "=r"(res)
-                    : "r"(fb.framebuffer_addr)
+                    : "r"(fbs[i].framebuffer_addr)
                     : "memory");
         } else {
             panic(false, "Unexpected EL in limine_load");
@@ -880,8 +883,26 @@ FEAT_END
         if (res & 1)
             panic(false, "Address translation for framebuffer failed");
 
-        fb_attr = res >> 56;
+        uint64_t new_attr = res >> 56;
+
+        // Use whatever we find first
+        if (fb_attr == (uint64_t)-1)
+            fb_attr = new_attr;
+        // Prefer Device memory over Normal memory
+        else if ((fb_attr & 0b11110000) && !(new_attr & 0b11110000))
+            fb_attr = new_attr;
+        // Prefer tighter Device memory (lower values)
+        else if (!(fb_attr & 0b11110000) && !(new_attr & 0b11110000) && fb_attr > new_attr)
+            fb_attr = new_attr;
+        // Use Normal non-cacheable otherwise (avoid trying to figure out how to downgrade inner vs outer).
+        else if ((fb_attr & 0b11110000) && (new_attr & 0b11110000))
+            fb_attr = 0b01000100; // Inner&outer Non-cacheable
+        // Otherwise do nothing (fb_attr is already more restrictive than new_attr).
     }
+
+    // If no framebuffers are found, just zero out the MAIR entry
+    if (fb_attr == (uint64_t)-1)
+        fb_attr = 0;
 #endif
 
     void *stack = ext_mem_alloc(stack_size) + stack_size;

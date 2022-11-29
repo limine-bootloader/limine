@@ -1,7 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <fs/file.h>
-#include <fs/ext2.h>
 #include <fs/fat32.h>
 #include <fs/iso9660.h>
 #include <lib/print.h>
@@ -17,18 +16,11 @@ char *fs_get_label(struct volume *part) {
     if ((ret = fat32_get_label(part)) != NULL) {
         return ret;
     }
-    if ((ret = ext2_get_label(part)) != NULL) {
-        return ret;
-    }
 
     return NULL;
 }
 
 bool fs_get_guid(struct guid *guid, struct volume *part) {
-    if (ext2_get_guid(guid, part) == true) {
-        return true;
-    }
-
     return false;
 }
 
@@ -58,9 +50,6 @@ struct file_handle *fopen(struct volume *part, const char *filename) {
     }
 #endif
 
-    if ((ret = ext2_open(part, filename)) != NULL) {
-        goto success;
-    }
     if ((ret = iso9660_open(part, filename)) != NULL) {
         goto success;
     }

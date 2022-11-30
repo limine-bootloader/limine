@@ -121,7 +121,7 @@ the value of `rip` is going to be taken from there.
 At entry all segment registers are loaded as 64 bit code/data segments, limits
 and bases are ignored since this is 64-bit mode.
 
-The GDT register is loaded to point to a GDT, in bootloader-reserved memory,
+The GDT register is loaded to point to a GDT, in bootloader-reclaimable memory,
 with at least the following entries, starting at offset 0:
 
   - Null descriptor
@@ -148,7 +148,7 @@ Legacy PIC and IO APIC IRQs are all masked.
 
 If booted by EFI/UEFI, boot services are exited.
 
-`rsp` is set to point to a stack, in bootloader-reserved memory, which is
+`rsp` is set to point to a stack, in bootloader-reclaimable memory, which is
 at least 64KiB (65536 bytes) in size, or the size specified in the Stack
 Size Request (see below). An invalid return address of 0 is pushed
 to the stack before jumping to the kernel.

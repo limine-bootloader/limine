@@ -21,7 +21,6 @@ char *fs_get_label(struct volume *part) {
 }
 
 bool fs_get_guid(struct guid *guid, struct volume *part) {
-    (void)guid; (void)part;
     return false;
 }
 

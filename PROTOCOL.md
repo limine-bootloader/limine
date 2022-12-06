@@ -208,7 +208,7 @@ struct limine_stack_size_request {
 };
 ```
 
-* `stack_size` - The requested stack size (also used for SMP processors).
+* `stack_size` - The requested stack size in bytes (also used for SMP processors).
 
 Response:
 ```c

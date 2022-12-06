@@ -796,6 +796,22 @@ struct limine_memmap_entry {
 };
 ```
 
+Here's a little description what each name means:
+
+<details>
+
+- `LIMINE_MEMMAP_USABLE`: Memory which you freely use.
+- `LIMINE_MEMMAP_RESERVED`: *Un*usable memory.
+- `LIMINE_MEMMAP_ACPI_RECLAIMABLE`: Acpi tables.
+- `LIMINE_MEMMAP_ACPI_NVS`: Something with acpi
+- `LIMINE_MEMMAP_BAD_MEMORY`: Broken memory
+- `LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE`: All the bootloader information (its
+        structs etc.)
+- `LIMINE_MEMMAP_KERNEL_AND_MODULES`: Your kernel and its modules
+- `LIMINE_MEMMAP_FRAMEBUFFER`: Where the framebuffer resides
+
+</details>
+
 Note: Memory between 0 and 0x1000 is never marked as usable memory.
 The kernel and modules loaded are not marked as usable memory.
 They are marked as Kernel/Modules. The entries are guaranteed to be sorted by

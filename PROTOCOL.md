@@ -801,7 +801,7 @@ Here's a little description what each name means:
 <details>
 
 - `LIMINE_MEMMAP_USABLE`: Memory which you freely use.
-- `LIMINE_MEMMAP_RESERVED`: *Un*usable memory.
+- `LIMINE_MEMMAP_RESERVED`: **Un**usable memory.
 - `LIMINE_MEMMAP_ACPI_RECLAIMABLE`: Acpi tables.
 - `LIMINE_MEMMAP_ACPI_NVS`: Something with acpi
 - `LIMINE_MEMMAP_BAD_MEMORY`: Broken memory

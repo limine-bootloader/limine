@@ -202,7 +202,7 @@ static bool device_init(void) {
 
         block_size = guesses[i];
 
-        fprintf(stderr, "Physical block size of %zu bytes.\n", block_size);
+        fprintf(stdout, "Physical block size of %zu bytes.\n", block_size);
 
         cache_state  = CACHE_CLEAN;
         cached_block = 0;
@@ -286,7 +286,7 @@ static void free_undeploy_data(void) {
 }
 
 static bool store_undeploy_data(const char *filename) {
-    fprintf(stderr, "Storing undeploy data to file: `%s`...\n", filename);
+    fprintf(stdout, "Storing undeploy data to file: `%s`...\n", filename);
 
     FILE *udfile = fopen(filename, "wb");
     if (udfile == NULL) {
@@ -321,7 +321,7 @@ error:
 }
 
 static bool load_undeploy_data(const char *filename) {
-    fprintf(stderr, "Loading undeploy data from file: `%s`...\n", filename);
+    fprintf(stdout, "Loading undeploy data from file: `%s`...\n", filename);
 
     FILE *udfile = fopen(filename, "rb");
     if (udfile == NULL) {
@@ -463,7 +463,7 @@ static void undeploy(void) {
         fprintf(stderr, "ERROR: Device cache flush failure. Undeploy may be incomplete!\n");
     }
 
-    fprintf(stderr, "Undeploy data restored successfully. Limine undeployed!\n");
+    fprintf(stdout, "Undeploy data restored successfully. Limine undeployed!\n");
 }
 
 #define device_read(BUFFER, LOC, COUNT)        \
@@ -585,10 +585,10 @@ int main(int argc, char *argv[]) {
             lb_size = lb_guesses[i];
             if (!force_mbr) {
                 gpt = 1;
-                fprintf(stderr, "Deploying to GPT. Logical block size of %" PRIu64 " bytes.\n",
+                fprintf(stdout, "Deploying to GPT. Logical block size of %" PRIu64 " bytes.\n",
                         lb_guesses[i]);
             } else {
-                fprintf(stderr, "Device has a valid GPT, refusing to force MBR.\n");
+                fprintf(stdout, "Device has a valid GPT, refusing to force MBR.\n");
                 goto cleanup;
             }
             break;
@@ -597,12 +597,12 @@ int main(int argc, char *argv[]) {
 
     struct gpt_table_header secondary_gpt_header;
     if (gpt) {
-        fprintf(stderr, "Secondary header at LBA 0x%" PRIx64 ".\n",
+        fprintf(stdout, "Secondary header at LBA 0x%" PRIx64 ".\n",
                 ENDSWAP(gpt_header.alternate_lba));
         device_read(&secondary_gpt_header, lb_size * ENDSWAP(gpt_header.alternate_lba),
               sizeof(struct gpt_table_header));
         if (!strncmp(secondary_gpt_header.signature, "EFI PART", 8)) {
-            fprintf(stderr, "Secondary header valid.\n");
+            fprintf(stdout, "Secondary header valid.\n");
         } else {
             fprintf(stderr, "Secondary header not valid, aborting.\n");
             goto cleanup;
@@ -767,14 +767,14 @@ int main(int argc, char *argv[]) {
                 goto cleanup;
             }
 
-            fprintf(stderr, "GPT partition specified. Deploying there instead of embedding.\n");
+            fprintf(stdout, "GPT partition specified. Deploying there instead of embedding.\n");
 
             stage2_loc_a = ENDSWAP(gpt_entry.starting_lba) * lb_size;
             stage2_loc_b = stage2_loc_a + stage2_size_a;
             if (stage2_loc_b & (lb_size - 1))
                 stage2_loc_b = (stage2_loc_b + lb_size) & ~(lb_size - 1);
         } else {
-            fprintf(stderr, "GPT partition NOT specified. Attempting GPT embedding.\n");
+            fprintf(stdout, "GPT partition NOT specified. Attempting GPT embedding.\n");
 
             int64_t max_partition_entry_used = -1;
             for (int64_t i = 0; i < (int64_t)ENDSWAP(gpt_header.number_of_partition_entries); i++) {
@@ -810,7 +810,7 @@ int main(int argc, char *argv[]) {
                 goto cleanup;
             }
 
-            fprintf(stderr, "New maximum count of partition entries: %zu.\n", new_partition_entry_count);
+            fprintf(stdout, "New maximum count of partition entries: %zu.\n", new_partition_entry_count);
 
             // Zero out unused partitions
             void *empty = calloc(1, ENDSWAP(gpt_header.size_of_partition_entry));
@@ -863,10 +863,10 @@ int main(int argc, char *argv[]) {
                          sizeof(struct gpt_table_header));
         }
     } else {
-        fprintf(stderr, "Deploying to MBR.\n");
+        fprintf(stdout, "Deploying to MBR.\n");
     }
 
-    fprintf(stderr, "Stage 2 to be located at 0x%" PRIx64 " and 0x%" PRIx64 ".\n",
+    fprintf(stdout, "Stage 2 to be located at 0x%" PRIx64 " and 0x%" PRIx64 ".\n",
             stage2_loc_a, stage2_loc_b);
 
     // Save original timestamp
@@ -902,11 +902,11 @@ int main(int argc, char *argv[]) {
     if (!device_flush_cache())
         goto cleanup;
 
-    fprintf(stderr, "Reminder: Remember to copy the limine.sys file in either\n"
+    fprintf(stdout, "Reminder: Remember to copy the limine.sys file in either\n"
                     "          the root, /boot, /limine, or /boot/limine directories of\n"
                     "          one of the partitions on the device, or boot will fail!\n");
 
-    fprintf(stderr, "Limine deployed successfully!\n");
+    fprintf(stdout, "Limine deployed successfully!\n");
 
     ok = EXIT_SUCCESS;
 

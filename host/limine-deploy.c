@@ -14,6 +14,8 @@
 
 #include "limine-hdd.h"
 
+static bool quiet = false;
+
 static int set_pos(FILE *stream, uint64_t pos) {
     if (sizeof(long) >= 8) {
         return fseek(stream, (long)pos, SEEK_SET);
@@ -202,7 +204,9 @@ static bool device_init(void) {
 
         block_size = guesses[i];
 
-        fprintf(stderr, "Physical block size of %zu bytes.\n", block_size);
+        if (!quiet) {
+            fprintf(stderr, "Physical block size of %zu bytes.\n", block_size);
+        }
 
         cache_state  = CACHE_CLEAN;
         cached_block = 0;
@@ -286,7 +290,9 @@ static void free_undeploy_data(void) {
 }
 
 static bool store_undeploy_data(const char *filename) {
-    fprintf(stderr, "Storing undeploy data to file: `%s`...\n", filename);
+    if (!quiet) {
+        fprintf(stderr, "Storing undeploy data to file: `%s`...\n", filename);
+    }
 
     FILE *udfile = fopen(filename, "wb");
     if (udfile == NULL) {
@@ -321,7 +327,9 @@ error:
 }
 
 static bool load_undeploy_data(const char *filename) {
-    fprintf(stderr, "Loading undeploy data from file: `%s`...\n", filename);
+    if (!quiet) {
+        fprintf(stderr, "Loading undeploy data from file: `%s`...\n", filename);
+    }
 
     FILE *udfile = fopen(filename, "rb");
     if (udfile == NULL) {
@@ -449,7 +457,9 @@ static void undeploy(void) {
                 fprintf(stderr, "ERROR: Undeploy data index %zu failed to write. Undeploy may be incomplete!\n", i);
                 break;
             }
-            fprintf(stderr, "Warning: Undeploy data index %zu failed to write, retrying...\n", i);
+            if (!quiet) {
+                fprintf(stderr, "Warning: Undeploy data index %zu failed to write, retrying...\n", i);
+            }
             if (!device_flush_cache()) {
                 fprintf(stderr, "ERROR: Device cache flush failure. Undeploy may be incomplete!\n");
             }
@@ -463,7 +473,9 @@ static void undeploy(void) {
         fprintf(stderr, "ERROR: Device cache flush failure. Undeploy may be incomplete!\n");
     }
 
-    fprintf(stderr, "Undeploy data restored successfully. Limine undeployed!\n");
+    if (!quiet) {
+        fprintf(stderr, "Undeploy data restored successfully. Limine undeployed!\n");
+    }
 }
 
 #define device_read(BUFFER, LOC, COUNT)        \
@@ -489,6 +501,8 @@ static void usage(const char *name) {
     printf("    --undeploy-data-file=<filename>\n");
     printf("                    Set the input (for --undeploy) or output file\n");
     printf("                    name of the file which contains undeploy data\n");
+    printf("\n");
+    printf("    --quiet         Do not print verbose diagnostic messages\n");
     printf("\n");
     printf("    --help | -h     Display this help message\n");
     printf("\n");
@@ -519,18 +533,20 @@ int main(int argc, char *argv[]) {
         if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
             usage(argv[0]);
             return EXIT_SUCCESS;
+        } else if (strcmp(argv[i], "--quiet") == 0) {
+            quiet = true;
         } else if (strcmp(argv[i], "--force-mbr") == 0) {
-            if (force_mbr) {
+            if (force_mbr && !quiet) {
                 fprintf(stderr, "Warning: --force-mbr already set.\n");
             }
             force_mbr = 1;
         } else if (strcmp(argv[i], "--undeploy") == 0) {
-            if (undeploy_mode) {
+            if (undeploy_mode && !quiet) {
                 fprintf(stderr, "Warning: --undeploy already set.\n");
             }
             undeploy_mode = true;
         } else if (memcmp(argv[i], "--undeploy-data-file=", 21) == 0) {
-            if (undeploy_file != NULL) {
+            if (undeploy_file != NULL && !quiet) {
                 fprintf(stderr, "Warning: --undeploy-data-file already set. Overriding...\n");
             }
             undeploy_file = argv[i] + 21;
@@ -585,10 +601,12 @@ int main(int argc, char *argv[]) {
             lb_size = lb_guesses[i];
             if (!force_mbr) {
                 gpt = 1;
-                fprintf(stderr, "Deploying to GPT. Logical block size of %" PRIu64 " bytes.\n",
-                        lb_guesses[i]);
+                if (!quiet) {
+                    fprintf(stderr, "Deploying to GPT. Logical block size of %" PRIu64 " bytes.\n",
+                            lb_guesses[i]);
+                }
             } else {
-                fprintf(stderr, "Device has a valid GPT, refusing to force MBR.\n");
+                fprintf(stderr, "ERROR: Device has a valid GPT, refusing to force MBR.\n");
                 goto cleanup;
             }
             break;
@@ -597,14 +615,18 @@ int main(int argc, char *argv[]) {
 
     struct gpt_table_header secondary_gpt_header;
     if (gpt) {
-        fprintf(stderr, "Secondary header at LBA 0x%" PRIx64 ".\n",
-                ENDSWAP(gpt_header.alternate_lba));
+        if (!quiet) {
+            fprintf(stderr, "Secondary header at LBA 0x%" PRIx64 ".\n",
+                    ENDSWAP(gpt_header.alternate_lba));
+        }
         device_read(&secondary_gpt_header, lb_size * ENDSWAP(gpt_header.alternate_lba),
               sizeof(struct gpt_table_header));
         if (!strncmp(secondary_gpt_header.signature, "EFI PART", 8)) {
-            fprintf(stderr, "Secondary header valid.\n");
+            if (!quiet) {
+                fprintf(stderr, "Secondary header valid.\n");
+            }
         } else {
-            fprintf(stderr, "Secondary header not valid, aborting.\n");
+            fprintf(stderr, "ERROR: Secondary header not valid, aborting.\n");
             goto cleanup;
         }
     }
@@ -719,8 +741,10 @@ int main(int argc, char *argv[]) {
         }
 
         if (mbr && !any_active) {
-            fprintf(stderr, "No active partition found, some systems may not boot.\n");
-            fprintf(stderr, "Setting partition 1 as active to work around the issue...\n");
+            if (!quiet) {
+                fprintf(stderr, "No active partition found, some systems may not boot.\n");
+                fprintf(stderr, "Setting partition 1 as active to work around the issue...\n");
+            }
             hint8 = 0x80;
             device_write(&hint8, 446, sizeof(uint8_t));
         }
@@ -767,14 +791,18 @@ int main(int argc, char *argv[]) {
                 goto cleanup;
             }
 
-            fprintf(stderr, "GPT partition specified. Deploying there instead of embedding.\n");
+            if (!quiet) {
+                fprintf(stderr, "GPT partition specified. Deploying there instead of embedding.\n");
+            }
 
             stage2_loc_a = ENDSWAP(gpt_entry.starting_lba) * lb_size;
             stage2_loc_b = stage2_loc_a + stage2_size_a;
             if (stage2_loc_b & (lb_size - 1))
                 stage2_loc_b = (stage2_loc_b + lb_size) & ~(lb_size - 1);
         } else {
-            fprintf(stderr, "GPT partition NOT specified. Attempting GPT embedding.\n");
+            if (!quiet) {
+                fprintf(stderr, "GPT partition NOT specified. Attempting GPT embedding.\n");
+            }
 
             int64_t max_partition_entry_used = -1;
             for (int64_t i = 0; i < (int64_t)ENDSWAP(gpt_header.number_of_partition_entries); i++) {
@@ -810,7 +838,9 @@ int main(int argc, char *argv[]) {
                 goto cleanup;
             }
 
-            fprintf(stderr, "New maximum count of partition entries: %zu.\n", new_partition_entry_count);
+            if (!quiet) {
+                fprintf(stderr, "New maximum count of partition entries: %zu.\n", new_partition_entry_count);
+            }
 
             // Zero out unused partitions
             void *empty = calloc(1, ENDSWAP(gpt_header.size_of_partition_entry));
@@ -863,11 +893,15 @@ int main(int argc, char *argv[]) {
                          sizeof(struct gpt_table_header));
         }
     } else {
-        fprintf(stderr, "Deploying to MBR.\n");
+        if (!quiet) {
+            fprintf(stderr, "Deploying to MBR.\n");
+        }
     }
 
-    fprintf(stderr, "Stage 2 to be located at 0x%" PRIx64 " and 0x%" PRIx64 ".\n",
-            stage2_loc_a, stage2_loc_b);
+    if (!quiet) {
+        fprintf(stderr, "Stage 2 to be located at 0x%" PRIx64 " and 0x%" PRIx64 ".\n",
+                stage2_loc_a, stage2_loc_b);
+    }
 
     // Save original timestamp
     device_read(timestamp, 218, 6);
@@ -902,11 +936,13 @@ int main(int argc, char *argv[]) {
     if (!device_flush_cache())
         goto cleanup;
 
-    fprintf(stderr, "Reminder: Remember to copy the limine.sys file in either\n"
-                    "          the root, /boot, /limine, or /boot/limine directories of\n"
-                    "          one of the partitions on the device, or boot will fail!\n");
+    if (!quiet) {
+        fprintf(stderr, "Reminder: Remember to copy the limine.sys file in either\n"
+                        "          the root, /boot, /limine, or /boot/limine directories of\n"
+                        "          one of the partitions on the device, or boot will fail!\n");
 
-    fprintf(stderr, "Limine deployed successfully!\n");
+        fprintf(stderr, "Limine deployed successfully!\n");
+    }
 
     ok = EXIT_SUCCESS;
 

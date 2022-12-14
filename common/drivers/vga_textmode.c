@@ -218,6 +218,16 @@ static void text_set_text_bg_default(struct term_context *_ctx) {
     ctx->text_palette &= 0x0f;
 }
 
+static void text_set_text_fg_default_bright(struct term_context *_ctx) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->text_palette = (ctx->text_palette & 0xf0) | (7 | (1 << 3));
+}
+
+static void text_set_text_bg_default_bright(struct term_context *_ctx) {
+    struct textmode_context *ctx = (void *)_ctx;
+    ctx->text_palette = (ctx->text_palette & 0x0f) | ((1 << 3) << 4);
+}
+
 static void text_putchar(struct term_context *_ctx, uint8_t c) {
     struct textmode_context *ctx = (void *)_ctx;
 
@@ -338,6 +348,8 @@ void vga_textmode_init(bool managed) {
     term->set_text_bg_rgb = text_set_text_bg_rgb;
     term->set_text_fg_default = text_set_text_fg_default;
     term->set_text_bg_default = text_set_text_bg_default;
+    term->set_text_fg_default_bright = text_set_text_fg_default_bright;
+    term->set_text_bg_default_bright = text_set_text_bg_default_bright;
     term->move_character = text_move_character;
     term->scroll = text_scroll;
     term->revscroll = text_revscroll;

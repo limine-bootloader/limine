@@ -366,6 +366,7 @@ static size_t margin = 64;
 static size_t margin_gradient = 4;
 
 static uint32_t default_bg, default_fg;
+static uint32_t default_bg_bright, default_fg_bright;
 
 static size_t bg_canvas_size;
 static uint32_t *bg_canvas;
@@ -638,6 +639,9 @@ bool gterm_init(struct fb_info **_fbs, size_t *_fbs_count,
     default_bg = 0x00000000; // background (black)
     default_fg = 0x00aaaaaa; // foreground (grey)
 
+    default_bg_bright = 0x00555555; // background (black)
+    default_fg_bright = 0x00ffffff; // foreground (grey)
+
     char *theme_background = config_get_value(config, 0, "TERM_BACKGROUND");
     if (theme_background != NULL) {
         default_bg = strtoui(theme_background, NULL, 16);
@@ -646,6 +650,16 @@ bool gterm_init(struct fb_info **_fbs, size_t *_fbs_count,
     char *theme_foreground = config_get_value(config, 0, "TERM_FOREGROUND");
     if (theme_foreground != NULL) {
         default_fg = strtoui(theme_foreground, NULL, 16) & 0xffffff;
+    }
+
+    char *theme_background_bright = config_get_value(config, 0, "TERM_BACKGROUND_BRIGHT");
+    if (theme_background_bright != NULL) {
+        default_bg_bright = strtoui(theme_background_bright, NULL, 16);
+    }
+
+    char *theme_foreground_bright = config_get_value(config, 0, "TERM_FOREGROUND_BRIGHT");
+    if (theme_foreground_bright != NULL) {
+        default_fg_bright = strtoui(theme_foreground_bright, NULL, 16);
     }
 
     background = NULL;
@@ -774,6 +788,7 @@ no_load_font:;
                             bg_canvas,
                             ansi_colours, ansi_bright_colours,
                             &default_bg, &default_fg,
+                            &default_bg_bright, &default_fg_bright,
                             font, font_width, font_height, font_spacing,
                             font_scale_x, font_scale_y,
                             margin);

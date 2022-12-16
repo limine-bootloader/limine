@@ -841,7 +841,6 @@ no_load_font:;
         term->in_bootloader = true;
 
         term_context_reinit(term);
-        term->full_refresh(term);
     }
 
     term_backend = GTERM;

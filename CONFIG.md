@@ -80,6 +80,8 @@ Limine graphical terminal control options. They are ignored if using text mode.
 * `TERM_PALETTE_BRIGHT` - Specifies the bright colour palette used by the terminal (RRGGBB). It is a `;` separated array of 8 bright colours: dark gray, bright red, bright green, yellow, bright blue, bright magenta, bright cyan, and white. Ignored if not using a graphical terminal.
 * `TERM_BACKGROUND` - Terminal text background colour (TTRRGGBB). TT stands for transparency.
 * `TERM_FOREGROUND` - Terminal text foreground colour (RRGGBB).
+* `TERM_BACKGROUND_BRIGHT` - Terminal text background bright colour (RRGGBB).
+* `TERM_FOREGROUND_BRIGHT` - Terminal text foreground bright colour (RRGGBB).
 * `TERM_MARGIN` - Set the amount of margin around the terminal.
 * `TERM_MARGIN_GRADIENT` - Set the thickness in pixel for the gradient around the terminal.
 * `TERM_WALLPAPER` - URI where to find the .BMP file to use as wallpaper.

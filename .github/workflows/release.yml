@@ -98,11 +98,3 @@ jobs:
             limine-*.tar.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Retrieve SSH key
-        run: 'echo "$ssh_key" > ssh_key && chmod 600 ssh_key'
-        env:
-          ssh_key: ${{ secrets.SSH_KEY }}
-
-      - name: Upload tarballs to website
-        run: 'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ssh_key limine-*.tar.* mint@limine-bootloader.org:/var/www/limine/html/files/limine/'

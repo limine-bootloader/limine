@@ -352,12 +352,12 @@ again:
 
 static void reprint_string(int x, int y, const char *s) {
     size_t orig_x, orig_y;
-    FOR_TERM(TERM->disable_cursor(TERM));
+    FOR_TERM(TERM->cursor_enabled = false);
     terms[0]->get_cursor_pos(terms[0], &orig_x, &orig_y);
     set_cursor_pos_helper(x, y);
     print("%s", s);
     set_cursor_pos_helper(orig_x, orig_y);
-    FOR_TERM(TERM->enable_cursor(TERM));
+    FOR_TERM(TERM->cursor_enabled = true);
 }
 
 static void cursor_back(void) {

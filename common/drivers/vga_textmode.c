@@ -81,20 +81,6 @@ static void text_clear(struct term_context *_ctx, bool move) {
     }
 }
 
-static void text_enable_cursor(struct term_context *_ctx) {
-    struct textmode_context *ctx = (void *)_ctx;
-
-    ctx->cursor_status = true;
-}
-
-static bool text_disable_cursor(struct term_context *_ctx) {
-    struct textmode_context *ctx = (void *)_ctx;
-
-    bool ret = ctx->cursor_status;
-    ctx->cursor_status = false;
-    return ret;
-}
-
 static void text_full_refresh(struct term_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
 
@@ -103,7 +89,7 @@ static void text_full_refresh(struct term_context *_ctx) {
         ctx->back_buffer[i] = ctx->front_buffer[i];
     }
 
-    if (ctx->cursor_status) {
+    if (_ctx->cursor_enabled) {
         draw_cursor(ctx);
         ctx->old_cursor_offset = ctx->cursor_offset;
     }
@@ -112,11 +98,11 @@ static void text_full_refresh(struct term_context *_ctx) {
 static void text_double_buffer_flush(struct term_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
 
-    if (ctx->cursor_status) {
+    if (_ctx->cursor_enabled) {
         draw_cursor(ctx);
     }
 
-    if (ctx->cursor_offset != ctx->old_cursor_offset || ctx->cursor_status == false) {
+    if (ctx->cursor_offset != ctx->old_cursor_offset || _ctx->cursor_enabled == false) {
         ctx->video_mem[ctx->old_cursor_offset + 1] = ctx->back_buffer[ctx->old_cursor_offset + 1];
     }
 
@@ -125,7 +111,7 @@ static void text_double_buffer_flush(struct term_context *_ctx) {
             continue;
         }
 
-        if (ctx->cursor_status && i == ctx->cursor_offset + 1) {
+        if (_ctx->cursor_enabled && i == ctx->cursor_offset + 1) {
             continue;
         }
 
@@ -133,7 +119,7 @@ static void text_double_buffer_flush(struct term_context *_ctx) {
         ctx->video_mem[i]    = ctx->back_buffer[i];
     }
 
-    if (ctx->cursor_status) {
+    if (_ctx->cursor_enabled) {
         ctx->old_cursor_offset = ctx->cursor_offset;
     }
 }
@@ -299,7 +285,6 @@ void vga_textmode_init(bool managed) {
     }
 
     ctx->cursor_offset = 0;
-    ctx->cursor_status = true;
     ctx->text_palette = 0x07;
 
     ctx->video_mem = (volatile uint8_t *)0xb8000;
@@ -309,7 +294,7 @@ void vga_textmode_init(bool managed) {
     // VGA cursor code taken from: https://wiki.osdev.org/Text_Mode_Cursor
 
     if (!managed) {
-        text_disable_cursor(term);
+        term->cursor_enabled = false;
 
         outb(0x3d4, 0x0a);
         outb(0x3d5, (inb(0x3d5) & 0xc0) | 14);
@@ -340,8 +325,6 @@ void vga_textmode_init(bool managed) {
 
     term->raw_putchar = text_putchar;
     term->clear = text_clear;
-    term->enable_cursor = text_enable_cursor;
-    term->disable_cursor = text_disable_cursor;
     term->set_cursor_pos = text_set_cursor_pos;
     term->get_cursor_pos = text_get_cursor_pos;
     term->set_text_fg = text_set_text_fg;

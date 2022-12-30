@@ -42,7 +42,7 @@ inline void reset_term(void) {
         print("\e[2J\e[H");
         term_context_reinit(term);
         term->in_bootloader = true;
-        term->enable_cursor(term);
+        term->cursor_enabled = true;
         term->double_buffer_flush(term);
     }
 }

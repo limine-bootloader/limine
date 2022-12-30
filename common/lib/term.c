@@ -178,8 +178,6 @@ void term_fallback(void) {
 
         fallback_clear(NULL, true);
 
-        term->enable_cursor = (void *)dummy_handle;
-        term->disable_cursor = (void *)dummy_handle;
         term->set_text_fg = (void *)dummy_handle;
         term->set_text_bg = (void *)dummy_handle;
         term->set_text_fg_bright = (void *)dummy_handle;

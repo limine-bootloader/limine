@@ -170,7 +170,7 @@ static bool editor_no_term_reset = false;
 char *config_entry_editor(const char *title, const char *orig_entry) {
     FOR_TERM(TERM->autoflush = false);
 
-    FOR_TERM(TERM->enable_cursor(TERM));
+    FOR_TERM(TERM->cursor_enabled = true);
 
     print("\e[2J\e[H");
 
@@ -214,7 +214,7 @@ refresh:
     invalid_syntax = false;
 
     print("\e[2J\e[H");
-    FOR_TERM(TERM->disable_cursor(TERM));
+    FOR_TERM(TERM->cursor_enabled = false);
     {
         size_t x, y;
         print("\n");
@@ -423,7 +423,7 @@ refresh:
 
     // Hack to redraw the cursor
     set_cursor_pos_helper(cursor_x, cursor_y);
-    FOR_TERM(TERM->enable_cursor(TERM));
+    FOR_TERM(TERM->cursor_enabled = true);
 
     FOR_TERM(TERM->double_buffer_flush(TERM));
 
@@ -730,7 +730,7 @@ refresh:
 
     FOR_TERM(TERM->autoflush = false);
 
-    FOR_TERM(TERM->disable_cursor(TERM));
+    FOR_TERM(TERM->cursor_enabled = false);
 
     print("\e[2J\e[H");
     {
@@ -747,7 +747,7 @@ refresh:
             quiet = false;
             menu_init_term();
             FOR_TERM(TERM->autoflush = false);
-            FOR_TERM(TERM->disable_cursor(TERM));
+            FOR_TERM(TERM->cursor_enabled = false);
         }
         print("Config file %s.\n\n", config_ready ? "contains no valid entries" : "not found");
         print("For information on the format of Limine config entries, consult CONFIG.md in\n");

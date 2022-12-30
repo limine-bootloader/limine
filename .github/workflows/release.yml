@@ -9,11 +9,14 @@ jobs:
   build:
     name: Build and upload artifacts
     runs-on: ubuntu-latest
-    container: archlinux:latest
+    container: alpine:edge
 
     steps:
+      - name: Upgrade container
+        run: apk update && apk upgrade
+
       - name: Install dependencies
-        run: pacman --noconfirm -Syu && pacman --needed --noconfirm -S base-devel git autoconf automake nasm curl mtools llvm clang lld mingw-w64-gcc openssh
+        run: apk add build-base xz git autoconf automake nasm mtools llvm clang lld mingw-w64-gcc openssh
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -48,10 +51,10 @@ jobs:
         run: rm build/bin/limine-deploy
 
       - name: Build limine-deploy-win32
-        run: make -C build/bin CC="i686-w64-mingw32-gcc" CFLAGS="-O2 -pipe" limine-deploy
+        run: make -C build/bin CC="x86_64-w64-mingw32-gcc" CFLAGS="-O2 -pipe" limine-deploy
 
       - name: Strip limine-deploy-win32
-        run: i686-w64-mingw32-strip build/bin/limine-deploy.exe
+        run: x86_64-w64-mingw32-strip build/bin/limine-deploy.exe
 
       - name: Copy LICENSE to bin
         run: cp LICENSE.md build/bin/

@@ -41,10 +41,6 @@ static void notready_size_t(struct term_context *ctx, size_t n) {
     (void)ctx;
     (void)n;
 }
-static bool notready_disable(struct term_context *ctx) {
-    (void)ctx;
-    return false;
-}
 static void notready_move_character(struct term_context *ctx, size_t a, size_t b, size_t c, size_t d) {
     (void)ctx;
     (void)a; (void)b; (void)c; (void)d;
@@ -68,8 +64,6 @@ static void term_notready(void) {
 
     term->raw_putchar = notready_raw_putchar;
     term->clear = notready_clear;
-    term->enable_cursor = notready_void;
-    term->disable_cursor = notready_disable;
     term->set_cursor_pos = notready_set_cursor_pos;
     term->get_cursor_pos = notready_get_cursor_pos;
     term->set_text_fg = notready_size_t;

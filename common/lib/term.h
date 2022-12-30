@@ -25,7 +25,7 @@ extern struct term_context *term;
 
 inline void reset_term(void) {
     term->autoflush = true;
-    term->enable_cursor(term);
+    term->cursor_enabled = true;;
     print("\e[2J\e[H");
     term->double_buffer_flush(term);
 }

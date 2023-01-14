@@ -72,7 +72,9 @@ noreturn static void spinup(uint8_t drive) {
     __builtin_unreachable();
 }
 
-noreturn void chainload(char *config) {
+noreturn void chainload(char *config, char *cmdline) {
+    (void)cmdline;
+
     uint64_t val;
 
     int part; {
@@ -188,7 +190,7 @@ void bios_chainload_volume(struct volume *p) {
 
 #elif defined (UEFI)
 
-noreturn void chainload(char *config) {
+noreturn void chainload(char *config, char *cmdline) {
     char *image_path = config_get_value(config, 0, "IMAGE_PATH");
     if (image_path == NULL)
         panic(true, "chainload: IMAGE_PATH not specified");
@@ -197,10 +199,10 @@ noreturn void chainload(char *config) {
     if ((image = uri_open(image_path)) == NULL)
         panic(true, "chainload: Failed to open image with path `%s`. Is the path correct?", image_path);
 
-    efi_chainload_file(config, image);
+    efi_chainload_file(config, cmdline, image);
 }
 
-noreturn void efi_chainload_file(char *config, struct file_handle *image) {
+noreturn void efi_chainload_file(char *config, char *cmdline, struct file_handle *image) {
     EFI_STATUS status;
 
     EFI_HANDLE efi_part_handle = image->efi_part_handle;
@@ -230,6 +232,16 @@ noreturn void efi_chainload_file(char *config, struct file_handle *image) {
     struct fb_info fbinfo;
     if (!fb_init(&fbinfo, req_width, req_height, req_bpp))
         panic(true, "chainload: Unable to set video mode");
+
+    size_t cmdline_len = strlen(cmdline);
+    CHAR16 *new_cmdline;
+    status = gBS->AllocatePool(EfiLoaderData, cmdline_len * sizeof(CHAR16), (void **)&new_cmdline);
+    if (status) {
+        panic(true, "chainload: Allocation failure");
+    }
+    for (size_t i = 0; i < cmdline_len + 1; i++) {
+        new_cmdline[i] = cmdline[i];
+    }
 
     pmm_release_uefi_mem();
 
@@ -272,6 +284,9 @@ noreturn void efi_chainload_file(char *config, struct file_handle *image) {
     if (efi_part_handle != 0) {
         new_handle_loaded_image->DeviceHandle = efi_part_handle;
     }
+
+    new_handle_loaded_image->LoadOptionsSize = cmdline_len;
+    new_handle_loaded_image->LoadOptions = new_cmdline;
 
     UINTN exit_data_size = 0;
     CHAR16 *exit_data = NULL;

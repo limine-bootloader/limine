@@ -8,14 +8,15 @@
 #include <lib/part.h>
 
 #if defined (BIOS)
-static void try(char *config, struct volume *v) {
+static void try(char *config, char *cmdline, struct volume *v) {
     (void)config;
+    (void)cmdline;
     bios_chainload_volume(v);
 }
 #endif
 
 #if defined (UEFI)
-static void try(char *config, struct volume *v) {
+static void try(char *config, char *cmdline, struct volume *v) {
     for (int i = 0; i <= v->max_partition + 1; i++) {
         struct file_handle *image;
         struct volume *p = volume_get_by_coord(v->is_optical, v->index, i);
@@ -28,12 +29,12 @@ static void try(char *config, struct volume *v) {
         }
         case_insensitive_fopen = old_cif;
 
-        efi_chainload_file(config, image);
+        efi_chainload_file(config, cmdline, image);
     }
 }
 #endif
 
-noreturn void chainload_next(char *config) {
+noreturn void chainload_next(char *config, char *cmdline) {
     bool wrap = false;
     for (int i = boot_volume->is_optical ? 0 : (wrap = true, boot_volume->index + 1);
          boot_volume->is_optical ? true : i != boot_volume->index; i++) {
@@ -47,7 +48,7 @@ noreturn void chainload_next(char *config) {
             }
         }
 
-        try(config, v);
+        try(config, cmdline, v);
     }
 
     wrap = false;
@@ -63,7 +64,7 @@ noreturn void chainload_next(char *config) {
             }
         }
 
-        try(config, v);
+        try(config, cmdline, v);
     }
 
     panic(true, "chainload_next: No other bootable device");

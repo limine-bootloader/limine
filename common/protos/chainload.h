@@ -3,11 +3,11 @@
 
 #include <stdnoreturn.h>
 
-noreturn void chainload(char *config);
+noreturn void chainload(char *config, char *cmdline);
 
 #if defined (UEFI)
 #include <fs/file.h>
-noreturn void efi_chainload_file(char *config, struct file_handle *image);
+noreturn void efi_chainload_file(char *config, char *cmdline, struct file_handle *image);
 #endif
 
 #if defined (BIOS)

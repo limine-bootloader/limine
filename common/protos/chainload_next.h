@@ -3,6 +3,6 @@
 
 #include <stdnoreturn.h>
 
-noreturn void chainload_next(char *config);
+noreturn void chainload_next(char *config, char *cmdline);
 
 #endif

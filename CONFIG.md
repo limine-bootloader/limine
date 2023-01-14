@@ -97,7 +97,7 @@ Editor control options.
 *Locally assignable (non protocol specific)* keys are:
 * `COMMENT` - An optional comment string that will be displayed by the bootloader on the menu when an entry is selected.
 * `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `limine`, `chainload`, `chainload_next`, `multiboot` (or `multiboot1`), and `multiboot2`.
-* `CMDLINE` - The command line string to be passed to the kernel. Can be omitted.
+* `CMDLINE` - The command line string to be passed to the kernel/executable. Can be omitted.
 * `KERNEL_CMDLINE` - Alias of `CMDLINE`.
 
 *Locally assignable (protocol specific)* keys are:

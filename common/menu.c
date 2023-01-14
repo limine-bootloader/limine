@@ -975,9 +975,9 @@ noreturn void boot(char *config) {
         print("Multiboot 2 is not available on aarch64.\n\n");
 #endif
     } else if (!strcmp(proto, "chainload_next")) {
-        chainload_next(config);
+        chainload_next(config, cmdline);
     } else if (!strcmp(proto, "chainload")) {
-        chainload(config);
+        chainload(config, cmdline);
     }
 
     panic(true, "Unsupported protocol specified for kernel.");

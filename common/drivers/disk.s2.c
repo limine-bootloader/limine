@@ -14,6 +14,7 @@
 #include <lib/rand.h>
 #include <mm/pmm.h>
 #include <sys/cpu.h>
+#include <pxe/pxe.h>
 
 #define DEFAULT_FASTEST_XFER_SIZE 64
 #define MAX_FASTEST_XFER_SIZE 512
@@ -313,6 +314,38 @@ int disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t c
     }
 }
 
+static struct volume *pxe_from_efi_handle(EFI_HANDLE efi_handle) {
+    static struct volume *vol = NULL;
+
+    // There's only one PXE volume
+    if (vol) {
+        return vol;
+    }
+
+    EFI_STATUS status;
+
+    EFI_GUID pxe_base_code_guid = EFI_PXE_BASE_CODE_PROTOCOL_GUID;
+    EFI_PXE_BASE_CODE *pxe_base_code = NULL;
+
+    status = gBS->HandleProtocol(efi_handle, &pxe_base_code_guid, (void **)&pxe_base_code);
+    if (status) {
+        return NULL;
+    }
+
+    if (!pxe_base_code->Mode->DhcpDiscoverValid) {
+        print("PXE somehow didn't use DHCP?\n");
+        return NULL;
+    }
+
+    if (pxe_base_code->Mode->UsingIpv6) {
+        print("Sorry, unsupported: PXE IPv6\n");
+        return NULL;
+    }
+
+    vol = pxe_bind_volume(efi_handle, pxe_base_code);
+    return vol;
+}
+
 static alignas(4096) uint8_t unique_sector_pool[4096];
 
 struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
@@ -323,7 +356,7 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
 
     status = gBS->HandleProtocol(efi_handle, &block_io_guid, (void **)&block_io);
     if (status) {
-        return NULL;
+        return pxe_from_efi_handle(efi_handle);
     }
 
     block_io->Media->WriteCaching = false;

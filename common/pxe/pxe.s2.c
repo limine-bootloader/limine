@@ -1,11 +1,15 @@
-#if defined (BIOS)
-
 #include <lib/print.h>
-#include <lib/real.h>
 #include <pxe/pxe.h>
 #include <lib/libc.h>
 #include <lib/misc.h>
 #include <mm/pmm.h>
+#if defined (BIOS)
+#include <lib/real.h>
+#elif defined (UEFI)
+#include <efi.h>
+#endif
+
+#if defined (BIOS)
 
 void set_pxe_fp(uint32_t fp);
 
@@ -51,6 +55,18 @@ void pxe_init(void) {
     }
     set_pxe_fp(bangpxe->rm_entry);
     printv("pxe: Successfully initialized\n");
+}
+
+#elif defined (UEFI)
+
+struct volume *pxe_bind_volume(EFI_HANDLE efi_handle, EFI_PXE_BASE_CODE *pxe_base_code) {
+    struct volume *volume = ext_mem_alloc(sizeof(struct volume));
+
+    volume->efi_handle = efi_handle;
+    volume->pxe_base_code = pxe_base_code;
+    volume->pxe = true;
+
+    return volume;
 }
 
 #endif

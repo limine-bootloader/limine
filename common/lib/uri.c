@@ -164,7 +164,6 @@ static struct file_handle *uri_fslabel_dispatch(char *fslabel, char *path) {
     return fopen(volume, path);
 }
 
-#if defined (BIOS)
 static struct file_handle *uri_tftp_dispatch(char *root, char *path) {
     uint32_t ip;
     if (!strcmp(root, "")) {
@@ -176,19 +175,16 @@ static struct file_handle *uri_tftp_dispatch(char *root, char *path) {
     }
 
     struct file_handle *ret;
-    if ((ret = tftp_open(ip, 69, path)) == NULL) {
+    if ((ret = tftp_open(boot_volume, root, path)) == NULL) {
         return NULL;
     }
 
     return ret;
 }
-#endif
 
 static struct file_handle *uri_boot_dispatch(char *s_part, char *path) {
-#if defined (BIOS)
     if (boot_volume->pxe)
         return uri_tftp_dispatch(s_part, path);
-#endif
 
     int partition;
 
@@ -242,10 +238,8 @@ struct file_handle *uri_open(char *uri) {
         ret = uri_guid_dispatch(root, path);
     } else if (!strcmp(resource, "fslabel")) {
         ret = uri_fslabel_dispatch(root, path);
-#if defined (BIOS)
     } else if (!strcmp(resource, "tftp")) {
         ret = uri_tftp_dispatch(root, path);
-#endif
     } else {
         panic(true, "Resource `%s` not valid.", resource);
     }

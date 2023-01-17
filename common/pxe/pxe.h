@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <lib/part.h>
 
+#if defined (BIOS)
+
 struct volume *pxe_bind_volume(void);
 void pxe_init(void);
 int pxe_call(uint16_t opcode, uint16_t buf_seg, uint16_t buf_off);
@@ -93,5 +95,11 @@ struct pxenv_get_cached_info {
     uint32_t buffer;
     uint16_t buffer_limit;
 } __attribute__((packed));
+
+#elif defined (UEFI)
+
+struct volume *pxe_bind_volume(EFI_HANDLE efi_handle, EFI_PXE_BASE_CODE *pxe_base_code);
+
+#endif
 
 #endif

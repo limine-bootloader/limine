@@ -17,8 +17,13 @@
 struct volume {
 #if defined (UEFI)
     EFI_HANDLE efi_handle;
+
+    // Block storage
     EFI_HANDLE efi_part_handle;
     EFI_BLOCK_IO *block_io;
+
+    // PXE
+    EFI_PXE_BASE_CODE_PROTOCOL *pxe_base_code;
 
     bool unique_sector_valid;
     uint64_t unique_sector;

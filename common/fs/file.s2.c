@@ -49,14 +49,12 @@ struct file_handle *fopen(struct volume *part, const char *filename) {
 
     struct file_handle *ret;
 
-#if defined (BIOS)
     if (part->pxe) {
-        if ((ret = tftp_open(0, 69, filename)) == NULL) {
+        if ((ret = tftp_open(part, "", filename)) == NULL) {
             return NULL;
         }
         goto success;
     }
-#endif
 
     if ((ret = ext2_open(part, filename)) != NULL) {
         goto success;

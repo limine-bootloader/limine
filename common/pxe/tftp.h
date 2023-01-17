@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <fs/file.h>
 
+#if defined (BIOS)
+
 #define UNDI_GET_INFORMATION 0xC
 
 #define TFTP_OPEN 0x0020
@@ -37,9 +39,8 @@ struct pxenv_get_file_size {
 
 #define TFTP_CLOSE 0x21
 
-//server_ip and server_port can be 0 for default
-struct file_handle *tftp_open(uint32_t server_ip, uint16_t server_port, const char *name);
+#endif
 
-uint32_t get_boot_server_info(void);
+struct file_handle *tftp_open(struct volume *part, const char *server_addr, const char *name);
 
 #endif

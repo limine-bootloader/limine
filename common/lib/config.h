@@ -26,7 +26,6 @@ struct conf_tuple {
 extern struct menu_entry *menu_tree;
 
 int init_config_disk(struct volume *part);
-int init_config_pxe(void);
 int init_config(size_t config_size);
 
 char *config_get_value(const char *config, size_t index, const char *key);

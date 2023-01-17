@@ -1,14 +1,18 @@
-#if defined (BIOS)
-
 #include <pxe/tftp.h>
 #include <pxe/pxe.h>
-#include <lib/real.h>
+#if defined (BIOS)
+#  include <lib/real.h>
+#elif defined (UEFI)
+#  include <efi.h>
+#endif
 #include <lib/print.h>
 #include <lib/libc.h>
 #include <mm/pmm.h>
 #include <lib/misc.h>
 
-uint32_t get_boot_server_info(void) {
+#if defined (BIOS)
+
+static uint32_t get_boot_server_info(void) {
     struct pxenv_get_cached_info cachedinfo = { 0 };
     cachedinfo.packet_type = 2;
     pxe_call(PXENV_GET_CACHED_INFO, ((uint16_t)rm_seg(&cachedinfo)), (uint16_t)rm_off(&cachedinfo));
@@ -16,12 +20,26 @@ uint32_t get_boot_server_info(void) {
     return ph->sip;
 }
 
-struct file_handle *tftp_open(uint32_t server_ip, uint16_t server_port, const char *name) {
+static uint32_t parse_ip_addr(const char *server_addr) {
+    uint32_t out;
+
+    if (!server_addr || !strlen(server_addr)) {
+        return get_boot_server_info();
+    }
+
+    if (inet_pton(server_addr, &out)) {
+        panic(true, "tftp: Invalid IPv4 address: \"%s\"", server_addr);
+    }
+
+    return out;
+}
+
+struct file_handle *tftp_open(struct volume *part, const char *server_addr, const char *name) {
+    uint32_t server_ip = parse_ip_addr(server_addr);
+    const uint16_t server_port = 69; // This couldn't be changed previously either
     int ret = 0;
 
-    if (!server_ip) {
-        server_ip = get_boot_server_info();
-    }
+    (void)part;
 
     struct PXENV_UNDI_GET_INFORMATION undi_info = { 0 };
     ret = pxe_call(UNDI_GET_INFORMATION, ((uint16_t)rm_seg(&undi_info)), (uint16_t)rm_off(&undi_info));
@@ -102,6 +120,82 @@ struct file_handle *tftp_open(uint32_t server_ip, uint16_t server_port, const ch
     }
 
     pmm_free(buf, mtu);
+
+    return handle;
+}
+
+#elif defined (UEFI)
+
+static EFI_IP_ADDRESS *parse_ip_addr(struct volume *part, const char *server_addr) {
+    static EFI_IP_ADDRESS out;
+
+    if (!server_addr || !strlen(server_addr)) {
+        EFI_PXE_BASE_CODE_PACKET* packet;
+        if (part->pxe_base_code->Mode->PxeReplyReceived) packet = &part->pxe_base_code->Mode->PxeReply;
+        else if (part->pxe_base_code->Mode->ProxyOfferReceived) packet = &part->pxe_base_code->Mode->ProxyOffer;
+        else packet = &part->pxe_base_code->Mode->DhcpAck;
+        memcpy(out.Addr, packet->Dhcpv4.BootpSiAddr, 4);
+    } else {
+        if (inet_pton(server_addr, &out.Addr)) {
+            panic(true, "tftp: Invalid IPv4 address: \"%s\"", server_addr);
+        }
+    }
+
+    return &out;
+}
+
+struct file_handle *tftp_open(struct volume *part, const char *server_addr, const char *name) {
+    if (!part->pxe_base_code) {
+        return NULL;
+    }
+
+    EFI_IP_ADDRESS *ip = parse_ip_addr(part, server_addr);
+
+    uint64_t file_size;
+    EFI_STATUS status;
+
+    status = part->pxe_base_code->Mtftp(
+            part->pxe_base_code,
+            EFI_PXE_BASE_CODE_TFTP_GET_FILE_SIZE,
+            NULL,
+            false,
+            &file_size,
+            NULL,
+            ip,
+            (uint8_t *)name,
+            NULL,
+            false);
+
+    if (status) {
+        return NULL;
+    }
+
+    struct file_handle *handle = ext_mem_alloc(sizeof(struct file_handle));
+
+    handle->size = file_size;
+    handle->is_memfile = true;
+
+    handle->pxe = true;
+    handle->pxe_ip = *(uint32_t *)&ip;
+    handle->pxe_port = 69;
+
+    handle->fd = ext_mem_alloc(handle->size);
+
+    status = part->pxe_base_code->Mtftp(
+            part->pxe_base_code,
+            EFI_PXE_BASE_CODE_TFTP_READ_FILE,
+            handle->fd,
+            false,
+            &file_size,
+            NULL,
+            ip,
+            (uint8_t *)name,
+            NULL,
+            false);
+
+    if (status) {
+        return NULL;
+    }
 
     return handle;
 }

@@ -19,6 +19,7 @@ struct file_handle {
     bool       readall;
     struct volume *vol;
     char      *path;
+    size_t     path_len;
     void      *fd;
     void     (*read)(void *fd, void *buf, uint64_t loc, uint64_t count);
     void     (*close)(void *fd);

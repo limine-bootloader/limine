@@ -279,6 +279,9 @@ struct file_handle *uri_open(char *uri) {
             panic(true, "tinf error");
         }
         compressed_fd->vol = ret->vol;
+        compressed_fd->path = ext_mem_alloc(ret->path_len);
+        memcpy(compressed_fd->path, ret->path, ret->path_len);
+        compressed_fd->path_len = ret->path_len;
         fclose(ret);
         compressed_fd->is_memfile = true;
         ret = compressed_fd;

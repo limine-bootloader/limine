@@ -53,7 +53,7 @@ struct file_handle *fopen(struct volume *part, const char *filename) {
         if ((ret = tftp_open(part, "", filename)) == NULL) {
             return NULL;
         }
-        goto success;
+        return ret;
     }
 
     if ((ret = ext2_open(part, filename)) != NULL) {
@@ -70,6 +70,7 @@ struct file_handle *fopen(struct volume *part, const char *filename) {
 
 success:
     ret->path = (char *)filename;
+    ret->path_len = filename_new_len;
 
     return ret;
 }
@@ -82,6 +83,7 @@ void fclose(struct file_handle *fd) {
     } else {
         fd->close(fd);
     }
+    pmm_free(fd->path, fd->path_len);
     pmm_free(fd, sizeof(struct file_handle));
 }
 

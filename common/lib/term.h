@@ -22,6 +22,8 @@ extern struct term_context *term;
 #define TERM_CTX_SAVE ((uint64_t)(-2))
 #define TERM_CTX_RESTORE ((uint64_t)(-3))
 #define TERM_FULL_REFRESH ((uint64_t)(-4))
+#define TERM_OOB_OUTPUT_GET ((uint64_t)(-10))
+#define TERM_OOB_OUTPUT_SET ((uint64_t)(-11))
 
 inline void reset_term(void) {
     term->autoflush = true;

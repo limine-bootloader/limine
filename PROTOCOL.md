@@ -444,10 +444,14 @@ context, and refresh the terminal fully.
 In order to achieve this, special values for the `length` argument are
 passed. These values are:
 ```c
+/* Response revision 0 */
 #define LIMINE_TERMINAL_CTX_SIZE ((uint64_t)(-1))
 #define LIMINE_TERMINAL_CTX_SAVE ((uint64_t)(-2))
 #define LIMINE_TERMINAL_CTX_RESTORE ((uint64_t)(-3))
 #define LIMINE_TERMINAL_FULL_REFRESH ((uint64_t)(-4))
+/* Response revision 1 */
+#define LIMINE_TERMINAL_OOB_OUTPUT_GET ((uint64_t)(-10))
+#define LIMINE_TERMINAL_OOB_OUTPUT_SET ((uint64_t)(-11))
 ```
 
 For `CTX_SIZE`, the `ptr` variable has to point to a location to which the
@@ -463,6 +467,25 @@ This location must have a size congruent to the value received from
 For `FULL_REFRESH`, the `ptr` variable is unused. This routine is to be used
 after control of the framebuffer is taken over and the bootloader's terminal
 has to *fully* repaint the framebuffer to avoid inconsistencies.
+
+If the response revision is equal or greater than 1
+`OOB_OUTPUT_GET` and `OOB_OUTPUT_SET` allow getting and setting the
+out-of-band terminal output settings. `ptr` points to a location to where
+the terminal will *write* or *read* a single `uint64_t` value containing the
+bits representing the settings.
+The possible settings are as follows:
+```c
+#define LIMINE_TERMINAL_OOB_OUTPUT_OCRNL (1 << 0)
+#define LIMINE_TERMINAL_OOB_OUTPUT_OFDEL (1 << 1)
+#define LIMINE_TERMINAL_OOB_OUTPUT_OFILL (1 << 2)
+#define LIMINE_TERMINAL_OOB_OUTPUT_OLCUC (1 << 3)
+#define LIMINE_TERMINAL_OOB_OUTPUT_ONLCR (1 << 4)
+#define LIMINE_TERMINAL_OOB_OUTPUT_ONLRET (1 << 5)
+#define LIMINE_TERMINAL_OOB_OUTPUT_ONOCR (1 << 6)
+#define LIMINE_TERMINAL_OOB_OUTPUT_OPOST (1 << 7)
+```
+The effect of each of these options matches the effect of the `stty(1)`
+options by the same name.
 
 #### x86_64
 

@@ -143,7 +143,7 @@ struct limine_framebuffer {
     uint8_t unused[7];
     uint64_t edid_size;
     LIMINE_PTR(void *) edid;
-    /* Revision 1 */
+    /* Response revision 1 */
     uint64_t mode_count;
     LIMINE_PTR(struct limine_video_mode **) modes;
 };
@@ -177,6 +177,19 @@ struct limine_framebuffer_request {
 #define LIMINE_TERMINAL_CTX_SAVE ((uint64_t)(-2))
 #define LIMINE_TERMINAL_CTX_RESTORE ((uint64_t)(-3))
 #define LIMINE_TERMINAL_FULL_REFRESH ((uint64_t)(-4))
+
+/* Response revision 1 */
+#define LIMINE_TERMINAL_OOB_OUTPUT_GET ((uint64_t)(-10))
+#define LIMINE_TERMINAL_OOB_OUTPUT_SET ((uint64_t)(-11))
+
+#define LIMINE_TERMINAL_OOB_OUTPUT_OCRNL (1 << 0)
+#define LIMINE_TERMINAL_OOB_OUTPUT_OFDEL (1 << 1)
+#define LIMINE_TERMINAL_OOB_OUTPUT_OFILL (1 << 2)
+#define LIMINE_TERMINAL_OOB_OUTPUT_OLCUC (1 << 3)
+#define LIMINE_TERMINAL_OOB_OUTPUT_ONLCR (1 << 4)
+#define LIMINE_TERMINAL_OOB_OUTPUT_ONLRET (1 << 5)
+#define LIMINE_TERMINAL_OOB_OUTPUT_ONOCR (1 << 6)
+#define LIMINE_TERMINAL_OOB_OUTPUT_OPOST (1 << 7)
 
 struct limine_terminal;
 

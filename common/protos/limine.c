@@ -689,6 +689,8 @@ FEAT_START
     struct limine_terminal_response *terminal_response =
         ext_mem_alloc(sizeof(struct limine_terminal_response));
 
+    terminal_response->revision = 1;
+
     struct limine_terminal *terminal = ext_mem_alloc(sizeof(struct limine_terminal));
 
     quiet = false;

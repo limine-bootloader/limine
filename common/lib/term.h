@@ -26,6 +26,8 @@ extern int term_backend;
 #define TERM_CTX_SAVE ((uint64_t)(-2))
 #define TERM_CTX_RESTORE ((uint64_t)(-3))
 #define TERM_FULL_REFRESH ((uint64_t)(-4))
+#define TERM_OOB_OUTPUT_GET ((uint64_t)(-10))
+#define TERM_OOB_OUTPUT_SET ((uint64_t)(-11))
 
 #define FOR_TERM(...) do { \
     for (size_t FOR_TERM_i = 0; FOR_TERM_i < terms_i; FOR_TERM_i++) { \

@@ -320,6 +320,14 @@ static void context_restore(struct term_context *term, uint64_t buf) {
 
 void _term_write(struct term_context *term, uint64_t buf, uint64_t count) {
     switch (count) {
+        case TERM_OOB_OUTPUT_GET: {
+            memcpy32to64(buf, (uint64_t)(uintptr_t)&term->oob_output, sizeof(uint64_t));
+            return;
+        }
+        case TERM_OOB_OUTPUT_SET: {
+            memcpy32to64((uint64_t)(uintptr_t)&term->oob_output, buf, sizeof(uint64_t));
+            return;
+        }
         case TERM_CTX_SIZE: {
             uint64_t ret = context_size(term);
             memcpy32to64(buf, (uint64_t)(uintptr_t)&ret, sizeof(uint64_t));

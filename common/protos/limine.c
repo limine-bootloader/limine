@@ -227,7 +227,10 @@ static struct limine_file get_file(struct file_handle *file, char *cmdline) {
         }
     }
 
-    ret.path = reported_addr(file->path);
+    char *path = ext_mem_alloc(file->path_len);
+    memcpy(path, file->path, file->path_len);
+
+    ret.path = reported_addr(path);
 
     ret.address = reported_addr(freadall(file, MEMMAP_KERNEL_AND_MODULES));
     ret.size = file->size;

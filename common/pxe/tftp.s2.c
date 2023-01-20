@@ -69,6 +69,12 @@ struct file_handle *tftp_open(struct volume *part, const char *server_addr, cons
     handle->pxe_ip = server_ip;
     handle->pxe_port = server_port;
 
+    size_t name_len = strlen(name);
+    handle->path = ext_mem_alloc(1 + name_len + 1);
+    handle->path[0] = '/';
+    memcpy(&handle->path[1], name, name_len);
+    handle->path_len = 1 + name_len + 1;
+
     struct pxenv_open open = {
         .status = 0,
         .sip = server_ip,
@@ -178,6 +184,12 @@ struct file_handle *tftp_open(struct volume *part, const char *server_addr, cons
     handle->pxe = true;
     handle->pxe_ip = *(uint32_t *)&ip;
     handle->pxe_port = 69;
+
+    size_t name_len = strlen(name);
+    handle->path = ext_mem_alloc(1 + name_len + 1);
+    handle->path[0] = '/';
+    memcpy(&handle->path[1], name, name_len);
+    handle->path_len = 1 + name_len + 1;
 
     handle->fd = ext_mem_alloc(handle->size);
 

@@ -3,10 +3,17 @@
 #include <lib/config.h>
 #include <lib/libc.h>
 #include <lib/misc.h>
+#include <lib/readline.h>
 #include <mm/pmm.h>
 #include <fs/file.h>
 #include <lib/print.h>
 #include <pxe/tftp.h>
+#include <crypt/blake2b.h>
+
+#define CONFIG_B2SUM_SIGNATURE "++CONFIG_B2SUM_SIGNATURE++"
+#define CONFIG_B2SUM_EMPTY "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+
+const char *config_b2sum = CONFIG_B2SUM_SIGNATURE CONFIG_B2SUM_EMPTY;
 
 static bool config_get_entry_name(char *ret, size_t index, size_t limit);
 static char *config_get_entry(size_t *size, size_t index);
@@ -136,6 +143,29 @@ struct macro {
 static struct macro *macros = NULL;
 
 int init_config(size_t config_size) {
+    config_b2sum += sizeof(CONFIG_B2SUM_SIGNATURE) - 1;
+
+    if (memcmp((void *)config_b2sum, CONFIG_B2SUM_EMPTY, 128) != 0) {
+        uint8_t out_buf[BLAKE2B_OUT_BYTES];
+        blake2b(out_buf, config_addr, config_size - 2);
+        uint8_t hash_buf[BLAKE2B_OUT_BYTES];
+
+        for (size_t i = 0; i < BLAKE2B_OUT_BYTES; i++) {
+            hash_buf[i] = digit_to_int(config_b2sum[i * 2]) << 4 | digit_to_int(config_b2sum[i * 2 + 1]);
+        }
+
+        if (memcmp(hash_buf, out_buf, BLAKE2B_OUT_BYTES) != 0) {
+            print("!!! CHECKSUM MISMATCH FOR CONFIG FILE !!!\n");
+            print("If you do not know what this means, ANSWER WITH 'N' NOW!\n");
+            print("Proceed with boot anyways? [y/N]: ");
+            if (getchar() != 'y') {
+                print("\n");
+                panic(true, "Checksum mismatch for config file");
+            }
+            print("\n");
+        }
+    }
+
     // add trailing newline if not present
     config_addr[config_size - 2] = '\n';
 

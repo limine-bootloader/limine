@@ -134,6 +134,12 @@ The boot device must contain the `limine.cfg` files in
 either the root, `limine`, `boot`, or `boot/limine` directory of one of the
 partitions, formatted with a supported file system (the ESP partition is recommended).
 
+### Secure Boot
+Limine can be booted with secure boot using shim. This will also allow one to enroll
+the BLAKE2B hash of the Limine config file into the Limine EFI executable image itself for
+verification purposes.
+For more information see the `limine-enroll-config` program and [the philosophy](/PHILOSOPHY.md).
+
 ### BIOS/MBR
 In order to install Limine on a MBR device (which can just be a raw image file),
 run `limine-deploy` as such:

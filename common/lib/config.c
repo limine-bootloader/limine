@@ -155,7 +155,7 @@ int init_config(size_t config_size) {
         }
 
         if (memcmp(hash_buf, out_buf, BLAKE2B_OUT_BYTES) != 0) {
-            panic(true, "!!! CHECKSUM MISMATCH FOR CONFIG FILE !!!");
+            panic(false, "!!! CHECKSUM MISMATCH FOR CONFIG FILE !!!");
         }
     }
 

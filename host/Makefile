@@ -6,7 +6,7 @@ PREFIX ?= /usr/local
 CFLAGS ?= -g -O2 -pipe -Wall -Wextra
 
 .PHONY: all
-all: limine-deploy limine-version
+all: limine-deploy limine-version limine-enroll-config
 
 .PHONY: install-data
 install-data: all
@@ -26,20 +26,26 @@ install: install-data
 	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/bin'
 	$(INSTALL) limine-deploy '$(DESTDIR)$(PREFIX)/bin/'
 	$(INSTALL) limine-version '$(DESTDIR)$(PREFIX)/bin/'
+	$(INSTALL) limine-enroll-config '$(DESTDIR)$(PREFIX)/bin/'
 
 .PHONY: install-strip
 install-strip: install-data
 	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/bin'
 	$(INSTALL) -s limine-deploy '$(DESTDIR)$(PREFIX)/bin/'
 	$(INSTALL) -s limine-version '$(DESTDIR)$(PREFIX)/bin/'
+	$(INSTALL) -s limine-enroll-config '$(DESTDIR)$(PREFIX)/bin/'
 
 .PHONY: clean
 clean:
 	rm -f limine-deploy limine-deploy.exe
 	rm -f limine-version limine-version.exe
+	rm -f limine-enroll-config limine-enroll-config.exe
 
 limine-deploy: limine-deploy.c limine-hdd.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -std=c99 -D__USE_MINGW_ANSI_STDIO limine-deploy.c $(LIBS) -o $@
 
 limine-version: limine-version.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -std=c99 -D__USE_MINGW_ANSI_STDIO limine-version.c $(LIBS) -o $@
+
+limine-enroll-config: limine-enroll-config.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -std=c99 -D__USE_MINGW_ANSI_STDIO limine-enroll-config.c $(LIBS) -o $@

@@ -23,19 +23,18 @@ as the reference implementation for the [Limine boot protocol](/PROTOCOL.md).
 * Multiboot 2
 * Chainloading
 
+### Supported partitioning schemes
+* MBR
+* GPT
+* Unpartitioned media
+
 ### Supported filesystems
 * ext2/3/4
 * FAT12/16/32
 * ISO9660 (CDs/DVDs)
 
-Even though these are the filesystems Limine supports directly, *any*
-filesystem can be utilised by the kernel provided that the kernel (and any
-needed modules) are on a directly supported filesystem.
-
-### Supported partitioning schemes
-* MBR
-* GPT
-* Unpartitioned media
+If your filesystem isn't listed here, please read [the philosophy](/PHILOSOPHY.md) first, especially before
+opening issues or pull requests related to this.
 
 ### Minimum system requirements
 For 32-bit x86 systems, support is only ensured starting with those with

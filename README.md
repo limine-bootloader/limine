@@ -42,6 +42,8 @@ Pentium Pro (i686) class CPUs.
 
 All x86_64 and aarch64 (UEFI) systems are supported.
 
+## Packaging status
+
 [![Packaging status](https://repology.org/badge/vertical-allrepos/limine.svg)](https://repology.org/project/limine/versions)
 
 ## Binary releases
@@ -55,15 +57,15 @@ For example, to clone the latest binary release of the `v4.x` branch one can do
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v4.x-branch-binary --depth=1
 ```
-or, to clone a specific binary point release (for example `v4.20221007.0`)
+or, to clone a specific binary point release (for example `v4.20230120.0`)
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v4.20221007.0-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v4.20230120.0-binary --depth=1
 ```
 
-In order to rebuild `limine-deploy`, simply run `make` in the binary
+In order to rebuild host utilities like `limine-deploy`, simply run `make` in the binary
 release directory.
 
-`limine-deploy.exe` binaries are provided for Windows.
+Host utility binaries are provided for Windows.
 
 ## Building the bootloader
 
@@ -128,7 +130,7 @@ the `/EFI/BOOT` directory of a FAT formatted EFI system partition. These files c
 be installed there and coexist with a BIOS installation of Limine (see below) so
 that the disk will be bootable on both BIOS and UEFI systems.
 
-The boot device must to contain the `limine.cfg` files in
+The boot device must contain the `limine.cfg` files in
 either the root, `limine`, `boot`, or `boot/limine` directory of one of the
 partitions, formatted with a supported file system (the ESP partition is recommended).
 
@@ -140,7 +142,7 @@ run `limine-deploy` as such:
 limine-deploy <path to device/image>
 ```
 
-The boot device must to contain the `limine.sys` and `limine.cfg` files in
+The boot device must contain the `limine.sys` and `limine.cfg` files in
 either the root, `limine`, `boot`, or `boot/limine` directory of one of the
 partitions, formatted with a supported file system.
 
@@ -162,7 +164,7 @@ In case one wants to let `limine-deploy` embed stage 2 within GPT's structures,
 simply omit the partition number, and invoke `limine-deploy` the same as one
 would do for an MBR partitioned device.
 
-The boot device must to contain the `limine.sys` and `limine.cfg` files in
+The boot device must contain the `limine.sys` and `limine.cfg` files in
 either the root, `limine`, `boot`, or `boot/limine` directory of one of the
 partitions, formatted with a supported file system.
 

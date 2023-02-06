@@ -155,14 +155,7 @@ int init_config(size_t config_size) {
         }
 
         if (memcmp(hash_buf, out_buf, BLAKE2B_OUT_BYTES) != 0) {
-            print("!!! CHECKSUM MISMATCH FOR CONFIG FILE !!!\n");
-            print("If you do not know what this means, ANSWER WITH 'N' NOW!\n");
-            print("Proceed with boot anyways? [y/N]: ");
-            if (getchar() != 'y') {
-                print("\n");
-                panic(true, "Checksum mismatch for config file");
-            }
-            print("\n");
+            panic(true, "!!! CHECKSUM MISMATCH FOR CONFIG FILE !!!");
         }
     }
 

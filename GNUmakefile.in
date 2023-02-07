@@ -103,8 +103,12 @@ $(call MKESCAPE,$(BINDIR))/limine-enroll-config: $(call MKESCAPE,$(BINDIR))/Make
 	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))' limine-enroll-config
 
 $(call MKESCAPE,$(BINDIR))/Makefile: $(call MKESCAPE,$(SRCDIR))/host/Makefile $(call MKESCAPE,$(SRCDIR))/host/.gitignore
-	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
-	cp '$(call SHESCAPE,$(SRCDIR))/host/Makefile' '$(call SHESCAPE,$(SRCDIR))/host/.gitignore' '$(call SHESCAPE,$(BINDIR))/'
+	if mkdir '$(call SHESCAPE,$(BINDIR))'; then \
+        cp '$(call SHESCAPE,$(SRCDIR))/host/Makefile' '$(call SHESCAPE,$(SRCDIR))/host/.gitignore' '$(call SHESCAPE,$(BINDIR))/'; \
+    else \
+        while ! [ -f '$(call SHESCAPE,$(SRCDIR))/host/Makefile' ]; do true; done; \
+        while ! [ -f '$(call SHESCAPE,$(SRCDIR))/host/.gitignore' ]; do true; done; \
+    fi
 
 .PHONY: limine-deploy
 limine-deploy:

@@ -1,22 +1,67 @@
+#undef IS_WINDOWS
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+#define IS_WINDOWS 1
+#endif
+
 #include <stddef.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define CONFIG_B2SUM_SIGNATURE "++CONFIG_B2SUM_SIGNATURE++"
 
+static void usage(const char *name) {
+    printf("Usage: %s <Limine executable> <BLAKE2B of config file>\n", name);
+    printf("\n");
+    printf("    --reset      Remove enrolled BLAKE2B, will not check config intergrity\n");
+    printf("\n");
+    printf("    --quiet      Do not print verbose diagnostic messages\n");
+    printf("\n");
+    printf("    --help | -h  Display this help message\n");
+    printf("\n");
+}
+
+static void remove_arg(int *argc, char *argv[], int index) {
+    for (int i = index; i < *argc - 1; i++) {
+        argv[i] = argv[i + 1];
+    }
+
+    (*argc)--;
+
+    argv[*argc] = NULL;
+}
+
 int main(int argc, char *argv[]) {
-    int ret = 1;
+    int ret = EXIT_FAILURE;
 
     char *bootloader = NULL;
     FILE *bootloader_file = NULL;
+    bool quiet = false;
+    bool reset = false;
 
-    if (argc <= 2) {
-        fprintf(stderr, "usage: %s <Limine bootloader executable> <128-byte BLAKE2B of config file>\n", argv[0]);
-        goto cleanup;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+            usage(argv[0]);
+            return EXIT_SUCCESS;
+        } else if (strcmp(argv[i], "--quiet") == 0) {
+            remove_arg(&argc, argv, i);
+            quiet = true;
+        } else if (strcmp(argv[i], "--reset") == 0) {
+            remove_arg(&argc, argv, i);
+            reset = true;
+        }
     }
 
-    if (strlen(argv[2]) != 128) {
+    if (argc <= (reset ? 1 : 2)) {
+        usage(argv[0]);
+#ifdef IS_WINDOWS
+        system("pause");
+#endif
+        return EXIT_FAILURE;
+    }
+
+    if (!reset && strlen(argv[2]) != 128) {
         fprintf(stderr, "ERROR: BLAKE2B specified is not 128 characters long\n");
         goto cleanup;
     }
@@ -67,7 +112,11 @@ int main(int argc, char *argv[]) {
         goto cleanup;
     }
 
-    memcpy(checksum_loc, argv[2], 128);
+    if (!reset) {
+        memcpy(checksum_loc, argv[2], 128);
+    } else {
+        memset(checksum_loc, '0', 128);
+    }
 
     if (fseek(bootloader_file, 0, SEEK_SET) != 0) {
         perror("ERROR");
@@ -78,8 +127,10 @@ int main(int argc, char *argv[]) {
         goto cleanup;
     }
 
-    fprintf(stderr, "Config file BLAKE2B successfully enrolled!\n");
-    ret = 0;
+    if (!quiet) {
+        fprintf(stderr, "Config file BLAKE2B successfully %s!\n", reset ? "reset" : "enrolled");
+    }
+    ret = EXIT_SUCCESS;
 
 cleanup:
     if (bootloader != NULL) {

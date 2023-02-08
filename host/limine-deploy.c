@@ -506,9 +506,6 @@ static void usage(const char *name) {
     printf("\n");
     printf("    --help | -h     Display this help message\n");
     printf("\n");
-#ifdef IS_WINDOWS
-    system("pause");
-#endif
 }
 
 int main(int argc, char *argv[]) {
@@ -526,6 +523,9 @@ int main(int argc, char *argv[]) {
 
     if (argc < 2) {
         usage(argv[0]);
+#ifdef IS_WINDOWS
+        system("pause");
+#endif
         return EXIT_FAILURE;
     }
 

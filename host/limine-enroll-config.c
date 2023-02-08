@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     char *checksum_loc = NULL;
     size_t checked_count = 0;
     const char *config_b2sum_sign = CONFIG_B2SUM_SIGNATURE;
-    for (size_t i = 0; i < bootloader_size; i++) {
+    for (size_t i = 0; i < bootloader_size - ((sizeof(CONFIG_B2SUM_SIGNATURE) - 1) + 128) + 1; i++) {
         if (bootloader[i] != config_b2sum_sign[checked_count]) {
             checked_count = 0;
             continue;

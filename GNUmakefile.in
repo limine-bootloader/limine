@@ -304,7 +304,7 @@ maintainer-clean: distclean
 .PHONY: common-uefi-x86-64
 common-uefi-x86-64:
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all \
-		CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk' \
+		CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-elf-toolchain.mk' \
 		TARGET=uefi-x86-64 \
 		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64'
 
@@ -315,7 +315,7 @@ common-uefi-x86-64-clean:
 .PHONY: common-uefi-aarch64
 common-uefi-aarch64:
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all \
-		CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/aarch64-toolchain.mk' \
+		CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/aarch64-elf-toolchain.mk' \
 		TARGET=uefi-aarch64 \
 		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-aarch64'
 
@@ -326,7 +326,7 @@ common-uefi-aarch64-clean:
 .PHONY: common-uefi-ia32
 common-uefi-ia32:
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all \
-		CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/i686-toolchain.mk' \
+		CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/i686-elf-toolchain.mk' \
 		TARGET=uefi-ia32 \
 		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32'
 
@@ -337,7 +337,7 @@ common-uefi-ia32-clean:
 .PHONY: common-bios
 common-bios:
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/common' all \
-		CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/i686-toolchain.mk' \
+		CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/i686-elf-toolchain.mk' \
 		TARGET=bios \
 		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/common-bios'
 
@@ -348,7 +348,7 @@ common-bios-clean:
 .PHONY: decompressor
 decompressor:
 	$(MAKE) -C '$(call SHESCAPE,$(SRCDIR))/decompressor' all \
-		CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/i686-toolchain.mk' \
+		CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/i686-elf-toolchain.mk' \
 		BUILDDIR='$(call SHESCAPE,$(BUILDDIR))/decompressor-build'
 
 .PHONY: decompressor-clean
@@ -391,7 +391,7 @@ ext2-test:
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
 	$(MAKE) limine-deploy
-	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-elf-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -414,7 +414,7 @@ fat12-test:
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
 	$(MAKE) limine-deploy
-	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-elf-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -437,7 +437,7 @@ fat16-test:
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
 	$(MAKE) limine-deploy
-	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-elf-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -461,7 +461,7 @@ legacy-fat16-test:
 	fdisk -l mbrtest.hdd
 	$(MAKE) limine-bios
 	$(MAKE) limine-deploy
-	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-elf-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show mbrtest.hdd > loopback_dev
@@ -484,7 +484,7 @@ fat32-test:
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
 	$(MAKE) limine-deploy
-	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-elf-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -506,7 +506,7 @@ iso9660-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-elf-toolchain.mk'
 	rm -rf test_image/
 	$(MKDIR_P) test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
@@ -520,7 +520,7 @@ full-hybrid-test:
 	$(MAKE) ovmf-ia32
 	$(MAKE) test-clean
 	$(MAKE) all
-	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-elf-toolchain.mk'
 	rm -rf test_image/
 	$(MKDIR_P) test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
@@ -538,7 +538,7 @@ full-hybrid-test:
 pxe-test:
 	$(MAKE) test-clean
 	$(MAKE) limine-bios
-	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-elf-toolchain.mk'
 	rm -rf test_image/
 	$(MKDIR_P) test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
@@ -551,7 +551,7 @@ uefi-x86-64-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-uefi-x86-64
-	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-elf-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -575,7 +575,7 @@ uefi-aa64-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-uefi-aarch64
-	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/aarch64-toolchain.mk'
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/aarch64-elf-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -599,7 +599,7 @@ uefi-ia32-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-uefi-ia32
-	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-toolchain.mk'
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-elf-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev

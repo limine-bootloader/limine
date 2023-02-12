@@ -12,7 +12,11 @@ AC_SUBST(SRCDIR)
 AC_SUBST(BUILDDIR)
 
 test "x$CFLAGS" = "x" && CFLAGS='-g -O2 -pipe -Wall -Wextra'
+
+AC_LANG(C)
 AC_PROG_CC
+
+AC_CHECK_HEADERS([stdint.h stddef.h stdbool.h limits.h inttypes.h stdio.h stdlib.h string.h])
 
 werror_state="no"
 AC_ARG_ENABLE([werror],
@@ -40,6 +44,14 @@ AC_CHECK_PROG([FIND_FOUND], [find], [yes])
 if ! test "x$FIND_FOUND" = "xyes"; then
     AC_MSG_ERROR([find not found, please install find before configuring])
 fi
+
+NATIVE_STRIP="$($CC -dumpmachine)"-strip
+AC_CHECK_PROG([NATIVE_STRIP_FOUND], $NATIVE_STRIP, [yes])
+if ! test "x$NATIVE_STRIP_FOUND" = "xyes"; then
+    NATIVE_STRIP=strip
+fi
+
+AC_SUBST(NATIVE_STRIP)
 
 rm -rf "$BUILDDIR/cross-files"
 

@@ -126,8 +126,8 @@ limine-enroll-config:
 clean: limine-bios-clean limine-uefi-ia32-clean limine-uefi-x86-64-clean limine-uefi-aarch64-clean
 	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 
-.PHONY: install-data
-install-data: all
+.PHONY: install
+install: all
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))'
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine'
 ifeq ($(BUILD_BIOS),limine-bios)
@@ -153,23 +153,19 @@ ifeq ($(BUILD_UEFI_IA32),limine-uefi-ia32)
 endif
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))'
 	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/limine.h' '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))/'
-
-.PHONY: install-strip
-install-strip: install-data
-	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))'
-	$(INSTALL_PROGRAM) -s '$(call SHESCAPE,$(BINDIR))/limine-version' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
-	$(INSTALL_PROGRAM) -s '$(call SHESCAPE,$(BINDIR))/limine-enroll-config' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
-ifneq ($(BUILD_LIMINE_DEPLOY),no)
-	$(INSTALL_PROGRAM) -s '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
-endif
-
-.PHONY: install
-install: install-data
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))'
 	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-version' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
 	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-enroll-config' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
 ifneq ($(BUILD_LIMINE_DEPLOY),no)
 	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
+endif
+
+.PHONY: install-strip
+install-strip: install
+	@NATIVE_STRIP@ '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/limine-version'
+	@NATIVE_STRIP@ '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/limine-enroll-config'
+ifneq ($(BUILD_LIMINE_DEPLOY),no)
+	@NATIVE_STRIP@ '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/limine-deploy'
 endif
 
 .PHONY: uninstall

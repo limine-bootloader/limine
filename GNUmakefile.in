@@ -83,7 +83,11 @@ override LIMINE_VERSION := @PACKAGE_VERSION@
 override STAGE1_FILES := $(shell find '$(call SHESCAPE,$(SRCDIR))/stage1' -type f -name '*.asm')
 
 .PHONY: all
-all: limine-version limine-enroll-config $(BUILD_UEFI_X86_64) $(BUILD_UEFI_IA32) $(BUILD_UEFI_AARCH64) $(BUILD_BIOS)
+all: $(call MKESCAPE,$(BINDIR))/Makefile
+	$(MAKE) all1
+
+.PHONY: all1
+all1: limine-version limine-enroll-config $(BUILD_UEFI_X86_64) $(BUILD_UEFI_IA32) $(BUILD_UEFI_AARCH64) $(BUILD_BIOS)
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'
 
 $(call MKESCAPE,$(BINDIR))/limine-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-hdd.bin
@@ -103,12 +107,8 @@ $(call MKESCAPE,$(BINDIR))/limine-enroll-config: $(call MKESCAPE,$(BINDIR))/Make
 	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))' limine-enroll-config
 
 $(call MKESCAPE,$(BINDIR))/Makefile: $(call MKESCAPE,$(SRCDIR))/host/Makefile $(call MKESCAPE,$(SRCDIR))/host/.gitignore
-	if mkdir '$(call SHESCAPE,$(BINDIR))'; then \
-        cp '$(call SHESCAPE,$(SRCDIR))/host/Makefile' '$(call SHESCAPE,$(SRCDIR))/host/.gitignore' '$(call SHESCAPE,$(BINDIR))/'; \
-    else \
-        while ! [ -f '$(call SHESCAPE,$(SRCDIR))/host/Makefile' ]; do true; done; \
-        while ! [ -f '$(call SHESCAPE,$(SRCDIR))/host/.gitignore' ]; do true; done; \
-    fi
+	mkdir -p '$(call SHESCAPE,$(BINDIR))'
+	cp '$(call SHESCAPE,$(SRCDIR))/host/Makefile' '$(call SHESCAPE,$(SRCDIR))/host/.gitignore' '$(call SHESCAPE,$(BINDIR))/'
 
 .PHONY: limine-deploy
 limine-deploy:

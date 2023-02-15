@@ -1,0 +1,62 @@
+--- common/stb/stb_image.h	2023-02-15 10:53:10.719623884 +0100
++++ common/stb/stb_image.h	2023-02-15 10:54:43.312960410 +0100
+@@ -127,6 +127,37 @@
+ #ifndef STBI_INCLUDE_STB_IMAGE_H
+ #define STBI_INCLUDE_STB_IMAGE_H
+ 
++#include <stddef.h>
++#include <lib/libc.h>
++#include <mm/pmm.h>
++
++#define INT_MAX __INT_MAX__
++#define INT_MIN (-INT_MAX - 1)
++
++#define UINT_MAX ((size_t)INT_MAX * 2 + 1)
++#define UINT_MIN (-UINT_MAX - 1)
++
++#define SHRT_MAX __SHRT_MAX__
++#define SHRT_MIN (-SHRT_MAX - 1)
++
++#define STBI_ASSERT(x)
++
++#define STBI_MALLOC(x) ext_mem_alloc(x)
++#define STBI_REALLOC(x, y) ({ \
++    void *STBI_REALLOC_new_buf = ext_mem_alloc(y); \
++    memcpy(STBI_REALLOC_new_buf, x, y); \
++    STBI_REALLOC_new_buf; \
++})
++#define STBI_FREE(x)
++
++#define STBI_NO_THREAD_LOCALS
++#define STBI_NO_STDIO
++#define STBI_NO_SIMD
++#define STBI_NO_LINEAR
++
++#define STBI_ONLY_ZLIB
++#define STBI_SUPPORT_ZLIB
++
+ // DOCUMENTATION
+ //
+ // Limitations:
+@@ -381,7 +412,7 @@
+    STBI_rgb_alpha  = 4
+ };
+ 
+-#include <stdlib.h>
++// #include <stdlib.h>
+ typedef unsigned char stbi_uc;
+ typedef unsigned short stbi_us;
+ 
+@@ -584,9 +615,9 @@
+ 
+ #include <stdarg.h>
+ #include <stddef.h> // ptrdiff_t on osx
+-#include <stdlib.h>
+-#include <string.h>
+-#include <limits.h>
++// #include <stdlib.h>
++// #include <string.h>
++// #include <limits.h>
+ 
+ #if !defined(STBI_NO_LINEAR) || !defined(STBI_NO_HDR)
+ #include <math.h>  // ldexp, pow

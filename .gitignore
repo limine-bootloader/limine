@@ -5,6 +5,7 @@
 /freestanding-headers
 /libgcc-binaries
 /common/term
+/common/stb/stb_image.h
 /ovmf*
 *.o
 *.d

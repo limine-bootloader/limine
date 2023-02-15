@@ -283,8 +283,9 @@ struct file_handle *uri_open(char *uri) {
         memcpy(compressed_fd->path, ret->path, ret->path_len);
         compressed_fd->path_len = ret->path_len;
         compressed_fd->is_memfile = true;
+        uint64_t src_size = ret->size;
         fclose(ret);
-        pmm_free(src, ret->size);
+        pmm_free(src, src_size);
         ret = compressed_fd;
     }
 

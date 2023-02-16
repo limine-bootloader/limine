@@ -24,6 +24,7 @@
  *      distribution.
  */
 
+#include <stdint.h>
 #include <stb/stb_image.h>
 
 typedef enum {
@@ -34,29 +35,27 @@ typedef enum {
     FCOMMENT = 16
 } tinf_gzip_flag;
 
-int tinf_gzip_uncompress(void *dest, unsigned int limit,
-                         const void *source, unsigned int sourceLen) {
-    const unsigned char *src = (const unsigned char *) source;
-    unsigned char *dst = (unsigned char *) dest;
-    const unsigned char *start;
+void *tinf_gzip_uncompress(const void *source, uint64_t sourceLen, uint64_t *outsize) {
+    const uint8_t *src = (const uint8_t *) source;
+    const uint8_t *start;
     int res;
-    unsigned char flg;
+    uint8_t flg;
 
     /* -- Check header -- */
 
     /* Check room for at least 10 byte header and 8 byte trailer */
     if (sourceLen < 18) {
-        return -1;
+        return NULL;
     }
 
     /* Check id bytes */
     if (src[0] != 0x1F || src[1] != 0x8B) {
-        return -1;
+        return NULL;
     }
 
     /* Check method is deflate */
     if (src[2] != 8) {
-        return -1;
+        return NULL;
     }
 
     /* Get flag byte */
@@ -64,7 +63,7 @@ int tinf_gzip_uncompress(void *dest, unsigned int limit,
 
     /* Check that reserved bits are zero */
     if (flg & 0xE0) {
-        return -1;
+        return NULL;
     }
 
     /* -- Find start of compressed data -- */
@@ -74,10 +73,10 @@ int tinf_gzip_uncompress(void *dest, unsigned int limit,
 
     /* Skip extra data if present */
     if (flg & FEXTRA) {
-        unsigned int xlen = *start;
+        uint64_t xlen = *((uint16_t *)start);
 
         if (xlen > sourceLen - 12) {
-            return -1;
+            return NULL;
         }
 
         start += xlen + 2;
@@ -86,8 +85,8 @@ int tinf_gzip_uncompress(void *dest, unsigned int limit,
     /* Skip file name if present */
     if (flg & FNAME) {
         do {
-            if (((unsigned int)(start - src)) >= sourceLen) {
-                return -1;
+            if (((uint64_t)(start - src)) >= sourceLen) {
+                return NULL;
             }
         } while (*start++);
     }
@@ -95,8 +94,8 @@ int tinf_gzip_uncompress(void *dest, unsigned int limit,
     /* Skip file comment if present */
     if (flg & FCOMMENT) {
         do {
-            if (((unsigned int)(start - src)) >= sourceLen) {
-                return -1;
+            if (((uint64_t)(start - src)) >= sourceLen) {
+                return NULL;
             }
         } while (*start++);
     }
@@ -105,13 +104,25 @@ int tinf_gzip_uncompress(void *dest, unsigned int limit,
         start += 2;
     }
 
+    /* -- Get decompressed length -- */
+
+    uint32_t dlen = *((uint32_t *)&src[sourceLen - 4]);
+
     /* -- Decompress data -- */
 
     if ((src + sourceLen) - start < 8) {
-        return -1;
+        return NULL;
     }
 
-    res = stbi_zlib_decode_noheader_buffer((char *)dst, limit, (const char *)start, (src + sourceLen) - start - 8);
+    void *buf = ext_mem_alloc(dlen);
 
-    return res == -1 ? res : 0;
+    res = stbi_zlib_decode_noheader_buffer(buf, dlen, (const char *)start, (src + sourceLen) - start - 8);
+
+    if (res == -1) {
+        pmm_free(buf, dlen);
+        return NULL;
+    }
+
+    *outsize = (uint64_t)dlen;
+    return buf;
 }

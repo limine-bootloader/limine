@@ -625,6 +625,8 @@ noreturn void _menu(bool first_run) {
 #endif
     }
 
+    term_fallback();
+
     if (bad_config == false) {
 #if defined (UEFI)
         if (init_config_disk(boot_volume)) {

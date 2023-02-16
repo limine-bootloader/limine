@@ -54,6 +54,9 @@ noreturn void panic(bool allow_menu, const char *fmt, ...) {
 
         getchar();
 
+        // This fixes a crash
+        term_notready();
+
         menu(false);
 /*
         fb_clear(&fbinfo);

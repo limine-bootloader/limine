@@ -43,6 +43,7 @@ SECTIONS
         term_write = .;
         term_backend = .;
         term_fallback = .;
+        term_notready = .;
         terms = .;
         terms_i = .;
         stage3_addr = .;

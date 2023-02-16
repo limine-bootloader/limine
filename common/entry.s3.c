@@ -130,5 +130,7 @@ noreturn void stage3_common(void) {
     init_io_apics();
 #endif
 
+    term_notready();
+
     menu(true);
 }

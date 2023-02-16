@@ -218,10 +218,7 @@ noreturn void efi_chainload_file(char *config, char *cmdline, struct file_handle
     pmm_free(_ptr, image->size);
     fclose(image);
 
-    if (term != NULL) {
-        term->deinit(term, pmm_free);
-        term = NULL;
-    }
+    term_notready();
 
     size_t req_width = 0, req_height = 0, req_bpp = 0;
 
@@ -229,9 +226,9 @@ noreturn void efi_chainload_file(char *config, char *cmdline, struct file_handle
     if (resolution != NULL)
         parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
-    struct fb_info fbinfo;
-    if (!fb_init(&fbinfo, req_width, req_height, req_bpp))
-        panic(true, "chainload: Unable to set video mode");
+    struct fb_info *fbinfo;
+    size_t fb_count;
+    fb_init(&fbinfo, &fb_count, req_width, req_height, req_bpp);
 
     size_t cmdline_len = strlen(cmdline);
     CHAR16 *new_cmdline;

@@ -8,89 +8,28 @@
 #include <drivers/vga_textmode.h>
 #include <term/backends/framebuffer.h>
 
+#if defined (BIOS)
 int current_video_mode = -1;
+#endif
+
+struct term_context **terms = NULL;
+size_t terms_i = 0;
+
 int term_backend = _NOT_READY;
 
-struct term_context *term;
+void term_notready(void) {
+    for (size_t i = 0; i < terms_i; i++) {
+        struct term_context *term = terms[i];
 
-static struct term_context term_local_struct;
-
-// --- notready ---
-
-static void notready_raw_putchar(struct term_context *ctx, uint8_t c) {
-    (void)ctx;
-    (void)c;
-}
-static void notready_clear(struct term_context *ctx, bool move) {
-    (void)ctx;
-    (void)move;
-}
-static void notready_void(struct term_context *ctx) {
-    (void)ctx;
-}
-static void notready_set_cursor_pos(struct term_context *ctx, size_t x, size_t y) {
-    (void)ctx;
-    (void)x; (void)y;
-}
-static void notready_get_cursor_pos(struct term_context *ctx, size_t *x, size_t *y) {
-    (void)ctx;
-    *x = 0;
-    *y = 0;
-}
-static void notready_size_t(struct term_context *ctx, size_t n) {
-    (void)ctx;
-    (void)n;
-}
-static void notready_move_character(struct term_context *ctx, size_t a, size_t b, size_t c, size_t d) {
-    (void)ctx;
-    (void)a; (void)b; (void)c; (void)d;
-}
-static void notready_uint32_t(struct term_context *ctx, uint32_t n) {
-    (void)ctx;
-    (void)n;
-}
-static void notready_deinit(struct term_context *ctx, void (*_free)(void *, size_t)) {
-    (void)ctx;
-    (void)_free;
-}
-
-static void term_notready(void) {
-    if (term != NULL) {
         term->deinit(term, pmm_free);
-        term = NULL;
     }
 
-    term = &term_local_struct;
+    pmm_free(terms, terms_i * sizeof(void *));
 
-    term->raw_putchar = notready_raw_putchar;
-    term->clear = notready_clear;
-    term->set_cursor_pos = notready_set_cursor_pos;
-    term->get_cursor_pos = notready_get_cursor_pos;
-    term->set_text_fg = notready_size_t;
-    term->set_text_bg = notready_size_t;
-    term->set_text_fg_bright = notready_size_t;
-    term->set_text_bg_bright = notready_size_t;
-    term->set_text_fg_rgb = notready_uint32_t;
-    term->set_text_bg_rgb = notready_uint32_t;
-    term->set_text_fg_default = notready_void;
-    term->set_text_bg_default = notready_void;
-    term->move_character = notready_move_character;
-    term->scroll = notready_void;
-    term->revscroll = notready_void;
-    term->swap_palette = notready_void;
-    term->save_state = notready_void;
-    term->restore_state = notready_void;
-    term->double_buffer_flush = notready_void;
-    term->full_refresh = notready_void;
-    term->deinit = notready_deinit;
-
-    term->cols = 80;
-    term->rows = 24;
+    terms_i = 0;
+    terms = NULL;
 
     term_backend = _NOT_READY;
-    term_context_reinit(term);
-
-    term->in_bootloader = true;
 }
 
 // --- fallback ---
@@ -156,7 +95,7 @@ static void fallback_scroll(struct term_context *ctx) {
     (void)ctx;
     size_t x, y;
     fallback_get_cursor_pos(NULL, &x, &y);
-    fallback_set_cursor_pos(NULL, term->cols - 1, term->rows - 1);
+    fallback_set_cursor_pos(NULL, ctx->cols - 1, ctx->rows - 1);
     fallback_raw_putchar(NULL, ' ');
     fallback_set_cursor_pos(NULL, x, y);
 }
@@ -167,7 +106,7 @@ static size_t cursor_x = 0, cursor_y = 0;
 
 static void fallback_scroll(struct term_context *ctx) {
     (void)ctx;
-    gST->ConOut->SetCursorPosition(gST->ConOut, term->cols - 1, term->rows - 1);
+    gST->ConOut->SetCursorPosition(gST->ConOut, ctx->cols - 1, ctx->rows - 1);
     CHAR16 string[2];
     string[0] = ' ';
     string[1] = 0;
@@ -176,7 +115,7 @@ static void fallback_scroll(struct term_context *ctx) {
 }
 
 static void fallback_raw_putchar(struct term_context *ctx, uint8_t c) {
-    if (!ctx->scroll_enabled && cursor_x == term->cols - 1 && cursor_y == term->rows - 1) {
+    if (!ctx->scroll_enabled && cursor_x == ctx->cols - 1 && cursor_y == ctx->rows - 1) {
         return;
     }
     gST->ConOut->EnableCursor(gST->ConOut, true);
@@ -184,9 +123,9 @@ static void fallback_raw_putchar(struct term_context *ctx, uint8_t c) {
     string[0] = c;
     string[1] = 0;
     gST->ConOut->OutputString(gST->ConOut, string);
-    if (++cursor_x >= term->cols) {
+    if (++cursor_x >= ctx->cols) {
         cursor_x = 0;
-        if (++cursor_y >= term->rows) {
+        if (++cursor_y >= ctx->rows) {
             cursor_y--;
         }
     }
@@ -204,7 +143,7 @@ static void fallback_clear(struct term_context *ctx, bool move) {
 
 static void fallback_set_cursor_pos(struct term_context *ctx, size_t x, size_t y) {
     (void)ctx;
-    if (x >= term->cols || y >= term->rows) {
+    if (x >= ctx->cols || y >= ctx->rows) {
         return;
     }
     gST->ConOut->SetCursorPosition(gST->ConOut, x, y);
@@ -219,13 +158,43 @@ static void fallback_get_cursor_pos(struct term_context *ctx, size_t *x, size_t 
 }
 #endif
 
+static bool dummy_handle(void) {
+    return true;
+}
+
 void term_fallback(void) {
     term_notready();
 
 #if defined (UEFI)
     if (!efi_boot_services_exited) {
 #endif
+
+        terms = ext_mem_alloc(sizeof(void *));
+        terms_i = 1;
+
+        terms[0] = ext_mem_alloc(sizeof(struct term_context));
+
+        struct term_context *term = terms[0];
+
         fallback_clear(NULL, true);
+
+        term->set_text_fg = (void *)dummy_handle;
+        term->set_text_bg = (void *)dummy_handle;
+        term->set_text_fg_bright = (void *)dummy_handle;
+        term->set_text_bg_bright = (void *)dummy_handle;
+        term->set_text_fg_rgb = (void *)dummy_handle;
+        term->set_text_bg_rgb = (void *)dummy_handle;
+        term->set_text_fg_default = (void *)dummy_handle;
+        term->set_text_bg_default = (void *)dummy_handle;
+        term->move_character = (void *)dummy_handle;
+        term->revscroll = (void *)dummy_handle;
+        term->swap_palette = (void *)dummy_handle;
+        term->save_state = (void *)dummy_handle;
+        term->restore_state = (void *)dummy_handle;
+        term->double_buffer_flush = (void *)dummy_handle;
+        term->full_refresh = (void *)dummy_handle;
+        term->deinit = (void *)dummy_handle;
+
         term->raw_putchar = fallback_raw_putchar;
         term->clear = fallback_clear;
         term->set_cursor_pos = fallback_set_cursor_pos;
@@ -258,7 +227,7 @@ extern void set_cursor_pos_helper(size_t x, size_t y);
 static uint8_t xfer_buf[TERM_XFER_CHUNK];
 #endif
 
-static uint64_t context_size(void) {
+static uint64_t context_size(struct term_context *term) {
     switch (term_backend) {
 #if defined (BIOS)
         case TEXTMODE:
@@ -279,7 +248,7 @@ static uint64_t context_size(void) {
     }
 }
 
-static void context_save(uint64_t buf) {
+static void context_save(struct term_context *term, uint64_t buf) {
     switch (term_backend) {
 #if defined (BIOS)
         case TEXTMODE: {
@@ -314,7 +283,7 @@ static void context_save(uint64_t buf) {
     }
 }
 
-static void context_restore(uint64_t buf) {
+static void context_restore(struct term_context *term, uint64_t buf) {
     switch (term_backend) {
 #if defined (BIOS)
         case TEXTMODE: {
@@ -349,7 +318,7 @@ static void context_restore(uint64_t buf) {
     }
 }
 
-void _term_write(uint64_t buf, uint64_t count) {
+void _term_write(struct term_context *term, uint64_t buf, uint64_t count) {
     switch (count) {
         case TERM_OOB_OUTPUT_GET: {
             memcpy32to64(buf, (uint64_t)(uintptr_t)&term->oob_output, sizeof(uint64_t));
@@ -360,16 +329,16 @@ void _term_write(uint64_t buf, uint64_t count) {
             return;
         }
         case TERM_CTX_SIZE: {
-            uint64_t ret = context_size();
+            uint64_t ret = context_size(term);
             memcpy32to64(buf, (uint64_t)(uintptr_t)&ret, sizeof(uint64_t));
             return;
         }
         case TERM_CTX_SAVE: {
-            context_save(buf);
+            context_save(term, buf);
             return;
         }
         case TERM_CTX_RESTORE: {
-            context_restore(buf);
+            context_restore(term, buf);
             return;
         }
         case TERM_FULL_REFRESH: {

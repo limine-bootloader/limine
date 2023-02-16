@@ -516,29 +516,36 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
         tag->common.type = MULTIBOOT_TAG_TYPE_FRAMEBUFFER;
         tag->common.size = sizeof(struct multiboot_tag_framebuffer);
 
-        if (term != NULL) {
-            term->deinit(term, pmm_free);
-            term = NULL;
-        }
+        term_notready();
+
+        size_t req_width = 0;
+        size_t req_height = 0;
+        size_t req_bpp = 0;
 
         if (fbtag) {
-            size_t req_width = fbtag->width;
-            size_t req_height = fbtag->height;
-            size_t req_bpp = fbtag->depth;
+            req_width = fbtag->width;
+            req_height = fbtag->height;
+            req_bpp = fbtag->depth;
 
+#if defined (UEFI)
+modeset:;
+#endif
             char *resolution = config_get_value(config, 0, "RESOLUTION");
             if (resolution != NULL)
                 parse_resolution(&req_width, &req_height, &req_bpp, resolution);
 
-            struct fb_info fbinfo;
-            if (!fb_init(&fbinfo, req_width, req_height, req_bpp)) {
+            struct fb_info *fbs;
+            size_t fbs_count;
+            fb_init(&fbs, &fbs_count, req_width, req_height, req_bpp);
+            if (fbs_count == 0) {
 #if defined (BIOS)
+textmode:
                 vga_textmode_init(false);
 
                 tag->common.framebuffer_addr = 0xb8000;
-                tag->common.framebuffer_pitch = 2 * term->cols;
-                tag->common.framebuffer_width = term->cols;
-                tag->common.framebuffer_height = term->rows;
+                tag->common.framebuffer_pitch = 2 * 80;
+                tag->common.framebuffer_width = 80;
+                tag->common.framebuffer_height = 25;
                 tag->common.framebuffer_bpp = 16;
                 tag->common.framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT;
 #elif defined (UEFI)
@@ -549,54 +556,26 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
                 }
 #endif
             } else {
-                tag->common.framebuffer_addr = fbinfo.framebuffer_addr;
-                tag->common.framebuffer_pitch = fbinfo.framebuffer_pitch;
-                tag->common.framebuffer_width = fbinfo.framebuffer_width;
-                tag->common.framebuffer_height = fbinfo.framebuffer_height;
-                tag->common.framebuffer_bpp = fbinfo.framebuffer_bpp;
+                tag->common.framebuffer_addr = fbs[0].framebuffer_addr;
+                tag->common.framebuffer_pitch = fbs[0].framebuffer_pitch;
+                tag->common.framebuffer_width = fbs[0].framebuffer_width;
+                tag->common.framebuffer_height = fbs[0].framebuffer_height;
+                tag->common.framebuffer_bpp = fbs[0].framebuffer_bpp;
                 tag->common.framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_RGB; // We only support RGB for VBE
 
-                tag->framebuffer_red_field_position = fbinfo.red_mask_shift;
-                tag->framebuffer_red_mask_size = fbinfo.red_mask_size;
-                tag->framebuffer_green_field_position = fbinfo.green_mask_shift;
-                tag->framebuffer_green_mask_size = fbinfo.green_mask_size;
-                tag->framebuffer_blue_field_position = fbinfo.blue_mask_shift;
-                tag->framebuffer_blue_mask_size = fbinfo.blue_mask_size;
+                tag->framebuffer_red_field_position = fbs[0].red_mask_shift;
+                tag->framebuffer_red_mask_size = fbs[0].red_mask_size;
+                tag->framebuffer_green_field_position = fbs[0].green_mask_shift;
+                tag->framebuffer_green_mask_size = fbs[0].green_mask_size;
+                tag->framebuffer_blue_field_position = fbs[0].blue_mask_shift;
+                tag->framebuffer_blue_mask_size = fbs[0].blue_mask_size;
             }
         } else {
 #if defined (UEFI)
             print("multiboot2: Warning: Cannot use text mode with UEFI\n");
-            struct fb_info fbinfo;
-            if (!fb_init(&fbinfo, 0, 0, 0)) {
-                if (is_framebuffer_required) {
-                    panic(true, "multiboot2: Failed to set video mode");
-                } else {
-                    goto skip_modeset;
-                }
-            }
-
-            tag->common.framebuffer_addr = fbinfo.framebuffer_addr;
-            tag->common.framebuffer_pitch = fbinfo.framebuffer_pitch;
-            tag->common.framebuffer_width = fbinfo.framebuffer_width;
-            tag->common.framebuffer_height = fbinfo.framebuffer_height;
-            tag->common.framebuffer_bpp = fbinfo.framebuffer_bpp;
-            tag->common.framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_RGB; // We only support RGB for VBE
-
-            tag->framebuffer_red_field_position = fbinfo.red_mask_shift;
-            tag->framebuffer_red_mask_size = fbinfo.red_mask_size;
-            tag->framebuffer_green_field_position = fbinfo.green_mask_shift;
-            tag->framebuffer_green_mask_size = fbinfo.green_mask_size;
-            tag->framebuffer_blue_field_position = fbinfo.blue_mask_shift;
-            tag->framebuffer_blue_mask_size = fbinfo.blue_mask_size;
+            goto modeset;
 #elif defined (BIOS)
-            vga_textmode_init(false);
-
-            tag->common.framebuffer_addr = 0xb8000;
-            tag->common.framebuffer_width = term->cols;
-            tag->common.framebuffer_height = term->rows;
-            tag->common.framebuffer_bpp = 16;
-            tag->common.framebuffer_pitch = 2 * term->cols;
-            tag->common.framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT;
+            goto textmode;
 #endif
         }
 

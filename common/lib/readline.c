@@ -352,34 +352,34 @@ again:
 
 static void reprint_string(int x, int y, const char *s) {
     size_t orig_x, orig_y;
-    term->cursor_enabled = false;
-    term->get_cursor_pos(term, &orig_x, &orig_y);
+    FOR_TERM(TERM->cursor_enabled = false);
+    terms[0]->get_cursor_pos(terms[0], &orig_x, &orig_y);
     set_cursor_pos_helper(x, y);
     print("%s", s);
     set_cursor_pos_helper(orig_x, orig_y);
-    term->cursor_enabled = true;
+    FOR_TERM(TERM->cursor_enabled = true);
 }
 
 static void cursor_back(void) {
     size_t x, y;
-    term->get_cursor_pos(term, &x, &y);
+    terms[0]->get_cursor_pos(terms[0], &x, &y);
     if (x) {
         x--;
     } else if (y) {
         y--;
-        x = term->cols - 1;
+        x = terms[0]->cols - 1;
     }
     set_cursor_pos_helper(x, y);
 }
 
 static void cursor_fwd(void) {
     size_t x, y;
-    term->get_cursor_pos(term, &x, &y);
-    if (x < term->cols - 1) {
+    terms[0]->get_cursor_pos(terms[0], &x, &y);
+    if (x < terms[0]->cols - 1) {
         x++;
     } else {
         x = 0;
-        if (y < term->rows - 1) {
+        if (y < terms[0]->rows - 1) {
             y++;
         }
     }
@@ -387,20 +387,20 @@ static void cursor_fwd(void) {
 }
 
 void readline(const char *orig_str, char *buf, size_t limit) {
-    bool prev_autoflush = term->autoflush;
-    term->autoflush = false;
+    bool prev_autoflush = terms[0]->autoflush;
+    FOR_TERM(TERM->autoflush = false);
 
     size_t orig_str_len = strlen(orig_str);
     memmove(buf, orig_str, orig_str_len);
     buf[orig_str_len] = 0;
 
     size_t orig_x, orig_y;
-    term->get_cursor_pos(term, &orig_x, &orig_y);
+    terms[0]->get_cursor_pos(terms[0], &orig_x, &orig_y);
 
     print("%s", orig_str);
 
     for (size_t i = orig_str_len; ; ) {
-        term->double_buffer_flush(term);
+        FOR_TERM(TERM->double_buffer_flush(TERM));
         int c = getchar();
         switch (c) {
             case GETCHAR_CURSOR_LEFT:
@@ -460,11 +460,11 @@ void readline(const char *orig_str, char *buf, size_t limit) {
                     buf[i] = c;
                     i++;
                     size_t prev_x, prev_y;
-                    term->get_cursor_pos(term, &prev_x, &prev_y);
+                    terms[0]->get_cursor_pos(terms[0], &prev_x, &prev_y);
                     cursor_fwd();
                     reprint_string(orig_x, orig_y, buf);
                     // If cursor has wrapped around, move the line start position up one row
-                    if (prev_x == term->cols - 1 && prev_y == term->rows - 1) {
+                    if (prev_x == terms[0]->cols - 1 && prev_y == terms[0]->rows - 1) {
                         orig_y--;
                         print("\n\e[J");  // Clear the bottom line
                     }
@@ -474,6 +474,6 @@ void readline(const char *orig_str, char *buf, size_t limit) {
     }
 
 out:
-    term->double_buffer_flush(term);
-    term->autoflush = prev_autoflush;
+    FOR_TERM(TERM->double_buffer_flush(TERM));
+    FOR_TERM(TERM->autoflush = prev_autoflush);
 }

@@ -43,7 +43,9 @@ SECTIONS
         term_write = .;
         term_backend = .;
         term_fallback = .;
-        term = .;
+        term_notready = .;
+        terms = .;
+        terms_i = .;
         stage3_addr = .;
 #else
 #ifdef LINKER_NOS2MAP

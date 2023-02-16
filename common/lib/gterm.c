@@ -360,8 +360,6 @@ static const uint8_t builtin_font[] = {
   0x00, 0x00, 0x00, 0x00
 };
 
-struct fb_info fbinfo;
-
 static struct image *background;
 
 static size_t margin = 64;
@@ -390,10 +388,10 @@ static inline uint32_t colour_blend(uint32_t fg, uint32_t bg) {
     return ARGB(0, r, g, b);
 }
 
-static uint32_t blend_gradient_from_box(size_t x, size_t y, uint32_t bg_px, uint32_t hex) {
+static uint32_t blend_gradient_from_box(struct fb_info *fb, size_t x, size_t y, uint32_t bg_px, uint32_t hex) {
     size_t distance, x_distance, y_distance;
-    size_t gradient_stop_x = fbinfo.framebuffer_width - margin;
-    size_t gradient_stop_y = fbinfo.framebuffer_height - margin;
+    size_t gradient_stop_x = fb->framebuffer_width - margin;
+    size_t gradient_stop_y = fb->framebuffer_height - margin;
 
     if (x < margin)
         x_distance = margin - x;
@@ -428,7 +426,7 @@ static size_t fixedp6_to_int(fixedp6 value) { return value / 64; }
 static fixedp6 int_to_fixedp6(size_t value) { return value * 64; }
 
 // Draw rect at coordinates, copying from the image to the fb and canvas, applying fn on every pixel
-__attribute__((always_inline)) static inline void genloop(size_t xstart, size_t xend, size_t ystart, size_t yend, uint32_t (*blend)(size_t x, size_t y, uint32_t orig)) {
+__attribute__((always_inline)) static inline void genloop(struct fb_info *fb, size_t xstart, size_t xend, size_t ystart, size_t yend, uint32_t (*blend)(struct fb_info *fb, size_t x, size_t y, uint32_t orig)) {
     uint8_t *img = background->img;
     const size_t img_width = background->img_width, img_height = background->img_height, img_pitch = background->pitch, colsize = background->bpp / 8;
 
@@ -437,10 +435,10 @@ __attribute__((always_inline)) static inline void genloop(size_t xstart, size_t 
         for (size_t y = ystart; y < yend; y++) {
             size_t image_y = y % img_height, image_x = xstart % img_width;
             const size_t off = img_pitch * (img_height - 1 - image_y);
-            size_t canvas_off = fbinfo.framebuffer_width * y;
+            size_t canvas_off = fb->framebuffer_width * y;
             for (size_t x = xstart; x < xend; x++) {
                 uint32_t img_pixel = *(uint32_t*)(img + image_x * colsize + off);
-                uint32_t i = blend(x, y, img_pixel);
+                uint32_t i = blend(fb, x, y, img_pixel);
                 bg_canvas[canvas_off + x] = i;
                 if (image_x++ == img_width) image_x = 0; // image_x = x % img_width, but modulo is too expensive
             }
@@ -451,10 +449,10 @@ __attribute__((always_inline)) static inline void genloop(size_t xstart, size_t 
         for (size_t y = ystart; y < yend; y++) {
             size_t image_y = y - background->y_displacement;
             const size_t off = img_pitch * (img_height - 1 - image_y);
-            size_t canvas_off = fbinfo.framebuffer_width * y;
+            size_t canvas_off = fb->framebuffer_width * y;
             if (image_y >= background->y_size) { /* external part */
                 for (size_t x = xstart; x < xend; x++) {
-                    uint32_t i = blend(x, y, background->back_colour);
+                    uint32_t i = blend(fb, x, y, background->back_colour);
                     bg_canvas[canvas_off + x] = i;
                 }
             }
@@ -463,7 +461,7 @@ __attribute__((always_inline)) static inline void genloop(size_t xstart, size_t 
                     size_t image_x = (x - background->x_displacement);
                     bool x_external = image_x >= background->x_size;
                     uint32_t img_pixel = *(uint32_t*)(img + image_x * colsize + off);
-                    uint32_t i = blend(x, y, x_external ? background->back_colour : img_pixel);
+                    uint32_t i = blend(fb, x, y, x_external ? background->back_colour : img_pixel);
                     bg_canvas[canvas_off + x] = i;
                 }
             }
@@ -474,15 +472,15 @@ __attribute__((always_inline)) static inline void genloop(size_t xstart, size_t 
     // so you can set x = xstart * ratio, and increment by ratio at each iteration
     case IMAGE_STRETCHED:
         for (size_t y = ystart; y < yend; y++) {
-            size_t img_y = (y * img_height) / fbinfo.framebuffer_height; // calculate Y with full precision
+            size_t img_y = (y * img_height) / fb->framebuffer_height; // calculate Y with full precision
             size_t off = img_pitch * (img_height - 1 - img_y);
-            size_t canvas_off = fbinfo.framebuffer_width * y;
+            size_t canvas_off = fb->framebuffer_width * y;
 
-            size_t ratio = int_to_fixedp6(img_width) / fbinfo.framebuffer_width;
+            size_t ratio = int_to_fixedp6(img_width) / fb->framebuffer_width;
             fixedp6 img_x = ratio * xstart;
             for (size_t x = xstart; x < xend; x++) {
                 uint32_t img_pixel = *(uint32_t*)(img + fixedp6_to_int(img_x) * colsize + off);
-                uint32_t i = blend(x, y, img_pixel);
+                uint32_t i = blend(fb, x, y, img_pixel);
                 bg_canvas[canvas_off + x] = i;
                 img_x += ratio;
             }
@@ -491,17 +489,17 @@ __attribute__((always_inline)) static inline void genloop(size_t xstart, size_t 
     }
 }
 
-static uint32_t blend_external(size_t x, size_t y, uint32_t orig) { (void)x; (void)y; return orig; }
-static uint32_t blend_internal(size_t x, size_t y, uint32_t orig) { (void)x; (void)y; return colour_blend(default_bg, orig); }
-static uint32_t blend_margin(size_t x, size_t y, uint32_t orig) { return blend_gradient_from_box(x, y, orig, default_bg); }
+static uint32_t blend_external(struct fb_info *fb, size_t x, size_t y, uint32_t orig) { (void)fb; (void)x; (void)y; return orig; }
+static uint32_t blend_internal(struct fb_info *fb, size_t x, size_t y, uint32_t orig) { (void)fb; (void)x; (void)y; return colour_blend(default_bg, orig); }
+static uint32_t blend_margin(struct fb_info *fb, size_t x, size_t y, uint32_t orig) { return blend_gradient_from_box(fb, x, y, orig, default_bg); }
 
-static void loop_external(size_t xstart, size_t xend, size_t ystart, size_t yend) { genloop(xstart, xend, ystart, yend, blend_external); }
-static void loop_margin(size_t xstart, size_t xend, size_t ystart, size_t yend) { genloop(xstart, xend, ystart, yend, blend_margin); }
-static void loop_internal(size_t xstart, size_t xend, size_t ystart, size_t yend) { genloop(xstart, xend, ystart, yend, blend_internal); }
+static void loop_external(struct fb_info *fb, size_t xstart, size_t xend, size_t ystart, size_t yend) { genloop(fb, xstart, xend, ystart, yend, blend_external); }
+static void loop_margin(struct fb_info *fb, size_t xstart, size_t xend, size_t ystart, size_t yend) { genloop(fb, xstart, xend, ystart, yend, blend_margin); }
+static void loop_internal(struct fb_info *fb, size_t xstart, size_t xend, size_t ystart, size_t yend) { genloop(fb, xstart, xend, ystart, yend, blend_internal); }
 
-static void generate_canvas(void) {
+static void generate_canvas(struct fb_info *fb) {
     if (background) {
-        bg_canvas_size = fbinfo.framebuffer_width * fbinfo.framebuffer_height * sizeof(uint32_t);
+        bg_canvas_size = fb->framebuffer_width * fb->framebuffer_height * sizeof(uint32_t);
         bg_canvas = ext_mem_alloc(bg_canvas_size);
 
         int64_t margin_no_gradient = (int64_t)margin - margin_gradient;
@@ -510,98 +508,75 @@ static void generate_canvas(void) {
             margin_no_gradient = 0;
         }
 
-        size_t scan_stop_x = fbinfo.framebuffer_width - margin_no_gradient;
-        size_t scan_stop_y = fbinfo.framebuffer_height - margin_no_gradient;
+        size_t scan_stop_x = fb->framebuffer_width - margin_no_gradient;
+        size_t scan_stop_y = fb->framebuffer_height - margin_no_gradient;
 
-        loop_external(0, fbinfo.framebuffer_width, 0, margin_no_gradient);
-        loop_external(0, fbinfo.framebuffer_width, scan_stop_y, fbinfo.framebuffer_height);
-        loop_external(0, margin_no_gradient, margin_no_gradient, scan_stop_y);
-        loop_external(scan_stop_x, fbinfo.framebuffer_width, margin_no_gradient, scan_stop_y);
+        loop_external(fb, 0, fb->framebuffer_width, 0, margin_no_gradient);
+        loop_external(fb, 0, fb->framebuffer_width, scan_stop_y, fb->framebuffer_height);
+        loop_external(fb, 0, margin_no_gradient, margin_no_gradient, scan_stop_y);
+        loop_external(fb, scan_stop_x, fb->framebuffer_width, margin_no_gradient, scan_stop_y);
 
-        size_t gradient_stop_x = fbinfo.framebuffer_width - margin;
-        size_t gradient_stop_y = fbinfo.framebuffer_height - margin;
+        size_t gradient_stop_x = fb->framebuffer_width - margin;
+        size_t gradient_stop_y = fb->framebuffer_height - margin;
 
         if (margin_gradient) {
-            loop_margin(margin_no_gradient, scan_stop_x, margin_no_gradient, margin);
-            loop_margin(margin_no_gradient, scan_stop_x, gradient_stop_y, scan_stop_y);
-            loop_margin(margin_no_gradient, margin, margin, gradient_stop_y);
-            loop_margin(gradient_stop_x, scan_stop_x, margin, gradient_stop_y);
+            loop_margin(fb, margin_no_gradient, scan_stop_x, margin_no_gradient, margin);
+            loop_margin(fb, margin_no_gradient, scan_stop_x, gradient_stop_y, scan_stop_y);
+            loop_margin(fb, margin_no_gradient, margin, margin, gradient_stop_y);
+            loop_margin(fb, gradient_stop_x, scan_stop_x, margin, gradient_stop_y);
         }
 
-        loop_internal(margin, gradient_stop_x, margin, gradient_stop_y);
+        loop_internal(fb, margin, gradient_stop_x, margin, gradient_stop_y);
     } else {
         bg_canvas = NULL;
     }
 }
 
-static bool last_serial = false;
-static char *last_config = NULL;
+bool gterm_init(struct fb_info **_fbs, size_t *_fbs_count,
+                char *config, size_t width, size_t height) {
+    static struct fb_info *fbs;
+    static size_t fbs_count;
 
-bool gterm_init(char *config, size_t width, size_t height) {
+    static bool prev_valid = false;
+    static char *prev_config;
+    static size_t prev_width, prev_height;
+
+    if (prev_valid && config == prev_config && width == prev_width && height == prev_height) {
+        *_fbs = fbs;
+        *_fbs_count = fbs_count;
+        reset_term();
+        return true;
+    }
+
+    prev_valid = false;
+
     if (quiet) {
-        if (term != NULL) {
-            term->deinit(term, pmm_free);
-            term = NULL;
-        }
+        term_notready();
         return false;
     }
 
 #if defined (UEFI)
     if (serial || COM_OUTPUT) {
-        if (term != NULL) {
-            term->deinit(term, pmm_free);
-            term = NULL;
-        }
         term_fallback();
         return true;
     }
 #endif
 
-    if (term != NULL
-     && term_backend == GTERM
-     && fbinfo.default_res == true
-     && width == 0
-     && height == 0
-     && fbinfo.framebuffer_bpp == 32
-     && serial == last_serial
-     && config == last_config) {
-        term->clear(term, true);
-        return true;
-    }
-
-    if (term != NULL
-     && term_backend == GTERM
-     && fbinfo.framebuffer_width == width
-     && fbinfo.framebuffer_height == height
-     && fbinfo.framebuffer_bpp == 32
-     && serial == last_serial
-     && config == last_config) {
-        term->clear(term, true);
-        return true;
-    }
-
-    if (term != NULL) {
-        term->deinit(term, pmm_free);
-        term = NULL;
-    }
+    term_notready();
 
     // We force bpp to 32
-    if (!fb_init(&fbinfo, width, height, 32)) {
-        return false;
+    fb_init(&fbs, &fbs_count, width, height, 32);
+
+    if (_fbs != NULL) {
+        *_fbs = fbs;
+    }
+    if (_fbs_count != NULL) {
+        *_fbs_count = fbs_count;
     }
 
-    // Ensure this is xRGB8888, we only support that for the menu
-    if (fbinfo.red_mask_size    != 8
-     || fbinfo.red_mask_shift   != 16
-     || fbinfo.green_mask_size  != 8
-     || fbinfo.green_mask_shift != 8
-     || fbinfo.blue_mask_size   != 8
-     || fbinfo.blue_mask_shift  != 0) {
+    if (fbs_count == 0) {
         return false;
     }
-
-    last_serial = serial;
-    last_config = config;
 
     // default scheme
     margin = 64;
@@ -716,20 +691,6 @@ bool gterm_init(char *config, size_t width, size_t height) {
         margin_gradient = strtoui(theme_margin_gradient, NULL, 10);
     }
 
-    if (background != NULL) {
-        char *background_layout = config_get_value(config, 0, "TERM_WALLPAPER_STYLE");
-        if (background_layout != NULL && strcmp(background_layout, "centered") == 0) {
-            char *background_colour = config_get_value(config, 0, "TERM_BACKDROP");
-            if (background_colour == NULL)
-                background_colour = "0";
-            uint32_t bg_col = strtoui(background_colour, NULL, 16);
-            image_make_centered(background, fbinfo.framebuffer_width, fbinfo.framebuffer_height, bg_col);
-        } else if (background_layout != NULL && strcmp(background_layout, "tiled") == 0) {
-        } else {
-            image_make_stretched(background, fbinfo.framebuffer_width, fbinfo.framebuffer_height);
-        }
-    }
-
     size_t font_width = 8;
     size_t font_height = 16;
     size_t font_size = (font_width * font_height * FBTERM_FONT_GLYPHS) / 8;
@@ -789,38 +750,105 @@ no_load_font:;
         }
     }
 
-    generate_canvas();
+    terms_i = 0;
+    terms = ext_mem_alloc(fbs_count * sizeof(void *));
 
-    term = fbterm_init(ext_mem_alloc,
-                (void *)(uintptr_t)fbinfo.framebuffer_addr,
-                fbinfo.framebuffer_width, fbinfo.framebuffer_height, fbinfo.framebuffer_pitch,
-                bg_canvas,
-                ansi_colours, ansi_bright_colours,
-                &default_bg, &default_fg,
-                &default_bg_bright, &default_fg_bright,
-                font, font_width, font_height, font_spacing,
-                font_scale_x, font_scale_y,
-                margin);
+    for (size_t i = 0; i < fbs_count; i++) {
+        struct fb_info *fb = &fbs[i];
 
-    pmm_free(font, FONT_MAX);
-    if (bg_canvas != NULL) {
-        pmm_free(bg_canvas, bg_canvas_size);
+        // Ensure this is xRGB8888, we only support that for the menu
+        if (fb->red_mask_size    != 8
+         || fb->red_mask_shift   != 16
+         || fb->green_mask_size  != 8
+         || fb->green_mask_shift != 8
+         || fb->blue_mask_size   != 8
+         || fb->blue_mask_shift  != 0) {
+            continue;
+        }
+
+        if (background != NULL) {
+            char *background_layout = config_get_value(config, 0, "TERM_WALLPAPER_STYLE");
+            if (background_layout != NULL && strcmp(background_layout, "centered") == 0) {
+                char *background_colour = config_get_value(config, 0, "TERM_BACKDROP");
+                if (background_colour == NULL)
+                    background_colour = "0";
+                uint32_t bg_col = strtoui(background_colour, NULL, 16);
+                image_make_centered(background, fb->framebuffer_width, fb->framebuffer_height, bg_col);
+            } else if (background_layout != NULL && strcmp(background_layout, "tiled") == 0) {
+            } else {
+                image_make_stretched(background, fb->framebuffer_width, fb->framebuffer_height);
+            }
+        }
+
+        generate_canvas(fb);
+
+        terms[terms_i] = fbterm_init(ext_mem_alloc,
+                            (void *)(uintptr_t)fb->framebuffer_addr,
+                            fb->framebuffer_width, fb->framebuffer_height, fb->framebuffer_pitch,
+                            bg_canvas,
+                            ansi_colours, ansi_bright_colours,
+                            &default_bg, &default_fg,
+                            &default_bg_bright, &default_fg_bright,
+                            font, font_width, font_height, font_spacing,
+                            font_scale_x, font_scale_y,
+                            margin);
+
+        if (terms[terms_i] != NULL) {
+            terms_i++;
+        }
+
+        if (bg_canvas != NULL) {
+            pmm_free(bg_canvas, bg_canvas_size);
+        }
     }
 
-    if (term == NULL) {
+    pmm_free(font, FONT_MAX);
+
+    if (terms_i == 0) {
         return false;
     }
 
-    if (serial) {
-        term->cols = term->cols > 80 ? 80 : term->cols;
-        term->rows = term->rows > 24 ? 24 : term->rows;
+    for (size_t i = 0; i < terms_i; i++) {
+        struct term_context *term = terms[i];
+
+        if (serial) {
+            term->cols = term->cols > 80 ? 80 : term->cols;
+            term->rows = term->rows > 24 ? 24 : term->rows;
+        }
     }
 
-    term->in_bootloader = true;
+    size_t min_cols = (size_t)-1;
+    size_t min_rows = (size_t)-1;
 
-    term_context_reinit(term);
+    for (size_t i = 0; i < terms_i; i++) {
+        struct term_context *term = terms[i];
+
+        if (term->cols < min_cols) {
+            min_cols = term->cols;
+        }
+
+        if (term->rows < min_rows) {
+            min_rows = term->rows;
+        }
+    }
+
+    for (size_t i = 0; i < terms_i; i++) {
+        struct term_context *term = terms[i];
+
+        term->cols = min_cols;
+        term->rows = min_rows;
+
+        term->in_bootloader = true;
+
+        term_context_reinit(term);
+    }
 
     term_backend = GTERM;
+
+    prev_config = config;
+    prev_height = height;
+    prev_width = width;
+    prev_valid = true;
 
     return true;
 }

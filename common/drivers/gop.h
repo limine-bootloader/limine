@@ -6,19 +6,12 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <efi.h>
 #include <lib/fb.h>
 
-bool init_gop(struct fb_info *ret,
+void init_gop(struct fb_info **ret, size_t *_fbs_count,
               uint64_t target_width, uint64_t target_height, uint16_t target_bpp);
 
-struct fb_info *gop_get_mode_list(size_t *count);
-
 extern bool gop_force_16;
-
-extern bool gop_ready;
-extern EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
-extern EFI_HANDLE gop_handle;
 
 #endif
 

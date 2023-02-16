@@ -38,14 +38,14 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 
     gST->ConOut->EnableCursor(gST->ConOut, false);
 
+    init_memmap();
+
     term_fallback();
 
     status = gBS->SetWatchdogTimer(0, 0x10000, 0, NULL);
     if (status) {
         print("WARNING: Failed to disable watchdog timer!\n");
     }
-
-    init_memmap();
 
 #if defined (__x86_64__) || defined (__i386__)
     init_gdt();
@@ -129,6 +129,8 @@ noreturn void stage3_common(void) {
     init_flush_irqs();
     init_io_apics();
 #endif
+
+    term_notready();
 
     menu(true);
 }

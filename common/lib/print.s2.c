@@ -222,9 +222,7 @@ out:
 #if defined (BIOS)
         if (stage3_loaded) {
 #endif
-            if (term != NULL) {
-                term_write(term, print_buf, print_buf_i);
-            }
+            FOR_TERM(term_write(TERM, print_buf, print_buf_i));
 #if defined (BIOS)
         } else {
             s2_print(print_buf, print_buf_i);

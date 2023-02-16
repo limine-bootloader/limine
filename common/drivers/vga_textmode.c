@@ -244,15 +244,12 @@ static void text_deinit(struct term_context *_ctx, void (*_free)(void *, size_t)
         _free(ctx->front_buffer, VD_ROWS * VD_COLS);
         ctx->front_buffer = NULL;
     }
+
+    pmm_free(ctx, sizeof(struct textmode_context));
 }
 
-static struct textmode_context term_local_struct;
-
 void vga_textmode_init(bool managed) {
-    if (term != NULL) {
-        term->deinit(term, pmm_free);
-        term = NULL;
-    }
+    term_notready();
 
     if (quiet) {
         return;
@@ -266,8 +263,13 @@ void vga_textmode_init(bool managed) {
         current_video_mode = 0x3;
     }
 
-    struct textmode_context *ctx = &term_local_struct;
-    term = &term_local_struct.term;
+    terms = ext_mem_alloc(sizeof(void *));
+    terms_i = 1;
+
+    terms[0] = ext_mem_alloc(sizeof(struct textmode_context));
+
+    struct term_context *term = terms[0];
+    struct textmode_context *ctx = (void *)term;
 
     if (ctx->back_buffer == NULL) {
         ctx->back_buffer = ext_mem_alloc(VD_ROWS * VD_COLS);

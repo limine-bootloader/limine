@@ -1,21 +1,12 @@
---- common/stb/stb_image.h	2023-02-15 11:52:01.743616847 +0100
-+++ common/stb/stb_image.h	2023-02-15 11:51:52.686949866 +0100
-@@ -127,6 +127,37 @@
+--- common/stb/stb_image.h	2023-02-18 09:34:39.771655260 +0100
++++ common/stb/stb_image.h	2023-02-18 09:35:26.014990183 +0100
+@@ -127,6 +127,28 @@
  #ifndef STBI_INCLUDE_STB_IMAGE_H
  #define STBI_INCLUDE_STB_IMAGE_H
  
 +#include <stddef.h>
 +#include <lib/libc.h>
 +#include <mm/pmm.h>
-+
-+#define INT_MAX __INT_MAX__
-+#define INT_MIN (-INT_MAX - 1)
-+
-+#define UINT_MAX ((size_t)INT_MAX * 2 + 1)
-+#define UINT_MIN (-UINT_MAX - 1)
-+
-+#define SHRT_MAX __SHRT_MAX__
-+#define SHRT_MIN (-SHRT_MAX - 1)
 +
 +#define STBI_ASSERT(x)
 +
@@ -38,7 +29,7 @@
  // DOCUMENTATION
  //
  // Limitations:
-@@ -381,7 +412,7 @@
+@@ -381,7 +403,7 @@
     STBI_rgb_alpha  = 4
  };
  
@@ -47,20 +38,18 @@
  typedef unsigned char stbi_uc;
  typedef unsigned short stbi_us;
  
-@@ -584,9 +615,9 @@
+@@ -584,8 +606,8 @@
  
  #include <stdarg.h>
  #include <stddef.h> // ptrdiff_t on osx
 -#include <stdlib.h>
 -#include <string.h>
--#include <limits.h>
 +// #include <stdlib.h>
 +// #include <string.h>
-+// #include <limits.h>
+ #include <limits.h>
  
  #if !defined(STBI_NO_LINEAR) || !defined(STBI_NO_HDR)
- #include <math.h>  // ldexp, pow
-@@ -1574,10 +1605,12 @@
+@@ -1574,10 +1596,12 @@
  STBIDEF void   stbi_ldr_to_hdr_scale(float scale) { stbi__l2h_scale = scale; }
  #endif
  

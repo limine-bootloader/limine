@@ -1,6 +1,6 @@
 AC_INIT([Limine], m4_esyscmd([./version.sh]), [https://github.com/limine-bootloader/limine/issues], [limine], [https://limine-bootloader.org/])
 
-AC_PREREQ(2.69)
+AC_PREREQ([2.69])
 
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SUBDIRS([cross-detect])
@@ -8,23 +8,23 @@ AC_CONFIG_SUBDIRS([cross-detect])
 SRCDIR="$(cd "$srcdir" && pwd -P)"
 BUILDDIR="$(pwd -P)"
 
-AC_SUBST(SRCDIR)
-AC_SUBST(BUILDDIR)
+AC_SUBST([SRCDIR])
+AC_SUBST([BUILDDIR])
 
 test "x$CFLAGS" = "x" && CFLAGS='-g -O2 -pipe -Wall -Wextra'
 
-AC_LANG(C)
+AC_LANG([C])
 AC_PROG_CC
 
-AC_CHECK_HEADERS([stdint.h stddef.h stdbool.h limits.h inttypes.h stdio.h stdlib.h string.h])
+AC_CHECK_HEADERS([stdint.h stddef.h stdbool.h limits.h inttypes.h stdio.h stdlib.h string.h],
+    [], AC_MSG_ERROR([required header not found]))
 
 werror_state="no"
 AC_ARG_ENABLE([werror],
     AS_HELP_STRING([--enable-werror], [treat warnings as errors]),
     werror_state="$enableval")
-
 if test "$werror_state" = "yes"; then
-    AC_SUBST(WERROR, [-Werror])
+    AC_SUBST([WERROR], [-Werror])
     CFLAGS="$CFLAGS -Werror"
 fi
 
@@ -46,12 +46,11 @@ if ! test "x$FIND_FOUND" = "xyes"; then
 fi
 
 NATIVE_STRIP="$($CC -dumpmachine)"-strip
-AC_CHECK_PROG([NATIVE_STRIP_FOUND], $NATIVE_STRIP, [yes])
+AC_CHECK_PROG([NATIVE_STRIP_FOUND], [$NATIVE_STRIP], [yes])
 if ! test "x$NATIVE_STRIP_FOUND" = "xyes"; then
     NATIVE_STRIP=strip
 fi
-
-AC_SUBST(NATIVE_STRIP)
+AC_SUBST([NATIVE_STRIP])
 
 rm -rf "$BUILDDIR/cross-files"
 
@@ -67,7 +66,7 @@ AC_ARG_ENABLE([bios-cd],
     AS_HELP_STRING([--enable-bios-cd], [enable building the x86 BIOS CD image]),
     BUILD_CD="$enableval")
 
-AC_SUBST(BUILD_CD)
+AC_SUBST([BUILD_CD])
 
 BUILD_PXE="$BUILD_ALL"
 
@@ -75,7 +74,7 @@ AC_ARG_ENABLE([bios-pxe],
     AS_HELP_STRING([--enable-bios-pxe], [enable building the x86 BIOS PXE image]),
     BUILD_PXE="$enableval")
 
-AC_SUBST(BUILD_PXE)
+AC_SUBST([BUILD_PXE])
 
 BUILD_BIOS="$BUILD_ALL"
 
@@ -107,8 +106,8 @@ else
     NEED_GZIP=yes
 fi
 
-AC_SUBST(BUILD_BIOS)
-AC_SUBST(BUILD_LIMINE_DEPLOY)
+AC_SUBST([BUILD_BIOS])
+AC_SUBST([BUILD_LIMINE_DEPLOY])
 
 BUILD_UEFI_IA32="$BUILD_ALL"
 
@@ -128,7 +127,7 @@ else
     NEED_NASM=yes
 fi
 
-AC_SUBST(BUILD_UEFI_IA32)
+AC_SUBST([BUILD_UEFI_IA32])
 
 BUILD_UEFI_X86_64="$BUILD_ALL"
 
@@ -148,7 +147,7 @@ else
     NEED_NASM=yes
 fi
 
-AC_SUBST(BUILD_UEFI_X86_64)
+AC_SUBST([BUILD_UEFI_X86_64])
 
 BUILD_UEFI_AARCH64="$BUILD_ALL"
 
@@ -167,7 +166,7 @@ else
     BUILD_UEFI_AARCH64="limine-uefi-aarch64"
 fi
 
-AC_SUBST(BUILD_UEFI_AARCH64)
+AC_SUBST([BUILD_UEFI_AARCH64])
 
 BUILD_CD_EFI="$BUILD_ALL"
 
@@ -186,7 +185,7 @@ if ! test "x$BUILD_CD_EFI" = "xno"; then
     fi
 fi
 
-AC_SUBST(BUILD_CD_EFI)
+AC_SUBST([BUILD_CD_EFI])
 
 if test "x$NEED_NASM" = "xyes"; then
     AC_CHECK_PROG([NASM_FOUND], [nasm], [yes])
@@ -202,25 +201,25 @@ if test "x$NEED_GZIP" = "xyes"; then
     fi
 fi
 
-AC_ARG_VAR(CROSS_TOOLCHAIN, [alternative toolchain prefix for Limine (or 'llvm')])
-AC_ARG_VAR(CROSS_CC, [C compiler command for Limine])
-AC_ARG_VAR(CROSS_LD, [linker command for Limine])
-AC_ARG_VAR(CROSS_OBJCOPY, [objcopy command for Limine])
-AC_ARG_VAR(CROSS_OBJDUMP, [objdump command for Limine])
-AC_ARG_VAR(CROSS_READELF, [readelf command for Limine])
+AC_ARG_VAR([CROSS_TOOLCHAIN], [alternative toolchain prefix for Limine (or 'llvm')])
+AC_ARG_VAR([CROSS_CC], [C compiler command for Limine])
+AC_ARG_VAR([CROSS_LD], [linker command for Limine])
+AC_ARG_VAR([CROSS_OBJCOPY], [objcopy command for Limine])
+AC_ARG_VAR([CROSS_OBJDUMP], [objdump command for Limine])
+AC_ARG_VAR([CROSS_READELF], [readelf command for Limine])
 
 m4_define([DEFAULT_CROSS_CFLAGS], [-g -O2 -pipe -Wall -Wextra])
-AC_ARG_VAR(CROSS_CFLAGS, [C flags for Limine @<:@default: ]DEFAULT_CROSS_CFLAGS[@:>@])
+AC_ARG_VAR([CROSS_CFLAGS], [C flags for Limine @<:@default: ]DEFAULT_CROSS_CFLAGS[@:>@])
 test "x$CROSS_CFLAGS" = "x" && CROSS_CFLAGS="DEFAULT_CROSS_CFLAGS"
 
 m4_define([DEFAULT_CROSS_LDFLAGS], [])
-AC_ARG_VAR(CROSS_LDFLAGS, [Linker flags for Limine @<:@default: ]DEFAULT_CROSS_LDFLAGS[@:>@])
+AC_ARG_VAR([CROSS_LDFLAGS], [Linker flags for Limine @<:@default: ]DEFAULT_CROSS_LDFLAGS[@:>@])
 test "x$CROSS_LDFLAGS" = "x" && CROSS_LDFLAGS="DEFAULT_CROSS_LDFLAGS"
 
 LIMINE_COPYRIGHT=$($GREP Copyright "$SRCDIR/LICENSE.md")
-AC_SUBST(LIMINE_COPYRIGHT)
+AC_SUBST([LIMINE_COPYRIGHT])
 
-AC_PREFIX_DEFAULT(/usr/local)
+AC_PREFIX_DEFAULT([/usr/local])
 
-AC_CONFIG_FILES(GNUmakefile config.h)
+AC_CONFIG_FILES([GNUmakefile config.h])
 AC_OUTPUT

@@ -1,3 +1,5 @@
+override MAKEFLAGS += -rR
+
 override prefix := @prefix@
 override exec_prefix := @exec_prefix@
 

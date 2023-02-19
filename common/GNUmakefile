@@ -1,3 +1,5 @@
+override MAKEFLAGS += -rR
+
 include $(CROSS_FILE)
 
 TARGET ?=

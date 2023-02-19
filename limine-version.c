@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#define LIMINE_VERSION "4.20230216.1"
+#define LIMINE_VERSION "4.20230219.0"
 
 int main(void) {
     puts(LIMINE_VERSION);

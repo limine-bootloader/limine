@@ -39,10 +39,10 @@ clean:
 	rm -f limine-enroll-config limine-enroll-config.exe
 
 limine-deploy: limine-deploy.c limine-hdd.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -std=c99 -D__USE_MINGW_ANSI_STDIO limine-deploy.c $(LIBS) -o $@
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -std=c99 -D__USE_MINGW_ANSI_STDIO limine-deploy.c $(LIBS) -o $@
 
 limine-version: limine-version.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -std=c99 -D__USE_MINGW_ANSI_STDIO limine-version.c $(LIBS) -o $@
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -std=c99 -D__USE_MINGW_ANSI_STDIO limine-version.c $(LIBS) -o $@
 
 limine-enroll-config: limine-enroll-config.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -std=c99 -D__USE_MINGW_ANSI_STDIO limine-enroll-config.c $(LIBS) -o $@
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -std=c99 -D__USE_MINGW_ANSI_STDIO limine-enroll-config.c $(LIBS) -o $@

@@ -39,9 +39,6 @@ override BUILD_PXE := @BUILD_PXE@
 override BUILD_CD := @BUILD_CD@
 override BUILD_LIMINE_DEPLOY := @BUILD_LIMINE_DEPLOY@
 
-override WERROR := @WERROR@
-export WERROR
-
 $(eval $(call DEFAULT_VAR,CC,@CC@))
 export CC
 

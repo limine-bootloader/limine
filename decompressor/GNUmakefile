@@ -32,7 +32,6 @@ override CROSS_CFLAGS += \
     -mno-80387 \
     -Wshadow \
     -Wvla \
-    $(WERROR) \
     -MMD \
     -I../freestanding-headers \
     -I'$(call SHESCAPE,$(BUILDDIR))/tinf' \

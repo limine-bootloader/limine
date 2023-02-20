@@ -48,7 +48,6 @@ override CROSS_CFLAGS += \
     -fno-lto \
     -Wshadow \
     -Wvla \
-    $(WERROR) \
     -MMD \
     -DCOM_OUTPUT=$(COM_OUTPUT) \
     -DE9_OUTPUT=$(E9_OUTPUT) \

@@ -387,6 +387,29 @@ mbrtest.hdd:
 	dd if=/dev/zero bs=1M count=0 seek=64 of=mbrtest.hdd
 	echo -e "o\nn\np\n1\n2048\n\nt\n6\na\nw\n" | fdisk mbrtest.hdd -H 16 -S 63
 
+.PHONY: ext2-test
+ext2-test:
+	$(MAKE) test-clean
+	$(MAKE) test.hdd
+	$(MAKE) limine-bios
+	$(MAKE) limine-deploy
+	$(MAKE) -C test CROSS_FILE='$(call SHESCAPE,$(BUILDDIR))/cross-files/x86_64-elf-toolchain.mk'
+	rm -rf test_image/
+	mkdir test_image
+	sudo losetup -Pf --show test.hdd > loopback_dev
+	sudo partprobe `cat loopback_dev`
+	sudo mkfs.ext2 `cat loopback_dev`p1
+	sudo mount `cat loopback_dev`p1 test_image
+	sudo mkdir test_image/boot
+	sudo cp -rv $(BINDIR)/* test_image/boot/
+	sudo cp -rv test/* test_image/boot/
+	sync
+	sudo umount test_image/
+	sudo losetup -d `cat loopback_dev`
+	rm -rf test_image loopback_dev
+	$(BINDIR)/limine-deploy test.hdd
+	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
+
 .PHONY: fat12-test
 fat12-test:
 	$(MAKE) test-clean

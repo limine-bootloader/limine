@@ -11,6 +11,9 @@ BUILDDIR="$(pwd -P)"
 AC_SUBST([SRCDIR])
 AC_SUBST([BUILDDIR])
 
+REGEN_DATE="m4_esyscmd([date '+%B %Y' | tr -d '\n'])"
+AC_SUBST([REGEN_DATE])
+
 test "x$CFLAGS" = "x" && CFLAGS='-g -O2 -pipe -Wall -Wextra'
 
 AC_LANG([C])
@@ -224,5 +227,5 @@ AC_SUBST([LIMINE_COPYRIGHT])
 
 AC_PREFIX_DEFAULT([/usr/local])
 
-AC_CONFIG_FILES([GNUmakefile config.h])
+AC_CONFIG_FILES([man/man1/limine-version.1 man/man1/limine-deploy.1 man/man1/limine-enroll-config.1 GNUmakefile config.h])
 AC_OUTPUT

@@ -1,0 +1,22 @@
+.TH LIMINE-VERSION 1 "version @PACKAGE_VERSION@" "@REGEN_DATE@"
+
+.SH NAME
+limine-version \- print Limine version
+
+.SH SYNOPSIS
+.B limine-version
+
+.SH DESCRIPTION
+\fBlimine-version\fR prints the version number of the installed copy of Limine
+to standard output.
+
+.SH BUGS
+Please report bugs via
+.IR @PACKAGE_BUGREPORT@ .
+
+.SH HOMEPAGE
+.I https://limine-bootloader.org/
+
+.SH SEE ALSO
+.BR limine-deploy (1)
+.BR limine-enroll-config (1)

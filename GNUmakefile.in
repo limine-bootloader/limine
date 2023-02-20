@@ -6,6 +6,8 @@ override exec_prefix := @exec_prefix@
 override ACBINDIR := @bindir@
 override ACDATAROOTDIR := @datarootdir@
 override ACINCLUDEDIR := @includedir@
+override datarootdir := @datarootdir@
+override mandir := @mandir@
 
 DESTDIR ?=
 
@@ -127,6 +129,10 @@ clean: limine-bios-clean limine-uefi-ia32-clean limine-uefi-x86-64-clean limine-
 
 .PHONY: install
 install: all
+	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BUILDDIR))/man/man1/limine-version.1' '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BUILDDIR))/man/man1/limine-deploy.1' '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BUILDDIR))/man/man1/limine-enroll-config.1' '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/'
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))'
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine'
 ifeq ($(BUILD_BIOS),limine-bios)
@@ -169,6 +175,9 @@ endif
 
 .PHONY: uninstall
 uninstall:
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/limine-version.1'
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/limine-deploy.1'
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/limine-enroll-config.1'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/limine-version'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/limine-enroll-config'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/limine-deploy'

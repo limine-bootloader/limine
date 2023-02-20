@@ -1,0 +1,39 @@
+.TH LIMINE-DEPLOY 1 "version @PACKAGE_VERSION@" "@REGEN_DATE@"
+
+.SH NAME
+limine-deploy \- install BIOS port's early stages to device
+
+.SH SYNOPSIS
+.B limine-deploy
+.RI "<device> [ GPT partition index ]"
+
+.SH DESCRIPTION
+\fBlimine-deploy\fR installs the BIOS port's early stages to the specified device.
+
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+Show the available command-line options and exit
+.TP
+.BR \-\-force-mbr
+Force MBR detection to work even if the safety checks fail (\fIDANGEROUS\fR!)
+.TP
+.BR \-\-undeploy
+Reverse the entire deployment procedure
+.TP
+.BR \-\-undeploy-data-file= \fIfilename
+Set the input (for --undeploy) or output file name of the file which contains undeploy data
+.TP
+.BR \-\-quiet
+Do not print verbose diagnostic messages
+
+.SH BUGS
+Please report bugs via
+.IR @PACKAGE_BUGREPORT@ .
+
+.SH HOMEPAGE
+.I @PACKAGE_URL@
+
+.SH SEE ALSO
+.BR limine-version (1)
+.BR limine-enroll-config (1)

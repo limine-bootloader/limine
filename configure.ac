@@ -1,4 +1,4 @@
-AC_INIT([Limine], m4_esyscmd([./version.sh]), [https://github.com/limine-bootloader/limine/issues], [limine], [https://limine-bootloader.org/])
+AC_INIT([Limine], [m4_esyscmd([./version.sh])], [https://github.com/limine-bootloader/limine/issues], [limine], [https://limine-bootloader.org/])
 
 AC_PREREQ([2.69])
 
@@ -17,12 +17,12 @@ AC_LANG([C])
 AC_PROG_CC
 
 AC_CHECK_HEADERS([stdint.h stddef.h stdbool.h limits.h inttypes.h stdio.h stdlib.h string.h],
-    [], AC_MSG_ERROR([required header not found]))
+    [], [AC_MSG_ERROR([required header not found])])
 
 werror_state="no"
 AC_ARG_ENABLE([werror],
-    AS_HELP_STRING([--enable-werror], [treat warnings as errors]),
-    werror_state="$enableval")
+    [AS_HELP_STRING([--enable-werror], [treat warnings as errors])],
+    [werror_state="$enableval"])
 if test "$werror_state" = "yes"; then
     AC_SUBST([WERROR], [-Werror])
     CFLAGS="$CFLAGS -Werror"
@@ -57,30 +57,30 @@ rm -rf "$BUILDDIR/cross-files"
 BUILD_ALL="no"
 
 AC_ARG_ENABLE([all],
-    AS_HELP_STRING([--enable-all], [enable ALL options]),
-    BUILD_ALL="$enableval")
+    [AS_HELP_STRING([--enable-all], [enable ALL ports])],
+    [BUILD_ALL="$enableval"])
 
 BUILD_CD="$BUILD_ALL"
 
 AC_ARG_ENABLE([bios-cd],
-    AS_HELP_STRING([--enable-bios-cd], [enable building the x86 BIOS CD image]),
-    BUILD_CD="$enableval")
+    [AS_HELP_STRING([--enable-bios-cd], [enable building the x86 BIOS CD image])],
+    [BUILD_CD="$enableval"])
 
 AC_SUBST([BUILD_CD])
 
 BUILD_PXE="$BUILD_ALL"
 
 AC_ARG_ENABLE([bios-pxe],
-    AS_HELP_STRING([--enable-bios-pxe], [enable building the x86 BIOS PXE image]),
-    BUILD_PXE="$enableval")
+    [AS_HELP_STRING([--enable-bios-pxe], [enable building the x86 BIOS PXE image])],
+    [BUILD_PXE="$enableval"])
 
 AC_SUBST([BUILD_PXE])
 
 BUILD_BIOS="$BUILD_ALL"
 
 AC_ARG_ENABLE([bios],
-    AS_HELP_STRING([--enable-bios], [enable building the x86 BIOS port]),
-    BUILD_BIOS="$enableval")
+    [AS_HELP_STRING([--enable-bios], [enable building the x86 BIOS port])],
+    [BUILD_BIOS="$enableval"])
 
 BUILD_LIMINE_DEPLOY="$BUILD_BIOS"
 
@@ -112,8 +112,8 @@ AC_SUBST([BUILD_LIMINE_DEPLOY])
 BUILD_UEFI_IA32="$BUILD_ALL"
 
 AC_ARG_ENABLE([uefi-ia32],
-    AS_HELP_STRING([--enable-uefi-ia32], [enable building the IA-32 UEFI port]),
-    BUILD_UEFI_IA32="$enableval")
+    [AS_HELP_STRING([--enable-uefi-ia32], [enable building the IA-32 UEFI port])],
+    [BUILD_UEFI_IA32="$enableval"])
 
 if test "x$BUILD_UEFI_IA32" = "xno"; then
     BUILD_UEFI_IA32=""
@@ -132,8 +132,8 @@ AC_SUBST([BUILD_UEFI_IA32])
 BUILD_UEFI_X86_64="$BUILD_ALL"
 
 AC_ARG_ENABLE([uefi-x86-64],
-    AS_HELP_STRING([--enable-uefi-x86-64], [enable building the x86-64 UEFI port]),
-    BUILD_UEFI_X86_64="$enableval")
+    [AS_HELP_STRING([--enable-uefi-x86-64], [enable building the x86-64 UEFI port])],
+    [BUILD_UEFI_X86_64="$enableval"])
 
 if test "x$BUILD_UEFI_X86_64" = "xno"; then
     BUILD_UEFI_X86_64=""
@@ -152,8 +152,8 @@ AC_SUBST([BUILD_UEFI_X86_64])
 BUILD_UEFI_AARCH64="$BUILD_ALL"
 
 AC_ARG_ENABLE([uefi-aarch64],
-    AS_HELP_STRING([--enable-uefi-aarch64], [enable building the aarch64 UEFI port]),
-    BUILD_UEFI_AARCH64="$enableval")
+    [AS_HELP_STRING([--enable-uefi-aarch64], [enable building the aarch64 UEFI port])],
+    [BUILD_UEFI_AARCH64="$enableval"])
 
 if test "x$BUILD_UEFI_AARCH64" = "xno"; then
     BUILD_UEFI_AARCH64=""
@@ -171,8 +171,8 @@ AC_SUBST([BUILD_UEFI_AARCH64])
 BUILD_CD_EFI="$BUILD_ALL"
 
 AC_ARG_ENABLE([uefi-cd],
-    AS_HELP_STRING([--enable-uefi-cd], [enable building limine-cd-efi.bin]),
-    BUILD_CD_EFI="$enableval")
+    [AS_HELP_STRING([--enable-uefi-cd], [enable building limine-cd-efi.bin])],
+    [BUILD_CD_EFI="$enableval"])
 
 if ! test "x$BUILD_CD_EFI" = "xno"; then
     AC_CHECK_PROG([MTOOLS_FOUND], [mcopy], [yes])
@@ -211,6 +211,9 @@ AC_ARG_VAR([CROSS_READELF], [readelf command for Limine])
 m4_define([DEFAULT_CROSS_CFLAGS], [-g -O2 -pipe -Wall -Wextra])
 AC_ARG_VAR([CROSS_CFLAGS], [C flags for Limine @<:@default: ]DEFAULT_CROSS_CFLAGS[@:>@])
 test "x$CROSS_CFLAGS" = "x" && CROSS_CFLAGS="DEFAULT_CROSS_CFLAGS"
+if test "$werror_state" = "yes"; then
+    CROSS_CFLAGS="$CROSS_CFLAGS -Werror"
+fi
 
 m4_define([DEFAULT_CROSS_LDFLAGS], [])
 AC_ARG_VAR([CROSS_LDFLAGS], [Linker flags for Limine @<:@default: ]DEFAULT_CROSS_LDFLAGS[@:>@])

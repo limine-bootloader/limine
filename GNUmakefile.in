@@ -2,12 +2,14 @@ override MAKEFLAGS += -rR
 
 override prefix := @prefix@
 override exec_prefix := @exec_prefix@
+override PACKAGE_TARNAME := @PACKAGE_TARNAME@
 
 override ACBINDIR := @bindir@
 override ACDATAROOTDIR := @datarootdir@
 override ACINCLUDEDIR := @includedir@
 override datarootdir := @datarootdir@
 override mandir := @mandir@
+override docdir := @docdir@
 
 DESTDIR ?=
 
@@ -129,6 +131,12 @@ clean: limine-bios-clean limine-uefi-ia32-clean limine-uefi-x86-64-clean limine-
 
 .PHONY: install
 install: all
+	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(docdir))'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/LICENSE.md' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/CONFIG.md' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/PROTOCOL.md' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/PHILOSOPHY.md' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/README.md' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1'
 	$(INSTALL_DATA) '$(call SHESCAPE,$(BUILDDIR))/man/man1/limine-version.1' '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/'
 ifneq ($(BUILD_LIMINE_DEPLOY),no)
@@ -177,6 +185,11 @@ endif
 
 .PHONY: uninstall
 uninstall:
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/LICENSE.md'
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/CONFIG.md'
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/PROTOCOL.md'
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/PHILOSOPHY.md'
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/README.md'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/limine-version.1'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/limine-deploy.1'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/limine-enroll-config.1'
@@ -305,7 +318,7 @@ dist:
 
 .PHONY: distclean
 distclean: clean
-	rm -rf ovmf* config.log config.status GNUmakefile config.h cross-files
+	rm -rf ovmf* config.log config.status GNUmakefile config.h cross-files man/man1/limine-version.1 man/man1/limine-deploy.1 man/man1/limine-enroll-config.1
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean

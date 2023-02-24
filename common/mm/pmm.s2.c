@@ -330,8 +330,6 @@ void init_memmap(void) {
         uint32_t our_type;
         switch (entry->Type) {
             case EfiReservedMemoryType:
-            case EfiRuntimeServicesCode:
-            case EfiRuntimeServicesData:
             case EfiUnusableMemory:
             case EfiMemoryMappedIO:
             case EfiMemoryMappedIOPortSpace:
@@ -349,6 +347,9 @@ void init_memmap(void) {
                 our_type = MEMMAP_ACPI_NVS; break;
             case EfiConventionalMemory:
                 our_type = MEMMAP_USABLE; break;
+            case EfiRuntimeServicesCode:
+            case EfiRuntimeServicesData:
+                our_type = MEMMAP_EFI_RUNTIME; break;
         }
 
         uint64_t base = entry->PhysicalStart;

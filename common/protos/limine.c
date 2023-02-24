@@ -1034,6 +1034,9 @@ FEAT_START
             case MEMMAP_FRAMEBUFFER:
                 _memmap[i].type = LIMINE_MEMMAP_FRAMEBUFFER;
                 break;
+            case MEMMAP_EFI_RUNTIME:
+                _memmap[i].type = LIMINE_MEMMAP_EFI_RUNTIME;
+                break;
             default:
             case MEMMAP_RESERVED:
                 _memmap[i].type = LIMINE_MEMMAP_RESERVED;

@@ -811,6 +811,7 @@ struct limine_memmap_response {
 #define LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE 5
 #define LIMINE_MEMMAP_KERNEL_AND_MODULES     6
 #define LIMINE_MEMMAP_FRAMEBUFFER            7
+#define LIMINE_MEMMAP_EFI_RUNTIME            8
 
 struct limine_memmap_entry {
     uint64_t base;

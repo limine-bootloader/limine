@@ -47,14 +47,17 @@ override CROSS_CFLAGS += \
     -fno-strict-aliasing \
     -fno-lto \
     -Wshadow \
-    -Wvla \
-    -MMD \
-    -DCOM_OUTPUT=$(COM_OUTPUT) \
-    -DE9_OUTPUT=$(E9_OUTPUT) \
+    -Wvla
+
+override CROSS_CPPFLAGS := \
     -I../freestanding-headers \
     -I'$(call SHESCAPE,$(BUILDDIR))/..' \
     -I. \
-    -I..
+    -I.. \
+    $(CROSS_CPPFLAGS) \
+    -DCOM_OUTPUT=$(COM_OUTPUT) \
+    -DE9_OUTPUT=$(E9_OUTPUT) \
+    -MMD
 
 ifeq ($(TARGET),bios)
     override CROSS_CFLAGS += \
@@ -63,7 +66,9 @@ ifeq ($(TARGET),bios)
         -m32 \
         -march=i686 \
         -mabi=sysv \
-        -mno-80387 \
+        -mno-80387
+    override CROSS_CPPFLAGS := \
+        $(CROSS_CPPFLAGS) \
         -DBIOS
 endif
 
@@ -77,11 +82,13 @@ ifeq ($(TARGET),uefi-x86-64)
         -mno-mmx \
         -mno-sse \
         -mno-sse2 \
-        -mno-red-zone \
-        -DUEFI \
-        -DGNU_EFI_USE_MS_ABI \
+        -mno-red-zone
+    override CROSS_CPPFLAGS := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
-        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/x86_64'
+        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/x86_64' \
+        $(CROSS_CPPFLAGS) \
+        -DUEFI \
+        -DGNU_EFI_USE_MS_ABI
 endif
 
 ifeq ($(TARGET),uefi-ia32)
@@ -90,19 +97,23 @@ ifeq ($(TARGET),uefi-ia32)
         -m32 \
         -march=i686 \
         -mabi=sysv \
-        -mno-80387 \
-        -DUEFI \
+        -mno-80387
+    override CROSS_CPPFLAGS := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
-        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/ia32'
+        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/ia32' \
+        $(CROSS_CPPFLAGS) \
+        -DUEFI
 endif
 
 ifeq ($(TARGET),uefi-aarch64)
     override CROSS_CFLAGS += \
         -fpie \
-        -mgeneral-regs-only \
-        -DUEFI \
+        -mgeneral-regs-only
+    override CROSS_CPPFLAGS := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
-        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/aarch64'
+        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/aarch64' \
+        $(CROSS_CPPFLAGS) \
+        -DUEFI
 endif
 
 override CROSS_LDFLAGS += \
@@ -202,13 +213,13 @@ $(call MKESCAPE,$(BUILDDIR))/stage2.bin: $(call MKESCAPE,$(BUILDDIR))/limine.sys
 $(call MKESCAPE,$(BUILDDIR))/stage2.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' stage2 32 '\.text\.stage2'
-	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/stage2.map.S' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) $(CROSS_CPPFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/stage2.map.S' -o '$(call SHESCAPE,$@)'
 	rm -f '$(call SHESCAPE,$(BUILDDIR))/stage2.map.S' '$(call SHESCAPE,$(BUILDDIR))/stage2.map.d'
 
 $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nos3map.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' full 32 '\.text'
-	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) $(CROSS_CPPFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
 	rm -f '$(call SHESCAPE,$(BUILDDIR))/full.map.S' '$(call SHESCAPE,$(BUILDDIR))/full.map.d'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.sys: $(call MKESCAPE,$(BUILDDIR))/limine_stage2only.elf $(call MKESCAPE,$(BUILDDIR))/limine.elf
@@ -280,7 +291,7 @@ ifeq ($(TARGET),uefi-x86-64)
 $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' full 64 '\.text'
-	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) $(CROSS_CPPFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
 	rm -f '$(call SHESCAPE,$(BUILDDIR))/full.map.S' '$(call SHESCAPE,$(BUILDDIR))/full.map.d'
 
 $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.elf
@@ -321,7 +332,7 @@ ifeq ($(TARGET),uefi-aarch64)
 $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' full 64 '\.text'
-	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) $(CROSS_CPPFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
 	rm -f '$(call SHESCAPE,$(BUILDDIR))/full.map.S' '$(call SHESCAPE,$(BUILDDIR))/full.map.d'
 
 $(call MKESCAPE,$(BUILDDIR))/BOOTAA64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.elf
@@ -361,7 +372,7 @@ ifeq ($(TARGET),uefi-ia32)
 $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' full 32 '\.text'
-	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) $(CROSS_CPPFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
 	rm -f '$(call SHESCAPE,$(BUILDDIR))/full.map.S' '$(call SHESCAPE,$(BUILDDIR))/full.map.d'
 
 $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.elf
@@ -402,25 +413,25 @@ endif
 ifeq ($(TARGET),uefi-x86-64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) $(CROSS_CPPFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-aarch64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) $(CROSS_CPPFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-ia32)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) $(CROSS_CPPFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),bios)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) $(CROSS_CPPFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 -include $(HEADER_DEPS)
@@ -428,7 +439,7 @@ endif
 ifeq ($(TARGET),bios)
 $(call MKESCAPE,$(BUILDDIR))/%.s2.o: %.s2.c
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) $(S2CFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) $(S2CFLAGS) $(CROSS_CPPFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 -include $(HEADER_DEPS)
@@ -464,11 +475,11 @@ endif
 ifeq ($(TARGET),uefi-aarch64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_aarch64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) $(CROSS_CPPFLAGS) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_uefi_aarch64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CROSS_CC) $(CROSS_CFLAGS) $(CROSS_CPPFLAGS) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-ia32)

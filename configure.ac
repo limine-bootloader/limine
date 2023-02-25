@@ -218,6 +218,10 @@ if test "$werror_state" = "yes"; then
     CROSS_CFLAGS="$CROSS_CFLAGS -Werror"
 fi
 
+m4_define([DEFAULT_CROSS_CPPFLAGS], [])
+AC_ARG_VAR([CROSS_CPPFLAGS], [C preprocessor flags for Limine @<:@default: ]DEFAULT_CROSS_CPPFLAGS[@:>@])
+test "x$CROSS_CPPFLAGS" = "x" && CROSS_CPPFLAGS="DEFAULT_CROSS_CPPFLAGS"
+
 m4_define([DEFAULT_CROSS_LDFLAGS], [])
 AC_ARG_VAR([CROSS_LDFLAGS], [Linker flags for Limine @<:@default: ]DEFAULT_CROSS_LDFLAGS[@:>@])
 test "x$CROSS_LDFLAGS" = "x" && CROSS_LDFLAGS="DEFAULT_CROSS_LDFLAGS"

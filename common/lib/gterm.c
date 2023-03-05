@@ -804,6 +804,9 @@ no_load_font:;
 
     pmm_free(font, FONT_MAX);
 
+    image_close(background);
+    background = NULL;
+
     if (terms_i == 0) {
         return false;
     }

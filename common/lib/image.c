@@ -48,7 +48,6 @@ struct image *image_open(struct file_handle *file) {
         pptr[i] = (pptr[i] & 0x0000ff00) | ((pptr[i] & 0x00ff0000) >> 16) | ((pptr[i] & 0x000000ff) << 16);
     }
 
-    image->allocated_size = x * y * 4;
     image->x_size = x;
     image->y_size = y;
     image->pitch = x * 4;
@@ -60,6 +59,6 @@ struct image *image_open(struct file_handle *file) {
 }
 
 void image_close(struct image *image) {
-    pmm_free(image->img, image->allocated_size);
+    stbi_image_free(image->img);
     pmm_free(image, sizeof(struct image));
 }

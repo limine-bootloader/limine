@@ -5,7 +5,6 @@
 #include <fs/file.h>
 
 struct image {
-    size_t allocated_size;
     size_t x_size;
     size_t y_size;
     int type;

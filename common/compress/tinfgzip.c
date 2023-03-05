@@ -116,7 +116,15 @@ void *tinf_gzip_uncompress(const void *source, uint64_t sourceLen, uint64_t *out
 
     void *buf = ext_mem_alloc(dlen);
 
-    res = stbi_zlib_decode_noheader_buffer(buf, dlen, (const char *)start, (src + sourceLen) - start - 8);
+    // XXX for some reason certain GZ files made by macOS do not properly decompress with stb_image
+    //     unless some skew (19 bytes?) is applied to the buffer. I have no idea why this is the
+    //     case but I'd rather have them load somewhat than not load at all.
+    for (uint64_t skew = 0; skew < 32; skew++) {
+        res = stbi_zlib_decode_noheader_buffer(buf, dlen, (const char *)start + skew, (src + sourceLen) - start - 8 - skew);
+        if (res != -1) {
+            break;
+        }
+    }
 
     if (res == -1) {
         pmm_free(buf, dlen);

@@ -1,6 +1,6 @@
---- common/stb/stb_image.h	2023-03-05 06:32:45.628671768 +0100
-+++ common/stb/stb_image.h	2023-03-05 07:47:29.931051098 +0100
-@@ -127,6 +127,31 @@
+--- common/stb/stb_image.h	2023-03-05 08:20:53.340368551 +0100
++++ common/stb/stb_image.h	2023-03-05 08:24:38.120359642 +0100
+@@ -127,6 +127,49 @@
  #ifndef STBI_INCLUDE_STB_IMAGE_H
  #define STBI_INCLUDE_STB_IMAGE_H
  
@@ -10,13 +10,31 @@
 +
 +#define STBI_ASSERT(x)
 +
-+#define STBI_MALLOC(x) ext_mem_alloc(x)
++#define STBI_MALLOC(x) ({ \
++    size_t STBI_MALLOC_alloc_size = (x); \
++    STBI_MALLOC_alloc_size += 16; \
++    void *STBI_MALLOC_buf = ext_mem_alloc(STBI_MALLOC_alloc_size); \
++    size_t *STBI_MALLOC_alloc_size_ptr = STBI_MALLOC_buf; \
++    *STBI_MALLOC_alloc_size_ptr = STBI_MALLOC_alloc_size; \
++    STBI_MALLOC_buf + 16; \
++})
++
++#define STBI_FREE(x) do { \
++    void *STBI_FREE_buf = (x); \
++    STBI_FREE_buf -= 16; \
++    size_t *STBI_FREE_alloc_size_ptr = STBI_FREE_buf; \
++    size_t STBI_FREE_alloc_size = *STBI_FREE_alloc_size_ptr; \
++    pmm_free(STBI_FREE_buf, STBI_FREE_alloc_size); \
++} while (0)
++
 +#define STBI_REALLOC(x, y) ({ \
-+    void *STBI_REALLOC_new_buf = ext_mem_alloc(y); \
-+    memcpy(STBI_REALLOC_new_buf, x, y); \
++    void *STBI_REALLOC_buf = (x); \
++    size_t STBI_REALLOC_alloc_size = (y); \
++    void *STBI_REALLOC_new_buf = STBI_MALLOC(STBI_REALLOC_alloc_size); \
++    memcpy(STBI_REALLOC_new_buf, STBI_REALLOC_buf, STBI_REALLOC_alloc_size); \
++    STBI_FREE(STBI_REALLOC_buf); \
 +    STBI_REALLOC_new_buf; \
 +})
-+#define STBI_FREE(x)
 +
 +#define STBI_NO_THREAD_LOCALS
 +#define STBI_NO_STDIO
@@ -32,7 +50,7 @@
  // DOCUMENTATION
  //
  // Limitations:
-@@ -381,7 +406,7 @@
+@@ -381,7 +424,7 @@
     STBI_rgb_alpha  = 4
  };
  
@@ -41,7 +59,7 @@
  typedef unsigned char stbi_uc;
  typedef unsigned short stbi_us;
  
-@@ -584,8 +609,8 @@
+@@ -584,8 +627,8 @@
  
  #include <stdarg.h>
  #include <stddef.h> // ptrdiff_t on osx
@@ -52,7 +70,7 @@
  #include <limits.h>
  
  #if !defined(STBI_NO_LINEAR) || !defined(STBI_NO_HDR)
-@@ -1574,10 +1599,12 @@
+@@ -1574,10 +1617,12 @@
  STBIDEF void   stbi_ldr_to_hdr_scale(float scale) { stbi__l2h_scale = scale; }
  #endif
  

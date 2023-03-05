@@ -1,6 +1,6 @@
---- common/stb/stb_image.h	2023-03-05 08:20:53.340368551 +0100
-+++ common/stb/stb_image.h	2023-03-05 08:24:38.120359642 +0100
-@@ -127,6 +127,49 @@
+--- common/stb/stb_image.h	2023-03-05 18:57:03.930649341 +0100
++++ common/stb/stb_image.h	2023-03-05 18:55:53.767318782 +0100
+@@ -127,6 +127,54 @@
  #ifndef STBI_INCLUDE_STB_IMAGE_H
  #define STBI_INCLUDE_STB_IMAGE_H
  
@@ -21,6 +21,9 @@
 +
 +#define STBI_FREE(x) do { \
 +    void *STBI_FREE_buf = (x); \
++    if (STBI_FREE_buf == NULL) { \
++        break; \
++    } \
 +    STBI_FREE_buf -= 16; \
 +    size_t *STBI_FREE_alloc_size_ptr = STBI_FREE_buf; \
 +    size_t STBI_FREE_alloc_size = *STBI_FREE_alloc_size_ptr; \
@@ -31,8 +34,10 @@
 +    void *STBI_REALLOC_buf = (x); \
 +    size_t STBI_REALLOC_alloc_size = (y); \
 +    void *STBI_REALLOC_new_buf = STBI_MALLOC(STBI_REALLOC_alloc_size); \
-+    memcpy(STBI_REALLOC_new_buf, STBI_REALLOC_buf, STBI_REALLOC_alloc_size); \
-+    STBI_FREE(STBI_REALLOC_buf); \
++    if (STBI_REALLOC_buf != NULL) { \
++        memcpy(STBI_REALLOC_new_buf, STBI_REALLOC_buf, STBI_REALLOC_alloc_size); \
++        STBI_FREE(STBI_REALLOC_buf); \
++    } \
 +    STBI_REALLOC_new_buf; \
 +})
 +
@@ -50,7 +55,7 @@
  // DOCUMENTATION
  //
  // Limitations:
-@@ -381,7 +424,7 @@
+@@ -381,7 +429,7 @@
     STBI_rgb_alpha  = 4
  };
  
@@ -59,7 +64,7 @@
  typedef unsigned char stbi_uc;
  typedef unsigned short stbi_us;
  
-@@ -584,8 +627,8 @@
+@@ -584,8 +632,8 @@
  
  #include <stdarg.h>
  #include <stddef.h> // ptrdiff_t on osx
@@ -70,7 +75,7 @@
  #include <limits.h>
  
  #if !defined(STBI_NO_LINEAR) || !defined(STBI_NO_HDR)
-@@ -1574,10 +1617,12 @@
+@@ -1574,10 +1622,12 @@
  STBIDEF void   stbi_ldr_to_hdr_scale(float scale) { stbi__l2h_scale = scale; }
  #endif
  

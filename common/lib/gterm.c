@@ -434,7 +434,7 @@ __attribute__((always_inline)) static inline void genloop(struct fb_info *fb, si
     case IMAGE_TILED:
         for (size_t y = ystart; y < yend; y++) {
             size_t image_y = y % img_height, image_x = xstart % img_width;
-            const size_t off = img_pitch * (img_height - 1 - image_y);
+            const size_t off = img_pitch * image_y;
             size_t canvas_off = fb->framebuffer_width * y;
             for (size_t x = xstart; x < xend; x++) {
                 uint32_t img_pixel = *(uint32_t*)(img + image_x * colsize + off);
@@ -448,7 +448,7 @@ __attribute__((always_inline)) static inline void genloop(struct fb_info *fb, si
     case IMAGE_CENTERED:
         for (size_t y = ystart; y < yend; y++) {
             size_t image_y = y - background->y_displacement;
-            const size_t off = img_pitch * (img_height - 1 - image_y);
+            const size_t off = img_pitch * image_y;
             size_t canvas_off = fb->framebuffer_width * y;
             if (image_y >= background->y_size) { /* external part */
                 for (size_t x = xstart; x < xend; x++) {
@@ -473,7 +473,7 @@ __attribute__((always_inline)) static inline void genloop(struct fb_info *fb, si
     case IMAGE_STRETCHED:
         for (size_t y = ystart; y < yend; y++) {
             size_t img_y = (y * img_height) / fb->framebuffer_height; // calculate Y with full precision
-            size_t off = img_pitch * (img_height - 1 - img_y);
+            size_t off = img_pitch * img_y;
             size_t canvas_off = fb->framebuffer_width * y;
 
             size_t ratio = int_to_fixedp6(img_width) / fb->framebuffer_width;

@@ -1,6 +1,6 @@
---- common/stb/stb_image.h	2023-02-18 09:34:39.771655260 +0100
-+++ common/stb/stb_image.h	2023-02-18 09:35:26.014990183 +0100
-@@ -127,6 +127,28 @@
+--- common/stb/stb_image.h	2023-03-05 06:32:45.628671768 +0100
++++ common/stb/stb_image.h	2023-03-05 07:47:29.931051098 +0100
+@@ -127,6 +127,31 @@
  #ifndef STBI_INCLUDE_STB_IMAGE_H
  #define STBI_INCLUDE_STB_IMAGE_H
  
@@ -25,11 +25,14 @@
 +
 +#define STBI_ONLY_ZLIB
 +#define STBI_SUPPORT_ZLIB
++#define STBI_ONLY_JPEG
++#define STBI_ONLY_PNG
++#define STBI_ONLY_BMP
 +
  // DOCUMENTATION
  //
  // Limitations:
-@@ -381,7 +403,7 @@
+@@ -381,7 +406,7 @@
     STBI_rgb_alpha  = 4
  };
  
@@ -38,7 +41,7 @@
  typedef unsigned char stbi_uc;
  typedef unsigned short stbi_us;
  
-@@ -584,8 +606,8 @@
+@@ -584,8 +609,8 @@
  
  #include <stdarg.h>
  #include <stddef.h> // ptrdiff_t on osx
@@ -49,7 +52,7 @@
  #include <limits.h>
  
  #if !defined(STBI_NO_LINEAR) || !defined(STBI_NO_HDR)
-@@ -1574,10 +1596,12 @@
+@@ -1574,10 +1599,12 @@
  STBIDEF void   stbi_ldr_to_hdr_scale(float scale) { stbi__l2h_scale = scale; }
  #endif
  

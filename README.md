@@ -232,6 +232,7 @@ More info on the format of `limine.cfg` can be found in [`CONFIG.md`](https://gi
 
 ## Acknowledgments
 Limine uses a stripped-down version of [tinf](https://github.com/jibsen/tinf) for early GZIP decompression.
+
 Limine relies on [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h) for runtime GZIP decompression and image loading.
 
 ## Discord server

@@ -1,9 +1,10 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <lib/image.h>
 #include <lib/config.h>
 #include <lib/misc.h>
 #include <mm/pmm.h>
-#include <lib/bmp.h>
+#include <stb/stb_image.h>
 
 void image_make_centered(struct image *image, int frame_x_size, int frame_y_size, uint32_t back_colour) {
     image->type = IMAGE_CENTERED;
@@ -26,11 +27,36 @@ struct image *image_open(struct file_handle *file) {
 
     image->type = IMAGE_TILED;
 
-    if (bmp_open_image(image, file))
-        return image;
+    void *src = ext_mem_alloc(file->size);
 
-    pmm_free(image, sizeof(struct image));
-    return NULL;
+    fread(file, src, 0, file->size);
+
+    int x, y, bpp;
+
+    image->img = stbi_load_from_memory(src, file->size, &x, &y, &bpp, 4);
+
+    pmm_free(src, file->size);
+
+    if (image->img == NULL) {
+        pmm_free(image, sizeof(struct image));
+        return NULL;
+    }
+
+    // Convert ABGR to XRGB
+    uint32_t *pptr = (void *)image->img;
+    for (int i = 0; i < x * y; i++) {
+        pptr[i] = (pptr[i] & 0x0000ff00) | ((pptr[i] & 0x00ff0000) >> 16) | ((pptr[i] & 0x000000ff) << 16);
+    }
+
+    image->allocated_size = x * y * 4;
+    image->x_size = x;
+    image->y_size = y;
+    image->pitch = x * 4;
+    image->bpp = 32;
+    image->img_width = x;
+    image->img_height = y;
+
+    return image;
 }
 
 void image_close(struct image *image) {

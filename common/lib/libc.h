@@ -10,6 +10,8 @@ bool isspace(int c);
 int toupper(int c);
 int tolower(int c);
 
+int abs(int i);
+
 void *memset(void *, int, size_t);
 void *memcpy(void *, const void *, size_t);
 int memcmp(const void *, const void *, size_t);

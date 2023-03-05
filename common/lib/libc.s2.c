@@ -26,6 +26,10 @@ int tolower(int c) {
     return c;
 }
 
+int abs(int i) {
+    return i < 0 ? -i : i;
+}
+
 char *strcpy(char *dest, const char *src) {
     size_t i;
 

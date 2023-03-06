@@ -9,7 +9,7 @@ as the reference implementation for the [Limine boot protocol](/PROTOCOL.md).
 
 ![Reference screenshot](/screenshot.png?raw=true "Reference screenshot")
 
-[Photo by Lívia Bittencourt](https://www.pexels.com/photo/big-sea-waves-under-rainbow-and-cloudy-sky-4636525/)
+[Photo by Rostislav Uzunov](https://www.pexels.com/photo/purple-and-pink-diamond-on-blue-background-5011647/)
 
 ### Supported architectures
 * IA-32 (32-bit x86)

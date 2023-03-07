@@ -58,8 +58,8 @@ static bool stage3_init(struct volume *part) {
     }
 
     fread(stage3, stage3_addr,
-          (uintptr_t)stage3_addr - 0x8000,
-          stage3->size - ((uintptr_t)stage3_addr - 0x8000));
+          (uintptr_t)stage3_addr - 0xf000,
+          stage3->size - ((uintptr_t)stage3_addr - 0xf000));
 
     fclose(stage3);
 

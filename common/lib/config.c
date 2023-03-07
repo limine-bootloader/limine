@@ -98,20 +98,25 @@ static struct menu_entry *create_menu_tree(struct menu_entry *parent,
                 break;
         }
 
-        struct menu_entry *entry = ext_mem_alloc(sizeof(struct menu_entry));
+        size_t entry_size;
+        char *config_entry = config_get_entry(&entry_size, i);
 
+        const char *arch = config_get_value(config_entry, 0, "KERNEL_ARCH");
+        if (arch == NULL)
+            arch = config_get_value(config_entry, 0, "ARCH");
+        if (arch != NULL && strcmp(arch, get_arch_name()) != 0)
+                continue;
+
+        struct menu_entry *entry = ext_mem_alloc(sizeof(struct menu_entry));
         if (root == NULL)
             root = entry;
 
         config_get_entry_name(name, i, 64);
-
         bool default_expanded = name[current_depth] == '+';
 
         strcpy(entry->name, name + current_depth + default_expanded);
         entry->parent = parent;
 
-        size_t entry_size;
-        char *config_entry = config_get_entry(&entry_size, i);
         entry->body = ext_mem_alloc(entry_size + 1);
         memcpy(entry->body, config_entry, entry_size);
         entry->body[entry_size] = 0;

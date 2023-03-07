@@ -21,6 +21,20 @@ UINT32 efi_desc_ver = 0;
 
 bool editor_enabled = true;
 
+const char *get_arch_name(void) {
+#ifdef __i386__
+    return "i386";
+#elif defined (__x86_64__)
+    return "x86_64";
+#elif defined (__aarch64__)
+    return "aarch64";
+#elif defined (__riscv64)
+    return "riscv64";
+#else
+    #error "Unknown architecture"
+#endif
+}
+
 bool parse_resolution(size_t *width, size_t *height, size_t *bpp, const char *buf) {
     size_t res[3] = {0};
 

@@ -84,9 +84,11 @@ static size_t get_prev_line(size_t index, const char *buffer) {
 }
 
 static const char *VALID_KEYS[] = {
+    "ARCH",
     "COMMENT",
     "PROTOCOL",
     "CMDLINE",
+    "KERNEL_ARCH",
     "KERNEL_CMDLINE",
     "KERNEL_PATH",
     "INITRD_PATH",

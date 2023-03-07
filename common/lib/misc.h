@@ -38,6 +38,8 @@ extern bool stage3_loaded;
 
 extern bool quiet, serial, editor_enabled, hash_mismatch_panic;
 
+const char *get_arch_name(void);
+
 bool parse_resolution(size_t *width, size_t *height, size_t *bpp, const char *buf);
 
 void get_absolute_path(char *path_ptr, const char *path, const char *pwd);

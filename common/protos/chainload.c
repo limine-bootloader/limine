@@ -21,7 +21,7 @@
 #if defined (BIOS)
 
 __attribute__((noinline, section(".realmode")))
-noreturn static void spinup(uint8_t drive) {
+noreturn static void spinup(uint8_t drive, void *buf) {
     struct idtr real_mode_idt;
     real_mode_idt.limit = 0x3ff;
     real_mode_idt.ptr   = 0;
@@ -29,6 +29,14 @@ noreturn static void spinup(uint8_t drive) {
     asm volatile (
         "cli\n\t"
         "cld\n\t"
+
+        // Safe stack location
+        "mov $0x7c00, %%esp\n\t"
+
+        // move buffer to final location
+        "mov $0x7c00, %%edi\n\t"
+        "mov $512, %%ecx\n\t"
+        "rep movsb\n\t"
 
         "lidt (%%eax)\n\t"
 
@@ -65,7 +73,7 @@ noreturn static void spinup(uint8_t drive) {
 
         ".code32\n\t"
         :
-        : "a" (&real_mode_idt), "d" (drive)
+        : "a" (&real_mode_idt), "d" (drive), "S"(buf)
         : "memory"
     );
 
@@ -177,15 +185,17 @@ load:
 void bios_chainload_volume(struct volume *p) {
     vga_textmode_init(false);
 
-    volume_read(p, (void *)0x7c00, 0, 512);
+    void *buf = ext_mem_alloc(512);
 
-    volatile uint16_t *boot_sig = (volatile uint16_t *)0x7dfe;
+    volume_read(p, buf, 0, 512);
+
+    uint16_t *boot_sig = (uint16_t *)(buf + 0x1fe);
 
     if (*boot_sig != 0xaa55) {
         return;
     }
 
-    spinup(p->drive);
+    spinup(p->drive, buf);
 }
 
 #elif defined (UEFI)

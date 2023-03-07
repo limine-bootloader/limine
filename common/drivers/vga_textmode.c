@@ -111,12 +111,13 @@ static void text_double_buffer_flush(struct term_context *_ctx) {
             continue;
         }
 
+        ctx->front_buffer[i] = ctx->back_buffer[i];
+
         if (_ctx->cursor_enabled && i == ctx->cursor_offset + 1) {
             continue;
         }
 
-        ctx->front_buffer[i] = ctx->back_buffer[i];
-        ctx->video_mem[i]    = ctx->back_buffer[i];
+        ctx->video_mem[i] = ctx->back_buffer[i];
     }
 
     if (_ctx->cursor_enabled) {
@@ -348,6 +349,11 @@ void vga_textmode_init(bool managed) {
     term->in_bootloader = true;
 
     term_context_reinit(term);
+
+    if (!managed) {
+        term->cursor_enabled = false;
+    }
+
     term->full_refresh(term);
 
     term_backend = TEXTMODE;

@@ -12,7 +12,7 @@ PHDRS
 
 SECTIONS
 {
-    . = 0x8000;
+    . = 0xf000;
 
     .text.stage2 : {
         *(.entry)
@@ -80,7 +80,7 @@ SECTIONS
 
     .note.gnu.build-id : {
         *(.note.gnu.build-id)
-        limine_sys_size = . - 0x8000;
+        limine_sys_size = . - 0xf000;
     } :data_s3
 
     .bss : {

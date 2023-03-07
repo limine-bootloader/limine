@@ -90,9 +90,9 @@ At handoff, the kernel will be properly loaded and mapped with appropriate
 MMU permissions at the requested virtual memory address (provided it is at
 or above `0xffffffff80000000`).
 
-No specific physical memory placement is guaranteed. In order to determine
-where the kernel is loaded in physical memory, see the Kernel Address feature
-below.
+No specific physical memory placement is guaranteed, except that the kernel
+is guaranteed to be physically contignous. In order to determine where the
+kernel is loaded in physical memory, see the Kernel Address feature below.
 
 Alongside the loaded kernel, the bootloader will set up memory mappings as such:
 ```

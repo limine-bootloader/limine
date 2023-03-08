@@ -292,7 +292,7 @@ noreturn void efi_chainload_file(char *config, char *cmdline, struct file_handle
         new_handle_loaded_image->DeviceHandle = efi_part_handle;
     }
 
-    new_handle_loaded_image->LoadOptionsSize = cmdline_len;
+    new_handle_loaded_image->LoadOptionsSize = cmdline_len * sizeof(CHAR16);
     new_handle_loaded_image->LoadOptions = new_cmdline;
 
     UINTN exit_data_size = 0;

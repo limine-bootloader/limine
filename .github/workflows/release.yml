@@ -63,7 +63,7 @@ jobs:
         run: i686-w64-mingw32-strip build/bin/limine-deploy.exe
 
       - name: Copy LICENSE to bin
-        run: cp LICENSE.md build/bin/
+        run: cp LICENSE build/bin/
 
       - name: Copy install-sh to bin
         run: cp build-aux/install-sh build/bin/

@@ -134,7 +134,7 @@ clean: limine-bios-clean limine-uefi-ia32-clean limine-uefi-x86-64-clean limine-
 .PHONY: install
 install: all
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(docdir))'
-	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/LICENSE.md' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/LICENSE' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
 	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/CONFIG.md' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
 	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/PROTOCOL.md' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
 	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/PHILOSOPHY.md' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
@@ -187,7 +187,7 @@ endif
 
 .PHONY: uninstall
 uninstall:
-	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/LICENSE.md'
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/LICENSE'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/CONFIG.md'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/PROTOCOL.md'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/PHILOSOPHY.md'

@@ -25,7 +25,7 @@
 /.vscode
 /test_image
 !/common/font.bin
-/cross-detect
+/freestanding-toolchain
 /configure
 /configure.ac.save
 /build-aux

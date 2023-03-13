@@ -3,7 +3,6 @@ AC_INIT([Limine], [m4_esyscmd([./version.sh])], [https://github.com/limine-bootl
 AC_PREREQ([2.69])
 
 AC_CONFIG_AUX_DIR([build-aux])
-AC_CONFIG_SUBDIRS([cross-detect])
 
 SRCDIR="$(cd "$srcdir" && pwd -P)"
 BUILDDIR="$(pwd -P)"
@@ -102,7 +101,7 @@ else
     (
     $MKDIR_P "$BUILDDIR/cross-files"
     cd "$BUILDDIR/cross-files"
-    CC="$CC" TRIPLET=i686-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes WANT_CROSS_READELF=yes "$SRCDIR/cross-detect/configure"
+    CC="$CC" ARCHITECTURE=i686 WANT_CROSS_CC=yes WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes WANT_CROSS_READELF=yes "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/cross-files/bios-i686-toolchain.mk"
     ) || exit 1
     BUILD_BIOS="limine-bios"
     NEED_NASM=yes
@@ -124,7 +123,7 @@ else
     (
     $MKDIR_P "$BUILDDIR/cross-files"
     cd "$BUILDDIR/cross-files"
-    CC="$CC" TRIPLET=i686-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes "$SRCDIR/cross-detect/configure"
+    CC="$CC" ARCHITECTURE=i686 WANT_CROSS_CC=yes WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/cross-files/uefi-i686-toolchain.mk"
     ) || exit 1
     BUILD_UEFI_IA32="limine-uefi-ia32"
     NEED_NASM=yes
@@ -144,7 +143,7 @@ else
     (
     $MKDIR_P "$BUILDDIR/cross-files"
     cd "$BUILDDIR/cross-files"
-    CC="$CC" TRIPLET=x86_64-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes "$SRCDIR/cross-detect/configure"
+    CC="$CC" ARCHITECTURE=x86_64 WANT_CROSS_CC=yes WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/cross-files/uefi-x86_64-toolchain.mk"
     ) || exit 1
     BUILD_UEFI_X86_64="limine-uefi-x86-64"
     NEED_NASM=yes
@@ -164,7 +163,7 @@ else
     (
     mkdir -p "$BUILDDIR/cross-files"
     cd "$BUILDDIR/cross-files"
-    CC="$CC" TRIPLET=aarch64-elf WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes "$SRCDIR/cross-detect/configure"
+    CC="$CC" ARCHITECTURE=aarch64 WANT_CROSS_CC=yes WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/cross-files/uefi-aarch64-toolchain.mk"
     ) || exit 1
     BUILD_UEFI_AARCH64="limine-uefi-aarch64"
 fi

@@ -95,8 +95,6 @@ these, run `./configure --help`.
 **`./configure` by default does not build any Limine port. Make sure to read the**
 **output of `./configure --help` and enable any or all ports!**
 
-To build using the LLVM toolchain, pass `CROSS_TOOLCHAIN=llvm` to `./configure`.
-
 Limine supports both in-tree and out-of-tree builds. Simply run the `configure`
 script from the directory you wish to execute the build in. The following `make`
 commands are supposed to be ran inside the build directory.

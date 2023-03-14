@@ -1,6 +1,6 @@
 override MAKEFLAGS += -rR
 
-include $(CROSS_FILE)
+include $(TOOLCHAIN_FILE)
 
 BUILDDIR ?=
 
@@ -14,7 +14,7 @@ ifeq ($(call MKESCAPE,$(BUILDDIR)),)
     $(error BUILDDIR not specified)
 endif
 
-override CROSS_CFLAGS += \
+override FREESTANDING_CFLAGS += \
     -Os \
     -std=gnu11 \
     -nostdinc \
@@ -33,22 +33,22 @@ override CROSS_CFLAGS += \
     -Wshadow \
     -Wvla
 
-override CROSS_CPPFLAGS := \
+override FREESTANDING_CPPFLAGS := \
     -I../freestanding-headers \
     -I'$(call SHESCAPE,$(BUILDDIR))/tinf' \
     -I. \
-    $(CROSS_CPPFLAGS) \
+    $(FREESTANDING_CPPFLAGS) \
     -MMD
 
-override CROSS_LDFLAGS += \
+override FREESTANDING_LDFLAGS += \
     -m elf_i386 \
     -nostdlib \
     -z max-page-size=0x1000 \
     -static \
     -T linker.ld
 
-ifeq ($(CROSS_LD_HAS_NO_PIE),yes)
-    override CROSS_LDFLAGS += -no-pie
+ifeq ($(FREESTANDING_LD_HAS_NO_PIE),yes)
+    override FREESTANDING_LDFLAGS += -no-pie
 endif
 
 override C_FILES := $(shell find . -type f -name '*.c')
@@ -60,8 +60,8 @@ override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=
 all: $(call MKESCAPE,$(BUILDDIR))/decompressor.bin
 
 $(call MKESCAPE,$(BUILDDIR))/decompressor.bin: $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o
-	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) -o '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf'
-	$(CROSS_OBJCOPY) -O binary '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf' '$(call SHESCAPE,$@)'
+	$(FREESTANDING_LD) '$(call OBJESCAPE,$^)' $(FREESTANDING_LDFLAGS) -o '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf'
+	$(FREESTANDING_OBJCOPY) -O binary '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf' '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))/tinf'
@@ -71,17 +71,17 @@ $(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
 
 $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) $(CROSS_CPPFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
+	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) $(CROSS_CPPFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
+	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
 
 -include $(HEADER_DEPS)
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CFLAGS) $(CROSS_CPPFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"

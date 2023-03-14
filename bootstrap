@@ -14,9 +14,4 @@ cd "$srcdir"
 [ -d limine-efi ] || git clone https://github.com/limine-bootloader/limine-efi.git
 [ -d libgcc-binaries ] || git clone https://github.com/mintsuki/libgcc-binaries.git
 
-automake_libdir="$(automake --print-libdir)"
-
-mkdir -p build-aux
-cp "${automake_libdir}/install-sh" build-aux
-
-autoreconf -fvi
+autoreconf -fvi -Wall

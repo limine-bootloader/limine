@@ -105,7 +105,14 @@ if test "x$BUILD_BIOS" = "xno"; then
     BUILD_BIOS=""
 else
     $MKDIR_P "$BUILDDIR/toolchain-files"
-    CC="$CC" ARCHITECTURE=i686 WANT_FREESTANDING_CC=yes WANT_FREESTANDING_LD=yes WANT_FREESTANDING_OBJCOPY=yes WANT_FREESTANDING_OBJDUMP=yes WANT_FREESTANDING_READELF=yes "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/bios-i686-toolchain.mk"
+    CC="$CC" \
+        ARCHITECTURE=i686 \
+        WANT_FREESTANDING_CC=yes \
+        WANT_FREESTANDING_LD=yes \
+        WANT_FREESTANDING_OBJCOPY=yes \
+        WANT_FREESTANDING_OBJDUMP=yes \
+        WANT_FREESTANDING_READELF=yes \
+        "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/bios-i686-toolchain.mk" || exit 1
     BUILD_BIOS="limine-bios"
     NEED_NASM=yes
     NEED_GZIP=yes
@@ -124,7 +131,13 @@ if test "x$BUILD_UEFI_IA32" = "xno"; then
     BUILD_UEFI_IA32=""
 else
     $MKDIR_P "$BUILDDIR/toolchain-files"
-    CC="$CC" ARCHITECTURE=i686 WANT_FREESTANDING_CC=yes WANT_FREESTANDING_LD=yes WANT_FREESTANDING_OBJCOPY=yes WANT_FREESTANDING_OBJDUMP=yes "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/uefi-i686-toolchain.mk"
+    CC="$CC" \
+        ARCHITECTURE=i686 \
+        WANT_FREESTANDING_CC=yes \
+        WANT_FREESTANDING_LD=yes \
+        WANT_FREESTANDING_OBJCOPY=yes \
+        WANT_FREESTANDING_OBJDUMP=yes \
+        "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/uefi-i686-toolchain.mk" || exit 1
     BUILD_UEFI_IA32="limine-uefi-ia32"
     NEED_NASM=yes
 fi
@@ -141,7 +154,13 @@ if test "x$BUILD_UEFI_X86_64" = "xno"; then
     BUILD_UEFI_X86_64=""
 else
     $MKDIR_P "$BUILDDIR/toolchain-files"
-    CC="$CC" ARCHITECTURE=x86_64 WANT_FREESTANDING_CC=yes WANT_FREESTANDING_LD=yes WANT_FREESTANDING_OBJCOPY=yes WANT_FREESTANDING_OBJDUMP=yes "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/uefi-x86_64-toolchain.mk"
+    CC="$CC" \
+        ARCHITECTURE=x86_64 \
+        WANT_FREESTANDING_CC=yes \
+        WANT_FREESTANDING_LD=yes \
+        WANT_FREESTANDING_OBJCOPY=yes \
+        WANT_FREESTANDING_OBJDUMP=yes \
+        "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/uefi-x86_64-toolchain.mk" || exit 1
     BUILD_UEFI_X86_64="limine-uefi-x86-64"
     NEED_NASM=yes
 fi
@@ -158,7 +177,13 @@ if test "x$BUILD_UEFI_AARCH64" = "xno"; then
     BUILD_UEFI_AARCH64=""
 else
     mkdir -p "$BUILDDIR/toolchain-files"
-    CC="$CC" ARCHITECTURE=aarch64 WANT_FREESTANDING_CC=yes WANT_FREESTANDING_LD=yes WANT_FREESTANDING_OBJCOPY=yes WANT_FREESTANDING_OBJDUMP=yes "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/uefi-aarch64-toolchain.mk"
+    CC="$CC" \
+        ARCHITECTURE=aarch64 \
+        WANT_FREESTANDING_CC=yes \
+        WANT_FREESTANDING_LD=yes \
+        WANT_FREESTANDING_OBJCOPY=yes \
+        WANT_FREESTANDING_OBJDUMP=yes \
+        "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/uefi-aarch64-toolchain.mk" || exit 1
     BUILD_UEFI_AARCH64="limine-uefi-aarch64"
 fi
 

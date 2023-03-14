@@ -13,10 +13,17 @@ AC_SUBST([BUILDDIR])
 REGEN_DATE="m4_esyscmd([date '+%B %Y' | tr -d '\n'])"
 AC_SUBST([REGEN_DATE])
 
+AC_DEFUN([PROG_ABSPATH], [
+    case "$$1" in
+        .*) $1="$(cd "$(dirname "$$1")" && pwd -P)/$(basename "$$1")" ;;
+    esac
+])
+
 test "x$CFLAGS" = "x" && CFLAGS='-g -O2 -pipe -Wall -Wextra'
 
 AC_LANG([C])
 AC_PROG_CC
+PROG_ABSPATH([CC])
 
 AC_CHECK_HEADERS([stdint.h stddef.h stdbool.h limits.h inttypes.h stdio.h stdlib.h string.h],
     [], [AC_MSG_ERROR([required header not found])])
@@ -31,16 +38,15 @@ if test "$werror_state" = "yes"; then
 fi
 
 AC_PROG_MKDIR_P
-case "$MKDIR_P" in
-    .*) MKDIR_P="$(cd "$(dirname "$MKDIR_P")" && pwd -P)/$(basename "$MKDIR_P")" ;;
-esac
+PROG_ABSPATH([MKDIR_P])
 AC_PROG_INSTALL
-case "$INSTALL" in
-    .*) INSTALL="$(cd "$(dirname "$INSTALL")" && pwd -P)/$(basename "$INSTALL")" ;;
-esac
+PROG_ABSPATH([INSTALL])
 AC_PROG_SED
+PROG_ABSPATH([SED])
 AC_PROG_GREP
+PROG_ABSPATH([GREP])
 AC_PROG_AWK
+PROG_ABSPATH([AWK])
 
 AC_CHECK_PROG([FIND_FOUND], [find], [yes])
 if ! test "x$FIND_FOUND" = "xyes"; then

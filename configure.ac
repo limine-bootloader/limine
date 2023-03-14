@@ -54,12 +54,12 @@ if ! test "x$NATIVE_STRIP_FOUND" = "xyes"; then
 fi
 AC_SUBST([NATIVE_STRIP])
 
-rm -rf "$BUILDDIR/cross-files"
+rm -rf "$BUILDDIR/toolchain-files"
 
 BUILD_ALL="no"
 
 AC_ARG_ENABLE([all],
-    [AS_HELP_STRING([--enable-all], [enable ALL ports])],
+    [AS_HELP_STRING([--enable-all], [enable ALL ports and targets])],
     [BUILD_ALL="$enableval"])
 
 BUILD_CD="$BUILD_ALL"
@@ -98,11 +98,8 @@ fi
 if test "x$BUILD_BIOS" = "xno"; then
     BUILD_BIOS=""
 else
-    (
-    $MKDIR_P "$BUILDDIR/cross-files"
-    cd "$BUILDDIR/cross-files"
-    CC="$CC" ARCHITECTURE=i686 WANT_CROSS_CC=yes WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes WANT_CROSS_READELF=yes "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/cross-files/bios-i686-toolchain.mk"
-    ) || exit 1
+    $MKDIR_P "$BUILDDIR/toolchain-files"
+    CC="$CC" ARCHITECTURE=i686 WANT_FREESTANDING_CC=yes WANT_FREESTANDING_LD=yes WANT_FREESTANDING_OBJCOPY=yes WANT_FREESTANDING_OBJDUMP=yes WANT_FREESTANDING_READELF=yes "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/bios-i686-toolchain.mk"
     BUILD_BIOS="limine-bios"
     NEED_NASM=yes
     NEED_GZIP=yes
@@ -120,11 +117,8 @@ AC_ARG_ENABLE([uefi-ia32],
 if test "x$BUILD_UEFI_IA32" = "xno"; then
     BUILD_UEFI_IA32=""
 else
-    (
-    $MKDIR_P "$BUILDDIR/cross-files"
-    cd "$BUILDDIR/cross-files"
-    CC="$CC" ARCHITECTURE=i686 WANT_CROSS_CC=yes WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/cross-files/uefi-i686-toolchain.mk"
-    ) || exit 1
+    $MKDIR_P "$BUILDDIR/toolchain-files"
+    CC="$CC" ARCHITECTURE=i686 WANT_FREESTANDING_CC=yes WANT_FREESTANDING_LD=yes WANT_FREESTANDING_OBJCOPY=yes WANT_FREESTANDING_OBJDUMP=yes "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/uefi-i686-toolchain.mk"
     BUILD_UEFI_IA32="limine-uefi-ia32"
     NEED_NASM=yes
 fi
@@ -140,11 +134,8 @@ AC_ARG_ENABLE([uefi-x86-64],
 if test "x$BUILD_UEFI_X86_64" = "xno"; then
     BUILD_UEFI_X86_64=""
 else
-    (
-    $MKDIR_P "$BUILDDIR/cross-files"
-    cd "$BUILDDIR/cross-files"
-    CC="$CC" ARCHITECTURE=x86_64 WANT_CROSS_CC=yes WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/cross-files/uefi-x86_64-toolchain.mk"
-    ) || exit 1
+    $MKDIR_P "$BUILDDIR/toolchain-files"
+    CC="$CC" ARCHITECTURE=x86_64 WANT_FREESTANDING_CC=yes WANT_FREESTANDING_LD=yes WANT_FREESTANDING_OBJCOPY=yes WANT_FREESTANDING_OBJDUMP=yes "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/uefi-x86_64-toolchain.mk"
     BUILD_UEFI_X86_64="limine-uefi-x86-64"
     NEED_NASM=yes
 fi
@@ -160,11 +151,8 @@ AC_ARG_ENABLE([uefi-aarch64],
 if test "x$BUILD_UEFI_AARCH64" = "xno"; then
     BUILD_UEFI_AARCH64=""
 else
-    (
-    mkdir -p "$BUILDDIR/cross-files"
-    cd "$BUILDDIR/cross-files"
-    CC="$CC" ARCHITECTURE=aarch64 WANT_CROSS_CC=yes WANT_CROSS_LD=yes WANT_CROSS_OBJCOPY=yes WANT_CROSS_OBJDUMP=yes "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/cross-files/uefi-aarch64-toolchain.mk"
-    ) || exit 1
+    mkdir -p "$BUILDDIR/toolchain-files"
+    CC="$CC" ARCHITECTURE=aarch64 WANT_FREESTANDING_CC=yes WANT_FREESTANDING_LD=yes WANT_FREESTANDING_OBJCOPY=yes WANT_FREESTANDING_OBJDUMP=yes "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/uefi-aarch64-toolchain.mk"
     BUILD_UEFI_AARCH64="limine-uefi-aarch64"
 fi
 
@@ -203,27 +191,27 @@ if test "x$NEED_GZIP" = "xyes"; then
     fi
 fi
 
-AC_ARG_VAR([CROSS_TOOLCHAIN], [alternative toolchain prefix for Limine (or 'llvm')])
-AC_ARG_VAR([CROSS_CC], [C compiler command for Limine])
-AC_ARG_VAR([CROSS_LD], [linker command for Limine])
-AC_ARG_VAR([CROSS_OBJCOPY], [objcopy command for Limine])
-AC_ARG_VAR([CROSS_OBJDUMP], [objdump command for Limine])
-AC_ARG_VAR([CROSS_READELF], [readelf command for Limine])
+AC_ARG_VAR([FREESTANDING_TOOLCHAIN], [alternative toolchain prefix for Limine (or 'llvm', or 'gnu')])
+AC_ARG_VAR([FREESTANDING_CC], [C compiler command for Limine])
+AC_ARG_VAR([FREESTANDING_LD], [linker command for Limine])
+AC_ARG_VAR([FREESTANDING_OBJCOPY], [objcopy command for Limine])
+AC_ARG_VAR([FREESTANDING_OBJDUMP], [objdump command for Limine])
+AC_ARG_VAR([FREESTANDING_READELF], [readelf command for Limine])
 
-m4_define([DEFAULT_CROSS_CFLAGS], [-g -O2 -pipe -Wall -Wextra])
-AC_ARG_VAR([CROSS_CFLAGS], [C flags for Limine @<:@default: ]DEFAULT_CROSS_CFLAGS[@:>@])
-test "x$CROSS_CFLAGS" = "x" && CROSS_CFLAGS="DEFAULT_CROSS_CFLAGS"
+m4_define([DEFAULT_FREESTANDING_CFLAGS], [-g -O2 -pipe -Wall -Wextra])
+AC_ARG_VAR([FREESTANDING_CFLAGS], [C flags for Limine @<:@default: ]DEFAULT_FREESTANDING_CFLAGS[@:>@])
+test "x$FREESTANDING_CFLAGS" = "x" && FREESTANDING_CFLAGS="DEFAULT_FREESTANDING_CFLAGS"
 if test "$werror_state" = "yes"; then
-    CROSS_CFLAGS="$CROSS_CFLAGS -Werror"
+    FREESTANDING_CFLAGS="$FREESTANDING_CFLAGS -Werror"
 fi
 
-m4_define([DEFAULT_CROSS_CPPFLAGS], [])
-AC_ARG_VAR([CROSS_CPPFLAGS], [C preprocessor flags for Limine @<:@default: ]DEFAULT_CROSS_CPPFLAGS[@:>@])
-test "x$CROSS_CPPFLAGS" = "x" && CROSS_CPPFLAGS="DEFAULT_CROSS_CPPFLAGS"
+m4_define([DEFAULT_FREESTANDING_CPPFLAGS], [])
+AC_ARG_VAR([FREESTANDING_CPPFLAGS], [C preprocessor flags for Limine @<:@default: ]DEFAULT_FREESTANDING_CPPFLAGS[@:>@])
+test "x$FREESTANDING_CPPFLAGS" = "x" && FREESTANDING_CPPFLAGS="DEFAULT_FREESTANDING_CPPFLAGS"
 
-m4_define([DEFAULT_CROSS_LDFLAGS], [])
-AC_ARG_VAR([CROSS_LDFLAGS], [Linker flags for Limine @<:@default: ]DEFAULT_CROSS_LDFLAGS[@:>@])
-test "x$CROSS_LDFLAGS" = "x" && CROSS_LDFLAGS="DEFAULT_CROSS_LDFLAGS"
+m4_define([DEFAULT_FREESTANDING_LDFLAGS], [])
+AC_ARG_VAR([FREESTANDING_LDFLAGS], [Linker flags for Limine @<:@default: ]DEFAULT_FREESTANDING_LDFLAGS[@:>@])
+test "x$FREESTANDING_LDFLAGS" = "x" && FREESTANDING_LDFLAGS="DEFAULT_FREESTANDING_LDFLAGS"
 
 LIMINE_COPYRIGHT=$($GREP Copyright "$SRCDIR/LICENSE")
 AC_SUBST([LIMINE_COPYRIGHT])

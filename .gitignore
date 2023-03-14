@@ -1,6 +1,6 @@
 /bin
 /build
-/cross-files
+/toolchain-files
 /limine-efi
 /freestanding-headers
 /libgcc-binaries

@@ -14,7 +14,7 @@ ifeq ($(call MKESCAPE,$(BUILDDIR)),)
     $(error BUILDDIR not specified)
 endif
 
-override FREESTANDING_CFLAGS += \
+override CFLAGS_FOR_TARGET += \
     -Os \
     -std=gnu11 \
     -nostdinc \
@@ -33,22 +33,22 @@ override FREESTANDING_CFLAGS += \
     -Wshadow \
     -Wvla
 
-override FREESTANDING_CPPFLAGS := \
+override CPPFLAGS_FOR_TARGET := \
     -I../freestanding-headers \
     -I./tinf \
     -I. \
-    $(FREESTANDING_CPPFLAGS) \
+    $(CPPFLAGS_FOR_TARGET) \
     -MMD
 
-override FREESTANDING_LDFLAGS += \
+override LDFLAGS_FOR_TARGET += \
     -m elf_i386 \
     -nostdlib \
     -z max-page-size=0x1000 \
     -static \
     -T linker.ld
 
-ifeq ($(FREESTANDING_LD_HAS_NO_PIE),yes)
-    override FREESTANDING_LDFLAGS += -no-pie
+ifeq ($(LD_FOR_TARGET_HAS_NO_PIE),yes)
+    override LDFLAGS_FOR_TARGET += -no-pie
 endif
 
 override C_FILES := $(shell find . -type f -name '*.c')
@@ -60,14 +60,14 @@ override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=
 all: $(call MKESCAPE,$(BUILDDIR))/decompressor.bin
 
 $(call MKESCAPE,$(BUILDDIR))/decompressor.bin: $(OBJ) ../libgcc-binaries/libgcc-i686.a
-	$(FREESTANDING_LD) '$(call OBJESCAPE,$^)' $(FREESTANDING_LDFLAGS) -o '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf'
-	$(FREESTANDING_OBJCOPY) -O binary '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf' '$(call SHESCAPE,$@)'
+	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf'
+	$(OBJCOPY_FOR_TARGET) -O binary '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf' '$(call SHESCAPE,$@)'
 
 -include $(HEADER_DEPS)
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"

@@ -19,10 +19,10 @@ jobs:
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Build the bootloader (LLVM)
-        run: ./bootstrap && ./configure FREESTANDING_TOOLCHAIN=llvm --enable-werror --enable-all && make all && make maintainer-clean
+        run: ./bootstrap && ./configure TOOLCHAIN_FOR_TARGET=llvm --enable-werror --enable-all && make all && make maintainer-clean
 
       - name: Build the bootloader (GNU, x86)
-        run: ./bootstrap && ./configure FREESTANDING_TOOLCHAIN=gnu --enable-werror --enable-bios --enable-uefi-ia32 --enable-uefi-x86_64 && make all && make maintainer-clean
+        run: ./bootstrap && ./configure TOOLCHAIN_FOR_TARGET=gnu --enable-werror --enable-bios --enable-uefi-ia32 --enable-uefi-x86_64 && make all && make maintainer-clean
 
       - name: Build the bootloader (GNU, aarch64)
-        run: ./bootstrap && ./configure FREESTANDING_TOOLCHAIN=aarch64-linux-gnu --enable-werror --enable-uefi-aarch64 && make all && make maintainer-clean
+        run: ./bootstrap && ./configure TOOLCHAIN_FOR_TARGET=aarch64-linux-gnu --enable-werror --enable-uefi-aarch64 && make all && make maintainer-clean

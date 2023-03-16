@@ -34,9 +34,9 @@ E9_OUTPUT ?= false
 
 override S2CFLAGS := -Os
 
-override BASE_CFLAGS := $(FREESTANDING_CFLAGS)
+override BASE_CFLAGS := $(CFLAGS_FOR_TARGET)
 
-override FREESTANDING_CFLAGS += \
+override CFLAGS_FOR_TARGET += \
     -g \
     -std=gnu11 \
     -nostdinc \
@@ -49,31 +49,31 @@ override FREESTANDING_CFLAGS += \
     -Wshadow \
     -Wvla
 
-override FREESTANDING_CPPFLAGS := \
+override CPPFLAGS_FOR_TARGET := \
     -I../freestanding-headers \
     -I'$(call SHESCAPE,$(BUILDDIR))/..' \
     -I. \
     -I.. \
-    $(FREESTANDING_CPPFLAGS) \
+    $(CPPFLAGS_FOR_TARGET) \
     -DCOM_OUTPUT=$(COM_OUTPUT) \
     -DE9_OUTPUT=$(E9_OUTPUT) \
     -MMD
 
 ifeq ($(TARGET),bios)
-    override FREESTANDING_CFLAGS += \
+    override CFLAGS_FOR_TARGET += \
         -fno-pie \
         -fno-pic \
         -m32 \
         -march=i686 \
         -mabi=sysv \
         -mno-80387
-    override FREESTANDING_CPPFLAGS := \
-        $(FREESTANDING_CPPFLAGS) \
+    override CPPFLAGS_FOR_TARGET := \
+        $(CPPFLAGS_FOR_TARGET) \
         -DBIOS
 endif
 
 ifeq ($(TARGET),uefi-x86-64)
-    override FREESTANDING_CFLAGS += \
+    override CFLAGS_FOR_TARGET += \
         -fpie \
         -m64 \
         -march=x86-64 \
@@ -83,56 +83,56 @@ ifeq ($(TARGET),uefi-x86-64)
         -mno-sse \
         -mno-sse2 \
         -mno-red-zone
-    override FREESTANDING_CPPFLAGS := \
+    override CPPFLAGS_FOR_TARGET := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/x86_64' \
-        $(FREESTANDING_CPPFLAGS) \
+        $(CPPFLAGS_FOR_TARGET) \
         -DUEFI \
         -DGNU_EFI_USE_MS_ABI
 endif
 
 ifeq ($(TARGET),uefi-ia32)
-    override FREESTANDING_CFLAGS += \
+    override CFLAGS_FOR_TARGET += \
         -fpie \
         -m32 \
         -march=i686 \
         -mabi=sysv \
         -mno-80387
-    override FREESTANDING_CPPFLAGS := \
+    override CPPFLAGS_FOR_TARGET := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/ia32' \
-        $(FREESTANDING_CPPFLAGS) \
+        $(CPPFLAGS_FOR_TARGET) \
         -DUEFI
 endif
 
 ifeq ($(TARGET),uefi-aarch64)
-    override FREESTANDING_CFLAGS += \
+    override CFLAGS_FOR_TARGET += \
         -fpie \
         -mgeneral-regs-only
-    override FREESTANDING_CPPFLAGS := \
+    override CPPFLAGS_FOR_TARGET := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/aarch64' \
-        $(FREESTANDING_CPPFLAGS) \
+        $(CPPFLAGS_FOR_TARGET) \
         -DUEFI
 endif
 
-override FREESTANDING_LDFLAGS += \
+override LDFLAGS_FOR_TARGET += \
     -nostdlib \
     -z max-page-size=0x1000
 
 ifeq ($(TARGET),bios)
-    override FREESTANDING_LDFLAGS += \
+    override LDFLAGS_FOR_TARGET += \
         -m elf_i386 \
         -static \
         --build-id=sha1
 
-    ifeq ($(FREESTANDING_LD_HAS_NO_PIE),yes)
-        override FREESTANDING_LDFLAGS += -no-pie
+    ifeq ($(LD_FOR_TARGET_HAS_NO_PIE),yes)
+        override LDFLAGS_FOR_TARGET += -no-pie
     endif
 endif
 
 ifeq ($(TARGET),uefi-x86-64)
-    override FREESTANDING_LDFLAGS += \
+    override LDFLAGS_FOR_TARGET += \
         -m elf_x86_64 \
         -static \
         -pie \
@@ -141,7 +141,7 @@ ifeq ($(TARGET),uefi-x86-64)
 endif
 
 ifeq ($(TARGET),uefi-ia32)
-    override FREESTANDING_LDFLAGS += \
+    override LDFLAGS_FOR_TARGET += \
         -m elf_i386 \
         -static \
         -pie \
@@ -150,7 +150,7 @@ ifeq ($(TARGET),uefi-ia32)
 endif
 
 ifeq ($(TARGET),uefi-aarch64)
-    override FREESTANDING_LDFLAGS += \
+    override LDFLAGS_FOR_TARGET += \
         -m aarch64elf \
         -static \
         -pie \
@@ -208,77 +208,77 @@ $(call MKESCAPE,$(BUILDDIR))/stage2.bin.gz: $(call MKESCAPE,$(BUILDDIR))/stage2.
 	gzip -n -9 < '$(call SHESCAPE,$<)' > '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/stage2.bin: $(call MKESCAPE,$(BUILDDIR))/limine.sys
-	dd if='$(call SHESCAPE,$<)' bs=$$(( 0x$$("$(FREESTANDING_READELF)" -S '$(call SHESCAPE,$(BUILDDIR))/limine.elf' | $(GREP) '\.text\.stage3' | $(SED) 's/^.*] //' | $(AWK) '{print $$3}' | $(SED) 's/^0*//') - 0xf000 )) count=1 of='$(call SHESCAPE,$@)' 2>/dev/null
+	dd if='$(call SHESCAPE,$<)' bs=$$(( 0x$$("$(READELF_FOR_TARGET)" -S '$(call SHESCAPE,$(BUILDDIR))/limine.elf' | $(GREP) '\.text\.stage3' | $(SED) 's/^.*] //' | $(AWK) '{print $$3}' | $(SED) 's/^0*//') - 0xf000 )) count=1 of='$(call SHESCAPE,$@)' 2>/dev/null
 
 $(call MKESCAPE,$(BUILDDIR))/stage2.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' stage2 32 '\.text\.stage2'
-	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/stage2.map.S' -o '$(call SHESCAPE,$@)'
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$(BUILDDIR))/stage2.map.S' -o '$(call SHESCAPE,$@)'
 	rm -f '$(call SHESCAPE,$(BUILDDIR))/stage2.map.S' '$(call SHESCAPE,$(BUILDDIR))/stage2.map.d'
 
 $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nos3map.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' full 32 '\.text'
-	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
 	rm -f '$(call SHESCAPE,$(BUILDDIR))/full.map.S' '$(call SHESCAPE,$(BUILDDIR))/full.map.d'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.sys: $(call MKESCAPE,$(BUILDDIR))/limine_stage2only.elf $(call MKESCAPE,$(BUILDDIR))/limine.elf
-	$(FREESTANDING_OBJCOPY) -O binary '$(call SHESCAPE,$(BUILDDIR))/limine.elf' '$(call SHESCAPE,$@)'
+	$(OBJCOPY_FOR_TARGET) -O binary '$(call SHESCAPE,$(BUILDDIR))/limine.elf' '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/linker_stage2only.ld: linker_bios.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
-	$(FREESTANDING_CC) -x c -E -P -undef -DLINKER_STAGE2ONLY linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_stage2only.ld'
+	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_STAGE2ONLY linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_stage2only.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_stage2only.elf: $(OBJ_S2) ../libgcc-binaries/libgcc-i686.a
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_stage2only.ld'
-	$(FREESTANDING_LD) '$(call OBJESCAPE,$^)' $(FREESTANDING_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker_stage2only.ld' -o '$(call SHESCAPE,$@)' || \
+	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker_stage2only.ld' -o '$(call SHESCAPE,$@)' || \
 		( echo "This error may mean that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
 		  false )
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nos2map.ld: linker_bios.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
-	$(FREESTANDING_CC) -x c -E -P -undef -DLINKER_NOMAP -DLINKER_NOS2MAP linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nos2map.ld'
+	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP -DLINKER_NOS2MAP linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nos2map.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(OBJ) ../libgcc-binaries/libgcc-i686.a
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nos2map.ld'
-	$(FREESTANDING_LD) '$(call OBJESCAPE,$^)' $(FREESTANDING_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nos2map.ld' -o '$(call SHESCAPE,$@)'
-	$(FREESTANDING_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
+	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nos2map.ld' -o '$(call SHESCAPE,$@)'
+	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(FREESTANDING_OBJCOPY) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s2.bin build-id.s2.o
-	$(FREESTANDING_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.bin'
+		$(OBJCOPY_FOR_TARGET) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s2.bin build-id.s2.o
+	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(FREESTANDING_OBJCOPY) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s3.bin build-id.s3.o
-	$(FREESTANDING_LD) '$(call OBJESCAPE,$^)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' $(FREESTANDING_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nos2map.ld' -o '$(call SHESCAPE,$@)'
+		$(OBJCOPY_FOR_TARGET) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s3.bin build-id.s3.o
+	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nos2map.ld' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_bios.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
-	$(FREESTANDING_CC) -x c -E -P -undef -DLINKER_NOMAP linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nos3map.elf: $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/stage2.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
-	$(FREESTANDING_LD) '$(call OBJESCAPE,$^)' $(FREESTANDING_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' -o '$(call SHESCAPE,$@)'
-	$(FREESTANDING_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
+	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' -o '$(call SHESCAPE,$@)'
+	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(FREESTANDING_OBJCOPY) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s2.bin build-id.s2.o
-	$(FREESTANDING_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.bin'
+		$(OBJCOPY_FOR_TARGET) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s2.bin build-id.s2.o
+	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(FREESTANDING_OBJCOPY) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s3.bin build-id.s3.o
-	$(FREESTANDING_LD) '$(call OBJESCAPE,$^)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' $(FREESTANDING_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' -o '$(call SHESCAPE,$@)'
+		$(OBJCOPY_FOR_TARGET) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s3.bin build-id.s3.o
+	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_bios.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
-	$(FREESTANDING_CC) -x c -E -P -undef linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+	$(CC_FOR_TARGET) -x c -E -P -undef linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/stage2.map.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
-	$(FREESTANDING_LD) '$(call OBJESCAPE,$^)' $(FREESTANDING_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' -o '$(call SHESCAPE,$@)'
-	$(FREESTANDING_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
+	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' -o '$(call SHESCAPE,$@)'
+	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(FREESTANDING_OBJCOPY) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s2.bin build-id.s2.o
-	$(FREESTANDING_OBJCOPY) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.bin'
+		$(OBJCOPY_FOR_TARGET) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s2.bin build-id.s2.o
+	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(FREESTANDING_OBJCOPY) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s3.bin build-id.s3.o
-	$(FREESTANDING_LD) '$(call OBJESCAPE,$^)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' $(FREESTANDING_LDFLAGS) -T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' -o '$(call SHESCAPE,$@)'
+		$(OBJCOPY_FOR_TARGET) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s3.bin build-id.s3.o
+	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' -o '$(call SHESCAPE,$@)'
 
 endif
 
@@ -291,39 +291,39 @@ ifeq ($(TARGET),uefi-x86-64)
 $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' full 64 '\.text'
-	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
 	rm -f '$(call SHESCAPE,$(BUILDDIR))/full.map.S' '$(call SHESCAPE,$(BUILDDIR))/full.map.d'
 
 $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.elf
-	$(FREESTANDING_OBJCOPY) -O binary '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
+	$(OBJCOPY_FOR_TARGET) -O binary '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_x86_64.o: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	unset CPPFLAGS; \
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
-		CC="$(FREESTANDING_CC)" \
+		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
 		CPPFLAGS='-nostdinc -I$(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
 		ARCH=x86_64
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_x86_64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
-	$(FREESTANDING_CC) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_x86_64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_x86_64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_x86_64.o $(OBJ) ../libgcc-binaries/libgcc-x86_64-no-red-zone.a
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
-	$(FREESTANDING_LD) \
+	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
-		'$(call OBJESCAPE,$^)' $(FREESTANDING_LDFLAGS) -o '$(call SHESCAPE,$@)'
+		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_x86_64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
-	$(FREESTANDING_CC) -x c -E -P -undef linker_uefi_x86_64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_x86_64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_x86_64.o $(OBJ) ../libgcc-binaries/libgcc-x86_64-no-red-zone.a $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
-	$(FREESTANDING_LD) \
+	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
-		'$(call OBJESCAPE,$^)' $(FREESTANDING_LDFLAGS) -o '$(call SHESCAPE,$@)'
+		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
 
 endif
 
@@ -332,39 +332,39 @@ ifeq ($(TARGET),uefi-aarch64)
 $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' full 64 '\.text'
-	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
 	rm -f '$(call SHESCAPE,$(BUILDDIR))/full.map.S' '$(call SHESCAPE,$(BUILDDIR))/full.map.d'
 
 $(call MKESCAPE,$(BUILDDIR))/BOOTAA64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.elf
-	$(FREESTANDING_OBJCOPY) -O binary '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
+	$(OBJCOPY_FOR_TARGET) -O binary '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-aarch64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_aarch64.o: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	unset CPPFLAGS; \
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
-		CC="$(FREESTANDING_CC)" \
+		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
 		CPPFLAGS='-nostdinc -I$(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
 		ARCH=aarch64
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_aarch64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
-	$(FREESTANDING_CC) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_aarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_aarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-aarch64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_aarch64.o $(OBJ) ../libgcc-binaries/libgcc-aarch64.a
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
-	$(FREESTANDING_LD) \
+	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
-		'$(call OBJESCAPE,$^)' $(FREESTANDING_LDFLAGS) -o '$(call SHESCAPE,$@)'
+		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_aarch64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
-	$(FREESTANDING_CC) -x c -E -P -undef linker_uefi_aarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_aarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-aarch64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_aarch64.o $(OBJ) ../libgcc-binaries/libgcc-aarch64.a $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
-	$(FREESTANDING_LD) \
+	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
-		'$(call OBJESCAPE,$^)' $(FREESTANDING_LDFLAGS) -o '$(call SHESCAPE,$@)'
+		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-ia32)
@@ -372,39 +372,39 @@ ifeq ($(TARGET),uefi-ia32)
 $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
 		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' full 32 '\.text'
-	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
 	rm -f '$(call SHESCAPE,$(BUILDDIR))/full.map.S' '$(call SHESCAPE,$(BUILDDIR))/full.map.d'
 
 $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.elf
-	$(FREESTANDING_OBJCOPY) -O binary '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
+	$(OBJCOPY_FOR_TARGET) -O binary '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_ia32.o: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	unset CPPFLAGS; \
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
-		CC="$(FREESTANDING_CC)" \
+		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
 		CPPFLAGS='-nostdinc -I$(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
 		ARCH=ia32
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_ia32.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
-	$(FREESTANDING_CC) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_ia32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_ia32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_ia32.o $(OBJ) ../libgcc-binaries/libgcc-i686.a
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
-	$(FREESTANDING_LD) \
+	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
-		'$(call OBJESCAPE,$^)' $(FREESTANDING_LDFLAGS) -o '$(call SHESCAPE,$@)'
+		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_ia32.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
-	$(FREESTANDING_CC) -x c -E -P -undef linker_uefi_ia32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_ia32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_ia32.o $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
-	$(FREESTANDING_LD) \
+	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
-		'$(call OBJESCAPE,$^)' $(FREESTANDING_LDFLAGS) -o '$(call SHESCAPE,$@)'
+		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
 
 endif
 
@@ -413,25 +413,25 @@ endif
 ifeq ($(TARGET),uefi-x86-64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-aarch64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-ia32)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),bios)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 -include $(HEADER_DEPS)
@@ -439,7 +439,7 @@ endif
 ifeq ($(TARGET),bios)
 $(call MKESCAPE,$(BUILDDIR))/%.s2.o: %.s2.c
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(S2CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(S2CFLAGS) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 -include $(HEADER_DEPS)
@@ -475,11 +475,11 @@ endif
 ifeq ($(TARGET),uefi-aarch64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_aarch64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_uefi_aarch64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-ia32)

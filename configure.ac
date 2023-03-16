@@ -107,11 +107,18 @@ else
     $MKDIR_P "$BUILDDIR/toolchain-files"
     CC="$CC" \
         ARCHITECTURE=i686 \
+        FREESTANDING_TOOLCHAIN_SUFFIX="_FOR_TARGET" \
+        FREESTANDING_TOOLCHAIN="$TOOLCHAIN_FOR_TARGET" \
         WANT_FREESTANDING_CC=yes \
+        FREESTANDING_CC="$CC_FOR_TARGET" \
         WANT_FREESTANDING_LD=yes \
+        FREESTANDING_LD="$LD_FOR_TARGET" \
         WANT_FREESTANDING_OBJCOPY=yes \
+        FREESTANDING_OBJCOPY="$OBJCOPY_FOR_TARGET" \
         WANT_FREESTANDING_OBJDUMP=yes \
+        FREESTANDING_OBJDUMP="$OBJDUMP_FOR_TARGET" \
         WANT_FREESTANDING_READELF=yes \
+        FREESTANDING_READELF="$READELF_FOR_TARGET" \
         "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/bios-i686-toolchain.mk" || exit 1
     BUILD_BIOS="limine-bios"
     NEED_NASM=yes
@@ -133,10 +140,16 @@ else
     $MKDIR_P "$BUILDDIR/toolchain-files"
     CC="$CC" \
         ARCHITECTURE=i686 \
+        FREESTANDING_TOOLCHAIN_SUFFIX="_FOR_TARGET" \
+        FREESTANDING_TOOLCHAIN="$TOOLCHAIN_FOR_TARGET" \
         WANT_FREESTANDING_CC=yes \
+        FREESTANDING_CC="$CC_FOR_TARGET" \
         WANT_FREESTANDING_LD=yes \
+        FREESTANDING_LD="$LD_FOR_TARGET" \
         WANT_FREESTANDING_OBJCOPY=yes \
+        FREESTANDING_OBJCOPY="$OBJCOPY_FOR_TARGET" \
         WANT_FREESTANDING_OBJDUMP=yes \
+        FREESTANDING_OBJDUMP="$OBJDUMP_FOR_TARGET" \
         "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/uefi-i686-toolchain.mk" || exit 1
     BUILD_UEFI_IA32="limine-uefi-ia32"
     NEED_NASM=yes
@@ -156,10 +169,16 @@ else
     $MKDIR_P "$BUILDDIR/toolchain-files"
     CC="$CC" \
         ARCHITECTURE=x86_64 \
+        FREESTANDING_TOOLCHAIN_SUFFIX="_FOR_TARGET" \
+        FREESTANDING_TOOLCHAIN="$TOOLCHAIN_FOR_TARGET" \
         WANT_FREESTANDING_CC=yes \
+        FREESTANDING_CC="$CC_FOR_TARGET" \
         WANT_FREESTANDING_LD=yes \
+        FREESTANDING_LD="$LD_FOR_TARGET" \
         WANT_FREESTANDING_OBJCOPY=yes \
+        FREESTANDING_OBJCOPY="$OBJCOPY_FOR_TARGET" \
         WANT_FREESTANDING_OBJDUMP=yes \
+        FREESTANDING_OBJDUMP="$OBJDUMP_FOR_TARGET" \
         "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/uefi-x86_64-toolchain.mk" || exit 1
     BUILD_UEFI_X86_64="limine-uefi-x86-64"
     NEED_NASM=yes
@@ -179,10 +198,16 @@ else
     mkdir -p "$BUILDDIR/toolchain-files"
     CC="$CC" \
         ARCHITECTURE=aarch64 \
+        FREESTANDING_TOOLCHAIN_SUFFIX="_FOR_TARGET" \
+        FREESTANDING_TOOLCHAIN="$TOOLCHAIN_FOR_TARGET" \
         WANT_FREESTANDING_CC=yes \
+        FREESTANDING_CC="$CC_FOR_TARGET" \
         WANT_FREESTANDING_LD=yes \
+        FREESTANDING_LD="$LD_FOR_TARGET" \
         WANT_FREESTANDING_OBJCOPY=yes \
+        FREESTANDING_OBJCOPY="$OBJCOPY_FOR_TARGET" \
         WANT_FREESTANDING_OBJDUMP=yes \
+        FREESTANDING_OBJDUMP="$OBJDUMP_FOR_TARGET" \
         "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/uefi-aarch64-toolchain.mk" || exit 1
     BUILD_UEFI_AARCH64="limine-uefi-aarch64"
 fi
@@ -222,27 +247,27 @@ if test "x$NEED_GZIP" = "xyes"; then
     fi
 fi
 
-AC_ARG_VAR([FREESTANDING_TOOLCHAIN], [alternative toolchain prefix for Limine (or 'llvm', or 'gnu')])
-AC_ARG_VAR([FREESTANDING_CC], [C compiler command for Limine])
-AC_ARG_VAR([FREESTANDING_LD], [linker command for Limine])
-AC_ARG_VAR([FREESTANDING_OBJCOPY], [objcopy command for Limine])
-AC_ARG_VAR([FREESTANDING_OBJDUMP], [objdump command for Limine])
-AC_ARG_VAR([FREESTANDING_READELF], [readelf command for Limine])
+AC_ARG_VAR([TOOLCHAIN_FOR_TARGET], [alternative toolchain prefix for Limine (or 'llvm', or 'gnu')])
+AC_ARG_VAR([CC_FOR_TARGET], [C compiler command for Limine])
+AC_ARG_VAR([LD_FOR_TARGET], [linker command for Limine])
+AC_ARG_VAR([OBJCOPY_FOR_TARGET], [objcopy command for Limine])
+AC_ARG_VAR([OBJDUMP_FOR_TARGET], [objdump command for Limine])
+AC_ARG_VAR([READELF_FOR_TARGET], [readelf command for Limine])
 
-m4_define([DEFAULT_FREESTANDING_CFLAGS], [-g -O2 -pipe -Wall -Wextra])
-AC_ARG_VAR([FREESTANDING_CFLAGS], [C flags for Limine @<:@default: ]DEFAULT_FREESTANDING_CFLAGS[@:>@])
-test "x$FREESTANDING_CFLAGS" = "x" && FREESTANDING_CFLAGS="DEFAULT_FREESTANDING_CFLAGS"
+m4_define([DEFAULT_CFLAGS_FOR_TARGET], [-g -O2 -pipe -Wall -Wextra])
+AC_ARG_VAR([CFLAGS_FOR_TARGET], [C flags for Limine @<:@default: ]DEFAULT_CFLAGS_FOR_TARGET[@:>@])
+test "x$CFLAGS_FOR_TARGET" = "x" && CFLAGS_FOR_TARGET="DEFAULT_CFLAGS_FOR_TARGET"
 if test "$werror_state" = "yes"; then
-    FREESTANDING_CFLAGS="$FREESTANDING_CFLAGS -Werror"
+    CFLAGS_FOR_TARGET="$CFLAGS_FOR_TARGET -Werror"
 fi
 
-m4_define([DEFAULT_FREESTANDING_CPPFLAGS], [])
-AC_ARG_VAR([FREESTANDING_CPPFLAGS], [C preprocessor flags for Limine @<:@default: ]DEFAULT_FREESTANDING_CPPFLAGS[@:>@])
-test "x$FREESTANDING_CPPFLAGS" = "x" && FREESTANDING_CPPFLAGS="DEFAULT_FREESTANDING_CPPFLAGS"
+m4_define([DEFAULT_CPPFLAGS_FOR_TARGET], [])
+AC_ARG_VAR([CPPFLAGS_FOR_TARGET], [C preprocessor flags for Limine @<:@default: ]DEFAULT_CPPFLAGS_FOR_TARGET[@:>@])
+test "x$CPPFLAGS_FOR_TARGET" = "x" && CPPFLAGS_FOR_TARGET="DEFAULT_CPPFLAGS_FOR_TARGET"
 
-m4_define([DEFAULT_FREESTANDING_LDFLAGS], [])
-AC_ARG_VAR([FREESTANDING_LDFLAGS], [Linker flags for Limine @<:@default: ]DEFAULT_FREESTANDING_LDFLAGS[@:>@])
-test "x$FREESTANDING_LDFLAGS" = "x" && FREESTANDING_LDFLAGS="DEFAULT_FREESTANDING_LDFLAGS"
+m4_define([DEFAULT_LDFLAGS_FOR_TARGET], [])
+AC_ARG_VAR([LDFLAGS_FOR_TARGET], [Linker flags for Limine @<:@default: ]DEFAULT_LDFLAGS_FOR_TARGET[@:>@])
+test "x$LDFLAGS_FOR_TARGET" = "x" && LDFLAGS_FOR_TARGET="DEFAULT_LDFLAGS_FOR_TARGET"
 
 LIMINE_COPYRIGHT=$($GREP Copyright "$SRCDIR/LICENSE")
 AC_SUBST([LIMINE_COPYRIGHT])

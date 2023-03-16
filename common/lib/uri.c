@@ -8,7 +8,7 @@
 #include <mm/pmm.h>
 #include <lib/print.h>
 #include <pxe/tftp.h>
-#include <compress/tinfgzip.h>
+#include <compress/gzip.h>
 #include <menu.h>
 #include <lib/readline.h>
 #include <crypt/blake2b.h>
@@ -273,8 +273,8 @@ struct file_handle *uri_open(char *uri) {
     if (compressed && ret != NULL) {
         struct file_handle *compressed_fd = ext_mem_alloc(sizeof(struct file_handle));
         void *src = freadall(ret, MEMMAP_BOOTLOADER_RECLAIMABLE);
-        if ((compressed_fd->fd = tinf_gzip_uncompress(src, ret->size, &compressed_fd->size)) == NULL) {
-            panic(true, "tinf error");
+        if ((compressed_fd->fd = gzip_uncompress(src, ret->size, &compressed_fd->size)) == NULL) {
+            panic(true, "GZip error");
         }
         compressed_fd->vol = ret->vol;
         compressed_fd->path = ext_mem_alloc(ret->path_len);

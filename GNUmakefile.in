@@ -4,9 +4,9 @@ override prefix := @prefix@
 override exec_prefix := @exec_prefix@
 override PACKAGE_TARNAME := @PACKAGE_TARNAME@
 
-override ACBINDIR := @bindir@
-override ACDATAROOTDIR := @datarootdir@
-override ACINCLUDEDIR := @includedir@
+override bindir := @bindir@
+override datarootdir := @datarootdir@
+override includedir := @includedir@
 override datarootdir := @datarootdir@
 override mandir := @mandir@
 override docdir := @docdir@
@@ -145,44 +145,44 @@ ifneq ($(BUILD_LIMINE_DEPLOY),no)
 	$(INSTALL_DATA) '$(call SHESCAPE,$(BUILDDIR))/man/man1/limine-deploy.1' '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/'
 endif
 	$(INSTALL_DATA) '$(call SHESCAPE,$(BUILDDIR))/man/man1/limine-enroll-config.1' '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/'
-	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))'
-	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine'
+	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(datarootdir))'
+	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine'
 ifeq ($(BUILD_BIOS),limine-bios)
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
 endif
 ifneq ($(BUILD_CD),no)
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-cd.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-cd.bin' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
 endif
 ifneq ($(BUILD_CD_EFI),no)
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
 endif
 ifneq ($(BUILD_PXE),no)
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
 endif
 ifeq ($(BUILD_UEFI_AARCH64),limine-uefi-aarch64)
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/BOOTAA64.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/BOOTAA64.EFI' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
 endif
 ifeq ($(BUILD_UEFI_X86_64),limine-uefi-x86-64)
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/BOOTX64.EFI' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
 endif
 ifeq ($(BUILD_UEFI_IA32),limine-uefi-ia32)
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/BOOTIA32.EFI' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
 endif
-	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))'
-	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/limine.h' '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))/'
-	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))'
-	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-version' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
-	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-enroll-config' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
+	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(includedir))'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/limine.h' '$(call SHESCAPE,$(DESTDIR)$(includedir))/'
+	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(bindir))'
+	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-version' '$(call SHESCAPE,$(DESTDIR)$(bindir))/'
+	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-enroll-config' '$(call SHESCAPE,$(DESTDIR)$(bindir))/'
 ifneq ($(BUILD_LIMINE_DEPLOY),no)
-	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/'
+	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(bindir))/'
 endif
 
 .PHONY: install-strip
 install-strip: install
-	@NATIVE_STRIP@ '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/limine-version'
-	@NATIVE_STRIP@ '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/limine-enroll-config'
+	@NATIVE_STRIP@ '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-version'
+	@NATIVE_STRIP@ '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-enroll-config'
 ifneq ($(BUILD_LIMINE_DEPLOY),no)
-	@NATIVE_STRIP@ '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/limine-deploy'
+	@NATIVE_STRIP@ '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-deploy'
 endif
 
 .PHONY: uninstall
@@ -195,11 +195,11 @@ uninstall:
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/limine-version.1'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/limine-deploy.1'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/limine-enroll-config.1'
-	rm -f '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/limine-version'
-	rm -f '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/limine-enroll-config'
-	rm -f '$(call SHESCAPE,$(DESTDIR)$(ACBINDIR))/limine-deploy'
-	rm -rf '$(call SHESCAPE,$(DESTDIR)$(ACDATAROOTDIR))/limine'
-	rm -f '$(call SHESCAPE,$(DESTDIR)$(ACINCLUDEDIR))/limine.h'
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-version'
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-enroll-config'
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-deploy'
+	rm -rf '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine'
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(includedir))/limine.h'
 
 $(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/common-bios/stage2.bin.gz
 	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'

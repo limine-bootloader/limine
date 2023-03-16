@@ -35,7 +35,7 @@ override FREESTANDING_CFLAGS += \
 
 override FREESTANDING_CPPFLAGS := \
     -I../freestanding-headers \
-    -I'$(call SHESCAPE,$(BUILDDIR))/tinf' \
+    -I./tinf \
     -I. \
     $(FREESTANDING_CPPFLAGS) \
     -MMD
@@ -59,27 +59,13 @@ override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=
 .PHONY: all
 all: $(call MKESCAPE,$(BUILDDIR))/decompressor.bin
 
-$(call MKESCAPE,$(BUILDDIR))/decompressor.bin: $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o
+$(call MKESCAPE,$(BUILDDIR))/decompressor.bin: $(OBJ) ../libgcc-binaries/libgcc-i686.a
 	$(FREESTANDING_LD) '$(call OBJESCAPE,$^)' $(FREESTANDING_LDFLAGS) -o '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf'
 	$(FREESTANDING_OBJCOPY) -O binary '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf' '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
-	rm -rf '$(call SHESCAPE,$(BUILDDIR))/tinf'
-	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
-	cp -r ../tinf '$(call SHESCAPE,$(BUILDDIR))/'
-	touch '$(call SHESCAPE,$(BUILDDIR))/tinf-copied'
-
-$(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
-	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
-
-$(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
-	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
-
 -include $(HEADER_DEPS)
 
-$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(FREESTANDING_CC) $(FREESTANDING_CFLAGS) $(FREESTANDING_CPPFLAGS) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 

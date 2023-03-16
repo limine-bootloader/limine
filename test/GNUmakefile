@@ -1,9 +1,9 @@
 include $(TOOLCHAIN_FILE)
 
-override CC := $(FREESTANDING_CC)
+override CC := $(CC_FOR_TARGET)
 CFLAGS = -O2 -g -Wall -Wextra
 LDFLAGS =
-override LD := $(FREESTANDING_LD)
+override LD := $(LD_FOR_TARGET)
 override QEMU := qemu-system-x86_64
 QEMUFLAGS = -m 1G -enable-kvm -cpu host
 
@@ -58,7 +58,7 @@ override INTERNALCFLAGS_MB  :=    \
 	-I..                 \
 	-I../common/protos
 
-ifneq ($(findstring 86,$(FREESTANDING_CC)),)
+ifneq ($(findstring 86,$(CC_FOR_TARGET)),)
 all: test.elf multiboot2.elf multiboot.elf
 else
 all: test.elf

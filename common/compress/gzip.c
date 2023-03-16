@@ -1,5 +1,5 @@
 /*
- * tinfgzip - tiny gzip decompressor
+ * originally from tinfgzip - tiny gzip decompressor
  *
  * Copyright (c) 2003-2019 Joergen Ibsen
  * Copyright (c) 2023 mintsuki and contributors to the Limine project
@@ -33,9 +33,9 @@ typedef enum {
     FEXTRA   = 4,
     FNAME    = 8,
     FCOMMENT = 16
-} tinf_gzip_flag;
+} gzip_flag;
 
-void *tinf_gzip_uncompress(const void *source, uint64_t sourceLen, uint64_t *outsize) {
+void *gzip_uncompress(const void *source, uint64_t sourceLen, uint64_t *outsize) {
     const uint8_t *src = (const uint8_t *) source;
     const uint8_t *start;
     int res;

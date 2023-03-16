@@ -25,7 +25,7 @@ MKESCAPE = $(subst $(SPACE),\ ,$(1))
 SHESCAPE = $(subst ','\'',$(1))
 NASMESCAPE = $(subst ','"'$(COMMA) \"'\"$(COMMA) '"',$(1))
 
-define PROPER_ASSIGN =
+define DEFAULT_VAR =
     ifeq ($(origin $1),default)
         override $(1) := $(2)
     endif
@@ -43,7 +43,7 @@ override BUILD_PXE := @BUILD_PXE@
 override BUILD_CD := @BUILD_CD@
 override BUILD_LIMINE_DEPLOY := @BUILD_LIMINE_DEPLOY@
 
-$(eval $(call PROPER_ASSIGN,CC,@CC@))
+$(eval $(call DEFAULT_VAR,CC,@CC@))
 export CC
 
 override MKDIR_P := @MKDIR_P@
@@ -67,20 +67,20 @@ export SED
 override AWK := @AWK@
 export AWK
 
-CPPFLAGS ?= @CPPFLAGS@
+$(eval $(call DEFAULT_VAR,CPPFLAGS,@CPPFLAGS@))
 export CPPFLAGS
-CFLAGS ?= @CFLAGS@
+$(eval $(call DEFAULT_VAR,CFLAGS,@CFLAGS@))
 export CFLAGS
-LDFLAGS ?= @LDFLAGS@
+$(eval $(call DEFAULT_VAR,LDFLAGS,@LDFLAGS@))
 export LDFLAGS
-LIBS ?= @LIBS@
+$(eval $(call DEFAULT_VAR,LIBS,@LIBS@))
 export LIBS
 
-CFLAGS_FOR_TARGET ?= @CFLAGS_FOR_TARGET@
+$(eval $(call DEFAULT_VAR,CFLAGS_FOR_TARGET,@CFLAGS_FOR_TARGET@))
 export CFLAGS_FOR_TARGET
-CPPFLAGS_FOR_TARGET ?= @CPPFLAGS_FOR_TARGET@
+$(eval $(call DEFAULT_VAR,CPPFLAGS_FOR_TARGET,@CPPFLAGS_FOR_TARGET@))
 export CPPFLAGS_FOR_TARGET
-LDFLAGS_FOR_TARGET ?= @LDFLAGS_FOR_TARGET@
+$(eval $(call DEFAULT_VAR,LDFLAGS_FOR_TARGET,@LDFLAGS_FOR_TARGET@))
 export LDFLAGS_FOR_TARGET
 
 override LIMINE_VERSION := @PACKAGE_VERSION@

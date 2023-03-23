@@ -58,7 +58,6 @@ override CPPFLAGS_FOR_TARGET := \
     -I../freestanding-headers \
     -I'$(call SHESCAPE,$(BUILDDIR))/..' \
     -I. \
-    -I.. \
     $(CPPFLAGS_FOR_TARGET) \
     -DCOM_OUTPUT=$(COM_OUTPUT) \
     -DE9_OUTPUT=$(E9_OUTPUT) \

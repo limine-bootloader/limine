@@ -274,5 +274,9 @@ AC_SUBST([LIMINE_COPYRIGHT])
 
 AC_PREFIX_DEFAULT([/usr/local])
 
+if ! test "$SRCDIR" = "$BUILDDIR"; then
+    cp "$SRCDIR/limine.h" "$BUILDDIR/"
+fi
+
 AC_CONFIG_FILES([man/man1/limine-version.1 man/man1/limine-deploy.1 man/man1/limine-enroll-config.1 GNUmakefile config.h])
 AC_OUTPUT

@@ -62,7 +62,8 @@ override CPPFLAGS_FOR_TARGET := \
     $(CPPFLAGS_FOR_TARGET) \
     -DCOM_OUTPUT=$(COM_OUTPUT) \
     -DE9_OUTPUT=$(E9_OUTPUT) \
-    -MMD
+    -MMD \
+    -MP
 
 ifeq ($(TARGET),bios)
     override CFLAGS_FOR_TARGET += \

@@ -43,7 +43,8 @@ override CPPFLAGS_FOR_TARGET := \
     -I./tinf \
     -I. \
     $(CPPFLAGS_FOR_TARGET) \
-    -MMD
+    -MMD \
+    -MP
 
 override LDFLAGS_FOR_TARGET += \
     -m elf_i386 \

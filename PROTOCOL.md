@@ -894,12 +894,40 @@ ID:
 
 Request:
 ```c
+#define LIMINE_INTERNAL_MODULE_REQUIRED (1 << 0)
+
+struct limine_internal_module {
+    const char *path;
+    const char *cmdline;
+    uint64_t flags;
+};
+
 struct limine_module_request {
     uint64_t id[4];
     uint64_t revision;
     struct limine_module_response *response;
+
+    /* Revision 1 */
+    uint64_t internal_module_count;
+    struct limine_internal_module **internal_modules;
 };
 ```
+
+* `internal_module_count` - How many internal modules are passed by the kernel.
+* `internal_modules` - Pointer to an array of `internal_module_count` pointers to
+`struct limine_internal_module` structures.
+
+As part of `struct limine_internal_module`:
+
+* `path` - Path to the module to load. This path is *relative* to the location of
+the kernel.
+* `cmdline` - Command line for the given module.
+* `flags` - Flags changing module loading behaviour:
+  - `LIMINE_INTERNAL_MODULE_REQUIRED`: Fail if the requested module is not found.
+
+Internal Limine modules are guaranteed to be loaded *before* user-specified
+(configuration) modules, and thus they are guaranteed to appear before user-specified
+modules in the `modules` array in the response.
 
 Response:
 ```c

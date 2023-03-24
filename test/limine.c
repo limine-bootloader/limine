@@ -55,9 +55,21 @@ struct limine_kernel_file_request kf_request = {
 __attribute__((section(".limine_reqs")))
 void *kf_req = &kf_request;
 
+struct limine_internal_module internal_module1 = {
+    .path = "boot:///boot/test.elf",
+    .cmdline = "First internal module"
+};
+
+struct limine_internal_module *internal_modules[] = {
+    &internal_module1
+};
+
 struct limine_module_request module_request = {
     .id = LIMINE_MODULE_REQUEST,
-    .revision = 0, .response = NULL
+    .revision = 1, .response = NULL,
+
+    .internal_module_count = 1,
+    .internal_modules = internal_modules
 };
 
 __attribute__((section(".limine_reqs")))

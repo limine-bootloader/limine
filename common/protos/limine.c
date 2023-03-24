@@ -194,6 +194,17 @@ static uint64_t reported_addr(void *addr) {
     return (uint64_t)(uintptr_t)addr + direct_map_offset;
 }
 
+#define get_phys_addr(addr) ({ \
+    __auto_type get_phys_addr__addr = (addr); \
+    uintptr_t get_phys_addr__r; \
+    if (get_phys_addr__addr & ((uint64_t)1 << 63)) { \
+        get_phys_addr__r = physical_base + (get_phys_addr__addr - virtual_base); \
+    } else { \
+        get_phys_addr__r = get_phys_addr__addr; \
+    } \
+    get_phys_addr__r; \
+})
+
 static struct limine_file get_file(struct file_handle *file, char *cmdline) {
     struct limine_file ret = {0};
 
@@ -623,6 +634,12 @@ FEAT_START
             break;
     }
 
+    size_t config_module_count = module_count;
+
+    if (module_request->revision >= 1) {
+        module_count += module_request->internal_module_count;
+    }
+
     if (module_count == 0) {
         break;
     }
@@ -633,12 +650,23 @@ FEAT_START
     struct limine_file *modules = ext_mem_alloc(module_count * sizeof(struct limine_file));
 
     for (size_t i = 0; i < module_count; i++) {
-        struct conf_tuple conf_tuple =
-                config_get_tuple(config, i,
-                                 "MODULE_PATH", "MODULE_CMDLINE");
+        char *module_path;
+        char *module_cmdline;
 
-        char *module_path = conf_tuple.value1;
-        char *module_cmdline = conf_tuple.value2;
+        if (i < config_module_count) {
+            struct conf_tuple conf_tuple =
+                    config_get_tuple(config, i,
+                                     "MODULE_PATH", "MODULE_CMDLINE");
+
+            module_path = conf_tuple.value1;
+            module_cmdline = conf_tuple.value2;
+        } else {
+            uint64_t *internal_modules = (void *)get_phys_addr(module_request->internal_modules);
+            struct limine_internal_module *internal_module = (void *)get_phys_addr(internal_modules[i - config_module_count]);
+
+            module_path = (char *)get_phys_addr(internal_module->path);
+            module_cmdline = (char *)get_phys_addr(internal_module->cmdline);
+        }
 
         if (module_cmdline == NULL) {
             module_cmdline = "";

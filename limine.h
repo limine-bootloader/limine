@@ -355,6 +355,14 @@ struct limine_kernel_file_request {
 
 #define LIMINE_MODULE_REQUEST { LIMINE_COMMON_MAGIC, 0x3e7e279702be32af, 0xca1c4f3bd1280cee }
 
+#define LIMINE_INTERNAL_MODULE_REQUIRED (1 << 0)
+
+struct limine_internal_module {
+    LIMINE_PTR(const char *) path;
+    LIMINE_PTR(const char *) cmdline;
+    uint64_t flags;
+};
+
 struct limine_module_response {
     uint64_t revision;
     uint64_t module_count;
@@ -365,6 +373,10 @@ struct limine_module_request {
     uint64_t id[4];
     uint64_t revision;
     LIMINE_PTR(struct limine_module_response *) response;
+
+    /* Revision 1 */
+    uint64_t internal_module_count;
+    LIMINE_PTR(struct limine_internal_module **) internal_modules;
 };
 
 /* RSDP */

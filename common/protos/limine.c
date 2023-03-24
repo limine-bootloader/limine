@@ -647,9 +647,11 @@ FEAT_START
 
     struct limine_file *modules = ext_mem_alloc(module_count * sizeof(struct limine_file));
 
+    size_t final_module_count = 0;
     for (size_t i = 0; i < module_count; i++) {
         char *module_path;
         char *module_cmdline;
+        bool module_required = true;
 
         if (i < module_request->internal_module_count) {
             uint64_t *internal_modules = (void *)get_phys_addr(module_request->internal_modules);
@@ -657,6 +659,8 @@ FEAT_START
 
             module_path = (char *)get_phys_addr(internal_module->path);
             module_cmdline = (char *)get_phys_addr(internal_module->cmdline);
+
+            module_required = internal_module->flags & LIMINE_INTERNAL_MODULE_REQUIRED;
         } else {
             struct conf_tuple conf_tuple =
                     config_get_tuple(config, i - module_request->internal_module_count,
@@ -673,21 +677,26 @@ FEAT_START
         print("limine: Loading module `%#`...\n", module_path);
 
         struct file_handle *f;
-        if ((f = uri_open(module_path)) == NULL)
-            panic(true, "limine: Failed to open module with path `%#`. Is the path correct?", module_path);
+        if ((f = uri_open(module_path)) == NULL) {
+            if (module_required) {
+                panic(true, "limine: Failed to open module with path `%#`. Is the path correct?", module_path);
+            }
+            print("limine: Warning: Non-required internal module `%#` not found\n", module_path);
+            continue;
+        }
 
-        struct limine_file *l = &modules[i];
+        struct limine_file *l = &modules[final_module_count++];
         *l = get_file(f, module_cmdline);
 
         fclose(f);
     }
 
-    uint64_t *modules_list = ext_mem_alloc(module_count * sizeof(uint64_t));
-    for (size_t i = 0; i < module_count; i++) {
+    uint64_t *modules_list = ext_mem_alloc(final_module_count * sizeof(uint64_t));
+    for (size_t i = 0; i < final_module_count; i++) {
         modules_list[i] = reported_addr(&modules[i]);
     }
 
-    module_response->module_count = module_count;
+    module_response->module_count = final_module_count;
     module_response->modules = reported_addr(modules_list);
 
     module_request->response = reported_addr(module_response);

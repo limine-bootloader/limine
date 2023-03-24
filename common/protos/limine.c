@@ -670,7 +670,7 @@ FEAT_START
         bool module_required = true;
         bool module_path_allocated = false;
 
-        if (i < module_request->internal_module_count) {
+        if (module_request->revision >= 1 && i < module_request->internal_module_count) {
             uint64_t *internal_modules = (void *)get_phys_addr(module_request->internal_modules);
             struct limine_internal_module *internal_module = (void *)get_phys_addr(internal_modules[i]);
 
@@ -693,7 +693,7 @@ FEAT_START
             module_required = internal_module->flags & LIMINE_INTERNAL_MODULE_REQUIRED;
         } else {
             struct conf_tuple conf_tuple =
-                    config_get_tuple(config, i - module_request->internal_module_count,
+                    config_get_tuple(config, i - (module_request->revision >= 1 ? module_request->internal_module_count : 0),
                                      "MODULE_PATH", "MODULE_CMDLINE");
 
             module_path = conf_tuple.value1;

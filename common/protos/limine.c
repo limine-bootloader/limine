@@ -310,6 +310,22 @@ noreturn void limine_load(char *config, char *cmdline) {
     if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic(true, "limine: Failed to open kernel with path `%#`. Is the path correct?", kernel_path);
 
+    char *k_path_copy = ext_mem_alloc(strlen(kernel_path) + 1);
+    strcpy(k_path_copy, kernel_path);
+    char *k_resource = NULL, *k_root = NULL, *k_path = NULL, *k_hash = NULL;
+    uri_resolve(k_path_copy, &k_resource, &k_root, &k_path, &k_hash);
+    char *k_path_ = ext_mem_alloc(strlen(k_path) + 2);
+    k_path_[0] = '/';
+    strcpy(k_path_ + 1, k_path);
+    k_path = k_path_;
+    for (size_t i = strlen(k_path) - 1; ; i--) {
+        if (k_path[i] == '/') {
+            k_path[i] = 0;
+            break;
+        }
+        k_path[i] = 0;
+    }
+
     uint8_t *kernel = freadall(kernel_file, MEMMAP_BOOTLOADER_RECLAIMABLE);
 
     char *kaslr_s = config_get_value(config, 0, "KASLR");
@@ -652,6 +668,7 @@ FEAT_START
         char *module_path;
         char *module_cmdline;
         bool module_required = true;
+        bool module_path_allocated = false;
 
         if (i < module_request->internal_module_count) {
             uint64_t *internal_modules = (void *)get_phys_addr(module_request->internal_modules);
@@ -659,6 +676,19 @@ FEAT_START
 
             module_path = (char *)get_phys_addr(internal_module->path);
             module_cmdline = (char *)get_phys_addr(internal_module->cmdline);
+
+            char *module_path_abs = ext_mem_alloc(1024);
+            char *module_path_abs_p = module_path_abs;
+            strcpy(module_path_abs_p, k_resource);
+            module_path_abs_p += strlen(k_resource);
+            strcpy(module_path_abs_p, "://");
+            module_path_abs_p += 3;
+            strcpy(module_path_abs_p, k_root);
+            module_path_abs_p += strlen(k_root);
+            get_absolute_path(module_path_abs_p, module_path, k_path);
+
+            module_path = module_path_abs;
+            module_path_allocated = true;
 
             module_required = internal_module->flags & LIMINE_INTERNAL_MODULE_REQUIRED;
         } else {
@@ -682,7 +712,13 @@ FEAT_START
                 panic(true, "limine: Failed to open module with path `%#`. Is the path correct?", module_path);
             }
             print("limine: Warning: Non-required internal module `%#` not found\n", module_path);
+            if (module_path_allocated) {
+                pmm_free(module_path, 1024);
+            }
             continue;
+        }
+        if (module_path_allocated) {
+            pmm_free(module_path, 1024);
         }
 
         struct limine_file *l = &modules[final_module_count++];

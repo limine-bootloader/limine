@@ -634,8 +634,6 @@ FEAT_START
             break;
     }
 
-    size_t config_module_count = module_count;
-
     if (module_request->revision >= 1) {
         module_count += module_request->internal_module_count;
     }
@@ -653,19 +651,19 @@ FEAT_START
         char *module_path;
         char *module_cmdline;
 
-        if (i < config_module_count) {
+        if (i < module_request->internal_module_count) {
+            uint64_t *internal_modules = (void *)get_phys_addr(module_request->internal_modules);
+            struct limine_internal_module *internal_module = (void *)get_phys_addr(internal_modules[i]);
+
+            module_path = (char *)get_phys_addr(internal_module->path);
+            module_cmdline = (char *)get_phys_addr(internal_module->cmdline);
+        } else {
             struct conf_tuple conf_tuple =
-                    config_get_tuple(config, i,
+                    config_get_tuple(config, i - module_request->internal_module_count,
                                      "MODULE_PATH", "MODULE_CMDLINE");
 
             module_path = conf_tuple.value1;
             module_cmdline = conf_tuple.value2;
-        } else {
-            uint64_t *internal_modules = (void *)get_phys_addr(module_request->internal_modules);
-            struct limine_internal_module *internal_module = (void *)get_phys_addr(internal_modules[i - config_module_count]);
-
-            module_path = (char *)get_phys_addr(internal_module->path);
-            module_cmdline = (char *)get_phys_addr(internal_module->cmdline);
         }
 
         if (module_cmdline == NULL) {

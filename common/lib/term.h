@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <lib/print.h>
-#include <term/term.h>
+#include <flanterm/flanterm.h>
 
 enum {
     _NOT_READY,
@@ -17,7 +17,7 @@ enum {
 extern int current_video_mode;
 #endif
 
-extern struct term_context **terms;
+extern struct flanterm_context **terms;
 extern size_t terms_i;
 
 extern int term_backend;
@@ -31,7 +31,7 @@ extern int term_backend;
 
 #define FOR_TERM(...) do { \
     for (size_t FOR_TERM_i = 0; FOR_TERM_i < terms_i; FOR_TERM_i++) { \
-        struct term_context *TERM = terms[FOR_TERM_i]; \
+        struct flanterm_context *TERM = terms[FOR_TERM_i]; \
         __VA_ARGS__ \
         ; \
     } \
@@ -39,10 +39,10 @@ extern int term_backend;
 
 inline void reset_term(void) {
     for (size_t i = 0; i < terms_i; i++) {
-        struct term_context *term = terms[i];
+        struct flanterm_context *term = terms[i];
 
         print("\e[2J\e[H");
-        term_context_reinit(term);
+        flanterm_context_reinit(term);
         term->in_bootloader = true;
         term->cursor_enabled = true;
         term->double_buffer_flush(term);
@@ -55,6 +55,6 @@ inline void set_cursor_pos_helper(size_t x, size_t y) {
 
 void term_notready(void);
 void term_fallback(void);
-void _term_write(struct term_context *term, uint64_t buf, uint64_t count);
+void _term_write(struct flanterm_context *term, uint64_t buf, uint64_t count);
 
 #endif

@@ -7,7 +7,7 @@ test -z "$srcdir" && srcdir=.
 
 cd "$srcdir"
 
-[ -d common/term ] || git clone https://github.com/limine-bootloader/terminal.git common/term --depth=1
+[ -d common/flanterm ] || git clone https://github.com/mintsuki/flanterm.git common/flanterm --depth=1
 [ -f common/stb/stb_image.h ] || ( curl -Lo common/stb/stb_image.h https://github.com/nothings/stb/raw/master/stb_image.h && patch -p0 < common/stb_image.patch )
 [ -f freestanding-toolchain ] || ( curl -Lo freestanding-toolchain https://github.com/mintsuki/freestanding-toolchain/raw/trunk/freestanding-toolchain && chmod +x freestanding-toolchain )
 [ -d freestanding-headers ] || git clone https://github.com/mintsuki/freestanding-headers.git --depth=1

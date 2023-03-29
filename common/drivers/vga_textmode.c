@@ -18,24 +18,24 @@ static void draw_cursor(struct textmode_context *ctx) {
     ctx->video_mem[ctx->cursor_offset + 1] = ((pal & 0xf0) >> 4) | ((pal & 0x0f) << 4);
 }
 
-static void text_save_state(struct term_context *_ctx) {
+static void text_save_state(struct flanterm_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
     ctx->saved_state_text_palette = ctx->text_palette;
     ctx->saved_state_cursor_offset = ctx->cursor_offset;
 }
 
-static void text_restore_state(struct term_context *_ctx) {
+static void text_restore_state(struct flanterm_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
     ctx->text_palette = ctx->saved_state_text_palette;
     ctx->cursor_offset = ctx->saved_state_cursor_offset;
 }
 
-static void text_swap_palette(struct term_context *_ctx) {
+static void text_swap_palette(struct flanterm_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
     ctx->text_palette = (ctx->text_palette << 4) | (ctx->text_palette >> 4);
 }
 
-static void text_scroll(struct term_context *_ctx) {
+static void text_scroll(struct flanterm_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
 
     // move the text up by one row
@@ -51,7 +51,7 @@ static void text_scroll(struct term_context *_ctx) {
     }
 }
 
-static void text_revscroll(struct term_context *_ctx) {
+static void text_revscroll(struct flanterm_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
 
     // move the text up by one row
@@ -69,7 +69,7 @@ static void text_revscroll(struct term_context *_ctx) {
     }
 }
 
-static void text_clear(struct term_context *_ctx, bool move) {
+static void text_clear(struct flanterm_context *_ctx, bool move) {
     struct textmode_context *ctx = (void *)_ctx;
 
     for (size_t i = 0; i < VIDEO_BOTTOM; i += 2) {
@@ -81,7 +81,7 @@ static void text_clear(struct term_context *_ctx, bool move) {
     }
 }
 
-static void text_full_refresh(struct term_context *_ctx) {
+static void text_full_refresh(struct flanterm_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
 
     for (size_t i = 0; i < VD_ROWS * VD_COLS; i++) {
@@ -95,7 +95,7 @@ static void text_full_refresh(struct term_context *_ctx) {
     }
 }
 
-static void text_double_buffer_flush(struct term_context *_ctx) {
+static void text_double_buffer_flush(struct flanterm_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
 
     if (_ctx->cursor_enabled) {
@@ -125,14 +125,14 @@ static void text_double_buffer_flush(struct term_context *_ctx) {
     }
 }
 
-static void text_get_cursor_pos(struct term_context *_ctx, size_t *x, size_t *y) {
+static void text_get_cursor_pos(struct flanterm_context *_ctx, size_t *x, size_t *y) {
     struct textmode_context *ctx = (void *)_ctx;
 
     *x = (ctx->cursor_offset % VD_COLS) / 2;
     *y = ctx->cursor_offset / VD_COLS;
 }
 
-static void text_move_character(struct term_context *_ctx, size_t new_x, size_t new_y, size_t old_x, size_t old_y) {
+static void text_move_character(struct flanterm_context *_ctx, size_t new_x, size_t new_y, size_t old_x, size_t old_y) {
     struct textmode_context *ctx = (void *)_ctx;
 
     if (old_x >= VD_COLS / 2 || old_y >= VD_ROWS
@@ -143,7 +143,7 @@ static void text_move_character(struct term_context *_ctx, size_t new_x, size_t 
     ctx->back_buffer[new_y * VD_COLS + new_x * 2] = ctx->back_buffer[old_y * VD_COLS + old_x * 2];
 }
 
-static void text_set_cursor_pos(struct term_context *_ctx, size_t x, size_t y) {
+static void text_set_cursor_pos(struct flanterm_context *_ctx, size_t x, size_t y) {
     struct textmode_context *ctx = (void *)_ctx;
 
     if (x >= VD_COLS / 2) {
@@ -165,57 +165,57 @@ static void text_set_cursor_pos(struct term_context *_ctx, size_t x, size_t y) {
 
 static uint8_t ansi_colours[] = { 0, 4, 2, 6, 1, 5, 3, 7 };
 
-static void text_set_text_fg(struct term_context *_ctx, size_t fg) {
+static void text_set_text_fg(struct flanterm_context *_ctx, size_t fg) {
     struct textmode_context *ctx = (void *)_ctx;
     ctx->text_palette = (ctx->text_palette & 0xf0) | ansi_colours[fg];
 }
 
-static void text_set_text_bg(struct term_context *_ctx, size_t bg) {
+static void text_set_text_bg(struct flanterm_context *_ctx, size_t bg) {
     struct textmode_context *ctx = (void *)_ctx;
     ctx->text_palette = (ctx->text_palette & 0x0f) | (ansi_colours[bg] << 4);
 }
 
-static void text_set_text_fg_bright(struct term_context *_ctx, size_t fg) {
+static void text_set_text_fg_bright(struct flanterm_context *_ctx, size_t fg) {
     struct textmode_context *ctx = (void *)_ctx;
     ctx->text_palette = (ctx->text_palette & 0xf0) | (ansi_colours[fg] | (1 << 3));
 }
 
-static void text_set_text_bg_bright(struct term_context *_ctx, size_t bg) {
+static void text_set_text_bg_bright(struct flanterm_context *_ctx, size_t bg) {
     struct textmode_context *ctx = (void *)_ctx;
     ctx->text_palette = (ctx->text_palette & 0x0f) | ((ansi_colours[bg] | (1 << 3)) << 4);
 }
 
-static void text_set_text_fg_rgb(struct term_context *ctx, uint32_t n) {
+static void text_set_text_fg_rgb(struct flanterm_context *ctx, uint32_t n) {
     (void)ctx;
     (void)n;
 }
 
-static void text_set_text_bg_rgb(struct term_context *ctx, uint32_t n) {
+static void text_set_text_bg_rgb(struct flanterm_context *ctx, uint32_t n) {
     (void)ctx;
     (void)n;
 }
 
-static void text_set_text_fg_default(struct term_context *_ctx) {
+static void text_set_text_fg_default(struct flanterm_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
     ctx->text_palette = (ctx->text_palette & 0xf0) | 7;
 }
 
-static void text_set_text_bg_default(struct term_context *_ctx) {
+static void text_set_text_bg_default(struct flanterm_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
     ctx->text_palette &= 0x0f;
 }
 
-static void text_set_text_fg_default_bright(struct term_context *_ctx) {
+static void text_set_text_fg_default_bright(struct flanterm_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
     ctx->text_palette = (ctx->text_palette & 0xf0) | (7 | (1 << 3));
 }
 
-static void text_set_text_bg_default_bright(struct term_context *_ctx) {
+static void text_set_text_bg_default_bright(struct flanterm_context *_ctx) {
     struct textmode_context *ctx = (void *)_ctx;
     ctx->text_palette = (ctx->text_palette & 0x0f) | ((1 << 3) << 4);
 }
 
-static void text_putchar(struct term_context *_ctx, uint8_t c) {
+static void text_putchar(struct flanterm_context *_ctx, uint8_t c) {
     struct textmode_context *ctx = (void *)_ctx;
 
     ctx->back_buffer[ctx->cursor_offset] = c;
@@ -233,7 +233,7 @@ static void text_putchar(struct term_context *_ctx, uint8_t c) {
     }
 }
 
-static void text_deinit(struct term_context *_ctx, void (*_free)(void *, size_t)) {
+static void text_deinit(struct flanterm_context *_ctx, void (*_free)(void *, size_t)) {
     struct textmode_context *ctx = (void *)_ctx;
 
     if (ctx->back_buffer != NULL) {
@@ -269,7 +269,7 @@ void vga_textmode_init(bool managed) {
 
     terms[0] = ext_mem_alloc(sizeof(struct textmode_context));
 
-    struct term_context *term = terms[0];
+    struct flanterm_context *term = terms[0];
     struct textmode_context *ctx = (void *)term;
 
     if (ctx->back_buffer == NULL) {
@@ -348,7 +348,7 @@ void vga_textmode_init(bool managed) {
 
     term->in_bootloader = true;
 
-    term_context_reinit(term);
+    flanterm_context_reinit(term);
 
     if (!managed) {
         term->cursor_enabled = false;

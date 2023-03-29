@@ -40,7 +40,7 @@ SECTIONS
         full_map = .;
         getchar = .;
         menu = .;
-        term_write = .;
+        flanterm_write = .;
         term_backend = .;
         term_fallback = .;
         term_notready = .;

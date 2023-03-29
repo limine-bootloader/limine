@@ -18,6 +18,7 @@
 #include <sys/gdt.h>
 #include <lib/fb.h>
 #include <lib/term.h>
+#include <term/backends/framebuffer.h>
 #include <sys/pic.h>
 #include <sys/lapic.h>
 #include <sys/idt.h>
@@ -746,6 +747,7 @@ FEAT_END
     }
 
     uint64_t *term_fb_ptr = NULL;
+    uint64_t term_fb_addr;
 
     struct fb_info *fbs;
     size_t fbs_count;
@@ -814,6 +816,7 @@ term_fail:
 #endif
 
     term_fb_ptr = &terminal->framebuffer;
+    term_fb_addr = reported_addr((void *)(((struct fbterm_context *)terms[0])->framebuffer));
 
     terminal->columns = terms[0]->cols;
     terminal->rows = terms[0]->rows;
@@ -845,16 +848,12 @@ skip_fb_init:
 
     // Framebuffer feature
 FEAT_START
-    struct limine_framebuffer *fbp = ext_mem_alloc(fbs_count * sizeof(struct limine_framebuffer));
-
-    if (term_fb_ptr != NULL) {
-        *term_fb_ptr = reported_addr(&fbp[0]);
-    }
-
     struct limine_framebuffer_request *framebuffer_request = get_request(LIMINE_FRAMEBUFFER_REQUEST);
-    if (framebuffer_request == NULL) {
+    if (framebuffer_request == NULL && term_fb_ptr == NULL) {
         break; // next feature
     }
+
+    struct limine_framebuffer *fbp = ext_mem_alloc(fbs_count * sizeof(struct limine_framebuffer));
 
     struct limine_framebuffer_response *framebuffer_response =
         ext_mem_alloc(sizeof(struct limine_framebuffer_response));
@@ -896,7 +895,17 @@ FEAT_START
     framebuffer_response->framebuffer_count = fbs_count;
     framebuffer_response->framebuffers = reported_addr(fb_list);
 
-    framebuffer_request->response = reported_addr(framebuffer_response);
+    if (framebuffer_request != NULL) {
+        framebuffer_request->response = reported_addr(framebuffer_response);
+    }
+    if (term_fb_ptr != NULL) {
+        for (size_t i = 0; i < fbs_count; i++) {
+            if (fbp[i].address == term_fb_addr) {
+                *term_fb_ptr = reported_addr(&fbp[i]);
+                break;
+            }
+        }
+    }
 FEAT_END
 
 no_fb:

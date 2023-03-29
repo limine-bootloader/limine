@@ -211,8 +211,6 @@ void term_fallback(void) {
 #endif
         term_backend = FALLBACK;
         flanterm_context_reinit(term);
-
-        term->in_bootloader = true;
 #if defined (UEFI)
     }
 #endif
@@ -357,7 +355,7 @@ void _term_write(struct flanterm_context *term, uint64_t buf, uint64_t count) {
     bool autoflush = term->autoflush;
     term->autoflush = false;
 
-    if (term->in_bootloader || native) {
+    if (native) {
         const char *s = (const char *)(uintptr_t)buf;
 
         flanterm_write(term, s, count);

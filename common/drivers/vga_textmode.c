@@ -346,8 +346,6 @@ void vga_textmode_init(bool managed) {
     term->full_refresh = text_full_refresh;
     term->deinit = text_deinit;
 
-    term->in_bootloader = true;
-
     flanterm_context_reinit(term);
 
     if (!managed) {

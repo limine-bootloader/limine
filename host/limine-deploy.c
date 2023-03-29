@@ -228,7 +228,9 @@ static bool device_flush_cache(void) {
 
     size_t ret = fwrite(cache, block_size, 1, device);
     if (ret != 1) {
-        perror("ERROR");
+        if (ferror(device)) {
+            perror("ERROR");
+        }
         return false;
     }
 
@@ -252,7 +254,9 @@ static bool device_cache_block(uint64_t block) {
 
     size_t ret = fread(cache, block_size, 1, device);
     if (ret != 1) {
-        perror("ERROR");
+        if (ferror(device)) {
+            perror("ERROR");
+        }
         return false;
     }
 

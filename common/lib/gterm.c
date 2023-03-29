@@ -9,8 +9,8 @@
 #include <lib/fb.h>
 #include <lib/image.h>
 #include <mm/pmm.h>
-#include <term/term.h>
-#include <term/backends/framebuffer.h>
+#include <flanterm/flanterm.h>
+#include <flanterm/backends/fb.h>
 #include <lib/term.h>
 
 // Builtin font originally taken from:
@@ -693,7 +693,7 @@ bool gterm_init(struct fb_info **_fbs, size_t *_fbs_count,
 
     size_t font_width = 8;
     size_t font_height = 16;
-    size_t font_size = (font_width * font_height * FBTERM_FONT_GLYPHS) / 8;
+    size_t font_size = (font_width * font_height * FLANTERM_FB_FONT_GLYPHS) / 8;
 
 #define FONT_MAX 16384
     uint8_t *font = ext_mem_alloc(FONT_MAX);
@@ -706,7 +706,7 @@ bool gterm_init(struct fb_info **_fbs, size_t *_fbs_count,
     if (menu_font_size != NULL) {
         parse_resolution(&tmp_font_width, &tmp_font_height, NULL, menu_font_size);
 
-        size_t tmp_font_size = (tmp_font_width * tmp_font_height * FBTERM_FONT_GLYPHS) / 8;
+        size_t tmp_font_size = (tmp_font_width * tmp_font_height * FLANTERM_FB_FONT_GLYPHS) / 8;
 
         if (tmp_font_size > FONT_MAX) {
             print("Font would be too large (%u bytes, %u bytes allowed). Not loading.\n", tmp_font_size, FONT_MAX);
@@ -782,7 +782,7 @@ no_load_font:;
 
         generate_canvas(fb);
 
-        terms[terms_i] = fbterm_init(ext_mem_alloc,
+        terms[terms_i] = flanterm_fb_init(ext_mem_alloc,
                             (void *)(uintptr_t)fb->framebuffer_addr,
                             fb->framebuffer_width, fb->framebuffer_height, fb->framebuffer_pitch,
                             bg_canvas,
@@ -814,7 +814,7 @@ no_load_font:;
     }
 
     for (size_t i = 0; i < terms_i; i++) {
-        struct term_context *term = terms[i];
+        struct flanterm_context *term = terms[i];
 
         if (serial) {
             term->cols = term->cols > 80 ? 80 : term->cols;
@@ -826,7 +826,7 @@ no_load_font:;
     size_t min_rows = (size_t)-1;
 
     for (size_t i = 0; i < terms_i; i++) {
-        struct term_context *term = terms[i];
+        struct flanterm_context *term = terms[i];
 
         if (term->cols < min_cols) {
             min_cols = term->cols;
@@ -838,14 +838,14 @@ no_load_font:;
     }
 
     for (size_t i = 0; i < terms_i; i++) {
-        struct term_context *term = terms[i];
+        struct flanterm_context *term = terms[i];
 
         term->cols = min_cols;
         term->rows = min_rows;
 
         term->in_bootloader = true;
 
-        term_context_reinit(term);
+        flanterm_context_reinit(term);
     }
 
     term_backend = GTERM;

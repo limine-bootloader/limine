@@ -18,7 +18,7 @@
 #include <sys/gdt.h>
 #include <lib/fb.h>
 #include <lib/term.h>
-#include <term/backends/framebuffer.h>
+#include <flanterm/backends/fb.h>
 #include <sys/pic.h>
 #include <sys/lapic.h>
 #include <sys/idt.h>
@@ -285,7 +285,7 @@ void limine_term_callback(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 static uint64_t term_arg;
 static void (*actual_callback)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 
-static void callback_shim(struct term_context *ctx, uint64_t a, uint64_t b, uint64_t c, uint64_t d) {
+static void callback_shim(struct flanterm_context *ctx, uint64_t a, uint64_t b, uint64_t c, uint64_t d) {
     (void)ctx;
     actual_callback(term_arg, a, b, c, d);
 }
@@ -816,7 +816,7 @@ term_fail:
 #endif
 
     term_fb_ptr = &terminal->framebuffer;
-    term_fb_addr = reported_addr((void *)(((struct fbterm_context *)terms[0])->framebuffer));
+    term_fb_addr = reported_addr((void *)(((struct flanterm_fb_context *)terms[0])->framebuffer));
 
     terminal->columns = terms[0]->cols;
     terminal->rows = terms[0]->rows;
@@ -1132,7 +1132,7 @@ FEAT_START
 FEAT_END
 
     // Clear terminal for kernels that will use the Limine terminal
-    FOR_TERM(term_write(TERM, "\e[2J\e[H", 7));
+    FOR_TERM(flanterm_write(TERM, "\e[2J\e[H", 7));
     FOR_TERM(TERM->in_bootloader = false);
 
 #if defined (__x86_64__) || defined (__i386__)

@@ -6,13 +6,13 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <term/term.h>
+#include <flanterm/flanterm.h>
 
 #define VD_COLS (80 * 2)
 #define VD_ROWS 25
 
 struct textmode_context {
-    struct term_context term;
+    struct flanterm_context term;
 
     volatile uint8_t *video_mem;
 

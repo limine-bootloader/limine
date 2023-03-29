@@ -6,20 +6,20 @@
 #include <lib/misc.h>
 #include <mm/pmm.h>
 #include <drivers/vga_textmode.h>
-#include <term/backends/framebuffer.h>
+#include <flanterm/backends/fb.h>
 
 #if defined (BIOS)
 int current_video_mode = -1;
 #endif
 
-struct term_context **terms = NULL;
+struct flanterm_context **terms = NULL;
 size_t terms_i = 0;
 
 int term_backend = _NOT_READY;
 
 void term_notready(void) {
     for (size_t i = 0; i < terms_i; i++) {
-        struct term_context *term = terms[i];
+        struct flanterm_context *term = terms[i];
 
         term->deinit(term, pmm_free);
     }
@@ -35,17 +35,17 @@ void term_notready(void) {
 // --- fallback ---
 
 #if defined (BIOS)
-static void fallback_raw_putchar(struct term_context *ctx, uint8_t c) {
+static void fallback_raw_putchar(struct flanterm_context *ctx, uint8_t c) {
     (void)ctx;
     struct rm_regs r = {0};
     r.eax = 0x0e00 | c;
     rm_int(0x10, &r, &r);
 }
 
-static void fallback_set_cursor_pos(struct term_context *ctx, size_t x, size_t y);
-static void fallback_get_cursor_pos(struct term_context *ctx, size_t *x, size_t *y);
+static void fallback_set_cursor_pos(struct flanterm_context *ctx, size_t x, size_t y);
+static void fallback_get_cursor_pos(struct flanterm_context *ctx, size_t *x, size_t *y);
 
-static void fallback_clear(struct term_context *ctx, bool move) {
+static void fallback_clear(struct flanterm_context *ctx, bool move) {
     (void)ctx;
     size_t x, y;
     fallback_get_cursor_pos(NULL, &x, &y);
@@ -72,7 +72,7 @@ static void fallback_clear(struct term_context *ctx, bool move) {
     fallback_set_cursor_pos(NULL, x, y);
 }
 
-static void fallback_set_cursor_pos(struct term_context *ctx, size_t x, size_t y) {
+static void fallback_set_cursor_pos(struct flanterm_context *ctx, size_t x, size_t y) {
     (void)ctx;
     struct rm_regs r = {0};
     r.eax = 0x0200;
@@ -81,7 +81,7 @@ static void fallback_set_cursor_pos(struct term_context *ctx, size_t x, size_t y
     rm_int(0x10, &r, &r);
 }
 
-static void fallback_get_cursor_pos(struct term_context *ctx, size_t *x, size_t *y) {
+static void fallback_get_cursor_pos(struct flanterm_context *ctx, size_t *x, size_t *y) {
     (void)ctx;
     struct rm_regs r = {0};
     r.eax = 0x0300;
@@ -91,7 +91,7 @@ static void fallback_get_cursor_pos(struct term_context *ctx, size_t *x, size_t 
     *y = r.edx >> 8;
 }
 
-static void fallback_scroll(struct term_context *ctx) {
+static void fallback_scroll(struct flanterm_context *ctx) {
     (void)ctx;
     size_t x, y;
     fallback_get_cursor_pos(NULL, &x, &y);
@@ -104,7 +104,7 @@ static void fallback_scroll(struct term_context *ctx) {
 
 static size_t cursor_x = 0, cursor_y = 0;
 
-static void fallback_scroll(struct term_context *ctx) {
+static void fallback_scroll(struct flanterm_context *ctx) {
     (void)ctx;
     gST->ConOut->SetCursorPosition(gST->ConOut, ctx->cols - 1, ctx->rows - 1);
     CHAR16 string[2];
@@ -114,7 +114,7 @@ static void fallback_scroll(struct term_context *ctx) {
     gST->ConOut->SetCursorPosition(gST->ConOut, cursor_x, cursor_y);
 }
 
-static void fallback_raw_putchar(struct term_context *ctx, uint8_t c) {
+static void fallback_raw_putchar(struct flanterm_context *ctx, uint8_t c) {
     if (!ctx->scroll_enabled && cursor_x == ctx->cols - 1 && cursor_y == ctx->rows - 1) {
         return;
     }
@@ -132,7 +132,7 @@ static void fallback_raw_putchar(struct term_context *ctx, uint8_t c) {
     gST->ConOut->SetCursorPosition(gST->ConOut, cursor_x, cursor_y);
 }
 
-static void fallback_clear(struct term_context *ctx, bool move) {
+static void fallback_clear(struct flanterm_context *ctx, bool move) {
     (void)ctx;
     gST->ConOut->ClearScreen(gST->ConOut);
     if (move) {
@@ -141,7 +141,7 @@ static void fallback_clear(struct term_context *ctx, bool move) {
     gST->ConOut->SetCursorPosition(gST->ConOut, cursor_x, cursor_y);
 }
 
-static void fallback_set_cursor_pos(struct term_context *ctx, size_t x, size_t y) {
+static void fallback_set_cursor_pos(struct flanterm_context *ctx, size_t x, size_t y) {
     (void)ctx;
     if (x >= ctx->cols || y >= ctx->rows) {
         return;
@@ -151,7 +151,7 @@ static void fallback_set_cursor_pos(struct term_context *ctx, size_t x, size_t y
     cursor_y = y;
 }
 
-static void fallback_get_cursor_pos(struct term_context *ctx, size_t *x, size_t *y) {
+static void fallback_get_cursor_pos(struct flanterm_context *ctx, size_t *x, size_t *y) {
     (void)ctx;
     *x = cursor_x;
     *y = cursor_y;
@@ -172,9 +172,9 @@ void term_fallback(void) {
         terms = ext_mem_alloc(sizeof(void *));
         terms_i = 1;
 
-        terms[0] = ext_mem_alloc(sizeof(struct term_context));
+        terms[0] = ext_mem_alloc(sizeof(struct flanterm_context));
 
-        struct term_context *term = terms[0];
+        struct flanterm_context *term = terms[0];
 
         fallback_clear(NULL, true);
 
@@ -210,7 +210,7 @@ void term_fallback(void) {
         term->rows = 25;
 #endif
         term_backend = FALLBACK;
-        term_context_reinit(term);
+        flanterm_context_reinit(term);
 
         term->in_bootloader = true;
 #if defined (UEFI)
@@ -227,15 +227,15 @@ extern void set_cursor_pos_helper(size_t x, size_t y);
 static uint8_t xfer_buf[TERM_XFER_CHUNK];
 #endif
 
-static uint64_t context_size(struct term_context *term) {
+static uint64_t context_size(struct flanterm_context *term) {
     switch (term_backend) {
 #if defined (BIOS)
         case TEXTMODE:
             return sizeof(struct textmode_context) + (VD_ROWS * VD_COLS) * 2;
 #endif
         case GTERM: {
-            struct fbterm_context *ctx = (void *)term;
-            return sizeof(struct fbterm_context) +
+            struct flanterm_fb_context *ctx = (void *)term;
+            return sizeof(struct flanterm_fb_context) +
                    ctx->font_bits_size +
                    ctx->font_bool_size +
                    ctx->canvas_size +
@@ -248,7 +248,7 @@ static uint64_t context_size(struct term_context *term) {
     }
 }
 
-static void context_save(struct term_context *term, uint64_t buf) {
+static void context_save(struct flanterm_context *term, uint64_t buf) {
     switch (term_backend) {
 #if defined (BIOS)
         case TEXTMODE: {
@@ -263,9 +263,9 @@ static void context_save(struct term_context *term, uint64_t buf) {
         }
 #endif
         case GTERM: {
-            struct fbterm_context *ctx = (void *)term;
-            memcpy32to64(buf, (uintptr_t)ctx, sizeof(struct fbterm_context));
-            buf += sizeof(struct fbterm_context);
+            struct flanterm_fb_context *ctx = (void *)term;
+            memcpy32to64(buf, (uintptr_t)ctx, sizeof(struct flanterm_fb_context));
+            buf += sizeof(struct flanterm_fb_context);
             memcpy32to64(buf, (uintptr_t)ctx->font_bits, ctx->font_bits_size);
             buf += ctx->font_bits_size;
             memcpy32to64(buf, (uintptr_t)ctx->font_bool, ctx->font_bool_size);
@@ -283,7 +283,7 @@ static void context_save(struct term_context *term, uint64_t buf) {
     }
 }
 
-static void context_restore(struct term_context *term, uint64_t buf) {
+static void context_restore(struct flanterm_context *term, uint64_t buf) {
     switch (term_backend) {
 #if defined (BIOS)
         case TEXTMODE: {
@@ -298,9 +298,9 @@ static void context_restore(struct term_context *term, uint64_t buf) {
         }
 #endif
         case GTERM: {
-            struct fbterm_context *ctx = (void *)term;
-            memcpy32to64((uintptr_t)ctx, buf, sizeof(struct fbterm_context));
-            buf += sizeof(struct fbterm_context);
+            struct flanterm_fb_context *ctx = (void *)term;
+            memcpy32to64((uintptr_t)ctx, buf, sizeof(struct flanterm_fb_context));
+            buf += sizeof(struct flanterm_fb_context);
             memcpy32to64((uintptr_t)ctx->font_bits, buf, ctx->font_bits_size);
             buf += ctx->font_bits_size;
             memcpy32to64((uintptr_t)ctx->font_bool, buf, ctx->font_bool_size);
@@ -318,7 +318,7 @@ static void context_restore(struct term_context *term, uint64_t buf) {
     }
 }
 
-void _term_write(struct term_context *term, uint64_t buf, uint64_t count) {
+void _term_write(struct flanterm_context *term, uint64_t buf, uint64_t count) {
     switch (count) {
         case TERM_OOB_OUTPUT_GET: {
             memcpy32to64(buf, (uint64_t)(uintptr_t)&term->oob_output, sizeof(uint64_t));
@@ -360,7 +360,7 @@ void _term_write(struct term_context *term, uint64_t buf, uint64_t count) {
     if (term->in_bootloader || native) {
         const char *s = (const char *)(uintptr_t)buf;
 
-        term_write(term, s, count);
+        flanterm_write(term, s, count);
     } else {
 #if defined (__i386__)
         while (count != 0) {
@@ -373,7 +373,7 @@ void _term_write(struct term_context *term, uint64_t buf, uint64_t count) {
 
             memcpy32to64((uint64_t)(uintptr_t)xfer_buf, buf, chunk);
 
-            term_write(term, (const char *)xfer_buf, chunk);
+            flanterm_write(term, (const char *)xfer_buf, chunk);
 
             count -= chunk;
             buf += chunk;

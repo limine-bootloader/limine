@@ -1133,7 +1133,6 @@ FEAT_END
 
     // Clear terminal for kernels that will use the Limine terminal
     FOR_TERM(flanterm_write(TERM, "\e[2J\e[H", 7));
-    FOR_TERM(TERM->in_bootloader = false);
 
 #if defined (__x86_64__) || defined (__i386__)
 #if defined (BIOS)

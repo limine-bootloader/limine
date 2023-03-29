@@ -226,12 +226,12 @@ refresh:
 
     print("    \e[32mESC\e[0m Discard and Exit    \e[32mF10\e[0m Boot\n\n");
 
-    print(serial ? "/" : "\xda");
+    print(serial ? "/" : "┌");
     for (size_t i = 0; i < terms[0]->cols - 2; i++) {
         switch (i) {
             case 1: case 2: case 3:
                 if (window_offset > 0) {
-                    print(serial ? "^" : "\x18");
+                    print(serial ? "^" : "↑");
                     break;
                 }
                 // FALLTHRU
@@ -241,7 +241,7 @@ refresh:
                     print("%s", title);
                     i += title_length - 1;
                 } else {
-                    print(serial ? "-" : "\xc4");
+                    print(serial ? "-" : "─");
                 }
             }
         }
@@ -249,9 +249,9 @@ refresh:
     size_t tmpx, tmpy;
 
     terms[0]->get_cursor_pos(terms[0], &tmpx, &tmpy);
-    print(serial ? "\\" : "\xbf");
+    print(serial ? "\\" : "┐");
     set_cursor_pos_helper(0, tmpy + 1);
-    print(serial ? "|" : "\xb3");
+    print(serial ? "|" : "│");
 
     size_t cursor_x, cursor_y;
     size_t current_line = 0, line_offset = 0, window_size = _window_size;
@@ -273,14 +273,14 @@ refresh:
             set_cursor_pos_helper(terms[0]->cols - 1, y);
             if (current_line == window_offset + window_size - 1) {
                 terms[0]->get_cursor_pos(terms[0], &tmpx, &tmpy);
-                print(serial ? "|" : "\xb3");
+                print(serial ? "|" : "│");
                 set_cursor_pos_helper(0, tmpy + 1);
-                print(serial ? "\\" : "\xc0");
+                print(serial ? "\\" : "└");
             } else {
                 terms[0]->get_cursor_pos(terms[0], &tmpx, &tmpy);
-                print(serial ? "|" : "\xb3");
+                print(serial ? "|" : "│");
                 set_cursor_pos_helper(0, tmpy + 1);
-                print(serial ? "|" : "\xb3");
+                print(serial ? "|" : "│");
             }
             line_offset = 0;
             token_type = validate_line(buffer + i + 1);
@@ -307,13 +307,13 @@ refresh:
                 size_t x, y;
                 terms[0]->get_cursor_pos(terms[0], &x, &y);
                 if (y == terms[0]->rows - 3) {
-                    print(serial ? ">" : "\x1a");
+                    print(serial ? ">" : "→");
                     set_cursor_pos_helper(0, y + 1);
-                    print(serial ? "\\" : "\xc0");
+                    print(serial ? "\\" : "└");
                 } else {
-                    print(serial ? ">" : "\x1a");
+                    print(serial ? ">" : "→");
                     set_cursor_pos_helper(0, y + 1);
-                    print(serial ? "<" : "\x1b\x1b");
+                    print(serial ? "<" : "←");
                 }
             }
             window_size--;
@@ -387,31 +387,31 @@ refresh:
         for (size_t i = 0; i < (window_size - (current_line - window_offset)) - 1; i++) {
             terms[0]->get_cursor_pos(terms[0], &x, &y);
             set_cursor_pos_helper(terms[0]->cols - 1, y);
-            print(serial ? "|" : "\xb3");
+            print(serial ? "|" : "│");
             set_cursor_pos_helper(0, y + 1);
-            print(serial ? "|" : "\xb3");
+            print(serial ? "|" : "│");
         }
         terms[0]->get_cursor_pos(terms[0], &x, &y);
         set_cursor_pos_helper(terms[0]->cols - 1, y);
-        print(serial ? "|" : "\xb3");
+        print(serial ? "|" : "│");
         set_cursor_pos_helper(0, y + 1);
-        print(serial ? "\\" : "\xc0");
+        print(serial ? "\\" : "└");
     }
 
     for (size_t i = 0; i < terms[0]->cols - 2; i++) {
         switch (i) {
             case 1: case 2: case 3:
                 if (current_line - window_offset >= window_size) {
-                    print(serial ? "v" : "\x19");
+                    print(serial ? "v" : "↓");
                     break;
                 }
                 // FALLTHRU
             default:
-                print(serial ? "-" : "\xc4");
+                print(serial ? "-" : "─");
         }
     }
     terms[0]->get_cursor_pos(terms[0], &tmpx, &tmpy);
-    print(serial ? "/" : "\xd9");
+    print(serial ? "/" : "┘");
     set_cursor_pos_helper(0, tmpy + 1);
 
     if (display_overflow_error) {
@@ -519,21 +519,21 @@ static size_t print_tree(size_t offset, size_t window, const char *shift, size_t
                 for (size_t j = 0; j < i; j++)
                     actual_parent = actual_parent->parent;
                 if (actual_parent->next != NULL) {
-                    if (!no_print) print(serial ? " |" : " \xb3");
+                    if (!no_print) print(serial ? " |" : " │");
                 } else {
                     if (!no_print) print("  ");
                 }
             }
             if (current_entry->next == NULL) {
-                if (!no_print) print(serial ? " `" : " \xc0");
+                if (!no_print) print(serial ? " `" : " └");
             } else {
-                if (!no_print) print(serial ? " |" : " \xc3");
+                if (!no_print) print(serial ? " |" : " ├");
             }
         }
         if (current_entry->sub) {
             if (!no_print) print(current_entry->expanded ? "[-]" : "[+]");
         } else if (level) {
-            if (!no_print) print(serial ? "-> " : "\xc4> ");
+            if (!no_print) print(serial ? "-> " : "─> ");
         } else {
             if (!no_print) print("   ");
         }
@@ -761,38 +761,38 @@ refresh:
         size_t x, y;
         terms[0]->get_cursor_pos(terms[0], &x, &y);
 
-        print(serial ? "/" : "\xda");
+        print(serial ? "/" : "┌");
         for (size_t i = 0; i < terms[0]->cols - 2; i++) {
             switch (i) {
                 case 1: case 2: case 3:
                     if (tree_offset > 0) {
-                        print(serial ? "^" : "\x18"); break;
+                        print(serial ? "^" : "↑"); break;
                     }
                     // FALLTHRU
                 default:
-                    print(serial ? "-" : "\xc4"); break;
+                    print(serial ? "-" : "─"); break;
             }
         }
-        print(serial ? "\\" : "\xbf");
+        print(serial ? "\\" : "┐");
 
         for (size_t i = y + 1; i < terms[0]->rows - 2; i++) {
             set_cursor_pos_helper(0, i);
-            print(serial ? "|" : "\xb3");
+            print(serial ? "|" : "│");
             set_cursor_pos_helper(terms[0]->cols - 1, i);
-            print(serial ? "|" : "\xb3");
+            print(serial ? "|" : "│");
         }
         set_cursor_pos_helper(0, terms[0]->rows - 2);
 
-        print(serial ? "\\" : "\xc0");
+        print(serial ? "\\" : "└");
         for (size_t i = 0; i < terms[0]->cols - 2; i++) {
-            print(serial ? "-" : "\xc4");
+            print(serial ? "-" : "─");
         }
-        print(serial ? "/" : "\xd9");
+        print(serial ? "/" : "┘");
 
         set_cursor_pos_helper(x, y + 2);
     }
 
-    size_t max_entries = print_tree(tree_offset, terms[0]->rows - 10, serial ? "|   " : "\xb3   ", 0, 0, selected_entry, menu_tree,
+    size_t max_entries = print_tree(tree_offset, terms[0]->rows - 10, serial ? "|   " : "│   ", 0, 0, selected_entry, menu_tree,
                                  &selected_menu_entry);
 
     {
@@ -801,7 +801,7 @@ refresh:
 
         if (tree_offset + (terms[0]->rows - 10) < max_entries) {
             set_cursor_pos_helper(2, terms[0]->rows - 2);
-            print(serial ? "vvv" : "\x19\x19\x19");
+            print(serial ? "vvv" : "↓↓↓");
         }
 
         set_cursor_pos_helper(0, 3);

@@ -843,8 +843,6 @@ no_load_font:;
         term->cols = min_cols;
         term->rows = min_rows;
 
-        term->in_bootloader = true;
-
         flanterm_context_reinit(term);
     }
 

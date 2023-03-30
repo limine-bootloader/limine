@@ -65,16 +65,22 @@ struct limine_internal_module internal_module2 = {
     .cmdline = "Second internal module"
 };
 
+struct limine_internal_module internal_module3 = {
+    .path = "./limine.cfg",
+    .cmdline = "Second internal module"
+};
+
 struct limine_internal_module *internal_modules[] = {
     &internal_module1,
-    &internal_module2
+    &internal_module2,
+    &internal_module3
 };
 
 struct limine_module_request module_request = {
     .id = LIMINE_MODULE_REQUEST,
     .revision = 1, .response = NULL,
 
-    .internal_module_count = 2,
+    .internal_module_count = 3,
     .internal_modules = internal_modules
 };
 

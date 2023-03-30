@@ -320,7 +320,7 @@ noreturn void limine_load(char *config, char *cmdline) {
     strcpy(k_path_ + 1, k_path);
     k_path = k_path_;
     for (size_t i = strlen(k_path) - 1; ; i--) {
-        if (k_path[i] == '/') {
+        if (k_path[i] == '/' || i == 1) {
             k_path[i] = 0;
             break;
         }

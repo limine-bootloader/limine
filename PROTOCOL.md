@@ -288,6 +288,8 @@ direct map.
 
 ### Terminal Feature
 
+Note: *This feature is deprecated, do not use if possible.*
+
 ID:
 ```c
 #define LIMINE_TERMINAL_REQUEST { LIMINE_COMMON_MAGIC, 0xc8ac59310c2b0844, 0xa68d0c7265d38878 }

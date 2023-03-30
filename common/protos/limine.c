@@ -662,6 +662,8 @@ FEAT_START
     struct limine_module_response *module_response =
         ext_mem_alloc(sizeof(struct limine_module_response));
 
+    module_response->revision = 1;
+
     struct limine_file *modules = ext_mem_alloc(module_count * sizeof(struct limine_file));
 
     size_t final_module_count = 0;

@@ -605,7 +605,7 @@ struct limine_framebuffer {
     uint64_t edid_size;
     void *edid;
 
-    /* Revision 1 */
+    /* Response revision 1 */
     uint64_t mode_count;
     struct limine_video_mode **modes;
 };
@@ -907,7 +907,7 @@ struct limine_module_request {
     uint64_t revision;
     struct limine_module_response *response;
 
-    /* Revision 1 */
+    /* Request revision 1 */
     uint64_t internal_module_count;
     struct limine_internal_module **internal_modules;
 };
@@ -916,6 +916,8 @@ struct limine_module_request {
 * `internal_module_count` - How many internal modules are passed by the kernel.
 * `internal_modules` - Pointer to an array of `internal_module_count` pointers to
 `struct limine_internal_module` structures.
+
+Note: Internal modules are honoured if the module response has revision >= 1.
 
 As part of `struct limine_internal_module`:
 

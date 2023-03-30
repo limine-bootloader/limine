@@ -380,7 +380,7 @@ struct limine_module_request {
     uint64_t revision;
     LIMINE_PTR(struct limine_module_response *) response;
 
-    /* Revision 1 */
+    /* Request revision 1 */
     uint64_t internal_module_count;
     LIMINE_PTR(struct limine_internal_module **) internal_modules;
 };

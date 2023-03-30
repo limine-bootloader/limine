@@ -52,7 +52,8 @@ override CFLAGS_FOR_TARGET += \
     -fno-strict-aliasing \
     -fno-lto \
     -Wshadow \
-    -Wvla
+    -Wvla \
+    -Wno-deprecated-declarations
 
 override CPPFLAGS_FOR_TARGET := \
     -I../freestanding-headers \

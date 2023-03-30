@@ -191,25 +191,31 @@ struct limine_framebuffer_request {
 #define LIMINE_TERMINAL_OOB_OUTPUT_ONOCR (1 << 6)
 #define LIMINE_TERMINAL_OOB_OUTPUT_OPOST (1 << 7)
 
-struct limine_terminal;
+#ifdef __GNUC__
+#  define LIMINE_DEPRECATED __attribute__((__deprecated__))
+#else
+#  define LIMINE_DEPRECATED
+#endif
+
+struct LIMINE_DEPRECATED limine_terminal;
 
 typedef void (*limine_terminal_write)(struct limine_terminal *, const char *, uint64_t);
 typedef void (*limine_terminal_callback)(struct limine_terminal *, uint64_t, uint64_t, uint64_t, uint64_t);
 
-struct limine_terminal {
+struct LIMINE_DEPRECATED limine_terminal {
     uint64_t columns;
     uint64_t rows;
     LIMINE_PTR(struct limine_framebuffer *) framebuffer;
 };
 
-struct limine_terminal_response {
+struct LIMINE_DEPRECATED limine_terminal_response {
     uint64_t revision;
     uint64_t terminal_count;
     LIMINE_PTR(struct limine_terminal **) terminals;
     LIMINE_PTR(limine_terminal_write) write;
 };
 
-struct limine_terminal_request {
+struct LIMINE_DEPRECATED limine_terminal_request {
     uint64_t id[4];
     uint64_t revision;
     LIMINE_PTR(struct limine_terminal_response *) response;

@@ -31,6 +31,19 @@ extern "C" {
 #  define LIMINE_PTR(TYPE) TYPE
 #endif
 
+#ifdef __GNUC__
+#  define LIMINE_DEPRECATED __attribute__((__deprecated__))
+#  define LIMINE_DEPRECATED_IGNORE_START \
+    _Pragma("GCC diagnostic push") \
+    _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#  define LIMINE_DEPRECATED_IGNORE_END \
+    _Pragma("GCC diagnostic pop")
+#else
+#  define LIMINE_DEPRECATED
+#  define LIMINE_DEPRECATED_IGNORE_START
+#  define LIMINE_DEPRECATED_IGNORE_END
+#endif
+
 #define LIMINE_COMMON_MAGIC 0xc7b1dd30df4c8b88, 0x0a82e883a194f07b
 
 struct limine_uuid {
@@ -191,11 +204,7 @@ struct limine_framebuffer_request {
 #define LIMINE_TERMINAL_OOB_OUTPUT_ONOCR (1 << 6)
 #define LIMINE_TERMINAL_OOB_OUTPUT_OPOST (1 << 7)
 
-#ifdef __GNUC__
-#  define LIMINE_DEPRECATED __attribute__((__deprecated__))
-#else
-#  define LIMINE_DEPRECATED
-#endif
+LIMINE_DEPRECATED_IGNORE_START
 
 struct LIMINE_DEPRECATED limine_terminal;
 
@@ -221,6 +230,8 @@ struct LIMINE_DEPRECATED limine_terminal_request {
     LIMINE_PTR(struct limine_terminal_response *) response;
     LIMINE_PTR(limine_terminal_callback) callback;
 };
+
+LIMINE_DEPRECATED_IGNORE_END
 
 /* 5-level paging */
 

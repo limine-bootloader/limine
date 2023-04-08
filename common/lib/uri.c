@@ -272,6 +272,8 @@ struct file_handle *uri_open(char *uri) {
 
     if (compressed && ret != NULL) {
         struct file_handle *compressed_fd = ext_mem_alloc(sizeof(struct file_handle));
+        fread(ret, &compressed_fd->size, ret->size - 4, sizeof(uint32_t));
+        compressed_fd->fd = ext_mem_alloc(compressed_fd->size);
         void *src = freadall(ret, MEMMAP_BOOTLOADER_RECLAIMABLE);
         if (tinf_gzip_uncompress(compressed_fd->fd, src, ret->size)) {
             panic(true, "tinf error");

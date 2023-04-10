@@ -127,9 +127,9 @@ struct limine_hhdm_request {
 #define LIMINE_FRAMEBUFFER_RGB 1
 
 struct limine_video_mode {
-    uint64_t pitch;
     uint64_t width;
     uint64_t height;
+    uint64_t pitch;
     uint16_t bpp;
     uint8_t memory_model;
     uint8_t red_mask_size;

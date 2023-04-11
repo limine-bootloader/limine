@@ -21,6 +21,11 @@ endif
 
 override CFLAGS_FOR_TARGET += \
     -Os \
+    -Wall \
+    -Wextra \
+    -Wshadow \
+    -Wvla \
+    $(WERROR_FLAG) \
     -std=gnu11 \
     -nostdinc \
     -ffreestanding \
@@ -34,9 +39,7 @@ override CFLAGS_FOR_TARGET += \
     -m32 \
     -march=i686 \
     -mabi=sysv \
-    -mno-80387 \
-    -Wshadow \
-    -Wvla
+    -mno-80387
 
 override CPPFLAGS_FOR_TARGET := \
     -I../freestanding-headers \

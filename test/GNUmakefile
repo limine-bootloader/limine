@@ -41,7 +41,7 @@ override INTERNALCFLAGS  :=       \
 	-fno-stack-protector \
 	-fno-stack-check     \
 	-fno-lto             \
-	-fpie                \
+	-fPIE                \
 	-mgeneral-regs-only  \
 	-mno-red-zone        \
 	-I.                  \
@@ -53,8 +53,8 @@ override INTERNALCFLAGS_MB  :=    \
 	-fno-stack-protector \
 	-fno-stack-check     \
 	-fno-lto             \
-	-fno-pie             \
-	-fno-pic             \
+	-fno-PIE             \
+	-fno-PIC             \
 	-m32                 \
 	-march=i686          \
 	-mabi=sysv           \

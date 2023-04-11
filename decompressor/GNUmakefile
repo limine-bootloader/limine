@@ -29,8 +29,8 @@ override CFLAGS_FOR_TARGET += \
     -fomit-frame-pointer \
     -fno-strict-aliasing \
     -fno-lto \
-    -fno-pie \
-    -fno-pic \
+    -fno-PIE \
+    -fno-PIC \
     -m32 \
     -march=i686 \
     -mabi=sysv \

@@ -68,8 +68,8 @@ override CPPFLAGS_FOR_TARGET := \
 
 ifeq ($(TARGET),bios)
     override CFLAGS_FOR_TARGET += \
-        -fno-pie \
-        -fno-pic \
+        -fno-PIE \
+        -fno-PIC \
         -m32 \
         -march=i686 \
         -mabi=sysv \
@@ -81,7 +81,7 @@ endif
 
 ifeq ($(TARGET),uefi-x86-64)
     override CFLAGS_FOR_TARGET += \
-        -fpie \
+        -fPIE \
         -m64 \
         -march=x86-64 \
         -mabi=sysv \
@@ -100,7 +100,7 @@ endif
 
 ifeq ($(TARGET),uefi-ia32)
     override CFLAGS_FOR_TARGET += \
-        -fpie \
+        -fPIE \
         -m32 \
         -march=i686 \
         -mabi=sysv \
@@ -114,7 +114,7 @@ endif
 
 ifeq ($(TARGET),uefi-aarch64)
     override CFLAGS_FOR_TARGET += \
-        -fpie \
+        -fPIE \
         -mgeneral-regs-only
     override CPPFLAGS_FOR_TARGET := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \

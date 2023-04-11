@@ -33,7 +33,7 @@ ext2-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) limine-deploy
+	$(MAKE) limine
 	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
@@ -48,7 +48,7 @@ ext2-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	$(BINDIR)/limine-deploy test.hdd
+	$(BINDIR)/limine bios-install test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: fat12-test
@@ -56,7 +56,7 @@ fat12-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) limine-deploy
+	$(MAKE) limine
 	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
@@ -71,7 +71,7 @@ fat12-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	$(BINDIR)/limine-deploy test.hdd
+	$(BINDIR)/limine bios-install test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: fat16-test
@@ -79,7 +79,7 @@ fat16-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) limine-deploy
+	$(MAKE) limine
 	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
@@ -94,7 +94,7 @@ fat16-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	$(BINDIR)/limine-deploy test.hdd
+	$(BINDIR)/limine bios-install test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: legacy-fat16-test
@@ -103,7 +103,7 @@ legacy-fat16-test:
 	$(MAKE) mbrtest.hdd
 	fdisk -l mbrtest.hdd
 	$(MAKE) limine-bios
-	$(MAKE) limine-deploy
+	$(MAKE) limine
 	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
@@ -118,7 +118,7 @@ legacy-fat16-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	$(BINDIR)/limine-deploy mbrtest.hdd
+	$(BINDIR)/limine bios-install mbrtest.hdd
 	qemu-system-i386 -cpu pentium2 -m 16M -M isapc -net none   -hda mbrtest.hdd -debugcon stdio
 
 .PHONY: fat32-test
@@ -126,7 +126,7 @@ fat32-test:
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-bios
-	$(MAKE) limine-deploy
+	$(MAKE) limine
 	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
@@ -141,7 +141,7 @@ fat32-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	$(BINDIR)/limine-deploy test.hdd
+	$(BINDIR)/limine bios-install test.hdd
 	qemu-system-x86_64 -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: iso9660-test
@@ -169,7 +169,7 @@ full-hybrid-test:
 	sudo cp -rv $(BINDIR)/* test_image/boot/
 	sudo cp -rv test/* test_image/boot/
 	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine-cd-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label test_image/ -o test.iso
-	$(BINDIR)/limine-deploy test.iso
+	$(BINDIR)/limine bios-install test.iso
 	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -cdrom test.iso -debugcon stdio
 	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -hda test.iso -debugcon stdio
 	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4   -cdrom test.iso -debugcon stdio

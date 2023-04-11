@@ -12,7 +12,21 @@
 #include <inttypes.h>
 #include <limits.h>
 
+#ifndef LIMINE_NO_BIOS
 #include "limine-hdd.h"
+#endif
+
+static void remove_arg(int *argc, char *argv[], int index) {
+    for (int i = index; i < *argc - 1; i++) {
+        argv[i] = argv[i + 1];
+    }
+
+    (*argc)--;
+
+    argv[*argc] = NULL;
+}
+
+#ifndef LIMINE_NO_BIOS
 
 static bool quiet = false;
 
@@ -265,37 +279,37 @@ static bool device_cache_block(uint64_t block) {
     return true;
 }
 
-struct undeploy_data {
+struct uninstall_data {
     void *data;
     uint64_t loc;
     uint64_t count;
 };
 
-#define UNDEPLOY_DATA_MAX 256
+#define UNINSTALL_DATA_MAX 256
 
-static bool undeploying = false;
-static struct undeploy_data undeploy_data[UNDEPLOY_DATA_MAX];
-static struct undeploy_data undeploy_data_rev[UNDEPLOY_DATA_MAX];
-static uint64_t undeploy_data_i = 0;
-static const char *undeploy_file = NULL;
+static bool uninstalling = false;
+static struct uninstall_data uninstall_data[UNINSTALL_DATA_MAX];
+static struct uninstall_data uninstall_data_rev[UNINSTALL_DATA_MAX];
+static uint64_t uninstall_data_i = 0;
+static const char *uninstall_file = NULL;
 
-static void reverse_undeploy_data(void) {
-    for (size_t i = 0, j = undeploy_data_i - 1; i < undeploy_data_i; i++, j--) {
-        undeploy_data_rev[j] = undeploy_data[i];
+static void reverse_uninstall_data(void) {
+    for (size_t i = 0, j = uninstall_data_i - 1; i < uninstall_data_i; i++, j--) {
+        uninstall_data_rev[j] = uninstall_data[i];
     }
 
-    memcpy(undeploy_data, undeploy_data_rev, undeploy_data_i * sizeof(struct undeploy_data));
+    memcpy(uninstall_data, uninstall_data_rev, uninstall_data_i * sizeof(struct uninstall_data));
 }
 
-static void free_undeploy_data(void) {
-    for (size_t i = 0; i < undeploy_data_i; i++) {
-        free(undeploy_data[i].data);
+static void free_uninstall_data(void) {
+    for (size_t i = 0; i < uninstall_data_i; i++) {
+        free(uninstall_data[i].data);
     }
 }
 
-static bool store_undeploy_data(const char *filename) {
+static bool store_uninstall_data(const char *filename) {
     if (!quiet) {
-        fprintf(stderr, "Storing undeploy data to file: `%s`...\n", filename);
+        fprintf(stderr, "Storing uninstall data to file: `%s`...\n", filename);
     }
 
     FILE *udfile = fopen(filename, "wb");
@@ -303,18 +317,18 @@ static bool store_undeploy_data(const char *filename) {
         goto error;
     }
 
-    if (fwrite(&undeploy_data_i, sizeof(uint64_t), 1, udfile) != 1) {
+    if (fwrite(&uninstall_data_i, sizeof(uint64_t), 1, udfile) != 1) {
         goto error;
     }
 
-    for (size_t i = 0; i < undeploy_data_i; i++) {
-        if (fwrite(&undeploy_data[i].loc, sizeof(uint64_t), 1, udfile) != 1) {
+    for (size_t i = 0; i < uninstall_data_i; i++) {
+        if (fwrite(&uninstall_data[i].loc, sizeof(uint64_t), 1, udfile) != 1) {
             goto error;
         }
-        if (fwrite(&undeploy_data[i].count, sizeof(uint64_t), 1, udfile) != 1) {
+        if (fwrite(&uninstall_data[i].count, sizeof(uint64_t), 1, udfile) != 1) {
             goto error;
         }
-        if (fwrite(undeploy_data[i].data, undeploy_data[i].count, 1, udfile) != 1) {
+        if (fwrite(uninstall_data[i].data, uninstall_data[i].count, 1, udfile) != 1) {
             goto error;
         }
     }
@@ -330,9 +344,9 @@ error:
     return false;
 }
 
-static bool load_undeploy_data(const char *filename) {
+static bool load_uninstall_data(const char *filename) {
     if (!quiet) {
-        fprintf(stderr, "Loading undeploy data from file: `%s`...\n", filename);
+        fprintf(stderr, "Loading uninstall data from file: `%s`...\n", filename);
     }
 
     FILE *udfile = fopen(filename, "rb");
@@ -340,22 +354,22 @@ static bool load_undeploy_data(const char *filename) {
         goto error;
     }
 
-    if (fread(&undeploy_data_i, sizeof(uint64_t), 1, udfile) != 1) {
+    if (fread(&uninstall_data_i, sizeof(uint64_t), 1, udfile) != 1) {
         goto error;
     }
 
-    for (size_t i = 0; i < undeploy_data_i; i++) {
-        if (fread(&undeploy_data[i].loc, sizeof(uint64_t), 1, udfile) != 1) {
+    for (size_t i = 0; i < uninstall_data_i; i++) {
+        if (fread(&uninstall_data[i].loc, sizeof(uint64_t), 1, udfile) != 1) {
             goto error;
         }
-        if (fread(&undeploy_data[i].count, sizeof(uint64_t), 1, udfile) != 1) {
+        if (fread(&uninstall_data[i].count, sizeof(uint64_t), 1, udfile) != 1) {
             goto error;
         }
-        undeploy_data[i].data = malloc(undeploy_data[i].count);
-        if (undeploy_data[i].data == NULL) {
+        uninstall_data[i].data = malloc(uninstall_data[i].count);
+        if (uninstall_data[i].data == NULL) {
             goto error;
         }
-        if (fread(undeploy_data[i].data, undeploy_data[i].count, 1, udfile) != 1) {
+        if (fread(uninstall_data[i].data, uninstall_data[i].count, 1, udfile) != 1) {
             goto error;
         }
     }
@@ -395,16 +409,16 @@ static bool _device_read(void *_buffer, uint64_t loc, size_t count) {
 }
 
 static bool _device_write(const void *_buffer, uint64_t loc, size_t count) {
-    if (undeploying) {
+    if (uninstalling) {
         goto skip_save;
     }
 
-    if (undeploy_data_i >= UNDEPLOY_DATA_MAX) {
-        fprintf(stderr, "Internal error: Too many undeploy data entries!\n");
+    if (uninstall_data_i >= UNINSTALL_DATA_MAX) {
+        fprintf(stderr, "Internal error: Too many uninstall data entries!\n");
         return false;
     }
 
-    struct undeploy_data *ud = &undeploy_data[undeploy_data_i];
+    struct uninstall_data *ud = &uninstall_data[uninstall_data_i];
 
     ud->data = malloc(count);
     if (ud->data == NULL) {
@@ -441,31 +455,31 @@ skip_save:;
         progress += chunk;
     }
 
-    if (!undeploying) {
-        undeploy_data_i++;
+    if (!uninstalling) {
+        uninstall_data_i++;
     }
     return true;
 }
 
-static void undeploy(void) {
-    undeploying = true;
+static void uninstall(void) {
+    uninstalling = true;
 
     cache_state = CACHE_CLEAN;
     cached_block = (uint64_t)-1;
 
-    for (size_t i = 0; i < undeploy_data_i; i++) {
-        struct undeploy_data *ud = &undeploy_data[i];
+    for (size_t i = 0; i < uninstall_data_i; i++) {
+        struct uninstall_data *ud = &uninstall_data[i];
         bool retry = false;
         while (!_device_write(ud->data, ud->loc, ud->count)) {
             if (retry) {
-                fprintf(stderr, "ERROR: Undeploy data index %zu failed to write. Undeploy may be incomplete!\n", i);
+                fprintf(stderr, "ERROR: Uninstall data index %zu failed to write. Uninstall may be incomplete!\n", i);
                 break;
             }
             if (!quiet) {
-                fprintf(stderr, "Warning: Undeploy data index %zu failed to write, retrying...\n", i);
+                fprintf(stderr, "Warning: Uninstall data index %zu failed to write, retrying...\n", i);
             }
             if (!device_flush_cache()) {
-                fprintf(stderr, "ERROR: Device cache flush failure. Undeploy may be incomplete!\n");
+                fprintf(stderr, "ERROR: Device cache flush failure. Uninstall may be incomplete!\n");
             }
             cache_state = CACHE_CLEAN;
             cached_block = (uint64_t)-1;
@@ -474,11 +488,11 @@ static void undeploy(void) {
     }
 
     if (!device_flush_cache()) {
-        fprintf(stderr, "ERROR: Device cache flush failure. Undeploy may be incomplete!\n");
+        fprintf(stderr, "ERROR: Device cache flush failure. Uninstall may be incomplete!\n");
     }
 
     if (!quiet) {
-        fprintf(stderr, "Undeploy data restored successfully. Limine undeployed!\n");
+        fprintf(stderr, "Uninstall data restored successfully. Limine uninstalled!\n");
     }
 }
 
@@ -494,17 +508,17 @@ static void undeploy(void) {
             goto cleanup;                       \
     } while (0)
 
-static void usage(const char *name) {
-    printf("Usage: %s <device> [GPT partition index]\n", name);
+static void bios_install_usage(const char *name) {
+    printf("Usage: %s bios-install <device> [GPT partition index]\n", name);
     printf("\n");
     printf("    --force-mbr     Force MBR detection to work even if the\n");
     printf("                    safety checks fail (DANGEROUS!)\n");
     printf("\n");
-    printf("    --undeploy      Reverse the entire deployment procedure\n");
+    printf("    --uninstall     Reverse the entire install procedure\n");
     printf("\n");
-    printf("    --undeploy-data-file=<filename>\n");
-    printf("                    Set the input (for --undeploy) or output file\n");
-    printf("                    name of the file which contains undeploy data\n");
+    printf("    --uninstall-data-file=<filename>\n");
+    printf("                    Set the input (for --uninstall) or output file\n");
+    printf("                    name of the file which contains uninstall data\n");
     printf("\n");
     printf("    --quiet         Do not print verbose diagnostic messages\n");
     printf("\n");
@@ -512,10 +526,10 @@ static void usage(const char *name) {
     printf("\n");
 }
 
-int main(int argc, char *argv[]) {
+static int bios_install(int argc, char *argv[]) {
     int      ok = EXIT_FAILURE;
     int      force_mbr = 0;
-    bool undeploy_mode = false;
+    bool uninstall_mode = false;
     const uint8_t *bootloader_img = binary_limine_hdd_bin_data;
     size_t   bootloader_file_size = sizeof(binary_limine_hdd_bin_data);
     uint8_t  orig_mbr[70], timestamp[6];
@@ -526,7 +540,7 @@ int main(int argc, char *argv[]) {
     bigendian = endbyte == 0x12;
 
     if (argc < 2) {
-        usage(argv[0]);
+        bios_install_usage(argv[-1]);
 #ifdef IS_WINDOWS
         system("pause");
 #endif
@@ -535,7 +549,7 @@ int main(int argc, char *argv[]) {
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
-            usage(argv[0]);
+            bios_install_usage(argv[-1]);
             return EXIT_SUCCESS;
         } else if (strcmp(argv[i], "--quiet") == 0) {
             quiet = true;
@@ -544,18 +558,18 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Warning: --force-mbr already set.\n");
             }
             force_mbr = 1;
-        } else if (strcmp(argv[i], "--undeploy") == 0) {
-            if (undeploy_mode && !quiet) {
-                fprintf(stderr, "Warning: --undeploy already set.\n");
+        } else if (strcmp(argv[i], "--uninstall") == 0) {
+            if (uninstall_mode && !quiet) {
+                fprintf(stderr, "Warning: --uninstall already set.\n");
             }
-            undeploy_mode = true;
-        } else if (memcmp(argv[i], "--undeploy-data-file=", 21) == 0) {
-            if (undeploy_file != NULL && !quiet) {
-                fprintf(stderr, "Warning: --undeploy-data-file already set. Overriding...\n");
+            uninstall_mode = true;
+        } else if (memcmp(argv[i], "--uninstall-data-file=", 21) == 0) {
+            if (uninstall_file != NULL && !quiet) {
+                fprintf(stderr, "Warning: --uninstall-data-file already set. Overriding...\n");
             }
-            undeploy_file = argv[i] + 21;
-            if (strlen(undeploy_file) == 0) {
-                fprintf(stderr, "ERROR: Undeploy data file has a zero-length name!\n");
+            uninstall_file = argv[i] + 21;
+            if (strlen(uninstall_file) == 0) {
+                fprintf(stderr, "ERROR: Uninstall data file has a zero-length name!\n");
                 return EXIT_FAILURE;
             }
         } else {
@@ -570,28 +584,28 @@ int main(int argc, char *argv[]) {
 
     if (device == NULL) {
         fprintf(stderr, "ERROR: No device specified\n");
-        usage(argv[0]);
+        bios_install_usage(argv[-1]);
         return EXIT_FAILURE;
     }
 
     if (!device_init()) {
-        goto undeploy_mode_cleanup;
+        goto uninstall_mode_cleanup;
     }
 
-    if (undeploy_mode) {
-        if (undeploy_file == NULL) {
-            fprintf(stderr, "ERROR: Undeploy mode set but no --undeploy-data-file=... passed.\n");
-            goto undeploy_mode_cleanup;
+    if (uninstall_mode) {
+        if (uninstall_file == NULL) {
+            fprintf(stderr, "ERROR: Uninstall mode set but no --uninstall-data-file=... passed.\n");
+            goto uninstall_mode_cleanup;
         }
 
-        if (!load_undeploy_data(undeploy_file)) {
-            goto undeploy_mode_cleanup;
+        if (!load_uninstall_data(uninstall_file)) {
+            goto uninstall_mode_cleanup;
         }
 
-        undeploy();
+        uninstall();
 
         ok = EXIT_SUCCESS;
-        goto undeploy_mode_cleanup;
+        goto uninstall_mode_cleanup;
     }
 
     // Probe for GPT and logical block size
@@ -606,7 +620,7 @@ int main(int argc, char *argv[]) {
             if (!force_mbr) {
                 gpt = 1;
                 if (!quiet) {
-                    fprintf(stderr, "Deploying to GPT. Logical block size of %" PRIu64 " bytes.\n",
+                    fprintf(stderr, "Installing to GPT. Logical block size of %" PRIu64 " bytes.\n",
                             lb_guesses[i]);
                 }
             } else {
@@ -796,7 +810,7 @@ int main(int argc, char *argv[]) {
             }
 
             if (!quiet) {
-                fprintf(stderr, "GPT partition specified. Deploying there instead of embedding.\n");
+                fprintf(stderr, "GPT partition specified. Installing there instead of embedding.\n");
             }
 
             stage2_loc_a = ENDSWAP(gpt_entry.starting_lba) * lb_size;
@@ -898,7 +912,7 @@ int main(int argc, char *argv[]) {
         }
     } else {
         if (!quiet) {
-            fprintf(stderr, "Deploying to MBR.\n");
+            fprintf(stderr, "Installing to MBR.\n");
         }
     }
 
@@ -945,25 +959,190 @@ int main(int argc, char *argv[]) {
                         "          the root, /boot, /limine, or /boot/limine directories of\n"
                         "          one of the partitions on the device, or boot will fail!\n");
 
-        fprintf(stderr, "Limine deployed successfully!\n");
+        fprintf(stderr, "Limine BIOS stages installed successfully!\n");
     }
 
     ok = EXIT_SUCCESS;
 
 cleanup:
-    reverse_undeploy_data();
+    reverse_uninstall_data();
     if (ok != EXIT_SUCCESS) {
-        // If we failed, attempt to reverse deploy process
-        undeploy();
-    } else if (undeploy_file != NULL) {
-        store_undeploy_data(undeploy_file);
+        // If we failed, attempt to reverse install process
+        uninstall();
+    } else if (uninstall_file != NULL) {
+        store_uninstall_data(uninstall_file);
     }
-undeploy_mode_cleanup:
-    free_undeploy_data();
+uninstall_mode_cleanup:
+    free_uninstall_data();
     if (cache)
         free(cache);
     if (device != NULL)
         fclose(device);
 
     return ok;
+}
+#endif
+
+#define CONFIG_B2SUM_SIGNATURE "++CONFIG_B2SUM_SIGNATURE++"
+
+static void enroll_config_usage(const char *name) {
+    printf("Usage: %s enroll-config <Limine executable> <BLAKE2B of config file>\n", name);
+    printf("\n");
+    printf("    --reset      Remove enrolled BLAKE2B, will not check config intergrity\n");
+    printf("\n");
+    printf("    --quiet      Do not print verbose diagnostic messages\n");
+    printf("\n");
+    printf("    --help | -h  Display this help message\n");
+    printf("\n");
+}
+
+static int enroll_config(int argc, char *argv[]) {
+    int ret = EXIT_FAILURE;
+
+    char *bootloader = NULL;
+    FILE *bootloader_file = NULL;
+    bool quiet = false;
+    bool reset = false;
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+            enroll_config_usage(argv[-1]);
+            return EXIT_SUCCESS;
+        } else if (strcmp(argv[i], "--quiet") == 0) {
+            remove_arg(&argc, argv, i);
+            quiet = true;
+        } else if (strcmp(argv[i], "--reset") == 0) {
+            remove_arg(&argc, argv, i);
+            reset = true;
+        }
+    }
+
+    if (argc <= (reset ? 1 : 2)) {
+        enroll_config_usage(argv[-1]);
+#ifdef IS_WINDOWS
+        system("pause");
+#endif
+        return EXIT_FAILURE;
+    }
+
+    if (!reset && strlen(argv[2]) != 128) {
+        fprintf(stderr, "ERROR: BLAKE2B specified is not 128 characters long\n");
+        goto cleanup;
+    }
+
+    bootloader_file = fopen(argv[1], "r+b");
+    if (bootloader_file == NULL) {
+        perror("ERROR");
+        goto cleanup;;
+    }
+
+    if (fseek(bootloader_file, 0, SEEK_END) != 0) {
+        perror("ERROR");
+        goto cleanup;
+    }
+    size_t bootloader_size = ftell(bootloader_file);
+    rewind(bootloader_file);
+
+    bootloader = malloc(bootloader_size);
+    if (bootloader == NULL) {
+        perror("ERROR");
+        goto cleanup;
+    }
+
+    if (fread(bootloader, bootloader_size, 1, bootloader_file) != 1) {
+        perror("ERROR");
+        goto cleanup;
+    }
+
+    char *checksum_loc = NULL;
+    size_t checked_count = 0;
+    const char *config_b2sum_sign = CONFIG_B2SUM_SIGNATURE;
+    for (size_t i = 0; i < bootloader_size - ((sizeof(CONFIG_B2SUM_SIGNATURE) - 1) + 128) + 1; i++) {
+        if (bootloader[i] != config_b2sum_sign[checked_count]) {
+            checked_count = 0;
+            continue;
+        }
+
+        checked_count++;
+
+        if (checked_count == sizeof(CONFIG_B2SUM_SIGNATURE) - 1) {
+            checksum_loc = &bootloader[i + 1];
+            break;
+        }
+    }
+
+    if (checksum_loc == NULL) {
+        fprintf(stderr, "ERROR: Checksum location not found in provided executable\n");
+        goto cleanup;
+    }
+
+    if (!reset) {
+        memcpy(checksum_loc, argv[2], 128);
+    } else {
+        memset(checksum_loc, '0', 128);
+    }
+
+    if (fseek(bootloader_file, 0, SEEK_SET) != 0) {
+        perror("ERROR");
+        goto cleanup;
+    }
+    if (fwrite(bootloader, bootloader_size, 1, bootloader_file) != 1) {
+        perror("ERROR");
+        goto cleanup;
+    }
+
+    if (!quiet) {
+        fprintf(stderr, "Config file BLAKE2B successfully %s!\n", reset ? "reset" : "enrolled");
+    }
+    ret = EXIT_SUCCESS;
+
+cleanup:
+    if (bootloader != NULL) {
+        free(bootloader);
+    }
+    if (bootloader_file != NULL) {
+        fclose(bootloader_file);
+    }
+    return ret;
+}
+
+#define LIMINE_VERSION "@LIMINE_VERSION@"
+
+static int version(void) {
+    puts(LIMINE_VERSION);
+    return EXIT_SUCCESS;
+}
+
+static void general_usage(const char *name) {
+    printf("Usage: %s <command> <args...>\n", name);
+    printf("\n");
+    printf("Valid commands: help, version, bios-install, enroll-config\n");
+}
+
+int main(int argc, char *argv[]) {
+    if (argc <= 1) {
+        general_usage(argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    if (strcmp(argv[1], "help") == 0
+     || strcmp(argv[1], "--help") == 0
+     || strcmp(argv[1], "-h") == 0) {
+        general_usage(argv[0]);
+        return EXIT_SUCCESS;
+    } else if (strcmp(argv[1], "bios-install") == 0) {
+#ifndef LIMINE_NO_BIOS
+        return bios_install(argc - 1, &argv[1]);
+#else
+        fprintf(stderr, "ERROR: Limine has been compiled without BIOS support.\n");
+        return EXIT_FAILURE;
+#endif
+    } else if (strcmp(argv[1], "enroll-config") == 0) {
+        return enroll_config(argc - 1, &argv[1]);
+    } else if (strcmp(argv[1], "version") == 0) {
+        return version();
+    }
+
+    general_usage(argv[0]);
+    return EXIT_FAILURE;
 }

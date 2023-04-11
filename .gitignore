@@ -33,9 +33,7 @@
 /config.status
 /config.log
 /autom4te.cache
-/man/man1/limine-version.1
-/man/man1/limine-deploy.1
-/man/man1/limine-enroll-config.1
+/man/man1/limine.1
 /GNUmakefile
 /config.h
 /common-bios

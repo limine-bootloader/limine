@@ -41,7 +41,6 @@ override BUILD_UEFI_AARCH64 := @BUILD_UEFI_AARCH64@
 override BUILD_CD_EFI := @BUILD_CD_EFI@
 override BUILD_PXE := @BUILD_PXE@
 override BUILD_CD := @BUILD_CD@
-override BUILD_LIMINE_DEPLOY := @BUILD_LIMINE_DEPLOY@
 
 $(eval $(call DEFAULT_VAR,CC,@CC@))
 export CC
@@ -95,40 +94,31 @@ all: $(call MKESCAPE,$(BINDIR))/Makefile
 	$(MAKE) all1
 
 .PHONY: all1
-all1: limine-version limine-enroll-config $(BUILD_UEFI_X86_64) $(BUILD_UEFI_IA32) $(BUILD_UEFI_AARCH64) $(BUILD_BIOS)
+all1: $(BUILD_UEFI_X86_64) $(BUILD_UEFI_IA32) $(BUILD_UEFI_AARCH64) $(BUILD_BIOS)
+	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine'
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin'
 
 $(call MKESCAPE,$(BINDIR))/limine-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-hdd.bin
 	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	cd '$(call SHESCAPE,$(BINDIR))' && '$(call SHESCAPE,$(SRCDIR))/host/hgen.sh' >limine-hdd.h
 
-$(call MKESCAPE,$(BINDIR))/limine-deploy: $(call MKESCAPE,$(BINDIR))/Makefile $(call MKESCAPE,$(SRCDIR))/host/limine-deploy.c $(call MKESCAPE,$(BINDIR))/limine-hdd.h
-	cp '$(call SHESCAPE,$(SRCDIR))/host/limine-deploy.c' '$(call SHESCAPE,$(BINDIR))/'
-	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))' limine-deploy
+ifeq ($(BUILD_BIOS),limine-bios)
+$(call MKESCAPE,$(BINDIR))/limine: $(call MKESCAPE,$(BINDIR))/Makefile $(call MKESCAPE,$(SRCDIR))/host/limine.c $(call MKESCAPE,$(BINDIR))/limine-hdd.h
+else
+override LIMINE_NO_BIOS := -DLIMINE_NO_BIOS
 
-$(call MKESCAPE,$(BINDIR))/limine-version: $(call MKESCAPE,$(BINDIR))/Makefile $(call MKESCAPE,$(SRCDIR))/host/limine-version.c
-	$(SED) 's/@LIMINE_VERSION@/@PACKAGE_VERSION@/g' <'$(call SHESCAPE,$(SRCDIR))/host/limine-version.c' >'$(call SHESCAPE,$(BINDIR))/limine-version.c'
-	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))' limine-version
-
-$(call MKESCAPE,$(BINDIR))/limine-enroll-config: $(call MKESCAPE,$(BINDIR))/Makefile $(call MKESCAPE,$(SRCDIR))/host/limine-enroll-config.c
-	cp '$(call SHESCAPE,$(SRCDIR))/host/limine-enroll-config.c' '$(call SHESCAPE,$(BINDIR))/'
-	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))' limine-enroll-config
+$(call MKESCAPE,$(BINDIR))/limine: $(call MKESCAPE,$(BINDIR))/Makefile $(call MKESCAPE,$(SRCDIR))/host/limine.c
+endif
+	$(SED) 's/@LIMINE_VERSION@/@PACKAGE_VERSION@/g' <'$(call SHESCAPE,$(SRCDIR))/host/limine.c' >'$(call SHESCAPE,$(BINDIR))/limine.c'
+	CPPFLAGS="$(CPPFLAGS) $(LIMINE_NO_BIOS)" $(MAKE) -C '$(call SHESCAPE,$(BINDIR))' limine
 
 $(call MKESCAPE,$(BINDIR))/Makefile: $(call MKESCAPE,$(SRCDIR))/host/Makefile $(call MKESCAPE,$(SRCDIR))/host/.gitignore
 	mkdir -p '$(call SHESCAPE,$(BINDIR))'
 	cp '$(call SHESCAPE,$(SRCDIR))/host/Makefile' '$(call SHESCAPE,$(SRCDIR))/host/.gitignore' '$(call SHESCAPE,$(BINDIR))/'
 
-.PHONY: limine-deploy
-limine-deploy:
-	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-deploy'
-
-.PHONY: limine-version
-limine-version:
-	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-version'
-
-.PHONY: limine-enroll-config
-limine-enroll-config:
-	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-enroll-config'
+.PHONY: limine
+limine:
+	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine'
 
 .PHONY: clean
 clean: limine-bios-clean limine-uefi-ia32-clean limine-uefi-x86-64-clean limine-uefi-aarch64-clean
@@ -143,11 +133,7 @@ install: all
 	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/PHILOSOPHY.md' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
 	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/README.md' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1'
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BUILDDIR))/man/man1/limine-version.1' '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/'
-ifneq ($(BUILD_LIMINE_DEPLOY),no)
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BUILDDIR))/man/man1/limine-deploy.1' '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/'
-endif
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BUILDDIR))/man/man1/limine-enroll-config.1' '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BUILDDIR))/man/man1/limine.1' '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/'
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(datarootdir))'
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine'
 ifeq ($(BUILD_BIOS),limine-bios)
@@ -174,19 +160,11 @@ endif
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(includedir))'
 	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/limine.h' '$(call SHESCAPE,$(DESTDIR)$(includedir))/'
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(bindir))'
-	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-version' '$(call SHESCAPE,$(DESTDIR)$(bindir))/'
-	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-enroll-config' '$(call SHESCAPE,$(DESTDIR)$(bindir))/'
-ifneq ($(BUILD_LIMINE_DEPLOY),no)
-	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine-deploy' '$(call SHESCAPE,$(DESTDIR)$(bindir))/'
-endif
+	$(INSTALL_PROGRAM) '$(call SHESCAPE,$(BINDIR))/limine' '$(call SHESCAPE,$(DESTDIR)$(bindir))/'
 
 .PHONY: install-strip
 install-strip: install
-	@NATIVE_STRIP@ '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-version'
-	@NATIVE_STRIP@ '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-enroll-config'
-ifneq ($(BUILD_LIMINE_DEPLOY),no)
-	@NATIVE_STRIP@ '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-deploy'
-endif
+	@NATIVE_STRIP@ '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine'
 
 .PHONY: uninstall
 uninstall:
@@ -195,12 +173,8 @@ uninstall:
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/PROTOCOL.md'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/PHILOSOPHY.md'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/README.md'
-	rm -f '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/limine-version.1'
-	rm -f '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/limine-deploy.1'
-	rm -f '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/limine-enroll-config.1'
-	rm -f '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-version'
-	rm -f '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-enroll-config'
-	rm -f '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-deploy'
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(mandir))/man1/limine.1'
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine'
 	rm -rf '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(includedir))/limine.h'
 
@@ -219,9 +193,6 @@ endif
 .PHONY: limine-bios
 limine-bios: common-bios decompressor
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
-ifneq ($(BUILD_LIMINE_DEPLOY),no)
-	$(MAKE) limine-deploy
-endif
 
 $(call MKESCAPE,$(BINDIR))/limine-cd-efi.bin: $(if $(BUILD_UEFI_IA32),$(call MKESCAPE,$(BUILDDIR))/common-uefi-ia32/BOOTIA32.EFI) $(if $(BUILD_UEFI_X86_64),$(call MKESCAPE,$(BUILDDIR))/common-uefi-x86-64/BOOTX64.EFI) $(if $(BUILD_UEFI_AARCH64),$(call MKESCAPE,$(BUILDDIR))/common-uefi-aarch64/BOOTAA64.EFI)
 ifneq ($(BUILD_CD_EFI),no)
@@ -321,7 +292,7 @@ dist:
 
 .PHONY: distclean
 distclean: clean
-	rm -rf ovmf* config.log config.status GNUmakefile config.h toolchain-files man/man1/limine-version.1 man/man1/limine-deploy.1 man/man1/limine-enroll-config.1
+	rm -rf ovmf* config.log config.status GNUmakefile config.h toolchain-files man/man1/limine.1
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean

@@ -91,8 +91,6 @@ AC_ARG_ENABLE([bios],
     [AS_HELP_STRING([--enable-bios], [enable building the x86 BIOS port])],
     [BUILD_BIOS="$enableval"])
 
-BUILD_LIMINE_DEPLOY="$BUILD_BIOS"
-
 if test "x$BUILD_BIOS" = "xno"; then
     if test "x$BUILD_CD" = "xyes"; then
         BUILD_BIOS="yes"
@@ -127,7 +125,6 @@ else
 fi
 
 AC_SUBST([BUILD_BIOS])
-AC_SUBST([BUILD_LIMINE_DEPLOY])
 
 BUILD_UEFI_IA32="$BUILD_ALL"
 
@@ -276,5 +273,5 @@ if ! test "$SRCDIR" = "$BUILDDIR"; then
     cp "$SRCDIR/limine.h" "$BUILDDIR/"
 fi
 
-AC_CONFIG_FILES([man/man1/limine-version.1 man/man1/limine-deploy.1 man/man1/limine-enroll-config.1 GNUmakefile config.h])
+AC_CONFIG_FILES([man/man1/limine.1 GNUmakefile config.h])
 AC_OUTPUT

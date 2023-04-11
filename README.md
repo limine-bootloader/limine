@@ -62,7 +62,7 @@ or, to clone a specific binary point release (for example `v4.20230120.0`)
 git clone https://github.com/limine-bootloader/limine.git --branch=v4.20230120.0-binary --depth=1
 ```
 
-In order to rebuild host utilities like `limine-deploy`, simply run `make` in the binary
+In order to rebuild host utilities like `limine`, simply run `make` in the binary
 release directory.
 
 Host utility binaries are provided for Windows.
@@ -136,14 +136,14 @@ partitions, formatted with a supported file system (the ESP partition is recomme
 Limine can be booted with secure boot using shim. This will also allow one to enroll
 the BLAKE2B hash of the Limine config file into the Limine EFI executable image itself for
 verification purposes.
-For more information see the `limine-enroll-config` program and [the philosophy](/PHILOSOPHY.md).
+For more information see the `limine enroll-config` program and [the philosophy](/PHILOSOPHY.md).
 
 ### BIOS/MBR
 In order to install Limine on a MBR device (which can just be a raw image file),
-run `limine-deploy` as such:
+run `limine bios-install` as such:
 
 ```bash
-limine-deploy <path to device/image>
+limine bios-install <path to device/image>
 ```
 
 The boot device must contain the `limine.sys` and `limine.cfg` files in
@@ -154,18 +154,18 @@ partitions, formatted with a supported file system.
 If using a GPT formatted device, there are 2 options one can follow for
 installation:
 * Specifying a dedicated stage 2 partition.
-* Letting `limine-deploy` attempt to embed stage 2 within GPT structures.
+* Letting `limine bios-install` attempt to embed stage 2 within GPT structures.
 
 In case one wants to specify a stage 2 partition, create a partition on the GPT
 device of at least 32KiB in size, and pass the 1-based number of the partition
-to `limine-deploy` as a second argument; such as:
+to `limine bios-install` as a second argument; such as:
 
 ```bash
-limine-deploy <path to device/image> <1-based stage 2 partition number>
+limine bios-install <path to device/image> <1-based stage 2 partition number>
 ```
 
-In case one wants to let `limine-deploy` embed stage 2 within GPT's structures,
-simply omit the partition number, and invoke `limine-deploy` the same as one
+In case one wants to let `limine bios-install` embed stage 2 within GPT's structures,
+simply omit the partition number, and invoke `limine bios-install` the same as one
 would do for an MBR partitioned device.
 
 The boot device must contain the `limine.sys` and `limine.cfg` files in
@@ -192,9 +192,9 @@ xorriso -as mkisofs -b <relative path of limine-cd.bin> \
 
 *Note: `xorriso` is required.*
 
-And do not forget to also run `limine-deploy` on the generated image:
+And do not forget to also run `limine bios-install` on the generated image:
 ```
-limine-deploy image.iso
+limine bios-install image.iso
 ```
 
 `<relative path of limine-cd.bin>` is the relative path of

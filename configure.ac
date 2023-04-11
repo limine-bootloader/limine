@@ -19,7 +19,7 @@ AC_DEFUN([PROG_ABSPATH], [
     esac
 ])
 
-test "x$CFLAGS" = "x" && CFLAGS='-g -O2 -pipe -Wall -Wextra'
+test "x$CFLAGS" = "x" && CFLAGS='-g -O2 -pipe'
 
 AC_LANG([C])
 AC_PROG_CC
@@ -33,8 +33,9 @@ AC_ARG_ENABLE([werror],
     [AS_HELP_STRING([--enable-werror], [treat warnings as errors])],
     [werror_state="$enableval"])
 if test "$werror_state" = "yes"; then
-    AC_SUBST([WERROR], [-Werror])
-    CFLAGS="$CFLAGS -Werror"
+    AC_SUBST([WERROR_FLAG], [-Werror])
+else
+    AC_SUBST([WERROR_FLAG], [-Wno-error])
 fi
 
 AC_PROG_MKDIR_P
@@ -254,12 +255,9 @@ AC_ARG_VAR([OBJCOPY_FOR_TARGET], [objcopy command for Limine])
 AC_ARG_VAR([OBJDUMP_FOR_TARGET], [objdump command for Limine])
 AC_ARG_VAR([READELF_FOR_TARGET], [readelf command for Limine])
 
-m4_define([DEFAULT_CFLAGS_FOR_TARGET], [-g -O2 -pipe -Wall -Wextra])
+m4_define([DEFAULT_CFLAGS_FOR_TARGET], [-g -O2 -pipe])
 AC_ARG_VAR([CFLAGS_FOR_TARGET], [C flags for Limine @<:@default: ]DEFAULT_CFLAGS_FOR_TARGET[@:>@])
 test "x$CFLAGS_FOR_TARGET" = "x" && CFLAGS_FOR_TARGET="DEFAULT_CFLAGS_FOR_TARGET"
-if test "$werror_state" = "yes"; then
-    CFLAGS_FOR_TARGET="$CFLAGS_FOR_TARGET -Werror"
-fi
 
 m4_define([DEFAULT_CPPFLAGS_FOR_TARGET], [])
 AC_ARG_VAR([CPPFLAGS_FOR_TARGET], [C preprocessor flags for Limine @<:@default: ]DEFAULT_CPPFLAGS_FOR_TARGET[@:>@])

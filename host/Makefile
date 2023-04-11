@@ -4,7 +4,7 @@ INSTALL ?= ./install-sh
 
 PREFIX ?= /usr/local
 
-CFLAGS ?= -g -O2 -pipe -Wall -Wextra
+CFLAGS ?= -g -O2 -pipe
 
 .PHONY: all
 all: limine-deploy limine-version limine-enroll-config
@@ -39,10 +39,10 @@ clean:
 	rm -f limine-enroll-config limine-enroll-config.exe
 
 limine-deploy: limine-deploy.c limine-hdd.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -std=c99 limine-deploy.c $(LIBS) -o $@
+	$(CC) $(CFLAGS) -Wall -Wextra $(WERROR_FLAG) $(CPPFLAGS) $(LDFLAGS) -std=c99 limine-deploy.c $(LIBS) -o $@
 
 limine-version: limine-version.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -std=c99 limine-version.c $(LIBS) -o $@
+	$(CC) $(CFLAGS) -Wall -Wextra $(WERROR_FLAG) $(CPPFLAGS) $(LDFLAGS) -std=c99 limine-version.c $(LIBS) -o $@
 
 limine-enroll-config: limine-enroll-config.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -std=c99 limine-enroll-config.c $(LIBS) -o $@
+	$(CC) $(CFLAGS) -Wall -Wextra $(WERROR_FLAG) $(CPPFLAGS) $(LDFLAGS) -std=c99 limine-enroll-config.c $(LIBS) -o $@

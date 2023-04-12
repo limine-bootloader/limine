@@ -523,6 +523,15 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
         size_t req_width = 0;
         size_t req_height = 0;
         size_t req_bpp = 0;
+#if defined (BIOS)
+        {
+            char *textmode_str = config_get_value(config, 0, "TEXTMODE");
+            bool textmode = textmode_str != NULL && strcmp(textmode_str, "yes") == 0;
+            if (textmode) {
+                goto textmode;
+            }
+        }
+#endif
 
         if (fbtag) {
             req_width = fbtag->width;

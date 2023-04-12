@@ -763,7 +763,7 @@ FEAT_START
 
     struct limine_terminal_response *terminal_response =
         ext_mem_alloc(sizeof(struct limine_terminal_response));
-
+    print("limine: Warning, kernel uses outdated terminal feature, which is been removed in v5.0\n");
     terminal_response->revision = 1;
 
     struct limine_terminal *terminal = ext_mem_alloc(sizeof(struct limine_terminal));

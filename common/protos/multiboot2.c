@@ -119,12 +119,12 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     for (struct multiboot_header_tag *tag = (struct multiboot_header_tag*)(header + 1); // header + 1 to skip the header struct.
        tag < (struct multiboot_header_tag *)((uintptr_t)header + header->header_length) && tag->type != MULTIBOOT_HEADER_TAG_END;
        tag = (struct multiboot_header_tag *)((uintptr_t)tag + ALIGN_UP(tag->size, MULTIBOOT_TAG_ALIGN))) {
+        bool is_required = !(tag->flags & MULTIBOOT_HEADER_TAG_OPTIONAL);
         switch (tag->type) {
             case MULTIBOOT_HEADER_TAG_INFORMATION_REQUEST: {
                 // Iterate the requests and check if they are supported by or not.
                 struct multiboot_header_tag_information_request *request = (void *)tag;
                 uint32_t size = (request->size - sizeof(struct multiboot_header_tag_information_request)) / sizeof(uint32_t);
-                bool is_required = !(request->flags & MULTIBOOT_HEADER_TAG_OPTIONAL);
 
                 for (uint32_t i = 0; i < size; i++) {
                     uint32_t r = request->requests[i];
@@ -192,7 +192,9 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
                 has_reloc_header = true;
                 break;
 
-            default: panic(true, "multiboot2: Unknown header tag type: %u\n", tag->type);
+            default:
+                if (is_required)
+                    panic(true, "multiboot2: Unknown header tag type: %u\n", tag->type);
         }
     }
 

@@ -192,7 +192,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
                 has_reloc_header = true;
                 break;
 
-            default: panic(true, "multiboot2: Unknown header tag type: %u\n");
+            default: panic(true, "multiboot2: Unknown header tag type: %u\n", tag->type);
         }
     }
 

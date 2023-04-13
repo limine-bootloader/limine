@@ -354,7 +354,15 @@ void vga_textmode_init(bool managed) {
 
     term->full_refresh(term);
 
-    term_backend = TEXTMODE;
+    if (!managed) {
+        term->deinit(term, pmm_free);
+        pmm_free(terms, sizeof(void *));
+        terms_i = 0;
+        terms = NULL;
+        term_backend = _NOT_READY;
+    } else {
+        term_backend = TEXTMODE;
+    }
 }
 
 #endif

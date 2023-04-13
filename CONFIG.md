@@ -150,6 +150,7 @@ Editor control options.
   to the 1st module string entry that appear, and so on.
 
   * `RESOLUTION` - The resolution to be used should the kernel request a graphical framebuffer. This setting takes the form of `<width>x<height>x<bpp>` and *overrides* any resolution requested by the kernel. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
+  * `TEXTMODE` - If set to `yes`, prefer text mode. (BIOS only)
 
 ## URIs
 

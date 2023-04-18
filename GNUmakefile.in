@@ -206,12 +206,12 @@ uninstall:
 
 $(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/common-bios/stage2.bin.gz
 	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
-	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm -Wall $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
 ifneq ($(BUILD_CD),no)
-	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm -Wall $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
 endif
 ifneq ($(BUILD_PXE),no)
-	cd '$(call SHESCAPE,$(SRCDIR))/stage1/pxe' && nasm bootsect.asm $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin'
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/pxe' && nasm bootsect.asm -Wall $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin'
 endif
 	cp '$(call SHESCAPE,$(BUILDDIR))/common-bios/limine.sys' '$(call SHESCAPE,$(BINDIR))/'
 	touch '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'

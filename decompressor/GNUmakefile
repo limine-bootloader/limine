@@ -94,4 +94,4 @@ $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -Wall $(WERROR_FLAG) -f elf32 -o '$(call SHESCAPE,$@)'

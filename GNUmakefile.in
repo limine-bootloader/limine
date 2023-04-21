@@ -11,6 +11,8 @@ override datarootdir := @datarootdir@
 override mandir := @mandir@
 override docdir := @docdir@
 
+override NATIVE_STRIP := @NATIVE_STRIP@
+
 DESTDIR ?=
 
 override BUILDDIR := @BUILDDIR@
@@ -42,7 +44,8 @@ override BUILD_CD_EFI := @BUILD_CD_EFI@
 override BUILD_PXE := @BUILD_PXE@
 override BUILD_CD := @BUILD_CD@
 
-$(eval $(call DEFAULT_VAR,CC,@CC@))
+override DEFAULT_CC := @CC@
+$(eval $(call DEFAULT_VAR,CC,$(DEFAULT_CC)))
 export CC
 
 override MKDIR_P := @MKDIR_P@
@@ -66,23 +69,30 @@ export SED
 override AWK := @AWK@
 export AWK
 
-$(eval $(call DEFAULT_VAR,CPPFLAGS,@CPPFLAGS@))
+override DEFAULT_CPPFLAGS := @CPPFLAGS@
+$(eval $(call DEFAULT_VAR,CPPFLAGS,$(DEFAULT_CPPFLAGS)))
 export CPPFLAGS
-$(eval $(call DEFAULT_VAR,CFLAGS,@CFLAGS@))
+override DEFAULT_CFLAGS := @CFLAGS@
+$(eval $(call DEFAULT_VAR,CFLAGS,$(DEFAULT_CFLAGS)))
 export CFLAGS
-$(eval $(call DEFAULT_VAR,LDFLAGS,@LDFLAGS@))
+override DEFAULT_LDFLAGS := @LDFLAGS@
+$(eval $(call DEFAULT_VAR,LDFLAGS,$(DEFAULT_LDFLAGS)))
 export LDFLAGS
-$(eval $(call DEFAULT_VAR,LIBS,@LIBS@))
+override DEFAULT_LIBS := @LIBS@
+$(eval $(call DEFAULT_VAR,LIBS,$(DEFAULT_LIBS)))
 export LIBS
 
 override WERROR_FLAG := @WERROR_FLAG@
 export WERROR_FLAG
 
-$(eval $(call DEFAULT_VAR,CFLAGS_FOR_TARGET,@CFLAGS_FOR_TARGET@))
+override DEFAULT_CFLAGS_FOR_TARGET := @CFLAGS_FOR_TARGET@
+$(eval $(call DEFAULT_VAR,CFLAGS_FOR_TARGET,$(DEFAULT_CFLAGS_FOR_TARGET)))
 export CFLAGS_FOR_TARGET
-$(eval $(call DEFAULT_VAR,CPPFLAGS_FOR_TARGET,@CPPFLAGS_FOR_TARGET@))
+override DEFAULT_CPPFLAGS_FOR_TARGET := @CPPFLAGS_FOR_TARGET@
+$(eval $(call DEFAULT_VAR,CPPFLAGS_FOR_TARGET,$(DEFAULT_CPPFLAGS_FOR_TARGET)))
 export CPPFLAGS_FOR_TARGET
-$(eval $(call DEFAULT_VAR,LDFLAGS_FOR_TARGET,@LDFLAGS_FOR_TARGET@))
+override DEFAULT_LDFLAGS_FOR_TARGET := @LDFLAGS_FOR_TARGET@
+$(eval $(call DEFAULT_VAR,LDFLAGS_FOR_TARGET,$(DEFAULT_LDFLAGS_FOR_TARGET)))
 export LDFLAGS_FOR_TARGET
 
 override LIMINE_VERSION := @PACKAGE_VERSION@
@@ -164,7 +174,7 @@ endif
 
 .PHONY: install-strip
 install-strip: install
-	@NATIVE_STRIP@ '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine'
+	$(NATIVE_STRIP) '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine'
 
 .PHONY: uninstall
 uninstall:

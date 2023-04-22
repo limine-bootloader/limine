@@ -88,6 +88,7 @@ struct bangpxe {
 } __attribute__((packed));
 
 #define PXENV_GET_CACHED_INFO 0x0071
+#define PXENV_PACKET_TYPE_CACHED_REPLY 3
 struct pxenv_get_cached_info {
     uint16_t status;
     uint16_t packet_type;

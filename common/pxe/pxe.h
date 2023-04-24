@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <lib/part.h>
 
+extern uint8_t cached_dhcp_packet[1472];
+extern int cached_dhcp_packet_len;
+
 #if defined (BIOS)
 
 struct volume *pxe_bind_volume(void);

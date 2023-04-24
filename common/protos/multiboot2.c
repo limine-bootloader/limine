@@ -24,6 +24,7 @@
 #include <mm/pmm.h>
 #include <lib/misc.h>
 #include <drivers/vga_textmode.h>
+#include <pxe/pxe.h>
 
 #define LIMINE_BRAND "Limine " LIMINE_VERSION
 
@@ -56,6 +57,7 @@ static size_t get_multiboot2_info_size(
                 ALIGN_UP(sizeof(struct multiboot_tag_efi64_ih), MULTIBOOT_TAG_ALIGN) +                                  // EFI image handle 64
             #endif
         #endif
+        ALIGN_UP(sizeof(struct multiboot_tag_network) + cached_dhcp_packet_len, MULTIBOOT_TAG_ALIGN) +                  // network info
         ALIGN_UP(sizeof(struct multiboot_tag), MULTIBOOT_TAG_ALIGN);                                                    // end
 }
 
@@ -781,6 +783,22 @@ skip_modeset:;
         append_tag(info_idx, mmap_tag);
     }
 #endif
+
+    //////////////////////////////////////////////
+    // Create network info tag
+    //////////////////////////////////////////////
+    {
+        if (cached_dhcp_packet_len) {
+            struct multiboot_tag_network *tag = (struct multiboot_tag_network *)(mb2_info + info_idx);
+
+            tag->type = MULTIBOOT_TAG_TYPE_NETWORK;
+            tag->size = sizeof(struct multiboot_tag_network) + cached_dhcp_packet_len;
+
+            // Copy over the DHCP packet.
+            memcpy(tag->dhcpack, cached_dhcp_packet, cached_dhcp_packet_len);
+            append_tag(info_idx, tag);
+        }
+    }
 
     //////////////////////////////////////////////
     // Create end tag

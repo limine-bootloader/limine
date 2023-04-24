@@ -132,6 +132,12 @@ void multiboot2_main(uint32_t magic, struct multiboot_info* mb_info_addr) {
 
                 break;
             }
+
+            case MULTIBOOT_TAG_TYPE_NETWORK: {
+                struct multiboot_tag_network *network = (struct multiboot_tag_network *)tag;
+                e9_printf("\t network tag exists");
+                break;
+            }
         }
 
         add_size = tag->size;

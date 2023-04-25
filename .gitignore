@@ -7,6 +7,7 @@
 /common/flanterm
 /common/stb/stb_image.h
 /ovmf*
+compile_commands.json
 *.o
 *.d
 *.a

@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <drivers/serial.h>
 #include <lib/gterm.h>
 #include <lib/misc.h>
 #include <lib/libc.h>

@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <drivers/serial.h>
 #include <drivers/vga_textmode.h>
 #include <sys/cpu.h>
 #include <lib/real.h>

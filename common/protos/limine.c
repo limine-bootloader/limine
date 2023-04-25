@@ -769,7 +769,6 @@ FEAT_START
     struct limine_terminal *terminal = ext_mem_alloc(sizeof(struct limine_terminal));
 
     quiet = false;
-    serial = false;
 
     char *term_conf_override_s = config_get_value(config, 0, "TERM_CONFIG_OVERRIDE");
     if (term_conf_override_s != NULL && strcmp(term_conf_override_s, "yes") == 0) {

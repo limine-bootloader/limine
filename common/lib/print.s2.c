@@ -236,7 +236,6 @@ out:
             outb(0xe9, print_buf[i]);
         }
 #endif
-#if defined (BIOS)
         if ((!quiet && serial) || COM_OUTPUT) {
             switch (print_buf[i]) {
                 case '\n':
@@ -252,6 +251,5 @@ out:
             }
             serial_out(print_buf[i]);
         }
-#endif
     }
 }

@@ -56,6 +56,7 @@ Some keys take *URIs* as values; these are described in the next section.
 * `TIMEOUT` - Specifies the timeout in seconds before the first *entry* is automatically booted. If set to `no`, disable automatic boot. If set to `0`, boots default entry instantly (see `DEFAULT_ENTRY` key).
 * `QUIET` - If set to `yes`, enable quiet mode, where all screen output except panics and important warnings is suppressed. If `TIMEOUT` is not 0, the `TIMEOUT` still occurs, and pressing any key during the timeout will reveal the menu and disable quiet mode.
 * `SERIAL` - If set to `yes`, enable serial I/O for the bootloader.
+* `SERIAL_BAUDRATE` - If `SERIAL` is set to `yes`, this specifies the baudrate to use for serial I/O. Defaults to `9600`.
 * `DEFAULT_ENTRY` - 1-based entry index of the entry which will be automatically selected at startup. If unspecified, it is `1`.
 * `GRAPHICS` - If set to `no`, force CGA text mode for the boot menu, else use a video mode. Ignored with Limine UEFI.
 * `VERBOSE` - If set to `yes`, print additional information during boot. Defaults to not verbose.

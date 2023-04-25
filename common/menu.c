@@ -13,6 +13,7 @@
 #include <lib/readline.h>
 #include <lib/uri.h>
 #include <mm/pmm.h>
+#include <drivers/serial.h>
 #include <drivers/vbe.h>
 #include <drivers/vga_textmode.h>
 #include <console.h>
@@ -652,6 +653,17 @@ noreturn void _menu(bool first_run) {
 
     char *serial_str = config_get_value(NULL, 0, "SERIAL");
     serial = serial_str != NULL && strcmp(serial_str, "yes") == 0;
+
+    // If serial is enabled, we should check for baud rate
+    if (serial) {
+        char *baud_str = config_get_value(NULL, 0, "SERIAL_BAUDRATE");
+        if (baud_str != NULL) {
+            int baud = strtoui(baud_str, NULL, 10);
+            if (baud > 0) {
+                serial_baudrate = baud;
+            }
+        }
+    }
 
     char *hash_mismatch_panic_str = config_get_value(NULL, 0, "HASH_MISMATCH_PANIC");
     hash_mismatch_panic = hash_mismatch_panic_str == NULL || strcmp(hash_mismatch_panic_str, "yes") == 0;

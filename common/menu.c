@@ -593,7 +593,9 @@ static void menu_init_term(void) {
         }
     } else {
 #if defined (BIOS)
-        vga_textmode_init(true);
+        if (!quiet) {
+            vga_textmode_init(true);
+        }
 #endif
     }
 }

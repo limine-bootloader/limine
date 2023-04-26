@@ -227,6 +227,12 @@ inline uint64_t rdtsc(void) {
     return v;
 }
 
+inline void delay(uint64_t cycles) {
+    uint64_t next_stop = rdtsc() + cycles;
+
+    while (rdtsc() < next_stop);
+}
+
 #define locked_read(var) ({ \
     typeof(*var) locked_read__ret = 0; \
     asm volatile ( \

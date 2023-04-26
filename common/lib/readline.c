@@ -98,10 +98,8 @@ int getchar_internal(uint8_t scancode, uint8_t ascii, uint32_t shift_state) {
     return ascii;
 }
 
-#if defined (BIOS)
-int _pit_sleep_and_quit_on_keypress(uint32_t ticks);
 
-static int input_sequence(void) {
+static int serial_input_sequence(void) {
     int val = 0;
 
     for (;;) {
@@ -153,6 +151,37 @@ static int input_sequence(void) {
     return 0;
 }
 
+static int serial_getchar(void) {
+    int ret = serial_in();
+
+    if (ret == -1) {
+        return 0;
+    }
+
+again:
+    switch (ret) {
+        case '\r':
+            return '\n';
+        case 0x1b:
+            delay(10000);
+            ret = serial_in();
+            if (ret == -1) {
+                return GETCHAR_ESCAPE;
+            }
+            if (ret == '[') {
+                return serial_input_sequence();
+            }
+            goto again;
+        case 0x7f:
+            return '\b';
+    }
+
+    return ret;
+}
+
+#if defined (BIOS)
+int _pit_sleep_and_quit_on_keypress(uint32_t ticks);
+
 int pit_sleep_and_quit_on_keypress(int seconds) {
     if (!serial) {
         return _pit_sleep_and_quit_on_keypress(seconds * 18);
@@ -165,29 +194,7 @@ int pit_sleep_and_quit_on_keypress(int seconds) {
             return ret;
         }
 
-        ret = serial_in();
-
-        if (ret != -1) {
-again:
-            switch (ret) {
-                case '\r':
-                    return '\n';
-                case 0x1b:
-                    delay(10000);
-                    ret = serial_in();
-                    if (ret == -1) {
-                        return GETCHAR_ESCAPE;
-                    }
-                    if (ret == '[') {
-                        return input_sequence();
-                    }
-                    goto again;
-                case 0x7f:
-                    return '\b';
-            }
-
-            return ret;
-        }
+        return serial_getchar();
     }
 
     return 0;
@@ -283,9 +290,23 @@ int pit_sleep_and_quit_on_keypress(int seconds) {
 
     gBS->CreateEvent(EVT_TIMER, TPL_CALLBACK, NULL, NULL, &events[1]);
 
-    gBS->SetTimer(events[1], TimerRelative, 10000000 * seconds);
+    int timeout = 10000000 * seconds;
+
+    if (serial) {
+        timeout = 0;
+    }
+
+    gBS->SetTimer(events[1], TimerRelative, timeout);
 
 again:
+    if (serial) {
+        int ret = serial_getchar();
+        if (ret != 0) {
+            return ret;
+        }
+        goto again;
+    }
+
     memset(&kd, 0, sizeof(EFI_KEY_DATA));
 
     gBS->WaitForEvent(2, events, &which);

@@ -304,7 +304,6 @@ again:
         if (ret != 0) {
             return ret;
         }
-        goto again;
     }
 
     memset(&kd, 0, sizeof(EFI_KEY_DATA));

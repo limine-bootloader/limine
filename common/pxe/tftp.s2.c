@@ -11,8 +11,8 @@
 #include <lib/misc.h>
 
 // cache the dhcp packet
-uint8_t cached_dhcp_packet[1472] = { 0 };
-int cached_dhcp_packet_len = 0;
+uint8_t cached_dhcp_packet[DHCP_ACK_PACKET_LEN] = { 0 };
+bool cached_dhcp_ack_valid = false;
 
 #if defined (BIOS)
 
@@ -21,8 +21,10 @@ static uint32_t get_boot_server_info(void) {
     cachedinfo.packet_type = PXENV_PACKET_TYPE_CACHED_REPLY;
     pxe_call(PXENV_GET_CACHED_INFO, ((uint16_t)rm_seg(&cachedinfo)), (uint16_t)rm_off(&cachedinfo));
     struct bootph *ph = (struct bootph*)(void *) (((((uint32_t)cachedinfo.buffer) >> 16) << 4) + (((uint32_t)cachedinfo.buffer) & 0xFFFF));
-    memcpy(&cached_dhcp_packet, ph, sizeof(struct bootph));
-    cached_dhcp_packet_len = sizeof(struct bootph);
+    if (!cached_dhcp_ack_valid) {
+        memcpy(cached_dhcp_packet, ph, DHCP_ACK_PACKET_LEN);
+        cached_dhcp_ack_valid = true;
+    }
     return ph->sip;
 }
 
@@ -147,8 +149,10 @@ static EFI_IP_ADDRESS *parse_ip_addr(struct volume *part, const char *server_add
         else if (part->pxe_base_code->Mode->ProxyOfferReceived) packet = &part->pxe_base_code->Mode->ProxyOffer;
         else packet = &part->pxe_base_code->Mode->DhcpAck;
         memcpy(out.Addr, packet->Dhcpv4.BootpSiAddr, 4);
-        memcpy(cached_dhcp_packet, packet, sizeof(EFI_PXE_BASE_CODE_PACKET));
-        cached_dhcp_packet_len = sizeof(EFI_PXE_BASE_CODE_PACKET);
+        if (!cached_dhcp_ack_valid) {
+            memcpy(cached_dhcp_packet, packet, DHCP_ACK_PACKET_LEN);
+            cached_dhcp_ack_valid = true;
+        }
     } else {
         if (inet_pton(server_addr, &out.Addr)) {
             panic(true, "tftp: Invalid IPv4 address: \"%s\"", server_addr);

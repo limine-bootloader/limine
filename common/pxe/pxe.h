@@ -4,8 +4,10 @@
 #include <stdint.h>
 #include <lib/part.h>
 
-extern uint8_t cached_dhcp_packet[1472];
-extern int cached_dhcp_packet_len;
+#define DHCP_ACK_PACKET_LEN 296
+
+extern uint8_t cached_dhcp_packet[DHCP_ACK_PACKET_LEN];
+extern bool cached_dhcp_ack_valid;
 
 #if defined (BIOS)
 
@@ -36,7 +38,7 @@ struct bootph {
         struct bootph_vendor_v {
             uint8_t magic[4];
             uint32_t flags;
-            uint8_t pad[56];
+            uint8_t pad[52];
         } v;
     } vendor;
 };

@@ -376,22 +376,42 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
 
         memcpy(tag->sections, kernel + section_hdr_info.section_offset, section_hdr_info.section_entry_size * section_hdr_info.num);
 
+        int bits = elf_bits(kernel);
+
         for (size_t i = 0; i < section_hdr_info.num; i++) {
-            struct elf64_shdr *shdr = (void *)tag->sections + i * section_hdr_info.section_entry_size;
+            if (bits == 64)  {
+                struct elf64_shdr *shdr = (void *)tag->sections + i * section_hdr_info.section_entry_size;
 
-            if (shdr->sh_addr != 0 || shdr->sh_size == 0) {
-                continue;
+                if (shdr->sh_addr != 0 || shdr->sh_size == 0) {
+                    continue;
+                }
+
+                uint64_t section = (uint64_t)-1; /* no target preference, use top */
+
+                if (!elsewhere_append(true /* flexible target */,
+                        ranges, &ranges_count,
+                        kernel + shdr->sh_offset, &section, shdr->sh_size)) {
+                    panic(true, "multiboot2: Cannot allocate elf sections");
+                }
+
+                shdr->sh_addr = section;
+            } else {
+                struct elf32_shdr *shdr = (void *)tag->sections + i * section_hdr_info.section_entry_size;
+
+                if (shdr->sh_addr != 0 || shdr->sh_size == 0) {
+                    continue;
+                }
+
+                uint64_t section = (uint64_t)-1; /* no target preference, use top */
+
+                if (!elsewhere_append(true /* flexible target */,
+                        ranges, &ranges_count,
+                        kernel + shdr->sh_offset, &section, shdr->sh_size)) {
+                    panic(true, "multiboot2: Cannot allocate elf sections");
+                }
+
+                shdr->sh_addr = section;
             }
-
-            uint64_t section = (uint64_t)-1; /* no target preference, use top */
-
-            if (!elsewhere_append(true /* flexible target */,
-                    ranges, &ranges_count,
-                    kernel + shdr->sh_offset, &section, shdr->sh_size)) {
-                panic(true, "multiboot2: Cannot allocate elf sections");
-            }
-
-            shdr->sh_addr = section;
         }
 
         append_tag(info_idx, tag);

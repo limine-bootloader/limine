@@ -229,9 +229,9 @@ An example `limine.cfg` file can be found in [`test/limine.cfg`](https://github.
 More info on the format of `limine.cfg` can be found in [`CONFIG.md`](https://github.com/limine-bootloader/limine/blob/trunk/CONFIG.md).
 
 ## Acknowledgments
-Limine uses a stripped-down version of [tinf](https://github.com/jibsen/tinf) for GZIP decompression.
+Limine uses a stripped-down version of [tinf](https://github.com/jibsen/tinf) for early GZIP decompression.
 
-Limine relies on [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h) for wallpaper image loading.
+Limine relies on [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h) for runtime GZIP decompression and image loading.
 
 ## Discord server
 We have a [Discord server](https://discord.gg/QEeZMz4) if you need support,

@@ -60,7 +60,6 @@ override CFLAGS_FOR_TARGET += \
 
 override CPPFLAGS_FOR_TARGET := \
     -I../freestanding-headers \
-    -I'$(call SHESCAPE,$(BUILDDIR))/tinf' \
     -I'$(call SHESCAPE,$(BUILDDIR))/..' \
     -I. \
     $(CPPFLAGS_FOR_TARGET) \
@@ -212,20 +211,6 @@ else ifeq ($(TARGET),uefi-aarch64)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTAA64.EFI
 endif
 
-$(call MKESCAPE,$(BUILDDIR))/tinf-copied: ../tinf/*
-	rm -rf '$(call SHESCAPE,$(BUILDDIR))/tinf'
-	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
-	cp -r ../tinf '$(call SHESCAPE,$(BUILDDIR))/'
-	touch '$(call SHESCAPE,$(BUILDDIR))/tinf-copied'
-
-$(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
-	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
-
-$(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o: $(call MKESCAPE,$(BUILDDIR))/tinf-copied
-	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$(@:.o=.c))' -o '$(call SHESCAPE,$@)'
-
 ifeq ($(TARGET),bios)
 
 $(call MKESCAPE,$(BUILDDIR))/stage2.bin.gz: $(call MKESCAPE,$(BUILDDIR))/stage2.bin
@@ -263,7 +248,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nos2map.ld: linker_bios.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP -DLINKER_NOS2MAP linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nos2map.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(OBJ) ../libgcc-binaries/libgcc-i686.a
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nos2map.ld'
 	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nos2map.ld' -o '$(call SHESCAPE,$@)'
 	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
@@ -278,7 +263,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_bios.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nos3map.elf: $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/stage2.map.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o
+$(call MKESCAPE,$(BUILDDIR))/limine_nos3map.elf: $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/stage2.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' -o '$(call SHESCAPE,$@)'
 	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
@@ -293,7 +278,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_bios.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/stage2.map.o $(call MKESCAPE,$(BUILDDIR))/full.map.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/stage2.map.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' -o '$(call SHESCAPE,$@)'
 	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
@@ -332,7 +317,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_x86_64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_x86_64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_x86_64.o $(OBJ) ../libgcc-binaries/libgcc-x86_64-no-red-zone.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_x86_64.o $(OBJ) ../libgcc-binaries/libgcc-x86_64-no-red-zone.a
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
@@ -342,7 +327,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_x86_64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_x86_64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_x86_64.o $(OBJ) ../libgcc-binaries/libgcc-x86_64-no-red-zone.a $(call MKESCAPE,$(BUILDDIR))/full.map.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_x86_64.o $(OBJ) ../libgcc-binaries/libgcc-x86_64-no-red-zone.a $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
@@ -372,7 +357,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_aarch64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_aarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-aarch64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_aarch64.o $(OBJ) ../libgcc-binaries/libgcc-aarch64.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-aarch64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_aarch64.o $(OBJ) ../libgcc-binaries/libgcc-aarch64.a
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
@@ -382,7 +367,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_aarch64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_aarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-aarch64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_aarch64.o $(OBJ) ../libgcc-binaries/libgcc-aarch64.a $(call MKESCAPE,$(BUILDDIR))/full.map.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-aarch64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_aarch64.o $(OBJ) ../libgcc-binaries/libgcc-aarch64.a $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
@@ -411,7 +396,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_ia32.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_ia32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_ia32.o $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_ia32.o $(OBJ) ../libgcc-binaries/libgcc-i686.a
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
@@ -421,7 +406,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_ia32.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_ia32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_ia32.o $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/full.map.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinfgzip.o $(call MKESCAPE,$(BUILDDIR))/tinf/tinflate.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_ia32.o $(OBJ) ../libgcc-binaries/libgcc-i686.a $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
@@ -432,25 +417,25 @@ endif
 -include $(HEADER_DEPS)
 
 ifeq ($(TARGET),uefi-x86-64)
-$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/limine-efi
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-aarch64)
-$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/limine-efi
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-ia32)
-$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied $(call MKESCAPE,$(BUILDDIR))/limine-efi
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),bios)
-$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/tinf-copied
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif

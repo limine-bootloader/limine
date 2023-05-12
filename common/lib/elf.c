@@ -20,6 +20,9 @@
 #define DT_RELA     0x00000007
 #define DT_RELASZ   0x00000008
 #define DT_RELAENT  0x00000009
+#define DT_FLAGS_1  0x6ffffffb
+
+#define DF_1_PIE    0x08000000
 
 #define ABI_SYSV     0x00
 #define ARCH_X86_64  0x3e
@@ -150,6 +153,11 @@ static bool elf64_is_relocatable(uint8_t *elf, struct elf64_hdr *hdr) {
             struct elf64_dyn *dyn = (void *)elf + (phdr->p_offset + j * sizeof(struct elf64_dyn));
 
             switch (dyn->d_tag) {
+                case DT_FLAGS_1:
+                    if (dyn->d_un & DF_1_PIE) {
+                        return true;
+                    }
+                    break;
                 case DT_RELA:
                     return true;
             }

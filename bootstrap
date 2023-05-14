@@ -12,7 +12,7 @@ if [ -z "$BOOTSTRAP_NO_SHALLOW_CLONES" ]; then
 fi
 
 [ -d common/flanterm ] || git clone https://github.com/mintsuki/flanterm.git common/flanterm $SHALLOW_CLONE_FLAG
-[ -f common/stb/stb_image.h ] || ( curl -Lo common/stb/stb_image.h https://github.com/nothings/stb/raw/9f1776a36d2a3d63c52f705c3a84b372cfed4340/stb_image.h && patch -p0 < common/stb_image.patch )
+[ -f common/stb/stb_image.h ] || ( curl -Lo common/stb/stb_image.h https://github.com/nothings/stb/raw/dev/stb_image.h && patch -p0 < common/stb_image.patch )
 [ -f freestanding-toolchain ] || ( curl -Lo freestanding-toolchain https://github.com/mintsuki/freestanding-toolchain/raw/trunk/freestanding-toolchain && chmod +x freestanding-toolchain )
 [ -d freestanding-headers ] || git clone https://github.com/mintsuki/freestanding-headers.git $SHALLOW_CLONE_FLAG
 [ -d limine-efi ] || git clone https://github.com/limine-bootloader/limine-efi.git $SHALLOW_CLONE_FLAG

@@ -137,8 +137,6 @@ static uint32_t crc32(void *_stream, size_t len) {
     return ret;
 }
 
-static bool bigendian = false;
-
 static uint16_t endswap16(uint16_t value) {
     uint16_t ret = 0;
     ret |= (value >> 8) & 0x00ff;
@@ -167,6 +165,20 @@ static uint64_t endswap64(uint64_t value) {
     ret |= (value << 56) & 0xff00000000000000;
     return ret;
 }
+
+#ifdef __BYTE_ORDER__
+
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define bigendian true
+#else
+#define bigendian false
+#endif
+
+#else /* !__BYTE_ORDER__ */
+
+static bool bigendian = false;
+
+#endif /* !__BYTE_ORDER__ */
 
 #define ENDSWAP(VALUE) (bigendian ? (                    \
     sizeof(VALUE) == 1 ? (VALUE)          :              \
@@ -521,9 +533,11 @@ int main(int argc, char *argv[]) {
     uint8_t  orig_mbr[70], timestamp[6];
     const char *part_ndx = NULL;
 
+#ifndef __BYTE_ORDER__
     uint32_t endcheck = 0x12345678;
     uint8_t endbyte = *((uint8_t *)&endcheck);
     bigendian = endbyte == 0x12;
+#endif
 
     if (argc < 2) {
         usage(argv[0]);

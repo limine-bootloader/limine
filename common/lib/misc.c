@@ -162,6 +162,8 @@ retry:
     asm volatile ("cli" ::: "memory");
 #elif defined (__aarch64__)
     asm volatile ("msr daifset, #15" ::: "memory");
+#elif defined (__riscv64)
+    asm volatile ("csrci sstatus, 0x2" ::: "memory");
 #else
 #error Unknown architecture
 #endif

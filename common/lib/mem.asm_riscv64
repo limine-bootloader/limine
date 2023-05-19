@@ -1,0 +1,58 @@
+
+.text
+.p2align 2
+
+.global memset
+memset:
+        beqz    a2, 1f
+        mv      t0, a0
+0:      sb      a1, (t0)
+        addi    t0, t0, 1
+        addi    a2, a2, -1
+        bnez    a2, 0b
+1:      ret
+
+
+.global memcpy
+memcpy:
+        beq     a0, a1, 1f
+        beqz    a2, 1f
+        mv      t0, a0
+0:      lb      t1, (a1)
+        sb      t1, (t0)
+        addi    t0, t0, 1
+        addi    a1, a1, 1
+        addi    a2, a2, -1
+        bnez    a2, 0b
+1:      ret
+
+
+.global memmove
+memmove:
+        bleu    a0, a1, memcpy
+        beqz    a2, 1f
+        mv      t0, a0
+        add     t0, t0, a2
+        add     a1, a1, a2
+0:      addi    t0, t0, -1
+        addi    a1, a1, -1
+        lb      t1, (a1)
+        sb      t1, (t0)
+        addi    a2, a2, -1
+        bnez    a2, 0b
+1:      ret
+
+
+.global memcmp
+memcmp:
+        mv      t0, a0
+        beqz    a2, 1f
+0:      lb      t1, (t0)
+        lb      t2, (a1)
+        sub     a0, t1, t2
+        bnez    a0, 1f
+        addi    t0, t0, 1
+        addi    a1, a1, 1
+        addi    a2, a2, -1
+        bnez    a2, 0b
+1:      ret

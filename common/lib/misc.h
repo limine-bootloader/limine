@@ -57,7 +57,7 @@ uint64_t strtoui(const char *s, const char **end, int base);
 
 #if defined (__i386__)
 void memcpy32to64(uint64_t, uint64_t, uint64_t);
-#elif defined (__x86_64__) || defined (__aarch64__)
+#elif defined (__x86_64__) || defined (__aarch64__) || defined(__riscv64)
 #  define memcpy32to64(X, Y, Z) memcpy((void *)(uintptr_t)(X), (void *)(uintptr_t)(Y), Z)
 #else
 #error Unknown architecture
@@ -98,6 +98,8 @@ noreturn void enter_in_current_el(uint64_t entry, uint64_t sp, uint64_t sctlr,
 noreturn void enter_in_el1(uint64_t entry, uint64_t sp, uint64_t sctlr,
                            uint64_t mair, uint64_t tcr, uint64_t ttbr0,
                            uint64_t ttbr1, uint64_t target_x0);
+#elif defined (__riscv64)
+noreturn void riscv_spinup(uint64_t entry, uint64_t sp, uint64_t satp);
 #else
 #error Unknown architecture
 #endif

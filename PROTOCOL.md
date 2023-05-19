@@ -197,6 +197,32 @@ Size Request (see below).
 
 All other general purpose registers (including `X29` and `X30`) are set to 0. Vector registers are in an undefined state.
 
+### riscv64
+
+At entry the machine is executing in Supervisor mode.
+
+`pc` will be the entry point as defined as part of the executable file format,
+unless the an Entry Point feature is requested (see below), in which case,
+the value of `pc` is going to be taken from there.
+
+`x1`(`ra`) is undefined, the kernel must not return from the entry point.
+
+`x2`(`sp`) is set to point to a stack, in bootloader-reclaimable memory, which is
+at least 64KiB (65536 bytes) in size, or the size specified in the Stack
+Size Request (see below).
+
+`x3`(`gp`) is undefined, kernel must load it's own global pointer if needed.
+
+All other general purpose registers, with the exception of `xX`(`t0`), are set to 0.
+
+`stvec` is in an undefined state. `sstatus.SIE` and `sie` are set to 0.
+
+`sstatus.FS` and `sstatus.XS` are both set to `Off`.
+
+Paging is enable with the paging mode specified by the Paging Mode feature (see below).
+
+The (A)PLIC, if present, is in an undefined state.
+
 ## Feature List
 
 Request IDs are composed of 4 64-bit unsigned integers, but the first 2 are
@@ -631,6 +657,78 @@ struct limine_video_mode {
     uint8_t blue_mask_shift;
 };
 ```
+
+### Paging Mode Feature
+
+The Paging Mode feature allows the kernel to control which paging mode is enabled
+before control is passed to it.
+
+ID:
+```c
+#define LIMINE_PAGING_MODE_REQUEST { LIMINE_COMMON_MAGIC, 0x95c1a0edab0944cb, 0xa4e5cb3842f7488a }
+```
+
+Request:
+```c
+struct limine_paging_mode_request {
+    uint64_t id[4];
+    uint64_t revision;
+    struct limine_paging_mode_response *response;
+    uint64_t mode;
+    uint64_t flags;
+};
+```
+
+Both the `mode` and `flags` fields are architecture-specific.
+
+Response:
+```c
+struct limine_paging_mode_response {
+    uint64_t revision;
+    uint64_t mode;
+    uint64_t flags;
+};
+```
+
+The response indicates which page mode was actually enabled by the bootloader.
+Kernels must be prepared to handle the case where the requested paging mode is not supported by the hardware.
+
+#### x86_64
+
+Values for `mode`:
+```c
+#define LIMINE_PAGING_MODE_X86_64_4LVL 0
+#define LIMINE_PAGING_MODE_X86_64_5LVL 1
+```
+
+No `flags` are currently defined.
+
+The default mode (when this request is not provided) is `LIMINE_PAGING_MODE_X86_64_4LVL`.
+
+#### aarch64
+
+Values for `mode`:
+```c
+#define LIMINE_PAGING_MODE_AARCH64_4LVL 0
+#define LIMINE_PAGING_MODE_AARCH64_5LVL 1
+```
+
+No `flags` are currently defined.
+
+The default mode (when this request is not provided) is `LIMINE_PAGING_MODE_AARCH64_4LVL`.
+
+#### riscv64
+
+Values for `mode`:
+```c
+#define LIMINE_PAGING_MODE_RISCV_SV39 0
+#define LIMINE_PAGING_MODE_RISCV_SV48 1
+#define LIMINE_PAGING_MODE_RISCV_SV57 2
+```
+
+No `flags` are currently defined.
+
+The default mode (when this request is not provided) is `LIMINE_PAGING_MODE_RISCV_SV39`.
 
 ### 5-Level Paging Feature
 

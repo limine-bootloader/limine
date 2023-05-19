@@ -35,10 +35,10 @@
 #define MAX_REQUESTS 128
 #define MAX_MEMMAP 256
 
-static pagemap_t build_pagemap(bool level5pg, bool nx, struct elf_range *ranges, size_t ranges_count,
+static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *ranges, size_t ranges_count,
                                uint64_t physical_base, uint64_t virtual_base,
                                uint64_t direct_map_offset) {
-    pagemap_t pagemap = new_pagemap(level5pg ? 5 : 4);
+    pagemap_t pagemap = new_pagemap(paging_mode);
 
     if (ranges_count == 0) {
         // Map 0 to 2GiB at 0xffffffff80000000
@@ -183,7 +183,7 @@ extern symbol limine_spinup_32;
                             | ((uint64_t)1 << 8)             /* TTBR0 Inner WB RW-Allocate */ \
                             | ((uint64_t)(tsz) << 0))        /* Address bits in TTBR0 */
 
-#else
+#elif !defined (__riscv64)
 #error Unknown architecture
 #endif
 
@@ -408,33 +408,91 @@ noreturn void limine_load(char *config, char *cmdline) {
     printv("limine: ELF entry point: %X\n", entry_point);
     printv("limine: Requests count:  %u\n", requests_count);
 
-    // 5 level paging feature & HHDM slide
-    bool want_5lv;
-FEAT_START
-    // Check if 5-level paging is available
-    bool level5pg = false;
-    // TODO(qookie): aarch64 also has optional 5 level paging when using 4K pages
+    // Paging Mode
+    int paging_mode, max_paging_mode;
+
 #if defined (__x86_64__) || defined (__i386__)
+    paging_mode = max_paging_mode = PAGING_MODE_X86_64_4LVL;
     if (cpuid(0x00000007, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 16))) {
         printv("limine: CPU has 5-level paging support\n");
-        level5pg = true;
+        max_paging_mode = PAGING_MODE_X86_64_5LVL;
     }
+
+#elif defined (__aarch64__)
+    paging_mode = max_paging_mode = PAGING_MODE_AARCH64_4LVL;
+    // TODO(qookie): aarch64 also has optional 5 level paging when using 4K pages
+
+#elif defined (__riscv64)
+    paging_mode = PAGING_MODE_RISCV_SV39;
+    max_paging_mode = vmm_max_paging_mode();
+
+#else
+#error Unknown architecture
 #endif
 
+#if defined (__riscv64)
+#define paging_mode_limine_to_vmm(x) (PAGING_MODE_RISCV_SV39 + (x))
+#define paging_mode_vmm_to_limine(x) ((x) - PAGING_MODE_RISCV_SV39)
+#else
+#define paging_mode_limine_to_vmm(x) (x)
+#define paging_mode_vmm_to_limine(x) (x)
+#endif
+
+#if defined(__riscv64)
+FEAT_START
+
+
+    struct limine_paging_mode_request *pm_request = get_request(LIMINE_PAGING_MODE_REQUEST);
+    if (pm_request == NULL)
+        break;
+
+    if (pm_request->mode > LIMINE_PAGING_MODE_MAX) {
+        print("warning: ignoring invalid mode in paging mode request\n");
+        break;
+    }
+
+    paging_mode = paging_mode_limine_to_vmm(pm_request->mode);
+    if (paging_mode > max_paging_mode)
+        paging_mode = max_paging_mode;
+
+    struct limine_paging_mode_response *pm_response =
+        ext_mem_alloc(sizeof(struct limine_paging_mode_response));
+
+    pm_response->mode = paging_mode_vmm_to_limine(paging_mode);
+    pm_request->response = reported_addr(pm_response);
+
+FEAT_END
+
+#else
+
+    // 5 level paging feature & HHDM slide
+FEAT_START
     struct limine_5_level_paging_request *lv5pg_request = get_request(LIMINE_5_LEVEL_PAGING_REQUEST);
-    want_5lv = lv5pg_request != NULL && level5pg;
+    if (lv5pg_request == NULL)
+        break;
 
-    direct_map_offset = want_5lv ? 0xff00000000000000 : 0xffff800000000000;
+#if defined (__x86_64__) || defined (__i386__)
+    if (max_paging_mode < PAGING_MODE_X86_64_5LVL)
+        break;
+    paging_mode = PAGING_MODE_X86_64_5LVL;
+#elif defined (__aarch64__)
+    if (max_paging_mode < PAGING_MODE_AARCH64_5LVL)
+        break;
+    paging_mode = PAGING_MODE_AARCH64_5LVL;
+#else
+#error Unknown architecture
+#endif
 
+    void *lv5pg_response = ext_mem_alloc(sizeof(struct limine_5_level_paging_response));
+    lv5pg_request->response = reported_addr(lv5pg_response);
+FEAT_END
+
+#endif
+
+    direct_map_offset = paging_mode_higher_half(paging_mode);
     if (kaslr) {
         direct_map_offset += (rand64() & ~((uint64_t)0x40000000 - 1)) & 0xfffffffffff;
     }
-
-    if (want_5lv) {
-        void *lv5pg_response = ext_mem_alloc(sizeof(struct limine_5_level_paging_response));
-        lv5pg_request->response = reported_addr(lv5pg_response);
-    }
-FEAT_END
 
 #if defined (__aarch64__)
     uint64_t aa64mmfr0;
@@ -442,7 +500,7 @@ FEAT_END
 
     uint64_t pa = aa64mmfr0 & 0xF;
 
-    uint64_t tsz = 64 - (want_5lv ? 57 : 48);
+    uint64_t tsz = 64 - paging_mode_va_bits(paging_mode);
 #endif
 
     struct limine_file *kf = ext_mem_alloc(sizeof(struct limine_file));
@@ -795,7 +853,7 @@ term_fail:
 #if defined (__i386__)
         actual_callback = (void *)limine_term_callback;
         limine_term_callback_ptr = terminal_request->callback;
-#elif defined (__x86_64__) || defined (__aarch64__)
+#elif defined (__x86_64__) || defined (__aarch64__) || defined (__riscv64)
         actual_callback = (void *)terminal_request->callback;
 #else
 #error Unknown architecture
@@ -811,7 +869,7 @@ term_fail:
 
     limine_term_write_ptr = (uintptr_t)term_write_shim;
     terminal_response->write = (uintptr_t)(void *)limine_term_write_entry;
-#elif defined (__x86_64__) || defined (__aarch64__)
+#elif defined (__x86_64__) || defined (__aarch64__) || defined (__riscv64)
     terminal_response->write = (uintptr_t)term_write_shim;
 #else
 #error Unknown architecture
@@ -1003,8 +1061,21 @@ FEAT_END
 #endif
 
     pagemap_t pagemap = {0};
-    pagemap = build_pagemap(want_5lv, nx_available, ranges, ranges_count,
+    pagemap = build_pagemap(paging_mode, nx_available, ranges, ranges_count,
                             physical_base, virtual_base, direct_map_offset);
+
+#if defined (__riscv64)
+    // Fetch the BSP's Hart ID before exiting boot services.
+    size_t bsp_hartid;
+    bool have_bsp_hartid = false;
+
+    RISCV_EFI_BOOT_PROTOCOL *riscv_boot_proto = get_riscv_boot_protocol();
+    if (riscv_boot_proto != NULL) {
+        if (riscv_boot_proto->GetBootHartId(riscv_boot_proto, &bsp_hartid) == EFI_SUCCESS) {
+            have_bsp_hartid = true;
+        }
+    }
+#endif
 
 #if defined (UEFI)
     efi_exit_boot_services();
@@ -1022,7 +1093,7 @@ FEAT_START
 #if defined (__x86_64__) || defined (__i386__)
     uint32_t bsp_lapic_id;
     smp_info = init_smp(&cpu_count, &bsp_lapic_id,
-                        true, want_5lv,
+                        true, paging_mode,
                         pagemap, smp_request->flags & LIMINE_SMP_X2APIC, nx_available,
                         direct_map_offset, true);
 #elif defined (__aarch64__)
@@ -1030,6 +1101,13 @@ FEAT_START
 
     smp_info = init_smp(&cpu_count, &bsp_mpidr,
                         pagemap, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa), LIMINE_SCTLR);
+#elif defined (__riscv64)
+    if (!have_bsp_hartid) {
+        printv("smp: failed to get bsp's hart id\n");
+        break;
+    }
+
+    smp_info = init_smp(&cpu_count, bsp_hartid, pagemap);
 #else
 #error Unknown architecture
 #endif
@@ -1051,6 +1129,8 @@ FEAT_START
     smp_response->bsp_lapic_id = bsp_lapic_id;
 #elif defined (__aarch64__)
     smp_response->bsp_mpidr = bsp_mpidr;
+#elif defined (__riscv64)
+    smp_response->bsp_hartid = bsp_hartid;
 #else
 #error Unknown architecture
 #endif
@@ -1155,7 +1235,7 @@ FEAT_END
     uint64_t reported_stack = reported_addr(stack);
 
     common_spinup(limine_spinup_32, 8,
-        want_5lv, (uint32_t)(uintptr_t)pagemap.top_level,
+        paging_mode, (uint32_t)(uintptr_t)pagemap.top_level,
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
         (uint32_t)reported_stack, (uint32_t)(reported_stack >> 32),
         (uint32_t)(uintptr_t)local_gdt, nx_available);
@@ -1165,6 +1245,11 @@ FEAT_END
     enter_in_el1(entry_point, (uint64_t)stack, LIMINE_SCTLR, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa),
                  (uint64_t)pagemap.top_level[0],
                  (uint64_t)pagemap.top_level[1], 0);
+#elif defined (__riscv64)
+    uint64_t reported_stack = reported_addr(stack);
+    uint64_t satp = make_satp(pagemap.paging_mode, pagemap.top_level);
+
+    riscv_spinup(entry_point, reported_stack, satp);
 #else
 #error Unknown architecture
 #endif

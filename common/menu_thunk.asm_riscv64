@@ -1,0 +1,21 @@
+.section .data
+
+.p2align 3
+stack_at_first_entry:
+        .8byte  0
+
+.section .text
+
+.global menu
+.extern _menu
+
+menu:
+        lla     t0, stack_at_first_entry
+        ld      t1, (t0)
+        beqz    t1, 1f
+        mv      sp, t1
+        j       2f
+1:      sd      sp, (t0)
+2:      mv      fp, zero
+        mv      ra, zero
+        j       _menu

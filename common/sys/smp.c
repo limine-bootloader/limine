@@ -13,6 +13,9 @@
 #include <mm/pmm.h>
 #define LIMINE_NO_POINTERS
 #include <limine.h>
+#if defined (__riscv64)
+#include <sys/sbi.h>
+#endif
 
 struct madt {
     struct sdt header;
@@ -64,6 +67,16 @@ struct madt_gicc {
     uint16_t spe_overflow_gsiv;
 } __attribute__((packed));
 
+// Reference: https://github.com/riscv-non-isa/riscv-acpi/issues/15
+struct madt_riscv_intc {
+    struct madt_header header;
+    uint8_t version;
+    uint8_t reserved;
+    uint32_t flags;
+    uint64_t hartid;
+    uint32_t acpi_processor_uid;
+} __attribute__((packed));
+
 #if defined (__x86_64__) || defined (__i386__)
 
 struct trampoline_passed_info {
@@ -77,7 +90,7 @@ struct trampoline_passed_info {
 
 static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
                          struct limine_smp_info *info_struct,
-                         bool longmode, bool lv5, uint32_t pagemap,
+                         bool longmode, int paging_mode, uint32_t pagemap,
                          bool x2apic, bool nx, uint64_t hhdm, bool wp) {
     // Prepare the trampoline
     static void *trampoline = NULL;
@@ -97,7 +110,7 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
     passed_info->smp_tpl_booted_flag = 0;
     passed_info->smp_tpl_pagemap     = pagemap;
     passed_info->smp_tpl_target_mode = ((uint32_t)x2apic << 2)
-                                     | ((uint32_t)lv5 << 1)
+                                     | ((uint32_t)paging_mode << 1)
                                      | ((uint32_t)nx << 3)
                                      | ((uint32_t)wp << 4)
                                      | ((uint32_t)longmode << 0);
@@ -137,7 +150,7 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
 struct limine_smp_info *init_smp(size_t   *cpu_count,
                                  uint32_t *_bsp_lapic_id,
                                  bool      longmode,
-                                 bool      lv5,
+                                 int       paging_mode,
                                  pagemap_t pagemap,
                                  bool      x2apic,
                                  bool      nx,
@@ -244,7 +257,7 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
 
                 // Try to start the AP
                 if (!smp_start_ap(lapic->lapic_id, &gdtr, info_struct,
-                                  longmode, lv5, (uintptr_t)pagemap.top_level,
+                                  longmode, paging_mode, (uintptr_t)pagemap.top_level,
                                   x2apic, nx, hhdm, wp)) {
                     print("smp: FAILED to bring-up AP\n");
                     continue;
@@ -281,7 +294,7 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
 
                 // Try to start the AP
                 if (!smp_start_ap(x2lapic->x2apic_id, &gdtr, info_struct,
-                                  longmode, lv5, (uintptr_t)pagemap.top_level,
+                                  longmode, paging_mode, (uintptr_t)pagemap.top_level,
                                   true, nx, hhdm, wp)) {
                     print("smp: FAILED to bring-up AP\n");
                     continue;
@@ -554,6 +567,134 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
     printv("Failed to figure out how to start APs.");
 
     return NULL;
+}
+
+#elif defined (__riscv64)
+
+struct trampoline_passed_info {
+    uint64_t smp_tpl_booted_flag;
+    uint64_t smp_tpl_satp;
+    uint64_t smp_tpl_info_struct;
+};
+
+static bool smp_start_ap(size_t hartid, size_t satp, struct limine_smp_info *info_struct) {
+    static struct trampoline_passed_info passed_info;
+
+    passed_info.smp_tpl_booted_flag = 0;
+    passed_info.smp_tpl_satp        = satp;
+    passed_info.smp_tpl_info_struct = (uint64_t)info_struct;
+
+    asm volatile ("" ::: "memory");
+
+    struct sbiret ret = sbi_hart_start(hartid, (size_t)smp_trampoline_start, (size_t)&passed_info);
+    if (ret.error != SBI_SUCCESS)
+        return false;
+
+    for (int i = 0; i < 1000000; i++) {
+        if (locked_read(&passed_info.smp_tpl_booted_flag) == 1)
+            return true;
+    }
+
+    return false;
+}
+
+RISCV_EFI_BOOT_PROTOCOL *get_riscv_boot_protocol(void) {
+    EFI_GUID boot_proto_guid = RISCV_EFI_BOOT_PROTOCOL_GUID;
+    UINTN bufsz = 0;
+
+    if (gBS->LocateHandle(ByProtocol, &boot_proto_guid, NULL, &bufsz, NULL) != EFI_BUFFER_TOO_SMALL)
+        return NULL;
+
+    EFI_HANDLE *handles_buf = ext_mem_alloc(bufsz);
+    if (handles_buf == NULL)
+        return NULL;
+
+    if (bufsz < sizeof(EFI_HANDLE))
+        return NULL;
+
+    if (gBS->LocateHandle(ByProtocol, &boot_proto_guid, NULL, &bufsz, handles_buf) != EFI_SUCCESS)
+        return NULL;
+
+    RISCV_EFI_BOOT_PROTOCOL *proto;
+    if (gBS->HandleProtocol(handles_buf[0], &boot_proto_guid, (void **)&proto) != EFI_SUCCESS)
+        return NULL;
+
+    return proto;
+}
+
+struct limine_smp_info *init_smp(size_t   *cpu_count,
+                                 size_t   bsp_hartid,
+                                 pagemap_t pagemap) {
+    // No RSDP means no ACPI.
+    // Parsing the Device Tree is the only other method for detecting APs.
+    if (acpi_get_rsdp() == NULL) {
+        printv("smp: ACPI is required to detect APs.\n");
+        return NULL;
+    }
+
+    struct madt *madt = acpi_get_table("APIC", 0);
+    if (madt == NULL)
+        return NULL;
+
+    size_t max_cpus = 0;
+    for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
+      (uintptr_t)madt_ptr < (uintptr_t)madt + madt->header.length;
+      madt_ptr += *(madt_ptr + 1)) {
+        switch (*madt_ptr) {
+            case 0x18: {
+                struct madt_riscv_intc *intc = (void *)madt_ptr;
+
+                // Check if we can actually try to start the AP
+                if ((intc->flags & 1) ^ ((intc->flags >> 1) & 1))
+                    max_cpus++;
+
+                continue;
+            }
+        }
+    }
+
+    struct limine_smp_info *ret = ext_mem_alloc(max_cpus * sizeof(struct limine_smp_info));
+    *cpu_count = 0;
+
+    // Try to start all APs
+    for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
+      (uintptr_t)madt_ptr < (uintptr_t)madt + madt->header.length;
+      madt_ptr += *(madt_ptr + 1)) {
+        switch (*madt_ptr) {
+            case 0x18: {
+                struct madt_riscv_intc *intc = (void *)madt_ptr;
+
+                // Check if we can actually try to start the AP
+                if (!((intc->flags & 1) ^ ((intc->flags >> 1) & 1)))
+                    continue;
+
+                struct limine_smp_info *info_struct = &ret[*cpu_count];
+
+                info_struct->processor_id = intc->acpi_processor_uid;
+                info_struct->hartid = intc->hartid;
+
+                // Do not try to restart the BSP
+                if (intc->hartid == bsp_hartid) {
+                    (*cpu_count)++;
+                    continue;
+                }
+
+                printv("smp: Found candidate AP for bring-up. Hart ID: %u\n", intc->hartid);
+
+                // Try to start the AP.
+                size_t satp = make_satp(pagemap.paging_mode, pagemap.top_level);
+                if (!smp_start_ap(intc->hartid, satp, info_struct)) {
+                    print("smp: FAILED to bring-up AP\n");
+                    continue;
+                }
+
+                (*cpu_count)++;
+                continue;
+            }
+        }
+    }
+
+    return ret;
 }
 
 #else

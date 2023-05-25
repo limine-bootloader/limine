@@ -598,30 +598,6 @@ static bool smp_start_ap(size_t hartid, size_t satp, struct limine_smp_info *inf
     return false;
 }
 
-RISCV_EFI_BOOT_PROTOCOL *get_riscv_boot_protocol(void) {
-    EFI_GUID boot_proto_guid = RISCV_EFI_BOOT_PROTOCOL_GUID;
-    UINTN bufsz = 0;
-
-    if (gBS->LocateHandle(ByProtocol, &boot_proto_guid, NULL, &bufsz, NULL) != EFI_BUFFER_TOO_SMALL)
-        return NULL;
-
-    EFI_HANDLE *handles_buf = ext_mem_alloc(bufsz);
-    if (handles_buf == NULL)
-        return NULL;
-
-    if (bufsz < sizeof(EFI_HANDLE))
-        return NULL;
-
-    if (gBS->LocateHandle(ByProtocol, &boot_proto_guid, NULL, &bufsz, handles_buf) != EFI_SUCCESS)
-        return NULL;
-
-    RISCV_EFI_BOOT_PROTOCOL *proto;
-    if (gBS->HandleProtocol(handles_buf[0], &boot_proto_guid, (void **)&proto) != EFI_SUCCESS)
-        return NULL;
-
-    return proto;
-}
-
 struct limine_smp_info *init_smp(size_t   *cpu_count,
                                  size_t   bsp_hartid,
                                  pagemap_t pagemap) {

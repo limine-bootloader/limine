@@ -368,7 +368,7 @@ static pt_entry_t *get_next_level(pagemap_t pagemap, pt_entry_t *current_level,
     pt_entry_t *ret;
 
     if (PT_IS_TABLE(current_level[entry])) {
-        ret = (pt_entry_t *)pte_addr(current_level[entry]);
+        ret = (pt_entry_t *)(size_t)pte_addr(current_level[entry]);
     } else {
         if (PT_IS_LARGE(current_level[entry])) {
             // We are replacing an existing large page with a smaller page.
@@ -394,7 +394,7 @@ static pt_entry_t *get_next_level(pagemap_t pagemap, pt_entry_t *current_level,
 
             // Allocate a table for the next level
             ret = ext_mem_alloc(PT_SIZE);
-            current_level[entry] = pte_new(ret, PT_TABLE_FLAGS);
+            current_level[entry] = pte_new((size_t)ret, PT_TABLE_FLAGS);
 
             // Recreate the old mapping with smaller pages
             for (uint64_t i = 0; i < old_page_size; i += new_page_size) {
@@ -403,7 +403,7 @@ static pt_entry_t *get_next_level(pagemap_t pagemap, pt_entry_t *current_level,
         } else {
             // Allocate a table for the next level
             ret = ext_mem_alloc(PT_SIZE);
-            current_level[entry] = pte_new(ret, PT_TABLE_FLAGS);
+            current_level[entry] = pte_new((size_t)ret, PT_TABLE_FLAGS);
         }
     }
 

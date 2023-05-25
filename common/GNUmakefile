@@ -130,14 +130,16 @@ ifeq ($(TARGET),uefi-aarch64)
 endif
 
 ifeq ($(TARGET),uefi-riscv64)
+	ifeq ($(CC_FOR_TARGET_IS_CLANG),yes)
+		override RISCV_CFLAGS += -march=rv64imac -mabi=lp64
+	else
+		override RISCV_CFLAGS += -march=rv64imac_zicsr_zifencei -mabi=lp64
+	endif
+
     override CFLAGS_FOR_TARGET += \
         -fPIE \
-		-march=rv64imac \
-		-mabi=lp64
-
-	ifeq ($(CC_FOR_TARGET_IS_CLANG),no)
-		override CFLAGS_FOR_TARGET += -march=rv64imac_zicsr_zifencei
-	endif
+		-fshort-wchar \
+		$(RISCV_CFLAGS)
 
     override CPPFLAGS_FOR_TARGET := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
@@ -427,7 +429,7 @@ $(call MKESCAPE,$(BUILDDIR))/BOOTRISCV64.EFI: $(call MKESCAPE,$(BUILDDIR))/limin
 $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-riscv64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_riscv64.o: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
 		CC="$(CC_FOR_TARGET)" \
-		CFLAGS="$(BASE_CFLAGS)" \
+		CFLAGS="$(BASE_CFLAGS) $(RISCV_CFLAGS)" \
 		CPPFLAGS='-nostdinc -I$(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
 		ARCH=riscv64
 

@@ -10,6 +10,9 @@
 #include <lib/libc.h>
 #if defined (UEFI)
 #  include <efi.h>
+#  if defined (__riscv64)
+#    include <protocol/riscv/efiboot.h>
+#  endif
 #endif
 
 #if defined (UEFI)
@@ -100,6 +103,9 @@ noreturn void enter_in_el1(uint64_t entry, uint64_t sp, uint64_t sctlr,
                            uint64_t ttbr1, uint64_t target_x0);
 #elif defined (__riscv64)
 noreturn void riscv_spinup(uint64_t entry, uint64_t sp, uint64_t satp);
+#if defined (UEFI)
+RISCV_EFI_BOOT_PROTOCOL *get_riscv_boot_protocol(void);
+#endif
 #else
 #error Unknown architecture
 #endif

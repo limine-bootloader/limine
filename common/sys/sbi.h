@@ -1,3 +1,5 @@
+#ifndef __SYS__SBI_H__
+#define __SYS__SBI_H__
 
 #include <stddef.h>
 #include <stdint.h>
@@ -26,3 +28,5 @@ static inline struct sbiret sbi_hart_start(unsigned long hartid,
                                            unsigned long opaque) {
     return sbicall(SBI_EID_HSM, 0, hartid, start_addr, opaque);
 }
+
+#endif

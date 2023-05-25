@@ -241,15 +241,18 @@ LIMINE_DEPRECATED_IGNORE_END
 #define LIMINE_PAGING_MODE_X86_64_4LVL 0
 #define LIMINE_PAGING_MODE_X86_64_5LVL 1
 #define LIMINE_PAGING_MODE_MAX LIMINE_PAGING_MODE_X86_64_5LVL
+#define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_X86_64_4LVL
 #elif defined (__aarch64__)
 #define LIMINE_PAGING_MODE_AARCH64_4LVL 0
 #define LIMINE_PAGING_MODE_AARCH64_5LVL 1
 #define LIMINE_PAGING_MODE_MAX LIMINE_PAGING_MODE_AARCH64_5LVL
+#define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_AARCH64_4LVL
 #elif defined (__riscv) && (__riscv_xlen == 64)
 #define LIMINE_PAGING_MODE_RISCV_SV39 0
 #define LIMINE_PAGING_MODE_RISCV_SV48 1
 #define LIMINE_PAGING_MODE_RISCV_SV57 2
 #define LIMINE_PAGING_MODE_MAX LIMINE_PAGING_MODE_RISCV_SV57
+#define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_RISCV_SV39
 #else
 #error Unknown architecture
 #endif
@@ -272,15 +275,19 @@ struct limine_paging_mode_request {
 
 #define LIMINE_5_LEVEL_PAGING_REQUEST { LIMINE_COMMON_MAGIC, 0x94469551da9b3192, 0xebe5e86db7382888 }
 
-struct limine_5_level_paging_response {
+LIMINE_DEPRECATED_IGNORE_START
+
+struct LIMINE_DEPRECATED limine_5_level_paging_response {
     uint64_t revision;
 };
 
-struct limine_5_level_paging_request {
+struct LIMINE_DEPRECATED limine_5_level_paging_request {
     uint64_t id[4];
     uint64_t revision;
     LIMINE_PTR(struct limine_5_level_paging_response *) response;
 };
+
+LIMINE_DEPRECATED_IGNORE_END
 
 /* SMP */
 

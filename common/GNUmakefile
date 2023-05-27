@@ -84,6 +84,7 @@ endif
 ifeq ($(TARGET),uefi-x86-64)
     override CFLAGS_FOR_TARGET += \
         -fPIE \
+        -fshort-wchar \
         -m64 \
         -march=x86-64 \
         -mabi=sysv \
@@ -103,6 +104,7 @@ endif
 ifeq ($(TARGET),uefi-ia32)
     override CFLAGS_FOR_TARGET += \
         -fPIE \
+        -fshort-wchar \
         -m32 \
         -march=i686 \
         -mabi=sysv \
@@ -117,6 +119,7 @@ endif
 ifeq ($(TARGET),uefi-aarch64)
     override CFLAGS_FOR_TARGET += \
         -fPIE \
+        -fshort-wchar \
         -mgeneral-regs-only
     override CPPFLAGS_FOR_TARGET := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \

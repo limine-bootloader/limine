@@ -97,8 +97,7 @@ ifeq ($(TARGET),uefi-x86-64)
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/x86_64' \
         $(CPPFLAGS_FOR_TARGET) \
-        -DUEFI \
-        -DGNU_EFI_USE_MS_ABI
+        -DUEFI
 endif
 
 ifeq ($(TARGET),uefi-ia32)

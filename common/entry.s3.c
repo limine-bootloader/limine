@@ -16,6 +16,7 @@
 #include <fs/file.h>
 #include <lib/elf.h>
 #include <mm/pmm.h>
+#include <kuroko-limine.h>
 #include <menu.h>
 #include <pxe/pxe.h>
 #include <pxe/tftp.h>
@@ -129,6 +130,8 @@ noreturn void stage3_common(void) {
     init_flush_irqs();
     init_io_apics();
 #endif
+
+    limine_krk_init();
 
     term_notready();
 

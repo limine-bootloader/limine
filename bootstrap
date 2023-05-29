@@ -25,6 +25,7 @@ fi
 [ -d freestanding-headers ] || git clone https://github.com/mintsuki/freestanding-headers.git $SHALLOW_CLONE_FLAG
 [ -d limine-efi ] || git clone https://github.com/limine-bootloader/limine-efi.git $SHALLOW_CLONE_FLAG
 [ -d libgcc-binaries ] || git clone https://github.com/mintsuki/libgcc-binaries.git $SHALLOW_CLONE_FLAG
+[ -d kuroko ] || git clone https://github.com/kuroko-lang/kuroko.git $SHALLOW_CLONE_FLAG
 
 mkdir -p build-aux
 cp "$(automake --print-libdir)/install-sh" build-aux

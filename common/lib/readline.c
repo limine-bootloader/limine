@@ -91,6 +91,8 @@ int getchar_internal(uint8_t scancode, uint8_t ascii, uint32_t shift_state) {
         }
     }
 
+    if (ascii == '\t') return ascii;
+
     // Guard against non-printable values
     if (ascii < 0x20 || ascii > 0x7e) {
         return -1;
@@ -310,7 +312,7 @@ again:
     }
 
     if (kd.Key.ScanCode == 0x08) {
-        return '\b';
+        return GETCHAR_DELETE;
     }
 
     if (kd.Key.ScanCode == SCAN_ESC) {

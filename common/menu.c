@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdnoreturn.h>
 #include <config.h>
+#include <kuroko-limine.h>
 #include <menu.h>
 #include <lib/print.h>
 #include <lib/misc.h>
@@ -815,6 +816,10 @@ refresh:
         }
         set_cursor_pos_helper(terms[0]->cols - 13, 3);
         print("\e[32mC\e[0m Console");
+
+        set_cursor_pos_helper(terms[0]->cols - 24, 3);
+        print("\e[32mK\e[0m Kuroko");
+
         set_cursor_pos_helper(x, y);
     }
 
@@ -926,6 +931,12 @@ timeout_aborted:
             case 'C': {
                 reset_term();
                 console();
+                goto refresh;
+            }
+            case 'k':
+            case 'K': {
+                reset_term();
+                limine_krk_enter_repl();
                 goto refresh;
             }
         }

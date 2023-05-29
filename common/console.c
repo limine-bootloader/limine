@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <config.h>
 #include <console.h>
+#include <kuroko-limine.h>
 #include <menu.h>
 #include <mm/pmm.h>
 #include <lib/print.h>
@@ -18,6 +19,7 @@ static void console_help(void) {
         "exit      -- Exit Limine console.\n"
         "clear     -- Clear the console.\n"
         "%s"
+        "kuroko    -- Start a Kuroko repl.\n"
         "lsvol     -- List volumes.\n"
         "version   -- Print version.\n"
         "copyright -- Print copyright.\n"
@@ -55,6 +57,8 @@ void console(void) {
             print(LIMINE_COPYRIGHT "\n");
             print("Limine is distributed under the terms of the BSD-2-Clause license.\n");
             print("There is ABSOLUTELY NO WARRANTY, to the extent permitted by law.\n");
+        } else if (strcmp(prompt, "kuroko") == 0) {
+            limine_krk_enter_repl();
         } else if (*prompt != 0) {
             print("Invalid command: `%s`.\n", prompt);
         }

@@ -70,6 +70,9 @@ override CPPFLAGS_FOR_TARGET := \
     -MMD \
     -MP
 
+$(call MKESCAPE,$(BUILDDIR))/./kuroko/%.o: override CFLAGS_FOR_TARGET += -DKRK_STATIC_ONLY -DKRK_DISABLE_THREADS -DKRK_NO_FILESYSTEM -DKRK_NO_CALLGRIND -DKRK_NO_SOURCE_IN_TRACEBACK -DKRK_NO_FLOAT -DKRK_NO_GC_TRACING -Wno-shadow -Wno-unused-parameter -Wno-misleading-indentation
+$(call MKESCAPE,$(BUILDDIR))/./kuroko/%.o: override CPPFLAGS_FOR_TARGET += -I'$(call SHESCAPE,$(BUILDDIR))/../kuroko-inc'
+
 ifeq ($(TARGET),bios)
     override CFLAGS_FOR_TARGET += \
         -fno-PIE \
@@ -200,7 +203,7 @@ ifeq ($(TARGET),uefi-riscv64)
         -z text
 endif
 
-override C_FILES := $(shell find . -type f -name '*.c')
+override C_FILES := $(shell find . -xtype f -name '*.c')
 ifeq ($(TARGET),bios)
     override ASMX86_FILES := $(shell find . -type f -name '*.asm_x86')
     override ASM32_FILES := $(shell find . -type f -name '*.asm_ia32')

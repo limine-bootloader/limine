@@ -44,6 +44,9 @@ jobs:
       - name: Clean limine-version
         run: rm build/bin/limine-version
 
+      - name: Fix permissions of certain files
+        run: for f in build/bin/limine.sys build/bin/BOOTX64.EFI build/bin/BOOTIA32.EFI build/bin/BOOTAA64.EFI; do chmod -x $f; done
+
       - name: Clean limine-enroll-config
         run: rm build/bin/limine-enroll-config
 

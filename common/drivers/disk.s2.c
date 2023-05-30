@@ -390,35 +390,19 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
 
     // Fallback to read-back method
 
-    EFI_GUID disk_io_guid = DISK_IO_PROTOCOL;
-    EFI_DISK_IO *disk_io = NULL;
-
-    status = gBS->HandleProtocol(efi_handle, &disk_io_guid, (void **)&disk_io);
-    if (status) {
-        disk_io = NULL;
-    }
-
     uint64_t signature = rand64();
     uint64_t new_signature;
     do { new_signature = rand64(); } while (new_signature == signature);
     uint64_t orig;
 
-    if (disk_io != NULL) {
-        status = disk_io->ReadDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &orig);
-    } else {
-        status = block_io->ReadBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
-        orig = *(uint64_t *)unique_sector_pool;
-    }
+    status = block_io->ReadBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
+    orig = *(uint64_t *)unique_sector_pool;
     if (status) {
         return NULL;
     }
 
-    if (disk_io != NULL) {
-        status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &signature);
-    } else {
-        *(uint64_t *)unique_sector_pool = signature;
-        status = block_io->WriteBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
-    }
+    *(uint64_t *)unique_sector_pool = signature;
+    status = block_io->WriteBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
     if (status) {
         return NULL;
     }
@@ -427,54 +411,32 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
     for (size_t i = 0; i < volume_index_i; i++) {
         uint64_t compare;
 
-        EFI_DISK_IO *cur_disk_io = NULL;
-
-        status = gBS->HandleProtocol(volume_index[i]->efi_handle,
-                          &disk_io_guid, (void **)&cur_disk_io);
-        if (status) {
-            cur_disk_io = NULL;
-        }
-
-        if (cur_disk_io != NULL) {
-            status = cur_disk_io->ReadDisk(cur_disk_io,
-                              volume_index[i]->block_io->Media->MediaId,
-                              volume_index[i]->first_sect * 512,
-                              sizeof(uint64_t), &compare);
-        } else {
-            status = volume_index[i]->block_io->ReadBlocks(volume_index[i]->block_io,
-                              volume_index[i]->block_io->Media->MediaId,
-                              (volume_index[i]->first_sect * 512) / volume_index[i]->sector_size,
-                              4096, unique_sector_pool);
-            compare = *(uint64_t *)unique_sector_pool;
-        }
+        status = volume_index[i]->block_io->ReadBlocks(volume_index[i]->block_io,
+                          volume_index[i]->block_io->Media->MediaId,
+                          (volume_index[i]->first_sect * 512) / volume_index[i]->sector_size,
+                          4096, unique_sector_pool);
+        compare = *(uint64_t *)unique_sector_pool;
         if (status) {
             continue;
         }
 
         if (compare == signature) {
             // Double check
-            if (disk_io != NULL) {
-                status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &new_signature);
-            } else {
-                *(uint64_t *)unique_sector_pool = new_signature;
-                status = block_io->WriteBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
+            status = block_io->ReadBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
+            if (status) {
+                break;
             }
+            *(uint64_t *)unique_sector_pool = new_signature;
+            status = block_io->WriteBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
             if (status) {
                 break;
             }
 
-            if (cur_disk_io != NULL) {
-                status = cur_disk_io->ReadDisk(cur_disk_io,
-                              volume_index[i]->block_io->Media->MediaId,
-                              volume_index[i]->first_sect * 512,
-                              sizeof(uint64_t), &compare);
-            } else {
-                status = volume_index[i]->block_io->ReadBlocks(volume_index[i]->block_io,
-                              volume_index[i]->block_io->Media->MediaId,
-                              (volume_index[i]->first_sect * 512) / volume_index[i]->sector_size,
-                              4096, unique_sector_pool);
-                compare = *(uint64_t *)unique_sector_pool;
-            }
+            status = volume_index[i]->block_io->ReadBlocks(volume_index[i]->block_io,
+                          volume_index[i]->block_io->Media->MediaId,
+                          (volume_index[i]->first_sect * 512) / volume_index[i]->sector_size,
+                          4096, unique_sector_pool);
+            compare = *(uint64_t *)unique_sector_pool;
             if (status) {
                 continue;
             }
@@ -484,24 +446,24 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
                 break;
             }
 
-            if (disk_io != NULL) {
-                status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &signature);
-            } else {
-                *(uint64_t *)unique_sector_pool = signature;
-                status = block_io->WriteBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
+            status = block_io->ReadBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
+            if (status) {
+                break;
             }
+            *(uint64_t *)unique_sector_pool = signature;
+            status = block_io->WriteBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
             if (status) {
                 break;
             }
         }
     }
 
-    if (disk_io != NULL) {
-        status = disk_io->WriteDisk(disk_io, block_io->Media->MediaId, 0, sizeof(uint64_t), &orig);
-    } else {
-        *(uint64_t *)unique_sector_pool = orig;
-        status = block_io->WriteBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
+    status = block_io->ReadBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
+    if (status) {
+        return NULL;
     }
+    *(uint64_t *)unique_sector_pool = orig;
+    status = block_io->WriteBlocks(block_io, block_io->Media->MediaId, 0, 4096, unique_sector_pool);
     if (status) {
         return NULL;
     }
@@ -612,14 +574,6 @@ fail:
             break;
         }
 
-        EFI_GUID disk_io_guid = DISK_IO_PROTOCOL;
-        EFI_DISK_IO *disk_io = NULL;
-
-        status = gBS->HandleProtocol(handles[i], &disk_io_guid, (void **)&disk_io);
-        if (status) {
-            disk_io = NULL;
-        }
-
         EFI_BLOCK_IO *drive = NULL;
 
         status = gBS->HandleProtocol(handles[i], &block_io_guid, (void **)&drive);
@@ -632,21 +586,12 @@ fail:
 
         drive->Media->WriteCaching = false;
 
-        uint64_t orig;
-        if (disk_io != NULL) {
-            status = disk_io->ReadDisk(disk_io, drive->Media->MediaId, 0, sizeof(uint64_t), &orig);
-        } else {
-            status = drive->ReadBlocks(drive, drive->Media->MediaId, 0, 4096, unique_sector_pool);
-        }
+        status = drive->ReadBlocks(drive, drive->Media->MediaId, 0, 4096, unique_sector_pool);
         if (status) {
             continue;
         }
 
-        if (disk_io != NULL) {
-            status = disk_io->WriteDisk(disk_io, drive->Media->MediaId, 0, sizeof(uint64_t), &orig);
-        } else {
-            status = drive->WriteBlocks(drive, drive->Media->MediaId, 0, 4096, unique_sector_pool);
-        }
+        status = drive->WriteBlocks(drive, drive->Media->MediaId, 0, 4096, unique_sector_pool);
 
         struct volume *block = ext_mem_alloc(sizeof(struct volume));
 

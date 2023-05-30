@@ -213,7 +213,9 @@ Size Request (see below).
 
 `x3`(`gp`) is undefined, kernel must load it's own global pointer if needed.
 
-All other general purpose registers, with the exception of `xX`(`t0`), are set to 0.
+All other general purpose registers, with the exception of `x5`(`t0`), are set to 0.
+
+If booted by EFI/UEFI, boot services are exited.
 
 `stvec` is in an undefined state. `sstatus.SIE` and `sie` are set to 0.
 
@@ -681,6 +683,8 @@ struct limine_paging_mode_request {
 
 Both the `mode` and `flags` fields are architecture-specific.
 
+The `LIMINE_PAGING_MODE_DEFAULT` macro is provided to select the default paging mode (see below).
+
 Response:
 ```c
 struct limine_paging_mode_response {
@@ -731,6 +735,9 @@ No `flags` are currently defined.
 The default mode (when this request is not provided) is `LIMINE_PAGING_MODE_RISCV_SV39`.
 
 ### 5-Level Paging Feature
+
+Note: *This feature has been deprecrated in favor of the [Paging Mode feature](#paging-mode-feature)
+and will be removed entirely in a future release.*
 
 ID:
 ```c
@@ -868,6 +875,53 @@ struct limine_smp_info {
 * `goto_address` - An atomic write to this field causes the parked CPU to
 jump to the written address, on a 64KiB (or Stack Size Request size) stack. A pointer to the
 `struct limine_smp_info` structure of the CPU is passed in `X0`. Other than
+that, the CPU state will be the same as described for the bootstrap
+processor. This field is unused for the structure describing the bootstrap
+processor.
+* `extra_argument` - A free for use field.
+
+#### riscv64
+
+Response:
+
+```c
+struct limine_smp_response {
+    uint64_t revision;
+    uint32_t flags;
+    uint64_t bsp_hartid;
+    uint64_t cpu_count;
+    struct limine_smp_info **cpus;
+};
+```
+
+* `flags` - Always zero
+* `bsp_hartid` - Hart ID of the bootstrap processor as reported by the UEFI RISC-V Boot Protocol or the SBI.
+* `cpu_count` - How many CPUs are present. It includes the bootstrap processor.
+* `cpus` - Pointer to an array of `cpu_count` pointers to
+`struct limine_smp_info` structures.
+
+Notes: The presence of this request will prompt the bootloader to bootstrap
+the secondary processors. This will not be done if this request is not present.
+
+```c
+struct limine_smp_info;
+
+typedef void (*limine_goto_address)(struct limine_smp_info *);
+
+struct limine_smp_info {
+    uint32_t processor_id;
+    uint64_t hartid;
+    uint64_t reserved;
+    limine_goto_address goto_address;
+    uint64_t extra_argument;
+};
+```
+
+* `processor_id` - ACPI Processor UID as specified by the MADT (always 0 on non-ACPI systems).
+* `hartid` - Hart ID of the processor as specified by the MADT or Device Tree.
+* `goto_address` - An atomic write to this field causes the parked CPU to
+jump to the written address, on a 64KiB (or Stack Size Request size) stack. A pointer to the
+`struct limine_smp_info` structure of the CPU is passed in `x10`(`a0`). Other than
 that, the CPU state will be the same as described for the bootstrap
 processor. This field is unused for the structure describing the bootstrap
 processor.

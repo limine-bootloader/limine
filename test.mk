@@ -243,6 +243,7 @@ uefi-aa64-test:
 .PHONY: uefi-rv64-test
 uefi-rv64-test:
 	$(MAKE) ovmf-rv64
+	dd if=/dev/zero of=OVMF.fd bs=1 count=1 seek=0x1ffffff
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-uefi-riscv64
@@ -259,10 +260,10 @@ uefi-rv64-test:
 	sudo $(MKDIR_P) test_image/EFI/BOOT
 	sudo cp $(BINDIR)/BOOTRISCV64.EFI test_image/EFI/BOOT/
 	sync
-	sudo unmount test_image/
+	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-riscv64 -m 512M -M virt -cpu rv64 -drive if=pflash,unit=1,format=raw,file=ovmf-rv64/OVMF.fd -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd -hda test.hdd -serial stdio
+	qemu-system-riscv64 -m 512M -M virt -cpu rv64 -drive if=pflash,unit=1,format=raw,file=ovmf-rv64/OVMF.fd -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd -device virtio-blk-device,drive=hd0 -drive id=hd0,format=raw,file=test.hdd -serial stdio
 
 .PHONY: uefi-ia32-test
 uefi-ia32-test:

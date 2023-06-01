@@ -545,11 +545,19 @@ void disk_create_index(void) {
 
     EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
     EFI_HANDLE *handles = tmp_handles;
-    UINTN handles_size = sizeof(EFI_HANDLE);
+    UINTN handles_size = sizeof(tmp_handles);
 
     status = gBS->LocateHandle(ByProtocol, &block_io_guid, NULL, &handles_size, handles);
 
+    // we only care about the first handle, so ignore if we get EFI_BUFFER_TOO_SMALL
     if (status != EFI_BUFFER_TOO_SMALL && status != EFI_SUCCESS) {
+        EFI_GUID pxe_guid = EFI_PXE_BASE_CODE_PROTOCOL_GUID;
+        status = gBS->LocateHandle(ByProtocol, &pxe_guid, NULL, &handles_size, handles);
+        // likewise, all that matters is that the protocol is present
+        if (status == EFI_BUFFER_TOO_SMALL || status == EFI_SUCCESS) {
+            return;
+        }
+
         goto fail;
     }
 

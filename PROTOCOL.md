@@ -211,7 +211,7 @@ the value of `pc` is going to be taken from there.
 at least 64KiB (65536 bytes) in size, or the size specified in the Stack
 Size Request (see below).
 
-`x3`(`gp`) is undefined, kernel must load it's own global pointer if needed.
+`x3`(`gp`) is undefined, kernel must load its own global pointer if needed.
 
 All other general purpose registers, with the exception of `x5`(`t0`), are set to 0.
 
@@ -683,7 +683,8 @@ struct limine_paging_mode_request {
 
 Both the `mode` and `flags` fields are architecture-specific.
 
-The `LIMINE_PAGING_MODE_DEFAULT` macro is provided to select the default paging mode (see below).
+The `LIMINE_PAGING_MODE_DEFAULT` macro is provided by all architectures to select
+the default paging mode (see below).
 
 Response:
 ```c
@@ -694,8 +695,9 @@ struct limine_paging_mode_response {
 };
 ```
 
-The response indicates which page mode was actually enabled by the bootloader.
-Kernels must be prepared to handle the case where the requested paging mode is not supported by the hardware.
+The response indicates which paging mode was actually enabled by the bootloader.
+Kernels must be prepared to handle the case where the requested paging mode is
+not supported by the hardware.
 
 #### x86_64
 
@@ -703,6 +705,8 @@ Values for `mode`:
 ```c
 #define LIMINE_PAGING_MODE_X86_64_4LVL 0
 #define LIMINE_PAGING_MODE_X86_64_5LVL 1
+
+#define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_X86_64_4LVL
 ```
 
 No `flags` are currently defined.
@@ -715,6 +719,8 @@ Values for `mode`:
 ```c
 #define LIMINE_PAGING_MODE_AARCH64_4LVL 0
 #define LIMINE_PAGING_MODE_AARCH64_5LVL 1
+
+#define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_AARCH64_4LVL
 ```
 
 No `flags` are currently defined.
@@ -728,6 +734,8 @@ Values for `mode`:
 #define LIMINE_PAGING_MODE_RISCV_SV39 0
 #define LIMINE_PAGING_MODE_RISCV_SV48 1
 #define LIMINE_PAGING_MODE_RISCV_SV57 2
+
+#define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_RISCV_SV39
 ```
 
 No `flags` are currently defined.
@@ -736,7 +744,7 @@ The default mode (when this request is not provided) is `LIMINE_PAGING_MODE_RISC
 
 ### 5-Level Paging Feature
 
-Note: *This feature has been deprecrated in favor of the [Paging Mode feature](#paging-mode-feature)
+Note: *This feature has been deprecated in favor of the [Paging Mode feature](#paging-mode-feature)
 and will be removed entirely in a future release.*
 
 ID:

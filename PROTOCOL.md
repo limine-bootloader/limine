@@ -735,12 +735,12 @@ Values for `mode`:
 #define LIMINE_PAGING_MODE_RISCV_SV48 1
 #define LIMINE_PAGING_MODE_RISCV_SV57 2
 
-#define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_RISCV_SV39
+#define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_RISCV_SV48
 ```
 
 No `flags` are currently defined.
 
-The default mode (when this request is not provided) is `LIMINE_PAGING_MODE_RISCV_SV39`.
+The default mode (when this request is not provided) is `LIMINE_PAGING_MODE_RISCV_SV48`.
 
 ### 5-Level Paging Feature
 

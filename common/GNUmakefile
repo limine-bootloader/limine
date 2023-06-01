@@ -130,23 +130,23 @@ ifeq ($(TARGET),uefi-aarch64)
 endif
 
 ifeq ($(TARGET),uefi-riscv64)
-	ifeq ($(CC_FOR_TARGET_IS_CLANG),yes)
-		override RISCV_CFLAGS += -march=rv64imac -mabi=lp64
-	else
-		override RISCV_CFLAGS += -march=rv64imac_zicsr_zifencei -mabi=lp64
-	endif
+    ifeq ($(CC_FOR_TARGET_IS_CLANG),yes)
+        override RISCV_CFLAGS += -march=rv64imac -mabi=lp64
+    else
+        override RISCV_CFLAGS += -march=rv64imac_zicsr_zifencei -mabi=lp64
+    endif
 
     override CFLAGS_FOR_TARGET += \
         -fPIE \
-		-fshort-wchar \
-		$(RISCV_CFLAGS)
+        -fshort-wchar \
+        $(RISCV_CFLAGS)
 
     override CPPFLAGS_FOR_TARGET := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/riscv64' \
         $(CPPFLAGS_FOR_TARGET) \
         -DUEFI \
-		-D__riscv64
+        -D__riscv64
 endif
 
 override LDFLAGS_FOR_TARGET += \

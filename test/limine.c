@@ -67,7 +67,7 @@ struct limine_internal_module internal_module2 = {
 
 struct limine_internal_module internal_module3 = {
     .path = "./limine.cfg",
-    .cmdline = "Second internal module"
+    .cmdline = "Third internal module"
 };
 
 struct limine_internal_module *internal_modules[] = {

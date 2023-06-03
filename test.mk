@@ -13,7 +13,7 @@ ovmf-aa64:
 
 ovmf-rv64:
 	mkdir -p ovmf-rv64
-	cd ovmf-rv64 && curl -o OVMF.fd https://retrage.github.io/edk2-nightly/bin/RELEASERISCV64_VIRT.fd
+	cd ovmf-rv64 && curl -o OVMF.fd https://retrage.github.io/edk2-nightly/bin/RELEASERISCV64_VIRT.fd && dd if=/dev/zero of=OVMF.fd bs=1 count=0 seek=33554432
 
 ovmf-ia32:
 	$(MKDIR_P) ovmf-ia32
@@ -243,7 +243,6 @@ uefi-aa64-test:
 .PHONY: uefi-rv64-test
 uefi-rv64-test:
 	$(MAKE) ovmf-rv64
-	dd if=/dev/zero of=OVMF.fd bs=1 count=1 seek=0x1ffffff
 	$(MAKE) test-clean
 	$(MAKE) test.hdd
 	$(MAKE) limine-uefi-riscv64

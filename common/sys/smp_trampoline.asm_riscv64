@@ -1,0 +1,63 @@
+
+.global smp_trampoline_start
+smp_trampoline_start:
+        // The AP begins executing here with the following state:
+        //      satp            = 0
+        //      sstatus.SIE     = 0
+        //      a0              = hartid
+        //      a1              = struct trampoline_passed_info *
+        //
+        // All other registers are undefined.
+
+        ld      a0, 16(a1)
+        ld      t0, 8(a1)
+        csrw    satp, t0
+
+        // Tell the BSP we've started.
+        li      t0, 1
+        fence   rw, w
+        sd      t0, (a1)
+
+        // Zero all the things.
+        // Preserve a0
+        mv      a1, zero
+        mv      a2, zero
+        mv      a3, zero
+        mv      a4, zero
+        mv      a5, zero
+        mv      a6, zero
+        mv      a7, zero
+        mv      s0, zero
+        mv      s1, zero
+        mv      s2, zero
+        mv      s3, zero
+        mv      s4, zero
+        mv      s5, zero
+        mv      s6, zero
+        mv      s7, zero
+        mv      s8, zero
+        mv      s9, zero
+        mv      s10, zero
+        mv      s11, zero
+        mv      t1, zero
+        mv      t2, zero
+        mv      t3, zero
+        mv      t4, zero
+        mv      t5, zero
+        mv      t6, zero
+        mv      tp, zero
+        mv      ra, zero
+
+        csrw    sie, zero
+        csrw    stvec, zero
+
+        // Wait for kernel to tell us where to go.
+0:      .insn i 0x0F, 0, x0, x0, 0x010  // pause
+        ld      t0, 24(a0)
+        fence   r, rw
+        beqz    t0, 0b
+
+        // Load sp from reserved field of info struct
+        ld      sp, 16(a0)
+
+        jr      t0

@@ -10,7 +10,7 @@ jobs:
 
     steps:
       - name: Install dependencies
-        run: pacman --noconfirm -Syu && pacman --needed --noconfirm -S base-devel git autoconf automake nasm curl mtools llvm clang lld aarch64-linux-gnu-gcc
+        run: pacman --noconfirm -Syu && pacman --needed --noconfirm -S base-devel git autoconf automake nasm curl mtools llvm clang lld aarch64-linux-gnu-gcc riscv64-linux-gnu-gcc
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -26,3 +26,6 @@ jobs:
 
       - name: Build the bootloader (GNU, aarch64)
         run: ./bootstrap && ./configure TOOLCHAIN_FOR_TARGET=aarch64-linux-gnu --enable-werror --enable-uefi-aarch64 && make all && make maintainer-clean
+
+      - name: Build the bootloader (GNU, riscv64)
+        run: ./bootstrap && ./configure TOOLCHAIN_FOR_TARGET=riscv64-linux-gnu --enable-werror --enable-uefi-riscv64 && make all && make maintainer-clean

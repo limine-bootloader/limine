@@ -74,7 +74,7 @@ noreturn void panic(bool allow_menu, const char *fmt, ...) {
         for (;;) {
 #if defined (__x86_64__) || defined (__i386__)
             asm ("hlt");
-#elif defined (__aarch64__)
+#elif defined (__aarch64__) || defined (__riscv64)
             asm ("wfi");
 #else
 #error Unknown architecture

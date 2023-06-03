@@ -212,6 +212,34 @@ fi
 
 AC_SUBST([BUILD_UEFI_AARCH64])
 
+BUILD_UEFI_RISCV64="$BUILD_ALL"
+
+AC_ARG_ENABLE([uefi-riscv64],
+    [AS_HELP_STRING([--enable-uefi-riscv64], [enable building the riscv64 UEFI port])],
+    [BUILD_UEFI_RISCV64="$enableval"])
+
+if test "x$BUILD_UEFI_RISCV64" = "xno"; then
+    BUILD_UEFI_RISCV64=""
+else
+    mkdir -p "$BUILDDIR/toolchain-files"
+    CC="$CC" \
+        ARCHITECTURE=riscv64 \
+        FREESTANDING_TOOLCHAIN_SUFFIX="_FOR_TARGET" \
+        FREESTANDING_TOOLCHAIN="$TOOLCHAIN_FOR_TARGET" \
+        WANT_FREESTANDING_CC=yes \
+        FREESTANDING_CC="$CC_FOR_TARGET" \
+        WANT_FREESTANDING_LD=yes \
+        FREESTANDING_LD="$LD_FOR_TARGET" \
+        WANT_FREESTANDING_OBJCOPY=yes \
+        FREESTANDING_OBJCOPY="$OBJCOPY_FOR_TARGET" \
+        WANT_FREESTANDING_OBJDUMP=yes \
+        FREESTANDING_OBJDUMP="$OBJDUMP_FOR_TARGET" \
+        "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/uefi-riscv64-toolchain.mk" || exit 1
+    BUILD_UEFI_RISCV64="limine-uefi-riscv64"
+fi
+
+AC_SUBST([BUILD_UEFI_RISCV64])
+
 BUILD_CD_EFI="$BUILD_ALL"
 
 AC_ARG_ENABLE([uefi-cd],

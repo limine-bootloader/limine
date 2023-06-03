@@ -28,11 +28,14 @@
 #define ARCH_X86_64  0x3e
 #define ARCH_X86_32  0x03
 #define ARCH_AARCH64 0xb7
+#define ARCH_RISCV   0xf3
 #define BITS_LE      0x01
+#define ELFCLASS64   0x02
 #define ET_DYN       0x0003
 #define SHT_RELA     0x00000004
 #define R_X86_64_RELATIVE  0x00000008
 #define R_AARCH64_RELATIVE 0x00000403
+#define R_RISCV_RELATIVE   0x00000003
 
 /* Indices into identification array */
 #define EI_CLASS    4
@@ -103,6 +106,8 @@ int elf_bits(uint8_t *elf) {
         case ARCH_X86_64:
         case ARCH_AARCH64:
             return 64;
+        case ARCH_RISCV:
+            return (hdr->ident[EI_CLASS] == ELFCLASS64) ? 64 : 32;
         case ARCH_X86_32:
             return 32;
         default:
@@ -226,6 +231,8 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
                 case R_X86_64_RELATIVE:
 #elif defined (__aarch64__)
                 case R_AARCH64_RELATIVE:
+#elif defined (__riscv64)
+                case R_RISCV_RELATIVE:
 #else
 #error Unknown architecture
 #endif
@@ -279,6 +286,11 @@ bool elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t lim
 #elif defined (__aarch64__)
     if (hdr->machine != ARCH_AARCH64) {
         printv("elf: Not an aarch64 ELF file.\n");
+        return false;
+    }
+#elif defined (__riscv64)
+    if (hdr->machine != ARCH_RISCV && hdr->ident[EI_CLASS] == ELFCLASS64) {
+        printv("elf: Not a riscv64 ELF file.\n");
         return false;
     }
 #else
@@ -415,6 +427,10 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
 #elif defined (__aarch64__)
     if (hdr->machine != ARCH_AARCH64) {
         panic(true, "elf: Not an aarch64 ELF file.\n");
+    }
+#elif defined (__riscv64)
+    if (hdr->machine != ARCH_RISCV && hdr->ident[EI_CLASS] == ELFCLASS64) {
+        panic(true, "elf: Not a riscv64 ELF file.\n");
     }
 #else
 #error Unknown architecture

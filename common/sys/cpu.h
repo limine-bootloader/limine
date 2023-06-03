@@ -287,6 +287,39 @@ inline int current_el(void) {
     return v;
 }
 
+#elif defined (__riscv64)
+
+inline uint64_t rdtsc(void) {
+    uint64_t v;
+    asm ("rdtime %0" : "=r"(v));
+    return v;
+}
+
+#define csr_read(csr) ({\
+    size_t v;\
+    asm volatile ("csrr %0, " csr : "=r"(v));\
+    v;\
+})
+
+#define csr_write(csr, v) ({\
+    size_t old;\
+    asm volatile ("csrrw %0, " csr ", %1" : "=r"(old) : "r"(v));\
+    old;\
+})
+
+#define make_satp(mode, ppn) (((size_t)(mode) << 60) | ((size_t)(ppn) >> 12))
+
+#define locked_read(var) ({ \
+    typeof(*var) locked_read__ret; \
+    asm volatile ( \
+        "ld %0, (%1); fence r, rw" \
+        : "=r"(locked_read__ret) \
+        : "r"(var) \
+        : "memory" \
+    ); \
+    locked_read__ret; \
+})
+
 #else
 #error Unknown architecture
 #endif

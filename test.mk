@@ -11,6 +11,10 @@ ovmf-aa64:
 	mkdir -p ovmf-aa64
 	cd ovmf-aa64 && curl -o OVMF-AA64.zip https://efi.akeo.ie/OVMF/OVMF-AA64.zip && 7z x OVMF-AA64.zip
 
+ovmf-rv64:
+	mkdir -p ovmf-rv64
+	cd ovmf-rv64 && curl -o OVMF.fd https://retrage.github.io/edk2-nightly/bin/RELEASERISCV64_VIRT.fd && dd if=/dev/zero of=OVMF.fd bs=1 count=0 seek=33554432
+
 ovmf-ia32:
 	$(MKDIR_P) ovmf-ia32
 	cd ovmf-ia32 && curl -o OVMF-IA32.zip https://efi.akeo.ie/OVMF/OVMF-IA32.zip && 7z x OVMF-IA32.zip
@@ -235,6 +239,30 @@ uefi-aa64-test:
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
 	qemu-system-aarch64 -m 512M -M virt -cpu cortex-a72 -bios ovmf-aa64/OVMF.fd -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd  -hda test.hdd -serial stdio
+
+.PHONY: uefi-rv64-test
+uefi-rv64-test:
+	$(MAKE) ovmf-rv64
+	$(MAKE) test-clean
+	$(MAKE) test.hdd
+	$(MAKE) limine-uefi-riscv64
+	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-riscv64-toolchain.mk'
+	rm -rf test_image/
+	mkdir test_image
+	sudo losetup -Pf --show test.hdd > loopback_dev
+	sudo partprobe `cat loopback_dev`
+	sudo mkfs.fat -F 32 `cat loopback_dev`p1
+	sudo mount `cat loopback_dev`p1 test_image
+	sudo mkdir test_image/boot
+	sudo cp -rv $(BINDIR)/* test_image/boot/
+	sudo cp -rv test/* test_image/boot/
+	sudo $(MKDIR_P) test_image/EFI/BOOT
+	sudo cp $(BINDIR)/BOOTRISCV64.EFI test_image/EFI/BOOT/
+	sync
+	sudo umount test_image/
+	sudo losetup -d `cat loopback_dev`
+	rm -rf test_image loopback_dev
+	qemu-system-riscv64 -m 512M -M virt -cpu rv64 -drive if=pflash,unit=1,format=raw,file=ovmf-rv64/OVMF.fd -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd -device virtio-blk-device,drive=hd0 -drive id=hd0,format=raw,file=test.hdd -serial stdio
 
 .PHONY: uefi-ia32-test
 uefi-ia32-test:

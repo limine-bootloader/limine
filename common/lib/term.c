@@ -346,7 +346,7 @@ void _term_write(struct flanterm_context *term, uint64_t buf, uint64_t count) {
     }
 
     bool native = false;
-#if defined (__x86_64__) || defined (__aarch64__)
+#if defined (__x86_64__) || defined (__aarch64__) || defined (__riscv64)
     native = true;
 #elif !defined (__i386__)
 #error Unknown architecture

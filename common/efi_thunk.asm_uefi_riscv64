@@ -1,0 +1,11 @@
+
+.global efi_main
+.extern uefi_entry
+efi_main:
+.option push
+.option norelax
+        lla     gp, __global_pointer$
+.option pop
+        mv      fp, zero
+        mv      ra, zero
+        j       uefi_entry

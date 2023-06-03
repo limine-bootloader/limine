@@ -109,6 +109,46 @@ uint32_t hex2bin(uint8_t *str, uint32_t size) {
 
 #if defined (UEFI)
 
+#if defined (__riscv)
+
+RISCV_EFI_BOOT_PROTOCOL *get_riscv_boot_protocol(void) {
+    EFI_GUID boot_proto_guid = RISCV_EFI_BOOT_PROTOCOL_GUID;
+    RISCV_EFI_BOOT_PROTOCOL *proto;
+
+    // LocateProtocol() is available from EFI version 1.1
+    if (gBS->Hdr.Revision >= ((1 << 16) | 10)) {
+        if (gBS->LocateProtocol(&boot_proto_guid, NULL, (void **)&proto) == EFI_SUCCESS) {
+            return proto;
+        }
+    }
+
+    UINTN bufsz = 0;
+    if (gBS->LocateHandle(ByProtocol, &boot_proto_guid, NULL, &bufsz, NULL) != EFI_BUFFER_TOO_SMALL)
+        return NULL;
+
+    EFI_HANDLE *handles_buf = ext_mem_alloc(bufsz);
+    if (handles_buf == NULL)
+        return NULL;
+
+    if (bufsz < sizeof(EFI_HANDLE))
+        goto error;
+
+    if (gBS->LocateHandle(ByProtocol, &boot_proto_guid, NULL, &bufsz, handles_buf) != EFI_SUCCESS)
+        goto error;
+
+    if (gBS->HandleProtocol(handles_buf[0], &boot_proto_guid, (void **)&proto) != EFI_SUCCESS)
+        goto error;
+
+    pmm_free(handles_buf, bufsz);
+    return proto;
+
+error:
+    pmm_free(handles_buf, bufsz);
+    return NULL;
+}
+
+#endif
+
 no_unwind bool efi_boot_services_exited = false;
 
 bool efi_exit_boot_services(void) {
@@ -162,6 +202,8 @@ retry:
     asm volatile ("cli" ::: "memory");
 #elif defined (__aarch64__)
     asm volatile ("msr daifset, #15" ::: "memory");
+#elif defined (__riscv64)
+    asm volatile ("csrci sstatus, 0x2" ::: "memory");
 #else
 #error Unknown architecture
 #endif

@@ -353,7 +353,7 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
 #endif
 
 // Maps level indexes to the page size for that level.
-_Static_assert(VMM_MAX_LEVEL < 5, "6-level paging not supported");
+_Static_assert(VMM_MAX_LEVEL <= 5, "6-level paging not supported");
 static uint64_t page_sizes[5] = {
     0x1000,
     0x200000,
@@ -376,9 +376,9 @@ static pt_entry_t *get_next_level(pagemap_t pagemap, pt_entry_t *current_level,
             // before performing the requested map operation.
 
 
-            if ((level_idx > VMM_MAX_LEVEL) || (level_idx == 0))
+            if ((level_idx >= VMM_MAX_LEVEL) || (level_idx == 0))
                 panic(false, "Unexpected level in get_next_level");
-            if (desired_sz > VMM_MAX_LEVEL)
+            if (desired_sz >= VMM_MAX_LEVEL)
                 panic(false, "Unexpected page size in get_next_level");
 
             uint64_t old_page_size = page_sizes[level_idx];

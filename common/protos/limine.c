@@ -191,6 +191,13 @@ static uint64_t physical_base, virtual_base, slide, direct_map_offset;
 static size_t requests_count;
 static void **requests;
 
+static void set_paging_mode(int paging_mode, bool kaslr) {
+    direct_map_offset = paging_mode_higher_half(paging_mode);
+    if (kaslr) {
+        direct_map_offset += (rand64() & ~((uint64_t)0x40000000 - 1)) & 0xfffffffffff;
+    }
+}
+
 static uint64_t reported_addr(void *addr) {
     return (uint64_t)(uintptr_t)addr + direct_map_offset;
 }
@@ -439,6 +446,7 @@ noreturn void limine_load(char *config, char *cmdline) {
 #endif
 
     bool have_paging_mode_request = false;
+    bool paging_mode_set = false;
 FEAT_START
     struct limine_paging_mode_request *pm_request = get_request(LIMINE_PAGING_MODE_REQUEST);
     if (pm_request == NULL)
@@ -453,6 +461,9 @@ FEAT_START
     paging_mode = paging_mode_limine_to_vmm(pm_request->mode);
     if (paging_mode > max_paging_mode)
         paging_mode = max_paging_mode;
+
+    set_paging_mode(paging_mode, kaslr);
+    paging_mode_set = true;
 
     struct limine_paging_mode_response *pm_response =
         ext_mem_alloc(sizeof(struct limine_paging_mode_response));
@@ -486,13 +497,15 @@ FEAT_START
 #error Unknown architecture
 #endif
 
+    set_paging_mode(paging_mode, kaslr);
+    paging_mode_set = true;
+
     void *lv5pg_response = ext_mem_alloc(sizeof(struct limine_5_level_paging_response));
     lv5pg_request->response = reported_addr(lv5pg_response);
 FEAT_END
 
-    direct_map_offset = paging_mode_higher_half(paging_mode);
-    if (kaslr) {
-        direct_map_offset += (rand64() & ~((uint64_t)0x40000000 - 1)) & 0xfffffffffff;
+    if (!paging_mode_set) {
+        set_paging_mode(paging_mode, kaslr);
     }
 
 #if defined (__aarch64__)

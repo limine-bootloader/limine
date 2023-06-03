@@ -60,5 +60,4 @@ smp_trampoline_start:
         // Load sp from reserved field of info struct
         ld      sp, 16(a0)
 
-        mv      a0, zero
         jr      t0

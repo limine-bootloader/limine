@@ -194,7 +194,8 @@ static void **requests;
 static void set_paging_mode(int paging_mode, bool kaslr) {
     direct_map_offset = paging_mode_higher_half(paging_mode);
     if (kaslr) {
-        direct_map_offset += (rand64() & ~((uint64_t)0x40000000 - 1)) & 0xfffffffffff;
+        uint64_t mask = ((uint64_t)1 << (paging_mode_va_bits(paging_mode) - 4)) - 1;
+        direct_map_offset += (rand64() & ~((uint64_t)0x40000000 - 1)) & mask;
     }
 }
 

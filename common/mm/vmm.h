@@ -15,6 +15,8 @@
 #define PAGING_MODE_X86_64_4LVL 0
 #define PAGING_MODE_X86_64_5LVL 1
 
+#define paging_mode_va_bits(mode) ((mode) ? 57 : 48)
+
 static inline uint64_t paging_mode_higher_half(int paging_mode) {
     if (paging_mode == PAGING_MODE_X86_64_5LVL) {
         return 0xff00000000000000;
@@ -88,6 +90,8 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
 #define PAGING_MODE_RISCV_SV39 8
 #define PAGING_MODE_RISCV_SV48 9
 #define PAGING_MODE_RISCV_SV57 10
+
+int paging_mode_va_bits(int paging_mode);
 
 enum page_size {
     Size4KiB,

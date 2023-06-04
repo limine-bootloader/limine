@@ -273,6 +273,19 @@ uint64_t paging_mode_higher_half(int paging_mode) {
     }
 }
 
+int paging_mode_va_bits(int paging_mode) {
+    switch (paging_mode) {
+        case PAGING_MODE_RISCV_SV39:
+            return 39;
+        case PAGING_MODE_RISCV_SV48:
+            return 48;
+        case PAGING_MODE_RISCV_SV57:
+            return 57;
+        default:
+            panic(false, "paging_mode_va_bits: invalid mode");
+    }
+}
+
 int vmm_max_paging_mode(void)
 {
     static int max_level;

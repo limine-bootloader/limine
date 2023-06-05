@@ -6,6 +6,7 @@
 /libgcc-binaries
 /common/flanterm
 /common/stb/stb_image.h
+/decompressor/tinf
 /ovmf*
 *.o
 *.d

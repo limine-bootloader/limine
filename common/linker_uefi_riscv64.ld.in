@@ -60,8 +60,8 @@ SECTIONS
 
    data_begin = .;
         *(.data .data.*)
+        __global_pointer$ = . + 0x800;
         *(.sdata .sdata.*)
-        __global_pointer$ = .;
         *(.sbss .sbss.*)
         *(.bss .bss.*)
         *(COMMON)

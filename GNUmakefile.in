@@ -293,7 +293,7 @@ dist:
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/freestanding-headers/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/libgcc-binaries/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/libgcc-binaries/.gitignore"
-	libgcc_needed="i686 x86_64-no-red-zone aarch64 riscv64"; \
+	libgcc_needed="i686 x86_64-no-red-zone aarch64 riscv64-softfloat"; \
 	for f in $$libgcc_needed; do \
 		mv '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/libgcc-binaries/libgcc-$$f.a" '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/libgcc-binaries/libgcc-$$f.a.save"; \
 	done; \

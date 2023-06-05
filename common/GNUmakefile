@@ -437,7 +437,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_riscv64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_riscv64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-riscv64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_riscv64.o $(OBJ) ../libgcc-binaries/libgcc-riscv64.a
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-riscv64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_riscv64.o $(OBJ) ../libgcc-binaries/libgcc-riscv64-softfloat.a
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
@@ -447,7 +447,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_riscv64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_riscv64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-riscv64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_riscv64.o $(OBJ) ../libgcc-binaries/libgcc-riscv64.a $(call MKESCAPE,$(BUILDDIR))/full.map.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-riscv64.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_riscv64.o $(OBJ) ../libgcc-binaries/libgcc-riscv64-softfloat.a $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \

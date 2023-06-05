@@ -589,14 +589,7 @@ no_fb:;
     boot_params->efi_info.efi_systab_hi = (uint32_t)((uint64_t)(uintptr_t)gST >> 32);
     boot_params->efi_info.efi_memmap    = (uint32_t)(uint64_t)(uintptr_t)efi_mmap;
     boot_params->efi_info.efi_memmap_hi = (uint32_t)((uint64_t)(uintptr_t)efi_mmap >> 32);
-#if defined (__x86_64__)
     boot_params->efi_info.efi_memmap_size     = efi_mmap_size;
-#elif defined (__i386__)
-    // A memmap size of 0 will cause Linux to force bail out of trying to use
-    // 32-bit EFI runtime services without ignoring other EFI info.
-    // XXX: Figure out why 64-bit Linux hangs if trying to use 32-bit boot services.
-    boot_params->efi_info.efi_memmap_size     = 0;
-#endif
     boot_params->efi_info.efi_memdesc_size    = efi_desc_size;
     boot_params->efi_info.efi_memdesc_version = efi_desc_ver;
 #endif

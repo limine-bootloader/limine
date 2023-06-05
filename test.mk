@@ -5,15 +5,15 @@ test-clean:
 
 ovmf-x64:
 	$(MKDIR_P) ovmf-x64
-	cd ovmf-x64 && curl -o OVMF-X64.zip https://efi.akeo.ie/OVMF/OVMF-X64.zip && 7z x OVMF-X64.zip
+	cd ovmf-x64 && curl -o OVMF.fd https://retrage.github.io/edk2-nightly/bin/RELEASEX64_OVMF.fd
 
 ovmf-aa64:
-	mkdir -p ovmf-aa64
-	cd ovmf-aa64 && curl -o OVMF-AA64.zip https://efi.akeo.ie/OVMF/OVMF-AA64.zip && 7z x OVMF-AA64.zip
+	$(MKDIR_P) ovmf-aa64
+	cd ovmf-aa64 && curl -o OVMF.fd https://retrage.github.io/edk2-nightly/bin/RELEASEAARCH64_QEMU_EFI.fd
 
 ovmf-ia32:
 	$(MKDIR_P) ovmf-ia32
-	cd ovmf-ia32 && curl -o OVMF-IA32.zip https://efi.akeo.ie/OVMF/OVMF-IA32.zip && 7z x OVMF-IA32.zip
+	cd ovmf-ia32 && curl -o OVMF.fd https://retrage.github.io/edk2-nightly/bin/RELEASEIa32_OVMF.fd
 
 .PHONY: test.hdd
 test.hdd:

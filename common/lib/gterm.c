@@ -783,6 +783,7 @@ no_load_font:;
         generate_canvas(fb);
 
         terms[terms_i] = flanterm_fb_init(ext_mem_alloc,
+                            pmm_free,
                             (void *)(uintptr_t)fb->framebuffer_addr,
                             fb->framebuffer_width, fb->framebuffer_height, fb->framebuffer_pitch,
                             bg_canvas,

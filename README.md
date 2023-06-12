@@ -6,6 +6,13 @@ Limine (pronounced as shown [here](https://www.merriam-webster.com/dictionary/in
 is a modern, advanced, portable, multiprotocol bootloader, also used
 as the reference implementation for the [Limine boot protocol](/PROTOCOL.md).
 
+### Donate
+
+If you want to support the work I (@mintsuki) do on Limine, feel free to donate to me on Liberapay:
+<a href="https://liberapay.com/mintsuki/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a>
+
+Donations welcome, but absolutely not mandatory!
+
 ### Limine's boot menu
 
 ![Reference screenshot](/screenshot.png?raw=true "Reference screenshot")

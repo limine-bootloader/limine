@@ -189,6 +189,9 @@ into a directory which will serve as the root of the created ISO.
 `boot/limine` directory; `limine-cd-efi.bin` and `limine-cd.bin` can reside
 anywhere).
 
+After that, create a `<ISO root directory>/EFI/BOOT` directory and copy the
+relevant Limine EFI executables over (such as `BOOTX64.EFI`).
+
 Place any other file you want to be on the final ISO in said directory, then
 run:
 ```

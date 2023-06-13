@@ -131,7 +131,7 @@ make install    # (or gmake where applicable)
 ## How to use
 
 ### UEFI
-The `BOOT{IA32,X64,AA64}.EFI` files are valid EFI applications that can be simply copied to
+The `BOOT*.EFI` files are valid EFI applications that can be simply copied to
 the `/EFI/BOOT` directory of a FAT formatted EFI system partition. These files can
 be installed there and coexist with a BIOS installation of Limine (see below) so
 that the disk will be bootable on both BIOS and UEFI systems.
@@ -228,9 +228,9 @@ server or your existing DHCP server and a proxy DHCP server such as dnsmasq.
 `limine.cfg` and `limine.sys` are expected to be on the server used for boot.
 
 ### UEFI/PXE boot
-The `BOOT{IA32,X64,AA64}.EFI` files are compatible with UEFI PXE.
+The `BOOT*.EFI` files are compatible with UEFI PXE.
 The steps needed to boot Limine are the same as with BIOS PXE,
-except that you don't need `limine.sys` in the server.
+except that the `limine.sys` file is not needed on the server.
 
 ### Configuration
 The `limine.cfg` file contains Limine's configuration.

@@ -41,9 +41,6 @@ jobs:
       - name: Build the bootloader
         run: make -C build
 
-      - name: Fix permissions of certain files
-        run: for f in build/bin/limine.sys build/bin/BOOTX64.EFI build/bin/BOOTIA32.EFI build/bin/BOOTAA64.EFI BOOTRISCV64.EFI; do chmod -x $f; done
-
       - name: Clean limine
         run: rm build/bin/limine
 

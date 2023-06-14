@@ -19,6 +19,7 @@ install: all
 	$(INSTALL) -m 644 limine-pxe.bin '$(DESTDIR)$(PREFIX)/share/limine/'
 	$(INSTALL) -m 644 BOOTX64.EFI '$(DESTDIR)$(PREFIX)/share/limine/'
 	$(INSTALL) -m 644 BOOTIA32.EFI '$(DESTDIR)$(PREFIX)/share/limine/'
+	$(INSTALL) -m 644 BOOTAA64.EFI '$(DESTDIR)$(PREFIX)/share/limine/'
 	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/include'
 	$(INSTALL) -m 644 limine.h '$(DESTDIR)$(PREFIX)/include/'
 	$(INSTALL) -d '$(DESTDIR)$(PREFIX)/bin'

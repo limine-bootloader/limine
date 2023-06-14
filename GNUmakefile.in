@@ -42,7 +42,7 @@ override BUILD_UEFI_IA32 := @BUILD_UEFI_IA32@
 override BUILD_UEFI_AARCH64 := @BUILD_UEFI_AARCH64@
 override BUILD_UEFI_RISCV64 := @BUILD_UEFI_RISCV64@
 override BUILD_CD_EFI := @BUILD_CD_EFI@
-override BUILD_PXE := @BUILD_PXE@
+override BUILD_BIOS_PXE := @BUILD_BIOS_PXE@
 override BUILD_CD := @BUILD_CD@
 
 override DEFAULT_CC := @CC@
@@ -156,8 +156,8 @@ endif
 ifneq ($(BUILD_CD_EFI),no)
 	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-cd-efi.bin' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
 endif
-ifneq ($(BUILD_PXE),no)
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
+ifneq ($(BUILD_BIOS_PXE),no)
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-bios-pxe.bin' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
 endif
 ifeq ($(BUILD_UEFI_AARCH64),limine-uefi-aarch64)
 	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/BOOTAA64.EFI' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
@@ -198,8 +198,8 @@ $(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUI
 ifneq ($(BUILD_CD),no)
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm -Wall $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
 endif
-ifneq ($(BUILD_PXE),no)
-	cd '$(call SHESCAPE,$(SRCDIR))/stage1/pxe' && nasm bootsect.asm -Wall $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-pxe.bin'
+ifneq ($(BUILD_BIOS_PXE),no)
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/pxe' && nasm bootsect.asm -Wall $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-bios-pxe.bin'
 endif
 	cp '$(call SHESCAPE,$(BUILDDIR))/common-bios/limine.sys' '$(call SHESCAPE,$(BINDIR))/'
 	touch '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'

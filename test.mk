@@ -190,7 +190,7 @@ pxe-test:
 	$(MKDIR_P) test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
 	sudo cp -rv test/* test_image/boot/
-	qemu-system-x86_64  -smp 4  -netdev user,id=n0,tftp=./test_image,bootfile=boot/limine-pxe.bin -device rtl8139,netdev=n0,mac=00:00:00:11:11:11 -debugcon stdio
+	qemu-system-x86_64  -smp 4  -netdev user,id=n0,tftp=./test_image,bootfile=boot/limine-bios-pxe.bin -device rtl8139,netdev=n0,mac=00:00:00:11:11:11 -debugcon stdio
 
 .PHONY: uefi-x86-64-test
 uefi-x86-64-test:

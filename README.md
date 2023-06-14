@@ -221,7 +221,7 @@ For example, if it was copied in
 `boot/limine-cd-efi.bin`.
 
 ### BIOS/PXE boot
-The `limine-pxe.bin` binary is a valid PXE boot image.
+The `limine-bios-pxe.bin` binary is a valid PXE boot image.
 In order to boot Limine from PXE it is necessary to setup a DHCP server with
 support for PXE booting. This can either be accomplished using a single DHCP
 server or your existing DHCP server and a proxy DHCP server such as dnsmasq.

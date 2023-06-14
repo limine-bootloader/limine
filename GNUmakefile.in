@@ -43,7 +43,7 @@ override BUILD_UEFI_AARCH64 := @BUILD_UEFI_AARCH64@
 override BUILD_UEFI_RISCV64 := @BUILD_UEFI_RISCV64@
 override BUILD_UEFI_CD := @BUILD_UEFI_CD@
 override BUILD_BIOS_PXE := @BUILD_BIOS_PXE@
-override BUILD_CD := @BUILD_CD@
+override BUILD_BIOS_CD := @BUILD_BIOS_CD@
 
 override DEFAULT_CC := @CC@
 $(eval $(call DEFAULT_VAR,CC,$(DEFAULT_CC)))
@@ -150,8 +150,8 @@ install: all
 ifeq ($(BUILD_BIOS),limine-bios)
 	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
 endif
-ifneq ($(BUILD_CD),no)
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-cd.bin' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
+ifneq ($(BUILD_BIOS_CD),no)
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-bios-cd.bin' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
 endif
 ifneq ($(BUILD_UEFI_CD),no)
 	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-uefi-cd.bin' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
@@ -195,8 +195,8 @@ uninstall:
 $(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/common-bios/stage2.bin.gz
 	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm -Wall $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
-ifneq ($(BUILD_CD),no)
-	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm -Wall $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-cd.bin'
+ifneq ($(BUILD_BIOS_CD),no)
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm -Wall $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-bios-cd.bin'
 endif
 ifneq ($(BUILD_BIOS_PXE),no)
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/pxe' && nasm bootsect.asm -Wall $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-bios-pxe.bin'

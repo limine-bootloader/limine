@@ -69,13 +69,13 @@ AC_ARG_ENABLE([all],
     [AS_HELP_STRING([--enable-all], [enable ALL ports and targets])],
     [BUILD_ALL="$enableval"])
 
-BUILD_CD="$BUILD_ALL"
+BUILD_BIOS_CD="$BUILD_ALL"
 
 AC_ARG_ENABLE([bios-cd],
     [AS_HELP_STRING([--enable-bios-cd], [enable building the x86 BIOS CD image])],
-    [BUILD_CD="$enableval"])
+    [BUILD_BIOS_CD="$enableval"])
 
-AC_SUBST([BUILD_CD])
+AC_SUBST([BUILD_BIOS_CD])
 
 BUILD_BIOS_PXE="$BUILD_ALL"
 
@@ -92,7 +92,7 @@ AC_ARG_ENABLE([bios],
     [BUILD_BIOS="$enableval"])
 
 if test "x$BUILD_BIOS" = "xno"; then
-    if test "x$BUILD_CD" = "xyes"; then
+    if test "x$BUILD_BIOS_CD" = "xyes"; then
         BUILD_BIOS="yes"
     fi
     if test "x$BUILD_BIOS_PXE" = "xyes"; then

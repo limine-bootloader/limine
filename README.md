@@ -183,10 +183,10 @@ partitions, formatted with a supported file system.
 
 ### BIOS/UEFI hybrid ISO creation
 In order to create a hybrid ISO with Limine, place the
-`limine-uefi-cd.bin`, `limine-cd.bin`, `limine.sys`, and `limine.cfg` files
+`limine-uefi-cd.bin`, `limine-bios-cd.bin`, `limine.sys`, and `limine.cfg` files
 into a directory which will serve as the root of the created ISO.
 (`limine.sys` and `limine.cfg` must either be in the root, `limine`, `boot`, or
-`boot/limine` directory; `limine-uefi-cd.bin` and `limine-cd.bin` can reside
+`boot/limine` directory; `limine-uefi-cd.bin` and `limine-bios-cd.bin` can reside
 anywhere).
 
 After that, create a `<ISO root directory>/EFI/BOOT` directory and copy the
@@ -195,7 +195,7 @@ relevant Limine EFI executables over (such as `BOOTX64.EFI`).
 Place any other file you want to be on the final ISO in said directory, then
 run:
 ```
-xorriso -as mkisofs -b <relative path of limine-cd.bin> \
+xorriso -as mkisofs -b <relative path of limine-bios-cd.bin> \
         -no-emul-boot -boot-load-size 4 -boot-info-table \
         --efi-boot <relative path of limine-uefi-cd.bin> \
         -efi-boot-part --efi-boot-image --protective-msdos-label \
@@ -209,10 +209,10 @@ And do not forget to also run `limine bios-install` on the generated image:
 limine bios-install image.iso
 ```
 
-`<relative path of limine-cd.bin>` is the relative path of
-`limine-cd.bin` inside the root directory.
-For example, if it was copied in `<root directory>/boot/limine-cd.bin`,
-it would be `boot/limine-cd.bin`.
+`<relative path of limine-bios-cd.bin>` is the relative path of
+`limine-bios-cd.bin` inside the root directory.
+For example, if it was copied in `<root directory>/boot/limine-bios-cd.bin`,
+it would be `boot/limine-bios-cd.bin`.
 
 `<relative path of limine-uefi-cd.bin>` is the relative path of
 `limine-uefi-cd.bin` inside the root directory.

@@ -13,7 +13,7 @@
 #include <limits.h>
 
 #ifndef LIMINE_NO_BIOS
-#include "limine-hdd.h"
+#include "limine-bios-hdd.h"
 #endif
 
 static void remove_arg(int *argc, char *argv[], int index) {

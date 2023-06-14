@@ -109,12 +109,12 @@ all1: $(BUILD_UEFI_X86_64) $(BUILD_UEFI_IA32) $(BUILD_UEFI_AARCH64) $(BUILD_UEFI
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine'
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-uefi-cd.bin'
 
-$(call MKESCAPE,$(BINDIR))/limine-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-hdd.bin
+$(call MKESCAPE,$(BINDIR))/limine-bios-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-bios-hdd.bin
 	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
-	cd '$(call SHESCAPE,$(BINDIR))' && '$(call SHESCAPE,$(SRCDIR))/host/hgen.sh' >limine-hdd.h
+	cd '$(call SHESCAPE,$(BINDIR))' && '$(call SHESCAPE,$(SRCDIR))/host/hgen.sh' >limine-bios-hdd.h
 
 ifeq ($(BUILD_BIOS),limine-bios)
-$(call MKESCAPE,$(BINDIR))/limine: $(call MKESCAPE,$(BINDIR))/Makefile $(call MKESCAPE,$(SRCDIR))/host/limine.c $(call MKESCAPE,$(BINDIR))/limine-hdd.h
+$(call MKESCAPE,$(BINDIR))/limine: $(call MKESCAPE,$(BINDIR))/Makefile $(call MKESCAPE,$(SRCDIR))/host/limine.c $(call MKESCAPE,$(BINDIR))/limine-bios-hdd.h
 else
 override LIMINE_NO_BIOS := -DLIMINE_NO_BIOS
 
@@ -194,7 +194,7 @@ uninstall:
 
 $(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/common-bios/stage2.bin.gz
 	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
-	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm -Wall $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-hdd.bin'
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm -Wall $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-bios-hdd.bin'
 ifneq ($(BUILD_BIOS_CD),no)
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm -Wall $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-bios-cd.bin'
 endif

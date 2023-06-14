@@ -14,7 +14,7 @@ SECTIONS
     kernel_start = .;
 
     .text : {
-        *(.text*)
+        *(.text .text.*)
     } :text
 
     . += 0x1000;
@@ -25,13 +25,15 @@ SECTIONS
     } :rodata
 
     .rodata : {
-        *(.rodata*)
+        *(.rodata .rodata.*)
     } :rodata
 
     . += 0x1000;
 
     .data : {
-        *(.data*)
+        *(.data .data.*)
+        __global_pointer$ = . + 0x800;
+        *(.sdata .sdata.*)
     } :data
 
     .dynamic : {
@@ -40,6 +42,7 @@ SECTIONS
 
     .bss : {
         *(COMMON)
-        *(.bss*)
+        *(.sbss .sbss.*)
+        *(.bss .bss.*)
     } :data
 }

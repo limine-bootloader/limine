@@ -172,7 +172,7 @@ full-hybrid-test:
 	$(MKDIR_P) test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
 	sudo cp -rv test/* test_image/boot/
-	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine-cd-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label test_image/ -o test.iso
+	xorriso -as mkisofs -b boot/limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine-uefi-cd.bin -efi-boot-part --efi-boot-image --protective-msdos-label test_image/ -o test.iso
 	$(BINDIR)/limine bios-install test.iso
 	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -cdrom test.iso -debugcon stdio
 	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -hda test.iso -debugcon stdio

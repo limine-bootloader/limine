@@ -240,24 +240,24 @@ fi
 
 AC_SUBST([BUILD_UEFI_RISCV64])
 
-BUILD_CD_EFI="$BUILD_ALL"
+BUILD_UEFI_CD="$BUILD_ALL"
 
 AC_ARG_ENABLE([uefi-cd],
-    [AS_HELP_STRING([--enable-uefi-cd], [enable building limine-cd-efi.bin])],
-    [BUILD_CD_EFI="$enableval"])
+    [AS_HELP_STRING([--enable-uefi-cd], [enable building limine-uefi-cd.bin])],
+    [BUILD_UEFI_CD="$enableval"])
 
-if ! test "x$BUILD_CD_EFI" = "xno"; then
+if ! test "x$BUILD_UEFI_CD" = "xno"; then
     AC_CHECK_PROG([MTOOLS_FOUND], [mcopy], [yes])
     if ! test "x$MTOOLS_FOUND" = "xyes"; then
-        if test "x$BUILD_CD_EFI" = "xyes"; then
-            AC_MSG_ERROR([mtools not found, install mtools to build limine-cd-efi.bin])
+        if test "x$BUILD_UEFI_CD" = "xyes"; then
+            AC_MSG_ERROR([mtools not found, install mtools to build limine-uefi-cd.bin])
         fi
-        AC_MSG_WARN([mtools not found, install mtools to build limine-cd-efi.bin])
-        BUILD_CD_EFI="no"
+        AC_MSG_WARN([mtools not found, install mtools to build limine-uefi-cd.bin])
+        BUILD_UEFI_CD="no"
     fi
 fi
 
-AC_SUBST([BUILD_CD_EFI])
+AC_SUBST([BUILD_UEFI_CD])
 
 if test "x$NEED_NASM" = "xyes"; then
     AC_CHECK_PROG([NASM_FOUND], [nasm], [yes])

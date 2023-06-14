@@ -86,7 +86,7 @@ Host utility binaries are provided for Windows.
 In order to build Limine, the following programs have to be installed:
 common UNIX tools (also known as `coreutils`),
 `GNU make`, `grep`, `sed`, `find`, `awk`, `gzip`, `nasm`, `mtools`
-(optional, necessary to build `limine-cd-efi.bin`).
+(optional, necessary to build `limine-uefi-cd.bin`).
 Furthermore, `gcc` or `llvm/clang` must also be installed, alongside
 the respective binutils.
 
@@ -183,10 +183,10 @@ partitions, formatted with a supported file system.
 
 ### BIOS/UEFI hybrid ISO creation
 In order to create a hybrid ISO with Limine, place the
-`limine-cd-efi.bin`, `limine-cd.bin`, `limine.sys`, and `limine.cfg` files
+`limine-uefi-cd.bin`, `limine-cd.bin`, `limine.sys`, and `limine.cfg` files
 into a directory which will serve as the root of the created ISO.
 (`limine.sys` and `limine.cfg` must either be in the root, `limine`, `boot`, or
-`boot/limine` directory; `limine-cd-efi.bin` and `limine-cd.bin` can reside
+`boot/limine` directory; `limine-uefi-cd.bin` and `limine-cd.bin` can reside
 anywhere).
 
 After that, create a `<ISO root directory>/EFI/BOOT` directory and copy the
@@ -197,7 +197,7 @@ run:
 ```
 xorriso -as mkisofs -b <relative path of limine-cd.bin> \
         -no-emul-boot -boot-load-size 4 -boot-info-table \
-        --efi-boot <relative path of limine-cd-efi.bin> \
+        --efi-boot <relative path of limine-uefi-cd.bin> \
         -efi-boot-part --efi-boot-image --protective-msdos-label \
         <root directory> -o image.iso
 ```
@@ -214,11 +214,11 @@ limine bios-install image.iso
 For example, if it was copied in `<root directory>/boot/limine-cd.bin`,
 it would be `boot/limine-cd.bin`.
 
-`<relative path of limine-cd-efi.bin>` is the relative path of
-`limine-cd-efi.bin` inside the root directory.
+`<relative path of limine-uefi-cd.bin>` is the relative path of
+`limine-uefi-cd.bin` inside the root directory.
 For example, if it was copied in
-`<root directory>/boot/limine-cd-efi.bin`, it would be
-`boot/limine-cd-efi.bin`.
+`<root directory>/boot/limine-uefi-cd.bin`, it would be
+`boot/limine-uefi-cd.bin`.
 
 ### BIOS/PXE boot
 The `limine-bios-pxe.bin` binary is a valid PXE boot image.

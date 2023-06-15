@@ -10,6 +10,21 @@
 #define VMM_FLAG_NOEXEC  ((uint64_t)1 << 63)
 #define VMM_FLAG_FB      ((uint64_t)0)
 
+#define VMM_MAX_LEVEL 3
+
+#define PAGING_MODE_X86_64_4LVL 0
+#define PAGING_MODE_X86_64_5LVL 1
+
+#define paging_mode_va_bits(mode) ((mode) ? 57 : 48)
+
+static inline uint64_t paging_mode_higher_half(int paging_mode) {
+    if (paging_mode == PAGING_MODE_X86_64_5LVL) {
+        return 0xff00000000000000;
+    } else {
+        return 0xffff800000000000;
+    }
+}
+
 typedef struct {
     int   levels;
     void *top_level;
@@ -31,6 +46,21 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
 #define VMM_FLAG_WRITE   ((uint64_t)1 << 0)
 #define VMM_FLAG_NOEXEC  ((uint64_t)1 << 1)
 #define VMM_FLAG_FB      ((uint64_t)1 << 2)
+
+#define VMM_MAX_LEVEL 3
+
+#define PAGING_MODE_AARCH64_4LVL 0
+#define PAGING_MODE_AARCH64_5LVL 1
+
+#define paging_mode_va_bits(mode) ((mode) ? 57 : 48)
+
+static inline uint64_t paging_mode_higher_half(int paging_mode) {
+    if (paging_mode == PAGING_MODE_AARCH64_5LVL) {
+        return 0xff00000000000000;
+    } else {
+        return 0xffff800000000000;
+    }
+}
 
 typedef struct {
     int   levels;

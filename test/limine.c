@@ -151,6 +151,16 @@ struct limine_dtb_request _dtb_request = {
 __attribute__((section(".limine_reqs")))
 void *dtb_req = &_dtb_request;
 
+struct limine_paging_mode_request _pm_request = {
+    .id = LIMINE_PAGING_MODE_REQUEST,
+    .revision = 0, .response = NULL,
+    .mode = LIMINE_PAGING_MODE_DEFAULT,
+    .flags = 0,
+};
+
+__attribute__((section(".limine_reqs")))
+void *pm_req = &_pm_request;
+
 static char *get_memmap_type(uint64_t type) {
     switch (type) {
         case LIMINE_MEMMAP_USABLE:
@@ -467,6 +477,18 @@ FEAT_START
     struct limine_dtb_response *dtb_response = _dtb_request.response;
     e9_printf("Device tree blob feature, revision %d", dtb_response->revision);
     e9_printf("Device tree blob pointer: %x", dtb_response->dtb_ptr);
+FEAT_END
+
+FEAT_START
+    e9_printf("");
+    if (_pm_request.response == NULL) {
+        e9_printf("Paging mode not passed");
+        break;
+    }
+    struct limine_paging_mode_response *pm_response = _pm_request.response;
+    e9_printf("Paging mode feature, revision %d", pm_response->revision);
+    e9_printf("  mode: %d", pm_response->mode);
+    e9_printf("  flags: %x", pm_response->flags);
 FEAT_END
 
     for (;;);

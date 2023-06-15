@@ -10,6 +10,7 @@
 
 typedef uint64_t pt_entry_t;
 
+static uint64_t page_sizes[5];
 static pt_entry_t *get_next_level(pagemap_t pagemap, pt_entry_t *current_level,
                                   uint64_t virt, enum page_size desired_sz,
                                   size_t level_idx, size_t entry);
@@ -28,9 +29,12 @@ static pt_entry_t *get_next_level(pagemap_t pagemap, pt_entry_t *current_level,
 #define PT_IS_LARGE(x) (((x) & (PT_FLAG_VALID | PT_FLAG_LARGE)) == (PT_FLAG_VALID | PT_FLAG_LARGE))
 #define PT_TO_VMM_FLAGS(x) ((x) & (PT_FLAG_WRITE | PT_FLAG_NX))
 
-pagemap_t new_pagemap(int lv) {
+#define pte_new(addr, flags)    ((pt_entry_t)(addr) | (flags))
+#define pte_addr(pte)           ((pte) & PT_PADDR_MASK)
+
+pagemap_t new_pagemap(int paging_mode) {
     pagemap_t pagemap;
-    pagemap.levels    = lv;
+    pagemap.levels    = paging_mode == PAGING_MODE_X86_64_5LVL ? 5 : 4;
     pagemap.top_level = ext_mem_alloc(PT_SIZE);
     return pagemap;
 }
@@ -146,6 +150,9 @@ void vmm_assert_4k_pages(void) {
 #define PT_IS_LARGE(x) (((x) & (PT_FLAG_VALID | PT_FLAG_TABLE)) == PT_FLAG_VALID)
 #define PT_TO_VMM_FLAGS(x) (pt_to_vmm_flags_internal(x))
 
+#define pte_new(addr, flags)    ((pt_entry_t)(addr) | (flags))
+#define pte_addr(pte)           ((pte) & PT_PADDR_MASK)
+
 static uint64_t pt_to_vmm_flags_internal(pt_entry_t entry) {
     uint64_t flags = 0;
 
@@ -159,9 +166,9 @@ static uint64_t pt_to_vmm_flags_internal(pt_entry_t entry) {
     return flags;
 }
 
-pagemap_t new_pagemap(int lv) {
+pagemap_t new_pagemap(int paging_mode) {
     pagemap_t pagemap;
-    pagemap.levels       = lv;
+    pagemap.levels       = paging_mode == PAGING_MODE_AARCH64_5LVL ? 5 : 4;
     pagemap.top_level[0] = ext_mem_alloc(PT_SIZE);
     pagemap.top_level[1] = ext_mem_alloc(PT_SIZE);
     return pagemap;
@@ -225,53 +232,41 @@ level4:
 #error Unknown architecture
 #endif
 
+// Maps level indexes to the page size for that level.
+_Static_assert(VMM_MAX_LEVEL <= 5, "6-level paging not supported");
+static uint64_t page_sizes[5] = {
+    0x1000,
+    0x200000,
+    0x40000000,
+    0x800000000000,
+    0x100000000000000,
+};
+
 static pt_entry_t *get_next_level(pagemap_t pagemap, pt_entry_t *current_level,
                                   uint64_t virt, enum page_size desired_sz,
                                   size_t level_idx, size_t entry) {
     pt_entry_t *ret;
 
     if (PT_IS_TABLE(current_level[entry])) {
-        ret = (pt_entry_t *)(size_t)(current_level[entry] & PT_PADDR_MASK);
+        ret = (pt_entry_t *)(size_t)pte_addr(current_level[entry]);
     } else {
         if (PT_IS_LARGE(current_level[entry])) {
             // We are replacing an existing large page with a smaller page.
             // Split the previous mapping into mappings of the newly requested size
             // before performing the requested map operation.
 
-            uint64_t old_page_size, new_page_size;
-            switch (level_idx) {
-                case 2:
-                    old_page_size = 0x40000000;
-                    break;
 
-                case 1:
-                    old_page_size = 0x200000;
-                    break;
+            if ((level_idx >= VMM_MAX_LEVEL) || (level_idx == 0))
+                panic(false, "Unexpected level in get_next_level");
+            if (desired_sz >= VMM_MAX_LEVEL)
+                panic(false, "Unexpected page size in get_next_level");
 
-                default:
-                    panic(false, "Unexpected level in get_next_level");
-            }
-
-            switch (desired_sz) {
-                case Size1GiB:
-                    new_page_size = 0x40000000;
-                    break;
-
-                case Size2MiB:
-                    new_page_size = 0x200000;
-                    break;
-
-                case Size4KiB:
-                    new_page_size = 0x1000;
-                    break;
-
-                default:
-                    panic(false, "Unexpected page size in get_next_level");
-            }
+            uint64_t old_page_size = page_sizes[level_idx];
+            uint64_t new_page_size = page_sizes[desired_sz];
 
             // Save all the information from the old entry at this level
             uint64_t old_flags = PT_TO_VMM_FLAGS(current_level[entry]);
-            uint64_t old_phys = current_level[entry] & PT_PADDR_MASK;
+            uint64_t old_phys = pte_addr(current_level[entry]);
             uint64_t old_virt = virt & ~(old_page_size - 1);
 
             if (old_phys & (old_page_size - 1))
@@ -279,7 +274,7 @@ static pt_entry_t *get_next_level(pagemap_t pagemap, pt_entry_t *current_level,
 
             // Allocate a table for the next level
             ret = ext_mem_alloc(PT_SIZE);
-            current_level[entry] = (pt_entry_t)(size_t)ret | PT_TABLE_FLAGS;
+            current_level[entry] = pte_new((size_t)ret, PT_TABLE_FLAGS);
 
             // Recreate the old mapping with smaller pages
             for (uint64_t i = 0; i < old_page_size; i += new_page_size) {
@@ -288,11 +283,9 @@ static pt_entry_t *get_next_level(pagemap_t pagemap, pt_entry_t *current_level,
         } else {
             // Allocate a table for the next level
             ret = ext_mem_alloc(PT_SIZE);
-            current_level[entry] = (pt_entry_t)(size_t)ret | PT_TABLE_FLAGS;
+            current_level[entry] = pte_new((size_t)ret, PT_TABLE_FLAGS);
         }
     }
 
     return ret;
 }
-
-

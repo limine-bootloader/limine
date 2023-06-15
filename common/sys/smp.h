@@ -13,7 +13,7 @@
 struct limine_smp_info *init_smp(size_t   *cpu_count,
                                  uint32_t *_bsp_lapic_id,
                                  bool      longmode,
-                                 bool      lv5,
+                                 int       paging_mode,
                                  pagemap_t pagemap,
                                  bool      x2apic,
                                  bool      nx,

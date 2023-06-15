@@ -35,10 +35,10 @@
 #define MAX_REQUESTS 128
 #define MAX_MEMMAP 256
 
-static pagemap_t build_pagemap(bool level5pg, bool nx, struct elf_range *ranges, size_t ranges_count,
+static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *ranges, size_t ranges_count,
                                uint64_t physical_base, uint64_t virtual_base,
                                uint64_t direct_map_offset) {
-    pagemap_t pagemap = new_pagemap(level5pg ? 5 : 4);
+    pagemap_t pagemap = new_pagemap(paging_mode);
 
     if (ranges_count == 0) {
         // Map 0 to 2GiB at 0xffffffff80000000
@@ -190,6 +190,14 @@ extern symbol limine_spinup_32;
 static uint64_t physical_base, virtual_base, slide, direct_map_offset;
 static size_t requests_count;
 static void **requests;
+
+static void set_paging_mode(int paging_mode, bool kaslr) {
+    direct_map_offset = paging_mode_higher_half(paging_mode);
+    if (kaslr) {
+        uint64_t mask = ((uint64_t)1 << (paging_mode_va_bits(paging_mode) - 4)) - 1;
+        direct_map_offset += (rand64() & ~((uint64_t)0x40000000 - 1)) & mask;
+    }
+}
 
 static uint64_t reported_addr(void *addr) {
     return (uint64_t)(uintptr_t)addr + direct_map_offset;
@@ -408,33 +416,87 @@ noreturn void limine_load(char *config, char *cmdline) {
     printv("limine: ELF entry point: %X\n", entry_point);
     printv("limine: Requests count:  %u\n", requests_count);
 
-    // 5 level paging feature & HHDM slide
-    bool want_5lv;
-FEAT_START
-    // Check if 5-level paging is available
-    bool level5pg = false;
-    // TODO(qookie): aarch64 also has optional 5 level paging when using 4K pages
+    // Paging Mode
+    int paging_mode, max_paging_mode;
+
 #if defined (__x86_64__) || defined (__i386__)
+    paging_mode = max_paging_mode = PAGING_MODE_X86_64_4LVL;
     if (cpuid(0x00000007, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 16))) {
         printv("limine: CPU has 5-level paging support\n");
-        level5pg = true;
+        max_paging_mode = PAGING_MODE_X86_64_5LVL;
     }
+
+#elif defined (__aarch64__)
+    paging_mode = max_paging_mode = PAGING_MODE_AARCH64_4LVL;
+    // TODO(qookie): aarch64 also has optional 5 level paging when using 4K pages
+
+#else
+#error Unknown architecture
 #endif
 
-    struct limine_5_level_paging_request *lv5pg_request = get_request(LIMINE_5_LEVEL_PAGING_REQUEST);
-    want_5lv = lv5pg_request != NULL && level5pg;
+#define paging_mode_limine_to_vmm(x) (x)
+#define paging_mode_vmm_to_limine(x) (x)
 
-    direct_map_offset = want_5lv ? 0xff00000000000000 : 0xffff800000000000;
+    bool have_paging_mode_request = false;
+    bool paging_mode_set = false;
+FEAT_START
+    struct limine_paging_mode_request *pm_request = get_request(LIMINE_PAGING_MODE_REQUEST);
+    if (pm_request == NULL)
+        break;
+    have_paging_mode_request = true;
 
-    if (kaslr) {
-        direct_map_offset += (rand64() & ~((uint64_t)0x40000000 - 1)) & 0xfffffffffff;
+    if (pm_request->mode > LIMINE_PAGING_MODE_MAX) {
+        print("warning: ignoring invalid mode in paging mode request\n");
+        break;
     }
 
-    if (want_5lv) {
-        void *lv5pg_response = ext_mem_alloc(sizeof(struct limine_5_level_paging_response));
-        lv5pg_request->response = reported_addr(lv5pg_response);
-    }
+    paging_mode = paging_mode_limine_to_vmm(pm_request->mode);
+    if (paging_mode > max_paging_mode)
+        paging_mode = max_paging_mode;
+
+    set_paging_mode(paging_mode, kaslr);
+    paging_mode_set = true;
+
+    struct limine_paging_mode_response *pm_response =
+        ext_mem_alloc(sizeof(struct limine_paging_mode_response));
+
+    pm_response->mode = paging_mode_vmm_to_limine(paging_mode);
+    pm_request->response = reported_addr(pm_response);
+
 FEAT_END
+
+    // 5 level paging feature & HHDM slide
+FEAT_START
+    struct limine_5_level_paging_request *lv5pg_request = get_request(LIMINE_5_LEVEL_PAGING_REQUEST);
+    if (lv5pg_request == NULL)
+        break;
+
+    if (have_paging_mode_request) {
+        print("paging: ignoring 5-level paging request in favor of paging mode request\n");
+        break;
+    }
+#if defined (__x86_64__) || defined (__i386__)
+    if (max_paging_mode < PAGING_MODE_X86_64_5LVL)
+        break;
+    paging_mode = PAGING_MODE_X86_64_5LVL;
+#elif defined (__aarch64__)
+    if (max_paging_mode < PAGING_MODE_AARCH64_5LVL)
+        break;
+    paging_mode = PAGING_MODE_AARCH64_5LVL;
+#else
+#error Unknown architecture
+#endif
+
+    set_paging_mode(paging_mode, kaslr);
+    paging_mode_set = true;
+
+    void *lv5pg_response = ext_mem_alloc(sizeof(struct limine_5_level_paging_response));
+    lv5pg_request->response = reported_addr(lv5pg_response);
+FEAT_END
+
+    if (!paging_mode_set) {
+        set_paging_mode(paging_mode, kaslr);
+    }
 
 #if defined (__aarch64__)
     uint64_t aa64mmfr0;
@@ -442,7 +504,7 @@ FEAT_END
 
     uint64_t pa = aa64mmfr0 & 0xF;
 
-    uint64_t tsz = 64 - (want_5lv ? 57 : 48);
+    uint64_t tsz = 64 - paging_mode_va_bits(paging_mode);
 #endif
 
     struct limine_file *kf = ext_mem_alloc(sizeof(struct limine_file));
@@ -1003,7 +1065,7 @@ FEAT_END
 #endif
 
     pagemap_t pagemap = {0};
-    pagemap = build_pagemap(want_5lv, nx_available, ranges, ranges_count,
+    pagemap = build_pagemap(paging_mode, nx_available, ranges, ranges_count,
                             physical_base, virtual_base, direct_map_offset);
 
 #if defined (UEFI)
@@ -1022,7 +1084,7 @@ FEAT_START
 #if defined (__x86_64__) || defined (__i386__)
     uint32_t bsp_lapic_id;
     smp_info = init_smp(&cpu_count, &bsp_lapic_id,
-                        true, want_5lv,
+                        true, paging_mode,
                         pagemap, smp_request->flags & LIMINE_SMP_X2APIC, nx_available,
                         direct_map_offset, true);
 #elif defined (__aarch64__)
@@ -1155,7 +1217,7 @@ FEAT_END
     uint64_t reported_stack = reported_addr(stack);
 
     common_spinup(limine_spinup_32, 8,
-        want_5lv, (uint32_t)(uintptr_t)pagemap.top_level,
+        paging_mode, (uint32_t)(uintptr_t)pagemap.top_level,
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
         (uint32_t)reported_stack, (uint32_t)(reported_stack >> 32),
         (uint32_t)(uintptr_t)local_gdt, nx_available);

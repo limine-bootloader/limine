@@ -632,7 +632,77 @@ struct limine_video_mode {
 };
 ```
 
+### Paging Mode Feature
+
+The Paging Mode feature allows the kernel to control which paging mode is enabled
+before control is passed to it.
+
+ID:
+```c
+#define LIMINE_PAGING_MODE_REQUEST { LIMINE_COMMON_MAGIC, 0x95c1a0edab0944cb, 0xa4e5cb3842f7488a }
+```
+
+Request:
+```c
+struct limine_paging_mode_request {
+    uint64_t id[4];
+    uint64_t revision;
+    struct limine_paging_mode_response *response;
+    uint64_t mode;
+    uint64_t flags;
+};
+```
+
+Both the `mode` and `flags` fields are architecture-specific.
+
+The `LIMINE_PAGING_MODE_DEFAULT` macro is provided by all architectures to select
+the default paging mode (see below).
+
+Response:
+```c
+struct limine_paging_mode_response {
+    uint64_t revision;
+    uint64_t mode;
+    uint64_t flags;
+};
+```
+
+The response indicates which paging mode was actually enabled by the bootloader.
+Kernels must be prepared to handle the case where the requested paging mode is
+not supported by the hardware.
+
+#### x86_64
+
+Values for `mode`:
+```c
+#define LIMINE_PAGING_MODE_X86_64_4LVL 0
+#define LIMINE_PAGING_MODE_X86_64_5LVL 1
+
+#define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_X86_64_4LVL
+```
+
+No `flags` are currently defined.
+
+The default mode (when this request is not provided) is `LIMINE_PAGING_MODE_X86_64_4LVL`.
+
+#### aarch64
+
+Values for `mode`:
+```c
+#define LIMINE_PAGING_MODE_AARCH64_4LVL 0
+#define LIMINE_PAGING_MODE_AARCH64_5LVL 1
+
+#define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_AARCH64_4LVL
+```
+
+No `flags` are currently defined.
+
+The default mode (when this request is not provided) is `LIMINE_PAGING_MODE_AARCH64_4LVL`.
+
 ### 5-Level Paging Feature
+
+Note: *This feature has been deprecated in favor of the [Paging Mode feature](#paging-mode-feature)
+and will be removed entirely in a future release.*
 
 ID:
 ```c

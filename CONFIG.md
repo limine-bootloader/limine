@@ -193,3 +193,9 @@ CMDLINE=something before ${MY_MACRO} something after
 ```
 
 Macros must always be placed inside `${...}` where `...` is the arbitrary macro name.
+
+### Built-in macros
+
+Limine automatically defines these macros:
+
+* `ARCH` - This built-in macro expands to the architecture of the machine. Possible values are: `x86-64`, `ia-32`, `aarch64`. In the case of IA-32, BIOS or UEFI, the macro will always expand to `x86-64` if the 64-bit extensions are available, else `ia-32`.

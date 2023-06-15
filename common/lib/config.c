@@ -9,6 +9,7 @@
 #include <lib/print.h>
 #include <pxe/tftp.h>
 #include <crypt/blake2b.h>
+#include <sys/cpu.h>
 
 #define CONFIG_B2SUM_SIGNATURE "++CONFIG_B2SUM_SIGNATURE++"
 #define CONFIG_B2SUM_EMPTY "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
@@ -178,6 +179,27 @@ int init_config(size_t config_size) {
     }
 
     // Load macros
+    struct macro *arch_macro = ext_mem_alloc(sizeof(struct macro));
+    strcpy(arch_macro->name, "ARCH");
+#if defined (__x86_64__)
+    strcpy(arch_macro->value, "x86-64");
+#elif defined (__i386__)
+    {
+    uint32_t eax, ebx, ecx, edx;
+    if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
+        strcpy(arch_macro->value, "ia-32");
+    } else {
+        strcpy(arch_macro->value, "x86-64");
+    }
+    }
+#elif defined (__aarch64__)
+    strcpy(arch_macro->value, "aarch64");
+#else
+#error "Unspecified architecture"
+#endif
+    arch_macro->next = macros;
+    macros = arch_macro;
+
     for (size_t i = 0; i < config_size;) {
         if ((config_size - i >= 3 && memcmp(config_addr + i, "\n${", 3) == 0)
          || (config_size - i >= 2 && i == 0 && memcmp(config_addr, "${", 2) == 0)) {

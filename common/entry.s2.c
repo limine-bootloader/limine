@@ -32,7 +32,7 @@ bool stage3_loaded = false;
 static bool stage3_found = false;
 
 extern symbol stage3_addr;
-extern symbol limine_sys_size;
+extern symbol limine_bios_sys_size;
 extern symbol build_id_s2;
 extern symbol build_id_s3;
 
@@ -41,10 +41,10 @@ static bool stage3_init(struct volume *part) {
 
     bool old_cif = case_insensitive_fopen;
     case_insensitive_fopen = true;
-    if ((stage3 = fopen(part, "/limine.sys")) == NULL
-     && (stage3 = fopen(part, "/limine/limine.sys")) == NULL
-     && (stage3 = fopen(part, "/boot/limine.sys")) == NULL
-     && (stage3 = fopen(part, "/boot/limine/limine.sys")) == NULL) {
+    if ((stage3 = fopen(part, "/limine-bios.sys")) == NULL
+     && (stage3 = fopen(part, "/limine/limine-bios.sys")) == NULL
+     && (stage3 = fopen(part, "/boot/limine-bios.sys")) == NULL
+     && (stage3 = fopen(part, "/boot/limine/limine-bios.sys")) == NULL) {
         case_insensitive_fopen = old_cif;
         return false;
     }
@@ -52,8 +52,8 @@ static bool stage3_init(struct volume *part) {
 
     stage3_found = true;
 
-    if (stage3->size != (size_t)limine_sys_size) {
-        print("limine.sys size incorrect.\n");
+    if (stage3->size != (size_t)limine_bios_sys_size) {
+        print("limine-bios.sys size incorrect.\n");
         return false;
     }
 
@@ -64,7 +64,7 @@ static bool stage3_init(struct volume *part) {
     fclose(stage3);
 
     if (memcmp(build_id_s2 + 16, build_id_s3 + 16, 20) != 0) {
-        print("limine.sys build ID mismatch.\n");
+        print("limine-bios.sys build ID mismatch.\n");
         return false;
     }
 
@@ -112,7 +112,7 @@ noreturn void entry(uint8_t boot_drive, int boot_from) {
     if (!stage3_found) {
         print("\n"
               "!! Stage 3 file not found!\n"
-              "!! Have you copied limine.sys to the root, /boot, /limine, or /boot/limine\n"
+              "!! Have you copied limine-bios.sys to the root, /boot, /limine, or /boot/limine\n"
               "!! directories of one of the partitions on the boot device?\n\n");
     }
 

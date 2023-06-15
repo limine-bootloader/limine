@@ -969,7 +969,7 @@ static int bios_install(int argc, char *argv[]) {
         goto cleanup;
 
     if (!quiet) {
-        fprintf(stderr, "Reminder: Remember to copy the limine.sys file in either\n"
+        fprintf(stderr, "Reminder: Remember to copy the limine-bios.sys file in either\n"
                         "          the root, /boot, /limine, or /boot/limine directories of\n"
                         "          one of the partitions on the device, or boot will fail!\n");
 

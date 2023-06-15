@@ -148,7 +148,7 @@ install: all
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(datarootdir))'
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine'
 ifeq ($(BUILD_BIOS),limine-bios)
-	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine.sys' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-bios.sys' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
 endif
 ifneq ($(BUILD_BIOS_CD),no)
 	$(INSTALL_DATA) '$(call SHESCAPE,$(BINDIR))/limine-bios-cd.bin' '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/limine/'
@@ -201,7 +201,7 @@ endif
 ifneq ($(BUILD_BIOS_PXE),no)
 	cd '$(call SHESCAPE,$(SRCDIR))/stage1/pxe' && nasm bootsect.asm -Wall $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-bios-pxe.bin'
 endif
-	cp '$(call SHESCAPE,$(BUILDDIR))/common-bios/limine.sys' '$(call SHESCAPE,$(BINDIR))/'
+	cp '$(call SHESCAPE,$(BUILDDIR))/common-bios/limine-bios.sys' '$(call SHESCAPE,$(BINDIR))/'
 	touch '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 
 .PHONY: limine-bios

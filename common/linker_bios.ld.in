@@ -80,7 +80,7 @@ SECTIONS
 
     .note.gnu.build-id : {
         *(.note.gnu.build-id)
-        limine_sys_size = . - 0xf000;
+        limine_bios_sys_size = . - 0xf000;
     } :data_s3
 
     .bss : {

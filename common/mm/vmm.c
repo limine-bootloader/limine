@@ -10,7 +10,16 @@
 
 typedef uint64_t pt_entry_t;
 
-static uint64_t page_sizes[5];
+// Maps level indexes to the page size for that level.
+_Static_assert(VMM_MAX_LEVEL <= 5, "6-level paging not supported");
+static uint64_t page_sizes[5] = {
+    0x1000,
+    0x200000,
+    0x40000000,
+    0x8000000000,
+    0x1000000000000,
+};
+
 static pt_entry_t *get_next_level(pagemap_t pagemap, pt_entry_t *current_level,
                                   uint64_t virt, enum page_size desired_sz,
                                   size_t level_idx, size_t entry);
@@ -231,16 +240,6 @@ level4:
 #else
 #error Unknown architecture
 #endif
-
-// Maps level indexes to the page size for that level.
-_Static_assert(VMM_MAX_LEVEL <= 5, "6-level paging not supported");
-static uint64_t page_sizes[5] = {
-    0x1000,
-    0x200000,
-    0x40000000,
-    0x800000000000,
-    0x100000000000000,
-};
 
 static pt_entry_t *get_next_level(pagemap_t pagemap, pt_entry_t *current_level,
                                   uint64_t virt, enum page_size desired_sz,

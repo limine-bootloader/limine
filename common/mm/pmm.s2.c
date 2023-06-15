@@ -430,14 +430,7 @@ void init_memmap(void) {
 
     sanitise_entries(memmap, &memmap_entries, false);
 
-    size_t recl_count = 0;
-    for (size_t i = 0; i < memmap_entries; i++) {
-        if (memmap[i].type == MEMMAP_EFI_RECLAIMABLE) {
-            recl_count++;
-        }
-    }
-
-    recl = ext_mem_alloc(recl_count * sizeof(struct memmap_entry));
+    recl = ext_mem_alloc(1024 * sizeof(struct memmap_entry));
 
     return;
 

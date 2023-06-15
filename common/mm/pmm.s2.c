@@ -286,6 +286,8 @@ void init_memmap(void) {
 #endif
 
 #if defined (UEFI)
+static struct memmap_entry *recl;
+
 extern symbol __image_base;
 extern symbol __image_end;
 
@@ -428,6 +430,15 @@ void init_memmap(void) {
 
     sanitise_entries(memmap, &memmap_entries, false);
 
+    size_t recl_count = 0;
+    for (size_t i = 0; i < memmap_entries; i++) {
+        if (memmap[i].type == MEMMAP_EFI_RECLAIMABLE) {
+            recl_count++;
+        }
+    }
+
+    recl = ext_mem_alloc(recl_count * sizeof(struct memmap_entry));
+
     return;
 
 fail:
@@ -441,15 +452,7 @@ static void pmm_reclaim_uefi_mem(struct memmap_entry *m, size_t *_count) {
 
     for (size_t i = 0; i < count; i++) {
         if (m[i].type == MEMMAP_EFI_RECLAIMABLE) {
-            recl_i++;
-        }
-    }
-
-    struct memmap_entry *recl = ext_mem_alloc(recl_i * sizeof(struct memmap_entry));
-
-    for (size_t i = 0, j = 0; i < count; i++) {
-        if (m[i].type == MEMMAP_EFI_RECLAIMABLE) {
-            recl[j++] = m[i];
+            recl[recl_i++] = m[i];
         }
     }
 

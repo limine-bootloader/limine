@@ -424,13 +424,11 @@ noreturn void limine_load(char *config, char *cmdline) {
 #define paging_mode_vmm_to_limine(x) (x)
 #endif
 
-    bool have_paging_mode_request = false;
     bool paging_mode_set = false;
 FEAT_START
     struct limine_paging_mode_request *pm_request = get_request(LIMINE_PAGING_MODE_REQUEST);
     if (pm_request == NULL)
         break;
-    have_paging_mode_request = true;
 
     if (pm_request->mode > LIMINE_PAGING_MODE_MAX) {
         print("warning: ignoring invalid mode in paging mode request\n");
@@ -450,37 +448,6 @@ FEAT_START
     pm_response->mode = paging_mode_vmm_to_limine(paging_mode);
     pm_request->response = reported_addr(pm_response);
 
-FEAT_END
-
-    // 5 level paging feature & HHDM slide
-FEAT_START
-    struct limine_5_level_paging_request *lv5pg_request = get_request(LIMINE_5_LEVEL_PAGING_REQUEST);
-    if (lv5pg_request == NULL)
-        break;
-
-    if (have_paging_mode_request) {
-        print("paging: ignoring 5-level paging request in favor of paging mode request\n");
-        break;
-    }
-#if defined (__x86_64__) || defined (__i386__)
-    if (max_paging_mode < PAGING_MODE_X86_64_5LVL)
-        break;
-    paging_mode = PAGING_MODE_X86_64_5LVL;
-#elif defined (__aarch64__)
-    if (max_paging_mode < PAGING_MODE_AARCH64_5LVL)
-        break;
-    paging_mode = PAGING_MODE_AARCH64_5LVL;
-#elif defined (__riscv64)
-    print("warning: the 5-level paging request is not supported on RISC-V\n");
-#else
-#error Unknown architecture
-#endif
-
-    set_paging_mode(paging_mode, kaslr);
-    paging_mode_set = true;
-
-    void *lv5pg_response = ext_mem_alloc(sizeof(struct limine_5_level_paging_response));
-    lv5pg_request->response = reported_addr(lv5pg_response);
 FEAT_END
 
     if (!paging_mode_set) {

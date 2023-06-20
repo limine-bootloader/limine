@@ -1,3 +1,5 @@
+section .text
+
 global memcpy32to64
 memcpy32to64:
     push ebp

@@ -1,5 +1,7 @@
 #include <lib/macros.aarch64_asm.h>
 
+.section .text
+
 // noreturn void enter_in_current_el(uint64_t entry, uint64_t sp, uint64_t sctlr,
 //                                   uint64_t target_x0)
 // Configure current EL state and jump to kernel. Used for Linux hence

@@ -1,3 +1,5 @@
+section .text
+
 extern lapic_eoi
 
 global dummy_isr

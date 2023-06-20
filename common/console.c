@@ -19,6 +19,7 @@ static void console_help(void) {
         "clear     -- Clear the console.\n"
         "%s"
         "lsvol     -- List volumes.\n"
+        "firmware  -- Show firmware type.\n"
         "version   -- Print version.\n"
         "copyright -- Print copyright.\n"
         "help      -- Print this help message.\n",
@@ -49,6 +50,14 @@ void console(void) {
                 config_ready = true;
                 boot(new_entry);
             }
+        } else if (strcmp(prompt, "firmware") == 0) {
+#if defined (BIOS)
+            print("BIOS\n");
+#elif defined (UEFI)
+            print("UEFI\n");
+#else
+            print("unknown\n");
+#endif
         } else if (strcmp(prompt, "version") == 0) {
             print(LIMINE_VERSION "\n");
         } else if (strcmp(prompt, "copyright") == 0) {

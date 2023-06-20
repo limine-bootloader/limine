@@ -8,6 +8,8 @@
 .set tpl_sctlr, -16
 .set tpl_info_struct, -8
 
+.section .text
+
 .global smp_trampoline_start
 smp_trampoline_start:
     bl .L_entry
@@ -93,6 +95,8 @@ smp_trampoline_start:
     eret
 
 smp_trampoline_end:
+
+.section .rodata
 
 .global smp_trampoline_size
 smp_trampoline_size:

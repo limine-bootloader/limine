@@ -1,3 +1,5 @@
+section .text
+
 global efi_main
 extern uefi_entry
 efi_main:

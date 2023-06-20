@@ -1,3 +1,4 @@
+.section .text
 
 .global smp_trampoline_start
 smp_trampoline_start:

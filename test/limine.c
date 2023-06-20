@@ -135,14 +135,6 @@ struct limine_smp_request _smp_request = {
 __attribute__((section(".limine_reqs")))
 void *smp_req = &_smp_request;
 
-struct limine_terminal_request _terminal_request = {
-    .id = LIMINE_TERMINAL_REQUEST,
-    .revision = 0, .response = NULL
-};
-
-__attribute__((section(".limine_reqs")))
-void *terminal_req = &_terminal_request;
-
 struct limine_dtb_request _dtb_request = {
     .id = LIMINE_DTB_REQUEST,
     .revision = 0, .response = NULL
@@ -240,17 +232,7 @@ void ap_entry(struct limine_smp_info *info) {
 
 extern char kernel_start[];
 
-static void write_shim(const char *s, uint64_t l) {
-    struct limine_terminal *terminal = _terminal_request.response->terminals[0];
-
-    _terminal_request.response->write(terminal, s, l);
-}
-
 void limine_main(void) {
-    if (_terminal_request.response) {
-        limine_print = write_shim;
-    }
-
     e9_printf("\nWe're alive");
 
     uint64_t kernel_slide = (uint64_t)kernel_start - 0xffffffff80000000;
@@ -456,24 +438,6 @@ FEAT_START
                 ;
         }
     }
-FEAT_END
-
-FEAT_START
-    e9_printf("");
-    if (_terminal_request.response == NULL) {
-        e9_printf("Terminal not passed");
-        break;
-    }
-    struct limine_terminal_response *term_response = _terminal_request.response;
-    e9_printf("Terminal feature, revision %d", term_response->revision);
-    e9_printf("%d terminal(s)", term_response->terminal_count);
-    for (size_t i = 0; i < term_response->terminal_count; i++) {
-        struct limine_terminal *terminal = term_response->terminals[i];
-        e9_printf("Columns: %d", terminal->columns);
-        e9_printf("Rows: %d", terminal->rows);
-        e9_printf("Using framebuffer: %x", terminal->framebuffer);
-    }
-    e9_printf("Write function at: %x", term_response->write);
 FEAT_END
 
 FEAT_START

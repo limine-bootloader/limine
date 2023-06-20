@@ -282,28 +282,6 @@ static void *_get_request(uint64_t id[4]) {
 #define FEAT_START do {
 #define FEAT_END } while (0);
 
-#if defined (__i386__)
-extern symbol limine_term_write_entry;
-void *limine_rt_stack = NULL;
-uint64_t limine_term_callback_ptr = 0;
-uint64_t limine_term_write_ptr = 0;
-void limine_term_callback(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
-#endif
-
-static uint64_t term_arg;
-static void (*actual_callback)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
-
-static void callback_shim(struct flanterm_context *ctx, uint64_t a, uint64_t b, uint64_t c, uint64_t d) {
-    (void)ctx;
-    actual_callback(term_arg, a, b, c, d);
-}
-
-// TODO pair with specific terminal
-static void term_write_shim(uint64_t context, uint64_t buf, uint64_t count) {
-    (void)context;
-    _term_write(terms[0], buf, count);
-}
-
 noreturn void limine_load(char *config, char *cmdline) {
 #if defined (__x86_64__) || defined (__i386__)
     uint32_t eax, ebx, ecx, edx;
@@ -821,91 +799,8 @@ FEAT_END
         parse_resolution(&req_width, &req_height, &req_bpp, resolution);
     }
 
-    uint64_t *term_fb_ptr = NULL;
-    uint64_t term_fb_addr;
-
     struct fb_info *fbs;
     size_t fbs_count;
-
-    // Terminal feature
-FEAT_START
-    struct limine_terminal_request *terminal_request = get_request(LIMINE_TERMINAL_REQUEST);
-    if (terminal_request == NULL) {
-        break; // next feature
-    }
-
-    struct limine_terminal_response *terminal_response =
-        ext_mem_alloc(sizeof(struct limine_terminal_response));
-
-    terminal_response->revision = 1;
-
-    struct limine_terminal *terminal = ext_mem_alloc(sizeof(struct limine_terminal));
-
-    quiet = false;
-    serial = false;
-
-    char *term_conf_override_s = config_get_value(config, 0, "TERM_CONFIG_OVERRIDE");
-    if (term_conf_override_s != NULL && strcmp(term_conf_override_s, "yes") == 0) {
-        if (!gterm_init(&fbs, &fbs_count, config, req_width, req_height)) {
-            goto term_fail;
-        }
-    } else {
-        if (!gterm_init(&fbs, &fbs_count, NULL, req_width, req_height)) {
-            goto term_fail;
-        }
-    }
-
-    if (0) {
-term_fail:
-        pmm_free(terminal, sizeof(struct limine_terminal));
-        pmm_free(terminal_response, sizeof(struct limine_terminal_response));
-        break; // next feature
-    }
-
-    if (terminal_request->callback != 0) {
-        terms[0]->callback = callback_shim;
-
-#if defined (__i386__)
-        actual_callback = (void *)limine_term_callback;
-        limine_term_callback_ptr = terminal_request->callback;
-#elif defined (__x86_64__) || defined (__aarch64__) || defined (__riscv64)
-        actual_callback = (void *)terminal_request->callback;
-#else
-#error Unknown architecture
-#endif
-    }
-
-    term_arg = reported_addr(terminal);
-
-#if defined (__i386__)
-    if (limine_rt_stack == NULL) {
-        limine_rt_stack = ext_mem_alloc(16384) + 16384;
-    }
-
-    limine_term_write_ptr = (uintptr_t)term_write_shim;
-    terminal_response->write = (uintptr_t)(void *)limine_term_write_entry;
-#elif defined (__x86_64__) || defined (__aarch64__) || defined (__riscv64)
-    terminal_response->write = (uintptr_t)term_write_shim;
-#else
-#error Unknown architecture
-#endif
-
-    term_fb_ptr = &terminal->framebuffer;
-    term_fb_addr = reported_addr((void *)(((struct flanterm_fb_context *)terms[0])->framebuffer));
-
-    terminal->columns = terms[0]->cols;
-    terminal->rows = terms[0]->rows;
-
-    uint64_t *term_list = ext_mem_alloc(1 * sizeof(uint64_t));
-    term_list[0] = reported_addr(terminal);
-
-    terminal_response->terminal_count = 1;
-    terminal_response->terminals = reported_addr(term_list);
-
-    terminal_request->response = reported_addr(terminal_response);
-
-    goto skip_fb_init;
-FEAT_END
 
     term_notready();
 
@@ -914,7 +809,6 @@ FEAT_END
         goto no_fb;
     }
 
-skip_fb_init:
     for (size_t i = 0; i < fbs_count; i++) {
         memmap_alloc_range(fbs[i].framebuffer_addr,
                            (uint64_t)fbs[i].framebuffer_pitch * fbs[i].framebuffer_height,
@@ -924,7 +818,7 @@ skip_fb_init:
     // Framebuffer feature
 FEAT_START
     struct limine_framebuffer_request *framebuffer_request = get_request(LIMINE_FRAMEBUFFER_REQUEST);
-    if (framebuffer_request == NULL && term_fb_ptr == NULL) {
+    if (framebuffer_request == NULL) {
         break; // next feature
     }
 
@@ -972,14 +866,6 @@ FEAT_START
 
     if (framebuffer_request != NULL) {
         framebuffer_request->response = reported_addr(framebuffer_response);
-    }
-    if (term_fb_ptr != NULL) {
-        for (size_t i = 0; i < fbs_count; i++) {
-            if (fbp[i].address == term_fb_addr) {
-                *term_fb_ptr = reported_addr(&fbp[i]);
-                break;
-            }
-        }
     }
 FEAT_END
 
@@ -1227,9 +1113,6 @@ FEAT_START
 
     memmap_request->response = reported_addr(memmap_response);
 FEAT_END
-
-    // Clear terminal for kernels that will use the Limine terminal
-    FOR_TERM(flanterm_write(TERM, "\e[2J\e[H", 7));
 
 #if defined (__x86_64__) || defined (__i386__)
 #if defined (BIOS)

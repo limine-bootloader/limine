@@ -2,13 +2,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-void (*limine_print)(const char *buf, size_t size) = NULL;
-
 static const char CONVERSION_TABLE[] = "0123456789abcdef";
 
 void e9_putc(char c) {
-    if (limine_print != NULL)
-        limine_print(&c, 1);
 #if defined (__x86_64__) || defined (__i386__)
     __asm__ __volatile__ ("outb %0, %1" :: "a" (c), "Nd" (0xe9) : "memory");
 #endif

@@ -1120,10 +1120,14 @@ cleanup:
     return ret;
 }
 
-#define LIMINE_VERSION "@LIMINE_VERSION@"
+#define LIMINE_VERSION "%VERSION%"
+#define LIMINE_COPYRIGHT "%COPYRIGHT%"
 
 static int version(void) {
-    puts(LIMINE_VERSION);
+    puts("Limine " LIMINE_VERSION);
+    puts(LIMINE_COPYRIGHT);
+    puts("Limine is distributed under the terms of the BSD-2-Clause license.");
+    puts("There is ABSOLUTELY NO WARRANTY, to the extent permitted by law.");
     return EXIT_SUCCESS;
 }
 
@@ -1153,7 +1157,8 @@ int main(int argc, char *argv[]) {
 #endif
     } else if (strcmp(argv[1], "enroll-config") == 0) {
         return enroll_config(argc - 1, &argv[1]);
-    } else if (strcmp(argv[1], "version") == 0) {
+    } else if (strcmp(argv[1], "version") == 0
+            || strcmp(argv[1], "--version") == 0) {
         return version();
     }
 

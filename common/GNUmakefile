@@ -49,7 +49,6 @@ override CFLAGS_FOR_TARGET += \
     -Wextra \
     -Wshadow \
     -Wvla \
-    -Wno-deprecated-declarations \
     $(WERROR_FLAG) \
     -std=gnu11 \
     -nostdinc \

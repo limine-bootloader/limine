@@ -396,7 +396,7 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, struct elf_range **_r
     *_ranges = ranges;
 }
 
-bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t alloc_type, bool kaslr, struct elf_range **ranges, uint64_t *ranges_count, uint64_t *physical_base, uint64_t *virtual_base, uint64_t *_image_size, bool *is_reloc) {
+bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t alloc_type, bool kaslr, struct elf_range **ranges, uint64_t *ranges_count, uint64_t *physical_base, uint64_t *virtual_base, uint64_t *_image_size, uint64_t *_image_size_before_bss, bool *is_reloc) {
     struct elf64_hdr *hdr = (void *)elf;
 
     if (strncmp((char *)hdr->ident, "\177ELF", 4)) {
@@ -518,6 +518,8 @@ again:
         }
     }
 
+    uint64_t bss_size;
+
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
@@ -548,6 +550,10 @@ again:
 
         memcpy((void *)(uintptr_t)load_addr, elf + (phdr->p_offset), phdr->p_filesz);
 
+        if (i == hdr->ph_num - 1) {
+            bss_size = phdr->p_memsz - phdr->p_filesz;
+        }
+
         if (!elf64_apply_relocations(elf, hdr, (void *)(uintptr_t)load_addr, phdr->p_vaddr, phdr->p_memsz, slide)) {
             panic(true, "elf: Failed to apply relocations");
         }
@@ -556,6 +562,10 @@ again:
         clean_inval_dcache_poc(mem_base, mem_base + mem_size);
         inval_icache_pou(mem_base, mem_base + mem_size);
 #endif
+    }
+
+    if (_image_size_before_bss != NULL) {
+        *_image_size_before_bss = image_size - bss_size;
     }
 
     *virtual_base += slide;

@@ -331,13 +331,14 @@ noreturn void limine_load(char *config, char *cmdline) {
     struct elf_range *ranges;
     uint64_t ranges_count;
 
-    uint64_t image_size;
+    uint64_t image_size_before_bss;
     bool is_reloc;
 
     if (!elf64_load(kernel, &entry_point, &slide,
                    MEMMAP_KERNEL_AND_MODULES, kaslr,
                    &ranges, &ranges_count,
-                   &physical_base, &virtual_base, &image_size,
+                   &physical_base, &virtual_base, NULL,
+                   &image_size_before_bss,
                    &is_reloc)) {
         panic(true, "limine: ELF64 load failure");
     }
@@ -358,7 +359,7 @@ noreturn void limine_load(char *config, char *cmdline) {
         requests = ext_mem_alloc(MAX_REQUESTS * sizeof(void *));
         requests_count = 0;
         uint64_t common_magic[2] = { LIMINE_COMMON_MAGIC };
-        for (size_t i = 0; i < ALIGN_DOWN(image_size, 8); i += 8) {
+        for (size_t i = 0; i < ALIGN_DOWN(image_size_before_bss, 8); i += 8) {
             uint64_t *p = (void *)(uintptr_t)physical_base + i;
 
             if (p[0] != common_magic[0]) {

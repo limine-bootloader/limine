@@ -562,8 +562,6 @@ again:
 #endif
     }
 
-    bss_size = 0;
-
     if (_image_size_before_bss != NULL) {
         *_image_size_before_bss = image_size - bss_size;
     }

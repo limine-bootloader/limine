@@ -518,7 +518,7 @@ again:
         }
     }
 
-    uint64_t bss_size;
+    uint64_t bss_size = 0;
 
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
@@ -550,9 +550,7 @@ again:
 
         memcpy((void *)(uintptr_t)load_addr, elf + (phdr->p_offset), phdr->p_filesz);
 
-        if (i == hdr->ph_num - 1) {
-            bss_size = phdr->p_memsz - phdr->p_filesz;
-        }
+        bss_size = phdr->p_memsz - phdr->p_filesz;
 
         if (!elf64_apply_relocations(elf, hdr, (void *)(uintptr_t)load_addr, phdr->p_vaddr, phdr->p_memsz, slide)) {
             panic(true, "elf: Failed to apply relocations");
@@ -563,6 +561,8 @@ again:
         inval_icache_pou(mem_base, mem_base + mem_size);
 #endif
     }
+
+    bss_size = 0;
 
     if (_image_size_before_bss != NULL) {
         *_image_size_before_bss = image_size - bss_size;

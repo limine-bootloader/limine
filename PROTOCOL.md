@@ -205,13 +205,13 @@ At entry the machine is executing in Supervisor mode.
 unless the an Entry Point feature is requested (see below), in which case,
 the value of `pc` is going to be taken from there.
 
-`x1`(`ra`) is undefined, the kernel must not return from the entry point.
+`x1`(`ra`) is set to 0, the kernel must not return from the entry point.
 
 `x2`(`sp`) is set to point to a stack, in bootloader-reclaimable memory, which is
 at least 64KiB (65536 bytes) in size, or the size specified in the Stack
 Size Request (see below).
 
-`x3`(`gp`) is undefined, kernel must load its own global pointer if needed.
+`x3`(`gp`) is set to 0, kernel must load its own global pointer if needed.
 
 All other general purpose registers, with the exception of `x5`(`t0`), are set to 0.
 
@@ -221,7 +221,7 @@ If booted by EFI/UEFI, boot services are exited.
 
 `sstatus.FS` and `sstatus.XS` are both set to `Off`.
 
-Paging is enable with the paging mode specified by the Paging Mode feature (see below).
+Paging is enabled with the paging mode specified by the Paging Mode feature (see below).
 
 The (A)PLIC, if present, is in an undefined state.
 

@@ -195,6 +195,7 @@ endif
 ifeq ($(TARGET),uefi-riscv64)
     override LDFLAGS_FOR_TARGET += \
         -m elf64lriscv \
+        --no-relax \
         -static \
         -pie \
         --no-dynamic-linker \

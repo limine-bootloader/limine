@@ -32,8 +32,6 @@ SECTIONS
 
     .data : {
         *(.data .data.*)
-        __global_pointer$ = . + 0x800;
-        *(.sdata .sdata.*)
     } :data
 
     .dynamic : {
@@ -41,8 +39,7 @@ SECTIONS
     } :data :dynamic
 
     .bss : {
-        *(COMMON)
-        *(.sbss .sbss.*)
         *(.bss .bss.*)
+        *(COMMON)
     } :data
 }

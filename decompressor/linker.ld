@@ -18,14 +18,14 @@ SECTIONS
     } :text
 
     .data : {
-        *(.rodata .rodata.*)
         *(.data .data.*)
+        *(.rodata .rodata.*)
     } :data
 
     .bss : {
         bss_begin = .;
-        *(COMMON)
         *(.bss .bss.*)
+        *(COMMON)
         bss_end = .;
     } :data
 

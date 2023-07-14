@@ -85,8 +85,8 @@ SECTIONS
 
     .bss : {
         bss_begin = .;
-        *(COMMON)
         *(.bss .bss.*)
+        *(COMMON)
         bss_end = .;
         data_end = .;
     } :data_s3

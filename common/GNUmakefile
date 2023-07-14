@@ -22,18 +22,6 @@ ifeq ($(call MKESCAPE,$(BUILDDIR)),)
     $(error BUILDDIR not specified)
 endif
 
-ifeq ($(TARGET),bios)
-    override OBJCOPY2ELF_FLAGS := -B i386 -O elf32-i386
-else ifeq ($(TARGET),uefi-x86-64)
-    override OBJCOPY2ELF_FLAGS := -B i386 -O elf64-x86-64
-else ifeq ($(TARGET),uefi-ia32)
-    override OBJCOPY2ELF_FLAGS := -B i386 -O elf32-i386
-else ifeq ($(TARGET),uefi-aarch64)
-    override OBJCOPY2ELF_FLAGS := -B aarch64 -O elf64-littleaarch64
-else
-    $(error Invalid target)
-endif
-
 COM_OUTPUT ?= false
 E9_OUTPUT ?= false
 
@@ -258,10 +246,10 @@ $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(OBJ) ../libgcc-binaries/libgcc-
 	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nos2map.ld' -o '$(call SHESCAPE,$@)'
 	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(OBJCOPY_FOR_TARGET) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s2.bin build-id.s2.o
+		$(OBJCOPY_FOR_TARGET) -I binary -B i386 -O elf32-i386 build-id.s2.bin build-id.s2.o
 	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(OBJCOPY_FOR_TARGET) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s3.bin build-id.s3.o
+		$(OBJCOPY_FOR_TARGET) -I binary -B i386 -O elf32-i386 build-id.s3.bin build-id.s3.o
 	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nos2map.ld' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_bios.ld.in
@@ -273,10 +261,10 @@ $(call MKESCAPE,$(BUILDDIR))/limine_nos3map.elf: $(OBJ) ../libgcc-binaries/libgc
 	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' -o '$(call SHESCAPE,$@)'
 	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(OBJCOPY_FOR_TARGET) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s2.bin build-id.s2.o
+		$(OBJCOPY_FOR_TARGET) -I binary -B i386 -O elf32-i386 build-id.s2.bin build-id.s2.o
 	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(OBJCOPY_FOR_TARGET) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s3.bin build-id.s3.o
+		$(OBJCOPY_FOR_TARGET) -I binary -B i386 -O elf32-i386 build-id.s3.bin build-id.s3.o
 	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_bios.ld.in
@@ -288,10 +276,10 @@ $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(OBJ) ../libgcc-binaries/libgcc-i686.a
 	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' -o '$(call SHESCAPE,$@)'
 	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(OBJCOPY_FOR_TARGET) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s2.bin build-id.s2.o
+		$(OBJCOPY_FOR_TARGET) -I binary -B i386 -O elf32-i386 build-id.s2.bin build-id.s2.o
 	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
-		$(OBJCOPY_FOR_TARGET) -I binary $(OBJCOPY2ELF_FLAGS) build-id.s3.bin build-id.s3.o
+		$(OBJCOPY_FOR_TARGET) -I binary -B i386 -O elf32-i386 build-id.s3.bin build-id.s3.o
 	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.o' '$(call SHESCAPE,$(BUILDDIR))/build-id.s3.o' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' -o '$(call SHESCAPE,$@)'
 
 endif

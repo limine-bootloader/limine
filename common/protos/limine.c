@@ -41,59 +41,26 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
     pagemap_t pagemap = new_pagemap(paging_mode);
 
     if (ranges_count == 0) {
-        // Map 0 to 2GiB at 0xffffffff80000000
-        for (uint64_t i = 0; i < 0x80000000; i += 0x40000000) {
-            map_page(pagemap, 0xffffffff80000000 + i, i, VMM_FLAG_WRITE, Size1GiB);
-        }
-    } else {
-        for (size_t i = 0; i < ranges_count; i++) {
-            uint64_t virt = ranges[i].base;
-            uint64_t phys;
-
-            if (virt & ((uint64_t)1 << 63)) {
-                phys = physical_base + (virt - virtual_base);
-            } else {
-                panic(false, "limine: Protected memory ranges are only supported for higher half kernels");
-            }
-
-            uint64_t pf =
-                (ranges[i].permissions & ELF_PF_X ? 0 : (nx ? VMM_FLAG_NOEXEC : 0)) |
-                (ranges[i].permissions & ELF_PF_W ? VMM_FLAG_WRITE : 0);
-
-            for (uint64_t j = 0; j < ranges[i].length; j += 0x1000) {
-                map_page(pagemap, virt + j, phys + j, pf, Size4KiB);
-            }
-        }
+        panic(true, "limine: ranges_count == 0");
     }
 
-    // Sub 2MiB mappings
-    for (uint64_t i = 0; i < 0x200000; i += 0x1000) {
-        if (i != 0) {
-            map_page(pagemap, i, i, VMM_FLAG_WRITE, Size4KiB);
+    for (size_t i = 0; i < ranges_count; i++) {
+        uint64_t virt = ranges[i].base;
+        uint64_t phys;
+
+        if (virt & ((uint64_t)1 << 63)) {
+            phys = physical_base + (virt - virtual_base);
+        } else {
+            panic(false, "limine: Virtual address of a PHDR in lower half");
         }
-        map_page(pagemap, direct_map_offset + i, i, VMM_FLAG_WRITE, Size4KiB);
-    }
 
-    // Map 2MiB to 4GiB at higher half base and 0
-    //
-    // NOTE: We cannot just directly map from 2MiB to 4GiB with 1GiB
-    // pages because if you do the math.
-    //
-    //     start = 0x200000
-    //     end   = 0x40000000
-    //
-    //     pages_required = (end - start) / (4096 * 512 * 512)
-    //
-    // So we map 2MiB to 1GiB with 2MiB pages and then map the rest
-    // with 1GiB pages :^)
-    for (uint64_t i = 0x200000; i < 0x40000000; i += 0x200000) {
-        map_page(pagemap, i, i, VMM_FLAG_WRITE, Size2MiB);
-        map_page(pagemap, direct_map_offset + i, i, VMM_FLAG_WRITE, Size2MiB);
-    }
+        uint64_t pf =
+            (ranges[i].permissions & ELF_PF_X ? 0 : (nx ? VMM_FLAG_NOEXEC : 0)) |
+            (ranges[i].permissions & ELF_PF_W ? VMM_FLAG_WRITE : 0);
 
-    for (uint64_t i = 0x40000000; i < 0x100000000; i += 0x40000000) {
-        map_page(pagemap, i, i, VMM_FLAG_WRITE, Size1GiB);
-        map_page(pagemap, direct_map_offset + i, i, VMM_FLAG_WRITE, Size1GiB);
+        for (uint64_t j = 0; j < ranges[i].length; j += 0x1000) {
+            map_page(pagemap, virt + j, phys + j, pf, Size4KiB);
+        }
     }
 
     size_t _memmap_entries = memmap_entries;
@@ -102,17 +69,18 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
     for (size_t i = 0; i < _memmap_entries; i++)
         _memmap[i] = memmap[i];
 
-    // Map any other region of memory from the memmap
+    // Map all free memory regions to the higher half direct map offset
     for (size_t i = 0; i < _memmap_entries; i++) {
+        if (_memmap[i].type != MEMMAP_USABLE
+         && _memmap[i].type != MEMMAP_BOOTLOADER_RECLAIMABLE
+         && _memmap[i].type != MEMMAP_KERNEL_AND_MODULES
+         && _memmap[i].type != MEMMAP_FRAMEBUFFER) {
+            continue;
+        }
+
         uint64_t base   = _memmap[i].base;
         uint64_t length = _memmap[i].length;
         uint64_t top    = base + length;
-
-        if (base < 0x100000000)
-            base = 0x100000000;
-
-        if (base >= top)
-            continue;
 
         uint64_t aligned_base   = ALIGN_DOWN(base, 0x40000000);
         uint64_t aligned_top    = ALIGN_UP(top, 0x40000000);
@@ -120,7 +88,12 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
 
         for (uint64_t j = 0; j < aligned_length; j += 0x40000000) {
             uint64_t page = aligned_base + j;
-            map_page(pagemap, page, page, VMM_FLAG_WRITE, Size1GiB);
+#if defined (__x86_64__) || defined (__i386__)
+            // XXX we do this as a quick and dirty way to switch to the higher half
+            if (_memmap[i].type == MEMMAP_BOOTLOADER_RECLAIMABLE) {
+                map_page(pagemap, page, page, VMM_FLAG_WRITE, Size1GiB);
+            }
+#endif
             map_page(pagemap, direct_map_offset + page, page, VMM_FLAG_WRITE, Size1GiB);
         }
     }
@@ -128,12 +101,13 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
     // Map the framebuffer as uncacheable
 #if defined (__aarch64__)
     for (size_t i = 0; i < _memmap_entries; i++) {
+        if (_memmap[i].type != MEMMAP_FRAMEBUFFER) {
+            continue;
+        }
+
         uint64_t base   = _memmap[i].base;
         uint64_t length = _memmap[i].length;
         uint64_t top    = base + length;
-
-        if (_memmap[i].type != MEMMAP_FRAMEBUFFER)
-            continue;
 
         uint64_t aligned_base   = ALIGN_DOWN(base, 0x1000);
         uint64_t aligned_top    = ALIGN_UP(top, 0x1000);
@@ -141,7 +115,6 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
 
         for (uint64_t j = 0; j < aligned_length; j += 0x1000) {
             uint64_t page = aligned_base + j;
-            map_page(pagemap, page, page, VMM_FLAG_WRITE | VMM_FLAG_FB, Size4KiB);
             map_page(pagemap, direct_map_offset + page, page, VMM_FLAG_WRITE | VMM_FLAG_FB, Size4KiB);
         }
     }
@@ -1100,11 +1073,12 @@ FEAT_END
 
     uint64_t reported_stack = reported_addr(stack);
 
-    common_spinup(limine_spinup_32, 8,
+    common_spinup(limine_spinup_32, 9,
         paging_mode, (uint32_t)(uintptr_t)pagemap.top_level,
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
         (uint32_t)reported_stack, (uint32_t)(reported_stack >> 32),
-        (uint32_t)(uintptr_t)local_gdt, nx_available);
+        (uint32_t)(uintptr_t)local_gdt, nx_available,
+        (uint32_t)direct_map_offset, (uint32_t)(direct_map_offset >> 32));
 #elif defined (__aarch64__)
     vmm_assert_4k_pages();
 

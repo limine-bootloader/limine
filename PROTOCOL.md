@@ -95,14 +95,11 @@ is guaranteed to be physically contiguous. In order to determine
 where the kernel is loaded in physical memory, see the Kernel Address feature
 below.
 
-Alongside the loaded kernel, the bootloader will set up memory mappings as such:
-```
- Base Physical Address -                    Size                    ->  Virtual address
-  0x0000000000001000   - 4 GiB plus any additional memory map entry -> 0x0000000000001000
-  0x0000000000000000   - 4 GiB plus any additional memory map entry -> HHDM start
-```
-Where HHDM start is returned by the Higher Half Direct Map feature (see below).
-These mappings are supervisor, read, write, execute (-rwx).
+Alongside the loaded kernel, the bootloader will set up memory mappings such
+that every usable, bootloader reclaimable, framebuffer, or kernel/modules
+memory map region is mapped at HHDM offset + its physical address.
+These mappings are supervisor, read, write, execute (-rwx), and they use
+WB caching (on x86_64).
 
 The bootloader page tables are in bootloader-reclaimable memory (see Memory Map
 feature below), and their specific layout is undefined as long as they provide

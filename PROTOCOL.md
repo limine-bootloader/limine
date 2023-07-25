@@ -98,6 +98,9 @@ below.
 Alongside the loaded kernel, the bootloader will set up memory mappings such
 that every usable, bootloader reclaimable, framebuffer, or kernel/modules
 memory map region is mapped at HHDM offset + its physical address.
+Additionally, the whole 0->4GiB physical memory region will also be mapped
+at HHDM offset + physical address, regardless of the contents of the
+memory map.
 These mappings are supervisor, read, write, execute (-rwx), and they use
 WB caching (on x86_64).
 

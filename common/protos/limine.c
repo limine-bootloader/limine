@@ -69,12 +69,18 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
     for (size_t i = 0; i < _memmap_entries; i++)
         _memmap[i] = memmap[i];
 
+    // Map 0->4GiB range to HHDM
+    for (uint64_t i = 0; i < 0x100000000; i += 0x40000000) {
+        map_page(pagemap, direct_map_offset + i, i, VMM_FLAG_WRITE, Size1GiB);
+    }
+
+    print_memmap(memmap, memmap_entries);
+
     // Map all free memory regions to the higher half direct map offset
     for (size_t i = 0; i < _memmap_entries; i++) {
         if (_memmap[i].type != MEMMAP_USABLE
          && _memmap[i].type != MEMMAP_BOOTLOADER_RECLAIMABLE
-         && _memmap[i].type != MEMMAP_KERNEL_AND_MODULES
-         && _memmap[i].type != MEMMAP_FRAMEBUFFER) {
+         && _memmap[i].type != MEMMAP_KERNEL_AND_MODULES) {
             continue;
         }
 
@@ -82,24 +88,25 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
         uint64_t length = _memmap[i].length;
         uint64_t top    = base + length;
 
+        if (base < 0x100000000) {
+            base = 0x100000000;
+        }
+
+        if (base >= top) {
+            continue;
+        }
+
         uint64_t aligned_base   = ALIGN_DOWN(base, 0x40000000);
         uint64_t aligned_top    = ALIGN_UP(top, 0x40000000);
         uint64_t aligned_length = aligned_top - aligned_base;
 
         for (uint64_t j = 0; j < aligned_length; j += 0x40000000) {
             uint64_t page = aligned_base + j;
-#if defined (__x86_64__) || defined (__i386__)
-            // XXX we do this as a quick and dirty way to switch to the higher half
-            if (_memmap[i].type == MEMMAP_BOOTLOADER_RECLAIMABLE) {
-                map_page(pagemap, page, page, VMM_FLAG_WRITE, Size1GiB);
-            }
-#endif
             map_page(pagemap, direct_map_offset + page, page, VMM_FLAG_WRITE, Size1GiB);
         }
     }
 
-    // Map the framebuffer as uncacheable
-#if defined (__aarch64__)
+    // Map the framebuffer with appropriate permissions
     for (size_t i = 0; i < _memmap_entries; i++) {
         if (_memmap[i].type != MEMMAP_FRAMEBUFFER) {
             continue;
@@ -117,6 +124,12 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
             uint64_t page = aligned_base + j;
             map_page(pagemap, direct_map_offset + page, page, VMM_FLAG_WRITE | VMM_FLAG_FB, Size4KiB);
         }
+    }
+
+    // XXX we do this as a quick and dirty way to switch to the higher half
+#if defined (__x86_64__) || defined (__i386__)
+    for (uint64_t i = 0; i < 0x100000000; i += 0x40000000) {
+        map_page(pagemap, i, i, VMM_FLAG_WRITE, Size1GiB);
     }
 #endif
 

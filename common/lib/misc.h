@@ -95,9 +95,6 @@ noreturn void stage3_common(void);
 #if defined (__x86_64__) || defined (__i386__)
 noreturn void common_spinup(void *fnptr, int args, ...);
 #elif defined (__aarch64__)
-noreturn void enter_in_current_el(uint64_t entry, uint64_t sp, uint64_t sctlr,
-                                  uint64_t target_x0);
-
 noreturn void enter_in_el1(uint64_t entry, uint64_t sp, uint64_t sctlr,
                            uint64_t mair, uint64_t tcr, uint64_t ttbr0,
                            uint64_t ttbr1, uint64_t target_x0);

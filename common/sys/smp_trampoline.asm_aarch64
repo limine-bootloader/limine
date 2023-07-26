@@ -1,6 +1,7 @@
 #include <lib/macros.aarch64_asm.h>
 
-.set tpl_booted_flag, -56
+.set tpl_booted_flag, -64
+.set tpl_hhdm_offset, -56
 .set tpl_ttbr0, -48
 .set tpl_ttbr1, -40
 .set tpl_mair, -32
@@ -26,19 +27,21 @@ smp_trampoline_start:
     ldr x4, [x1, tpl_tcr]
     ldr x5, [x1, tpl_ttbr0]
     ldr x6, [x1, tpl_ttbr1]
+    ldr x7, [x1, tpl_hhdm_offset]
 
-    // Configure EL1 state
+    PICK_EL x8, 1f, 0f
+0:
+    // Configure EL2-specific state for EL1
+
+    // Configure EL1 page tables
     msr mair_el1, x3
     msr tcr_el1, x4
     msr ttbr0_el1, x5
     msr ttbr1_el1, x6
     msr sctlr_el1, x2
+    isb
     dsb sy
     isb
-
-    PICK_EL x8, 1f, 0f
-0:
-    // Configure EL2-specific state for EL1
 
     // Don't trap counters to EL2
     mrs x8, cnthctl_el2
@@ -60,26 +63,67 @@ smp_trampoline_start:
     // Run rest of trampoline in EL1
     mov x8, #0x3c4
     msr spsr_el2, x8
-    adr x8, 1f
+    adrp x8, 3f
+    add x8, x8, :lo12:2f
+    add x8, x8, x7 // Add HHDM offset
     msr elr_el2, x8
 
     eret
 
 1:
+    msr spsel, #0
+
+    // Switch to the new page tables
+
+    // Point the EL1t handler to the continuation, such that after we page fault,
+    // execution continues as expected.
+    adrp x8, 2f
+    add x8, x8, #:lo12:2f
+    add x8, x8, x7
+    msr vbar_el1, x8
+    isb
+    dsb sy
+    isb
+
+    // Switch the page table registers
+    msr mair_el1, x3
+    msr tcr_el1, x4
+    msr ttbr0_el1, x5
+    msr ttbr1_el1, x6
+    msr sctlr_el1, x2
+    isb
+    dsb sy
+    isb
+
+    // Jump to the higher half mapping in case we didn't immediately crash
+    br x8
+
+// Alignment required by VBAR register
+.align 11
+2:
+    // Zero out VBAR to avoid confusion
+    msr vbar_el1, xzr
+
+3:
+    // Add HHDM offset to data pointer
+    add x1, x1, x7
+
     // Notify BSP we are alive
     mov x8, #1
     add x9, x1, tpl_booted_flag
     stlr x8, [x9]
 
     // Wait for BSP to tell us where to go
+    // Add HHDM offset to our info struct pointer
+    add x0, x0, x7
     add x9, x0, #24
-2:
+4:
     ldar x8, [x9]
-    cbnz x8, 3f
+    cbnz x8, 5f
     yield
-    b 2b
+    b 4b
 
-3:
+5:
     msr elr_el1, x8
 
     msr spsel, #0

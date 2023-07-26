@@ -955,7 +955,8 @@ FEAT_START
     uint64_t bsp_mpidr;
 
     smp_info = init_smp(&cpu_count, &bsp_mpidr,
-                        pagemap, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa), LIMINE_SCTLR);
+                        pagemap, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa), LIMINE_SCTLR,
+                        direct_map_offset);
 #elif defined (__riscv64)
     if (!have_bsp_hartid) {
         printv("smp: failed to get bsp's hart id\n");
@@ -1099,7 +1100,8 @@ FEAT_END
 
     enter_in_el1(entry_point, reported_stack, LIMINE_SCTLR, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa),
                  (uint64_t)pagemap.top_level[0],
-                 (uint64_t)pagemap.top_level[1], 0);
+                 (uint64_t)pagemap.top_level[1],
+                 direct_map_offset);
 #elif defined (__riscv64)
     uint64_t reported_stack = reported_addr(stack);
     uint64_t satp = make_satp(pagemap.paging_mode, pagemap.top_level);

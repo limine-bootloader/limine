@@ -1002,7 +1002,7 @@ uninstall_mode_cleanup:
 static void enroll_config_usage(const char *name) {
     printf("Usage: %s enroll-config <Limine executable> <BLAKE2B of config file>\n", name);
     printf("\n");
-    printf("    --reset      Remove enrolled BLAKE2B, will not check config intergrity\n");
+    printf("    --reset      Remove enrolled BLAKE2B, will not check config integrity\n");
     printf("\n");
     printf("    --quiet      Do not print verbose diagnostic messages\n");
     printf("\n");
@@ -1120,7 +1120,7 @@ cleanup:
     return ret;
 }
 
-#define LIMINE_VERSION "5.20230709.0"
+#define LIMINE_VERSION "5.20230726.0"
 #define LIMINE_COPYRIGHT "Copyright (C) 2019-2023 mintsuki and contributors."
 
 static int version(void) {

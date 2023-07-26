@@ -52,13 +52,13 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
 #define PAGING_MODE_AARCH64_4LVL 0
 #define PAGING_MODE_AARCH64_5LVL 1
 
-#define paging_mode_va_bits(mode) ((mode) ? 57 : 48)
+#define paging_mode_va_bits(mode) ((mode) ? 52 : 48)
 
 static inline uint64_t paging_mode_higher_half(int paging_mode) {
     if (paging_mode == PAGING_MODE_AARCH64_5LVL) {
-        return 0xff00000000000000;
+        return 0xffc0000000000000;
     } else {
-        return 0xffff800000000000;
+        return 0xffff000000000000;
     }
 }
 

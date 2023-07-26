@@ -14,7 +14,7 @@
 static void usage(const char *name) {
     printf("Usage: %s <Limine executable> <BLAKE2B of config file>\n", name);
     printf("\n");
-    printf("    --reset      Remove enrolled BLAKE2B, will not check config intergrity\n");
+    printf("    --reset      Remove enrolled BLAKE2B, will not check config integrity\n");
     printf("\n");
     printf("    --quiet      Do not print verbose diagnostic messages\n");
     printf("\n");

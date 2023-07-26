@@ -1225,7 +1225,9 @@ FEAT_END
 #elif defined (__aarch64__)
     vmm_assert_4k_pages();
 
-    enter_in_el1(entry_point, (uint64_t)stack, LIMINE_SCTLR, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa),
+    uint64_t reported_stack = reported_addr(stack);
+
+    enter_in_el1(entry_point, reported_stack, LIMINE_SCTLR, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa),
                  (uint64_t)pagemap.top_level[0],
                  (uint64_t)pagemap.top_level[1], 0);
 #else

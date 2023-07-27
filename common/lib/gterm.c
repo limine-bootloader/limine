@@ -740,6 +740,7 @@ no_load_font:;
 
     size_t font_scale_x = 1;
     size_t font_scale_y = 1;
+    bool font_scale_is_default = true;
 
     char *menu_font_scale = config_get_value(config, 0, "TERM_FONT_SCALE");
     if (menu_font_scale != NULL) {
@@ -747,6 +748,8 @@ no_load_font:;
         if (font_scale_x > 8 || font_scale_y > 8) {
             font_scale_x = 1;
             font_scale_y = 1;
+        } else {
+            font_scale_is_default = false;
         }
     }
 
@@ -781,6 +784,17 @@ no_load_font:;
         }
 
         generate_canvas(fb);
+
+        if (font_scale_is_default) {
+            if (fb->framebuffer_width > 1366 && fb->framebuffer_height > 768) {
+                font_scale_x = 2;
+                font_scale_y = 2;
+            }
+            if (fb->framebuffer_width > 2560 && fb->framebuffer_height > 1440) {
+                font_scale_x = 4;
+                font_scale_y = 4;
+            }
+        }
 
         terms[terms_i] = flanterm_fb_init(ext_mem_alloc,
                             pmm_free,

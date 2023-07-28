@@ -20,12 +20,19 @@ static void console_help(void) {
         "%s"
         "lsvol     -- List volumes.\n"
         "firmware  -- Show firmware type.\n"
+#if defined (UEFI)
+        "slide     -- Print load slide offset.\n"
+#endif
         "version   -- Print version.\n"
         "copyright -- Print copyright.\n"
         "help      -- Print this help message.\n",
         editor_enabled ? "editor    -- Open an empty boot entry editor.\n" : ""
     );
 }
+
+#if defined (UEFI)
+extern symbol __image_base;
+#endif
 
 void console(void) {
     print("Welcome to the Limine console.\nType 'help' for more information.\n\n");
@@ -57,6 +64,10 @@ void console(void) {
             print("UEFI\n");
 #else
             print("unknown\n");
+#endif
+#if defined (UEFI)
+        } else if (strcmp(prompt, "slide") == 0) {
+            print("%p\n", __image_base);
 #endif
         } else if (strcmp(prompt, "version") == 0) {
             print(LIMINE_VERSION "\n");

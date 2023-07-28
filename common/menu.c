@@ -495,12 +495,18 @@ refresh:
 
 static size_t print_tree(size_t offset, size_t window, const char *shift, size_t level, size_t base_index, size_t selected_entry,
                       struct menu_entry *current_entry,
-                      struct menu_entry **selected_menu_entry) {
+                      struct menu_entry **selected_menu_entry,
+                      size_t *max_len) {
     size_t max_entries = 0;
 
     bool no_print = false;
+    size_t dummy_max_len;
     if (shift == NULL) {
         no_print = true;
+        if (max_len == NULL) {
+            max_len = &dummy_max_len;
+        }
+        *max_len = 0;
     }
 
     for (;;) {
@@ -513,6 +519,7 @@ static size_t print_tree(size_t offset, size_t window, const char *shift, size_t
             goto skip_line;
         }
         if (!no_print) print("%s", shift);
+        size_t cur_len = strlen(shift);
         if (level) {
             for (size_t i = level - 1; i > 0; i--) {
                 struct menu_entry *actual_parent = current_entry;
@@ -523,12 +530,14 @@ static size_t print_tree(size_t offset, size_t window, const char *shift, size_t
                 } else {
                     if (!no_print) print("  ");
                 }
+                cur_len += 2;
             }
             if (current_entry->next == NULL) {
                 if (!no_print) print(serial ? " `" : " └");
             } else {
                 if (!no_print) print(serial ? " |" : " ├");
             }
+            cur_len += 2;
         }
         if (current_entry->sub) {
             if (!no_print) print(current_entry->expanded ? "[-]" : "[+]");
@@ -537,20 +546,26 @@ static size_t print_tree(size_t offset, size_t window, const char *shift, size_t
         } else {
             if (!no_print) print("   ");
         }
+        cur_len += 3;
         if (base_index + max_entries == selected_entry) {
             *selected_menu_entry = current_entry;
             if (!no_print) print("\e[7m");
         }
         if (!no_print) print(" %s \e[27m\n", current_entry->name);
+        cur_len += 1 + strlen(current_entry->name) + 1;
 skip_line:
         if (current_entry->sub && current_entry->expanded) {
             max_entries += print_tree(offset, window, shift, level + 1, base_index + max_entries + 1,
                                       selected_entry,
                                       current_entry->sub,
-                                      selected_menu_entry);
+                                      selected_menu_entry,
+                                      max_len);
         }
         max_entries++;
         current_entry = current_entry->next;
+        if (cur_len > *max_len) {
+            *max_len = cur_len;
+        }
     }
     return max_entries;
 }
@@ -706,7 +721,7 @@ noreturn void _menu(bool first_run) {
     if (!skip_timeout && !timeout) {
         // Use print tree to load up selected_menu_entry and determine if the
         // default entry is valid.
-        print_tree(0, 0, NULL, 0, 0, selected_entry, menu_tree, &selected_menu_entry);
+        print_tree(0, 0, NULL, 0, 0, selected_entry, menu_tree, &selected_menu_entry, NULL);
         if (selected_menu_entry == NULL || selected_menu_entry->sub != NULL) {
             quiet = false;
             print("Default entry is not valid or directory, booting to menu.\n");
@@ -794,8 +809,20 @@ refresh:
         set_cursor_pos_helper(x, y + 2);
     }
 
-    size_t max_entries = print_tree(tree_offset, terms[0]->rows - 10, serial ? "|   " : "│   ", 0, 0, selected_entry, menu_tree,
-                                 &selected_menu_entry);
+    size_t max_tree_len;
+    print_tree(tree_offset, terms[0]->rows - 10, NULL, 0, 0, selected_entry, menu_tree,
+               &selected_menu_entry, &max_tree_len);
+
+    size_t tree_prefix_len = terms[0]->cols / 2 - max_tree_len / 2;
+    if (!serial) tree_prefix_len += strlen("│") - 1;
+    char *tree_prefix = ext_mem_alloc(tree_prefix_len);
+    memset(tree_prefix, ' ', tree_prefix_len);
+    memcpy(tree_prefix, serial ? "|" : "│", strlen(serial ? "|" : "│"));
+
+    size_t max_entries = print_tree(tree_offset, terms[0]->rows - 10, tree_prefix, 0, 0, selected_entry, menu_tree,
+                                    &selected_menu_entry, NULL);
+
+    pmm_free(tree_prefix, tree_prefix_len);
 
     {
         size_t x, y;
@@ -865,7 +892,7 @@ timeout_aborted:
                 if (ent < (int)max_entries) {
                     selected_entry = ent;
                     print_tree(0, 0, NULL, 0, 0, selected_entry, menu_tree,
-                               &selected_menu_entry);
+                               &selected_menu_entry, NULL);
                     goto autoboot;
                 }
                 goto refresh;

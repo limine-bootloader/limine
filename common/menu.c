@@ -815,7 +815,7 @@ refresh:
     print_tree(tree_offset, terms[0]->rows - 10, NULL, 0, 0, selected_entry, menu_tree,
                &selected_menu_entry, &max_tree_len);
 
-    size_t tree_prefix_len = terms[0]->cols / 2 - DIV_ROUNDUP(max_tree_len, 2);
+    size_t tree_prefix_len = (terms[0]->cols / 2 - DIV_ROUNDUP(max_tree_len, 2)) - 2;
     if (!serial) tree_prefix_len += strlen("│") - 1;
     char *tree_prefix = ext_mem_alloc(tree_prefix_len);
     memset(tree_prefix, ' ', tree_prefix_len);

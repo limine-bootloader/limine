@@ -500,12 +500,12 @@ static size_t print_tree(size_t offset, size_t window, const char *shift, size_t
     size_t max_entries = 0;
 
     bool no_print = false;
-    size_t dummy_max_len;
+    size_t dummy_max_len = 0;
+    if (max_len == NULL) {
+        max_len = &dummy_max_len;
+    }
     if (shift == NULL) {
         no_print = true;
-        if (max_len == NULL) {
-            max_len = &dummy_max_len;
-        }
         *max_len = 0;
     }
 

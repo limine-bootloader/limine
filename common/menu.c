@@ -519,7 +519,7 @@ static size_t print_tree(size_t offset, size_t window, const char *shift, size_t
             goto skip_line;
         }
         if (!no_print) print("%s", shift);
-        size_t cur_len = strlen(shift);
+        size_t cur_len = shift ? strlen(shift) : 0;
         if (level) {
             for (size_t i = level - 1; i > 0; i--) {
                 struct menu_entry *actual_parent = current_entry;

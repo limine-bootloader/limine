@@ -139,6 +139,60 @@ struct memmap_entry *compare_entry_type(struct memmap_entry *p1, struct memmap_e
     return p1->type > p2->type ? p1 : p2;
 }
 
+int merge_overlaps(struct memmap_entry *p1, struct memmap_entry *p2) {
+    if (!p1 || !p2) return -1;
+    if (p1->base + p1->length < p2->base) return -2;
+    if (p1->type != p2->type) return -3;
+
+    // Merge into the lower base address. The merged from entry has the higher
+    // base address, and is marked as zero length.
+    p1->length = p2->base + p2->length - p1->base;
+    p2->length = 0;
+
+    return 0;
+}
+
+int split_overlaps(struct memmap_entry *dst, struct memmap_entry *p1, struct memmap_entry *p2) {
+    struct memmap_entry *good;
+    struct memmap_entry *bad;
+    struct memmap_entry *ptr;
+    size_t good_top;
+    size_t bad_top;
+    size_t size;
+
+    if (p1->base + p1->length - 1 < p2->base) return 0;
+
+    // Good and bad pointer in this case means order of precedence. For example,
+    // MEMMAP_ACPI_RECLAIMABLE is considered the 'good' type, whereas
+    // MEMMAP_RESERVED is considered the 'bad' type
+    ptr = dst;
+    bad = compare_entry_type(p1, p2);
+    good = p1 != bad ? p1 : p2;
+
+    good_top = good->base + good->length;
+    bad_top = bad->base + bad->length;
+
+    size = good_top - bad_top;
+    size = size <= good->length ? size : 0;
+    if (size > 0) {
+        // bad_top as new base may look strange, but it is correct. This is the
+        // three-way split scenario, and correcting the size of the lower
+        // memory region happens later. 
+        *ptr++ = (struct memmap_entry) {
+            bad_top,
+                size,
+                good->type,
+                good->unused
+        };
+    }
+
+    // Consider the good entry consumed if base is lower than the good base.
+    // Otherwise calculate new size.
+    good->length = bad->base <= good->base ? 0 : bad->base - good->base;
+
+    return ptr - dst;
+}
+
 static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_entries) {
     size_t count = *_count;
 

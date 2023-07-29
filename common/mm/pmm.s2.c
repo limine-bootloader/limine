@@ -179,7 +179,7 @@ int split_overlaps(struct memmap_entry *dst, struct memmap_entry *p1, struct mem
         // three-way split scenario, and correcting the size of the lower
         // memory region happens later. 
         *ptr++ = (struct memmap_entry) {
-            bad_top,
+                bad_top,
                 size,
                 good->type,
                 good->unused
@@ -194,108 +194,76 @@ int split_overlaps(struct memmap_entry *dst, struct memmap_entry *p1, struct mem
 }
 
 static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_entries) {
-    size_t count = *_count;
+    struct memmap_entry *overlap_map[2 * memmap_max_entries];
+    struct memmap_entry clean_map[memmap_max_entries];
+    struct memmap_entry new_map[memmap_max_entries];
+    struct memmap_entry tmp;
 
-    for (size_t i = 0; i < count; i++) {
-        if (m[i].type != MEMMAP_USABLE)
-            continue;
+    size_t count;
+    size_t new_count;
+    int overlaps;
+    int clean;
 
-        // Check if the entry overlaps other entries
-        for (size_t j = 0; j < count; j++) {
-            if (j == i)
-                continue;
+    count = *_count;
 
-            uint64_t base   = m[i].base;
-            uint64_t length = m[i].length;
-            uint64_t top    = base + length;
-
-            uint64_t res_base   = m[j].base;
-            uint64_t res_length = m[j].length;
-            uint64_t res_top    = res_base + res_length;
-
-            if ( (res_base >= base && res_base < top)
-              && (res_top  >= base && res_top  < top) ) {
-                // TODO actually handle splitting off usable chunks
-                panic(false, "A non-usable memory map entry is inside a usable section.");
-            }
-
-            if (res_base >= base && res_base < top) {
-                top = res_base;
-            }
-
-            if (res_top  >= base && res_top  < top) {
-                base = res_top;
-            }
-
-            m[i].base   = base;
-            m[i].length = top - base;
+    // Sort the entries by base address
+    for (int i = 0; i < count; i++) {
+        int j = i - 1;
+        tmp = m[i];
+        while (j >= 0 && m[j].base >= tmp.base) {
+            m[j + 1] = m[j];
+            j--;
         }
+        m[j + 1] = tmp;
+    }
 
-        if (!m[i].length
-         || (align_entries && !align_entry(&m[i].base, &m[i].length))) {
-            // Remove i from memmap
-            m[i] = m[count - 1];
-            count--; i--;
+    // Find all overlapping entries, ignoring zero size ones. The map is
+    // constructed in reverse order as it makes merges and splits easier
+    overlaps = 0;
+    for (int j = count - 1; j >= 0; j--) {
+        if (!m[j].length) continue;
+        for (int i = j - 1; i >= 0; i--) {
+            if (!m[i].length) continue;
+            if (m[i].base + m[i].length >= (m + j)->base) {
+                overlap_map[overlaps++] = m + i;
+                overlap_map[overlaps++] = m + j;
+            }
         }
     }
 
-    // Remove 0 length usable entries and usable entries below 0x1000
-    for (size_t i = 0; i < count; i++) {
-        if (m[i].type != MEMMAP_USABLE)
-            continue;
-
-        if (!sanitiser_keep_first_page && m[i].base < 0x1000) {
-            if (m[i].base + m[i].length <= 0x1000) {
-                goto del_mm1;
+    // Left-hand side is always the lower base address
+    for (int j = 0; j < overlaps; j += 2) {
+        if (!merge_overlaps(overlap_map[j], overlap_map[j + 1]) ) {
+            // Propagate new merges into previous merges
+            for (int i = j - 1; i >= 0; i--) {
+                if(overlap_map[i] != overlap_map[j + 1]) continue;
+                overlap_map[i] = overlap_map[j];
             }
-
-            m[i].length -= 0x1000 - m[i].base;
-            m[i].base = 0x1000;
-        }
-
-        if (m[i].length == 0) {
-del_mm1:
-            // Remove i from memmap
-            m[i] = m[count - 1];
-            count--; i--;
         }
     }
 
-    // Sort the entries
-    for (size_t p = 0; p < count - 1; p++) {
-        uint64_t min = m[p].base;
-        size_t min_index = p;
-        for (size_t i = p; i < count; i++) {
-            if (m[i].base < min) {
-                min = m[i].base;
-                min_index = i;
-            }
-        }
-        struct memmap_entry min_e = m[min_index];
-        m[min_index] = m[p];
-        m[p] = min_e;
+    clean = 0;
+    for (int i = 0; i < overlaps; i += 2) {
+        if (!overlap_map[i]->length || !overlap_map[i + 1]->length) continue;
+        clean += split_overlaps(&clean_map[clean], overlap_map[i], overlap_map[i + 1]);
     }
 
-    // Merge contiguous bootloader-reclaimable and usable entries
-    for (size_t i = 0; i < count - 1; i++) {
-        if (m[i].type != MEMMAP_BOOTLOADER_RECLAIMABLE
-         && m[i].type != MEMMAP_USABLE)
-            continue;
-
-        if (m[i+1].type == m[i].type
-         && m[i+1].base == m[i].base + m[i].length) {
-            m[i].length += m[i+1].length;
-
-            // Eradicate from memmap
-            for (size_t j = i + 2; j < count; j++) {
-                m[j - 1] = m[j];
-            }
-            count--;
-            i--;
+    // Rebuild the memory map from clean_map array and dirtied memmap_entry array
+    new_count = 0;
+    for (int i = 0, j = clean - 1; i < count || j >= 0; ) {
+        while (i < count && !m[i].length) i++;
+        while (j >= 0 && !clean_map[j].length) j--;
+        if (i < count && (j < 0 || m[i].base < clean_map[j].base) ) {
+            new_map[new_count++] = m[i++];
+        } else if (j >= 0 && (i >= count || clean_map[j].base < m[i].base) ) {
+            new_map[new_count++] = clean_map[j--];
         }
     }
 
-    *_count = count;
+    *_count = new_count;
+    memcpy(m, new_map, sizeof(*m) * new_count);
+
+    return;
 }
 
 #if defined (UEFI)

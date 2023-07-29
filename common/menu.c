@@ -776,50 +776,13 @@ refresh:
         console();
     }
 
-    {   // Draw box around boot menu
-        size_t x, y;
-        terms[0]->get_cursor_pos(terms[0], &x, &y);
-
-        print(serial ? "/" : "┌");
-        for (size_t i = 0; i < terms[0]->cols - 2; i++) {
-            switch (i) {
-                case 1: case 2: case 3:
-                    if (tree_offset > 0) {
-                        print(serial ? "^" : "↑"); break;
-                    }
-                    // FALLTHRU
-                default:
-                    print(serial ? "-" : "─"); break;
-            }
-        }
-        print(serial ? "\\" : "┐");
-
-        for (size_t i = y + 1; i < terms[0]->rows - 2; i++) {
-            set_cursor_pos_helper(0, i);
-            print(serial ? "|" : "│");
-            set_cursor_pos_helper(terms[0]->cols - 1, i);
-            print(serial ? "|" : "│");
-        }
-        set_cursor_pos_helper(0, terms[0]->rows - 2);
-
-        print(serial ? "\\" : "└");
-        for (size_t i = 0; i < terms[0]->cols - 2; i++) {
-            print(serial ? "-" : "─");
-        }
-        print(serial ? "/" : "┘");
-
-        set_cursor_pos_helper(x, y + 2);
-    }
-
     size_t max_tree_len;
     print_tree(tree_offset, terms[0]->rows - 10, NULL, 0, 0, selected_entry, menu_tree,
                &selected_menu_entry, &max_tree_len);
 
     size_t tree_prefix_len = (terms[0]->cols / 2 - DIV_ROUNDUP(max_tree_len, 2)) - 2;
-    if (!serial) tree_prefix_len += strlen("│") - 1;
-    char *tree_prefix = ext_mem_alloc(tree_prefix_len);
+    char *tree_prefix = ext_mem_alloc(tree_prefix_len + 1);
     memset(tree_prefix, ' ', tree_prefix_len);
-    memcpy(tree_prefix, serial ? "|" : "│", strlen(serial ? "|" : "│"));
 
     size_t max_entries = print_tree(tree_offset, terms[0]->rows - 10, tree_prefix, 0, 0, selected_entry, menu_tree,
                                     &selected_menu_entry, NULL);

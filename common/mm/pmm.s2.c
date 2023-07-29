@@ -62,6 +62,10 @@ size_t memmap_entries = 0;
 
 struct memmap_entry *untouched_memmap;
 size_t untouched_memmap_entries = 0;
+
+struct memmap_entry **overlap_map;
+struct memmap_entry *clean_map;
+struct memmap_entry *new_map;
 #endif
 
 static const char *memmap_type(uint32_t type) {
@@ -194,9 +198,11 @@ int split_overlaps(struct memmap_entry *dst, struct memmap_entry *p1, struct mem
 }
 
 static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_entries) {
+#if defined (BIOS)
     struct memmap_entry *overlap_map[2 * memmap_max_entries];
     struct memmap_entry clean_map[memmap_max_entries];
     struct memmap_entry new_map[memmap_max_entries];
+#endif
     struct memmap_entry tmp;
 
     size_t count;
@@ -356,6 +362,19 @@ void init_memmap(void) {
     }
 
     status = gBS->GetMemoryMap(&efi_mmap_size, efi_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
+    if (status) {
+        goto fail;
+    }
+
+    status = gBS->AllocatePool(EfiLoaderData, 2 * memmap_max_entries * sizeof(*overlap_map), (void**)&overlap_map);
+    if (status) {
+        goto fail;
+    }
+    status = gBS->AllocatePool(EfiLoaderData, memmap_max_entries * sizeof(*clean_map), (void**)&clean_map);
+    if (status) {
+        goto fail;
+    }
+    status = gBS->AllocatePool(EfiLoaderData, memmap_max_entries * sizeof(*new_map), (void**)&new_map);
     if (status) {
         goto fail;
     }

@@ -496,7 +496,7 @@ refresh:
 static size_t print_tree(size_t offset, size_t window, const char *shift, size_t level, size_t base_index, size_t selected_entry,
                       struct menu_entry *current_entry,
                       struct menu_entry **selected_menu_entry,
-                      size_t *max_len) {
+                      size_t *max_len, size_t *max_height) {
     size_t max_entries = 0;
 
     bool no_print = false;
@@ -504,8 +504,13 @@ static size_t print_tree(size_t offset, size_t window, const char *shift, size_t
     if (max_len == NULL) {
         max_len = &dummy_max_len;
     }
+    size_t dummy_max_height = 0;
+    if (max_height == NULL) {
+        max_height = &dummy_max_height;
+    }
     if (!level) {
         *max_len = 0;
+        *max_height = 0;
     }
     if (shift == NULL) {
         no_print = true;
@@ -554,6 +559,7 @@ static size_t print_tree(size_t offset, size_t window, const char *shift, size_t
             if (!no_print) print("\e[7m");
         }
         if (!no_print) print(" %s \e[27m\n", current_entry->name);
+        (*max_height)++;
         cur_len += 1 + strlen(current_entry->name) + 1;
 skip_line:
         if (current_entry->sub && current_entry->expanded) {
@@ -561,7 +567,7 @@ skip_line:
                                       selected_entry,
                                       current_entry->sub,
                                       selected_menu_entry,
-                                      max_len);
+                                      max_len, max_height);
         }
         max_entries++;
         current_entry = current_entry->next;
@@ -723,7 +729,7 @@ noreturn void _menu(bool first_run) {
     if (!skip_timeout && !timeout) {
         // Use print tree to load up selected_menu_entry and determine if the
         // default entry is valid.
-        print_tree(0, 0, NULL, 0, 0, selected_entry, menu_tree, &selected_menu_entry, NULL);
+        print_tree(0, 0, NULL, 0, 0, selected_entry, menu_tree, &selected_menu_entry, NULL, NULL);
         if (selected_menu_entry == NULL || selected_menu_entry->sub != NULL) {
             quiet = false;
             print("Default entry is not valid or directory, booting to menu.\n");
@@ -756,7 +762,6 @@ refresh:
         terms[0]->get_cursor_pos(terms[0], &x, &y);
         set_cursor_pos_helper(terms[0]->cols / 2 - DIV_ROUNDUP(strlen(menu_branding), 2), y);
         print("\e[3%sm%s\e[37m", menu_branding_colour, menu_branding);
-        print("\n\n\n\n");
     }
 
     while (menu_tree == NULL) {
@@ -776,16 +781,18 @@ refresh:
         console();
     }
 
-    size_t max_tree_len;
+    size_t max_tree_len, max_tree_height;
     print_tree(tree_offset, terms[0]->rows - 10, NULL, 0, 0, selected_entry, menu_tree,
-               &selected_menu_entry, &max_tree_len);
+               &selected_menu_entry, &max_tree_len, &max_tree_height);
 
     size_t tree_prefix_len = (terms[0]->cols / 2 - DIV_ROUNDUP(max_tree_len, 2)) - 2;
     char *tree_prefix = ext_mem_alloc(tree_prefix_len + 1);
     memset(tree_prefix, ' ', tree_prefix_len);
 
+    set_cursor_pos_helper(0, terms[0]->rows / 2 - DIV_ROUNDUP(max_tree_height, 2));
+
     size_t max_entries = print_tree(tree_offset, terms[0]->rows - 10, tree_prefix, 0, 0, selected_entry, menu_tree,
-                                    &selected_menu_entry, NULL);
+                                    &selected_menu_entry, NULL, NULL);
 
     pmm_free(tree_prefix, tree_prefix_len);
 
@@ -857,7 +864,7 @@ timeout_aborted:
                 if (ent < (int)max_entries) {
                     selected_entry = ent;
                     print_tree(0, 0, NULL, 0, 0, selected_entry, menu_tree,
-                               &selected_menu_entry, NULL);
+                               &selected_menu_entry, NULL, NULL);
                     goto autoboot;
                 }
                 goto refresh;

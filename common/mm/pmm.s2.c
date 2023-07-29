@@ -264,6 +264,13 @@ static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_
         }
     }
 
+    for(size_t i = 0; align_entries && i < new_count; i++) {
+        // Don't bother aligning unusable entries
+        if(!bad_entry_type(m[i].type) ) {
+            align_entry(&m[i].base, &m[i].length);
+        }
+    }
+
     *_count = new_count;
     memcpy(m, new_map, sizeof(*m) * new_count);
 

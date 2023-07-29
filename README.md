@@ -17,7 +17,7 @@ Donations welcome, but absolutely not mandatory!
 
 ![Reference screenshot](/screenshot.png?raw=true "Reference screenshot")
 
-[Photo by Rostislav Uzunov](https://www.pexels.com/photo/purple-and-pink-diamond-on-blue-background-5011647/)
+[Photo by Pixabay](https://www.pexels.com/photo/painting-of-black-cloud-during-sunset-164175/)
 
 ### Supported architectures
 * IA-32 (32-bit x86)

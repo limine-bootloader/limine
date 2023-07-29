@@ -786,11 +786,11 @@ no_load_font:;
         generate_canvas(fb);
 
         if (font_scale_is_default) {
-            if (fb->framebuffer_width > 1366 && fb->framebuffer_height > 768) {
+            if (fb->framebuffer_width >= (1920 + 1920 / 3) && fb->framebuffer_height >= (1080 + 1080 / 3)) {
                 font_scale_x = 2;
                 font_scale_y = 2;
             }
-            if (fb->framebuffer_width > 2560 && fb->framebuffer_height > 1440) {
+            if (fb->framebuffer_width >= (3840 + 3840 / 3) && fb->framebuffer_height >= (2160 + 2160 / 3)) {
                 font_scale_x = 4;
                 font_scale_y = 4;
             }

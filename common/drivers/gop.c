@@ -171,8 +171,19 @@ static struct fb_info *get_mode_list(size_t *count, EFI_GRAPHICS_OUTPUT_PROTOCOL
     return ret;
 }
 
+#define MAX_PRESET_MODES 128
+no_unwind static int preset_modes[MAX_PRESET_MODES];
+no_unwind static bool preset_modes_initialised = false;
+
 void init_gop(struct fb_info **ret, size_t *_fbs_count,
               uint64_t target_width, uint64_t target_height, uint16_t target_bpp) {
+    if (preset_modes_initialised == false) {
+        for (size_t i = 0; i < MAX_PRESET_MODES; i++) {
+            preset_modes[i] = -1;
+        }
+        preset_modes_initialised = true;
+    }
+
     EFI_STATUS status;
 
     EFI_HANDLE tmp_handles[1];
@@ -216,7 +227,7 @@ void init_gop(struct fb_info **ret, size_t *_fbs_count,
     };
 
     size_t fbs_count = 0;
-    for (size_t i = 0; i < handles_count; i++) {
+    for (size_t i = 0; i < handles_count && i < MAX_PRESET_MODES; i++) {
         struct fb_info *fb = &(*ret)[fbs_count];
 
         uint64_t _target_width = target_width;
@@ -249,7 +260,9 @@ void init_gop(struct fb_info **ret, size_t *_fbs_count,
             continue;
         }
 
-        int preset_mode = gop->Mode->Mode;
+        if (preset_modes[i] == -1) {
+            preset_modes[i] = gop->Mode->Mode;
+        }
 
         fb->edid = get_edid_info(handles[i]);
 
@@ -293,7 +306,7 @@ fallback:
         if (current_fallback == 1) {
             current_fallback++;
 
-            if (try_mode(fb, gop, preset_mode, 0, 0, 0, *ret, fbs_count)) {
+            if (try_mode(fb, gop, preset_modes[i], 0, 0, 0, *ret, fbs_count)) {
                 goto success;
             }
         }

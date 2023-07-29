@@ -118,6 +118,27 @@ static bool align_entry(uint64_t *base, uint64_t *length) {
 
 static bool sanitiser_keep_first_page = false;
 
+int bad_entry_type(uint32_t type) {
+    switch (type) {
+        case MEMMAP_USABLE:
+        case MEMMAP_ACPI_RECLAIMABLE:
+        case MEMMAP_BOOTLOADER_RECLAIMABLE:
+        case MEMMAP_EFI_RECLAIMABLE:
+            return 0;
+        default:
+            return 1;
+    }
+}
+
+struct memmap_entry *compare_entry_type(struct memmap_entry *p1, struct memmap_entry *p2) {
+    // MEMMAP_RESERVED etc. should take precedence over reclaimable types
+    if (!bad_entry_type(p1->type) && bad_entry_type(p2->type) ) return p2;
+    if (bad_entry_type(p1->type) && !bad_entry_type(p2->type) ) return p1;
+
+    // Otherwise return entry pointer with the greatest type
+    return p1->type > p2->type ? p1 : p2;
+}
+
 static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_entries) {
     size_t count = *_count;
 

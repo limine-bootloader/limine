@@ -201,8 +201,8 @@ static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_
 
     size_t count;
     size_t new_count;
-    int overlaps;
-    int clean;
+    size_t overlaps;
+    size_t clean;
 
     count = *_count;
 
@@ -211,10 +211,10 @@ static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_
     }
 
     // Sort the entries by base address
-    for (int i = 0; i < count; i++) {
-        int j = i - 1;
+    for (size_t i = 0; i < count; i++) {
+        size_t j = i - 1;
         tmp = m[i];
-        while (j >= 0 && m[j].base >= tmp.base) {
+        while (j < count && m[j].base >= tmp.base) {
             m[j + 1] = m[j];
             j--;
         }
@@ -224,9 +224,9 @@ static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_
     // Find all overlapping entries, ignoring zero size ones. The map is
     // constructed in reverse order as it makes merges and splits easier
     overlaps = 0;
-    for (int j = count - 1; j >= 0; j--) {
+    for (size_t j = count - 1; j < count; j--) {
         if (!m[j].length) continue;
-        for (int i = j - 1; i >= 0; i--) {
+        for (size_t i = j - 1; i < count; i--) {
             if (!m[i].length) continue;
             if (m[i].base + m[i].length >= (m + j)->base) {
                 overlap_map[overlaps++] = m + i;
@@ -236,10 +236,10 @@ static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_
     }
 
     // Left-hand side is always the lower base address
-    for (int j = 0; j < overlaps; j += 2) {
+    for (size_t j = 0; j < overlaps; j += 2) {
         if (!merge_overlaps(overlap_map[j], overlap_map[j + 1]) ) {
             // Propagate new merges into previous merges
-            for (int i = j - 1; i >= 0; i--) {
+            for (size_t i = j - 1; i < overlaps; i--) {
                 if(overlap_map[i] != overlap_map[j + 1]) continue;
                 overlap_map[i] = overlap_map[j];
             }
@@ -247,19 +247,19 @@ static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_
     }
 
     clean = 0;
-    for (int i = 0; i < overlaps; i += 2) {
+    for (size_t i = 0; i < overlaps; i += 2) {
         if (!overlap_map[i]->length || !overlap_map[i + 1]->length) continue;
         clean += split_overlaps(&clean_map[clean], overlap_map[i], overlap_map[i + 1]);
     }
 
     // Rebuild the memory map from clean_map array and dirtied memmap_entry array
     new_count = 0;
-    for (int i = 0, j = clean - 1; i < count || j >= 0; ) {
+    for (size_t i = 0, j = clean - 1; i < count || j < clean; ) {
         while (i < count && !m[i].length) i++;
-        while (j >= 0 && !clean_map[j].length) j--;
-        if (i < count && (j < 0 || m[i].base < clean_map[j].base) ) {
+        while (j < clean && !clean_map[j].length) j--;
+        if (i < count && (j > clean || m[i].base < clean_map[j].base) ) {
             new_map[new_count++] = m[i++];
-        } else if (j >= 0 && (i >= count || clean_map[j].base < m[i].base) ) {
+        } else if (j < clean && (i >= count || clean_map[j].base < m[i].base) ) {
             new_map[new_count++] = clean_map[j--];
         }
     }

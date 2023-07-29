@@ -52,6 +52,10 @@ void *conv_mem_alloc(size_t count) {
 
 struct memmap_entry memmap[memmap_max_entries];
 size_t memmap_entries = 0;
+
+struct memmap_entry *overlap_map[2 * memmap_max_entries];
+struct memmap_entry clean_map[memmap_max_entries];
+struct memmap_entry new_map[memmap_max_entries];
 #endif
 
 #if defined (UEFI)
@@ -198,11 +202,6 @@ int split_overlaps(struct memmap_entry *dst, struct memmap_entry *p1, struct mem
 }
 
 static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_entries) {
-#if defined (BIOS)
-    struct memmap_entry *overlap_map[2 * memmap_max_entries];
-    struct memmap_entry clean_map[memmap_max_entries];
-    struct memmap_entry new_map[memmap_max_entries];
-#endif
     struct memmap_entry tmp;
 
     size_t count;

@@ -19,6 +19,7 @@ extern symbol bss_end;
 
 bool allocations_disallowed = true;
 static void sanitise_entries(struct memmap_entry *, size_t *, bool);
+static size_t split_entry(struct memmap_entry *, struct memmap_entry *, struct memmap_entry *);
 
 void *conv_mem_alloc(size_t count) {
     static uint64_t base = 4096;
@@ -51,6 +52,7 @@ void *conv_mem_alloc(size_t count) {
 #define memmap_max_entries ((size_t)512)
 
 struct memmap_entry memmap[memmap_max_entries];
+struct memmap_entry *overlap[2 * memmap_max_entries];
 size_t memmap_entries = 0;
 #endif
 
@@ -62,6 +64,8 @@ size_t memmap_entries = 0;
 
 struct memmap_entry *untouched_memmap;
 size_t untouched_memmap_entries = 0;
+
+struct memmap_entry **overlap;
 #endif
 
 static const char *memmap_type(uint32_t type) {
@@ -117,6 +121,33 @@ static bool align_entry(uint64_t *base, uint64_t *length) {
 }
 
 static bool sanitiser_keep_first_page = false;
+
+static size_t split_entry(struct memmap_entry *dst, struct memmap_entry *bad, struct memmap_entry *good) {
+    struct memmap_entry *ptr;
+    size_t length;
+
+    if(!dst) return 0;
+
+    ptr = dst;
+
+    length = bad->base - good->base;
+    length = length <= good->length ? length : 0;
+    if(length > 0) {
+        *ptr++ = (struct memmap_entry) { 
+            good->base,
+            length,
+            good->type,
+            good->unused
+        };
+    }
+
+    length = (good->base + good->length) - (bad->base + bad->length);
+    length = length <= good->length ? length : 0;
+    good->base = bad->base + bad->length;
+    good->length = length;
+
+    return ptr - dst; 
+}
 
 static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_entries) {
     size_t count = *_count;
@@ -315,6 +346,11 @@ void init_memmap(void) {
     }
 
     status = gBS->AllocatePool(EfiLoaderData, memmap_max_entries * sizeof(struct memmap_entry), (void **)&untouched_memmap);
+    if (status) {
+        goto fail;
+    }
+
+    status = gBS->AllocatePool(EfiLoaderData, 2 * memmap_max_entries * sizeof(struct memmap_entry), (void **)&overlap);
     if (status) {
         goto fail;
     }

@@ -126,13 +126,13 @@ static size_t split_entry(struct memmap_entry *dst, struct memmap_entry *bad, st
     struct memmap_entry *ptr;
     size_t length;
 
-    if(!dst) return 0;
+    if (!dst) return 0;
 
     ptr = dst;
 
     length = bad->base - good->base;
     length = length <= good->length ? length : 0;
-    if(length > 0) {
+    if (length > 0) {
         *ptr++ = (struct memmap_entry) { 
             good->base,
             length,
@@ -171,6 +171,8 @@ static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_
             uint64_t res_length = m[j].length;
             uint64_t res_top    = res_base + res_length;
 
+            // Construct an overlap map if bad memory completely overlaps usable
+            // memory. In this case, the entries are not touched at all yet.
             if ( (res_base >= base && res_base < top)
               && (res_top  >= base && res_top  < top) ) {
                 overlap[num_overlaps++] = m + j;
@@ -195,6 +197,31 @@ static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_
             m[i] = m[count - 1];
             count--; i--;
         }
+    }
+
+    // Sort the entries according to the bad type's base address, or don't
+    // bother if there's zero or one overlaps. This is just an adapted version
+    // of the sorting algorithm used for the map as a whole.
+    for (size_t p = 0; num_overlaps > 2 && p < num_overlaps - 2; p += 2) {
+        uint64_t min = overlap[p]->base;
+        size_t min_index = p;
+        for (size_t i = p; i < num_overlaps; i += 2) {
+            if (overlap[i]->base < min) {
+                min = overlap[i]->base;
+                min_index = i;
+            }
+        }
+        struct memmap_entry *bad = overlap[min_index];
+        struct memmap_entry *good = overlap[min_index + 1];
+        overlap[min_index] = overlap[p];
+        overlap[min_index + 1] = overlap[p + 1];
+        overlap[p] = bad;
+        overlap[p + 1] = good;
+    }
+
+    // Split the entries into the memory map
+    for (size_t i = 0; count < memmap_max_entries && i < num_overlaps; i += 2) {
+        count += split_entry(m + count, overlap[i], overlap[i + 1]);
     }
 
     // Remove 0 length usable entries and usable entries below 0x1000

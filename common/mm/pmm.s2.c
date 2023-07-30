@@ -150,8 +150,10 @@ static size_t split_entry(struct memmap_entry *dst, struct memmap_entry *bad, st
 }
 
 static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_entries) {
+    size_t num_overlaps;
     size_t count = *_count;
 
+    num_overlaps = 0;
     for (size_t i = 0; i < count; i++) {
         if (m[i].type != MEMMAP_USABLE)
             continue;
@@ -171,20 +173,20 @@ static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_
 
             if ( (res_base >= base && res_base < top)
               && (res_top  >= base && res_top  < top) ) {
-                // TODO actually handle splitting off usable chunks
-                panic(false, "A non-usable memory map entry is inside a usable section.");
-            }
+                overlap[num_overlaps++] = m + j;
+                overlap[num_overlaps++] = m + i;
+            } else { 
+                if (res_base >= base && res_base < top) {
+                    top = res_base;
+                } 
 
-            if (res_base >= base && res_base < top) {
-                top = res_base;
-            }
+                if (res_top  >= base && res_top  < top) {
+                    base = res_top;
+                }
 
-            if (res_top  >= base && res_top  < top) {
-                base = res_top;
+                m[i].base   = base;
+                m[i].length = top - base;
             }
-
-            m[i].base   = base;
-            m[i].length = top - base;
         }
 
         if (!m[i].length

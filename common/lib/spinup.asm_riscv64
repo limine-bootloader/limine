@@ -3,7 +3,7 @@
 
 .global riscv_spinup
 riscv_spinup:
-
+.option norelax
         csrci   sstatus, 0x2
         csrw    sie, zero
         csrw    stvec, zero

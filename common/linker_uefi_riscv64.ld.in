@@ -60,6 +60,8 @@ SECTIONS
 
    data_begin = .;
         *(.data .data.*)
+        *(.sdata .sdata.*)
+        *(.sbss .sbss.*)
         *(.bss .bss.*)
         *(COMMON)
    data_end = .;

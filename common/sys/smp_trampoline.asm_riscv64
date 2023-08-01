@@ -2,6 +2,7 @@
 
 .global smp_trampoline_start
 smp_trampoline_start:
+.option norelax
         // The AP begins executing here with the following state:
         //      satp            = 0
         //      sstatus.SIE     = 0

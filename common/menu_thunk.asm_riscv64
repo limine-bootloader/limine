@@ -10,6 +10,7 @@ stack_at_first_entry:
 .extern _menu
 
 menu:
+.option norelax
         lla     t0, stack_at_first_entry
         ld      t1, (t0)
         beqz    t1, 1f

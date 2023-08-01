@@ -128,7 +128,8 @@ ifeq ($(TARGET),uefi-riscv64)
     endif
 
     override CFLAGS_FOR_TARGET += \
-        -mabi=lp64
+        -mabi=lp64 \
+        -mno-relax
 
     override CPPFLAGS_FOR_TARGET := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \

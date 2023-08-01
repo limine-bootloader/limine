@@ -3,6 +3,7 @@
 .global efi_main
 .extern uefi_entry
 efi_main:
+.option norelax
         mv      fp, zero
         mv      ra, zero
         j       uefi_entry

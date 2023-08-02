@@ -11,6 +11,7 @@ riscv_spinup:
         add     t0, t0, a3
         csrw    stvec, t0
         csrw    satp, a2
+        sfence.vma
         unimp
 .align 4
 0:

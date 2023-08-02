@@ -30,6 +30,8 @@ smp_trampoline_start:
         csrw    stvec, t0
         ld      t0, smp_tpl_satp(a1)
         csrw    satp, t0
+        sfence.vma
+        unimp
 0:
         // Relocate the info struct to the higher half.
         add     a0, t1, a0

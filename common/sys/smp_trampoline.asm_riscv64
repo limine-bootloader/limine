@@ -11,14 +11,28 @@ smp_trampoline_start:
         //
         // All other registers are undefined.
 
-        ld      a0, 16(a1)
-        ld      t0, 8(a1)
-        csrw    satp, t0
+#define smp_tpl_booted_flag     0
+#define smp_tpl_satp            8
+#define smp_tpl_info_struct     16
+#define smp_tpl_hhdm_offset     24
+
+        ld      a0, smp_tpl_info_struct(a1)
+        ld      t1, smp_tpl_hhdm_offset(a1)
 
         // Tell the BSP we've started.
         li      t0, 1
         fence   rw, w
         sd      t0, (a1)
+
+        // Set `stvec` so we page fault into the higher half after loading `satp`.
+        lla     t0, 0f
+        add     t0, t1, t0
+        csrw    stvec, t0
+        ld      t0, smp_tpl_satp(a1)
+        csrw    satp, t0
+0:
+        // Relocate the info struct to the higher half.
+        add     a0, t1, a0
 
         // Zero all the things.
         // Preserve a0

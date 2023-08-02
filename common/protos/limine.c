@@ -963,7 +963,7 @@ FEAT_START
         break;
     }
 
-    smp_info = init_smp(&cpu_count, bsp_hartid, pagemap);
+    smp_info = init_smp(&cpu_count, bsp_hartid, pagemap, direct_map_offset);
 #else
 #error Unknown architecture
 #endif
@@ -1106,7 +1106,7 @@ FEAT_END
     uint64_t reported_stack = reported_addr(stack);
     uint64_t satp = make_satp(pagemap.paging_mode, pagemap.top_level);
 
-    riscv_spinup(entry_point, reported_stack, satp);
+    riscv_spinup(entry_point, reported_stack, satp, direct_map_offset);
 #else
 #error Unknown architecture
 #endif

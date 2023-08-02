@@ -312,7 +312,7 @@ int vmm_max_paging_mode(void)
         pt_entry_t entry = PT_FLAG_ACCESSED | PT_FLAG_DIRTY | PT_FLAG_RWX | PT_FLAG_VALID;
         for (int i = 0; i < 256; i++) {
             table[i] = entry;
-            entry += page_sizes[lvl];
+            entry += page_sizes[lvl] >> 2;
         }
 
         uint64_t satp = ((uint64_t)(6 + lvl) << 60) | ((uint64_t)table >> 12);

@@ -582,14 +582,17 @@ struct trampoline_passed_info {
     uint64_t smp_tpl_booted_flag;
     uint64_t smp_tpl_satp;
     uint64_t smp_tpl_info_struct;
+    uint64_t smp_tpl_hhdm_offset;
 };
 
-static bool smp_start_ap(size_t hartid, size_t satp, struct limine_smp_info *info_struct) {
+static bool smp_start_ap(size_t hartid, size_t satp, struct limine_smp_info *info_struct,
+                         uint64_t hhdm_offset) {
     static struct trampoline_passed_info passed_info;
 
     passed_info.smp_tpl_booted_flag = 0;
     passed_info.smp_tpl_satp        = satp;
     passed_info.smp_tpl_info_struct = (uint64_t)info_struct;
+    passed_info.smp_tpl_hhdm_offset = hhdm_offset;
 
     asm volatile ("" ::: "memory");
 
@@ -606,8 +609,9 @@ static bool smp_start_ap(size_t hartid, size_t satp, struct limine_smp_info *inf
 }
 
 struct limine_smp_info *init_smp(size_t   *cpu_count,
-                                 size_t   bsp_hartid,
-                                 pagemap_t pagemap) {
+                                 size_t    bsp_hartid,
+                                 pagemap_t pagemap,
+                                 uint64_t  hhdm_offset) {
     // No RSDP means no ACPI.
     // Parsing the Device Tree is the only other method for detecting APs.
     if (acpi_get_rsdp() == NULL) {
@@ -666,7 +670,7 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
 
                 // Try to start the AP.
                 size_t satp = make_satp(pagemap.paging_mode, pagemap.top_level);
-                if (!smp_start_ap(intc->hartid, satp, info_struct)) {
+                if (!smp_start_ap(intc->hartid, satp, info_struct, hhdm_offset)) {
                     print("smp: FAILED to bring-up AP\n");
                     continue;
                 }

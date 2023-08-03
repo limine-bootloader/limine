@@ -32,6 +32,7 @@ SECTIONS
 
     .data : {
         *(.data .data.*)
+        *(.sdata .sdata.*)
     } :data
 
     .dynamic : {
@@ -39,6 +40,7 @@ SECTIONS
     } :data :dynamic
 
     .bss : {
+        *(.sbss .sbss.*)
         *(.bss .bss.*)
         *(COMMON)
     } :data

@@ -47,6 +47,11 @@ override INTERNALCFLAGS  :=       \
 	-I.                  \
 	-I..
 
+ifneq ($(findstring riscv,$(CC_FOR_TARGET)),)
+override INTERNALCFLAGS += -march=rv64imac -mabi=lp64 -mno-relax
+override INTERNALLDFLAGS += --no-relax
+endif
+
 override INTERNALCFLAGS_MB  :=    \
 	-std=c11             \
 	-ffreestanding       \

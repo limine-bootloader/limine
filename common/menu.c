@@ -692,6 +692,11 @@ noreturn void _menu(bool first_run) {
         editor_enabled = strcmp(editor_enabled_str, "yes") == 0;
     }
 
+    char *help_hidden_str = config_get_value(NULL, 0, "INTERFACE_HELP_HIDDEN");
+    if (help_hidden_str != NULL) {
+        help_hidden = strcmp(help_hidden_str, "yes") == 0;
+    }
+
     menu_branding = config_get_value(NULL, 0, "INTERFACE_BRANDING");
     if (menu_branding == NULL)
         menu_branding = "Limine " LIMINE_VERSION;
@@ -805,15 +810,17 @@ refresh:
             print(serial ? "vvv" : "↓↓↓");
         }
 
-        set_cursor_pos_helper(0, 3);
-        if (editor_enabled && selected_menu_entry->sub == NULL) {
-            print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m Boot    \e[32mE\e[0m Edit");
-        } else {
-            print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m %s",
-                  selected_menu_entry->expanded ? "Collapse" : "Expand");
+        if (!help_hidden) {
+            set_cursor_pos_helper(0, 3);
+            if (editor_enabled && selected_menu_entry->sub == NULL) {
+                print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m Boot    \e[32mE\e[0m Edit");
+            } else {
+                print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m %s",
+                      selected_menu_entry->expanded ? "Collapse" : "Expand");
+            }
+            set_cursor_pos_helper(terms[0]->cols - 13, 3);
+            print("\e[32mC\e[0m Console");
         }
-        set_cursor_pos_helper(terms[0]->cols - 13, 3);
-        print("\e[32mC\e[0m Console");
         set_cursor_pos_helper(x, y);
     }
 

@@ -1,5 +1,3 @@
-ENTRY(limine_main)
-
 PHDRS
 {
     text    PT_LOAD    FLAGS((1 << 0) | (1 << 2)) ; /* Execute + Read */

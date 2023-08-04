@@ -45,7 +45,8 @@ override INTERNALCFLAGS  :=       \
 	-mgeneral-regs-only  \
 	-mno-red-zone        \
 	-I.                  \
-	-I..
+	-I..                 \
+    -D_LIMINE_PROTO
 
 ifneq ($(findstring riscv,$(CC_FOR_TARGET)),)
 override INTERNALCFLAGS += -march=rv64imac -mabi=lp64 -mno-relax
@@ -74,7 +75,11 @@ else
 all: test.elf
 endif
 
-test.elf: limine.o e9print.o memory.o
+flanterm:
+	mkdir -p flanterm
+	cp -rv ../common/flanterm/* ./flanterm/
+
+test.elf: limine.o e9print.o memory.o flanterm/flanterm.o flanterm/backends/fb.o
 	$(LD) $^ $(LDFLAGS) $(INTERNALLDFLAGS) -o $@
 
 multiboot2.elf: multiboot2_trampoline.o
@@ -87,7 +92,7 @@ multiboot.elf: multiboot_trampoline.o
 	$(CC) $(CFLAGS) $(INTERNALCFLAGS_MB) -c e9print.c -o e9print.o
 	$(LD) $^ multiboot.o e9print.o $(LDFLAGS) $(INTERNAL_LD_FLAGS_MULTIBOOT1) -m elf_i386 -o $@
 
-%.o: %.c
+%.o: %.c flanterm
 	$(CC) $(CFLAGS) $(INTERNALCFLAGS) -c $< -o $@
 
 %.o: %.asm
@@ -97,3 +102,4 @@ clean:
 	rm -rf test.elf limine.o e9print.o memory.o
 	rm -rf multiboot2.o multiboot2.elf multiboot2_trampoline.o
 	rm -rf multiboot.o multiboot_trampoline.o multiboot.elf
+	rm -rf flanterm

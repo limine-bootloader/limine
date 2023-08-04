@@ -2,11 +2,21 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#if defined (_LIMINE_PROTO)
+#include <flanterm/flanterm.h>
+extern struct flanterm_context *ft_ctx;
+#endif
+
 static const char CONVERSION_TABLE[] = "0123456789abcdef";
 
 void e9_putc(char c) {
 #if defined (__x86_64__) || defined (__i386__)
     __asm__ __volatile__ ("outb %0, %1" :: "a" (c), "Nd" (0xe9) : "memory");
+#endif
+#if defined (_LIMINE_PROTO)
+    if (ft_ctx != NULL) {
+        flanterm_write(ft_ctx, &c, 1);
+    }
 #endif
 }
 

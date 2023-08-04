@@ -2,6 +2,8 @@
 #include <stddef.h>
 #include <limine.h>
 #include <e9print.h>
+#include <flanterm/flanterm.h>
+#include <flanterm/backends/fb.h>
 
 static void limine_main(void);
 
@@ -232,8 +234,19 @@ void ap_entry(struct limine_smp_info *info) {
 
 extern char kernel_start[];
 
+struct flanterm_context *ft_ctx = NULL;
+
 void limine_main(void) {
     e9_printf("\nWe're alive");
+
+    struct limine_framebuffer *fb = framebuffer_request.response->framebuffers[0];
+
+    ft_ctx = flanterm_fb_simple_init(
+        fb->address,
+        fb->width,
+        fb->height,
+        fb->pitch
+    );
 
     uint64_t kernel_slide = (uint64_t)kernel_start - 0xffffffff80000000;
 

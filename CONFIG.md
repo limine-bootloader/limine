@@ -69,6 +69,7 @@ Limine interface control options.
 * `INTERFACE_BRANDING` - A string that will be displayed on top of the Limine interface.
 * `INTERFACE_BRANDING_COLOUR` - A value between 0 and 7 specifying the colour of the branding string. Default is cyan (6).
 * `INTERFACE_BRANDING_COLOR` - Alias of `INTERFACE_BRANDING_COLOUR`.
+* `INTERFACE_HELP_HIDDEN` - Hides the help text located at the top of the screen showing the key bindings.
 
 Limine graphical terminal control options. They are ignored if using text mode.
 

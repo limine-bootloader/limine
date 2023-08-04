@@ -244,7 +244,7 @@ static void write_shim(const char *s, uint64_t l) {
     _terminal_request.response->write(terminal, s, l);
 }
 
-void limine_main(void) {
+static void limine_main(void) {
     if (_terminal_request.response) {
         limine_print = write_shim;
     }

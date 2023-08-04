@@ -236,7 +236,7 @@ extern char kernel_start[];
 
 struct flanterm_context *ft_ctx = NULL;
 
-void limine_main(void) {
+static void limine_main(void) {
     e9_printf("\nWe're alive");
 
     struct limine_framebuffer *fb = framebuffer_request.response->framebuffers[0];

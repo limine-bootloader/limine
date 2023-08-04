@@ -20,6 +20,7 @@ UINT32 efi_desc_ver = 0;
 #endif
 
 bool editor_enabled = true;
+bool help_hidden = false;
 
 bool parse_resolution(size_t *width, size_t *height, size_t *bpp, const char *buf) {
     size_t res[3] = {0};

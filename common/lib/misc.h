@@ -33,7 +33,7 @@ extern struct volume *boot_volume;
 extern bool stage3_loaded;
 #endif
 
-extern bool quiet, serial, editor_enabled, hash_mismatch_panic;
+extern bool quiet, serial, editor_enabled, help_hidden, hash_mismatch_panic;
 
 bool parse_resolution(size_t *width, size_t *height, size_t *bpp, const char *buf);
 

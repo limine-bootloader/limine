@@ -1080,6 +1080,12 @@ FEAT_END
     rm_int(0x15, &r, &r);
 #endif
 
+    // Enable PAT (write-combining/write-protect)
+    uint64_t pat = rdmsr(0x277);
+    pat &= 0xffffffff;
+    pat |= (uint64_t)0x0105 << 32;
+    wrmsr(0x277, pat);
+
     pic_mask_all();
     io_apic_mask_all();
 

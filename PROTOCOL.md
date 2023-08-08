@@ -100,9 +100,7 @@ that every usable, bootloader reclaimable, framebuffer, or kernel/modules
 memory map region is mapped at HHDM offset + its physical address.
 Additionally, the whole 0->4GiB physical memory region will also be mapped
 at HHDM offset + physical address, regardless of the contents of the
-memory map.
-These mappings are supervisor, read, write, execute (-rwx), and they use
-WB caching (on x86_64).
+memory map. These mappings are supervisor, read, write, execute (-rwx).
 
 The bootloader page tables are in bootloader-reclaimable memory (see Memory Map
 feature below), and their specific layout is undefined as long as they provide
@@ -111,6 +109,18 @@ the above memory mappings.
 If the kernel is a position independent executable, the bootloader is free to
 relocate it as it sees fit, potentially performing KASLR (as specified by the
 config).
+
+## Caching
+
+### x86_64
+
+All HHDM memory regions are mapped using write-back (WB) caching, except
+framebuffer regions which are mapped using write-combining (WC) caching.
+
+The MTRRs are left as the firmware set them up.
+
+The PAT's (Page Attribute Table) layout is unspecified and the OS should
+not be making assumptions about it.
 
 ## Entry machine state
 

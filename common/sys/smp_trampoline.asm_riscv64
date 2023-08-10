@@ -19,11 +19,6 @@ smp_trampoline_start:
         ld      a0, smp_tpl_info_struct(a1)
         ld      t1, smp_tpl_hhdm_offset(a1)
 
-        // Tell the BSP we've started.
-        li      t0, 1
-        fence   rw, w
-        sd      t0, (a1)
-
         // Set `stvec` so we page fault into the higher half after loading `satp`.
         lla     t0, 0f
         add     t0, t1, t0
@@ -33,8 +28,14 @@ smp_trampoline_start:
         sfence.vma
         unimp
 0:
-        // Relocate the info struct to the higher half.
+        // Relocate the smp_info and passed_info pointers to the higher half.
         add     a0, t1, a0
+        add     a1, t1, a1
+
+        // Tell the BSP we've started.
+        li      t0, 1
+        fence   rw, w
+        sd      t0, (a1)
 
         // Zero all the things.
         // Preserve a0

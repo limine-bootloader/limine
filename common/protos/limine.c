@@ -556,7 +556,11 @@ FEAT_START
         smbios_response->entry_64 = reported_addr(smbios_entry_64);
     }
 
-    smbios_request->response = reported_addr(smbios_response);
+    if (smbios_entry_32 == NULL && smbios_entry_64 == NULL) {
+        pmm_free(smbios_response, sizeof(struct limine_smbios_response));
+    } else {
+        smbios_request->response = reported_addr(smbios_response);
+    }
 FEAT_END
 
 #if defined (UEFI)

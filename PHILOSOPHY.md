@@ -23,7 +23,7 @@ checksums contained there) from going unnoticed.
 
 ### What about ext2/3/4? Why is that supported then?
 
-Simply put, legacy. And because a lot of Linux users expect it to "work that way". ext2/3/4 support has been dropped as of Limine 5.x.
+Simply put, legacy. And because a lot of Linux users expect it to "work that way". ext2/3/4 support has been dropped as of Limine 6.x.
 
 ### But I don't want to have a separate FAT boot partition! I don't want it!!!
 

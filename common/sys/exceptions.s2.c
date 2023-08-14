@@ -6,7 +6,7 @@
 #if defined (BIOS)
 
 static const char *exception_names[] = {
-    "Division by 0",
+    "Division",
     "Debug",
     "NMI",
     "Breakpoint",
@@ -22,10 +22,10 @@ static const char *exception_names[] = {
     "General protection fault",
     "Page fault",
     "???",
-    "x87 exception",
+    "x87",
     "Alignment check",
     "Machine check",
-    "SIMD exception",
+    "SIMD",
     "Virtualisation",
     "???",
     "???",
@@ -41,7 +41,7 @@ static const char *exception_names[] = {
 
 void except(uint32_t exception, uint32_t error_code, uint32_t ebp, uint32_t eip) {
     (void)ebp;
-    panic(false, "%s at %x. Error code: %x", exception_names[exception], eip, error_code);
+    panic(false, "%s exception at %x. Error code: %x", exception_names[exception], eip, error_code);
 }
 
 #endif

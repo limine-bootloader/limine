@@ -227,11 +227,6 @@ void disk_create_index(void) {
     int optical_indices = 1, hdd_indices = 1;
 
     for (uint8_t drive = 0x80; drive < 0xf0; drive++) {
-        if (volume_index_i == MAX_VOLUMES) {
-            print("WARNING: TOO MANY VOLUMES!");
-            break;
-        }
-
         struct rm_regs r = {0};
         struct bios_drive_params drive_params;
 
@@ -278,6 +273,10 @@ void disk_create_index(void) {
             block->guid_valid = true;
         }
 
+        if (volume_index_i == MAX_VOLUMES) {
+            print("WARNING: TOO MANY VOLUMES!");
+            return;
+        }
         volume_index[volume_index_i++] = block;
 
         for (int part = 0; ; part++) {
@@ -289,6 +288,10 @@ void disk_create_index(void) {
             if (ret == NO_PARTITION)
                 continue;
 
+            if (volume_index_i == MAX_VOLUMES) {
+                print("WARNING: TOO MANY VOLUMES!");
+                return;
+            }
             volume_index[volume_index_i++] = p;
 
             block->max_partition++;
@@ -577,11 +580,6 @@ fail:
     size_t handle_count = handles_size / sizeof(EFI_HANDLE);
 
     for (size_t i = 0; i < handle_count; i++) {
-        if (volume_index_i == MAX_VOLUMES) {
-            print("WARNING: TOO MANY VOLUMES!");
-            break;
-        }
-
         EFI_BLOCK_IO *drive = NULL;
 
         status = gBS->HandleProtocol(handles[i], &block_io_guid, (void **)&drive);
@@ -632,6 +630,10 @@ fail:
             block->guid_valid = true;
         }
 
+        if (volume_index_i == MAX_VOLUMES) {
+            print("WARNING: TOO MANY VOLUMES!");
+            return;
+        }
         volume_index[volume_index_i++] = block;
 
         for (int part = 0; ; part++) {
@@ -646,6 +648,11 @@ fail:
 
             struct volume *p = ext_mem_alloc(sizeof(struct volume));
             memcpy(p, &_p, sizeof(struct volume));
+
+            if (volume_index_i == MAX_VOLUMES) {
+                print("WARNING: TOO MANY VOLUMES!");
+                return;
+            }
             volume_index[volume_index_i++] = p;
 
             block->max_partition++;

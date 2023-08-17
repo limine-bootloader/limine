@@ -577,7 +577,7 @@ again:
         }
 
 #if defined (__aarch64__)
-        clean_inval_dcache_poc(mem_base, mem_base + mem_size);
+        clean_dcache_poc(mem_base, mem_base + mem_size);
         inval_icache_pou(mem_base, mem_base + mem_size);
 #endif
     }

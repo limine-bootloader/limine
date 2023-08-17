@@ -265,6 +265,19 @@ inline void clean_inval_dcache_poc(uintptr_t start, uintptr_t end) {
     asm volatile ("dsb sy\n\tisb");
 }
 
+// Clean D-Cache to Point of Coherency
+inline void clean_dcache_poc(uintptr_t start, uintptr_t end) {
+    size_t dsz = dcache_line_size();
+
+    uintptr_t addr = start & ~(dsz - 1);
+    while (addr < end) {
+        asm volatile ("dc cvac, %0" :: "r"(addr) : "memory");
+        addr += dsz;
+    }
+
+    asm volatile ("dsb sy\n\tisb");
+}
+
 // Invalidate I-Cache to Point of Unification
 inline void inval_icache_pou(uintptr_t start, uintptr_t end) {
     size_t isz = icache_line_size();

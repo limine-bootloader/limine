@@ -114,13 +114,17 @@ config).
 
 ### x86_64
 
-All HHDM memory regions are mapped using write-back (WB) caching, except
-framebuffer regions which are mapped using write-combining (WC) caching.
+The kernel executable, loaded at or above `0xffffffff80000000`, see all of its
+segments mapped using write-back (WB) caching at the page tables level.
 
-The MTRRs are left as the firmware set them up.
+All HHDM memory regions are mapped using write-back (WB) caching at the page
+tables level, except framebuffer regions which are mapped using write-combining
+(WC) caching at the page tables level.
 
 The PAT's (Page Attribute Table) layout is unspecified and the OS should
 not be making assumptions about it.
+
+The MTRRs are left as the firmware set them up.
 
 ### aarch64
 

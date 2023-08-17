@@ -353,7 +353,7 @@ static bool try_start_ap(int boot_method, uint64_t method_ptr,
     // Additionally, the newly-booted AP may have caches disabled which implies
     // it possibly does not see our cache contents either.
 
-    clean_inval_dcache_poc((uintptr_t)trampoline, (uintptr_t)trampoline + 0x1000);
+    clean_dcache_poc((uintptr_t)trampoline, (uintptr_t)trampoline + 0x1000);
     inval_icache_pou((uintptr_t)trampoline, (uintptr_t)trampoline + 0x1000);
 
     asm volatile ("" ::: "memory");
@@ -361,7 +361,7 @@ static bool try_start_ap(int boot_method, uint64_t method_ptr,
     switch (boot_method) {
         case BOOT_WITH_SPIN_TBL:
             *(volatile uint64_t *)method_ptr = (uint64_t)(uintptr_t)trampoline;
-            clean_inval_dcache_poc(method_ptr, method_ptr + 8);
+            clean_dcache_poc(method_ptr, method_ptr + 8);
             asm ("sev");
             break;
 

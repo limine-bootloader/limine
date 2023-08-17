@@ -297,6 +297,10 @@ bool elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t lim
 #error Unknown architecture
 #endif
 
+    if (hdr->sh_num == 0) {
+        return false;
+    }
+
     if (hdr->shdr_size < sizeof(struct elf64_shdr)) {
         panic(true, "elf: shdr_size < sizeof(struct elf64_shdr)");
     }

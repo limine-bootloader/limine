@@ -128,6 +128,9 @@ The MTRRs are left as the firmware set them up.
 
 ### aarch64
 
+The kernel executable, loaded at or above `0xffffffff80000000`, see all of its
+segments mapped using Normal Write-Back RW-Allocate non-transient caching mode.
+
 All HHDM memory regions are mapped using the Normal Write-Back RW-Allocate
 non-transient caching mode, except for the framebuffer regions, which are
 mapped in using an unspecified caching mode, correct for use with the

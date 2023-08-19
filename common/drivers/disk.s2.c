@@ -218,6 +218,10 @@ static bool detect_sector_size(struct volume *volume) {
 
     volume->sector_size = sector_size_a > sector_size_b ? sector_size_a : sector_size_b;
 
+    if (volume->sector_size == 0) {
+        return false;
+    }
+
     return true;
 }
 

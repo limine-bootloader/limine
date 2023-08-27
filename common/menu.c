@@ -548,12 +548,14 @@ static size_t print_tree(size_t offset, size_t window, const char *shift, size_t
         }
         if (current_entry->sub) {
             if (!no_print) print(current_entry->expanded ? "[-]" : "[+]");
+            cur_len += 3;
         } else if (level) {
-            if (!no_print) print(serial ? "-> " : "─> ");
+            if (!no_print) print(serial ? "-> " : "─►");
+            cur_len += 2;
         } else {
             if (!no_print) print("   ");
+            cur_len += 3;
         }
-        cur_len += 3;
         if (base_index + max_entries == selected_entry) {
             *selected_menu_entry = current_entry;
             if (!no_print) print("\e[7m");

@@ -63,7 +63,6 @@ ifeq ($(TARGET),bios)
         -fno-PIC \
         -m32 \
         -march=i686 \
-        -mabi=sysv \
         -mno-80387
     override CPPFLAGS_FOR_TARGET := \
         $(CPPFLAGS_FOR_TARGET) \
@@ -76,7 +75,6 @@ ifeq ($(TARGET),uefi-x86-64)
         -fshort-wchar \
         -m64 \
         -march=x86-64 \
-        -mabi=sysv \
         -mno-80387 \
         -mno-mmx \
         -mno-sse \
@@ -95,7 +93,6 @@ ifeq ($(TARGET),uefi-ia32)
         -fshort-wchar \
         -m32 \
         -march=i686 \
-        -mabi=sysv \
         -mno-80387
     override CPPFLAGS_FOR_TARGET := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \

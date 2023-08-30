@@ -60,7 +60,6 @@ ifneq ($(findstring x86_64,$(CC_FOR_TARGET)),)
 override CFLAGS += \
     -m64 \
     -march=x86-64 \
-    -mabi=sysv \
     -mgeneral-regs-only \
     -mno-red-zone
 endif
@@ -81,7 +80,6 @@ override CFLAGS_MB := \
     -fno-PIC \
     -m32 \
     -march=i686 \
-    -mabi=sysv \
     -mgeneral-regs-only \
     -I../freestanding-headers \
     -I. \

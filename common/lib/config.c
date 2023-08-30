@@ -147,6 +147,8 @@ int init_config(size_t config_size) {
     config_b2sum += sizeof(CONFIG_B2SUM_SIGNATURE) - 1;
 
     if (memcmp((void *)config_b2sum, CONFIG_B2SUM_EMPTY, 128) != 0) {
+        editor_enabled = false;
+
         uint8_t out_buf[BLAKE2B_OUT_BYTES];
         blake2b(out_buf, config_addr, config_size - 2);
         uint8_t hash_buf[BLAKE2B_OUT_BYTES];

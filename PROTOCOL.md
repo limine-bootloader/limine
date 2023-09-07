@@ -142,6 +142,16 @@ caching modes, in an unspecified order.
 In order to access MMIO regions, the kernel must ensure the correct caching mode
 is used on it's own.
 
+### riscv64
+
+If the `Svpbmt` extension is available, all framebuffer memory regions are mapped
+with `PBMT=NC` to enable write-combining optimizations. The kernel executable,
+loaded at or above `0xffffffff80000000`, and all HHDM memory regions are mapped
+with the default `PBMT=PMA`.
+
+If the `Svpbmt` extension is not available, no PMAs can be overridden (effectively,
+everything is mapped with `PBMT=PMA`).
+
 ## Entry machine state
 
 ### x86_64

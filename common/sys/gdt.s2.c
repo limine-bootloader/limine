@@ -12,7 +12,7 @@ static struct gdt_desc gdt_descs[] = {
         .limit       = 0xffff,
         .base_low    = 0x0000,
         .base_mid    = 0x00,
-        .access      = 0b10011010,
+        .access      = 0b10011011,
         .granularity = 0b00000000,
         .base_hi     = 0x00
     },
@@ -21,7 +21,7 @@ static struct gdt_desc gdt_descs[] = {
         .limit       = 0xffff,
         .base_low    = 0x0000,
         .base_mid    = 0x00,
-        .access      = 0b10010010,
+        .access      = 0b10010011,
         .granularity = 0b00000000,
         .base_hi     = 0x00
     },
@@ -30,7 +30,7 @@ static struct gdt_desc gdt_descs[] = {
         .limit       = 0xffff,
         .base_low    = 0x0000,
         .base_mid    = 0x00,
-        .access      = 0b10011010,
+        .access      = 0b10011011,
         .granularity = 0b11001111,
         .base_hi     = 0x00
     },
@@ -39,7 +39,7 @@ static struct gdt_desc gdt_descs[] = {
         .limit       = 0xffff,
         .base_low    = 0x0000,
         .base_mid    = 0x00,
-        .access      = 0b10010010,
+        .access      = 0b10010011,
         .granularity = 0b11001111,
         .base_hi     = 0x00
     },
@@ -48,7 +48,7 @@ static struct gdt_desc gdt_descs[] = {
         .limit       = 0x0000,
         .base_low    = 0x0000,
         .base_mid    = 0x00,
-        .access      = 0b10011010,
+        .access      = 0b10011011,
         .granularity = 0b00100000,
         .base_hi     = 0x00
     },
@@ -57,7 +57,7 @@ static struct gdt_desc gdt_descs[] = {
         .limit       = 0x0000,
         .base_low    = 0x0000,
         .base_mid    = 0x00,
-        .access      = 0b10010010,
+        .access      = 0b10010011,
         .granularity = 0b00000000,
         .base_hi     = 0x00
     }

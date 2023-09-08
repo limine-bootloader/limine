@@ -9,14 +9,14 @@ linux_gdt:
     dw 0xffff
     dw 0x0000
     db 0x00
-    db 10011010b
+    db 10011011b
     db 11001111b
     db 0x00
 
     dw 0xffff
     dw 0x0000
     db 0x00
-    db 10010010b
+    db 10010011b
     db 11001111b
     db 0x00
 

@@ -141,7 +141,8 @@ either the root, `limine`, `boot`, or `boot/limine` directory of one of the
 partitions, formatted with a supported file system (the ESP partition is recommended).
 
 ### Secure Boot
-Limine can be booted with secure boot using shim. This will also allow one to enroll
+Limine can be booted with secure boot if the executable is signed and the key used to
+sign it is added to the firmware's keychain. This should be done in combination with enrolling
 the BLAKE2B hash of the Limine config file into the Limine EFI executable image itself for
 verification purposes.
 For more information see the `limine enroll-config` program and [the philosophy](/PHILOSOPHY.md).

@@ -17,9 +17,9 @@ in the config file provides as much security as encrypting the kernel does.
 ### What? But what if someone modifies the config file! Ha! You clearly have not thought about that!
 
 We have. While this is a pointless effort on legacy x86 BIOS, it is a reasonable expectation on UEFI systems with Secure Boot. Limine provides a
-way to modify its own EFI executable to bake in the BLAKE2B checksum of the config file itself. The EFI executable gets then enrolled or otherwise
-verified by the Secure Boot loader through, eg., the shim project. This prevents modifications being done to the config file (and in turn the
-checksums contained there) from going unnoticed.
+way to modify its own EFI executable to bake in the BLAKE2B checksum of the config file itself. The EFI executable can then get signed with
+a key added to the firmware's keychain. This prevents modifications to the config file (and in turn the checksums contained there)
+from going unnoticed.
 
 ### What about ext2/3/4? Why is that supported then?
 

@@ -106,7 +106,7 @@ these, run `./configure --help`.
 
 Limine supports both in-tree and out-of-tree builds. Simply run the `configure`
 script from the directory you wish to execute the build in. The following `make`
-commands are supposed to be ran inside the build directory.
+commands are supposed to be run inside the build directory.
 
 ### Building Limine
 

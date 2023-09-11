@@ -5,6 +5,7 @@ ENTRY(_start)
 PHDRS
 {
     text    PT_LOAD    FLAGS((1 << 0) | (1 << 2)) ;
+    rodata  PT_LOAD    FLAGS((1 << 2)) ;
     data    PT_LOAD    FLAGS((1 << 1) | (1 << 2)) ;
     dynamic PT_DYNAMIC FLAGS((1 << 1) | (1 << 2)) ;
 }
@@ -12,11 +13,13 @@ PHDRS
 SECTIONS
 {
     . = 0;
-    __image_base = .;
-    __image_size = __image_end - __image_base;
+    __slide = .;
+    __image_base = ABSOLUTE(.);
+    __image_size = ABSOLUTE(__image_end - __image_base);
 
     .text : {
         *(.pe_header)
+
         . = ALIGN(0x1000);
 
         __text_start = ABSOLUTE(.);
@@ -24,19 +27,13 @@ SECTIONS
     } :text
 
     . = ALIGN(0x1000);
-    __text_end = .;
-    __text_size = __text_end - __text_start;
+    __text_end = ABSOLUTE(.);
+    __text_size = ABSOLUTE(__text_end - __text_start);
 
-    .data : {
-        __sbat_start = ABSOLUTE(.);
-        *(.data.sbat)
-        . = ALIGN(0x1000);
-        __sbat_end = ABSOLUTE(.);
-        __sbat_size = ABSOLUTE(__sbat_end - __sbat_start);
-        PROVIDE(__sbat_sizev = ABSOLUTE(0));
-
+    .rodata : {
         __reloc_start = ABSOLUTE(.);
-        *(.data.reloc)
+        *(.reloc)
+
         . = ALIGN(0x1000);
         __reloc_end = ABSOLUTE(.);
         __reloc_size = ABSOLUTE(__reloc_end - __reloc_start);
@@ -49,18 +46,16 @@ SECTIONS
 #else
    *(.full_map)
 #endif
+    } :rodata
 
-   *(.no_unwind)
-
+    .data : {
    data_begin = .;
         *(.data .data.*)
         *(.bss .bss.*)
         *(COMMON)
    data_end = .;
-    } :data
 
-    .rela : {
-        *(.rela .rela.*)
+   *(.no_unwind)
     } :data
 
     .got : {
@@ -72,10 +67,10 @@ SECTIONS
         . = ALIGN(0x1000);
     } :data :dynamic
 
-    __data_end = .;
-    __data_size = __data_end - __data_start;
+    __data_end = ABSOLUTE(.);
+    __data_size = ABSOLUTE(__data_end - __data_start);
 
-    __image_end = .;
+    __image_end = ABSOLUTE(.);
 
     /DISCARD/ : {
         *(.eh_frame)

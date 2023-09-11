@@ -11,7 +11,7 @@
 #if defined (BIOS)
 extern symbol stage2_map;
 #elif defined (UEFI)
-extern symbol __image_base;
+extern symbol __slide;
 #endif
 
 extern symbol full_map;
@@ -27,7 +27,7 @@ static char *trace_address(size_t *off, size_t addr) {
 #elif defined (UEFI)
     limine_map = full_map;
 
-    addr -= (size_t)__image_base;
+    addr -= (size_t)__slide;
 #endif
 
     uintptr_t prev_addr = 0;

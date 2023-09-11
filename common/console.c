@@ -31,7 +31,7 @@ static void console_help(void) {
 }
 
 #if defined (UEFI)
-extern symbol __image_base;
+extern symbol __slide;
 #endif
 
 void console(void) {
@@ -67,7 +67,7 @@ void console(void) {
 #endif
 #if defined (UEFI)
         } else if (strcmp(prompt, "slide") == 0) {
-            print("%p\n", __image_base);
+            print("%p\n", __slide);
 #endif
         } else if (strcmp(prompt, "version") == 0) {
             print(LIMINE_VERSION "\n");

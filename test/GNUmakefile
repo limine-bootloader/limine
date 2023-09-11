@@ -12,15 +12,15 @@ override LD := $(LD_FOR_TARGET)
 override QEMU := qemu-system-x86_64
 QEMUFLAGS = -m 1G -enable-kvm -cpu host
 
-ifneq ($(findstring x86_64,$(CC_FOR_TARGET)),)
+ifneq ($(findstring x86_64,$(shell $(CC_FOR_TARGET) -dumpmachine)),)
 override LDFLAGS += \
     -m elf_x86_64
 endif
-ifneq ($(findstring aarch64,$(CC_FOR_TARGET)),)
+ifneq ($(findstring aarch64,$(shell $(CC_FOR_TARGET) -dumpmachine)),)
 override LDFLAGS += \
     -m aarch64elf
 endif
-ifneq ($(findstring riscv64,$(CC_FOR_TARGET)),)
+ifneq ($(findstring riscv64,$(shell $(CC_FOR_TARGET) -dumpmachine)),)
 override LDFLAGS += \
     -m elf64lriscv
 endif
@@ -60,7 +60,7 @@ override CFLAGS += \
     -I. \
     -D_LIMINE_PROTO
 
-ifneq ($(findstring x86_64,$(CC_FOR_TARGET)),)
+ifneq ($(findstring x86_64,$(shell $(CC_FOR_TARGET) -dumpmachine)),)
 override CFLAGS += \
     -m64 \
     -march=x86-64 \
@@ -68,12 +68,12 @@ override CFLAGS += \
     -mno-red-zone
 endif
 
-ifneq ($(findstring aarch64,$(CC_FOR_TARGET)),)
+ifneq ($(findstring aarch64,$(shell $(CC_FOR_TARGET) -dumpmachine)),)
 override CFLAGS += \
     -mgeneral-regs-only
 endif
 
-ifneq ($(findstring riscv64,$(CC_FOR_TARGET)),)
+ifneq ($(findstring riscv64,$(shell $(CC_FOR_TARGET) -dumpmachine)),)
 override CFLAGS += \
     -march=rv64imac \
     -mabi=lp64 \
@@ -98,7 +98,7 @@ override CFLAGS_MB := \
     -I. \
     -I../common/protos
 
-ifneq ($(findstring 86,$(CC_FOR_TARGET)),)
+ifneq ($(findstring 86,$(shell $(CC_FOR_TARGET) -dumpmachine)),)
 all: test.elf multiboot2.elf multiboot.elf
 else
 all: test.elf

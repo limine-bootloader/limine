@@ -5,8 +5,10 @@ ENTRY(_start)
 PHDRS
 {
     text_s2   PT_LOAD    FLAGS((1 << 0) | (1 << 2)) ;
+    rodata_s2 PT_LOAD    FLAGS((1 << 2)) ;
     data_s2   PT_LOAD    FLAGS((1 << 1) | (1 << 2)) ;
     text_s3   PT_LOAD    FLAGS((1 << 0) | (1 << 2)) ;
+    rodata_s3 PT_LOAD    FLAGS((1 << 2)) ;
     data_s3   PT_LOAD    FLAGS((1 << 1) | (1 << 2)) ;
 }
 
@@ -21,17 +23,13 @@ SECTIONS
         *libgcc*.a:*(.text .text.*)
     } :text_s2
 
-    .data.stage2 : {
+    .rodata.stage2 : {
+        *.s2.o(.rodata .rodata.*)
+        *libgcc*.a:*(.rodata .rodata.*)
+
         build_id_s2 = .;
         KEEP(*build-id.s2.o(*))
 
-        *.s2.o(.no_unwind)
-        s2_data_begin = .;
-        *.s2.o(.data .data.*)
-        *libgcc*.a:*(.data .data.*)
-        s2_data_end = .;
-        *.s2.o(.rodata .rodata.*)
-        *libgcc*.a:*(.rodata .rodata.*)
 #ifdef LINKER_STAGE2ONLY
         /* stage2 missing symbols overrides */
         stage2_map = .;
@@ -54,6 +52,15 @@ SECTIONS
         *(.stage2_map)
 #endif
 #endif
+    } :rodata_s2
+
+    .data.stage2 : {
+        s2_data_begin = .;
+        *.s2.o(.data .data.*)
+        *libgcc*.a:*(.data .data.*)
+        s2_data_end = .;
+
+        *.s2.o(.no_unwind)
     } :data_s2
 
 #ifndef LINKER_STAGE2ONLY
@@ -62,19 +69,25 @@ SECTIONS
         *(.text .text.*)
     } :text_s3
 
-    .data.stage3 : {
+    .rodata.stage3 : {
+        *(.rodata .rodata.*)
+
         build_id_s3 = .;
         KEEP(*build-id.s3.o(*))
 
-        *(.rodata .rodata.*)
 #ifdef LINKER_NOMAP
         full_map = .;
 #else
         *(.full_map)
 #endif
-        *(.no_unwind)
+    } :rodata_s3
+
+    .data.stage3 : {
         data_begin = .;
         *(.data .data.*)
+        data_end = .;
+
+        *(.no_unwind)
     } :data_s3
 #endif
 
@@ -88,7 +101,6 @@ SECTIONS
         *(.bss .bss.*)
         *(COMMON)
         bss_end = .;
-        data_end = .;
     } :data_s3
 
     /DISCARD/ : {

@@ -217,15 +217,13 @@ noreturn void efi_chainload_file(char *config, char *cmdline, struct file_handle
 
     EFI_HANDLE efi_part_handle = image->efi_part_handle;
 
-    void *_ptr = freadall(image, MEMMAP_RESERVED);
+    void *ptr = freadall(image, MEMMAP_RESERVED);
     size_t image_size = image->size;
-    void *ptr;
-    status = gBS->AllocatePool(EfiLoaderData, image_size, &ptr);
-    if (status)
-        panic(true, "chainload: Allocation failure");
-    memcpy(ptr, _ptr, image_size);
 
-    pmm_free(_ptr, image->size);
+    memmap_alloc_range_in(untouched_memmap, &untouched_memmap_entries,
+                          (uintptr_t)ptr, ALIGN_UP(image_size, 4096),
+                          MEMMAP_RESERVED, MEMMAP_USABLE, true, false, true);
+
     fclose(image);
 
     term_notready();

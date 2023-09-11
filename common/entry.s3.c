@@ -26,7 +26,7 @@
 void stage3_common(void);
 
 #if defined (UEFI)
-extern symbol __image_base;
+extern symbol __slide;
 
 noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     gST = SystemTable;
@@ -52,7 +52,7 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 #endif
 
 #if defined (__x86_64__)
-    if ((uintptr_t)__image_base > 0x100000000) {
+    if ((uintptr_t)__slide >= 0x100000000) {
         panic(false, "Limine does not support being loaded above 4GiB");
     }
 #endif

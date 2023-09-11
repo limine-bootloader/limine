@@ -288,8 +288,8 @@ void init_memmap(void) {
 #if defined (UEFI)
 static struct memmap_entry *recl;
 
-extern symbol __image_base;
-extern symbol __image_end;
+extern symbol __slide;
+extern symbol __image_size;
 
 void init_memmap(void) {
     EFI_STATUS status;
@@ -422,10 +422,8 @@ void init_memmap(void) {
 
     sanitiser_keep_first_page = old_skfp;
 
-    size_t bootloader_size = ALIGN_UP((uintptr_t)__image_end - (uintptr_t)__image_base, 4096);
-
     // Allocate bootloader itself
-    memmap_alloc_range((uintptr_t)__image_base, bootloader_size,
+    memmap_alloc_range((uintptr_t)__slide, (uintptr_t)__image_size,
                        MEMMAP_BOOTLOADER_RECLAIMABLE, 0, true, false, true);
 
     sanitise_entries(memmap, &memmap_entries, false);

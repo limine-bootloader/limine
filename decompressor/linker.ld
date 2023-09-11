@@ -5,6 +5,7 @@ ENTRY(_start)
 PHDRS
 {
     text  PT_LOAD    FLAGS((1 << 0) | (1 << 2)) ;
+    rodata PT_LOAD   FLAGS((1 << 2)) ;
     data  PT_LOAD    FLAGS((1 << 1) | (1 << 2)) ;
 }
 
@@ -17,9 +18,12 @@ SECTIONS
         *(.text .text.*)
     } :text
 
+    .rodata : {
+        *(.rodata .rodata.*)
+    } :rodata
+
     .data : {
         *(.data .data.*)
-        *(.rodata .rodata.*)
     } :data
 
     .bss : {

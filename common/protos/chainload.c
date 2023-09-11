@@ -242,7 +242,7 @@ noreturn void efi_chainload_file(char *config, char *cmdline, struct file_handle
 
     size_t cmdline_len = strlen(cmdline);
     CHAR16 *new_cmdline;
-    status = gBS->AllocatePool(EfiLoaderData, cmdline_len * sizeof(CHAR16), (void **)&new_cmdline);
+    status = gBS->AllocatePool(EfiLoaderData, (cmdline_len + 1) * sizeof(CHAR16), (void **)&new_cmdline);
     if (status) {
         panic(true, "chainload: Allocation failure");
     }

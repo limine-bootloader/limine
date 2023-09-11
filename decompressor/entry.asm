@@ -2,7 +2,7 @@ extern bss_begin
 extern bss_end
 extern entry
 
-section .entry
+section .entry progbits alloc exec nowrite align=16
 
 global _start
 _start:

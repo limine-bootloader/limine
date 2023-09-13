@@ -551,77 +551,46 @@ static bool smp_start_ap(size_t hartid, size_t satp, struct limine_smp_info *inf
     return false;
 }
 
-struct limine_smp_info *init_smp(size_t   *cpu_count,
-                                 size_t    bsp_hartid,
-                                 pagemap_t pagemap,
-                                 uint64_t  hhdm_offset) {
-    // No RSDP means no ACPI.
-    // Parsing the Device Tree is the only other method for detecting APs.
-    if (acpi_get_rsdp() == NULL) {
-        printv("smp: ACPI is required to detect APs.\n");
-        return NULL;
-    }
-
-    struct madt *madt = acpi_get_table("APIC", 0);
-    if (madt == NULL)
-        return NULL;
-
-    size_t max_cpus = 0;
-    for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
-      (uintptr_t)madt_ptr < (uintptr_t)madt + madt->header.length;
-      madt_ptr += *(madt_ptr + 1)) {
-        switch (*madt_ptr) {
-            case 0x18: {
-                struct madt_riscv_intc *intc = (void *)madt_ptr;
-
-                // Check if we can actually try to start the AP
-                if ((intc->flags & 1) ^ ((intc->flags >> 1) & 1))
-                    max_cpus++;
-
-                continue;
-            }
+struct limine_smp_info *init_smp(size_t *cpu_count, pagemap_t pagemap, uint64_t hhdm_offset) {
+    size_t num_cpus = 0;
+    for (struct riscv_hart *hart = hart_list; hart != NULL; hart = hart->next) {
+        if (!(hart->flags & RISCV_HART_COPROC)) {
+            num_cpus += 1;
         }
     }
 
-    struct limine_smp_info *ret = ext_mem_alloc(max_cpus * sizeof(struct limine_smp_info));
+    struct limine_smp_info *ret = ext_mem_alloc(num_cpus * sizeof(struct limine_smp_info));
+    if (ret == NULL) {
+        panic(false, "out of memory");
+    }
+
     *cpu_count = 0;
-
-    // Try to start all APs
-    for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
-      (uintptr_t)madt_ptr < (uintptr_t)madt + madt->header.length;
-      madt_ptr += *(madt_ptr + 1)) {
-        switch (*madt_ptr) {
-            case 0x18: {
-                struct madt_riscv_intc *intc = (void *)madt_ptr;
-
-                // Check if we can actually try to start the AP
-                if (!((intc->flags & 1) ^ ((intc->flags >> 1) & 1)))
-                    continue;
-
-                struct limine_smp_info *info_struct = &ret[*cpu_count];
-
-                info_struct->processor_id = intc->acpi_processor_uid;
-                info_struct->hartid = intc->hartid;
-
-                // Do not try to restart the BSP
-                if (intc->hartid == bsp_hartid) {
-                    (*cpu_count)++;
-                    continue;
-                }
-
-                printv("smp: Found candidate AP for bring-up. Hart ID: %u\n", intc->hartid);
-
-                // Try to start the AP.
-                size_t satp = make_satp(pagemap.paging_mode, pagemap.top_level);
-                if (!smp_start_ap(intc->hartid, satp, info_struct, hhdm_offset)) {
-                    print("smp: FAILED to bring-up AP\n");
-                    continue;
-                }
-
-                (*cpu_count)++;
-                continue;
-            }
+    for (struct riscv_hart *hart = hart_list; hart != NULL; hart = hart->next) {
+        if (hart->flags & RISCV_HART_COPROC) {
+            continue;
         }
+        struct limine_smp_info *info_struct = &ret[*cpu_count];
+
+        info_struct->hartid = hart->hartid;
+        info_struct->processor_id = hart->acpi_uid;
+
+        // Don't try to start the BSP.
+        if (hart->hartid == bsp_hartid) {
+            *cpu_count += 1;
+            continue;
+        }
+
+        printv("smp: Found candidate AP for bring-up. Hart ID: %u\n", hart->hartid);
+
+        // Try to start the AP.
+        size_t satp = make_satp(pagemap.paging_mode, pagemap.top_level);
+        if (!smp_start_ap(hart->hartid, satp, info_struct, hhdm_offset)) {
+            print("smp: FAILED to bring-up AP\n");
+            continue;
+        }
+
+        (*cpu_count)++;
+        continue;
     }
 
     return ret;

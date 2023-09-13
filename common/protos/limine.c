@@ -923,19 +923,6 @@ FEAT_END
     pagemap = build_pagemap(paging_mode, nx_available, ranges, ranges_count,
                             physical_base, virtual_base, direct_map_offset);
 
-#if defined (__riscv64)
-    // Fetch the BSP's Hart ID before exiting boot services.
-    size_t bsp_hartid;
-    bool have_bsp_hartid = false;
-
-    RISCV_EFI_BOOT_PROTOCOL *riscv_boot_proto = get_riscv_boot_protocol();
-    if (riscv_boot_proto != NULL) {
-        if (riscv_boot_proto->GetBootHartId(riscv_boot_proto, &bsp_hartid) == EFI_SUCCESS) {
-            have_bsp_hartid = true;
-        }
-    }
-#endif
-
 #if defined (UEFI)
     efi_exit_boot_services();
 #endif
@@ -962,12 +949,7 @@ FEAT_START
                         pagemap, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa), LIMINE_SCTLR,
                         direct_map_offset);
 #elif defined (__riscv64)
-    if (!have_bsp_hartid) {
-        printv("smp: failed to get bsp's hart id\n");
-        break;
-    }
-
-    smp_info = init_smp(&cpu_count, bsp_hartid, pagemap, direct_map_offset);
+    smp_info = init_smp(&cpu_count, pagemap, direct_map_offset);
 #else
 #error Unknown architecture
 #endif

@@ -246,6 +246,7 @@ level4:
 #define PT_FLAG_USER        ((uint64_t)1 << 4)
 #define PT_FLAG_ACCESSED    ((uint64_t)1 << 6)
 #define PT_FLAG_DIRTY       ((uint64_t)1 << 7)
+#define PT_FLAG_PBMT_NC     ((uint64_t)1 << 62)
 #define PT_PADDR_MASK       ((uint64_t)0x003ffffffffffc00)
 
 #define PT_FLAG_RWX         (PT_FLAG_READ | PT_FLAG_WRITE | PT_FLAG_EXEC)
@@ -265,6 +266,8 @@ static uint64_t pt_to_vmm_flags_internal(pt_entry_t entry) {
         flags |= VMM_FLAG_WRITE;
     if (!(entry & PT_FLAG_EXEC))
         flags |= VMM_FLAG_NOEXEC;
+    if (entry & PT_FLAG_PBMT_NC)
+        flags |= VMM_FLAG_FB;
 
     return flags;
 }
@@ -331,11 +334,19 @@ done:
     return 6 + max_level;
 }
 
+static pt_entry_t pbmt_nc = 0;
+
 pagemap_t new_pagemap(int paging_mode) {
     pagemap_t pagemap;
     pagemap.paging_mode   = paging_mode;
     pagemap.max_page_size = paging_mode - 6;
     pagemap.top_level     = ext_mem_alloc(PT_SIZE);
+
+    if (riscv_check_isa_extension("svpbmt", NULL, NULL)) {
+        printv("riscv: Svpbmt extension is supported.\n");
+        pbmt_nc = PT_FLAG_PBMT_NC;
+    }
+
     return pagemap;
 }
 
@@ -351,6 +362,8 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
         ptflags |= PT_FLAG_WRITE;
     if (!(flags & VMM_FLAG_NOEXEC))
         ptflags |= PT_FLAG_EXEC;
+    if (flags & VMM_FLAG_FB)
+        ptflags |= pbmt_nc;
 
     // Start at the highest level.
     // The values of `enum page_size` map to the level index at which that size is mapped.

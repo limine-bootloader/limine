@@ -80,7 +80,7 @@ static inline struct rhct_hart_info *rhct_get_hart_info(struct rhct *rhct, uint3
     return NULL;
 }
 
-void riscv_init(void) {
+void init_riscv(void) {
     struct madt *madt = acpi_get_table("APIC", 0);
     struct rhct *rhct = acpi_get_table("RHCT", 0);
     if (madt == NULL || rhct == NULL) {
@@ -221,7 +221,7 @@ static bool parse_extension(const char **s, struct isa_extension *ext) {
 }
 
 static bool extension_matches(const struct isa_extension *ext, const char *name) {
-    for (size_t i = ext->name_len; i > 0; i--) {
+    for (size_t i = 0; i < ext->name_len; i++) {
         const char c1 = tolower(ext->name[i]);
         const char c2 = tolower(*name++);
         if (c2 == '\0' || c1 != c2) {

@@ -130,6 +130,15 @@ struct madt_x2apic {
     uint32_t acpi_processor_uid;
 } __attribute__((packed));
 
+struct madt_io_apic {
+    uint8_t type;
+    uint8_t length;
+    uint8_t apic_id;
+    uint8_t reserved;
+    uint32_t address;
+    uint32_t gsib;
+} __attribute__((packed));
+
 struct madt_gicc {
     struct madt_header header;
     uint8_t  reserved1[2];

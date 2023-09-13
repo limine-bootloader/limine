@@ -103,6 +103,66 @@ struct smbios_entry_point_64 {
     uint64_t table_address;
 } __attribute__((packed));
 
+struct madt {
+    struct sdt header;
+    uint32_t local_controller_addr;
+    uint32_t flags;
+    char     madt_entries_begin[];
+} __attribute__((packed));
+
+struct madt_header {
+    uint8_t type;
+    uint8_t length;
+} __attribute__((packed));
+
+struct madt_lapic {
+    struct madt_header header;
+    uint8_t  acpi_processor_uid;
+    uint8_t  lapic_id;
+    uint32_t flags;
+} __attribute__((packed));
+
+struct madt_x2apic {
+    struct madt_header header;
+    uint8_t  reserved[2];
+    uint32_t x2apic_id;
+    uint32_t flags;
+    uint32_t acpi_processor_uid;
+} __attribute__((packed));
+
+struct madt_gicc {
+    struct madt_header header;
+    uint8_t  reserved1[2];
+    uint32_t iface_no;
+    uint32_t acpi_uid;
+    uint32_t flags;
+    uint32_t parking_ver;
+    uint32_t perf_gsiv;
+    uint64_t parking_addr;
+    uint64_t gicc_base_addr;
+    uint64_t gicv_base_addr;
+    uint64_t gich_base_addr;
+    uint32_t vgic_maint_gsiv;
+    uint64_t gicr_base_addr;
+    uint64_t mpidr;
+    uint8_t  power_eff_class;
+    uint8_t  reserved2;
+    uint16_t spe_overflow_gsiv;
+} __attribute__((packed));
+
+// Reference: https://github.com/riscv-non-isa/riscv-acpi/issues/15
+struct madt_riscv_intc {
+    struct madt_header header;
+    uint8_t version;
+    uint8_t reserved;
+    uint32_t flags;
+    uint64_t hartid;
+    uint32_t acpi_processor_uid;
+} __attribute__((packed));
+
+#define MADT_RISCV_INTC_ENABLED        ((uint32_t)1 << 0)
+#define MADT_RISCV_INTC_ONLINE_CAPABLE ((uint32_t)1 << 1)
+
 uint8_t acpi_checksum(void *ptr, size_t size);
 void   *acpi_get_rsdp(void);
 

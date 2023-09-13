@@ -32,7 +32,6 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
 #elif defined (__riscv64)
 
 struct limine_smp_info *init_smp(size_t   *cpu_count,
-                                 uint64_t bsp_hartid,
                                  pagemap_t pagemap);
 
 #else

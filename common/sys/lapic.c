@@ -9,22 +9,6 @@
 #include <lib/acpi.h>
 #include <mm/pmm.h>
 
-struct madt {
-    struct sdt header;
-    uint32_t local_controller_addr;
-    uint32_t flags;
-    char     madt_entries_begin[];
-} __attribute__((packed));
-
-struct madt_io_apic {
-    uint8_t type;
-    uint8_t length;
-    uint8_t apic_id;
-    uint8_t reserved;
-    uint32_t address;
-    uint32_t gsib;
-} __attribute__((packed));
-
 struct dmar {
     struct sdt header;
     uint8_t host_address_width;

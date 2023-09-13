@@ -22,6 +22,7 @@
 #include <drivers/disk.h>
 #include <sys/lapic.h>
 #include <lib/readline.h>
+#include <sys/cpu.h>
 
 void stage3_common(void);
 
@@ -128,6 +129,18 @@ noreturn void stage3_common(void) {
 #if defined (__x86_64__) || defined (__i386__)
     init_flush_irqs();
     init_io_apics();
+#endif
+
+#if defined (__riscv)
+#if defined (UEFI)
+    RISCV_EFI_BOOT_PROTOCOL *rv_proto = get_riscv_boot_protocol();
+    if (rv_proto == NULL || rv_proto->GetBootHartId(rv_proto, &bsp_hartid) != EFI_SUCCESS) {
+        panic(false, "failed to get BSP's hartid");
+    }
+#else
+#error riscv: only UEFI is supported
+#endif
+    init_riscv();
 #endif
 
     term_notready();

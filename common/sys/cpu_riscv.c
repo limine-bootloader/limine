@@ -4,6 +4,7 @@
 #include <lib/acpi.h>
 #include <lib/misc.h>
 #include <lib/print.h>
+#include <sys/cpu.h>
 #include <mm/pmm.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -130,6 +131,10 @@ void init_riscv(void) {
             continue;
         }
 
+        if (strncmp("rv64", isa_string, 4) && strncmp("rv32", isa_string, 4)) {
+            print("riscv: skipping hartid %u with invalid isa string: %s", hartid, isa_string);
+        }
+
         struct riscv_hart *hart = ext_mem_alloc(sizeof(struct riscv_hart));
         if (hart == NULL) {
             panic(false, "out of memory");
@@ -233,7 +238,8 @@ static bool extension_matches(const struct isa_extension *ext, const char *name)
 }
 
 bool riscv_check_isa_extension_for(size_t hartid, const char *name, size_t *maj, size_t *min) {
-    const char *isa_string = riscv_get_hart(hartid)->isa_string;
+    // Skip the `rv{32,64}` prefix so it's not parsed as extensions.
+    const char *isa_string = riscv_get_hart(hartid)->isa_string + 4;
 
     struct isa_extension ext;
     while (parse_extension(&isa_string, &ext)) {

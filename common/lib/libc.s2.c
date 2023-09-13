@@ -12,6 +12,14 @@ bool isspace(int c) {
     return (c >= '\t' && c <= 0xD) || c == ' ';
 }
 
+bool isalpha(int c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+bool isdigit(int c) {
+    return c >= '0' && c <= '9';
+}
+
 int toupper(int c) {
     if (c >= 'a' && c <= 'z') {
         return c - 0x20;
@@ -76,6 +84,18 @@ int strncmp(const char *s1, const char *s2, size_t n) {
     for (size_t i = 0; i < n; i++) {
         char c1 = s1[i], c2 = s2[i];
         if (c1 != c2)
+            return c1 < c2 ? -1 : 1;
+        if (!c1)
+            return 0;
+    }
+
+    return 0;
+}
+
+int strncasecmp(const char *s1, const char *s2, size_t n) {
+    for (size_t i = 0; i < n; i++) {
+        char c1 = s1[i], c2 = s2[i];
+        if (tolower(c1) != tolower(c2))
             return c1 < c2 ? -1 : 1;
         if (!c1)
             return 0;

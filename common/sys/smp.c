@@ -14,55 +14,8 @@
 #define LIMINE_NO_POINTERS
 #include <limine.h>
 
-struct madt {
-    struct sdt header;
-    uint32_t local_controller_addr;
-    uint32_t flags;
-    char     madt_entries_begin[];
-} __attribute__((packed));
-
-struct madt_header {
-    uint8_t type;
-    uint8_t length;
-} __attribute__((packed));
-
-struct madt_lapic {
-    struct madt_header header;
-    uint8_t  acpi_processor_uid;
-    uint8_t  lapic_id;
-    uint32_t flags;
-} __attribute__((packed));
-
-struct madt_x2apic {
-    struct madt_header header;
-    uint8_t  reserved[2];
-    uint32_t x2apic_id;
-    uint32_t flags;
-    uint32_t acpi_processor_uid;
-} __attribute__((packed));
-
 extern symbol smp_trampoline_start;
 extern size_t smp_trampoline_size;
-
-struct madt_gicc {
-    struct madt_header header;
-    uint8_t  reserved1[2];
-    uint32_t iface_no;
-    uint32_t acpi_uid;
-    uint32_t flags;
-    uint32_t parking_ver;
-    uint32_t perf_gsiv;
-    uint64_t parking_addr;
-    uint64_t gicc_base_addr;
-    uint64_t gicv_base_addr;
-    uint64_t gich_base_addr;
-    uint32_t vgic_maint_gsiv;
-    uint64_t gicr_base_addr;
-    uint64_t mpidr;
-    uint8_t  power_eff_class;
-    uint8_t  reserved2;
-    uint16_t spe_overflow_gsiv;
-} __attribute__((packed));
 
 #if defined (__x86_64__) || defined (__i386__)
 

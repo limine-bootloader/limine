@@ -6,6 +6,8 @@
 
 bool isprint(int c);
 bool isspace(int c);
+bool isalpha(int c);
+bool isdigit(int c);
 
 int toupper(int c);
 int tolower(int c);
@@ -23,6 +25,7 @@ size_t strlen(const char *);
 int strcmp(const char *, const char *);
 int strcasecmp(const char *, const char *);
 int strncmp(const char *, const char *, size_t);
+int strncasecmp(const char *, const char *, size_t);
 int inet_pton(const char *src, void *dst);
 
 #endif

@@ -320,6 +320,30 @@ inline uint64_t rdtsc(void) {
     locked_read__ret; \
 })
 
+extern size_t bsp_hartid;
+
+struct riscv_hart {
+    struct riscv_hart *next;
+    const char *isa_string;
+    size_t hartid;
+    uint32_t acpi_uid;
+    uint8_t mmu_type;
+    uint8_t flags;
+};
+
+#define RISCV_HART_COPROC  ((uint8_t)1 << 0)  // is a coprocessor
+#define RISCV_HART_HAS_MMU ((uint8_t)1 << 1)  // `mmu_type` field is valid
+
+extern struct riscv_hart *hart_list;
+
+bool riscv_check_isa_extension_for(size_t hartid, const char *ext, size_t *maj, size_t *min);
+
+static inline bool riscv_check_isa_extension(const char *ext, size_t *maj, size_t *min) {
+    return riscv_check_isa_extension_for(bsp_hartid, ext, maj, min);
+}
+
+void init_riscv(void);
+
 #else
 #error Unknown architecture
 #endif

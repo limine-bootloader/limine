@@ -112,7 +112,7 @@ If the kernel is a position independent executable, the bootloader is free to
 relocate it as it sees fit, potentially performing KASLR (as specified by the
 config).
 
-## Entry machine state
+## Machine state at entry
 
 ### x86_64
 

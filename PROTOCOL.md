@@ -163,7 +163,7 @@ everything is mapped with `PBMT=PMA`).
 
 ## Machine state at entry
 
-### x86_64
+### x86-64
 
 `rip` will be the entry point as defined as part of the executable file format,
 unless the an Entry Point feature is requested (see below), in which case,
@@ -566,7 +566,7 @@ The possible settings are as follows:
 The effect of each of these options matches the effect of the `stty(1)`
 options by the same name.
 
-#### x86_64
+#### x86-64
 
 Additionally, the kernel must ensure, when calling `write()`, that:
 
@@ -747,7 +747,7 @@ The response indicates which paging mode was actually enabled by the bootloader.
 Kernels must be prepared to handle the case where the requested paging mode is
 not supported by the hardware.
 
-#### x86_64
+#### x86-64
 
 Values for `mode`:
 ```c
@@ -817,7 +817,7 @@ struct limine_5_level_paging_response {
 ```
 
 Notes: The presence of this request will prompt the bootloader to turn on
-x86_64 5-level paging. It will not be turned on if this request is not present.
+x86-64 5-level paging. It will not be turned on if this request is not present.
 If the response pointer is changed to a valid pointer, 5-level paging is engaged.
 
 ### SMP (multiprocessor) Feature
@@ -837,9 +837,9 @@ struct limine_smp_request {
 };
 ```
 
-* `flags` - Bit 0: Enable X2APIC, if possible. (x86_64-only)
+* `flags` - Bit 0: Enable X2APIC, if possible. (x86-64 only)
 
-#### x86_64:
+#### x86-64:
 
 Response:
 

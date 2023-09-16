@@ -8,7 +8,7 @@
 
 #define VMM_FLAG_WRITE   ((uint64_t)1 << 1)
 #define VMM_FLAG_NOEXEC  ((uint64_t)1 << 63)
-#define VMM_FLAG_FB      ((uint64_t)0)
+#define VMM_FLAG_FB      (((uint64_t)1 << 3) | ((uint64_t)1 << 12))
 
 #define VMM_MAX_LEVEL 3
 

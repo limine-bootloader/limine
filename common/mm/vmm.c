@@ -119,6 +119,12 @@ level4:
 
     pml1 = get_next_level(pagemap, pml2, virt_addr, pg_size, 1, pml2_entry);
 
+    // PML1 wants PAT bit at 7 instead of 12
+    if (flags & ((uint64_t)1 << 12)) {
+        flags &= ~((uint64_t)1 << 12);
+        flags |= ((uint64_t)1 << 7);
+    }
+
     pml1[pml1_entry] = (pt_entry_t)(phys_addr | flags);
 }
 

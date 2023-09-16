@@ -41,28 +41,25 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
     pagemap_t pagemap = new_pagemap(paging_mode);
 
     if (ranges_count == 0) {
-        // Map 0 to 2GiB at 0xffffffff80000000
-        for (uint64_t i = 0; i < 0x80000000; i += 0x40000000) {
-            map_page(pagemap, 0xffffffff80000000 + i, i, VMM_FLAG_WRITE, Size1GiB);
+        panic(true, "limine: ranges_count == 0");
+    }
+
+    for (size_t i = 0; i < ranges_count; i++) {
+        uint64_t virt = ranges[i].base;
+        uint64_t phys;
+
+        if (virt & ((uint64_t)1 << 63)) {
+            phys = physical_base + (virt - virtual_base);
+        } else {
+            panic(false, "limine: Virtual address of a PHDR in lower half");
         }
-    } else {
-        for (size_t i = 0; i < ranges_count; i++) {
-            uint64_t virt = ranges[i].base;
-            uint64_t phys;
 
-            if (virt & ((uint64_t)1 << 63)) {
-                phys = physical_base + (virt - virtual_base);
-            } else {
-                panic(false, "limine: Protected memory ranges are only supported for higher half kernels");
-            }
+        uint64_t pf =
+            (ranges[i].permissions & ELF_PF_X ? 0 : (nx ? VMM_FLAG_NOEXEC : 0)) |
+            (ranges[i].permissions & ELF_PF_W ? VMM_FLAG_WRITE : 0);
 
-            uint64_t pf =
-                (ranges[i].permissions & ELF_PF_X ? 0 : (nx ? VMM_FLAG_NOEXEC : 0)) |
-                (ranges[i].permissions & ELF_PF_W ? VMM_FLAG_WRITE : 0);
-
-            for (uint64_t j = 0; j < ranges[i].length; j += 0x1000) {
-                map_page(pagemap, virt + j, phys + j, pf, Size4KiB);
-            }
+        for (uint64_t j = 0; j < ranges[i].length; j += 0x1000) {
+            map_page(pagemap, virt + j, phys + j, pf, Size4KiB);
         }
     }
 
@@ -108,11 +105,13 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
         uint64_t length = _memmap[i].length;
         uint64_t top    = base + length;
 
-        if (base < 0x100000000)
+        if (base < 0x100000000) {
             base = 0x100000000;
+        }
 
-        if (base >= top)
+        if (base >= top) {
             continue;
+        }
 
         uint64_t aligned_base   = ALIGN_DOWN(base, 0x40000000);
         uint64_t aligned_top    = ALIGN_UP(top, 0x40000000);
@@ -125,15 +124,15 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
         }
     }
 
-    // Map the framebuffer as uncacheable
-#if defined (__aarch64__)
+    // Map the framebuffer with appropriate permissions
     for (size_t i = 0; i < _memmap_entries; i++) {
+        if (_memmap[i].type != MEMMAP_FRAMEBUFFER) {
+            continue;
+        }
+
         uint64_t base   = _memmap[i].base;
         uint64_t length = _memmap[i].length;
         uint64_t top    = base + length;
-
-        if (_memmap[i].type != MEMMAP_FRAMEBUFFER)
-            continue;
 
         uint64_t aligned_base   = ALIGN_DOWN(base, 0x1000);
         uint64_t aligned_top    = ALIGN_UP(top, 0x1000);
@@ -145,7 +144,6 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
             map_page(pagemap, direct_map_offset + page, page, VMM_FLAG_WRITE | VMM_FLAG_FB, Size4KiB);
         }
     }
-#endif
 
     return pagemap;
 }
@@ -1213,6 +1211,16 @@ FEAT_END
     r.ebx = 0x02;   // Long mode only
     rm_int(0x15, &r, &r);
 #endif
+
+    // Set PAT as:
+    // PAT0 -> WB  (06)
+    // PAT1 -> WT  (04)
+    // PAT2 -> UC- (07)
+    // PAT3 -> UC  (00)
+    // PAT4 -> WP  (05)
+    // PAT5 -> WC  (01)
+    uint64_t pat = (uint64_t)0x010500070406;
+    wrmsr(0x277, pat);
 
     pic_mask_all();
     io_apic_mask_all();

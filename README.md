@@ -21,7 +21,7 @@ Donations welcome, but absolutely not mandatory!
 
 ### Supported architectures
 * IA-32 (32-bit x86)
-* x86_64
+* x86-64
 * aarch64 (arm64)
 
 ### Supported boot protocols
@@ -48,7 +48,7 @@ opening issues or pull requests related to this.
 For 32-bit x86 systems, support is only ensured starting with those with
 Pentium Pro (i686) class CPUs.
 
-All x86_64 and aarch64 (UEFI) systems are supported.
+All x86-64 and aarch64 (UEFI) systems are supported.
 
 ## Packaging status
 

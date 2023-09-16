@@ -112,9 +112,9 @@ config).
 
 ## Caching
 
-### x86_64
+### x86-64
 
-The kernel executable, loaded at or above `0xffffffff80000000`, see all of its
+The kernel executable, loaded at or above `0xffffffff80000000`, sees all of its
 segments mapped using write-back (WB) caching at the page tables level.
 
 All HHDM memory regions are mapped using write-back (WB) caching at the page
@@ -137,7 +137,7 @@ The MTRRs are left as the firmware set them up.
 
 ### aarch64
 
-The kernel executable, loaded at or above `0xffffffff80000000`, see all of its
+The kernel executable, loaded at or above `0xffffffff80000000`, sees all of its
 segments mapped using Normal Write-Back RW-Allocate non-transient caching mode.
 
 All HHDM memory regions are mapped using the Normal Write-Back RW-Allocate
@@ -161,7 +161,7 @@ with the default `PBMT=PMA`.
 If the `Svpbmt` extension is not available, no PMAs can be overridden (effectively,
 everything is mapped with `PBMT=PMA`).
 
-## Entry machine state
+## Machine state at entry
 
 ### x86_64
 

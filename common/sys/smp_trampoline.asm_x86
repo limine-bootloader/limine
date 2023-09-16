@@ -168,6 +168,10 @@ parking64:
     jmp .loop
 
   .out:
+    ; Clear TLB
+    mov rax, cr3
+    mov cr3, rax
+
     mov rsp, qword [rdi + 8]
     push 0
     push rax

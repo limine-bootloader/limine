@@ -40,8 +40,8 @@ smp_trampoline_start:
     mov cr4, eax
 
     mov ecx, 0x277
-    rdmsr
-    mov edx, 0x0105
+    mov eax, 0x00070406
+    mov edx, 0x00000105
     wrmsr
 
     test dword [ebx + (passed_info.target_mode - smp_trampoline_start)], (1 << 2)

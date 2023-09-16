@@ -121,8 +121,17 @@ All HHDM memory regions are mapped using write-back (WB) caching at the page
 tables level, except framebuffer regions which are mapped using write-combining
 (WC) caching at the page tables level.
 
-The PAT's (Page Attribute Table) layout is unspecified and the OS should
-not be making assumptions about it.
+The PAT's (Page Attribute Table) layout is specified to be as follows:
+```
+PAT0 -> WB
+PAT1 -> WT
+PAT2 -> UC-
+PAT3 -> UC
+PAT4 -> WP
+PAT5 -> WC
+PAT6 -> unspecified
+PAT7 -> unspecified
+```
 
 The MTRRs are left as the firmware set them up.
 

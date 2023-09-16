@@ -149,7 +149,7 @@ The `MAIR_EL1` register will at least contain entries for the above-mentioned
 caching modes, in an unspecified order.
 
 In order to access MMIO regions, the kernel must ensure the correct caching mode
-is used on it's own.
+is used on its own.
 
 ### riscv64
 
@@ -213,7 +213,7 @@ unless the an Entry Point feature is requested (see below), in which case,
 the value of `PC` is going to be taken from there.
 
 The contents of the `VBAR_EL1` register are undefined, and the kernel must load
-it's own.
+its own.
 
 The `MAIR_EL1` register contents are described above, in the caching section.
 

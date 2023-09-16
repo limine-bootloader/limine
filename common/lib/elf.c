@@ -280,7 +280,7 @@ bool elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t lim
 
 #if defined (__x86_64__) || defined (__i386__)
     if (hdr->machine != ARCH_X86_64) {
-        printv("elf: Not an x86_64 ELF file.\n");
+        printv("elf: Not an x86-64 ELF file.\n");
         return false;
     }
 #elif defined (__aarch64__)
@@ -426,7 +426,7 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
 
 #if defined (__x86_64__) || defined (__i386__)
     if (hdr->machine != ARCH_X86_64) {
-        panic(true, "elf: Not an x86_64 ELF file.\n");
+        panic(true, "elf: Not an x86-64 ELF file.\n");
     }
 #elif defined (__aarch64__)
     if (hdr->machine != ARCH_AARCH64) {
@@ -689,7 +689,7 @@ bool elf64_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
     }
 
     if (hdr->machine != ARCH_X86_64) {
-        printv("elf: Not an x86_64 ELF file.\n");
+        printv("elf: Not an x86-64 ELF file.\n");
         return false;
     }
 

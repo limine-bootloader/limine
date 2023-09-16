@@ -63,18 +63,16 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
         }
     }
 
-    size_t _memmap_entries = memmap_entries;
-    struct memmap_entry *_memmap =
-        ext_mem_alloc(_memmap_entries * sizeof(struct memmap_entry));
-    for (size_t i = 0; i < _memmap_entries; i++)
-        _memmap[i] = memmap[i];
-
     // Map 0->4GiB range to HHDM
     for (uint64_t i = 0; i < 0x100000000; i += 0x40000000) {
         map_page(pagemap, direct_map_offset + i, i, VMM_FLAG_WRITE, Size1GiB);
     }
 
-    print_memmap(memmap, memmap_entries);
+    size_t _memmap_entries = memmap_entries;
+    struct memmap_entry *_memmap =
+        ext_mem_alloc(_memmap_entries * sizeof(struct memmap_entry));
+    for (size_t i = 0; i < _memmap_entries; i++)
+        _memmap[i] = memmap[i];
 
     // Map all free memory regions to the higher half direct map offset
     for (size_t i = 0; i < _memmap_entries; i++) {

@@ -574,7 +574,7 @@ struct limine_smp_info *init_smp(size_t *cpu_count, pagemap_t pagemap) {
 
         // Try to start the AP.
         size_t satp = make_satp(pagemap.paging_mode, pagemap.top_level);
-        if (!smp_start_ap(hart->hartid, satp, info_struct, hhdm_offset)) {
+        if (!smp_start_ap(hart->hartid, satp, info_struct)) {
             print("smp: FAILED to bring-up AP\n");
             continue;
         }

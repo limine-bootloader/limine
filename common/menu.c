@@ -776,6 +776,7 @@ refresh:
         terms[0]->get_cursor_pos(terms[0], &x, &y);
         set_cursor_pos_helper(terms[0]->cols / 2 - DIV_ROUNDUP(strlen(menu_branding), 2), y);
         print("\e[3%sm%s\e[37m", menu_branding_colour, menu_branding);
+        print("\n\n\n\n");
     }
 
     while (menu_tree == NULL) {

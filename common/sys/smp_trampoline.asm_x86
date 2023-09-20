@@ -169,8 +169,8 @@ parking64:
 
   .out:
     ; Clear TLB
-    mov rax, cr3
-    mov cr3, rax
+    mov rbx, cr3
+    mov cr3, rbx
 
     mov rsp, qword [rdi + 8]
     push 0

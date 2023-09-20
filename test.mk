@@ -13,7 +13,7 @@ ovmf-aa64:
 
 ovmf-rv64:
 	$(MKDIR_P) ovmf-rv64
-	cd ovmf-rv64 && curl -o OVMF.fd https://retrage.github.io/edk2-nightly/bin/RELEASERISCV64_VIRT.fd && dd if=/dev/zero of=OVMF.fd bs=1 count=0 seek=33554432
+	cd ovmf-rv64 && curl -o OVMF.fd https://retrage.github.io/edk2-nightly/bin/RELEASERISCV64_VIRT_CODE.fd && dd if=/dev/zero of=OVMF.fd bs=1 count=0 seek=33554432
 
 ovmf-ia32:
 	$(MKDIR_P) ovmf-ia32
@@ -262,7 +262,7 @@ uefi-rv64-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-riscv64 -m 512M -M virt -cpu rv64 -drive if=pflash,unit=1,format=raw,file=ovmf-rv64/OVMF.fd -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd -device virtio-blk-device,drive=hd0 -drive id=hd0,format=raw,file=test.hdd -serial stdio
+	qemu-system-riscv64 -m 512M -M virt -cpu rv64 -drive if=pflash,unit=0,format=raw,file=ovmf-rv64/OVMF.fd -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd -device virtio-blk-device,drive=hd0 -drive id=hd0,format=raw,file=test.hdd -serial stdio
 
 .PHONY: uefi-ia32-test
 uefi-ia32-test:

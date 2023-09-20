@@ -896,7 +896,7 @@ Response:
 ```c
 struct limine_smp_response {
     uint64_t revision;
-    uint32_t flags;
+    uint64_t flags;
     uint64_t bsp_mpidr;
     uint64_t cpu_count;
     struct limine_smp_info **cpus;
@@ -945,7 +945,7 @@ Response:
 ```c
 struct limine_smp_response {
     uint64_t revision;
-    uint32_t flags;
+    uint64_t flags;
     uint64_t bsp_hartid;
     uint64_t cpu_count;
     struct limine_smp_info **cpus;
@@ -967,7 +967,7 @@ struct limine_smp_info;
 typedef void (*limine_goto_address)(struct limine_smp_info *);
 
 struct limine_smp_info {
-    uint32_t processor_id;
+    uint64_t processor_id;
     uint64_t hartid;
     uint64_t reserved;
     limine_goto_address goto_address;

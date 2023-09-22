@@ -87,7 +87,7 @@ The protocol mandates kernels to load themselves at or above
 `0xffffffff80000000`. Lower half kernels are *not supported*.
 
 At handoff, the kernel will be properly loaded and mapped with appropriate
-MMU permissions at the requested virtual memory address (provided it is at
+MMU permissions, as supervisor, at the requested virtual memory address (provided it is at
 or above `0xffffffff80000000`).
 
 No specific physical memory placement is guaranteed, except that the kernel
@@ -95,12 +95,14 @@ is guaranteed to be physically contiguous. In order to determine
 where the kernel is loaded in physical memory, see the Kernel Address feature
 below.
 
-Alongside the loaded kernel, the bootloader will set up memory mappings such
-that every usable, bootloader reclaimable, framebuffer, or kernel/modules
-memory map region is mapped at HHDM offset + its physical address.
-Additionally, the whole 0->4GiB physical memory region will also be mapped
-at HHDM offset + physical address, regardless of the contents of the
-memory map. These mappings are supervisor, read, write, execute (-rwx).
+Alongside the loaded kernel, the bootloader will set up memory mappings as such:
+```
+ Base Physical Address |                                                       | Base Virtual Address
+  0x0000000000001000   | (4 GiB - 0x1000) and any additional memory map region |  0x0000000000001000
+  0x0000000000000000   |      4 GiB and any additional memory map region       |      HHDM start
+```
+Where "HHDM start" is returned by the Higher Half Direct Map feature (see below).
+These mappings are supervisor, read, write, execute (-rwx).
 
 The bootloader page tables are in bootloader-reclaimable memory (see Memory Map
 feature below), and their specific layout is undefined as long as they provide
@@ -117,7 +119,7 @@ config).
 The kernel executable, loaded at or above `0xffffffff80000000`, sees all of its
 segments mapped using write-back (WB) caching at the page tables level.
 
-All HHDM memory regions are mapped using write-back (WB) caching at the page
+All HHDM and identity map memory regions are mapped using write-back (WB) caching at the page
 tables level, except framebuffer regions which are mapped using write-combining
 (WC) caching at the page tables level.
 
@@ -140,7 +142,7 @@ The MTRRs are left as the firmware set them up.
 The kernel executable, loaded at or above `0xffffffff80000000`, sees all of its
 segments mapped using Normal Write-Back RW-Allocate non-transient caching mode.
 
-All HHDM memory regions are mapped using the Normal Write-Back RW-Allocate
+All HHDM and identity map memory regions are mapped using the Normal Write-Back RW-Allocate
 non-transient caching mode, except for the framebuffer regions, which are
 mapped in using an unspecified caching mode, correct for use with the
 framebuffer on the platform.
@@ -155,7 +157,7 @@ is used on its own.
 
 If the `Svpbmt` extension is available, all framebuffer memory regions are mapped
 with `PBMT=NC` to enable write-combining optimizations. The kernel executable,
-loaded at or above `0xffffffff80000000`, and all HHDM memory regions are mapped
+loaded at or above `0xffffffff80000000`, and all HHDM and identity map memory regions are mapped
 with the default `PBMT=PMA`.
 
 If the `Svpbmt` extension is not available, no PMAs can be overridden (effectively,

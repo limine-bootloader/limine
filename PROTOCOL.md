@@ -87,7 +87,7 @@ The protocol mandates kernels to load themselves at or above
 `0xffffffff80000000`. Lower half kernels are *not supported*.
 
 At handoff, the kernel will be properly loaded and mapped with appropriate
-MMU permissions at the requested virtual memory address (provided it is at
+MMU permissions, as supervisor, at the requested virtual memory address (provided it is at
 or above `0xffffffff80000000`).
 
 No specific physical memory placement is guaranteed, except that the kernel
@@ -97,11 +97,11 @@ below.
 
 Alongside the loaded kernel, the bootloader will set up memory mappings as such:
 ```
- Base Physical Address -                    Size                    ->  Virtual address
-  0x0000000000001000   - 4 GiB plus any additional memory map entry -> 0x0000000000001000
-  0x0000000000000000   - 4 GiB plus any additional memory map entry -> HHDM start
+ Base Physical Address |                                                       | Base Virtual Address
+  0x0000000000001000   | (4 GiB - 0x1000) and any additional memory map region |  0x0000000000001000
+  0x0000000000000000   |      4 GiB and any additional memory map region       |      HHDM start
 ```
-Where HHDM start is returned by the Higher Half Direct Map feature (see below).
+Where "HHDM start" is returned by the Higher Half Direct Map feature (see below).
 These mappings are supervisor, read, write, execute (-rwx).
 
 The bootloader page tables are in bootloader-reclaimable memory (see Memory Map
@@ -152,6 +152,16 @@ caching modes, in an unspecified order.
 
 In order to access MMIO regions, the kernel must ensure the correct caching mode
 is used on its own.
+
+### riscv64
+
+If the `Svpbmt` extension is available, all framebuffer memory regions are mapped
+with `PBMT=NC` to enable write-combining optimizations. The kernel executable,
+loaded at or above `0xffffffff80000000`, and all HHDM and identity map memory regions are mapped
+with the default `PBMT=PMA`.
+
+If the `Svpbmt` extension is not available, no PMAs can be overridden (effectively,
+everything is mapped with `PBMT=PMA`).
 
 ## Machine state at entry
 
@@ -236,6 +246,34 @@ Size Request (see below).
 
 All other general purpose registers (including `X29` and `X30`) are set to 0.
 Vector registers are in an undefined state.
+
+### riscv64
+
+At entry the machine is executing in Supervisor mode.
+
+`pc` will be the entry point as defined as part of the executable file format,
+unless the an Entry Point feature is requested (see below), in which case,
+the value of `pc` is going to be taken from there.
+
+`x1`(`ra`) is set to 0, the kernel must not return from the entry point.
+
+`x2`(`sp`) is set to point to a stack, in bootloader-reclaimable memory, which is
+at least 64KiB (65536 bytes) in size, or the size specified in the Stack
+Size Request (see below).
+
+`x3`(`gp`) is set to 0, kernel must load its own global pointer if needed.
+
+All other general purpose registers, with the exception of `x5`(`t0`), are set to 0.
+
+If booted by EFI/UEFI, boot services are exited.
+
+`stvec` is in an undefined state. `sstatus.SIE` and `sie` are set to 0.
+
+`sstatus.FS` and `sstatus.XS` are both set to `Off`.
+
+Paging is enabled with the paging mode specified by the Paging Mode feature (see below).
+
+The (A)PLIC, if present, is in an undefined state.
 
 ## Feature List
 
@@ -739,6 +777,21 @@ No `flags` are currently defined.
 
 The default mode (when this request is not provided) is `LIMINE_PAGING_MODE_AARCH64_4LVL`.
 
+#### riscv64
+
+Values for `mode`:
+```c
+#define LIMINE_PAGING_MODE_RISCV_SV39 0
+#define LIMINE_PAGING_MODE_RISCV_SV48 1
+#define LIMINE_PAGING_MODE_RISCV_SV57 2
+
+#define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_RISCV_SV48
+```
+
+No `flags` are currently defined.
+
+The default mode (when this request is not provided) is `LIMINE_PAGING_MODE_RISCV_SV48`.
+
 ### 5-Level Paging Feature
 
 Note: *This feature has been deprecated in favor of the [Paging Mode feature](#paging-mode-feature)
@@ -843,7 +896,7 @@ Response:
 ```c
 struct limine_smp_response {
     uint64_t revision;
-    uint32_t flags;
+    uint64_t flags;
     uint64_t bsp_mpidr;
     uint64_t cpu_count;
     struct limine_smp_info **cpus;
@@ -880,6 +933,53 @@ struct limine_smp_info {
 * `goto_address` - An atomic write to this field causes the parked CPU to
 jump to the written address, on a 64KiB (or Stack Size Request size) stack. A pointer to the
 `struct limine_smp_info` structure of the CPU is passed in `X0`. Other than
+that, the CPU state will be the same as described for the bootstrap
+processor. This field is unused for the structure describing the bootstrap
+processor.
+* `extra_argument` - A free for use field.
+
+#### riscv64
+
+Response:
+
+```c
+struct limine_smp_response {
+    uint64_t revision;
+    uint64_t flags;
+    uint64_t bsp_hartid;
+    uint64_t cpu_count;
+    struct limine_smp_info **cpus;
+};
+```
+
+* `flags` - Always zero
+* `bsp_hartid` - Hart ID of the bootstrap processor as reported by the UEFI RISC-V Boot Protocol or the SBI.
+* `cpu_count` - How many CPUs are present. It includes the bootstrap processor.
+* `cpus` - Pointer to an array of `cpu_count` pointers to
+`struct limine_smp_info` structures.
+
+Notes: The presence of this request will prompt the bootloader to bootstrap
+the secondary processors. This will not be done if this request is not present.
+
+```c
+struct limine_smp_info;
+
+typedef void (*limine_goto_address)(struct limine_smp_info *);
+
+struct limine_smp_info {
+    uint64_t processor_id;
+    uint64_t hartid;
+    uint64_t reserved;
+    limine_goto_address goto_address;
+    uint64_t extra_argument;
+};
+```
+
+* `processor_id` - ACPI Processor UID as specified by the MADT (always 0 on non-ACPI systems).
+* `hartid` - Hart ID of the processor as specified by the MADT or Device Tree.
+* `goto_address` - An atomic write to this field causes the parked CPU to
+jump to the written address, on a 64KiB (or Stack Size Request size) stack. A pointer to the
+`struct limine_smp_info` structure of the CPU is passed in `x10`(`a0`). Other than
 that, the CPU state will be the same as described for the bootstrap
 processor. This field is unused for the structure describing the bootstrap
 processor.

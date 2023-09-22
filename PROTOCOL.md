@@ -87,7 +87,7 @@ The protocol mandates kernels to load themselves at or above
 `0xffffffff80000000`. Lower half kernels are *not supported*.
 
 At handoff, the kernel will be properly loaded and mapped with appropriate
-MMU permissions at the requested virtual memory address (provided it is at
+MMU permissions, as supervisor, at the requested virtual memory address (provided it is at
 or above `0xffffffff80000000`).
 
 No specific physical memory placement is guaranteed, except that the kernel
@@ -97,11 +97,11 @@ below.
 
 Alongside the loaded kernel, the bootloader will set up memory mappings as such:
 ```
- Base Physical Address -                    Size                    ->  Virtual address
-  0x0000000000001000   - 4 GiB plus any additional memory map entry -> 0x0000000000001000
-  0x0000000000000000   - 4 GiB plus any additional memory map entry -> HHDM start
+ Base Physical Address |                                                       | Base Virtual Address
+  0x0000000000001000   | (4 GiB - 0x1000) and any additional memory map region |  0x0000000000001000
+  0x0000000000000000   |      4 GiB and any additional memory map region       |      HHDM start
 ```
-Where HHDM start is returned by the Higher Half Direct Map feature (see below).
+Where "HHDM start" is returned by the Higher Half Direct Map feature (see below).
 These mappings are supervisor, read, write, execute (-rwx).
 
 The bootloader page tables are in bootloader-reclaimable memory (see Memory Map

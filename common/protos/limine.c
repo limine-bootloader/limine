@@ -951,7 +951,7 @@ FEAT_START
 #if defined (__x86_64__) || defined (__i386__)
     uint32_t bsp_lapic_id;
     smp_info = init_smp(&cpu_count, &bsp_lapic_id,
-                        true, paging_mode,
+                        paging_mode,
                         pagemap, smp_request->flags & LIMINE_SMP_X2APIC, nx_available,
                         direct_map_offset, true);
 #elif defined (__aarch64__)

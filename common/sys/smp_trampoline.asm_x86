@@ -56,9 +56,6 @@ smp_trampoline_start:
   .nox2apic:
     lea esp, [ebx + (temp_stack.top - smp_trampoline_start)]
 
-    test dword [ebx + (passed_info.target_mode - smp_trampoline_start)], (1 << 0)
-    jz parking32
-
     mov eax, cr4
     bts eax, 5
     mov cr4, eax
@@ -122,34 +119,6 @@ smp_trampoline_start:
     lea rax, [rax + rbx + (parking64 - smp_trampoline_start)]
 
     jmp rax
-
-bits 32
-parking32:
-    mov edi, dword [ebx + (passed_info.smp_info_struct - smp_trampoline_start)]
-    mov eax, 1
-    lock xchg dword [ebx + (passed_info.booted_flag - smp_trampoline_start)], eax
-
-    xor eax, eax
-  .loop:
-    lock xadd dword [edi + 16], eax
-    test eax, eax
-    jnz .out
-    pause
-    jmp .loop
-
-  .out:
-    mov esp, dword [edi + 8]
-    push 0
-    push edi
-    push eax
-    xor eax, eax
-    xor ebx, ebx
-    xor ecx, ecx
-    xor edx, edx
-    xor esi, esi
-    xor edi, edi
-    xor ebp, ebp
-    ret
 
 bits 64
 parking64:

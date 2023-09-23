@@ -38,6 +38,7 @@ Donations welcome, but absolutely not mandatory!
 * Unpartitioned media
 
 ### Supported filesystems
+* ext2/3/4
 * FAT12/16/32
 * ISO9660 (CDs/DVDs)
 

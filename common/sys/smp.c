@@ -30,7 +30,7 @@ struct trampoline_passed_info {
 
 static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
                          struct limine_smp_info *info_struct,
-                         bool longmode, int paging_mode, uint32_t pagemap,
+                         int paging_mode, uint32_t pagemap,
                          bool x2apic, bool nx, uint64_t hhdm, bool wp) {
     // Prepare the trampoline
     static void *trampoline = NULL;
@@ -50,10 +50,9 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
     passed_info->smp_tpl_booted_flag = 0;
     passed_info->smp_tpl_pagemap     = pagemap;
     passed_info->smp_tpl_target_mode = ((uint32_t)x2apic << 2)
-                                     | ((uint32_t)paging_mode << 1)
+                                     | ((uint32_t)(paging_mode == PAGING_MODE_X86_64_5LVL) << 1)
                                      | ((uint32_t)nx << 3)
-                                     | ((uint32_t)wp << 4)
-                                     | ((uint32_t)longmode << 0);
+                                     | ((uint32_t)wp << 4);
     passed_info->smp_tpl_gdt = *gdtr;
     passed_info->smp_tpl_hhdm = hhdm;
 
@@ -89,7 +88,6 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
 
 struct limine_smp_info *init_smp(size_t   *cpu_count,
                                  uint32_t *_bsp_lapic_id,
-                                 bool      longmode,
                                  int       paging_mode,
                                  pagemap_t pagemap,
                                  bool      x2apic,
@@ -197,7 +195,7 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
 
                 // Try to start the AP
                 if (!smp_start_ap(lapic->lapic_id, &gdtr, info_struct,
-                                  longmode, paging_mode, (uintptr_t)pagemap.top_level,
+                                  paging_mode, (uintptr_t)pagemap.top_level,
                                   x2apic, nx, hhdm, wp)) {
                     print("smp: FAILED to bring-up AP\n");
                     continue;
@@ -234,7 +232,7 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
 
                 // Try to start the AP
                 if (!smp_start_ap(x2lapic->x2apic_id, &gdtr, info_struct,
-                                  longmode, paging_mode, (uintptr_t)pagemap.top_level,
+                                  paging_mode, (uintptr_t)pagemap.top_level,
                                   true, nx, hhdm, wp)) {
                     print("smp: FAILED to bring-up AP\n");
                     continue;

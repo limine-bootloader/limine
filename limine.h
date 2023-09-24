@@ -330,7 +330,7 @@ struct limine_smp_info {
 
 struct limine_smp_response {
     uint64_t revision;
-    uint32_t flags;
+    uint64_t flags;
     uint64_t bsp_mpidr;
     uint64_t cpu_count;
     LIMINE_PTR(struct limine_smp_info **) cpus;
@@ -339,7 +339,7 @@ struct limine_smp_response {
 #elif defined (__riscv) && (__riscv_xlen == 64)
 
 struct limine_smp_info {
-    uint32_t processor_id;
+    uint64_t processor_id;
     uint64_t hartid;
     uint64_t reserved;
     LIMINE_PTR(limine_goto_address) goto_address;
@@ -348,7 +348,7 @@ struct limine_smp_info {
 
 struct limine_smp_response {
     uint64_t revision;
-    uint32_t flags;
+    uint64_t flags;
     uint64_t bsp_hartid;
     uint64_t cpu_count;
     LIMINE_PTR(struct limine_smp_info **) cpus;

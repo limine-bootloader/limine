@@ -480,6 +480,23 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
               && phdr_in->p_vaddr + phdr_in->p_memsz <= phdr->p_vaddr + phdr->p_memsz)) {
                 panic(true, "elf: Attempted to load ELF file with overlapping PHDRs (%u and %u overlap)", i, j);
             }
+
+            if (ranges != NULL) {
+                uint64_t page_rounded_base = ALIGN_DOWN(phdr->p_vaddr, 4096);
+                uint64_t page_rounded_top = ALIGN_UP(phdr->p_vaddr + phdr->p_memsz, 4096);
+                uint64_t page_rounded_base_in = ALIGN_DOWN(phdr_in->p_vaddr, 4096);
+                uint64_t page_rounded_top_in = ALIGN_UP(phdr_in->p_vaddr + phdr_in->p_memsz, 4096);
+
+                if ((page_rounded_base >= page_rounded_base_in
+                  && page_rounded_base < page_rounded_top_in)
+                   ||
+                    (page_rounded_top > page_rounded_base_in
+                  && page_rounded_top <= page_rounded_top_in)) {
+                    if ((phdr->p_flags & 0b111) != (phdr_in->p_flags & 0b111)) {
+                        panic(true, "elf: Attempted to load ELF file with PHDRs with different permissions sharing the same memory page.");
+                    }
+                }
+            }
         }
 
         if (phdr->p_vaddr < min_vaddr) {

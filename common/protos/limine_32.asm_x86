@@ -98,3 +98,5 @@ bits 64
     xor r15d, r15d
 
     iretq
+
+section .note.GNU-stack noalloc noexec nowrite progbits

@@ -63,3 +63,5 @@ smp_trampoline_start:
         ld      sp, 16(a0)
 
         jr      t0
+
+.section .note.GNU-stack,"",%progbits

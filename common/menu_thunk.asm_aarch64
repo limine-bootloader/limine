@@ -23,3 +23,5 @@ menu:
     mov x29, xzr
 
     b _menu
+
+.section .note.GNU-stack,"",%progbits

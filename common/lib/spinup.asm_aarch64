@@ -61,3 +61,5 @@ enter_in_el1:
     ZERO_REGS_EXCEPT_X0
 
     eret
+
+.section .note.GNU-stack,"",%progbits

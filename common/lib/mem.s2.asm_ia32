@@ -107,3 +107,5 @@ bits 32
     pop esi
     pop ebp
     ret
+
+section .note.GNU-stack noalloc noexec nowrite progbits

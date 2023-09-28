@@ -65,3 +65,5 @@ linux_spinup:
     cld
 
     jmp [esp+4]
+
+section .note.GNU-stack noalloc noexec nowrite progbits

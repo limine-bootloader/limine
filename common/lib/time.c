@@ -9,7 +9,7 @@
 #include <lib/misc.h>
 
 // Julian date calculation from https://en.wikipedia.org/wiki/Julian_day
-static uint64_t get_jdn(uint8_t days, uint8_t months, uint16_t years) {
+static int get_jdn(int days, int months, int years) {
     return (1461 * (years + 4800 + (months - 14)/12))/4 + (367 *
            (months - 2 - 12 * ((months - 14)/12)))/12 -
            (3 * ((years + 4900 + (months - 14)/12)/100))/4

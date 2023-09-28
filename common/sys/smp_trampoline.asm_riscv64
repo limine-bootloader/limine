@@ -54,7 +54,7 @@ smp_trampoline_start:
         csrw    stvec, zero
 
         // Wait for kernel to tell us where to go.
-0:      .insn i 0x0F, 0, x0, x0, 0x010  // pause
+0:      .4byte 0x0100000f    // pause
         ld      t0, 24(a0)
         fence   r, rw
         beqz    t0, 0b

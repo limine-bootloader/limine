@@ -8,3 +8,5 @@ dummy_isr:
     call lapic_eoi
     popa
     iretd
+
+section .note.GNU-stack noalloc noexec nowrite progbits

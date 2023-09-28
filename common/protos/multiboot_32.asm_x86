@@ -19,3 +19,5 @@ multiboot_spinup_32:
     pop edx ; elf_ranges_count
 
     jmp ebx
+
+section .note.GNU-stack noalloc noexec nowrite progbits

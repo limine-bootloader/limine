@@ -8,3 +8,5 @@ efi_main:
     mov x29, xzr
 
     b uefi_entry
+
+.section .note.GNU-stack,"",%progbits

@@ -7,3 +7,5 @@ efi_main:
         mv      fp, zero
         mv      ra, zero
         j       uefi_entry
+
+.section .note.GNU-stack,"",%progbits

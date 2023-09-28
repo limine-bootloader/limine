@@ -15,3 +15,5 @@ sbicall:
         mv      a6, t1
         ecall
         ret
+
+.section .note.GNU-stack,"",%progbits

@@ -153,3 +153,5 @@ _pit_sleep_and_quit_on_keypress:
   .mods:  dd 0
   .ascii: dd 0
   .scan:  dd 0
+
+section .note.GNU-stack noalloc noexec nowrite progbits

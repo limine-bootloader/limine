@@ -60,3 +60,5 @@ common_spinup:
     mov cr4, eax
 
     call edi
+
+section .note.GNU-stack noalloc noexec nowrite progbits

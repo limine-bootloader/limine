@@ -32,7 +32,7 @@ SECTIONS
 
     .rodata : {
         __reloc_start = ABSOLUTE(.);
-        *(.reloc)
+        *(.dummy_reloc)
 
         . = ALIGN(0x1000);
         __reloc_end = ABSOLUTE(.);

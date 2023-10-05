@@ -56,6 +56,7 @@ void pmm_randomise_memory(void);
 void *ext_mem_alloc(size_t count);
 void *ext_mem_alloc_type(size_t count, uint32_t type);
 void *ext_mem_alloc_type_aligned(size_t count, uint32_t type, size_t alignment);
+void *ext_mem_alloc_type_aligned_mode(size_t count, uint32_t type, size_t alignment, bool allow_high_allocs);
 
 void *conv_mem_alloc(size_t count);
 

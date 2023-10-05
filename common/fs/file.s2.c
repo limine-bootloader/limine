@@ -96,6 +96,10 @@ void fread(struct file_handle *fd, void *buf, uint64_t loc, uint64_t count) {
 }
 
 void *freadall(struct file_handle *fd, uint32_t type) {
+    return freadall_mode(fd, type, false);
+}
+
+void *freadall_mode(struct file_handle *fd, uint32_t type, bool allow_high_allocs) {
     if (fd->is_memfile) {
         if (fd->readall) {
             return fd->fd;
@@ -104,7 +108,7 @@ void *freadall(struct file_handle *fd, uint32_t type) {
         fd->readall = true;
         return fd->fd;
     } else {
-        void *ret = ext_mem_alloc_type(fd->size, type);
+        void *ret = ext_mem_alloc_type_aligned_mode(fd->size, type, 4096, allow_high_allocs);
         fd->read(fd, ret, 0, fd->size);
         fd->close(fd);
         fd->fd = ret;

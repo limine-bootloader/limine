@@ -250,7 +250,7 @@ static struct limine_file get_file(struct file_handle *file, char *cmdline) {
 
     ret.path = reported_addr(path);
 
-    ret.address = reported_addr(freadall(file, MEMMAP_KERNEL_AND_MODULES));
+    ret.address = reported_addr(freadall_mode(file, MEMMAP_KERNEL_AND_MODULES, true));
     ret.size = file->size;
 
     ret.cmdline = reported_addr(cmdline);

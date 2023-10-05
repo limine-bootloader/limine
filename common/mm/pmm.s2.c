@@ -568,13 +568,15 @@ void *ext_mem_alloc_type(size_t count, uint32_t type) {
 }
 
 void *ext_mem_alloc_type_aligned(size_t count, uint32_t type, size_t alignment) {
-#if defined (__x86_64__) || defined (__aarch64__) || defined (__riscv64)
     return ext_mem_alloc_type_aligned_mode(count, type, alignment, false);
 }
 
 // Allocate memory top down.
 void *ext_mem_alloc_type_aligned_mode(size_t count, uint32_t type, size_t alignment, bool allow_high_allocs) {
+#if !defined (__x86_64__) && !defined (__aarch64__) && !defined (__riscv64)
+    (void)allow_high_allocs;
 #endif
+
     count = ALIGN_UP(count, alignment);
 
     if (allocations_disallowed)

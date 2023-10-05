@@ -356,25 +356,6 @@ void init_memmap(void) {
         uint64_t base = entry->PhysicalStart;
         uint64_t length = entry->NumberOfPages * 4096;
 
-        // We only manage memory below 4GiB. For anything above that, make it
-        // EFI reclaimable.
-        if (our_type == MEMMAP_USABLE) {
-            if (base + length > 0x100000000) {
-                if (base < 0x100000000) {
-                    memmap[memmap_entries].base = base;
-                    memmap[memmap_entries].length = 0x100000000 - base;
-                    memmap[memmap_entries].type = our_type;
-
-                    base = 0x100000000;
-                    length -= memmap[memmap_entries].length;
-
-                    memmap_entries++;
-                }
-
-                our_type = MEMMAP_EFI_RECLAIMABLE;
-            }
-        }
-
         memmap[memmap_entries].base = base;
         memmap[memmap_entries].length = length;
         memmap[memmap_entries].type = our_type;
@@ -565,8 +546,12 @@ void *ext_mem_alloc_type(size_t count, uint32_t type) {
     return ext_mem_alloc_type_aligned(count, type, 4096);
 }
 
-// Allocate memory top down, hopefully without bumping into kernel or modules
 void *ext_mem_alloc_type_aligned(size_t count, uint32_t type, size_t alignment) {
+    return ext_mem_alloc_type_aligned_mode(count, type, alignment, false);
+}
+
+// Allocate memory top down.
+void *ext_mem_alloc_type_aligned_mode(size_t count, uint32_t type, size_t alignment, bool allow_high_allocs) {
     count = ALIGN_UP(count, alignment);
 
     if (allocations_disallowed)
@@ -580,7 +565,7 @@ void *ext_mem_alloc_type_aligned(size_t count, uint32_t type, size_t alignment) 
         int64_t entry_top  = (int64_t)(memmap[i].base + memmap[i].length);
 
         // Let's make sure the entry is not > 4GiB
-        if (entry_top >= 0x100000000) {
+        if (entry_top >= 0x100000000 && !allow_high_allocs) {
             entry_top = 0x100000000;
             if (entry_base >= entry_top)
                 continue;

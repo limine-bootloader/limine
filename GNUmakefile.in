@@ -11,7 +11,7 @@ override datarootdir := @datarootdir@
 override mandir := @mandir@
 override docdir := @docdir@
 
-override NATIVE_STRIP := @NATIVE_STRIP@
+override STRIP := @STRIP@
 
 DESTDIR ?=
 
@@ -178,7 +178,7 @@ endif
 
 .PHONY: install-strip
 install-strip: install
-	$(NATIVE_STRIP) '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine'
+	$(STRIP) '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine'
 
 .PHONY: uninstall
 uninstall:

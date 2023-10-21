@@ -25,9 +25,6 @@ AC_LANG([C])
 AC_PROG_CC
 PROG_ABSPATH([CC])
 
-AC_CHECK_HEADERS([stdint.h stddef.h stdbool.h limits.h inttypes.h stdio.h stdlib.h string.h],
-    [], [AC_MSG_ERROR([required header not found])])
-
 werror_state="no"
 AC_ARG_ENABLE([werror],
     [AS_HELP_STRING([--enable-werror], [treat warnings as errors])],
@@ -54,14 +51,36 @@ if ! test "x$FIND_FOUND" = "xyes"; then
     AC_MSG_ERROR([find not found, please install find before configuring])
 fi
 
-NATIVE_STRIP="$($CC -dumpmachine)"-strip
-AC_CHECK_PROG([NATIVE_STRIP_FOUND], [$NATIVE_STRIP], [yes])
-if ! test "x$NATIVE_STRIP_FOUND" = "xyes"; then
-    NATIVE_STRIP=strip
+STRIP="$($CC -dumpmachine)"-strip
+AC_CHECK_PROG([STRIP_FOUND], [$STRIP], [yes])
+if ! test "x$STRIP_FOUND" = "xyes"; then
+    STRIP=strip
 fi
-AC_SUBST([NATIVE_STRIP])
+AC_SUBST([STRIP])
 
-rm -rf "$BUILDDIR/toolchain-files"
+PKGCONFIG="$($CC -dumpmachine)"-pkg-config
+AC_CHECK_PROG([PKGCONFIG_FOUND], [$PKGCONFIG], [yes])
+if ! test "x$PKGCONFIG_FOUND" = "xyes"; then
+    PKGCONFIG=pkg-config
+fi
+
+PKGCONFIG_LIBS=""
+
+CFLAGS="$CFLAGS $($PKGCONFIG --cflags-only-other $PKGCONFIG_LIBS 2>/dev/null)"
+CPPFLAGS="$($PKGCONFIG --cflags-only-I $PKGCONFIG_LIBS 2>/dev/null) $CPPFLAGS"
+LIBS="$LIBS $($PKGCONFIG --libs $PKGCONFIG_LIBS 2>/dev/null)"
+
+AC_CHECK_HEADERS([stdint.h stddef.h stdbool.h limits.h inttypes.h stdio.h stdlib.h string.h],
+    [], [AC_MSG_ERROR([required header not found])])
+
+AC_ARG_VAR([TOOLCHAIN_FOR_TARGET], [alternative toolchain prefix for Limine (or 'llvm', or 'gnu')])
+AC_ARG_VAR([CC_FOR_TARGET], [C compiler command for Limine])
+AC_ARG_VAR([LD_FOR_TARGET], [linker command for Limine])
+AC_ARG_VAR([OBJCOPY_FOR_TARGET], [objcopy command for Limine])
+AC_ARG_VAR([OBJDUMP_FOR_TARGET], [objdump command for Limine])
+AC_ARG_VAR([READELF_FOR_TARGET], [readelf command for Limine])
+
+rm -rf toolchain-files
 
 BUILD_ALL="no"
 
@@ -105,7 +124,7 @@ fi
 if test "x$BUILD_BIOS" = "xno"; then
     BUILD_BIOS=""
 else
-    $MKDIR_P "$BUILDDIR/toolchain-files"
+    $MKDIR_P toolchain-files
     CC="$CC" \
         ARCHITECTURE=i686 \
         FREESTANDING_TOOLCHAIN_SUFFIX="_FOR_TARGET" \
@@ -120,7 +139,7 @@ else
         FREESTANDING_OBJDUMP="$OBJDUMP_FOR_TARGET" \
         WANT_FREESTANDING_READELF=yes \
         FREESTANDING_READELF="$READELF_FOR_TARGET" \
-        "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/bios-i686-toolchain.mk" || exit 1
+        "$SRCDIR/freestanding-toolchain" >"toolchain-files/bios-i686-toolchain.mk" || exit 1
     BUILD_BIOS="limine-bios"
     NEED_NASM=yes
     NEED_GZIP=yes
@@ -138,7 +157,7 @@ AC_ARG_ENABLE([uefi-ia32],
 if test "x$BUILD_UEFI_IA32" = "xno"; then
     BUILD_UEFI_IA32=""
 else
-    $MKDIR_P "$BUILDDIR/toolchain-files"
+    $MKDIR_P toolchain-files
     CC="$CC" \
         ARCHITECTURE=i686 \
         FREESTANDING_TOOLCHAIN_SUFFIX="_FOR_TARGET" \
@@ -151,7 +170,7 @@ else
         FREESTANDING_OBJCOPY="$OBJCOPY_FOR_TARGET" \
         WANT_FREESTANDING_OBJDUMP=yes \
         FREESTANDING_OBJDUMP="$OBJDUMP_FOR_TARGET" \
-        "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/uefi-i686-toolchain.mk" || exit 1
+        "$SRCDIR/freestanding-toolchain" >"toolchain-files/uefi-i686-toolchain.mk" || exit 1
     BUILD_UEFI_IA32="limine-uefi-ia32"
     NEED_NASM=yes
 fi
@@ -167,7 +186,7 @@ AC_ARG_ENABLE([uefi-x86-64],
 if test "x$BUILD_UEFI_X86_64" = "xno"; then
     BUILD_UEFI_X86_64=""
 else
-    $MKDIR_P "$BUILDDIR/toolchain-files"
+    $MKDIR_P toolchain-files
     CC="$CC" \
         ARCHITECTURE=x86_64 \
         FREESTANDING_TOOLCHAIN_SUFFIX="_FOR_TARGET" \
@@ -180,7 +199,7 @@ else
         FREESTANDING_OBJCOPY="$OBJCOPY_FOR_TARGET" \
         WANT_FREESTANDING_OBJDUMP=yes \
         FREESTANDING_OBJDUMP="$OBJDUMP_FOR_TARGET" \
-        "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/uefi-x86_64-toolchain.mk" || exit 1
+        "$SRCDIR/freestanding-toolchain" >"toolchain-files/uefi-x86_64-toolchain.mk" || exit 1
     BUILD_UEFI_X86_64="limine-uefi-x86-64"
     NEED_NASM=yes
 fi
@@ -196,7 +215,7 @@ AC_ARG_ENABLE([uefi-aarch64],
 if test "x$BUILD_UEFI_AARCH64" = "xno"; then
     BUILD_UEFI_AARCH64=""
 else
-    mkdir -p "$BUILDDIR/toolchain-files"
+    mkdir -p toolchain-files
     CC="$CC" \
         ARCHITECTURE=aarch64 \
         FREESTANDING_TOOLCHAIN_SUFFIX="_FOR_TARGET" \
@@ -209,7 +228,7 @@ else
         FREESTANDING_OBJCOPY="$OBJCOPY_FOR_TARGET" \
         WANT_FREESTANDING_OBJDUMP=yes \
         FREESTANDING_OBJDUMP="$OBJDUMP_FOR_TARGET" \
-        "$SRCDIR/freestanding-toolchain" >"$BUILDDIR/toolchain-files/uefi-aarch64-toolchain.mk" || exit 1
+        "$SRCDIR/freestanding-toolchain" >"toolchain-files/uefi-aarch64-toolchain.mk" || exit 1
     BUILD_UEFI_AARCH64="limine-uefi-aarch64"
 fi
 
@@ -248,13 +267,6 @@ if test "x$NEED_GZIP" = "xyes"; then
     fi
 fi
 
-AC_ARG_VAR([TOOLCHAIN_FOR_TARGET], [alternative toolchain prefix for Limine (or 'llvm', or 'gnu')])
-AC_ARG_VAR([CC_FOR_TARGET], [C compiler command for Limine])
-AC_ARG_VAR([LD_FOR_TARGET], [linker command for Limine])
-AC_ARG_VAR([OBJCOPY_FOR_TARGET], [objcopy command for Limine])
-AC_ARG_VAR([OBJDUMP_FOR_TARGET], [objdump command for Limine])
-AC_ARG_VAR([READELF_FOR_TARGET], [readelf command for Limine])
-
 m4_define([DEFAULT_CFLAGS_FOR_TARGET], [-g -O2 -pipe])
 AC_ARG_VAR([CFLAGS_FOR_TARGET], [C flags for Limine @<:@default: ]DEFAULT_CFLAGS_FOR_TARGET[@:>@])
 test "x$CFLAGS_FOR_TARGET" = "x" && CFLAGS_FOR_TARGET="DEFAULT_CFLAGS_FOR_TARGET"
@@ -264,7 +276,7 @@ AC_ARG_VAR([CPPFLAGS_FOR_TARGET], [C preprocessor flags for Limine @<:@default: 
 test "x$CPPFLAGS_FOR_TARGET" = "x" && CPPFLAGS_FOR_TARGET="DEFAULT_CPPFLAGS_FOR_TARGET"
 
 m4_define([DEFAULT_LDFLAGS_FOR_TARGET], [])
-AC_ARG_VAR([LDFLAGS_FOR_TARGET], [Linker flags for Limine @<:@default: ]DEFAULT_LDFLAGS_FOR_TARGET[@:>@])
+AC_ARG_VAR([LDFLAGS_FOR_TARGET], [linker flags for Limine @<:@default: ]DEFAULT_LDFLAGS_FOR_TARGET[@:>@])
 test "x$LDFLAGS_FOR_TARGET" = "x" && LDFLAGS_FOR_TARGET="DEFAULT_LDFLAGS_FOR_TARGET"
 
 LIMINE_COPYRIGHT=$($GREP Copyright "$SRCDIR/LICENSE")
@@ -272,8 +284,8 @@ AC_SUBST([LIMINE_COPYRIGHT])
 
 AC_PREFIX_DEFAULT([/usr/local])
 
-if ! test "$SRCDIR" = "$BUILDDIR"; then
-    cp "$SRCDIR/limine.h" "$BUILDDIR/"
+if ! test -f limine.h; then
+    cp "$SRCDIR/limine.h" ./
 fi
 
 AC_CONFIG_FILES([man/man1/limine-version.1 man/man1/limine-deploy.1 man/man1/limine-enroll-config.1 GNUmakefile config.h])

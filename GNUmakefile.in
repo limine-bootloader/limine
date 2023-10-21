@@ -11,7 +11,7 @@ override datarootdir := @datarootdir@
 override mandir := @mandir@
 override docdir := @docdir@
 
-override NATIVE_STRIP := @NATIVE_STRIP@
+override STRIP := @STRIP@
 
 DESTDIR ?=
 
@@ -192,10 +192,10 @@ endif
 
 .PHONY: install-strip
 install-strip: install
-	$(NATIVE_STRIP) '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-version'
-	$(NATIVE_STRIP) '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-enroll-config'
+	$(STRIP) '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-version'
+	$(STRIP) '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-enroll-config'
 ifneq ($(BUILD_LIMINE_DEPLOY),no)
-	$(NATIVE_STRIP) '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-deploy'
+	$(STRIP) '$(call SHESCAPE,$(DESTDIR)$(bindir))/limine-deploy'
 endif
 
 .PHONY: uninstall

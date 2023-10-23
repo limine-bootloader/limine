@@ -51,27 +51,59 @@ if ! test "x$FIND_FOUND" = "xyes"; then
     AC_MSG_ERROR([find not found, please install find before configuring])
 fi
 
-STRIP="$($CC -dumpmachine)"-strip
-AC_CHECK_PROG([STRIP_FOUND], [$STRIP], [yes])
-if ! test "x$STRIP_FOUND" = "xyes"; then
-    STRIP=strip
+AC_ARG_VAR([STRIP], [strip command])
+
+if ! test -z "$STRIP"; then
+    AC_CHECK_PROG([STRIP_USER_FOUND], [$STRIP], [yes])
+    if ! test "x$STRIP_USER_FOUND" = "xyes"; then
+        AC_MSG_ERROR([$STRIP not found, please install $STRIP before configuring])
+    fi
+else
+    STRIP="$($CC -dumpmachine)"-strip
+    AC_CHECK_PROG([STRIP_FOUND], [$STRIP], [yes])
+    if ! test "x$STRIP_FOUND" = "xyes"; then
+        STRIP=strip
+        AC_CHECK_PROG([STRIP_DEFAULT_FOUND], [$STRIP], [yes])
+        if ! test "x$STRIP_DEFAULT_FOUND" = "xyes"; then
+            AC_MSG_ERROR([$STRIP not found, please install $STRIP before configuring])
+        fi
+    fi
 fi
+
 AC_SUBST([STRIP])
 
-PKGCONFIG="$($CC -dumpmachine)"-pkg-config
-AC_CHECK_PROG([PKGCONFIG_FOUND], [$PKGCONFIG], [yes])
-if ! test "x$PKGCONFIG_FOUND" = "xyes"; then
-    PKGCONFIG=pkg-config
-fi
+PKGCONF_LIBS_LIST=""
 
-PKGCONFIG_LIBS=""
+PKG_PROG_PKG_CONFIG
 
-CFLAGS="$CFLAGS $($PKGCONFIG --cflags-only-other $PKGCONFIG_LIBS 2>/dev/null)"
-CPPFLAGS="$($PKGCONFIG --cflags-only-I $PKGCONFIG_LIBS 2>/dev/null) $CPPFLAGS"
-LIBS="$LIBS $($PKGCONFIG --libs $PKGCONFIG_LIBS 2>/dev/null)"
+for lib in $PKGCONF_LIBS_LIST; do
+    set -e
+    $PKG_CONFIG --exists --print-errors "$lib"
+    set +e
+done
+
+PKGCONF_CFLAGS="$($PKG_CONFIG --cflags-only-other $PKGCONF_LIBS_LIST 2>/dev/null)"
+PKGCONF_CPPFLAGS="$($PKG_CONFIG --cflags-only-I $PKGCONF_LIBS_LIST 2>/dev/null)"
+PKGCONF_LIBS="$($PKG_CONFIG --libs $PKGCONF_LIBS_LIST 2>/dev/null)"
+
+AC_SUBST([PKGCONF_CFLAGS])
+AC_SUBST([PKGCONF_CPPFLAGS])
+AC_SUBST([PKGCONF_LIBS])
+
+OLD_CFLAGS="$CFLAGS"
+OLD_CPPFLAGS="$CPPFLAGS"
+OLD_LIBS="$LIBS"
+
+CFLAGS="$CFLAGS $PKGCONF_CFLAGS"
+CPPFLAGS="$PKGCONF_CPPFLAGS $CPPFLAGS"
+LIBS="$LIBS $PKGCONF_LIBS"
 
 AC_CHECK_HEADERS([stdint.h stddef.h stdbool.h limits.h inttypes.h stdio.h stdlib.h string.h],
     [], [AC_MSG_ERROR([required header not found])])
+
+CFLAGS="$OLD_CFLAGS"
+CPPFLAGS="$OLD_CPPFLAGS"
+LIBS="$OLD_LIBS"
 
 AC_ARG_VAR([TOOLCHAIN_FOR_TARGET], [alternative toolchain prefix for Limine (or 'llvm', or 'gnu')])
 AC_ARG_VAR([CC_FOR_TARGET], [C compiler command for Limine])

@@ -156,6 +156,14 @@ void io_apic_mask_all(void) {
         uint32_t gsi_count = io_apic_gsi_count(i);
         for (uint32_t j = 0; j < gsi_count; j++) {
             uintptr_t ioredtbl = j * 2 + 16;
+            switch ((io_apic_read(i, ioredtbl) >> 8) & 0b111) {
+                case 0b000: // Fixed
+                case 0b001: // Lowest Priority
+                    break;
+                default:
+                    continue;
+            }
+
             io_apic_write(i, ioredtbl, (1 << 16)); // mask
             io_apic_write(i, ioredtbl + 1, 0);
         }

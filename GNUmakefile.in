@@ -72,15 +72,18 @@ export AWK
 
 override DEFAULT_CPPFLAGS := @CPPFLAGS@
 $(eval $(call DEFAULT_VAR,CPPFLAGS,$(DEFAULT_CPPFLAGS)))
+override CPPFLAGS := @PKGCONF_CPPFLAGS@ $(CPPFLAGS)
 export CPPFLAGS
 override DEFAULT_CFLAGS := @CFLAGS@
 $(eval $(call DEFAULT_VAR,CFLAGS,$(DEFAULT_CFLAGS)))
+override CFLAGS += @PKGCONF_CFLAGS@
 export CFLAGS
 override DEFAULT_LDFLAGS := @LDFLAGS@
 $(eval $(call DEFAULT_VAR,LDFLAGS,$(DEFAULT_LDFLAGS)))
 export LDFLAGS
 override DEFAULT_LIBS := @LIBS@
 $(eval $(call DEFAULT_VAR,LIBS,$(DEFAULT_LIBS)))
+override LIBS += @PKGCONF_LIBS@
 export LIBS
 
 override WERROR_FLAG := @WERROR_FLAG@
@@ -322,7 +325,7 @@ distclean: clean
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf common/flanterm common/stb/stb_image.h decompressor/tinf freestanding-headers libgcc-binaries limine-efi freestanding-toolchain configure build-aux *'~' autom4te.cache *.tar.xz *.tar.gz
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf common/flanterm common/stb/stb_image.h decompressor/tinf freestanding-headers libgcc-binaries limine-efi freestanding-toolchain configure build-aux *'~' autom4te.cache aclocal.m4 *.tar.xz *.tar.gz
 
 .PHONY: common-uefi-x86-64
 common-uefi-x86-64:

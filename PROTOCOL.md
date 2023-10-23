@@ -197,7 +197,8 @@ If 5-level paging is requested and available, then 5-level paging is enabled
 
 The A20 gate is opened.
 
-Legacy PIC and IO APIC IRQs are all masked.
+Legacy PIC (if available) and IO APIC IRQs (only those with delivery mode fixed
+(0b000) or lowest priority (0b001)) are all masked.
 
 If booted by EFI/UEFI, boot services are exited.
 

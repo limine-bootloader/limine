@@ -30,6 +30,7 @@
 /configure
 /configure.ac.save
 /build-aux
+/aclocal.m4
 /*~
 /config.status
 /config.log

@@ -33,7 +33,6 @@
 #include <limine.h>
 
 #define MAX_REQUESTS 128
-#define MAX_MEMMAP 256
 
 static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *ranges, size_t ranges_count,
                                uint64_t physical_base, uint64_t virtual_base,
@@ -1008,8 +1007,8 @@ FEAT_START
 
     if (memmap_request != NULL) {
         memmap_response = ext_mem_alloc(sizeof(struct limine_memmap_response));
-        _memmap = ext_mem_alloc(sizeof(struct limine_memmap_entry) * MAX_MEMMAP);
-        memmap_list = ext_mem_alloc(MAX_MEMMAP * sizeof(uint64_t));
+        _memmap = ext_mem_alloc(sizeof(struct limine_memmap_entry) * MEMMAP_MAX);
+        memmap_list = ext_mem_alloc(MEMMAP_MAX * sizeof(uint64_t));
     }
 
     size_t mmap_entries;
@@ -1019,7 +1018,7 @@ FEAT_START
         break; // next feature
     }
 
-    if (mmap_entries > MAX_MEMMAP) {
+    if (mmap_entries > MEMMAP_MAX) {
         panic(false, "limine: Too many memmap entries");
     }
 

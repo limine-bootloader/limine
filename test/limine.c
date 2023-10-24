@@ -245,7 +245,13 @@ static void limine_main(void) {
         fb->address,
         fb->width,
         fb->height,
-        fb->pitch
+        fb->pitch,
+        fb->red_mask_size,
+        fb->red_mask_shift,
+        fb->green_mask_size,
+        fb->green_mask_shift,
+        fb->blue_mask_size,
+        fb->blue_mask_shift
     );
 
     uint64_t kernel_slide = (uint64_t)kernel_start - 0xffffffff80000000;

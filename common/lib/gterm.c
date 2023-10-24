@@ -10,6 +10,7 @@
 #include <lib/image.h>
 #include <mm/pmm.h>
 #include <flanterm/flanterm.h>
+#define FLANTERM_FB_SUPPORT_BPP
 #include <flanterm/backends/fb.h>
 #include <lib/term.h>
 
@@ -673,13 +674,8 @@ no_load_font:;
     for (size_t i = 0; i < fbs_count; i++) {
         struct fb_info *fb = &fbs[i];
 
-        // Ensure this is xRGB8888, we only support that for the menu
-        if (fb->red_mask_size    != 8
-         || fb->red_mask_shift   != 16
-         || fb->green_mask_size  != 8
-         || fb->green_mask_shift != 8
-         || fb->blue_mask_size   != 8
-         || fb->blue_mask_shift  != 0) {
+        // Ensure that this framebuffer uses 32-bits per pixel.
+        if (fb->framebuffer_bpp != 32) {
             continue;
         }
 
@@ -714,6 +710,9 @@ no_load_font:;
                             pmm_free,
                             (void *)(uintptr_t)fb->framebuffer_addr,
                             fb->framebuffer_width, fb->framebuffer_height, fb->framebuffer_pitch,
+                            fb->red_mask_size, fb->red_mask_shift,
+                            fb->green_mask_size, fb->green_mask_shift,
+                            fb->blue_mask_size, fb->blue_mask_shift,
                             bg_canvas,
                             ansi_colours, ansi_bright_colours,
                             &default_bg, &default_fg,

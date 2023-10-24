@@ -649,7 +649,10 @@ noreturn void _menu(bool first_run) {
         rewound_s2_data = ext_mem_alloc(s2_data_size);
         rewound_bss = ext_mem_alloc(bss_size);
 #endif
-        rewound_memmap = ext_mem_alloc(256 * sizeof(struct memmap_entry));
+        rewound_memmap = ext_mem_alloc(MEMMAP_MAX * sizeof(struct memmap_entry));
+        if (memmap_entries > MEMMAP_MAX) {
+            panic(false, "menu: Too many memmap entries");
+        }
         memcpy(rewound_memmap, memmap, memmap_entries * sizeof(struct memmap_entry));
         rewound_memmap_entries = memmap_entries;
         memcpy(rewound_data, data_begin, data_size);

@@ -56,7 +56,9 @@ override CPPFLAGS_FOR_TARGET := \
     -MMD \
     -MP
 
-$(call MKESCAPE,$(BUILDDIR))/./flanterm/backends/fb.o: override CPPFLAGS_FOR_TARGET += -DFLANTERM_FB_DISABLE_BUMP_ALLOC
+$(call MKESCAPE,$(BUILDDIR))/./flanterm/backends/fb.o: override CPPFLAGS_FOR_TARGET += \
+	-DFLANTERM_FB_DISABLE_BUMP_ALLOC \
+	-DFLANTERM_FB_SUPPORT_BPP
 
 ifeq ($(TARGET),bios)
     override CFLAGS_FOR_TARGET += \

@@ -63,7 +63,11 @@ again:
 #if defined (UEFI)
 uint64_t time(void) {
     EFI_TIME time;
-    gRT->GetTime(&time, NULL);
+    EFI_STATUS status = gRT->GetTime(&time, NULL);
+
+    if (status != 0) {
+        return 0;
+    }
 
     return get_unix_epoch(time.Second, time.Minute, time.Hour,
                           time.Day, time.Month, time.Year);

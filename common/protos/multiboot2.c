@@ -46,9 +46,9 @@ static size_t get_multiboot2_info_size(
         ALIGN_UP(sizeof(struct multiboot_tag_load_base_addr), MULTIBOOT_TAG_ALIGN) +                                    // load base address
         ALIGN_UP(smbios_tag_size, MULTIBOOT_TAG_ALIGN) +                                                                // SMBIOS
         ALIGN_UP(sizeof(struct multiboot_tag_basic_meminfo), MULTIBOOT_TAG_ALIGN) +                                     // basic memory info
-        ALIGN_UP(sizeof(struct multiboot_tag_mmap) + sizeof(struct multiboot_mmap_entry) * 256, MULTIBOOT_TAG_ALIGN) +  // MMAP
+        ALIGN_UP(sizeof(struct multiboot_tag_mmap) + sizeof(struct multiboot_mmap_entry) * MEMMAP_MAX, MULTIBOOT_TAG_ALIGN) +  // MMAP
         #if defined (UEFI)
-            ALIGN_UP(sizeof(struct multiboot_tag_efi_mmap) + (efi_desc_size * 256), MULTIBOOT_TAG_ALIGN) +              // EFI MMAP
+            ALIGN_UP(sizeof(struct multiboot_tag_efi_mmap) + (efi_desc_size * MEMMAP_MAX), MULTIBOOT_TAG_ALIGN) +              // EFI MMAP
             #if defined (__i386__)
                 ALIGN_UP(sizeof(struct multiboot_tag_efi32), MULTIBOOT_TAG_ALIGN) +                                     // EFI system table 32
                 ALIGN_UP(sizeof(struct multiboot_tag_efi32_ih), MULTIBOOT_TAG_ALIGN) +                                  // EFI image handle 32
@@ -738,7 +738,7 @@ skip_modeset:;
     // Create memory map tag
     //////////////////////////////////////////////
     {
-        if (mb_mmap_count > 256) {
+        if (mb_mmap_count > MEMMAP_MAX) {
             panic(false, "multiboot2: too many memory map entries");
         }
 
@@ -785,7 +785,7 @@ skip_modeset:;
     //////////////////////////////////////////////
 #if defined (UEFI)
     {
-        if ((efi_mmap_size / efi_desc_size) > 256) {
+        if ((efi_mmap_size / efi_desc_size) > MEMMAP_MAX) {
             panic(false, "multiboot2: too many EFI memory map entries");
         }
 

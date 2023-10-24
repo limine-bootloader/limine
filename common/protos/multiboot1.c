@@ -37,7 +37,7 @@ static size_t get_multiboot1_info_size(
            ALIGN_UP(sizeof(section_entry_size * section_num), 16) +         // ELF info
            ALIGN_UP(sizeof(struct multiboot1_module) * modules_count, 16) + // modules count
            ALIGN_UP(modules_cmdlines_size, 16) +                            // modules command lines
-           ALIGN_UP(sizeof(struct multiboot1_mmap_entry) * 256, 16);        // memory map
+           ALIGN_UP(sizeof(struct multiboot1_mmap_entry) * MEMMAP_MAX, 16);        // memory map
 }
 
 static void *mb1_info_alloc(void **mb1_info_raw, size_t size) {

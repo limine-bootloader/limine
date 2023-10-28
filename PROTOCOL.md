@@ -168,8 +168,8 @@ everything is mapped with `PBMT=PMA`).
 ### x86-64
 
 `rip` will be the entry point as defined as part of the executable file format,
-unless the an Entry Point feature is requested (see below), in which case,
-the value of `rip` is going to be taken from there.
+unless an Entry Point feature is requested (see below), in which case, the value
+of `rip` is going to be taken from there.
 
 At entry all segment registers are loaded as 64 bit code/data segments, limits
 and bases are ignored since this is 64-bit mode.

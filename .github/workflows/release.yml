@@ -51,7 +51,7 @@ jobs:
         run: i686-w64-mingw32-strip build/bin/limine.exe
 
       - name: Copy LICENSE to bin
-        run: cp LICENSE build/bin/
+        run: cp COPYING build/bin/LICENSE
 
       - name: Copy install-sh to bin
         run: cp build-aux/install-sh build/bin/

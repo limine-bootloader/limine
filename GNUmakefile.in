@@ -141,7 +141,7 @@ clean: limine-bios-clean limine-uefi-ia32-clean limine-uefi-x86-64-clean limine-
 .PHONY: install
 install: all
 	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(docdir))'
-	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/LICENSE' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
+	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/COPYING' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
 	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/CONFIG.md' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
 	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/PROTOCOL.md' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
 	$(INSTALL_DATA) '$(call SHESCAPE,$(SRCDIR))/PHILOSOPHY.md' '$(call SHESCAPE,$(DESTDIR)$(docdir))/'
@@ -185,7 +185,7 @@ install-strip: install
 
 .PHONY: uninstall
 uninstall:
-	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/LICENSE'
+	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/COPYING'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/CONFIG.md'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/PROTOCOL.md'
 	rm -f '$(call SHESCAPE,$(DESTDIR)$(docdir))/PHILOSOPHY.md'
@@ -291,6 +291,7 @@ dist:
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"
 	cp -r '$(call SHESCAPE,$(SRCDIR))'/.git '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"/
 	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && git checkout .
+	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && git log --oneline --decorate > ChangeLog
 	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && ./bootstrap
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/common/flanterm/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/freestanding-headers/.git"
@@ -325,7 +326,7 @@ distclean: clean
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf common/flanterm common/stb/stb_image.h decompressor/tinf freestanding-headers libgcc-binaries limine-efi freestanding-toolchain configure build-aux *'~' autom4te.cache aclocal.m4 *.tar.xz *.tar.gz
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf common/flanterm common/stb/stb_image.h decompressor/tinf freestanding-headers libgcc-binaries limine-efi freestanding-toolchain configure INSTALL build-aux *'~' autom4te.cache aclocal.m4 *.tar.xz *.tar.gz
 
 .PHONY: common-uefi-x86-64
 common-uefi-x86-64:

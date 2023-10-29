@@ -168,7 +168,7 @@ everything is mapped with `PBMT=PMA`).
 ### x86-64
 
 `rip` will be the entry point as defined as part of the executable file format,
-unless an Entry Point feature is requested (see below), in which case, the value
+unless the Entry Point feature is requested (see below), in which case, the value
 of `rip` is going to be taken from there.
 
 At entry all segment registers are loaded as 64 bit code/data segments, limits
@@ -212,7 +212,7 @@ All other general purpose registers are set to 0.
 ### aarch64
 
 `PC` will be the entry point as defined as part of the executable file format,
-unless the an Entry Point feature is requested (see below), in which case,
+unless the Entry Point feature is requested (see below), in which case,
 the value of `PC` is going to be taken from there.
 
 The contents of the `VBAR_EL1` register are undefined, and the kernel must load
@@ -253,8 +253,8 @@ Vector registers are in an undefined state.
 At entry the machine is executing in Supervisor mode.
 
 `pc` will be the entry point as defined as part of the executable file format,
-unless the an Entry Point feature is requested (see below), in which case,
-the value of `pc` is going to be taken from there.
+unless the Entry Point feature is requested (see below), in which case, the
+value of `pc` is going to be taken from there.
 
 `x1`(`ra`) is set to 0, the kernel must not return from the entry point.
 

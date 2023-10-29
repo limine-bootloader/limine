@@ -253,9 +253,16 @@ int init_config(size_t config_size) {
                         panic(true, "config: Malformed macro usage");
                     }
                 }
-                if (config_addr[i] != '=') {
+                if (config_addr[i++] != '=') {
                     i = orig_i;
                     goto next;
+                }
+                while (config_addr[i] != '\n' && config_addr[i] != 0) {
+                    i++;
+                    if (i >= config_size) {
+                        bad_config = true;
+                        panic(true, "config: Malformed macro usage");
+                    }
                 }
                 continue;
             }

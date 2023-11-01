@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <limine.h>
 #include <e9print.h>
 #include <flanterm/flanterm.h>
@@ -240,6 +241,11 @@ struct flanterm_context *ft_ctx = NULL;
 
 static void limine_main(void) {
     e9_printf("\nWe're alive");
+
+    if (limine_base_revision_supported == false) {
+        e9_printf("Limine base revision not supported");
+        for (;;);
+    }
 
     struct limine_framebuffer *fb = framebuffer_request.response->framebuffers[0];
 

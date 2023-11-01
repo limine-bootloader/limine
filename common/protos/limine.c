@@ -342,6 +342,25 @@ noreturn void limine_load(char *config, char *cmdline) {
 
     kaslr = kaslr && is_reloc;
 
+    // Determine base revision
+    LIMINE_BASE_REVISION_1
+    int base_revision = 0;
+    for (size_t i = 0; i < ALIGN_DOWN(image_size_before_bss, 8); i += 8) {
+        void *p = (void *)(uintptr_t)physical_base + i;
+        int new_revision = 0;
+
+        if (memcmp(p, (void *)&limine_base_revision_1, 16) == 0) {
+            new_revision = 1;
+        }
+
+        if (new_revision != 0) {
+            if (base_revision != 0) {
+                panic(true, "limine: Duplicated base revision tag");
+            }
+            base_revision = new_revision;
+        }
+    }
+
     // Load requests
     if (elf64_load_section(kernel, &requests, ".limine_reqs", 0, slide)) {
         for (size_t i = 0; ; i++) {

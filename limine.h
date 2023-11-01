@@ -44,6 +44,9 @@ extern "C" {
 #  define LIMINE_DEPRECATED_IGNORE_END
 #endif
 
+#define LIMINE_BASE_REVISION_1 \
+    volatile uint64_t limine_base_revision_1[2] = { 0xf9562b2d5c95a6c8, 0x6a7b384944536bdc };
+
 #define LIMINE_COMMON_MAGIC 0xc7b1dd30df4c8b88, 0x0a82e883a194f07b
 
 struct limine_uuid {

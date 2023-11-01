@@ -5,6 +5,8 @@
 #include <flanterm/flanterm.h>
 #include <flanterm/backends/fb.h>
 
+LIMINE_BASE_REVISION(1)
+
 static void limine_main(void);
 
 struct limine_entry_point_request entry_point_request = {

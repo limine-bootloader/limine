@@ -343,21 +343,16 @@ noreturn void limine_load(char *config, char *cmdline) {
     kaslr = kaslr && is_reloc;
 
     // Determine base revision
-    LIMINE_BASE_REVISION_1
+    LIMINE_BASE_REVISION(0)
     int base_revision = 0;
     for (size_t i = 0; i < ALIGN_DOWN(image_size_before_bss, 8); i += 8) {
-        void *p = (void *)(uintptr_t)physical_base + i;
-        int new_revision = 0;
+        uint64_t *p = (void *)(uintptr_t)physical_base + i;
 
-        if (memcmp(p, (void *)&limine_base_revision_1, 16) == 0) {
-            new_revision = 1;
-        }
-
-        if (new_revision != 0) {
+        if (p[0] == limine_base_revision[0] && p[1] == limine_base_revision[1]) {
             if (base_revision != 0) {
                 panic(true, "limine: Duplicated base revision tag");
             }
-            base_revision = new_revision;
+            base_revision = p[2];
         }
     }
 
@@ -409,6 +404,7 @@ noreturn void limine_load(char *config, char *cmdline) {
     printv("limine: Virtual base:    %X\n", virtual_base);
     printv("limine: Slide:           %X\n", slide);
     printv("limine: ELF entry point: %X\n", entry_point);
+    printv("limine: Base revision:   %u\n", base_revision);
     printv("limine: Requests count:  %u\n", requests_count);
 
     // Paging Mode

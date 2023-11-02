@@ -62,33 +62,8 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
         }
     }
 
-    // Sub 2MiB mappings
-    for (uint64_t i = 0; i < 0x200000; i += 0x1000) {
-        if (i != 0) {
-            map_page(pagemap, i, i, VMM_FLAG_WRITE, Size4KiB);
-        }
-        map_page(pagemap, direct_map_offset + i, i, VMM_FLAG_WRITE, Size4KiB);
-    }
-
-    // Map 2MiB to 4GiB at higher half base and 0
-    //
-    // NOTE: We cannot just directly map from 2MiB to 4GiB with 1GiB
-    // pages because if you do the math.
-    //
-    //     start = 0x200000
-    //     end   = 0x40000000
-    //
-    //     pages_required = (end - start) / (4096 * 512 * 512)
-    //
-    // So we map 2MiB to 1GiB with 2MiB pages and then map the rest
-    // with 1GiB pages :^)
-    for (uint64_t i = 0x200000; i < 0x40000000; i += 0x200000) {
-        map_page(pagemap, i, i, VMM_FLAG_WRITE, Size2MiB);
-        map_page(pagemap, direct_map_offset + i, i, VMM_FLAG_WRITE, Size2MiB);
-    }
-
-    for (uint64_t i = 0x40000000; i < 0x100000000; i += 0x40000000) {
-        map_page(pagemap, i, i, VMM_FLAG_WRITE, Size1GiB);
+    // Map 0->4GiB range to HHDM
+    for (uint64_t i = 0; i < 0x100000000; i += 0x40000000) {
         map_page(pagemap, direct_map_offset + i, i, VMM_FLAG_WRITE, Size1GiB);
     }
 
@@ -98,8 +73,14 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
     for (size_t i = 0; i < _memmap_entries; i++)
         _memmap[i] = memmap[i];
 
-    // Map any other region of memory from the memmap
+    // Map all free memory regions to the higher half direct map offset
     for (size_t i = 0; i < _memmap_entries; i++) {
+        if (_memmap[i].type != MEMMAP_USABLE
+         && _memmap[i].type != MEMMAP_BOOTLOADER_RECLAIMABLE
+         && _memmap[i].type != MEMMAP_KERNEL_AND_MODULES) {
+            continue;
+        }
+
         uint64_t base   = _memmap[i].base;
         uint64_t length = _memmap[i].length;
         uint64_t top    = base + length;
@@ -118,7 +99,6 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
 
         for (uint64_t j = 0; j < aligned_length; j += 0x40000000) {
             uint64_t page = aligned_base + j;
-            map_page(pagemap, page, page, VMM_FLAG_WRITE, Size1GiB);
             map_page(pagemap, direct_map_offset + page, page, VMM_FLAG_WRITE, Size1GiB);
         }
     }
@@ -139,10 +119,16 @@ static pagemap_t build_pagemap(int paging_mode, bool nx, struct elf_range *range
 
         for (uint64_t j = 0; j < aligned_length; j += 0x1000) {
             uint64_t page = aligned_base + j;
-            map_page(pagemap, page, page, VMM_FLAG_WRITE | VMM_FLAG_FB, Size4KiB);
             map_page(pagemap, direct_map_offset + page, page, VMM_FLAG_WRITE | VMM_FLAG_FB, Size4KiB);
         }
     }
+
+    // XXX we do this as a quick and dirty way to switch to the higher half
+#if defined (__x86_64__) || defined (__i386__)
+    for (uint64_t i = 0; i < 0x100000000; i += 0x40000000) {
+        map_page(pagemap, i, i, VMM_FLAG_WRITE, Size1GiB);
+    }
+#endif
 
     return pagemap;
 }
@@ -979,9 +965,10 @@ FEAT_START
     uint64_t bsp_mpidr;
 
     smp_info = init_smp(&cpu_count, &bsp_mpidr,
-                        pagemap, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa), LIMINE_SCTLR);
+                        pagemap, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa), LIMINE_SCTLR,
+                        direct_map_offset);
 #elif defined (__riscv64)
-    smp_info = init_smp(&cpu_count, pagemap);
+    smp_info = init_smp(&cpu_count, pagemap, direct_map_offset);
 #else
 #error Unknown architecture
 #endif
@@ -1115,11 +1102,12 @@ FEAT_END
 
     uint64_t reported_stack = reported_addr(stack);
 
-    common_spinup(limine_spinup_32, 8,
+    common_spinup(limine_spinup_32, 10,
         paging_mode, (uint32_t)(uintptr_t)pagemap.top_level,
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
         (uint32_t)reported_stack, (uint32_t)(reported_stack >> 32),
-        (uint32_t)(uintptr_t)local_gdt, nx_available);
+        (uint32_t)(uintptr_t)local_gdt, nx_available,
+        (uint32_t)direct_map_offset, (uint32_t)(direct_map_offset >> 32));
 #elif defined (__aarch64__)
     vmm_assert_4k_pages();
 
@@ -1127,12 +1115,13 @@ FEAT_END
 
     enter_in_el1(entry_point, reported_stack, LIMINE_SCTLR, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa),
                  (uint64_t)pagemap.top_level[0],
-                 (uint64_t)pagemap.top_level[1], 0);
+                 (uint64_t)pagemap.top_level[1],
+                 direct_map_offset);
 #elif defined (__riscv64)
     uint64_t reported_stack = reported_addr(stack);
     uint64_t satp = make_satp(pagemap.paging_mode, pagemap.top_level);
 
-    riscv_spinup(entry_point, reported_stack, satp);
+    riscv_spinup(entry_point, reported_stack, satp, direct_map_offset);
 #else
 #error Unknown architecture
 #endif

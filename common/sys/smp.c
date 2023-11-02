@@ -257,6 +257,8 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
 struct trampoline_passed_info {
     uint64_t smp_tpl_booted_flag;
 
+    uint64_t smp_tpl_hhdm_offset;
+
     uint64_t smp_tpl_ttbr0;
     uint64_t smp_tpl_ttbr1;
 
@@ -279,7 +281,8 @@ static uint32_t psci_cpu_on = 0xC4000003;
 static bool try_start_ap(int boot_method, uint64_t method_ptr,
                          struct limine_smp_info *info_struct,
                          uint64_t ttbr0, uint64_t ttbr1, uint64_t mair,
-                         uint64_t tcr, uint64_t sctlr) {
+                         uint64_t tcr, uint64_t sctlr,
+                         uint64_t hhdm_offset) {
     // Prepare the trampoline
     static void *trampoline = NULL;
     if (trampoline == NULL) {
@@ -301,6 +304,7 @@ static bool try_start_ap(int boot_method, uint64_t method_ptr,
     passed_info->smp_tpl_mair        = mair;
     passed_info->smp_tpl_tcr         = tcr;
     passed_info->smp_tpl_sctlr       = sctlr;
+    passed_info->smp_tpl_hhdm_offset = hhdm_offset;
 
     // Cache coherency between the I-Cache and D-Cache is not guaranteed by the
     // architecture and as such we must perform I-Cache invalidation.
@@ -384,7 +388,8 @@ static struct limine_smp_info *try_acpi_smp(size_t   *cpu_count,
                                             pagemap_t pagemap,
                                             uint64_t  mair,
                                             uint64_t  tcr,
-                                            uint64_t  sctlr) {
+                                            uint64_t  sctlr,
+                                            uint64_t  hhdm_offset) {
     int boot_method = BOOT_WITH_ACPI_PARK;
 
     // Search for FADT table
@@ -472,7 +477,7 @@ static struct limine_smp_info *try_acpi_smp(size_t   *cpu_count,
                 if (!try_start_ap(boot_method, gicc->parking_addr, info_struct,
                                   (uint64_t)(uintptr_t)pagemap.top_level[0],
                                   (uint64_t)(uintptr_t)pagemap.top_level[1],
-                                  mair, tcr, sctlr)) {
+                                  mair, tcr, sctlr, hhdm_offset)) {
                     print("smp: FAILED to bring-up AP\n");
                     continue;
                 }
@@ -493,16 +498,18 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
                                  pagemap_t pagemap,
                                  uint64_t  mair,
                                  uint64_t  tcr,
-                                 uint64_t  sctlr) {
+                                 uint64_t  sctlr,
+                                 uint64_t  hhdm_offset) {
     struct limine_smp_info *info = NULL;
 
     //if (dtb_is_present() && (info = try_dtb_smp(cpu_count,
-    //                _bsp_iface_no, pagemap, mair, tcr, sctlr)))
+    //                _bsp_iface_no, pagemap, mair, tcr, sctlr, hhdm_offset)))
     //    return info;
 
     // No RSDP means no ACPI
-    if (acpi_get_rsdp() && (info = try_acpi_smp(cpu_count,
-                    bsp_mpidr, pagemap, mair, tcr, sctlr)))
+    if (acpi_get_rsdp() && (info = try_acpi_smp(
+                                    cpu_count, bsp_mpidr, pagemap,
+                                    mair, tcr, sctlr, hhdm_offset)))
         return info;
 
     printv("Failed to figure out how to start APs.");
@@ -516,14 +523,17 @@ struct trampoline_passed_info {
     uint64_t smp_tpl_booted_flag;
     uint64_t smp_tpl_satp;
     uint64_t smp_tpl_info_struct;
+    uint64_t smp_tpl_hhdm_offset;
 };
 
-static bool smp_start_ap(size_t hartid, size_t satp, struct limine_smp_info *info_struct) {
+static bool smp_start_ap(size_t hartid, size_t satp, struct limine_smp_info *info_struct,
+                         uint64_t hhdm_offset) {
     static struct trampoline_passed_info passed_info;
 
     passed_info.smp_tpl_booted_flag = 0;
     passed_info.smp_tpl_satp        = satp;
     passed_info.smp_tpl_info_struct = (uint64_t)info_struct;
+    passed_info.smp_tpl_hhdm_offset = hhdm_offset;
 
     asm volatile ("" ::: "memory");
 
@@ -539,7 +549,7 @@ static bool smp_start_ap(size_t hartid, size_t satp, struct limine_smp_info *inf
     return false;
 }
 
-struct limine_smp_info *init_smp(size_t *cpu_count, pagemap_t pagemap) {
+struct limine_smp_info *init_smp(size_t *cpu_count, pagemap_t pagemap, uint64_t hhdm_offset) {
     size_t num_cpus = 0;
     for (struct riscv_hart *hart = hart_list; hart != NULL; hart = hart->next) {
         if (!(hart->flags & RISCV_HART_COPROC)) {
@@ -572,7 +582,7 @@ struct limine_smp_info *init_smp(size_t *cpu_count, pagemap_t pagemap) {
 
         // Try to start the AP.
         size_t satp = make_satp(pagemap.paging_mode, pagemap.top_level);
-        if (!smp_start_ap(hart->hartid, satp, info_struct)) {
+        if (!smp_start_ap(hart->hartid, satp, info_struct, hhdm_offset)) {
             print("smp: FAILED to bring-up AP\n");
             continue;
         }

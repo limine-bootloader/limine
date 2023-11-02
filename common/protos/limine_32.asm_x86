@@ -67,6 +67,24 @@ bits 64
     mov eax, [rsp+28] ; local_gdt
     lgdt [rax]
 
+    ; Jump to higher half
+    mov rax, qword [rsp+36]
+    add rsp, rax
+    call .p2
+  .p2:
+    add qword [rsp], .hh - .p2
+    add qword [rsp], rax
+    retq
+  .hh:
+
+    ; Unmap lower half entirely
+    mov rsi, cr3
+    lea rdi, [rsi + rax]
+    mov rcx, 256
+    xor rax, rax
+    rep stosq
+    mov cr3, rsi
+
     ; Push fake return address
     mov rsi, [rsp+20] ; stack
     sub rsi, 8

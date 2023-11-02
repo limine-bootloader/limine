@@ -242,7 +242,7 @@ struct flanterm_context *ft_ctx = NULL;
 static void limine_main(void) {
     e9_printf("\nWe're alive");
 
-    if (limine_base_revision_supported == false) {
+    if (LIMINE_BASE_REVISION_SUPPORTED == false) {
         e9_printf("Limine base revision not supported");
         for (;;);
     }

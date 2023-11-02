@@ -26,12 +26,14 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
                                  pagemap_t pagemap,
                                  uint64_t  mair,
                                  uint64_t  tcr,
-                                 uint64_t  sctlr);
+                                 uint64_t  sctlr,
+                                 uint64_t  hhdm_offset);
 
 #elif defined (__riscv64)
 
 struct limine_smp_info *init_smp(size_t   *cpu_count,
-                                 pagemap_t pagemap);
+                                 pagemap_t pagemap,
+                                 uint64_t  hhdm_offset);
 
 #else
 #error Unknown architecture

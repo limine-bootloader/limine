@@ -6,11 +6,19 @@ riscv_spinup:
 .option norelax
         csrci   sstatus, 0x2
         csrw    sie, zero
+
+        lla     t0, 0f
+        add     t0, t0, a3
+        csrw    stvec, t0
+        csrw    satp, a2
+        sfence.vma
+        unimp
+.align 4
+0:
         csrw    stvec, zero
 
         mv      t0, a0
         mv      sp, a1
-        csrw    satp, a2
 
         mv      a0, zero
         mv      a1, zero

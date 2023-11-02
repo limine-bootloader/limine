@@ -4,7 +4,7 @@
 
 // noreturn void enter_in_el1(uint64_t entry, uint64_t sp, uint64_t sctlr,
 //                            uint64_t mair, uint64_t tcr, uint64_t ttbr0,
-//                            uint64_t ttbr1, uint64_t target_x0)
+//                            uint64_t ttbr1, uint64_t direct_map_offset)
 // Potentially drop to EL1 from EL2 (and also disable trapping to EL2), then
 // configure EL1 state and jump to kernel.
 
@@ -13,6 +13,50 @@ enter_in_el1:
     msr spsel, #0
     mov sp, x1
 
+    PICK_EL x8, 0f, 2f
+0:
+    // Switch to the new page tables
+
+    // Point the EL1t handler to the continuation, such that after we page fault,
+    // execution continues and the kernel is entered.
+    adrp x8, 1f
+    add x8, x8, #:lo12:1f
+    add x8, x8, x7
+    msr vbar_el1, x8
+    isb
+    dsb sy
+    isb
+
+    // Switch the page table registers
+    msr mair_el1, x3
+    msr tcr_el1, x4
+    msr ttbr0_el1, x5
+    msr ttbr1_el1, x6
+    msr sctlr_el1, x2
+    isb
+    dsb sy
+    isb
+
+    // Jump to the higher half mapping in case we didn't immediately crash
+    br x8
+
+// Alignment required by VBAR register
+.align 11
+1:
+    // Zero out VBAR to avoid confusion
+    msr vbar_el1, xzr
+
+    // Enter kernel in EL1
+    mov x8, #0x3c4
+    msr spsr_el1, x8
+    msr elr_el1, x0
+
+    mov x0, xzr
+    ZERO_REGS_EXCEPT_X0
+
+    eret
+
+2:
     // Configure EL1 state
     msr mair_el1, x3
     msr tcr_el1, x4
@@ -22,19 +66,6 @@ enter_in_el1:
     dsb sy
     isb
 
-    PICK_EL x8, 0f, 1f
-0:
-    // Enter kernel in EL1
-    mov x8, #0x3c4
-    msr spsr_el1, x8
-    msr elr_el1, x0
-
-    mov x0, x7
-    ZERO_REGS_EXCEPT_X0
-
-    eret
-
-1:
     // Configure EL2-specific state for EL1
 
     // Don't trap counters to EL2
@@ -57,7 +88,7 @@ enter_in_el1:
     msr spsr_el2, x8
     msr elr_el2, x0
 
-    mov x0, x7
+    mov x0, xzr
     ZERO_REGS_EXCEPT_X0
 
     eret

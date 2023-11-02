@@ -113,7 +113,10 @@ the "Feature List" section below.
 
 ## Limine Requests Section
 
-If the executable kernel file contains a `.limine_reqs` section, the bootloader
+Note: *This behaviour is deprecated as of base protocol revision 1*
+
+For kernels requesting deprecated base revision 0,
+if the executable kernel file contains a `.limine_reqs` section, the bootloader
 will, instead of scanning the executable for requests, fetch the requests
 from a NULL-terminated array of pointers to the provided requests, contained
 inside said section.

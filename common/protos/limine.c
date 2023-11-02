@@ -377,7 +377,7 @@ noreturn void limine_load(char *config, char *cmdline) {
     }
 
     // Load requests
-    if (elf64_load_section(kernel, &requests, ".limine_reqs", 0, slide)) {
+    if (base_revision == 0 && elf64_load_section(kernel, &requests, ".limine_reqs", 0, slide)) {
         for (size_t i = 0; ; i++) {
             if (requests[i] == NULL) {
                 break;

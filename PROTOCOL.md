@@ -133,13 +133,28 @@ where the kernel is loaded in physical memory, see the Kernel Address feature
 below.
 
 Alongside the loaded kernel, the bootloader will set up memory mappings as such:
+
 ```
- Base Physical Address |                                                       | Base Virtual Address
-  0x0000000000001000   | (4 GiB - 0x1000) and any additional memory map region |  0x0000000000001000
-  0x0000000000000000   |      4 GiB and any additional memory map region       |      HHDM start
+ Base Physical Address |                               | Base Virtual Address
+ ----------------------+-------------------------------+-----------------------
+                       |    (4 GiB - 0x1000) and any   |
+  0x0000000000001000   |  additional memory map region |  0x0000000000001000
+                       |    (Base revision 0 only)     |
+ ----------------------+-------------------------------+-----------------------
+                       |     4 GiB and additional      |
+  0x0000000000000000   |  memory map regions depending |      HHDM start
+                       |       on base revision        |
 ```
 Where "HHDM start" is returned by the Higher Half Direct Map feature (see below).
 These mappings are supervisor, read, write, execute (-rwx).
+
+For base revision 0, the above-4GiB identity and HHDM mappings cover any memory
+map region.
+
+For base revision 1, the above-4GiB HHDM mappings do not comprise memory map regions
+of types:
+ - Reserved
+ - Bad memory
 
 The bootloader page tables are in bootloader-reclaimable memory (see Memory Map
 feature below), and their specific layout is undefined as long as they provide

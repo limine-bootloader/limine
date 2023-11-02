@@ -377,18 +377,18 @@ noreturn void limine_load(char *config, char *cmdline) {
     }
 
     // Load requests
-    if (base_revision == 0 && elf64_load_section(kernel, &requests, ".limine_reqs", 0, slide)) {
+    uint64_t *limine_reqs = NULL;
+    requests = ext_mem_alloc(MAX_REQUESTS * sizeof(void *));
+    requests_count = 0;
+    if (base_revision == 0 && elf64_load_section(kernel, &limine_reqs, ".limine_reqs", 0, slide)) {
         for (size_t i = 0; ; i++) {
-            if (requests[i] == NULL) {
+            if (limine_reqs[i] == 0) {
                 break;
             }
-            requests[i] -= virtual_base;
-            requests[i] += physical_base;
+            requests[i] = (void *)(uintptr_t)((limine_reqs[i] - virtual_base) + physical_base);
             requests_count++;
         }
     } else {
-        requests = ext_mem_alloc(MAX_REQUESTS * sizeof(void *));
-        requests_count = 0;
         uint64_t common_magic[2] = { LIMINE_COMMON_MAGIC };
         for (size_t i = 0; i < ALIGN_DOWN(image_size_before_bss, 8); i += 8) {
             uint64_t *p = (void *)(uintptr_t)physical_base + i;

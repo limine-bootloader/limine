@@ -22,6 +22,43 @@ higher half direct map offset already added to them, unless otherwise noted.
 The calling convention matches the C ABI for the specific architecture
 (SysV for x86, AAPCS for aarch64).
 
+## Base protocol revisions
+
+The Limine boot protocol comes in several base revisions; so far only 2
+base revisions are specified: 0 and 1.
+
+Base protocol revisions change certain behaviours of the Limine boot protocol
+outside any specific feature. The specifics are going to be described as
+needed throughout this specification.
+
+Base revision 0 is considered deprecated, and it is the default base revision
+a kernel is assumed to be requesting and complying to if no base revision tag
+is provided by the kernel, for backwards compatibility.
+
+A base revision tag is a set of 3 64-bit values placed somewhere in the kernel
+binary on an 8-byte aligned boundary; the first 2 values are a magic number
+for the bootloader to be able to identify the tag, and the last value is the
+requested base revision number. Lack of base revision tag implies revision 0.
+
+```c
+#define LIMINE_BASE_REVISION(N) \
+    uint64_t limine_base_revision[3] = { 0xf9562b2d5c95a6c8, 0x6a7b384944536bdc, (N) };
+```
+
+If a bootloader drops support for an older base revision, the bootloader must
+fail to boot a kernel requesting such base revision. If a bootloader does not yet
+support a requested base revision (i.e. if the requested base revision is higher
+than the maximum base revision supported), it must assume the highest base
+revision it supports, and communicate failure to comply to the kernel by
+*leaving the 3rd component of the base revision tag unchanged*.
+On the other hand, if the kernel's requested base revision is supported,
+*the 3rd component of the base revision tag must be set to 0 by the bootloader*.
+
+Note: this means that unlike when the bootloader drops support for an older base
+revision and *it* is responsible for failing to boot the kernel, in case the
+bootloader does not yet support the kernel's requested base revision,
+it is up to the kernel itself to fail (or handle the condition otherwise).
+
 ## Features
 
 The protocol is centered around the concept of request/response - collectively

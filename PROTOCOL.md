@@ -48,8 +48,8 @@ requested base revision number. Lack of base revision tag implies revision 0.
 If a bootloader drops support for an older base revision, the bootloader must
 fail to boot a kernel requesting such base revision. If a bootloader does not yet
 support a requested base revision (i.e. if the requested base revision is higher
-than the maximum base revision supported), it must assume the highest base
-revision it supports, and communicate failure to comply to the kernel by
+than the maximum base revision supported), it must boot the kernel using any
+arbitrary revision it supports, and communicate failure to comply to the kernel by
 *leaving the 3rd component of the base revision tag unchanged*.
 On the other hand, if the kernel's requested base revision is supported,
 *the 3rd component of the base revision tag must be set to 0 by the bootloader*.

@@ -1,3 +1,5 @@
+#if defined (__x86_64__) || defined (__i386__)
+
 #include <stdint.h>
 #include <stddef.h>
 #include <mm/mtrr.h>
@@ -138,3 +140,5 @@ void mtrr_restore(void) {
     /* restore old value of cr0 */
     asm volatile ("mov %0, %%cr0" :: "r"(old_cr0) : "memory");
 }
+
+#endif

@@ -13,8 +13,6 @@ AC_SUBST([BUILDDIR])
 REGEN_DATE="m4_esyscmd([date '+%B %Y' | tr -d '\n'])"
 AC_SUBST([REGEN_DATE])
 
-AC_CANONICAL_HOST
-
 AC_DEFUN([PROG_ABSPATH], [
     case "$$1" in
         .*) $1="$(cd "$(dirname "$$1")" && pwd -P)/$(basename "$$1")" ;;

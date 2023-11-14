@@ -874,7 +874,7 @@ struct limine_5_level_paging_response {
 };
 ```
 
-Notes: The presence of this request will prompt the bootloader to turn on
+Note: The presence of this request will prompt the bootloader to turn on
 x86-64 5-level paging. It will not be turned on if this request is not present.
 If the response pointer is changed to a valid pointer, 5-level paging is engaged.
 
@@ -917,8 +917,11 @@ struct limine_smp_response {
 * `cpus` - Pointer to an array of `cpu_count` pointers to
 `struct limine_smp_info` structures.
 
-Notes: The presence of this request will prompt the bootloader to bootstrap
+Note: The presence of this request will prompt the bootloader to bootstrap
 the secondary processors. This will not be done if this request is not present.
+
+Note: The MTRRs of APs will be synchronised by the bootloader to match
+the BSP, as Intel SDM requires (Vol. 3A, 12.11.5).
 
 ```c
 struct limine_smp_info;
@@ -965,7 +968,7 @@ struct limine_smp_response {
 * `cpus` - Pointer to an array of `cpu_count` pointers to
 `struct limine_smp_info` structures.
 
-Notes: The presence of this request will prompt the bootloader to bootstrap
+Note: The presence of this request will prompt the bootloader to bootstrap
 the secondary processors. This will not be done if this request is not present.
 
 ```c
@@ -1014,7 +1017,7 @@ struct limine_smp_response {
 * `cpus` - Pointer to an array of `cpu_count` pointers to
 `struct limine_smp_info` structures.
 
-Notes: The presence of this request will prompt the bootloader to bootstrap
+Note: The presence of this request will prompt the bootloader to bootstrap
 the secondary processors. This will not be done if this request is not present.
 
 ```c

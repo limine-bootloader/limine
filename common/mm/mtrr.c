@@ -87,12 +87,10 @@ void mtrr_restore(void) {
     /* then invalidate the caches */
     asm volatile ("wbinvd" ::: "memory");
 
-#if defined (UEFI)
-    /* on UEFI, paging is enabled, so do a cr3 read/write to flush the TLB */
+    /* do a cr3 read/write to flush the TLB */
     uintptr_t cr3;
     asm volatile ("mov %%cr3, %0" : "=r"(cr3) :: "memory");
     asm volatile ("mov %0, %%cr3" :: "r"(cr3) : "memory");
-#endif
 
     /* disable the MTRRs */
     uint64_t mtrr_def = rdmsr(0x2ff);
@@ -128,11 +126,9 @@ void mtrr_restore(void) {
     mtrr_def |= (1 << 11);
     wrmsr(0x2ff, mtrr_def);
 
-#if defined (UEFI)
-    /* on UEFI, paging is enabled, so do a cr3 read/write to flush the TLB */
+    /* do a cr3 read/write to flush the TLB */
     asm volatile ("mov %%cr3, %0" : "=r"(cr3) :: "memory");
     asm volatile ("mov %0, %%cr3" :: "r"(cr3) : "memory");
-#endif
 
     /* then invalidate the caches */
     asm volatile ("wbinvd" ::: "memory");

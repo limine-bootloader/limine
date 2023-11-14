@@ -54,7 +54,7 @@ smp_trampoline_start:
     wrmsr
 
   .nox2apic:
-    lea esp, [ebx + (temp_stack.top - smp_trampoline_start)]
+    mov esp, [ebx + (passed_info.temp_stack - smp_trampoline_start)]
 
     mov eax, cr4
     bts eax, 5
@@ -79,6 +79,11 @@ smp_trampoline_start:
     mov eax, cr0
     bts eax, 31
     mov cr0, eax
+
+%ifdef IA32_TARGET
+    ; Synchronise MTRRs with BSP
+    call [ebx + (passed_info.mtrr_restore - smp_trampoline_start)]
+%endif
 
     lea eax, [ebx + (.mode64 - smp_trampoline_start)]
     push 0x28
@@ -123,8 +128,15 @@ smp_trampoline_start:
 bits 64
 parking64:
     mov ebx, ebx
+
+%ifdef X86_64_TARGET
+    ; Synchronise MTRRs with BSP
+    call [rbx + (passed_info.mtrr_restore - smp_trampoline_start)]
+%endif
+
     mov edi, dword [rbx + (passed_info.smp_info_struct - smp_trampoline_start)]
     add rdi, qword [rbx + (passed_info.hhdm - smp_trampoline_start)]
+
     mov eax, 1
     lock xchg dword [rbx + (passed_info.booted_flag - smp_trampoline_start)], eax
 
@@ -160,11 +172,6 @@ parking64:
     xor r15, r15
     ret
 
-align 16
-temp_stack:
-    times 128 db 0
-  .top:
-
 invalid_idt:
     times 2 dq 0
 
@@ -178,6 +185,10 @@ passed_info:
         dw 0
         dq 0
     .hhdm:
+        dq 0
+    .mtrr_restore:
+        dq 0
+    .temp_stack:
         dq 0
 
 smp_trampoline_end:

@@ -69,6 +69,8 @@ ifeq ($(TARGET),bios)
     override CPPFLAGS_FOR_TARGET := \
         $(CPPFLAGS_FOR_TARGET) \
         -DBIOS
+    override NASM_TARGET := \
+        -DIA32_TARGET
 endif
 
 ifeq ($(TARGET),uefi-x86-64)
@@ -87,6 +89,8 @@ ifeq ($(TARGET),uefi-x86-64)
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/x86_64' \
         $(CPPFLAGS_FOR_TARGET) \
         -DUEFI
+    override NASM_TARGET := \
+        -DX86_64_TARGET
 endif
 
 ifeq ($(TARGET),uefi-ia32)
@@ -101,6 +105,8 @@ ifeq ($(TARGET),uefi-ia32)
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/ia32' \
         $(CPPFLAGS_FOR_TARGET) \
         -DUEFI
+    override NASM_TARGET := \
+        -DIA32_TARGET
 endif
 
 ifeq ($(TARGET),uefi-aarch64)
@@ -566,29 +572,29 @@ endif
 ifeq ($(TARGET),bios)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_ia32
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_bios_ia32
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_x86
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-x86-64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_x86_64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) -f elf64 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf64 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_uefi_x86_64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) -f elf64 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf64 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_x86
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) -f elf64 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf64 -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-aarch64)
@@ -614,13 +620,13 @@ endif
 ifeq ($(TARGET),uefi-ia32)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_ia32
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_uefi_ia32
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_x86
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -F dwarf -g -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
 endif

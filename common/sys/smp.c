@@ -11,6 +11,7 @@
 #include <sys/gdt.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>
+#include <mm/mtrr.h>
 #define LIMINE_NO_POINTERS
 #include <limine.h>
 #if defined (__riscv64)
@@ -29,6 +30,8 @@ struct trampoline_passed_info {
     uint32_t smp_tpl_info_struct;
     struct gdtr smp_tpl_gdt;
     uint64_t smp_tpl_hhdm;
+    uint64_t smp_tpl_mtrr_restore;
+    uint64_t smp_tpl_temp_stack;
 } __attribute__((packed));
 
 static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
@@ -41,6 +44,11 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
         trampoline = conv_mem_alloc(smp_trampoline_size);
 
         memcpy(trampoline, smp_trampoline_start, smp_trampoline_size);
+    }
+
+    static void *temp_stack = NULL;
+    if (temp_stack == NULL) {
+        temp_stack = ext_mem_alloc(8192);
     }
 
     static struct trampoline_passed_info *passed_info = NULL;
@@ -58,6 +66,8 @@ static bool smp_start_ap(uint32_t lapic_id, struct gdtr *gdtr,
                                      | ((uint32_t)wp << 4);
     passed_info->smp_tpl_gdt = *gdtr;
     passed_info->smp_tpl_hhdm = hhdm;
+    passed_info->smp_tpl_mtrr_restore = (uint64_t)(uintptr_t)mtrr_restore;
+    passed_info->smp_tpl_temp_stack = (uint64_t)(uintptr_t)temp_stack;
 
     asm volatile ("" ::: "memory");
 
@@ -171,6 +181,8 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
     *cpu_count = 0;
 
     // Try to start all APs
+    mtrr_save();
+
     for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
       (uintptr_t)madt_ptr < (uintptr_t)madt + madt->header.length;
       madt_ptr += *(madt_ptr + 1)) {

@@ -28,5 +28,7 @@ fi
 
 AUTOMAKE_LIBDIR="$(automake --print-libdir)"
 cp "${AUTOMAKE_LIBDIR}/INSTALL" ./
+mkdir -p build-aux
+cp "${AUTOMAKE_LIBDIR}/install-sh" build-aux/
 
-libtoolize -cfvi -Wall && autoreconf -fvi -Wall
+autoreconf -fvi -Wall

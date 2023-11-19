@@ -85,7 +85,7 @@ Host utility binaries are provided for Windows.
 
 In order to build Limine, the following programs have to be installed:
 common UNIX tools (also known as `coreutils`),
-`GNU make`, `pkg-config`, `grep`, `sed`, `find`, `awk`, `gzip`, `nasm`, `mtools`
+`GNU make`, `grep`, `sed`, `find`, `awk`, `gzip`, `nasm`, `mtools`
 (optional, necessary to build `limine-uefi-cd.bin`).
 Furthermore, `gcc` or `llvm/clang` must also be installed, alongside
 the respective binutils.
@@ -96,7 +96,7 @@ If using a release tarball (recommended, see https://github.com/limine-bootloade
 run `./configure` directly.
 
 If checking out from the repository, run `./bootstrap` first in order to download the
-necessary dependencies and generate the configure script (`autoconf`, `automake`, and `libtool` required).
+necessary dependencies and generate the configure script (`GNU autoconf` and `GNU automake` required).
 
 `./configure` takes arguments and environment variables; for more information on
 these, run `./configure --help`.

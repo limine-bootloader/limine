@@ -26,11 +26,7 @@ fi
 [ -d limine-efi ] || git clone https://github.com/limine-bootloader/limine-efi.git $SHALLOW_CLONE_FLAG
 [ -d libgcc-binaries ] || git clone https://github.com/mintsuki/libgcc-binaries.git $SHALLOW_CLONE_FLAG
 
-autoreconf -fvi -Wall
-
 AUTOMAKE_LIBDIR="$(automake --print-libdir)"
 cp "${AUTOMAKE_LIBDIR}/INSTALL" ./
-eval "$(grep 'ac_aux_files="' configure)"
-for f in $ac_aux_files; do
-    cp "${AUTOMAKE_LIBDIR}/$f" ./build-aux/
-done
+
+libtoolize -cfvi -Wall && autoreconf -fvi -Wall

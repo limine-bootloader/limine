@@ -96,7 +96,7 @@ If using a release tarball (recommended, see https://github.com/limine-bootloade
 run `./configure` directly.
 
 If checking out from the repository, run `./bootstrap` first in order to download the
-necessary dependencies and generate the configure script (`GNU autoconf` and `GNU automake` required).
+necessary dependencies and generate the configure script (`autoconf`, `automake`, and `libtool` required).
 
 `./configure` takes arguments and environment variables; for more information on
 these, run `./configure --help`.

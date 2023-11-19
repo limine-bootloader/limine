@@ -29,10 +29,7 @@ fi
 autoreconf -fvi -Wall
 
 AUTOMAKE_LIBDIR="$(automake --print-libdir)"
-
 cp "${AUTOMAKE_LIBDIR}/INSTALL" ./
-
-mkdir -p build-aux
 eval "$(grep 'ac_aux_files="' configure)"
 for f in $ac_aux_files; do
     cp "${AUTOMAKE_LIBDIR}/$f" ./build-aux/

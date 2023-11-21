@@ -29,6 +29,8 @@ fi
 AUTOMAKE_LIBDIR="$(automake --print-libdir)"
 cp "${AUTOMAKE_LIBDIR}/INSTALL" ./
 mkdir -p build-aux
+cp "${AUTOMAKE_LIBDIR}/config.guess" build-aux/
+cp "${AUTOMAKE_LIBDIR}/config.sub" build-aux/
 cp "${AUTOMAKE_LIBDIR}/install-sh" build-aux/
 
 autoreconf -fvi -Wall

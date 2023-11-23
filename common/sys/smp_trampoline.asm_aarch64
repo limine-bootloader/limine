@@ -99,7 +99,7 @@ smp_trampoline_start:
     br x8
 
 // Alignment required by VBAR register
-.align 11
+.align 12
 2:
     // Zero out VBAR to avoid confusion
     msr vbar_el1, xzr

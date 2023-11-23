@@ -291,7 +291,6 @@ dist:
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"
 	cp -r '$(call SHESCAPE,$(SRCDIR))'/.git '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"/
 	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && git checkout .
-	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && git log --oneline --decorate > ChangeLog
 	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && ./bootstrap
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/common/flanterm/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/freestanding-headers/.git"

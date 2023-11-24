@@ -85,7 +85,10 @@ jobs:
         run: ./bootstrap && ./configure --enable-all && make dist
 
       - name: Create release notes
-        run: echo "Binary release can be found at https://github.com/limine-bootloader/limine/tree/$TAG_NAME-binary" > rel_notes.txt
+        run: |
+          echo "Changelog can be found [here](https://github.com/limine-bootloader/limine/releases/download/$TAG_NAME/ChangeLog)." > rel_notes.txt
+          echo "" >> rel_notes.txt
+          echo "Binary release can be found [here](https://github.com/limine-bootloader/limine/tree/$TAG_NAME-binary)." >> rel_notes.txt
 
       - name: Release
         uses: softprops/action-gh-release@v1

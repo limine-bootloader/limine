@@ -21,6 +21,7 @@ static void console_help(void) {
         "lsvol     -- List volumes.\n"
         "firmware  -- Show firmware type.\n"
 #if defined (UEFI)
+        "setup     -- Reboot to firmware setup.\n"
         "slide     -- Print load slide offset.\n"
 #endif
         "version   -- Print version.\n"
@@ -66,6 +67,12 @@ void console(void) {
             print("unknown\n");
 #endif
 #if defined (UEFI)
+        } else if (strcmp(prompt, "setup") == 0) {
+            if (reboot_to_fw_ui_supported()) {
+                reboot_to_fw_ui();
+            } else {
+                print("Your firmware does not support rebooting to the firmware UI.\n");
+            }
         } else if (strcmp(prompt, "slide") == 0) {
             print("%p\n", __slide);
 #endif

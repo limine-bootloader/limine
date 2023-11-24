@@ -628,6 +628,50 @@ static void menu_init_term(void) {
     }
 }
 
+#if defined(UEFI)
+bool reboot_to_fw_ui_supported(void) {
+    uint64_t os_indications_supported;
+    UINTN size = sizeof(os_indications_supported);
+    EFI_GUID global_variable = EFI_GLOBAL_VARIABLE;
+    EFI_STATUS status = gRT->GetVariable(L"OsIndicationsSupported", &global_variable, NULL, &size, &os_indications_supported);
+    if (status == EFI_SUCCESS && size == sizeof(os_indications_supported)) {
+        return (os_indications_supported & EFI_OS_INDICATIONS_BOOT_TO_FW_UI) != 0;
+    }
+    return false;
+}
+
+noreturn void reboot_to_fw_ui(void) {
+    reset_term();
+    print("Rebooting to the firmware setup...\n");
+
+    uint64_t os_indications;
+    UINTN size = sizeof(os_indications);
+    EFI_GUID global_variable = EFI_GLOBAL_VARIABLE;
+    EFI_STATUS status = gRT->GetVariable(L"OsIndications", &global_variable, NULL, &size, &os_indications);
+    if (status != EFI_SUCCESS || size != sizeof(os_indications)) {
+        if (status == EFI_NOT_FOUND) {
+            os_indications = 0;
+            goto not_found;
+        }
+
+        panic(true, "Failed to get OsIndications variable, status=%X", status);
+    }
+
+not_found:;
+    uint64_t new_os_indications = os_indications | EFI_OS_INDICATIONS_BOOT_TO_FW_UI;
+    status = gRT->SetVariable(L"OsIndications", &global_variable,
+        EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+        sizeof(new_os_indications), &new_os_indications);
+
+    if (status != EFI_SUCCESS) {
+        panic(true, "Failed to set OsIndications variable, status=%X", status);
+    }
+
+    gRT->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
+    panic(true, "Failed to reboot to firmware UI");
+}
+#endif
+
 noreturn void _menu(bool first_run) {
     size_t data_size = (uintptr_t)data_end - (uintptr_t)data_begin;
 #if defined (BIOS)
@@ -739,6 +783,10 @@ noreturn void _menu(bool first_run) {
             timeout = strtoui(timeout_config, NULL, 10);
     }
 
+#if defined(UEFI)
+    bool reboot_to_firmware_supported = reboot_to_fw_ui_supported();
+#endif
+
     if (!first_run) {
         skip_timeout = true;
     }
@@ -831,6 +879,12 @@ refresh:
                 print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m %s",
                       selected_menu_entry->expanded ? "Collapse" : "Expand");
             }
+#if defined(UEFI)
+            if (reboot_to_firmware_supported) {
+                set_cursor_pos_helper(terms[0]->cols - 33, 3);
+                print("\e[32mS\e[0m Firmware Setup");
+            }
+#endif
             set_cursor_pos_helper(terms[0]->cols - 13, 3);
             print("\e[32mC\e[0m Console");
         }
@@ -941,6 +995,15 @@ timeout_aborted:
                 }
                 break;
             }
+#if defined(UEFI)
+            case 's':
+            case 'S': {
+                if (reboot_to_firmware_supported) {
+                    reboot_to_fw_ui();
+                }
+                break;
+            }
+#endif
             case 'c':
             case 'C': {
                 reset_term();

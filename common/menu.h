@@ -4,6 +4,11 @@
 #include <stdbool.h>
 #include <stdnoreturn.h>
 
+#if defined(UEFI)
+bool reboot_to_fw_ui_supported(void);
+noreturn void reboot_to_fw_ui(void);
+#endif
+
 noreturn void menu(bool first_run);
 
 noreturn void boot(char *config);

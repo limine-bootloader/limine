@@ -5,6 +5,7 @@
 /freestanding-headers
 /libgcc-binaries
 /common/flanterm
+/common/libfdt
 /common/stb/stb_image.h
 /decompressor/tinf
 /ovmf*

@@ -246,6 +246,8 @@ Limine uses a stripped-down version of [tinf](https://github.com/jibsen/tinf) fo
 
 Limine relies on [stb_image](https://github.com/nothings/stb/blob/dev/stb_image.h) for runtime GZIP decompression and image loading.
 
+Limine uses a patched version of libfdt (can be found in Linux's source tree) for manipulating FDTs.
+
 ## Discord server
 We have a [Discord server](https://discord.gg/QEeZMz4) if you need support,
 info, or you just want to hang out with us.

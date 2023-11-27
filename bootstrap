@@ -12,6 +12,15 @@ if [ -z "$BOOTSTRAP_NO_SHALLOW_CLONES" ]; then
 fi
 
 [ -d common/flanterm ] || git clone https://github.com/mintsuki/flanterm.git common/flanterm $SHALLOW_CLONE_FLAG
+[ -d common/libfdt ] || (
+    set -e
+    curl -Lo dtc-1.7.0.tar.xz https://mirrors.edge.kernel.org/pub/software/utils/dtc/dtc-1.7.0.tar.xz
+    tar -xf dtc-1.7.0.tar.xz
+    mv dtc-1.7.0/libfdt/ common/libfdt
+    rm -rf dtc-1.7.0 dtc-1.7.0.tar.xz
+    find common/libfdt/ -type f -not -name '*.c' -not -name '*.h' -delete
+    patch -p1 < common/libfdt.patch
+)
 [ -f common/stb/stb_image.h ] || ( curl -Lo common/stb/stb_image.h https://github.com/nothings/stb/raw/dev/stb_image.h && patch -p0 < common/stb_image.patch )
 [ -d decompressor/tinf ] || (
     set -e

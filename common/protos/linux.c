@@ -378,7 +378,7 @@ struct linux_efi_initrd {
 #endif
 
 noreturn void linux_load(char *config, char *cmdline) {
-#if defined(__riscv64__)
+#if defined(__riscv64)
     (void)cmdline;
 #endif
 

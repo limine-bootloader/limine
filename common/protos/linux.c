@@ -1,5 +1,3 @@
-#if defined (__x86_64__) || defined (__i386__)
-
 #include <stdint.h>
 #include <stddef.h>
 #include <stdnoreturn.h>
@@ -7,18 +5,21 @@
 #include <fs/file.h>
 #include <lib/libc.h>
 #include <lib/misc.h>
-#include <lib/real.h>
 #include <lib/term.h>
 #include <lib/config.h>
 #include <lib/print.h>
 #include <lib/uri.h>
 #include <mm/pmm.h>
-#include <sys/idt.h>
 #include <lib/fb.h>
+#include <sys/cpu.h>
+
+#if defined (__x86_64__) || defined (__i386__)
 #include <lib/acpi.h>
+#include <lib/real.h>
 #include <drivers/edid.h>
 #include <drivers/vga_textmode.h>
 #include <drivers/gop.h>
+#include <sys/idt.h>
 
 noreturn void linux_spinup(void *entry, void *boot_params);
 
@@ -349,8 +350,38 @@ struct boot_params {
 } __attribute__((packed));
 
 // End of Linux code
+#elif defined(__aarch64__)
+#include <libfdt/libfdt.h>
+
+// Taken from https://www.kernel.org/doc/Documentation/arm64/booting.txt
+
+struct kernel_header {
+    uint32_t code0; /* Executable code */
+    uint32_t code1; /* Executable code */
+    uint64_t text_offset; /* Image load offset, little endian */
+    uint64_t image_size; /* Effective Image size, little endian */
+    uint64_t flags; /* kernel flags, little endian */
+    uint64_t res2; /* = 0, reserved */
+    uint64_t res3; /* = 0, reserved */
+    uint64_t res4; /* = 0, reserved */
+    uint32_t magic; /* = 0x644d5241, Magic number, little endian, "ARM\x64" */
+    uint32_t res5; /* reserved (used for PE COFF offset) */
+};
+
+struct linux_efi_initrd {
+    unsigned long base;
+    unsigned long size;
+};
+
+// Linux specifies that the maximum FDT size is 2M.
+#define MAX_FDT_SIZE 0x200000
+#endif
 
 noreturn void linux_load(char *config, char *cmdline) {
+#if defined(__riscv64__)
+    (void)cmdline;
+#endif
+
     struct file_handle *kernel_file;
 
     char *kernel_path = config_get_value(config, 0, "KERNEL_PATH");
@@ -362,6 +393,7 @@ noreturn void linux_load(char *config, char *cmdline) {
     if ((kernel_file = uri_open(kernel_path)) == NULL)
         panic(true, "linux: Failed to open kernel with path `%#`. Is the path correct?", kernel_path);
 
+#if defined (__x86_64__) || defined (__i386__)
     uint32_t signature;
     fread(kernel_file, &signature, 0x202, sizeof(uint32_t));
 
@@ -432,16 +464,136 @@ noreturn void linux_load(char *config, char *cmdline) {
         kernel_load_addr += 0x100000;
     }
     fread(kernel_file, (void *)kernel_load_addr, real_mode_code_size, kernel_file->size - real_mode_code_size);
+#elif defined(__aarch64__)
+    struct kernel_header header;
+    fread(kernel_file, &header, 0, sizeof(struct kernel_header));
+    if (header.magic != 0x644d5241) {
+        panic(true, "linux: Invalid kernel signature");
+    }
+
+    // Allocate physical memory for the kernel image
+    void *kernel = ext_mem_alloc(header.image_size);
+    fread(kernel_file, kernel, 0, header.image_size);
+    printv("linux: Kernel allocated at %X\n", (uintptr_t)kernel);
+
+    // Clean and invalidate caches for the memory range the kernel is loaded in
+    uintptr_t kernel_addr = (uintptr_t)kernel;
+    clean_dcache_poc(kernel_addr, kernel_addr + header.image_size);
+    inval_icache_pou(kernel_addr, kernel_addr + header.image_size);
+
+    // Get current exception level
+    uint64_t el;
+    asm volatile("mrs %0, currentel" : "=r"(el));
+
+    el >>= 2;
+    el &= 0x3;
+
+    uint64_t sctlr;
+    if (el == 1) {
+        printv("linux: Booting from EL1\n");
+        asm volatile("mrs %0, sctlr_el1" : "=r"(sctlr));
+    } else if (el == 2) {
+        printv("linux: Booting from EL2 with virtualization support\n");
+        asm volatile("mrs %0, sctlr_el2" : "=r"(sctlr));
+    } else {
+        panic(true, "linux: Linux cannot be booted from EL3 or EL0");
+    }
+
+    // Disable MMU and caches
+    sctlr &= ~((1 << 0) | (1 << 2) | (1 << 12));
+
+    if (el == 1) {
+        asm volatile("msr sctlr_el1, %0" :: "r"(sctlr));
+    } else if (el == 2) {
+        asm volatile("msr sctlr_el2, %0" :: "r"(sctlr));
+    }
+
+    // Look for the DTB in the configuration tables
+    void *fdt_addr = NULL;
+    const EFI_GUID dtb_guid = EFI_DTB_TABLE_GUID;
+
+    for (size_t i = 0; i < gST->NumberOfTableEntries; i++) {
+        EFI_CONFIGURATION_TABLE *cur_table = &gST->ConfigurationTable[i];
+        if (memcmp(&cur_table->VendorGuid, &dtb_guid, sizeof(EFI_GUID)) == 0) {
+            fdt_addr = cur_table->VendorTable;
+            break;
+        }
+    }
+
+    // Allocate memory for the FDT and copy it if it was found
+    // Otherwise, create an empty tree
+    void *fdt = ext_mem_alloc(MAX_FDT_SIZE);
+    if (fdt_addr) {
+        uint32_t fdt_size = fdt_totalsize(fdt_addr);
+        memcpy(fdt, fdt_addr, fdt_size);
+        print("linux: Copied %d bytes of FDT\n", fdt_size);
+    } else {
+        fdt_create_empty_tree(fdt, MAX_FDT_SIZE);
+    }
+
+    // Find the /chosen node, or create it if it doesn't exist
+    int node = fdt_subnode_offset(fdt, 0, "chosen");
+    if (node < 0) {
+        node = fdt_add_subnode(fdt, 0, "chosen");
+        if (node < 0) {
+            panic(true, "linux: Failed to add /chosen node to FDT");
+        }
+    }
+
+    int status;
+    if (!cmdline) {
+        goto no_cmdline;
+    }
+
+    // Set the bootargs property on the /chosen node
+    size_t cmdline_size = strlen(cmdline);
+    if (cmdline_size) {
+        status = fdt_setprop(fdt, node, "bootargs", cmdline, cmdline_size + 1);
+        if (status != 0) {
+            goto fdt_error;
+        }
+    }
+
+no_cmdline:;
+    // Setup the /chosen node properties for UEFI
+    // Right now they are just placeholder values, but they are updated later
+
+    uint32_t fdt_val32 = UINT32_MAX;
+    uint64_t fdt_val64 = UINT64_MAX;
+
+    status = fdt_setprop(fdt, node, "linux,uefi-system-table", &fdt_val64, sizeof(uint64_t));
+    if (status != 0) {
+        goto fdt_error;
+    }
+
+    status = fdt_setprop(fdt, node, "linux,uefi-mmap-start", &fdt_val64, sizeof(uint64_t));
+    if (status != 0) {
+        goto fdt_error;
+    }
+
+    status = fdt_setprop(fdt, node, "linux,uefi-mmap-size", &fdt_val32, sizeof(uint32_t));
+    if (status != 0) {
+        goto fdt_error;
+    }
+
+    status = fdt_setprop(fdt, node, "linux,uefi-mmap-desc-size", &fdt_val32, sizeof(uint32_t));
+    if (status != 0) {
+        goto fdt_error;
+    }
+
+    status = fdt_setprop(fdt, node, "linux,uefi-mmap-desc-ver", &fdt_val32, sizeof(uint32_t));
+    if (status != 0) {
+        goto fdt_error;
+    }
+#elif defined(__riscv64)
+    panic(true, "linux: RISC-V is not supported yet");
+#endif
 
     fclose(kernel_file);
 
     ///////////////////////////////////////
     // Modules
     ///////////////////////////////////////
-
-    uint32_t modules_mem_base = setup_header->initrd_addr_max;
-    if (modules_mem_base == 0)
-        modules_mem_base = 0x38000000;
 
     size_t size_of_all_modules = 0;
 
@@ -459,6 +611,15 @@ noreturn void linux_load(char *config, char *cmdline) {
         fclose(module);
     }
 
+    if (size_of_all_modules == 0) {
+        goto no_modules;
+    }
+
+#if defined(__x86_64__) || defined(__i386__)
+    uint32_t modules_mem_base = setup_header->initrd_addr_max;
+    if (modules_mem_base == 0)
+        modules_mem_base = 0x38000000;
+
     modules_mem_base -= size_of_all_modules;
     modules_mem_base = ALIGN_DOWN(modules_mem_base, 4096);
 
@@ -468,8 +629,15 @@ noreturn void linux_load(char *config, char *cmdline) {
             break;
         modules_mem_base -= 4096;
     }
+#else
+    uintptr_t modules_mem_base = (uintptr_t)ext_mem_alloc(size_of_all_modules);
+    if (modules_mem_base == 0) {
+        panic(true, "linux: Failed to allocate memory for modules");
+    }
+#endif
 
-    size_t _modules_mem_base = modules_mem_base;
+    uintptr_t _modules_mem_base = modules_mem_base;
+
     for (size_t i = 0; ; i++) {
         char *module_path = config_get_value(config, i, "MODULE_PATH");
         if (module_path == NULL)
@@ -486,10 +654,33 @@ noreturn void linux_load(char *config, char *cmdline) {
         _modules_mem_base += module->size;
     }
 
-    if (size_of_all_modules != 0) {
-        setup_header->ramdisk_image = (uint32_t)modules_mem_base;
-        setup_header->ramdisk_size  = (uint32_t)size_of_all_modules;
+#if defined(__x86_64__) || defined(__i386__)
+    setup_header->ramdisk_image = (uint32_t)modules_mem_base;
+    setup_header->ramdisk_size  = (uint32_t)size_of_all_modules;
+#elif defined(__aarch64__)
+    fdt_val64 = cpu_to_fdt64(_modules_mem_base);
+    status = fdt_setprop(fdt, node, "linux,initrd-start", &fdt_val64, sizeof(uint64_t));
+    if (status != 0) {
+        goto fdt_error;
     }
+
+    fdt_val64 = cpu_to_fdt64(ALIGN_UP(_modules_mem_base, 4096));
+    status = fdt_setprop(fdt, node, "linux,initrd-end", &fdt_val64, sizeof(uint64_t));
+    if (status != 0) {
+        goto fdt_error;
+    }
+
+    struct linux_efi_initrd *initrd_tbl = ext_mem_alloc(sizeof(struct linux_efi_initrd));
+    initrd_tbl->base = _modules_mem_base;
+    initrd_tbl->size = size_of_all_modules;
+
+    EFI_GUID linux_initrd_guid = {0x5568e427, 0x68fc, 0x4f3d, {0xac, 0x74, 0xca, 0x55, 0x52, 0x31, 0xcc, 0x68}};
+    if (gBS->InstallConfigurationTable(&linux_initrd_guid, initrd_tbl) != EFI_SUCCESS) {
+        panic(true, "linux: Failed to install initrd table");
+    }
+#endif
+
+no_modules:;
 
     ///////////////////////////////////////
     // Video
@@ -497,7 +688,9 @@ noreturn void linux_load(char *config, char *cmdline) {
 
     term_notready();
 
+#if defined(__x86_64__) || defined(__i386__)
     struct screen_info *screen_info = &boot_params->screen_info;
+#endif
 
 #if defined (BIOS)
     {
@@ -517,7 +710,7 @@ noreturn void linux_load(char *config, char *cmdline) {
 
     struct fb_info *fbs;
     size_t fbs_count;
-#if defined (UEFI)
+#if defined (UEFI) && (defined (__x86_64__) || defined (__i386__))
     gop_force_16 = true;
 #endif
     fb_init(&fbs, &fbs_count, req_width, req_height, req_bpp);
@@ -537,6 +730,7 @@ set_textmode:;
         screen_info->orig_video_isVGA = VIDEO_TYPE_VGAC;
 #endif
     } else {
+#if defined(__x86_64__) || defined(__i386__)
         screen_info->capabilities   = VIDEO_CAPABILITY_64BIT_BASE | VIDEO_CAPABILITY_SKIP_QUIRKS;
         screen_info->flags          = VIDEO_FLAGS_NOCURSOR;
         screen_info->lfb_base       = (uint32_t)fbs[0].framebuffer_addr;
@@ -562,16 +756,20 @@ set_textmode:;
 #elif defined (UEFI)
         screen_info->orig_video_isVGA = VIDEO_TYPE_EFI;
 #endif
+#endif
     }
 
 #if defined (UEFI)
 no_fb:;
 #endif
+
+#if defined(__x86_64__) || defined(__i386__)
     ///////////////////////////////////////
     // RSDP
     ///////////////////////////////////////
 
     boot_params->acpi_rsdp_addr = (uintptr_t)acpi_get_rsdp();
+#endif
 
     ///////////////////////////////////////
     // UEFI
@@ -579,10 +777,11 @@ no_fb:;
 #if defined (UEFI)
     efi_exit_boot_services();
 
-#if defined (__x86_64__)
-    memcpy(&boot_params->efi_info.efi_loader_signature, "EL64", 4);
-#elif defined (__i386__)
+#if defined (__x86_64__) || defined (__i386__)
+#if defined (__i386__)
     memcpy(&boot_params->efi_info.efi_loader_signature, "EL32", 4);
+#else
+    memcpy(&boot_params->efi_info.efi_loader_signature, "EL64", 4);
 #endif
 
     boot_params->efi_info.efi_systab    = (uint32_t)(uint64_t)(uintptr_t)gST;
@@ -592,8 +791,45 @@ no_fb:;
     boot_params->efi_info.efi_memmap_size     = efi_mmap_size;
     boot_params->efi_info.efi_memdesc_size    = efi_desc_size;
     boot_params->efi_info.efi_memdesc_version = efi_desc_ver;
+#elif defined(__aarch64__)
+    node = fdt_path_offset(fdt, "/chosen");
+    if (node < 0) {
+        panic(true, "linux: Failed to find /chosen node in FDT");
+    }
+
+    fdt_val64 = cpu_to_fdt64((uintptr_t)gST);
+    status = fdt_setprop_inplace(fdt, node, "linux,uefi-system-table", &fdt_val64, sizeof(uint64_t));
+    if (status != 0) {
+        goto fdt_error;
+    }
+
+    fdt_val64 = cpu_to_fdt64((uintptr_t)efi_mmap);
+    status = fdt_setprop_inplace(fdt, node, "linux,uefi-mmap-start", &fdt_val64, sizeof(uint64_t));
+    if (status != 0) {
+        goto fdt_error;
+    }
+
+    fdt_val32 = cpu_to_fdt32(efi_mmap_size);
+    status = fdt_setprop_inplace(fdt, node, "linux,uefi-mmap-size", &fdt_val32, sizeof(uint32_t));
+    if (status != 0) {
+        goto fdt_error;
+    }
+
+    fdt_val32 = cpu_to_fdt32(efi_desc_size);
+    status = fdt_setprop_inplace(fdt, node, "linux,uefi-mmap-desc-size", &fdt_val32, sizeof(uint32_t));
+    if (status != 0) {
+        goto fdt_error;
+    }
+
+    fdt_val32 = cpu_to_fdt32(efi_desc_ver);
+    status = fdt_setprop_inplace(fdt, node, "linux,uefi-mmap-desc-ver", &fdt_val32, sizeof(uint32_t));
+    if (status != 0) {
+        goto fdt_error;
+    }
+#endif
 #endif
 
+#if defined(__x86_64__) || defined(__i386__)
     ///////////////////////////////////////
     // e820
     ///////////////////////////////////////
@@ -613,15 +849,25 @@ no_fb:;
         j++;
         boot_params->e820_entries = j;
     }
+#endif
 
     ///////////////////////////////////////
     // Spin up
     ///////////////////////////////////////
 
+#if defined(__x86_64__) || defined(__i386__)
     irq_flush_type = IRQ_PIC_ONLY_FLUSH;
 
     common_spinup(linux_spinup, 2, (uint32_t)kernel_load_addr,
                                    (uint32_t)(uintptr_t)boot_params);
-}
+#elif defined(__aarch64__)
+    fdt_pack(fdt);
+    print("linux: FDT allocated at %X\n", (uintptr_t)fdt);
 
+    void(*kernel_entry)(void *, uint64_t, uint64_t, uint64_t) = kernel;
+    kernel_entry(fdt, 0, 0, 0);
+
+fdt_error:;
+    panic(true, "linux: Failed to update the FDT");
 #endif
+}

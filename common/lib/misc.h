@@ -25,6 +25,8 @@ extern UINTN efi_mmap_size, efi_desc_size;
 extern UINT32 efi_desc_ver;
 
 extern bool efi_boot_services_exited;
+extern bool efi_no_va_map;
+
 bool efi_exit_boot_services(void);
 #endif
 

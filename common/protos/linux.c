@@ -803,6 +803,10 @@ no_fb:;
         goto fdt_error;
     }
 
+    if (efi_no_va_map) {
+        goto no_va_map;
+    }
+
     fdt_val64 = cpu_to_fdt64((uintptr_t)efi_mmap);
     status = fdt_setprop_inplace(fdt, node, "linux,uefi-mmap-start", &fdt_val64, sizeof(uint64_t));
     if (status != 0) {
@@ -826,6 +830,8 @@ no_fb:;
     if (status != 0) {
         goto fdt_error;
     }
+
+no_va_map:;
 #endif
 #endif
 

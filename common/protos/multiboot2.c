@@ -173,6 +173,15 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
                 }
                 break;
             }
+            case MULTIBOOT_HEADER_TAG_CONSOLE_FLAGS: {
+#if defined (UEFI)
+                struct multiboot_header_tag_console_flags *flags = (void *)tag;
+                if ((flags->console_flags & (1 << 1)) && (flags->console_flags & (1 << 0))) {
+                    panic(true, "multiboot2: OS requested EGA text mode, but UEFI does not support it");
+                }
+#endif
+                break;
+            }
             case MULTIBOOT_HEADER_TAG_FRAMEBUFFER: {
                 fbtag = (void *)tag;
                 break;

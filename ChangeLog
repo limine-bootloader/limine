@@ -9,9 +9,6 @@
         - multiboot2 protocol: Add support for console flags header tag.
         - Limine protocol: Add support for EFI memory map feature.
 
-    Bug fixes:
-        - Call SetVirtualAddressMap() when exiting EFI boot services.
-
     Miscellaneous:
         - Improve error reporting from host "limine" executable.
         - Do not ignore errors from mtools when building limine-uefi-cd.bin.

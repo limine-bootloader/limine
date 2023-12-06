@@ -105,7 +105,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     struct multiboot_header_tag_framebuffer *fbtag = NULL;
 
     bool has_reloc_header = false;
-    struct multiboot_header_tag_relocatable reloc_tag;
+    struct multiboot_header_tag_relocatable reloc_tag = {0};
 
     bool is_new_acpi_required = false;
     bool is_old_acpi_required = false;
@@ -301,12 +301,14 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
                 if (relocated_base + ranges->length > reloc_tag.max_addr) {
                     goto reloc_fail;
                 }
+                break;
             case 2: // Prefer highest to lowest
                 reloc_ascend = false;
                 relocated_base = ALIGN_DOWN(reloc_tag.align, reloc_tag.max_addr - ranges->length);
                 if (relocated_base < reloc_tag.min_addr) {
                     goto reloc_fail;
                 }
+                break;
         }
 
         for (;;) {

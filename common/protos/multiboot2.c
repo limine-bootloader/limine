@@ -105,6 +105,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     struct multiboot_header_tag_framebuffer *fbtag = NULL;
 
     bool has_reloc_header = false;
+    struct multiboot_header_tag_relocatable reloc_tag;
 
     bool is_new_acpi_required = false;
     bool is_old_acpi_required = false;
@@ -190,9 +191,12 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
             case MULTIBOOT_HEADER_TAG_EFI_BS:
                 break;
 
-            case MULTIBOOT_HEADER_TAG_RELOCATABLE:
+            case MULTIBOOT_HEADER_TAG_RELOCATABLE: {
                 has_reloc_header = true;
+                struct multiboot_header_tag_relocatable *reloc_tag_ptr = (void *)tag;
+                reloc_tag = *reloc_tag_ptr;
                 break;
+            }
 
             default:
                 if (is_required)
@@ -204,7 +208,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
     struct elf_section_hdr_info section_hdr_info = {0};
 
     struct elsewhere_range *ranges;
-    uint64_t ranges_count;
+    uint64_t ranges_count = 1;
 
     if (addresstag != NULL) {
         size_t header_offset = (size_t)header - (size_t)kernel;
@@ -249,7 +253,6 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
             panic(true, "multiboot2: Using address tag but entry address tag missing");
         }
 
-        ranges_count = 1;
         ranges = ext_mem_alloc(sizeof(struct elsewhere_range));
 
         ranges->elsewhere = (uintptr_t)elsewhere;
@@ -261,14 +264,14 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
 
         switch (bits) {
             case 32:
-                if (!elf32_load_elsewhere(kernel, &e, &ranges, &ranges_count))
+                if (!elf32_load_elsewhere(kernel, &e, &ranges))
                     panic(true, "multiboot2: ELF32 load failure");
 
                 section_hdr_info = elf32_section_hdr_info(kernel);
                 section_hdr_info_valid = true;
                 break;
             case 64: {
-                if (!elf64_load_elsewhere(kernel, &e, &ranges, &ranges_count))
+                if (!elf64_load_elsewhere(kernel, &e, &ranges))
                     panic(true, "multiboot2: ELF64 load failure");
 
                 section_hdr_info = elf64_section_hdr_info(kernel);
@@ -284,13 +287,61 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
         }
     }
 
-    // Get the load base address (AKA the lowest target in the ranges)
-    uint64_t load_base_addr = (uint64_t)-1;
-    for (size_t i = 0; i < ranges_count; i++) {
-        if (load_base_addr > ranges[i].target) {
-            load_base_addr = ranges[i].target;
+    uint64_t reloc_slide = 0;
+
+    if (has_reloc_header) {
+        bool reloc_ascend;
+        uint64_t relocated_base;
+
+        switch (reloc_tag.preference) {
+            default:
+            case 0: case 1: // Prefer lowest to highest
+                reloc_ascend = true;
+                relocated_base = ALIGN_UP(reloc_tag.align, reloc_tag.min_addr);
+                if (relocated_base + ranges->length > reloc_tag.max_addr) {
+                    goto reloc_fail;
+                }
+            case 2: // Prefer highest to lowest
+                reloc_ascend = false;
+                relocated_base = ALIGN_DOWN(reloc_tag.align, reloc_tag.max_addr - ranges->length);
+                if (relocated_base < reloc_tag.min_addr) {
+                    goto reloc_fail;
+                }
         }
+
+        for (;;) {
+            if (check_usable_memory(relocated_base, relocated_base + ranges->length)) {
+                break;
+            }
+
+            if (reloc_ascend) {
+                relocated_base += reloc_tag.align;
+                if (relocated_base + ranges->length > reloc_tag.max_addr) {
+                    goto reloc_fail;
+                }
+            } else {
+                relocated_base -= reloc_tag.align;
+                if (relocated_base < reloc_tag.min_addr) {
+                    goto reloc_fail;
+                }
+            }
+        }
+
+        reloc_slide = reloc_ascend ?
+            relocated_base - ranges->target : ranges->target - relocated_base;
+
+        entry_point += reloc_slide;
+
+        ranges->target = relocated_base;
     }
+
+    if (!check_usable_memory(ranges->target, ranges->target + ranges->length)) {
+reloc_fail:
+        panic(true, "multiboot2: Could not find viable load address for kernel");
+    }
+
+    // Get the load base address (AKA the lowest target in the ranges)
+    uint64_t load_base_addr = ranges->target;
 
     size_t modules_size = 0;
     size_t n_modules;

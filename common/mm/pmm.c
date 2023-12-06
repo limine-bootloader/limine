@@ -1,6 +1,29 @@
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include <mm/pmm.h>
 #include <lib/rand.h>
 #include <lib/print.h>
+
+static bool full_overlap_check(uint64_t base1, uint64_t top1,
+                               uint64_t base2, uint64_t top2) {
+    return ((base1 >= base2 && base1 <  top2)
+         && (top1  >  base2 && top1  <= top2));
+}
+
+bool check_usable_memory(uint64_t base, uint64_t top) {
+    for (size_t i = 0; i < memmap_entries; i++) {
+        if (memmap[i].type != MEMMAP_USABLE) {
+            continue;
+        }
+
+        if (full_overlap_check(base, top, memmap[i].base, memmap[i].base + memmap[i].length)) {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 void pmm_randomise_memory(void) {
     print("pmm: Randomising memory contents...");

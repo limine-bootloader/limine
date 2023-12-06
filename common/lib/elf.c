@@ -617,8 +617,7 @@ again:
 }
 
 bool elf32_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
-                          struct elsewhere_range **ranges,
-                          uint64_t *ranges_count) {
+                          struct elsewhere_range **ranges) {
     struct elf32_hdr *hdr = (void *)elf;
 
     if (strncmp((char *)hdr->ident, "\177ELF", 4)) {
@@ -643,19 +642,32 @@ bool elf32_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
         panic(true, "elf: phdr_size < sizeof(struct elf32_phdr)");
     }
 
-    *ranges_count = 0;
+    size_t image_size = 0;
+    uint64_t min_vaddr = (uint64_t)-1;
+    uint64_t max_vaddr = 0;
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf32_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
         if (phdr->p_type != PT_LOAD)
             continue;
 
-        *ranges_count += 1;
+        if (phdr->p_vaddr < min_vaddr) {
+            min_vaddr = phdr->p_vaddr;
+        }
+
+        if (phdr->p_vaddr + phdr->p_memsz > max_vaddr) {
+            max_vaddr = phdr->p_vaddr + phdr->p_memsz;
+        }
     }
+    image_size = max_vaddr - min_vaddr;
 
-    *ranges = ext_mem_alloc(sizeof(struct elsewhere_range) * *ranges_count);
+    void *elsewhere = ext_mem_alloc(image_size);
 
-    size_t cur_entry = 0;
+    *ranges = ext_mem_alloc(sizeof(struct elsewhere_range));
+
+    (*ranges)->elsewhere = (uintptr_t)elsewhere;
+    (*ranges)->target = min_vaddr;
+    (*ranges)->length = image_size;
 
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf32_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
@@ -668,9 +680,7 @@ bool elf32_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
             panic(true, "elf: p_filesz > p_memsz");
         }
 
-        void *elsewhere = ext_mem_alloc(phdr->p_memsz);
-
-        memcpy(elsewhere, elf + phdr->p_offset, phdr->p_filesz);
+        memcpy(elsewhere + (phdr->p_vaddr - min_vaddr), elf + phdr->p_offset, phdr->p_filesz);
 
         if (!entry_adjusted
          && *entry_point >= phdr->p_vaddr
@@ -679,20 +689,13 @@ bool elf32_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
             *entry_point += phdr->p_paddr;
             entry_adjusted = true;
         }
-
-        (*ranges)[cur_entry].elsewhere = (uintptr_t)elsewhere;
-        (*ranges)[cur_entry].target = phdr->p_paddr;
-        (*ranges)[cur_entry].length = phdr->p_memsz;
-
-        cur_entry++;
     }
 
     return true;
 }
 
 bool elf64_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
-                          struct elsewhere_range **ranges,
-                          uint64_t *ranges_count) {
+                          struct elsewhere_range **ranges) {
     struct elf64_hdr *hdr = (void *)elf;
 
     if (strncmp((char *)hdr->ident, "\177ELF", 4)) {
@@ -717,19 +720,32 @@ bool elf64_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
         panic(true, "elf: phdr_size < sizeof(struct elf64_phdr)");
     }
 
-    *ranges_count = 0;
+    size_t image_size = 0;
+    uint64_t min_vaddr = (uint64_t)-1;
+    uint64_t max_vaddr = 0;
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
         if (phdr->p_type != PT_LOAD)
             continue;
 
-        *ranges_count += 1;
+        if (phdr->p_vaddr < min_vaddr) {
+            min_vaddr = phdr->p_vaddr;
+        }
+
+        if (phdr->p_vaddr + phdr->p_memsz > max_vaddr) {
+            max_vaddr = phdr->p_vaddr + phdr->p_memsz;
+        }
     }
+    image_size = max_vaddr - min_vaddr;
 
-    *ranges = ext_mem_alloc(sizeof(struct elsewhere_range) * *ranges_count);
+    void *elsewhere = ext_mem_alloc(image_size);
 
-    size_t cur_entry = 0;
+    *ranges = ext_mem_alloc(sizeof(struct elsewhere_range));
+
+    (*ranges)->elsewhere = (uintptr_t)elsewhere;
+    (*ranges)->target = min_vaddr;
+    (*ranges)->length = image_size;
 
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
@@ -742,9 +758,7 @@ bool elf64_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
             panic(true, "elf: p_filesz > p_memsz");
         }
 
-        void *elsewhere = ext_mem_alloc(phdr->p_memsz);
-
-        memcpy(elsewhere, elf + phdr->p_offset, phdr->p_filesz);
+        memcpy(elsewhere + (phdr->p_vaddr - min_vaddr), elf + phdr->p_offset, phdr->p_filesz);
 
         if (!entry_adjusted
          && *entry_point >= phdr->p_vaddr
@@ -753,12 +767,6 @@ bool elf64_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
             *entry_point += phdr->p_paddr;
             entry_adjusted = true;
         }
-
-        (*ranges)[cur_entry].elsewhere = (uintptr_t)elsewhere;
-        (*ranges)[cur_entry].target = phdr->p_paddr;
-        (*ranges)[cur_entry].length = phdr->p_memsz;
-
-        cur_entry++;
     }
 
     return true;

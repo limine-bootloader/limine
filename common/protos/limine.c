@@ -974,6 +974,7 @@ FEAT_END
 #endif
 
     // EFI memory map
+#if defined (UEFI)
 FEAT_START
     struct limine_efi_memmap_request *efi_memmap_request = get_request(LIMINE_EFI_MEMMAP_REQUEST);
     if (efi_memmap_request == NULL) {
@@ -990,6 +991,7 @@ FEAT_START
 
     efi_memmap_request->response = reported_addr(efi_memmap_response);
 FEAT_END
+#endif
 
     // SMP
 FEAT_START

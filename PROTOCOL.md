@@ -1347,6 +1347,41 @@ struct limine_efi_system_table_response {
 
 * `address` - Address of EFI system table.
 
+### EFI Memory Map Feature
+
+ID:
+```c
+#define LIMINE_EFI_MEMMAP_REQUEST { LIMINE_COMMON_MAGIC, 0x7df62a431d6872d5, 0xa4fcdfb3e57306c8 }
+```
+
+Request:
+```c
+struct limine_efi_memmap_request {
+    uint64_t id[4];
+    uint64_t revision;
+    struct limine_efi_memmap_response *response;
+};
+```
+
+Response:
+```c
+struct limine_efi_memmap_response {
+    uint64_t revision;
+    void *memmap;
+    uint64_t memmap_size;
+    uint64_t desc_size;
+    uint64_t desc_version;
+};
+```
+
+* `memmap` - Address (HHDM) of the EFI memory map.
+* `memmap_size` - Size in bytes of the EFI memory map.
+* `desc_size` - EFI memory map descriptor size in bytes.
+* `desc_version` - Version of EFI memory map descriptors.
+
+Note: This feature provides data suitable for use with RT->SetVirtualAddressMap(), provided
+HHDM offset is subtracted from `memmap`.
+
 ### Boot Time Feature
 
 ID:

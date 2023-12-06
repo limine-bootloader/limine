@@ -86,6 +86,11 @@ struct limine_efi_system_table_request est_request = {
     .revision = 0, .response = NULL
 };
 
+struct limine_efi_memmap_request efi_memmap_request = {
+    .id = LIMINE_EFI_MEMMAP_REQUEST,
+    .revision = 0, .response = NULL
+};
+
 struct limine_boot_time_request boot_time_request = {
     .id = LIMINE_BOOT_TIME_REQUEST,
     .revision = 0, .response = NULL
@@ -362,6 +367,20 @@ FEAT_START
     struct limine_efi_system_table_response *est_response = est_request.response;
     e9_printf("EFI system table feature, revision %d", est_response->revision);
     e9_printf("EFI system table at: %x", est_response->address);
+FEAT_END
+
+FEAT_START
+    e9_printf("");
+    if (efi_memmap_request.response == NULL) {
+        e9_printf("EFI memory map not passed");
+        break;
+    }
+    struct limine_efi_memmap_response *efi_memmap_response = efi_memmap_request.response;
+    e9_printf("EFI memory map feature, revision %d", efi_memmap_response->revision);
+    e9_printf("EFI memory map at: %x", efi_memmap_response->memmap);
+    e9_printf("EFI memory map size: %x", efi_memmap_response->memmap_size);
+    e9_printf("EFI memory descriptor size: %x", efi_memmap_response->desc_size);
+    e9_printf("EFI memory descriptor version: %d", efi_memmap_response->desc_version);
 FEAT_END
 
 FEAT_START

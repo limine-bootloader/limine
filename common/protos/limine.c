@@ -973,6 +973,24 @@ FEAT_END
     efi_exit_boot_services();
 #endif
 
+    // EFI memory map
+FEAT_START
+    struct limine_efi_memmap_request *efi_memmap_request = get_request(LIMINE_EFI_MEMMAP_REQUEST);
+    if (efi_memmap_request == NULL) {
+        break; // next feature
+    }
+
+    struct limine_efi_memmap_response *efi_memmap_response =
+        ext_mem_alloc(sizeof(struct limine_efi_memmap_response));
+
+    efi_memmap_response->memmap = reported_addr(efi_mmap);
+    efi_memmap_response->memmap_size = efi_mmap_size;
+    efi_memmap_response->desc_size = efi_desc_size;
+    efi_memmap_response->desc_version = efi_desc_ver;
+
+    efi_memmap_request->response = reported_addr(efi_memmap_response);
+FEAT_END
+
     // SMP
 FEAT_START
     struct limine_smp_request *smp_request = get_request(LIMINE_SMP_REQUEST);

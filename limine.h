@@ -507,6 +507,24 @@ struct limine_efi_system_table_request {
     LIMINE_PTR(struct limine_efi_system_table_response *) response;
 };
 
+/* EFI memory map */
+
+#define LIMINE_EFI_MEMMAP_REQUEST { LIMINE_COMMON_MAGIC, 0x7df62a431d6872d5, 0xa4fcdfb3e57306c8 }
+
+struct limine_efi_memmap_response {
+    uint64_t revision;
+    LIMINE_PTR(void *) memmap;
+    uint64_t memmap_size;
+    uint64_t desc_size;
+    uint64_t desc_version;
+};
+
+struct limine_efi_memmap_request {
+    uint64_t id[4];
+    uint64_t revision;
+    LIMINE_PTR(struct limine_efi_memmap_response *) response;
+};
+
 /* Boot time */
 
 #define LIMINE_BOOT_TIME_REQUEST { LIMINE_COMMON_MAGIC, 0x502746e184c088aa, 0xfbc5ec83e6327893 }

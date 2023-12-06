@@ -151,7 +151,6 @@ error:
 #endif
 
 no_unwind bool efi_boot_services_exited = false;
-no_unwind bool efi_no_va_map = false;
 
 bool efi_exit_boot_services(void) {
     EFI_STATUS status;
@@ -198,21 +197,6 @@ retry:
         }
         retries++;
         goto retry;
-    }
-
-    for (size_t i = 0; i < efi_mmap_size / efi_desc_size; i++) {
-        EFI_MEMORY_DESCRIPTOR *md = (void *)efi_mmap + i * efi_desc_size;
-        if ((md->Attribute & EFI_MEMORY_RUNTIME) == 0) {
-            continue;
-        }
-
-        md->VirtualStart = md->PhysicalStart;
-    }
-
-    status = gRT->SetVirtualAddressMap(efi_mmap_size, efi_desc_size, efi_desc_ver, efi_mmap);
-    if (status != EFI_SUCCESS) {
-        print("efi: Failed to set virtual address map\n");
-        efi_no_va_map = true;
     }
 
 #if defined(__x86_64__) || defined(__i386__)

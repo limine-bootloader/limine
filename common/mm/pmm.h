@@ -72,4 +72,6 @@ void pmm_free(void *ptr, size_t length);
 void pmm_release_uefi_mem(void);
 #endif
 
+bool check_usable_memory(uint64_t base, uint64_t top);
+
 #endif

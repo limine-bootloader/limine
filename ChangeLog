@@ -1,5 +1,17 @@
 2023-12-07  mintsuki  <mintsuki@protonmail.com>
 
+    *** Release 5.20231207.1 ***
+
+    Noteworthy changes compared to the previous release, 5.20231207.0:
+
+    Bug fixes:
+        - multiboot2/elf: Fix issue where ELF vaddrs were taken into account
+          instead of paddrs when loading executables.
+        - Fix implementation of a function that detects whether a given memory
+          range is physical RAM.
+
+2023-12-07  mintsuki  <mintsuki@protonmail.com>
+
     *** Release 5.20231207.0 ***
 
     Noteworthy changes compared to the previous release, 5.20231124.0:

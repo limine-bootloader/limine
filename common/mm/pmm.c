@@ -12,13 +12,43 @@ static bool full_overlap_check(uint64_t base1, uint64_t top1,
 }
 
 bool check_usable_memory(uint64_t base, uint64_t top) {
+    uint64_t overlap_remaining = top - base;
+
     for (size_t i = 0; i < memmap_entries; i++) {
-        if (memmap[i].type != MEMMAP_USABLE) {
+        if (memmap[i].type != MEMMAP_USABLE
+#if defined (UEFI)
+         && memmap[i].type != MEMMAP_EFI_RECLAIMABLE
+#endif
+         && memmap[i].type != MEMMAP_BOOTLOADER_RECLAIMABLE
+         && memmap[i].type != MEMMAP_KERNEL_AND_MODULES) {
             continue;
         }
 
-        if (full_overlap_check(base, top, memmap[i].base, memmap[i].base + memmap[i].length)) {
+        uint64_t memmap_top = memmap[i].base + memmap[i].length;
+
+        if (full_overlap_check(base, top, memmap[i].base, memmap_top)) {
             return true;
+        }
+
+        // Count how many bytes from a real-RAM entry overlap our range
+        if ((memmap[i].base >= base && memmap[i].base < top)
+         || (memmap_top > base && memmap_top <= top)) {
+            uint64_t overlap_bottom = base;
+            if (memmap[i].base >= base && memmap[i].base < top) {
+                overlap_bottom = memmap[i].base;
+            }
+
+            uint64_t overlap_top = top;
+            if (memmap_top > base && memmap_top <= top) {
+                overlap_top = memmap_top;
+            }
+
+            uint64_t overlap_size = overlap_top - overlap_bottom;
+            overlap_remaining -= overlap_size;
+
+            if (overlap_remaining == 0) {
+                return true;
+            }
         }
     }
 

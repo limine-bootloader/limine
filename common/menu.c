@@ -98,20 +98,10 @@ static const char *VALID_KEYS[] = {
     "KASLR",
     "DRIVE",
     "PARTITION",
+    "MBR_ID",
+    "GPT_GUID",
+    "GPT_UUID",
     "IMAGE_PATH",
-    "TERM_PALETTE",
-    "TERM_PALETTE_BRIGHT",
-    "TERM_BACKGROUND",
-    "TERM_FOREGROUND",
-    "TERM_WALLPAPER",
-    "TERM_MARGIN",
-    "TERM_MARGIN_GRADIENT",
-    "TERM_WALLPAPER_STYLE",
-    "TERM_BACKDROP",
-    "TERM_FONT_SIZE",
-    "TERM_FONT",
-    "TERM_FONT_SPACING",
-    "TERM_FONT_SCALE",
     NULL
 };
 

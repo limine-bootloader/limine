@@ -99,7 +99,6 @@ static const char *VALID_KEYS[] = {
     "DRIVE",
     "PARTITION",
     "IMAGE_PATH",
-    "TERM_CONFIG_OVERRIDE",
     "TERM_PALETTE",
     "TERM_PALETTE_BRIGHT",
     "TERM_BACKGROUND",

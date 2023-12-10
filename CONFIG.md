@@ -12,12 +12,12 @@ Once the file is located, Limine will use it as its config file. Other possible
 candidates in subsequent partitions or directories are ignored.
 
 It is thus imperative that the intended config file is placed in a location that will
-not be shadowed by another potentially candidate config file.
+not be shadowed by another candidate config file.
 
 ## Structure of the config file
 
 The Limine configuration file is comprised of *assignments* and *entries*.
-Comments begin in '#'.
+Comments begin in '#' and can only be on their own lines.
 
 ### Entries and sub-entries
 
@@ -47,12 +47,15 @@ are delimiters.
 Some *assignments* are part of an entry (*local*), some other assignments are *global*.
 *Global assignments* can appear anywhere in the file and are not part of an entry,
 although usually one would put them at the beginning of the config.
-Some *local assignments* are shared between entries using any *protocol*, while other
+Some *local assignments* work the same amongst entries using any *protocol*, while other
 *local assignments* are specific to a given *protocol*.
 
 Some keys take *URIs* as values; these are described in the next section.
 
 *Globally assignable* keys are:
+
+Miscellaneous:
+
 * `TIMEOUT` - Specifies the timeout in seconds before the first *entry* is automatically booted. If set to `no`, disable automatic boot. If set to `0`, boots default entry instantly (see `DEFAULT_ENTRY` key).
 * `QUIET` - If set to `yes`, enable quiet mode, where all screen output except panics and important warnings is suppressed. If `TIMEOUT` is not 0, the `TIMEOUT` still occurs, and pressing any key during the timeout will reveal the menu and disable quiet mode.
 * `SERIAL` - If set to `yes`, enable serial I/O for the bootloader.
@@ -63,7 +66,7 @@ Some keys take *URIs* as values; these are described in the next section.
 * `RANDOMIZE_MEMORY` - Alias of `RANDOMISE_MEMORY`.
 * `HASH_MISMATCH_PANIC` - If set to `no`, do not panic if there is a hash mismatch for a file, but print a warning instead.
 
-Limine interface control options.
+Limine interface control options:
 
 * `INTERFACE_RESOLUTION` - Specify screen resolution to be used by the Limine interface (menu, editor, console...) in the form `<width>x<height>`. This will *only* affect the Limine interface, not any booted OS. If not specified, Limine will pick a resolution automatically. If the resolution is not available, Limine will pick another one automatically. Ignored if using text mode.
 * `INTERFACE_BRANDING` - A string that will be displayed on top of the Limine interface.
@@ -71,7 +74,9 @@ Limine interface control options.
 * `INTERFACE_BRANDING_COLOR` - Alias of `INTERFACE_BRANDING_COLOUR`.
 * `INTERFACE_HELP_HIDDEN` - Hides the help text located at the top of the screen showing the key bindings.
 
-Limine graphical terminal control options. They are ignored if using text mode.
+Limine graphical terminal control options:
+
+These are ignored if using text mode.
 
 * `TERM_FONT` - URI path to a font file to be used instead of the default one for the menu and terminal. The font file must be a code page 437 character set comprised of 256 consecutive glyph bitmaps. Each glyph's bitmap must be expressed left to right (1 byte per row), and top to bottom (16 bytes per whole glyph by default; see `TERM_FONT_SIZE`). See e.g. the [VGA text mode font collection](https://github.com/viler-int10h/vga-text-mode-fonts) for fonts.
 * `TERM_FONT_SIZE` - The size of the font in dots, which must correspond to the font file or the display will be garbled. Note that glyphs are always one byte wide, and columns over 8 are empty. Many fonts may be used in both 8- and 9-dot wide variants. Defaults to `8x16`. Ignored if `TERM_FONT` not set or if the font fails to load.
@@ -89,38 +94,31 @@ Limine graphical terminal control options. They are ignored if using text mode.
 * `TERM_WALLPAPER_STYLE` - The style which will be used to display the wallpaper image: `tiled`, `centered`, or `stretched`. Default is `stretched`.
 * `TERM_BACKDROP` - When the background style is `centered`, this specifies the colour of the backdrop for parts of the screen not covered by the background image, in RRGGBB format.
 
-Editor control options.
+Editor control options:
 
 * `EDITOR_ENABLED` - If set to `no`, the editor will not be accessible. Defaults to `yes`.
 * `EDITOR_HIGHLIGHTING` - If set to `no`, syntax highlighting in the editor will be disabled. Defaults to `yes`.
 * `EDITOR_VALIDATION` - If set to `no`, the editor will not alert you about invalid keys / syntax errors. Defaults to `yes`.
 
 *Locally assignable (non protocol specific)* keys are:
+
 * `COMMENT` - An optional comment string that will be displayed by the bootloader on the menu when an entry is selected.
 * `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `limine`, `chainload`, `chainload_next`, `multiboot` (or `multiboot1`), and `multiboot2`.
 * `CMDLINE` - The command line string to be passed to the kernel/executable. Can be omitted.
 * `KERNEL_CMDLINE` - Alias of `CMDLINE`.
 
 *Locally assignable (protocol specific)* keys are:
+
 * Linux protocol:
   * `KERNEL_PATH` - The URI path of the kernel.
-  * `MODULE_PATH` - The URI path to a module (such as initramfs).
-
-  Note that one can define this last variable multiple times to specify multiple
-  modules.
+  * `MODULE_PATH` - The URI path to a module (such as initramfs). This key can be assigned multiple times to specify multiple modules.
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
   * `TEXTMODE` - If set to `yes`, prefer text mode. (BIOS only)
 
 * Limine protocol:
   * `KERNEL_PATH` - The URI path of the kernel.
-  * `MODULE_PATH` - The URI path to a module.
-  * `MODULE_CMDLINE` - A command line to be passed to a module.
-
-  **Note:** One can define these 2 last variable multiple times to specify multiple
-  modules.
-  The entries will be matched in order. E.g.: The 1st module path entry will be matched
-  to the 1st module string entry that appear, and so on.
-
+  * `MODULE_PATH` - The URI path to a module. This key can be assigned multiple times to specify multiple modules.
+  * `MODULE_CMDLINE` - A command line to be passed to a module. This key can also be specified multiple times. It applies to the module described by the last module key assigned.
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
   * `KASLR` - For relocatable kernels, if set to `no`, disable kernel address space layout randomisation. KASLR is enabled by default.
 
@@ -135,20 +133,12 @@ Editor control options.
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
 
 * chainload_next protocol:
-  This protocol does not specify any locally assignable key on BIOS. Will boot the next bootable drive found in the system, if there is one.
-
   * `RESOLUTION` - For UEFI, the resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
 
 * multiboot1 and multiboot2 protocols:
   * `KERNEL_PATH` - The URI path of the kernel.
-  * `MODULE_PATH` - The URI path to a module.
-  * `MODULE_STRING` - A string to be passed to a module.
-
-  **Note:** One can define these 2 last variable multiple times to specify multiple
-  modules.
-  The entries will be matched in order. E.g.: the 1st module path entry will be matched
-  to the 1st module string entry that appear, and so on.
-
+  * `MODULE_PATH` - The URI path to a module. This key can be assigned multiple times to specify multiple modules.
+  * `MODULE_STRING` - A string to be passed to a module. This key can also be specified multiple times. It applies to the module described by the last module key assigned.
   * `RESOLUTION` - The resolution to be used should the kernel request a graphical framebuffer. This setting takes the form of `<width>x<height>x<bpp>` and *overrides* any resolution requested by the kernel. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
   * `TEXTMODE` - If set to `yes`, prefer text mode. (BIOS only)
 

@@ -21,10 +21,6 @@ way to modify its own EFI executable to bake in the BLAKE2B checksum of the conf
 a key added to the firmware's keychain. This prevents modifications to the config file (and in turn the checksums contained there)
 from going unnoticed.
 
-### What about ext2/3/4? Why is that supported then?
-
-This is explicitly against the philosophy, but it is a pragmatic compromise since a lot of Linux distros and setups expect it to "work that way".
-
 ### But I don't want to have a separate FAT boot partition! I don't want it!!!
 
 Well tough luck. It is `$year_following_2012` now and most PCs are equipped with UEFI and simply won't boot without a FAT EFI system partition

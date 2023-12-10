@@ -103,7 +103,7 @@ Editor control options:
 *Locally assignable (non protocol specific)* keys are:
 
 * `COMMENT` - An optional comment string that will be displayed by the bootloader on the menu when an entry is selected.
-* `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `limine`, `chainload`, `chainload_next`, `multiboot` (or `multiboot1`), and `multiboot2`.
+* `PROTOCOL` - The boot protocol that will be used to boot the kernel. Valid protocols are: `linux`, `limine`, `multiboot` (or `multiboot1`), `multiboot2`, `efi_chainload`, `bios_chainload`, and `chainload_next`.
 * `CMDLINE` - The command line string to be passed to the kernel/executable. Can be omitted.
 * `KERNEL_CMDLINE` - Alias of `CMDLINE`.
 
@@ -122,25 +122,25 @@ Editor control options:
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
   * `KASLR` - For relocatable kernels, if set to `no`, disable kernel address space layout randomisation. KASLR is enabled by default.
 
-* Chainload protocol on BIOS:
-  * `DRIVE` - The 1-based drive to chainload, if omitted, assume boot drive.
-  * `PARTITION` - The 1-based partition to chainload, if omitted, or set to 0, chainload drive (MBR).
-  * `MBR_ID` - Optional. If passed, use an MBR ID (32-bit hex value) to identify the drive containing the volume to chainload. Overrides `DRIVE`, if present, but does *not* override `PARTITION`.
-  * `GPT_UUID` or `GPT_GUID` - Optional. If passed, use the GPT GUID to identify the drive containing the volume to chainload. Overrides `DRIVE` and `MBR_ID`, if present, but does *not* override `PARTITION`.
-
-* Chainload protocol on UEFI:
-  * `IMAGE_PATH` - URI of the EFI application to chainload.
-  * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
-
-* chainload_next protocol:
-  * `RESOLUTION` - For UEFI, the resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
-
 * multiboot1 and multiboot2 protocols:
   * `KERNEL_PATH` - The URI path of the kernel.
   * `MODULE_PATH` - The URI path to a module. This key can be assigned multiple times to specify multiple modules.
   * `MODULE_STRING` - A string to be passed to a module. This key can also be specified multiple times. It applies to the module described by the last module key assigned.
   * `RESOLUTION` - The resolution to be used should the kernel request a graphical framebuffer. This setting takes the form of `<width>x<height>x<bpp>` and *overrides* any resolution requested by the kernel. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
   * `TEXTMODE` - If set to `yes`, prefer text mode. (BIOS only)
+
+* EFI Chainload protocol:
+  * `IMAGE_PATH` - URI of the EFI application to chainload.
+  * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
+
+* BIOS Chainload protocol:
+  * `DRIVE` - The 1-based drive to chainload, if omitted, assume boot drive.
+  * `PARTITION` - The 1-based partition to chainload, if omitted, or set to 0, chainload drive (MBR).
+  * `MBR_ID` - Optional. If passed, use an MBR ID (32-bit hex value) to identify the drive containing the volume to chainload. Overrides `DRIVE`, if present, but does *not* override `PARTITION`.
+  * `GPT_UUID` or `GPT_GUID` - Optional. If passed, use the GPT GUID to identify the drive containing the volume to chainload. Overrides `DRIVE` and `MBR_ID`, if present, but does *not* override `PARTITION`.
+
+* chainload_next protocol:
+  * `RESOLUTION` - For UEFI, the resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
 
 ## URIs
 

@@ -123,7 +123,6 @@ Editor control options.
 
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
   * `KASLR` - For relocatable kernels, if set to `no`, disable kernel address space layout randomisation. KASLR is enabled by default.
-  * `TERM_CONFIG_OVERRIDE` - If set to `yes`, override the terminal configuration for this entry. Resets all the `TERM_*` assignments to default and allows setting them anew inside the entry. Note that without this, Limine will never look for terminal configuration settings inside entries.
 
 * Chainload protocol on BIOS:
   * `DRIVE` - The 1-based drive to chainload, if omitted, assume boot drive.

@@ -1,3 +1,16 @@
+2023-12-10  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 6.20231210.0 ***
+
+    This is the first release in the 6.x series.
+
+    Breaking changes compared to the 5.x series:
+
+    - Support for the unmaintained ext2/3/4 filesystems dropped in compliance
+      with the Limine bootloader design philosophy.
+    - Chainloading protocol split into 2 protocols: EFI chainloading and BIOS
+      chainloading.
+
 2023-12-07  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 5.20231207.1 ***

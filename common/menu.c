@@ -1017,12 +1017,7 @@ noreturn void boot(char *config) {
         panic(true, "Boot protocol not specified for this entry");
     }
 
-    if (!strcmp(proto, "stivale1") || !strcmp(proto, "stivale") || !strcmp(proto, "stivale2")) {
-        quiet = false;
-        print("The stivale and stivale2 protocols are no longer supported as of Limine 4.x\n");
-        print("Please notify kernel maintainers to move to the Limine boot protocol or\n");
-        print("roll back to Limine 3.x.\n\n");
-    } else if (!strcmp(proto, "limine")) {
+    if (!strcmp(proto, "limine")) {
         limine_load(config, cmdline);
     } else if (!strcmp(proto, "linux")) {
 #if defined (__x86_64__) || defined (__i386__)

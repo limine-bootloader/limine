@@ -1,14 +1,12 @@
 # The Limine Boot Protocol
 
-The Limine boot protocol is a modern, minimal, fast, and extensible boot
-protocol, with a focus on backwards and forwards compatibility,
-created from the experience gained by working on the
-[stivale boot protocols](https://github.com/stivale).
+The Limine boot protocol is a modern, portable, featureful, and extensible boot
+protocol.
 
 This file serves as the official centralised collection of features that
-the Limine boot protocol is composed of. Other bootloaders may support extra
+the Limine boot protocol is comprised of. Other bootloaders may support extra
 unofficial features, but it is strongly recommended to avoid fragmentation
-and submit new features by opening a pull request to this repository.
+and submit new features by opening a pull request to the Limine repository.
 
 The [limine.h](/limine.h) file provides an implementation of all the
 structures and constants described in this document, for the C and C++

@@ -1146,7 +1146,27 @@ cleanup:
 #define LIMINE_VERSION "%VERSION%"
 #define LIMINE_COPYRIGHT "%COPYRIGHT%"
 
-static int version(void) {
+static void version_usage(void) {
+    printf("usage: %s version [options...]\n", program_name);
+    printf("\n");
+    printf("    --version-only  Only print the version number without licensing info\n");
+    printf("                    and other distractions\n");
+    printf("\n");
+    printf("    --help | -h     Display this help message\n");
+    printf("\n");
+}
+
+static int version(int argc, char *argv[]) {
+    if (argc >= 2) {
+        if (strcmp(argv[1], "--help") == 0) {
+            version_usage();
+            return EXIT_SUCCESS;
+        } else if (strcmp(argv[1], "--version-only") == 0) {
+            puts(LIMINE_VERSION);
+            return EXIT_SUCCESS;
+        }
+    }
+
     puts("Limine " LIMINE_VERSION);
     puts(LIMINE_COPYRIGHT);
     puts("Limine is distributed under the terms of the BSD-2-Clause license.");
@@ -1225,7 +1245,7 @@ int main(int argc, char *argv[]) {
         return print_datadir();
     } else if (strcmp(argv[1], "version") == 0
             || strcmp(argv[1], "--version") == 0) {
-        return version();
+        return version(argc - 1, &argv[1]);
     }
 
     general_usage();

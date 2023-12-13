@@ -1159,11 +1159,11 @@ static void general_usage(void) {
     printf("\n");
     printf("    --print-datadir   Print the directory containing the bootloader files\n");
     printf("\n");
-    printf("    --version         Print Limine version (like `version` command)\n");
+    printf("    --version         Print the Limine version (like the `version` command)\n");
     printf("\n");
     printf("    --help | -h       Display this help message\n");
     printf("\n");
-    printf("Commands: help, version, bios-install, enroll-config\n");
+    printf("Commands: `help`, `version`, `bios-install`, `enroll-config`\n");
     printf("Use `--help` after specifying the command for command-specific help.\n");
 }
 
@@ -1183,7 +1183,7 @@ static int print_datadir(void) {
         if (program_name[i] == '/')
 #endif
         {
-            program_name[i + 1] = 0;
+            program_name[i] = 0;
             puts(program_name);
             return EXIT_SUCCESS;
         }

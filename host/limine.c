@@ -543,8 +543,8 @@ static void uninstall(void) {
             goto cleanup;                       \
     } while (0)
 
-static void bios_install_usage(const char *name) {
-    printf("usage: %s bios-install <device> [GPT partition index]\n", name);
+static void bios_install_usage(void) {
+    printf("usage: %s bios-install <device> [GPT partition index]\n", program_name);
     printf("\n");
     printf("    --force-mbr     Force MBR detection to work even if the\n");
     printf("                    safety checks fail (DANGEROUS!)\n");
@@ -577,7 +577,7 @@ static int bios_install(int argc, char *argv[]) {
 #endif
 
     if (argc < 2) {
-        bios_install_usage(argv[-1]);
+        bios_install_usage();
 #ifdef IS_WINDOWS
         system("pause");
 #endif
@@ -586,7 +586,7 @@ static int bios_install(int argc, char *argv[]) {
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
-            bios_install_usage(argv[-1]);
+            bios_install_usage();
             return EXIT_SUCCESS;
         } else if (strcmp(argv[i], "--quiet") == 0) {
             quiet = true;
@@ -621,7 +621,7 @@ static int bios_install(int argc, char *argv[]) {
 
     if (device == NULL) {
         fprintf(stderr, "%s: error: No device specified\n", program_name);
-        bios_install_usage(argv[-1]);
+        bios_install_usage();
         return EXIT_FAILURE;
     }
 
@@ -1022,8 +1022,8 @@ uninstall_mode_cleanup:
 
 #define CONFIG_B2SUM_SIGNATURE "++CONFIG_B2SUM_SIGNATURE++"
 
-static void enroll_config_usage(const char *name) {
-    printf("usage: %s enroll-config <Limine executable> <BLAKE2B of config file>\n", name);
+static void enroll_config_usage(void) {
+    printf("usage: %s enroll-config <Limine executable> <BLAKE2B of config file>\n", program_name);
     printf("\n");
     printf("    --reset      Remove enrolled BLAKE2B, will not check config integrity\n");
     printf("\n");
@@ -1043,7 +1043,7 @@ static int enroll_config(int argc, char *argv[]) {
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
-            enroll_config_usage(argv[-1]);
+            enroll_config_usage();
             return EXIT_SUCCESS;
         } else if (strcmp(argv[i], "--quiet") == 0) {
             remove_arg(&argc, argv, i);
@@ -1055,7 +1055,7 @@ static int enroll_config(int argc, char *argv[]) {
     }
 
     if (argc <= (reset ? 1 : 2)) {
-        enroll_config_usage(argv[-1]);
+        enroll_config_usage();
 #ifdef IS_WINDOWS
         system("pause");
 #endif

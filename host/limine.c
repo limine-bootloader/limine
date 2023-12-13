@@ -18,7 +18,7 @@
 #include "limine-bios-hdd.h"
 #endif
 
-static const char *program_name = NULL;
+static char *program_name = NULL;
 
 static void perror_wrap(const char *fmt, ...) {
     int old_errno = errno;
@@ -1157,7 +1157,46 @@ static int version(void) {
 static void general_usage(void) {
     printf("usage: %s <command> <args...>\n", program_name);
     printf("\n");
-    printf("Valid commands: help, version, bios-install, enroll-config\n");
+    printf("    --print-datadir   Print the directory containing the bootloader files\n");
+    printf("\n");
+    printf("    --version         Print Limine version (like `version` command)\n");
+    printf("\n");
+    printf("    --help | -h       Display this help message\n");
+    printf("\n");
+    printf("Commands: help, version, bios-install, enroll-config\n");
+    printf("Use `--help` after specifying the command for command-specific help.\n");
+}
+
+static int print_datadir(void) {
+#ifdef LIMINE_DATADIR
+    puts(LIMINE_DATADIR);
+    return EXIT_SUCCESS;
+#else
+    if (program_name == NULL || strlen(program_name) == 0) {
+        goto fail;
+    }
+
+    for (size_t i = strlen(program_name) - 1; ; i--) {
+#if IS_WINDOWS
+        if (program_name[i] == '\\')
+#else
+        if (program_name[i] == '/')
+#endif
+        {
+            program_name[i + 1] = 0;
+            puts(program_name);
+            return EXIT_SUCCESS;
+        }
+
+        if (i == 0) {
+            goto fail;
+        }
+    }
+
+fail:
+    fprintf(stderr, "%s: error: Could not determine datadir path.\n", program_name);
+    return EXIT_FAILURE;
+#endif
 }
 
 int main(int argc, char *argv[]) {
@@ -1182,6 +1221,8 @@ int main(int argc, char *argv[]) {
 #endif
     } else if (strcmp(argv[1], "enroll-config") == 0) {
         return enroll_config(argc - 1, &argv[1]);
+    } else if (strcmp(argv[1], "--print-datadir") == 0) {
+        return print_datadir();
     } else if (strcmp(argv[1], "version") == 0
             || strcmp(argv[1], "--version") == 0) {
         return version();

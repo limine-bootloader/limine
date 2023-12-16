@@ -18,7 +18,7 @@
 #include "limine-bios-hdd.h"
 #endif
 
-static const char *program_name = NULL;
+static char *program_name = NULL;
 
 static void perror_wrap(const char *fmt, ...) {
     int old_errno = errno;
@@ -543,8 +543,8 @@ static void uninstall(void) {
             goto cleanup;                       \
     } while (0)
 
-static void bios_install_usage(const char *name) {
-    printf("usage: %s bios-install <device> [GPT partition index]\n", name);
+static void bios_install_usage(void) {
+    printf("usage: %s bios-install <device> [GPT partition index]\n", program_name);
     printf("\n");
     printf("    --force-mbr     Force MBR detection to work even if the\n");
     printf("                    safety checks fail (DANGEROUS!)\n");
@@ -577,7 +577,7 @@ static int bios_install(int argc, char *argv[]) {
 #endif
 
     if (argc < 2) {
-        bios_install_usage(argv[-1]);
+        bios_install_usage();
 #ifdef IS_WINDOWS
         system("pause");
 #endif
@@ -586,7 +586,7 @@ static int bios_install(int argc, char *argv[]) {
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
-            bios_install_usage(argv[-1]);
+            bios_install_usage();
             return EXIT_SUCCESS;
         } else if (strcmp(argv[i], "--quiet") == 0) {
             quiet = true;
@@ -621,7 +621,7 @@ static int bios_install(int argc, char *argv[]) {
 
     if (device == NULL) {
         fprintf(stderr, "%s: error: No device specified\n", program_name);
-        bios_install_usage(argv[-1]);
+        bios_install_usage();
         return EXIT_FAILURE;
     }
 
@@ -1022,8 +1022,8 @@ uninstall_mode_cleanup:
 
 #define CONFIG_B2SUM_SIGNATURE "++CONFIG_B2SUM_SIGNATURE++"
 
-static void enroll_config_usage(const char *name) {
-    printf("usage: %s enroll-config <Limine executable> <BLAKE2B of config file>\n", name);
+static void enroll_config_usage(void) {
+    printf("usage: %s enroll-config <Limine executable> <BLAKE2B of config file>\n", program_name);
     printf("\n");
     printf("    --reset      Remove enrolled BLAKE2B, will not check config integrity\n");
     printf("\n");
@@ -1043,7 +1043,7 @@ static int enroll_config(int argc, char *argv[]) {
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
-            enroll_config_usage(argv[-1]);
+            enroll_config_usage();
             return EXIT_SUCCESS;
         } else if (strcmp(argv[i], "--quiet") == 0) {
             remove_arg(&argc, argv, i);
@@ -1055,7 +1055,7 @@ static int enroll_config(int argc, char *argv[]) {
     }
 
     if (argc <= (reset ? 1 : 2)) {
-        enroll_config_usage(argv[-1]);
+        enroll_config_usage();
 #ifdef IS_WINDOWS
         system("pause");
 #endif
@@ -1143,10 +1143,30 @@ cleanup:
     return ret;
 }
 
-#define LIMINE_VERSION "6.20231210.0"
+#define LIMINE_VERSION "6.20231216.0"
 #define LIMINE_COPYRIGHT "Copyright (C) 2019-2023 mintsuki and contributors."
 
-static int version(void) {
+static void version_usage(void) {
+    printf("usage: %s version [options...]\n", program_name);
+    printf("\n");
+    printf("    --version-only  Only print the version number without licensing info\n");
+    printf("                    and other distractions\n");
+    printf("\n");
+    printf("    --help | -h     Display this help message\n");
+    printf("\n");
+}
+
+static int version(int argc, char *argv[]) {
+    if (argc >= 2) {
+        if (strcmp(argv[1], "--help") == 0) {
+            version_usage();
+            return EXIT_SUCCESS;
+        } else if (strcmp(argv[1], "--version-only") == 0) {
+            puts(LIMINE_VERSION);
+            return EXIT_SUCCESS;
+        }
+    }
+
     puts("Limine " LIMINE_VERSION);
     puts(LIMINE_COPYRIGHT);
     puts("Limine is distributed under the terms of the BSD-2-Clause license.");
@@ -1157,7 +1177,24 @@ static int version(void) {
 static void general_usage(void) {
     printf("usage: %s <command> <args...>\n", program_name);
     printf("\n");
-    printf("Valid commands: help, version, bios-install, enroll-config\n");
+    printf("    --print-datadir   Print the directory containing the bootloader files\n");
+    printf("\n");
+    printf("    --version         Print the Limine version (like the `version` command)\n");
+    printf("\n");
+    printf("    --help | -h       Display this help message\n");
+    printf("\n");
+    printf("Commands: `help`, `version`, `bios-install`, `enroll-config`\n");
+    printf("Use `--help` after specifying the command for command-specific help.\n");
+}
+
+static int print_datadir(void) {
+#ifdef LIMINE_DATADIR
+    puts(LIMINE_DATADIR);
+    return EXIT_SUCCESS;
+#else
+    fprintf(stderr, "%s: error: Cannot print datadir for `limine` built out-of-tree.\n", program_name);
+    return EXIT_FAILURE;
+#endif
 }
 
 int main(int argc, char *argv[]) {
@@ -1182,9 +1219,11 @@ int main(int argc, char *argv[]) {
 #endif
     } else if (strcmp(argv[1], "enroll-config") == 0) {
         return enroll_config(argc - 1, &argv[1]);
+    } else if (strcmp(argv[1], "--print-datadir") == 0) {
+        return print_datadir();
     } else if (strcmp(argv[1], "version") == 0
             || strcmp(argv[1], "--version") == 0) {
-        return version();
+        return version(argc - 1, &argv[1]);
     }
 
     general_usage();

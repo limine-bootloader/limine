@@ -1192,29 +1192,7 @@ static int print_datadir(void) {
     puts(LIMINE_DATADIR);
     return EXIT_SUCCESS;
 #else
-    if (program_name == NULL || strlen(program_name) == 0) {
-        goto fail;
-    }
-
-    for (size_t i = strlen(program_name) - 1; ; i--) {
-#if IS_WINDOWS
-        if (program_name[i] == '\\')
-#else
-        if (program_name[i] == '/')
-#endif
-        {
-            program_name[i] = 0;
-            puts(program_name);
-            return EXIT_SUCCESS;
-        }
-
-        if (i == 0) {
-            goto fail;
-        }
-    }
-
-fail:
-    fprintf(stderr, "%s: error: Could not determine datadir path.\n", program_name);
+    fprintf(stderr, "%s: error: Cannot print datadir for `limine` built out-of-tree.\n", program_name);
     return EXIT_FAILURE;
 #endif
 }

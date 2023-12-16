@@ -1,3 +1,17 @@
+2023-12-16  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 6.20231216.0 ***
+
+    Noteworthy changes compared to the previous release, 6.20231210.0:
+
+    New features:
+        - Added a `--print-datadir` switch to the `limine` program in order
+          to print the directory where Limine files are stored when installed
+          on a host distro.
+
+    Miscellaneous:
+        - General improvements to the `--help` texts for the `limine` program.
+
 2023-12-10  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 6.20231210.0 ***

@@ -165,14 +165,24 @@ int init_config(size_t config_size) {
     // add trailing newline if not present
     config_addr[config_size - 2] = '\n';
 
-    // remove windows carriage returns and spaces at the start of lines, if any
+    // remove windows carriage returns and spaces at the start and end of lines, if any
     for (size_t i = 0; i < config_size; i++) {
         size_t skip = 0;
+        if (config_addr[i] == ' ' || config_addr[i] == '\t') {
+            while (config_addr[i + skip] == ' ' || config_addr[i + skip] == '\t') {
+                skip++;
+            }
+            if (config_addr[i + skip] == '\n') {
+                goto skip_loop;
+            }
+            skip = 0;
+        }
         while ((config_addr[i + skip] == '\r')
-            || ((!i || config_addr[i - 1] == '\n')
-             && (config_addr[i + skip] == ' ' || config_addr[i + skip] == '\t'))) {
+            || ((!i || config_addr[i - 1] == '\n') && (config_addr[i + skip] == ' ' || config_addr[i + skip] == '\t'))
+        ) {
             skip++;
         }
+skip_loop:
         if (skip) {
             for (size_t j = i; j < config_size - skip; j++)
                 config_addr[j] = config_addr[j + skip];

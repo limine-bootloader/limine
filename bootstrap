@@ -26,11 +26,14 @@ fi
 [ -d limine-efi ] || git clone https://github.com/limine-bootloader/limine-efi.git $SHALLOW_CLONE_FLAG
 [ -d libgcc-binaries ] || git clone https://github.com/mintsuki/libgcc-binaries.git $SHALLOW_CLONE_FLAG
 
-AUTOMAKE_LIBDIR="$(automake --print-libdir)"
-cp "${AUTOMAKE_LIBDIR}/INSTALL" ./
-mkdir -p build-aux
-cp "${AUTOMAKE_LIBDIR}/config.guess" build-aux/
-cp "${AUTOMAKE_LIBDIR}/config.sub" build-aux/
-cp "${AUTOMAKE_LIBDIR}/install-sh" build-aux/
-
 autoreconf -fvi -Wall
+
+# Older versions of autoreconf have a bug where they do not
+# install auxiliary files, sometimes... Check if that is the
+# case and work around...
+for auxfile in config.guess config.sub install-sh; do
+    if ! [ -f build-aux/$auxfile ]; then
+        mkdir -p build-aux
+        cp -v "$(automake --print-libdir)/$auxfile" build-aux/
+    fi
+done

@@ -30,7 +30,6 @@
 /freestanding-toolchain
 /configure
 /configure.ac.save
-/INSTALL
 /build-aux
 /aclocal.m4
 /*~

@@ -9,6 +9,12 @@ jobs:
     container: archlinux:latest
 
     steps:
+      - name: Switch to Arch testing
+        run: |
+          set -e
+          sed -i ':a;N;$!ba;s/#\[core-testing\]\n#Include/[core-testing]\nInclude/g' /etc/pacman.conf
+          sed -i ':a;N;$!ba;s/#\[extra-testing\]\n#Include/[extra-testing]\nInclude/g' /etc/pacman.conf
+
       - name: Install dependencies
         run: pacman --noconfirm -Syu && pacman --needed --noconfirm -S base-devel git autoconf automake nasm curl mtools llvm clang lld aarch64-linux-gnu-gcc riscv64-linux-gnu-gcc
 

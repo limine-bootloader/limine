@@ -1,3 +1,13 @@
+2023-12-27  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 6.20231227.0 ***
+
+    Noteworthy changes compared to the previous release, 6.20231226.0:
+
+    Bug fixes:
+        - Actually regenerate build system with GNU Autoconf 2.72 instead of
+          GNU Autoconf 2.71.
+
 2023-12-26  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 6.20231226.0 ***

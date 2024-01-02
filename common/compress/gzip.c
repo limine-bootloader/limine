@@ -2,7 +2,7 @@
  * originally from tinfgzip - tiny gzip decompressor
  *
  * Copyright (c) 2003-2019 Joergen Ibsen
- * Copyright (c) 2023 mintsuki and contributors to the Limine project
+ * Copyright (c) 2023-2024 mintsuki and contributors to the Limine project
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages

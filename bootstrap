@@ -12,7 +12,12 @@ if [ -z "$BOOTSTRAP_NO_SHALLOW_CLONES" ]; then
 fi
 
 [ -d common/flanterm ] || git clone https://github.com/mintsuki/flanterm.git common/flanterm $SHALLOW_CLONE_FLAG
-[ -f common/stb/stb_image.h ] || ( curl -Lo common/stb/stb_image.h https://github.com/nothings/stb/raw/master/stb_image.h && patch -p0 < common/stb_image.patch )
+[ -f common/stb/stb_image.h ] || (
+    set -e
+    curl -Lo common/stb/stb_image.h https://github.com/nothings/stb/raw/master/stb_image.h
+    patch -p0 < common/stb_image.patch
+    rm -f common/stb/stb_image.h.orig
+)
 [ -d decompressor/tinf ] || (
     set -e
     mkdir -p decompressor/tinf

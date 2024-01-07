@@ -773,7 +773,7 @@ FEAT_START
             if (module_required) {
                 panic(true, "limine: Failed to open module with path `%#`. Is the path correct?", module_path);
             }
-            print("limine: Warning: Non-required internal module `%#` not found\n", module_path);
+            printv("limine: Warning: Non-required internal module `%#` not found\n", module_path);
             if (module_path_allocated) {
                 pmm_free(module_path, 1024);
             }

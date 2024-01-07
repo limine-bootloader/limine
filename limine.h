@@ -438,6 +438,7 @@ struct limine_kernel_file_request {
 #define LIMINE_MODULE_REQUEST { LIMINE_COMMON_MAGIC, 0x3e7e279702be32af, 0xca1c4f3bd1280cee }
 
 #define LIMINE_INTERNAL_MODULE_REQUIRED (1 << 0)
+#define LIMINE_INTERNAL_MODULE_COMPRESSED (1 << 1)
 
 struct limine_internal_module {
     LIMINE_PTR(const char *) path;

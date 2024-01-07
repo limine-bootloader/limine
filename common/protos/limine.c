@@ -717,7 +717,7 @@ FEAT_START
     struct limine_module_response *module_response =
         ext_mem_alloc(sizeof(struct limine_module_response));
 
-    module_response->revision = 1;
+    module_response->revision = 2;
 
     struct limine_file *modules = ext_mem_alloc(module_count * sizeof(struct limine_file));
 
@@ -737,6 +737,10 @@ FEAT_START
 
             char *module_path_abs = ext_mem_alloc(1024);
             char *module_path_abs_p = module_path_abs;
+            if (internal_module->flags & LIMINE_INTERNAL_MODULE_COMPRESSED) {
+                strcpy(module_path_abs_p, "$");
+                module_path_abs_p += 1;
+            }
             strcpy(module_path_abs_p, k_resource);
             module_path_abs_p += strlen(k_resource);
             strcpy(module_path_abs_p, "://");

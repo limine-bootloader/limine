@@ -1164,6 +1164,7 @@ ID:
 Request:
 ```c
 #define LIMINE_INTERNAL_MODULE_REQUIRED (1 << 0)
+#define LIMINE_INTERNAL_MODULE_COMPRESSED (1 << 1)
 
 struct limine_internal_module {
     const char *path;
@@ -1195,6 +1196,7 @@ the kernel.
 * `cmdline` - Command line for the given module.
 * `flags` - Flags changing module loading behaviour:
   - `LIMINE_INTERNAL_MODULE_REQUIRED`: Fail if the requested module is not found.
+  - `LIMINE_INTERNAL_MODULE_COMPRESSED`: The module is GZ-compressed and should be decompressed by the bootloader. This is honoured if the response is revision 2 or greater.
 
 Internal Limine modules are guaranteed to be loaded *before* user-specified
 (configuration) modules, and thus they are guaranteed to appear before user-specified

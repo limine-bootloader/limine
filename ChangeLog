@@ -1,3 +1,16 @@
+2024-01-07  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 6.20240107.0 ***
+
+    Noteworthy changes compared to the previous release, 6.20231227.0:
+
+    New features:
+        - Limine boot protocol: Add support for compressed internal modules.
+
+    Miscellaneous:
+        - Improve error reporting from host "limine" executable.
+        - Track "master" branch of stb_image upstream.
+
 2023-12-27  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 6.20231227.0 ***

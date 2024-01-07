@@ -496,7 +496,11 @@ skip_save:;
     return true;
 }
 
-static void uninstall(void) {
+static bool uninstall(bool quiet_arg) {
+    bool print_cache_flush_fail = false;
+    bool print_write_fail = false;
+    bool ret = true;
+
     uninstalling = true;
 
     cache_state = CACHE_CLEAN;
@@ -507,14 +511,15 @@ static void uninstall(void) {
         bool retry = false;
         while (!_device_write(ud->data, ud->loc, ud->count)) {
             if (retry) {
-                fprintf(stderr, "%s: error: Uninstall data index %zu failed to write. Uninstall may be incomplete!\n", program_name, i);
+                fprintf(stderr, "%s: warning: Retry failed.\n", program_name);
+                print_write_fail = true;
                 break;
             }
             if (!quiet) {
                 fprintf(stderr, "%s: warning: Uninstall data index %zu failed to write, retrying...\n", program_name, i);
             }
             if (!device_flush_cache()) {
-                fprintf(stderr, "%s: error: Device cache flush failure. Uninstall may be incomplete!\n", program_name);
+                print_cache_flush_fail = true;
             }
             cache_state = CACHE_CLEAN;
             cached_block = (uint64_t)-1;
@@ -523,12 +528,24 @@ static void uninstall(void) {
     }
 
     if (!device_flush_cache()) {
-        fprintf(stderr, "%s: error: Device cache flush failure. Uninstall may be incomplete!\n", program_name);
+        print_cache_flush_fail = true;
     }
 
-    if (!quiet) {
-        fprintf(stderr, "Uninstall data restored successfully. Limine uninstalled!\n");
+    if (print_write_fail) {
+        fprintf(stderr, "%s: error: Some data failed to be uninstalled correctly.\n", program_name);
+        ret = false;
     }
+
+    if (print_cache_flush_fail) {
+        fprintf(stderr, "%s: error: Device cache flush failure. Uninstall may be incomplete.\n", program_name);
+        ret = false;
+    }
+
+    if (ret == true && !quiet && !quiet_arg) {
+        fprintf(stderr, "Uninstall data restored successfully.\n");
+    }
+
+    return ret;
 }
 
 #define device_read(BUFFER, LOC, COUNT)        \
@@ -639,9 +656,11 @@ static int bios_install(int argc, char *argv[]) {
             goto uninstall_mode_cleanup;
         }
 
-        uninstall();
-
-        ok = EXIT_SUCCESS;
+        if (uninstall(false) == false) {
+            ok = EXIT_FAILURE;
+        } else {
+            ok = EXIT_SUCCESS;
+        }
         goto uninstall_mode_cleanup;
     }
 
@@ -1005,7 +1024,8 @@ cleanup:
     reverse_uninstall_data();
     if (ok != EXIT_SUCCESS) {
         // If we failed, attempt to reverse install process
-        uninstall();
+        fprintf(stderr, "%s: Install failed, undoing work...\n", program_name);
+        uninstall(true);
     } else if (uninstall_file != NULL) {
         store_uninstall_data(uninstall_file);
     }
@@ -1143,8 +1163,8 @@ cleanup:
     return ret;
 }
 
-#define LIMINE_VERSION "6.20231227.0"
-#define LIMINE_COPYRIGHT "Copyright (C) 2019-2023 mintsuki and contributors."
+#define LIMINE_VERSION "6.20240107.0"
+#define LIMINE_COPYRIGHT "Copyright (C) 2019-2024 mintsuki and contributors."
 
 static void version_usage(void) {
     printf("usage: %s version [options...]\n", program_name);

@@ -73,6 +73,7 @@ int getchar_internal(uint8_t scancode, uint8_t ascii, uint32_t shift_state) {
 #endif
     }
     switch (ascii) {
+        case '\n':
         case '\r':
             return '\n';
         case '\b':

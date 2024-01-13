@@ -8,6 +8,7 @@
 /common/libfdt
 /common/stb/stb_image.h*
 /decompressor/tinf
+/tinf
 /ovmf*
 *.o
 *.d

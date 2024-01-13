@@ -26,10 +26,12 @@ TINF_COMMIT_HASH=57ffa1f1d5e3dde19011b2127bd26d01689b694b
 clone_repo_commit() {
     [ -d $2 ] && (
         set -e
-        git -C $2 checkout $3 || (
-            set -e
-            rm -rf $2
-        )
+        if [ -f $2/.git ]; then
+            git -C $2 checkout $3 || (
+                set -e
+                rm -rf $2
+            )
+        fi
     )
     [ -d $2 ] || (
         set -e

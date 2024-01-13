@@ -309,6 +309,7 @@ dist:
 	done
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/limine-efi/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/limine-efi/.gitignore"
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/tinf"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/.gitignore"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/.github"
@@ -328,7 +329,7 @@ distclean: clean
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf common/flanterm common/stb/stb_image.h* decompressor/tinf freestanding-headers libgcc-binaries limine-efi freestanding-toolchain configure build-aux *'~' autom4te.cache aclocal.m4 *.tar.xz *.tar.gz
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf common/flanterm common/stb/stb_image.h* decompressor/tinf tinf freestanding-headers libgcc-binaries limine-efi freestanding-toolchain configure build-aux *'~' autom4te.cache aclocal.m4 *.tar.xz *.tar.gz
 
 .PHONY: common-uefi-x86-64
 common-uefi-x86-64:

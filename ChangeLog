@@ -1,3 +1,19 @@
+2024-01-14  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.0.0 ***
+
+    Noteworthy changes compared to the previous release, 6.20240107.0:
+
+    Bug fixes:
+        - Minor fix of newline handling when reading user input lines.
+
+    Miscellanous:
+        - Bump major version to 7. Note: There is no breaking change in 7.x
+          compared to 6.x; the major version bump is done due to a change in
+          the versioning scheme used by Limine (move to proper Semantic
+          Versioning).
+        - Fix versions of external dependencies in "bootstrap" script.
+
 2024-01-07  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 6.20240107.0 ***

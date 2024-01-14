@@ -61,13 +61,13 @@ are shipped in the `-binary` branches and tags of this repository
 (see [branches](https://github.com/limine-bootloader/limine/branches/all) and
 [tags](https://github.com/limine-bootloader/limine/tags)).
 
-For example, to clone the latest binary release of the `v6.x` branch one can do
+For example, to clone the latest binary release, one can do:
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v6.x-branch-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=binary --depth=1
 ```
-or, to clone a specific binary point release (for example `v6.20240107.0`)
+or, to clone a specific binary point release (for example `7.0.0`):
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v6.20240107.0-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v7.0.0-binary --depth=1
 ```
 
 In order to rebuild host utilities like `limine`, simply run `make` in the binary

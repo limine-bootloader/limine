@@ -57,7 +57,11 @@ enter_in_el1:
     eret
 
 2:
-    // Configure EL1 state
+    // Check HCR_EL2.E2H
+    mrs x8, hcr_el2
+    tbnz x8, #34, 3f
+
+    // Configure EL1 state (normal silicon)
     msr mair_el1, x3
     msr tcr_el1, x4
     msr ttbr0_el1, x5
@@ -65,6 +69,19 @@ enter_in_el1:
     msr sctlr_el1, x2
     dsb sy
     isb
+    b 4f
+
+3:
+    // Configure EL1 state (apple silicon)
+    msr s3_5_c10_c2_0, x3 // MAIR_EL12
+    msr s3_5_c2_c0_2, x4 // TCR_EL12
+    msr s3_5_c2_c0_0, x5 // TTBR0_EL12
+    msr s3_5_c2_c0_1, x6 // TTBR1_EL12
+    msr s3_5_c1_c0_0, x2 // SCTLR_EL12
+    dsb sy
+    isb
+
+4:
 
     // Configure EL2-specific state for EL1
 

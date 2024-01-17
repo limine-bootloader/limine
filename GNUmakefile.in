@@ -1,5 +1,13 @@
 override MAKEFLAGS += -rR
 
+override MAKEVER_MAJOR := $(shell echo $(MAKE_VERSION) | cut -f1 -d.)
+override MAKEVER_MINOR := $(shell echo $(MAKE_VERSION) | cut -f2 -d.)
+override MAKEVER_VALID := $(shell ( [ "$(MAKEVER_MAJOR)" -gt 4 ] || ( [ "$(MAKEVER_MAJOR)" -eq 4 ] && [ "$(MAKEVER_MINOR)" -gt 2 ] ) ) && echo 1)
+
+ifneq ($(MAKEVER_VALID),1)
+$(error GNU Make version 4.2 or greater is required to build Limine)
+endif
+
 override prefix := @prefix@
 override exec_prefix := @exec_prefix@
 override PACKAGE_TARNAME := @PACKAGE_TARNAME@

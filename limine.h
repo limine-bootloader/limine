@@ -14,8 +14,8 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _LIMINE_H
-#define _LIMINE_H 1
+#ifndef LIMINE_H
+#define LIMINE_H 1
 
 #ifdef __cplusplus
 extern "C" {

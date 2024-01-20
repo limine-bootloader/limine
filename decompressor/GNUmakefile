@@ -41,7 +41,7 @@ override CFLAGS_FOR_TARGET += \
     -mno-80387
 
 override CPPFLAGS_FOR_TARGET := \
-    -I../freestanding-headers \
+    -isystem ../freestanding-headers \
     -I./tinf \
     -I. \
     $(CPPFLAGS_FOR_TARGET) \

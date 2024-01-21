@@ -29,6 +29,8 @@ override CFLAGS_FOR_TARGET += \
     -std=gnu11 \
     -nostdinc \
     -ffreestanding \
+    -ffunction-sections \
+    -fdata-sections \
     -fno-stack-protector \
     -fno-stack-check \
     -fomit-frame-pointer \
@@ -52,6 +54,7 @@ override LDFLAGS_FOR_TARGET += \
     -m elf_i386 \
     -nostdlib \
     -z max-page-size=0x1000 \
+    -gc-sections \
     -static \
     -T linker.ld
 
@@ -67,7 +70,7 @@ override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=
 .PHONY: all
 all: $(call MKESCAPE,$(BUILDDIR))/decompressor.bin
 
-$(call MKESCAPE,$(BUILDDIR))/decompressor.bin: $(OBJ) ../libgcc-binaries/libgcc-i686.a
+$(call MKESCAPE,$(BUILDDIR))/decompressor.bin: $(OBJ)
 	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf'
 	$(OBJCOPY_FOR_TARGET) -O binary '$(call SHESCAPE,$(BUILDDIR))/decompressor.elf' '$(call SHESCAPE,$@)'
 

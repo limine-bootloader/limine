@@ -20,12 +20,12 @@ SECTIONS
         *(.entry)
         *(.realmode)
         *.s2.o(.text .text.*)
-        *libgcc*.a:*(.text .text.*)
+        *cc-runtime*(.text .text.*)
     } :text_s2
 
     .rodata.stage2 : {
         *.s2.o(.rodata .rodata.*)
-        *libgcc*.a:*(.rodata .rodata.*)
+        *cc-runtime*(.rodata .rodata.*)
 
         build_id_s2 = .;
         KEEP(*build-id.s2.o(*))
@@ -57,7 +57,7 @@ SECTIONS
     .data.stage2 : {
         s2_data_begin = .;
         *.s2.o(.data .data.*)
-        *libgcc*.a:*(.data .data.*)
+        *cc-runtime*(.data .data.*)
         s2_data_end = .;
 
         *.s2.o(.no_unwind)

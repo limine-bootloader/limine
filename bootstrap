@@ -17,7 +17,7 @@ FLANTERM_COMMIT_HASH=545ab1faa8ba7493ae7a43064d520e402ad308b5
 
 FREESTANDING_HEADERS_COMMIT_HASH=dd3abd2d7147efc4170dff478d3b7730bed14147
 
-LIBGCC_BINARIES_COMMIT_HASH=7e1775311640070f3157a332c6ad5bce1c47ad56
+CC_RUNTIME_COMMIT_HASH=38942e9a0d11af77c5d9fb45794850f7a1565d2b
 
 LIMINE_EFI_COMMIT_HASH=c7d42cae902fc7e3f0b20b428186e8d9b1e9f5b5
 
@@ -42,7 +42,9 @@ clone_repo_commit() {
 
 clone_repo_commit https://github.com/mintsuki/flanterm.git common/flanterm $FLANTERM_COMMIT_HASH
 clone_repo_commit https://github.com/mintsuki/freestanding-headers.git freestanding-headers $FREESTANDING_HEADERS_COMMIT_HASH
-clone_repo_commit https://github.com/mintsuki/libgcc-binaries.git libgcc-binaries $LIBGCC_BINARIES_COMMIT_HASH
+clone_repo_commit https://github.com/mintsuki/cc-runtime.git common/cc-runtime $CC_RUNTIME_COMMIT_HASH
+rm -rf decompressor/cc-runtime
+cp -rp common/cc-runtime decompressor/
 clone_repo_commit https://github.com/limine-bootloader/limine-efi.git limine-efi $LIMINE_EFI_COMMIT_HASH
 clone_repo_commit https://github.com/jibsen/tinf.git tinf $TINF_COMMIT_HASH
 

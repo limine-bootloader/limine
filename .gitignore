@@ -3,10 +3,11 @@
 /toolchain-files
 /limine-efi
 /freestanding-headers
-/libgcc-binaries
 /common/flanterm
 /common/stb/stb_image.h*
+/common/cc-runtime
 /decompressor/tinf
+/decompressor/cc-runtime
 /tinf
 /ovmf*
 *.o

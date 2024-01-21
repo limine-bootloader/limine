@@ -18,7 +18,7 @@ SECTIONS
     __image_size = ABSOLUTE(__image_end - __image_base);
 
     .text : {
-        *(.pe_header)
+        KEEP(*(.pe_header))
 
         . = ALIGN(0x1000);
 

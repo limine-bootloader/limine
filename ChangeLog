@@ -1,3 +1,22 @@
+2024-01-22  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.0.1 ***
+
+    Noteworthy changes compared to the previous release, 7.0.0:
+
+    Bug fixes:
+        - Fix ARM64/aarch64 spinup code to properly support Apple Silicon
+          chips.
+        - Prevent users from building Limine with a GNU Make version older than
+          4.2, as that is not supported, by gracefully erroring out with a
+          useful error message.
+        - Avoid usage of reserved C identifiers in certain cases.
+
+    Miscellaneous:
+        - Drop usage of "libgcc-binaries" for "cc-runtime". This finally makes
+          us able to ship Limine tarballs without included binary blobs, and
+          should improve compatibility with more obscure toolchain set ups.
+
 2024-01-14  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.0.0 ***

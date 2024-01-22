@@ -207,7 +207,7 @@ ifeq ($(TARGET),bios)
     override ASMB_FILES := $(shell find . -type f -name '*.asm_bios_ia32')
 
     override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.o) $(ASM32_FILES:.asm_ia32=.o) $(ASMB_FILES:.asm_bios_ia32=.o) $(ASMX86_FILES:.asm_x86=.o))
-    override OBJ_S2 := $(filter %.s2.o,$(OBJ)) $(foreach f,$(OBJ),$(if $(findstring cc-runtime,$(f)),$(f),))
+    override OBJ_S2 := $(filter %.s2.o,$(OBJ))
 endif
 ifeq ($(TARGET),uefi-x86-64)
     override ASMX86_FILES := $(shell find . -type f -name '*.asm_x86')

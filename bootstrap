@@ -42,9 +42,12 @@ clone_repo_commit() {
 
 clone_repo_commit https://github.com/mintsuki/flanterm.git common/flanterm $FLANTERM_COMMIT_HASH
 clone_repo_commit https://github.com/mintsuki/freestanding-headers.git freestanding-headers $FREESTANDING_HEADERS_COMMIT_HASH
-clone_repo_commit https://github.com/mintsuki/cc-runtime.git common/cc-runtime $CC_RUNTIME_COMMIT_HASH
-rm -rf decompressor/cc-runtime
-cp -rp common/cc-runtime decompressor/
+clone_repo_commit https://github.com/mintsuki/cc-runtime.git decompressor/cc-runtime $CC_RUNTIME_COMMIT_HASH
+rm -rf common/cc-runtime
+cp -rp decompressor/cc-runtime common/
+for f in common/cc-runtime/*.c; do
+    mv "$f" "$(echo "$f" | sed 's/\.c/.s2.c/g')"
+done
 clone_repo_commit https://github.com/limine-bootloader/limine-efi.git limine-efi $LIMINE_EFI_COMMIT_HASH
 clone_repo_commit https://github.com/jibsen/tinf.git tinf $TINF_COMMIT_HASH
 

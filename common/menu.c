@@ -862,8 +862,9 @@ refresh:
 
         if (!help_hidden) {
             set_cursor_pos_helper(0, 3);
-            if (editor_enabled && selected_menu_entry->sub == NULL) {
-                print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m Boot    \e[32mE\e[0m Edit");
+            if (selected_menu_entry->sub == NULL) {
+                print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m Boot    %s",
+                      editor_enabled ? "\e[32mE\e[0m Edit" : "");
             } else {
                 print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m %s",
                       selected_menu_entry->expanded ? "Collapse" : "Expand");

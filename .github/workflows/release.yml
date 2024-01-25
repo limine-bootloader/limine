@@ -74,6 +74,9 @@ jobs:
           git push origin binary
           git tag $TAG_NAME-binary
           git push origin binary --tags
+          git checkout v6.x-branch-binary
+          git rebase binary
+          git push origin v6.x-branch-binary
 
       - name: Cleanup source tree
         run: git checkout $TAG_NAME && rm -rf * && git checkout .

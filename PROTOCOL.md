@@ -420,7 +420,7 @@ direct map.
 
 ### Terminal Feature
 
-Note: *This feature is deprecated, do not use if possible.*
+Note: *This feature is deprecated and has been removed as of Limine 5.x, please do not use.*
 
 ID:
 ```c
@@ -849,7 +849,7 @@ The default mode (when this request is not provided) is `LIMINE_PAGING_MODE_RISC
 ### 5-Level Paging Feature
 
 Note: *This feature has been deprecated in favor of the [Paging Mode feature](#paging-mode-feature)
-and will be removed entirely in a future release.*
+and has been removed as of Limine 5.x.*
 
 ID:
 ```c

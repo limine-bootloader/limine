@@ -1,3 +1,17 @@
+2024-01-26  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.0.2 ***
+
+    Noteworthy changes compared to the previous release, 7.0.1:
+
+    Bug fixes:
+        - Fix a cosmetic bug in the menu where, when the editor was disabled,
+          the controls showed "ENTER Expand" even for boot entries instead of
+          only for menu directories.
+
+    Miscellaneous:
+        - Exclusively use git for obtaining dependencies in "bootstrap" script.
+
 2024-01-22  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.0.1 ***

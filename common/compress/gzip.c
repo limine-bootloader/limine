@@ -25,7 +25,7 @@
  */
 
 #include <stdint.h>
-#include <stb/stb_image.h>
+#include <lib/stb_image.h>
 
 typedef enum {
     FTEXT    = 1,

@@ -4,11 +4,12 @@
 /limine-efi
 /freestanding-headers
 /common/flanterm
-/common/stb/stb_image.h*
+/common/lib/stb_image.h
 /common/cc-runtime
 /decompressor/tinf
 /decompressor/cc-runtime
 /tinf
+/stb
 /ovmf*
 *.o
 *.d

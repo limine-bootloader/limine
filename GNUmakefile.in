@@ -305,11 +305,13 @@ dist:
 	cd '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)" && ./bootstrap
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/common/flanterm/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/freestanding-headers/.git"
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/build-aux/freestanding-toolchain/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/common/cc-runtime/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/decompressor/cc-runtime/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/limine-efi/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/limine-efi/.gitignore"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/tinf"
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/stb"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/.gitignore"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/.github"
@@ -329,7 +331,7 @@ distclean: clean
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf common/flanterm common/stb/stb_image.h* decompressor/tinf tinf freestanding-headers common/cc-runtime decompressor/cc-runtime limine-efi freestanding-toolchain configure build-aux *'~' autom4te.cache aclocal.m4 *.tar.xz *.tar.gz
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf common/flanterm common/lib/stb_image.h decompressor/tinf tinf stb freestanding-headers common/cc-runtime decompressor/cc-runtime limine-efi build-aux/freestanding-toolchain configure build-aux *'~' autom4te.cache aclocal.m4 *.tar.xz *.tar.gz
 
 .PHONY: common-uefi-x86-64
 common-uefi-x86-64:

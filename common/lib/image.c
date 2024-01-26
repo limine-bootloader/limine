@@ -4,7 +4,7 @@
 #include <lib/config.h>
 #include <lib/misc.h>
 #include <mm/pmm.h>
-#include <stb/stb_image.h>
+#include <lib/stb_image.h>
 
 void image_make_centered(struct image *image, int frame_x_size, int frame_y_size, uint32_t back_colour) {
     image->type = IMAGE_CENTERED;

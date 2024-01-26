@@ -1,5 +1,5 @@
---- common/stb/stb_image.h	2023-03-05 18:57:03.930649341 +0100
-+++ common/stb/stb_image.h	2023-03-05 18:55:53.767318782 +0100
+--- common/lib/stb_image.h	2023-03-05 18:57:03.930649341 +0100
++++ common/lib/stb_image.h	2023-03-05 18:55:53.767318782 +0100
 @@ -127,6 +127,54 @@
  #ifndef STBI_INCLUDE_STB_IMAGE_H
  #define STBI_INCLUDE_STB_IMAGE_H

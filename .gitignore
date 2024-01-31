@@ -29,7 +29,6 @@
 /.vscode
 /test_image
 !/common/font.bin
-/freestanding-toolchain
 /configure
 /configure.ac.save
 /build-aux

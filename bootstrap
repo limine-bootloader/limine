@@ -16,20 +16,17 @@ FLANTERM_COMMIT_HASH=545ab1faa8ba7493ae7a43064d520e402ad308b5
 STB_COMMIT_HASH=f4a71b13373436a2866c5d68f8f80ac6f0bc1ffe
 
 clone_repo_commit() {
-    [ -d $2 ] && (
-        set -e
-        if [ -d $2/.git ]; then
-            git -C $2 checkout $3 || (
-                set -e
-                rm -rf $2
-            )
+    if [ -d $2/.git ]; then
+        git -C $2 reset --hard
+        git -C $2 clean -fd
+        if ! git -C $2 checkout $3; then
+            rm -rf $2
         fi
-    )
-    [ -d $2 ] || (
-        set -e
+    fi
+    if ! [ -d $2 ]; then
         git clone $1 $2
         git -C $2 checkout $3
-    )
+    fi
 }
 
 clone_repo_commit https://github.com/mintsuki/freestanding-toolchain.git build-aux/freestanding-toolchain $FREESTANDING_TOOLCHAIN_COMMIT_HASH

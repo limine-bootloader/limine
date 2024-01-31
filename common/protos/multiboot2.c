@@ -206,10 +206,25 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
                 reloc_tag = *reloc_tag_ptr;
                 break;
             }
+            case MULTIBOOT_HEADER_TAG_ENTRY_ADDRESS_EFI64: {
+                if (entry_point == 0xffffffff /* no alternative entry */) {
+                    panic(true, "multiboot2: required EFI AMD64 entry tag is unsupported and no alternative entry was found\n");
+                }
+                break;
+            }
 
             default:
-                if (is_required)
-                    panic(true, "multiboot2: Unknown header tag type: %u\n", tag->type);
+                if (is_required) {
+                    if (tag->type <= 10 /* max specified ID */) {
+                        panic(true, "multiboot2: Unsupported header tag type: %u\n", tag->type);
+                    } else {
+                        panic(true, "multiboot2: Unknown custom header tag type: %u\n", tag->type);
+                    }
+                } else {
+                    if (tag->type > 10) {
+                        print("multiboot2: Unknown custom header tag type: %u\n", tag->type);
+                    }
+                }
         }
     }
 

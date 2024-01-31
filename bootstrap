@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/usr/bin/env bash
 
 set -ex
 
@@ -67,20 +67,25 @@ for auxfile in $AUXFILES; do
     rm -f build-aux/$auxfile
 done
 
-autoreconf -fvi -Wall
 
-# Older versions of autoreconf have a bug where they do not
-# install auxiliary files, sometimes... Check if that is the
-# case and work around...
-for auxfile in $AUXFILES; do
-    if ! [ -f build-aux/$auxfile ]; then
-        if ! automake --print-libdir >/dev/null 2>&1; then
-            echo "error: Broken autoreconf detected, but missing or broken automake."
-            echo "       Please make sure automake is installed and working."
-            exit 1
-        fi
-        mkdir -p build-aux
-        cp -v "$(automake --print-libdir)/$auxfile" build-aux/
-        chmod +x build-aux/$auxfile
-    fi
-done
+# This skip is needed for build.nix. There, we differentiate between
+# network-related setup and file-related setup in different derivations.
+if [[ "$@" != *"--skip-autoconf"* ]]; then
+  autoreconf -fvi -Wall
+
+  # Older versions of autoreconf have a bug where they do not
+  # install auxiliary files, sometimes... Check if that is the
+  # case and work around...
+  for auxfile in $AUXFILES; do
+      if ! [ -f build-aux/$auxfile ]; then
+          if ! automake --print-libdir >/dev/null 2>&1; then
+              echo "error: Broken autoreconf detected, but missing or broken automake."
+              echo "       Please make sure automake is installed and working."
+              exit 1
+          fi
+          mkdir -p build-aux
+          cp -v "$(automake --print-libdir)/$auxfile" build-aux/
+          chmod +x build-aux/$auxfile
+      fi
+  done
+fi

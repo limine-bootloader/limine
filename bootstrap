@@ -7,21 +7,13 @@ test -z "$srcdir" && srcdir=.
 
 cd "$srcdir"
 
-STB_COMMIT_HASH=f4a71b13373436a2866c5d68f8f80ac6f0bc1ffe
-STB_IMAGE_H_HASH=9053a86ea3fab378ad42c740bbc5003c7c2038a466da1446e1d9b943178d131c9add2d41fca23149cc55381a94ba32c4d29f5ce09d80e19809e067bac2ee7b92
-
 FREESTANDING_TOOLCHAIN_COMMIT_HASH=18a5e52483344e117d45738c9afb2b34792cbced
-FREESTANDING_TOOLCHAIN_HASH=44546a7cbeb17d67569d620753a6c8e36d8f7dd3d46f5cb5b7708cb2c29a9dc02e95b336d81a4baffb29c957a0d658cbcf77b2327a8bda4bfbdfedace4c3dd90
-
-FLANTERM_COMMIT_HASH=545ab1faa8ba7493ae7a43064d520e402ad308b5
-
 FREESTANDING_HEADERS_COMMIT_HASH=dd3abd2d7147efc4170dff478d3b7730bed14147
-
 CC_RUNTIME_COMMIT_HASH=38942e9a0d11af77c5d9fb45794850f7a1565d2b
-
 LIMINE_EFI_COMMIT_HASH=f49bfc29a344f1bd57a6a99d8c71fcc133cd72c7
-
 TINF_COMMIT_HASH=57ffa1f1d5e3dde19011b2127bd26d01689b694b
+FLANTERM_COMMIT_HASH=545ab1faa8ba7493ae7a43064d520e402ad308b5
+STB_COMMIT_HASH=f4a71b13373436a2866c5d68f8f80ac6f0bc1ffe
 
 clone_repo_commit() {
     [ -d $2 ] && (
@@ -40,11 +32,8 @@ clone_repo_commit() {
     )
 }
 
-clone_repo_commit https://github.com/mintsuki/flanterm.git common/flanterm $FLANTERM_COMMIT_HASH
-
-clone_repo_commit https://github.com/mintsuki/freestanding-headers.git freestanding-headers $FREESTANDING_HEADERS_COMMIT_HASH
-
 clone_repo_commit https://github.com/mintsuki/freestanding-toolchain.git build-aux/freestanding-toolchain $FREESTANDING_TOOLCHAIN_COMMIT_HASH
+clone_repo_commit https://github.com/mintsuki/freestanding-headers.git freestanding-headers $FREESTANDING_HEADERS_COMMIT_HASH
 
 clone_repo_commit https://github.com/mintsuki/cc-runtime.git decompressor/cc-runtime $CC_RUNTIME_COMMIT_HASH
 rm -rf common/cc-runtime
@@ -60,6 +49,8 @@ mkdir -p decompressor/tinf
 cp tinf/src/tinf.h tinf/src/tinflate.c tinf/src/tinfgzip.c decompressor/tinf/
 patch -p0 < decompressor/tinf.patch
 rm -f tinf/src/tinf.h.orig tinf/src/tinflate.c.orig tinf/src/tinfgzip.c.orig
+
+clone_repo_commit https://github.com/mintsuki/flanterm.git common/flanterm $FLANTERM_COMMIT_HASH
 
 clone_repo_commit https://github.com/nothings/stb.git stb $STB_COMMIT_HASH
 cp stb/stb_image.h common/lib/

@@ -206,6 +206,12 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
                 reloc_tag = *reloc_tag_ptr;
                 break;
             }
+            case MULTIBOOT_HEADER_TAG_ENTRY_ADDRESS_EFI64: {
+                if (entry_point == 0xffffffff /* no alternative entry */) {
+                    panic(true, "multiboot2: required EFI AMD64 entry tag is unsupported and no alternative entry was found\n");
+                }
+                break;
+            }
 
             default:
                 if (is_required)

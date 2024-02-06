@@ -8,5 +8,22 @@ test -z "$srcdir" && srcdir=.
 
 cd "$srcdir"
 
-[ -f version ] || ( git describe --exact-match --tags $(git log -n1 --pretty='%h') 2>/dev/null || git log -n1 --pretty='%h' ) | sed 's/^v//g' | xargs printf '%s'
-[ -f version ] && ( cat version 2>/dev/null ) | xargs printf '%s'
+if [ -f version ]; then
+    printf '%s' "$(cat version)"
+    exit 0
+fi
+
+if ! [ -d .git ] || ! git log -n1 --pretty='%h' >/dev/null 2>&1; then
+    printf 'UNVERSIONED'
+    exit 0
+fi
+
+tmpfile="$(mktemp)"
+
+if ! git describe --exact-match --tags $(git log -n1 --pretty='%h') >"$tmpfile" 2>/dev/null; then
+    echo g$(git log -n1 --pretty='%h') >"$tmpfile"
+fi
+
+printf '%s' "$(sed 's/^v//g' <"$tmpfile")"
+
+rm -f "$tmpfile"

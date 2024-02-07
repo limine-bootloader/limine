@@ -200,15 +200,8 @@ void term_fallback(void) {
         term->set_cursor_pos = fallback_set_cursor_pos;
         term->get_cursor_pos = fallback_get_cursor_pos;
         term->scroll = fallback_scroll;
-#if defined (UEFI)
-        UINTN uefi_term_x_size, uefi_term_y_size;
-        gST->ConOut->QueryMode(gST->ConOut, gST->ConOut->Mode->Mode, &uefi_term_x_size, &uefi_term_y_size);
-        term->cols = uefi_term_x_size;
-        term->rows = uefi_term_y_size;
-#elif defined (BIOS)
         term->cols = 80;
         term->rows = 25;
-#endif
         term_backend = FALLBACK;
         flanterm_context_reinit(term);
 #if defined (UEFI)

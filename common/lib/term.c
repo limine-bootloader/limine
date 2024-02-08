@@ -260,7 +260,7 @@ void term_fallback(void) {
         term->get_cursor_pos = fallback_get_cursor_pos;
         term->scroll = fallback_scroll;
         term->cols = 80;
-        term->rows = 25;
+        term->rows = 24;
         term_backend = FALLBACK;
         flanterm_context_reinit(term);
 #if defined (UEFI)

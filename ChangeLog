@@ -1,3 +1,19 @@
+2024-02-08  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.0.3 ***
+
+    Noteworthy changes compared to the previous release, 7.0.2:
+
+    Bug fixes:
+        - multiboot2 protocol: Do not panic if there is a ENTRY_ADDRESS_EFI64
+          tag, but there is a valid alternatve entry point. This further aligns
+          our behaviour with GRUB2.
+
+    Miscellaneous:
+        - Terminal: Significantly improve serial and fallback UEFI console's
+          rendition (especially colour palettes).
+        - Serial: Add a baud rate config setting for Limine's BIOS version.
+
 2024-01-26  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.0.2 ***

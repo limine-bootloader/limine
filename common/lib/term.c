@@ -156,6 +156,65 @@ static void fallback_get_cursor_pos(struct flanterm_context *ctx, size_t *x, siz
     *x = cursor_x;
     *y = cursor_y;
 }
+
+static UINTN ansi_colours[] = {
+    EFI_BLACK,
+    EFI_RED,
+    EFI_GREEN,
+    EFI_YELLOW,
+    EFI_BLUE,
+    EFI_MAGENTA,
+    EFI_CYAN,
+    EFI_LIGHTGRAY
+};
+
+static UINTN conout_current_fg, conout_current_bg;
+
+static void fallback_set_text_fg(struct flanterm_context *ctx, size_t fg) {
+    (void)ctx;
+    conout_current_fg = ansi_colours[fg];
+    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+}
+
+static void fallback_set_text_bg(struct flanterm_context *ctx, size_t bg) {
+    (void)ctx;
+    conout_current_bg = ansi_colours[bg];
+    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+}
+
+static void fallback_set_text_fg_bright(struct flanterm_context *ctx, size_t fg) {
+    (void)ctx;
+    conout_current_fg = ansi_colours[fg] | EFI_BRIGHT;
+    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+}
+
+static void fallback_set_text_bg_bright(struct flanterm_context *ctx, size_t bg) {
+    (void)ctx;
+    // bg does not support bright
+    conout_current_bg = ansi_colours[bg];
+    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+}
+
+static void fallback_set_text_fg_default(struct flanterm_context *ctx) {
+    (void)ctx;
+    conout_current_fg = EFI_LIGHTGRAY;
+    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+}
+
+static void fallback_set_text_bg_default(struct flanterm_context *ctx) {
+    (void)ctx;
+    conout_current_bg = EFI_BLACK;
+    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+}
+
+static void fallback_swap_palette(struct flanterm_context *ctx) {
+    (void)ctx;
+    UINTN tmp = conout_current_bg;
+    conout_current_bg = conout_current_fg;
+    conout_current_fg = tmp;
+    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+}
+
 #endif
 
 static bool dummy_handle(void) {
@@ -205,6 +264,17 @@ void term_fallback(void) {
         term_backend = FALLBACK;
         flanterm_context_reinit(term);
 #if defined (UEFI)
+
+        term->set_text_fg = fallback_set_text_fg;
+        term->set_text_bg = fallback_set_text_bg;
+        term->set_text_fg_bright = fallback_set_text_fg_bright;
+        term->set_text_bg_bright = fallback_set_text_bg_bright;
+        term->set_text_fg_default = fallback_set_text_fg_default;
+        term->set_text_bg_default = fallback_set_text_bg_default;
+        term->swap_palette = fallback_swap_palette;
+
+        term->set_text_fg_default(term);
+        term->set_text_bg_default(term);
     }
 #endif
 }

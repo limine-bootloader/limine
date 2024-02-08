@@ -237,7 +237,7 @@ out:
         }
 #endif
 #if defined (BIOS)
-        if ((!quiet && serial) || COM_OUTPUT) {
+        if (stage3_loaded && ((!quiet && serial) || COM_OUTPUT)) {
             switch (print_buf[i]) {
                 case '\n':
                     serial_out('\r');

@@ -42,6 +42,7 @@ SECTIONS
         term_notready = .;
         terms = .;
         terms_i = .;
+        serial_out = .;
         stage3_addr = .;
 #else
 #ifdef LINKER_NOS2MAP

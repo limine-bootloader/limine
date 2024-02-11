@@ -15,6 +15,8 @@ TINF_COMMIT_HASH=57ffa1f1d5e3dde19011b2127bd26d01689b694b
 FLANTERM_COMMIT_HASH=545ab1faa8ba7493ae7a43064d520e402ad308b5
 STB_COMMIT_HASH=f4a71b13373436a2866c5d68f8f80ac6f0bc1ffe
 
+AUXFILES="config.guess config.sub install-sh"
+
 clone_repo_commit() {
     if [ -d $2/.git ]; then
         git -C $2 reset --hard
@@ -61,14 +63,16 @@ if ! [ -f version ]; then
     rm -f common/lib/stb_image.h.orig
 fi
 
-rm -rf build-aux
+for auxfile in $AUXFILES; do
+    rm -f build-aux/$auxfile
+done
 
 autoreconf -fvi -Wall
 
 # Older versions of autoreconf have a bug where they do not
 # install auxiliary files, sometimes... Check if that is the
 # case and work around...
-for auxfile in config.guess config.sub install-sh; do
+for auxfile in $AUXFILES; do
     if ! [ -f build-aux/$auxfile ]; then
         if ! automake --print-libdir >/dev/null 2>&1; then
             echo "error: Broken autoreconf detected, but missing or broken automake."

@@ -61,6 +61,8 @@ if ! [ -f version ]; then
     rm -f common/lib/stb_image.h.orig
 fi
 
+rm -rf build-aux
+
 autoreconf -fvi -Wall
 
 # Older versions of autoreconf have a bug where they do not

@@ -8,9 +8,6 @@ ifneq ($(MAKEVER_VALID),1)
 $(error GNU Make version 4.2 or greater is required to build Limine)
 endif
 
-override LC_ALL := C
-export LC_ALL
-
 override SOURCE_DATE_EPOCH := @SOURCE_DATE_EPOCH@
 export SOURCE_DATE_EPOCH
 

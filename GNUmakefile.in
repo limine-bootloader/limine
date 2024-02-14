@@ -8,6 +8,14 @@ ifneq ($(MAKEVER_VALID),1)
 $(error GNU Make version 4.2 or greater is required to build Limine)
 endif
 
+override LC_ALL := C
+export LC_ALL
+
+override SOURCE_DATE_EPOCH := @SOURCE_DATE_EPOCH@
+export SOURCE_DATE_EPOCH
+
+override SOURCE_DATE_EPOCH_TOUCH := @SOURCE_DATE_EPOCH_TOUCH@
+
 override prefix := @prefix@
 override exec_prefix := @exec_prefix@
 override PACKAGE_TARNAME := @PACKAGE_TARNAME@
@@ -109,7 +117,7 @@ export LDFLAGS_FOR_TARGET
 
 override LIMINE_VERSION := @PACKAGE_VERSION@
 
-override STAGE1_FILES := $(shell find '$(call SHESCAPE,$(SRCDIR))/stage1' -type f -name '*.asm')
+override STAGE1_FILES := $(shell find '$(call SHESCAPE,$(SRCDIR))/stage1' -type f -name '*.asm' | LC_ALL=C sort)
 
 .PHONY: all
 all: $(call MKESCAPE,$(BINDIR))/Makefile
@@ -224,21 +232,16 @@ ifneq ($(BUILD_UEFI_CD),no)
 	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	rm -f '$(call SHESCAPE,$(BINDIR))/limine-uefi-cd.bin'
 	dd if=/dev/zero of='$(call SHESCAPE,$(BINDIR))/limine-uefi-cd.bin' bs=512 count=2880 2>/dev/null
-	mformat -i '$(call SHESCAPE,$(BINDIR))/limine-uefi-cd.bin' -f 1440 ::
-	mmd -D s -i '$(call SHESCAPE,$(BINDIR))/limine-uefi-cd.bin' ::/EFI
-	mmd -D s -i '$(call SHESCAPE,$(BINDIR))/limine-uefi-cd.bin' ::/EFI/BOOT
-	if [ -f '$(call SHESCAPE,$(BUILDDIR))/common-uefi-aarch64/BOOTAA64.EFI' ]; then \
-	    mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-uefi-cd.bin' '$(call SHESCAPE,$(BUILDDIR))/common-uefi-aarch64/BOOTAA64.EFI' ::/EFI/BOOT; \
-	fi
-	if [ -f '$(call SHESCAPE,$(BUILDDIR))/common-uefi-riscv64/BOOTRISCV64.EFI' ]; then \
-	    mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-uefi-cd.bin' '$(call SHESCAPE,$(BUILDDIR))/common-uefi-riscv64/BOOTRISCV64.EFI' ::/EFI/BOOT; \
-	fi
-	if [ -f '$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64/BOOTX64.EFI' ]; then \
-	    mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-uefi-cd.bin' '$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64/BOOTX64.EFI' ::/EFI/BOOT; \
-	fi
-	if [ -f '$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32/BOOTIA32.EFI' ]; then \
-	    mcopy -D o -i '$(call SHESCAPE,$(BINDIR))/limine-uefi-cd.bin' '$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32/BOOTIA32.EFI' ::/EFI/BOOT; \
-	fi
+	mformat -i '$(call SHESCAPE,$(BINDIR))/limine-uefi-cd.bin' -f 1440 -N 12345678 ::
+	LIMINE_UEFI_CD_TMP="$$(mktemp -d)"; \
+		mkdir -p "$$LIMINE_UEFI_CD_TMP"/EFI/BOOT; \
+		cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi-aarch64/BOOTAA64.EFI' "$$LIMINE_UEFI_CD_TMP"/EFI/BOOT/ 2>/dev/null; \
+		cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi-riscv64/BOOTRISCV64.EFI' "$$LIMINE_UEFI_CD_TMP"/EFI/BOOT/ 2>/dev/null; \
+		cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64/BOOTX64.EFI' "$$LIMINE_UEFI_CD_TMP"/EFI/BOOT/ 2>/dev/null; \
+		cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32/BOOTIA32.EFI' "$$LIMINE_UEFI_CD_TMP"/EFI/BOOT/ 2>/dev/null; \
+		find "$$LIMINE_UEFI_CD_TMP" -exec touch -d $(SOURCE_DATE_EPOCH_TOUCH) '{}' + && \
+		mcopy -D o -s -m -i '$(call SHESCAPE,$(BINDIR))/limine-uefi-cd.bin' "$$LIMINE_UEFI_CD_TMP"/EFI :: && \
+		rm -rf "$$LIMINE_UEFI_CD_TMP"
 endif
 
 .PHONY: limine-uefi-cd

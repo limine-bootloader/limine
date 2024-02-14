@@ -62,8 +62,8 @@ ifeq ($(LD_FOR_TARGET_HAS_NO_PIE),yes)
     override LDFLAGS_FOR_TARGET += -no-pie
 endif
 
-override C_FILES := $(shell find . -type f -name '*.c')
-override ASM_FILES := $(shell find . -type f -name '*.asm')
+override C_FILES := $(shell find . -type f -name '*.c' | LC_ALL=C sort)
+override ASM_FILES := $(shell find . -type f -name '*.asm' | LC_ALL=C sort)
 override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o))
 override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.d))
 

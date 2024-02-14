@@ -15,12 +15,19 @@ TINF_COMMIT_HASH=57ffa1f1d5e3dde19011b2127bd26d01689b694b
 FLANTERM_COMMIT_HASH=545ab1faa8ba7493ae7a43064d520e402ad308b5
 STB_COMMIT_HASH=f4a71b13373436a2866c5d68f8f80ac6f0bc1ffe
 
+AUXFILES="config.guess config.sub install-sh"
+
 clone_repo_commit() {
     if [ -d $2/.git ]; then
         git -C $2 reset --hard
         git -C $2 clean -fd
         if ! git -C $2 checkout $3; then
             rm -rf $2
+        fi
+    else
+        if [ -d $2 ]; then
+            echo "error: '$2' is not a Git repository"
+            exit 1
         fi
     fi
     if ! [ -d $2 ]; then
@@ -29,39 +36,51 @@ clone_repo_commit() {
     fi
 }
 
-clone_repo_commit https://github.com/mintsuki/freestanding-toolchain.git build-aux/freestanding-toolchain $FREESTANDING_TOOLCHAIN_COMMIT_HASH
-clone_repo_commit https://github.com/mintsuki/freestanding-headers.git freestanding-headers $FREESTANDING_HEADERS_COMMIT_HASH
+if ! [ -f version ]; then
+    clone_repo_commit https://github.com/mintsuki/freestanding-toolchain.git build-aux/freestanding-toolchain $FREESTANDING_TOOLCHAIN_COMMIT_HASH
+    clone_repo_commit https://github.com/mintsuki/freestanding-headers.git freestanding-headers $FREESTANDING_HEADERS_COMMIT_HASH
 
-clone_repo_commit https://github.com/mintsuki/cc-runtime.git decompressor/cc-runtime $CC_RUNTIME_COMMIT_HASH
-rm -rf common/cc-runtime
-cp -rp decompressor/cc-runtime common/
-for f in common/cc-runtime/*.c; do
-    mv "$f" "$(echo "$f" | sed 's/\.c/.s2.c/g')"
+    clone_repo_commit https://github.com/mintsuki/cc-runtime.git decompressor/cc-runtime $CC_RUNTIME_COMMIT_HASH
+    rm -rf common/cc-runtime
+    cp -rp decompressor/cc-runtime common/
+    for f in common/cc-runtime/*.c; do
+        mv "$f" "$(echo "$f" | sed 's/\.c/.s2.c/g')"
+    done
+
+    clone_repo_commit https://github.com/limine-bootloader/limine-efi.git limine-efi $LIMINE_EFI_COMMIT_HASH
+
+    clone_repo_commit https://github.com/jibsen/tinf.git tinf $TINF_COMMIT_HASH
+    mkdir -p decompressor/tinf
+    cp tinf/src/tinf.h tinf/src/tinflate.c tinf/src/tinfgzip.c decompressor/tinf/
+    patch -p0 < decompressor/tinf.patch
+    rm -f tinf/src/tinf.h.orig tinf/src/tinflate.c.orig tinf/src/tinfgzip.c.orig
+
+    clone_repo_commit https://github.com/mintsuki/flanterm.git common/flanterm $FLANTERM_COMMIT_HASH
+
+    clone_repo_commit https://github.com/nothings/stb.git stb $STB_COMMIT_HASH
+    cp stb/stb_image.h common/lib/
+    patch -p0 < common/stb_image.patch
+    rm -f common/lib/stb_image.h.orig
+fi
+
+for auxfile in $AUXFILES; do
+    rm -f build-aux/$auxfile
 done
-
-clone_repo_commit https://github.com/limine-bootloader/limine-efi.git limine-efi $LIMINE_EFI_COMMIT_HASH
-
-clone_repo_commit https://github.com/jibsen/tinf.git tinf $TINF_COMMIT_HASH
-mkdir -p decompressor/tinf
-cp tinf/src/tinf.h tinf/src/tinflate.c tinf/src/tinfgzip.c decompressor/tinf/
-patch -p0 < decompressor/tinf.patch
-rm -f tinf/src/tinf.h.orig tinf/src/tinflate.c.orig tinf/src/tinfgzip.c.orig
-
-clone_repo_commit https://github.com/mintsuki/flanterm.git common/flanterm $FLANTERM_COMMIT_HASH
-
-clone_repo_commit https://github.com/nothings/stb.git stb $STB_COMMIT_HASH
-cp stb/stb_image.h common/lib/
-patch -p0 < common/stb_image.patch
-rm -f common/lib/stb_image.h.orig
 
 autoreconf -fvi -Wall
 
 # Older versions of autoreconf have a bug where they do not
 # install auxiliary files, sometimes... Check if that is the
 # case and work around...
-for auxfile in config.guess config.sub install-sh; do
+for auxfile in $AUXFILES; do
     if ! [ -f build-aux/$auxfile ]; then
+        if ! automake --print-libdir >/dev/null 2>&1; then
+            echo "error: Broken autoreconf detected, but missing or broken automake."
+            echo "       Please make sure automake is installed and working."
+            exit 1
+        fi
         mkdir -p build-aux
         cp -v "$(automake --print-libdir)/$auxfile" build-aux/
+        chmod +x build-aux/$auxfile
     fi
 done

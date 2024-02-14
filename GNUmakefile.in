@@ -239,7 +239,7 @@ ifneq ($(BUILD_UEFI_CD),no)
 		cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi-riscv64/BOOTRISCV64.EFI' "$$LIMINE_UEFI_CD_TMP"/EFI/BOOT/ 2>/dev/null; \
 		cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi-x86-64/BOOTX64.EFI' "$$LIMINE_UEFI_CD_TMP"/EFI/BOOT/ 2>/dev/null; \
 		cp '$(call SHESCAPE,$(BUILDDIR))/common-uefi-ia32/BOOTIA32.EFI' "$$LIMINE_UEFI_CD_TMP"/EFI/BOOT/ 2>/dev/null; \
-		find "$$LIMINE_UEFI_CD_TMP" -exec touch -d $(SOURCE_DATE_EPOCH_TOUCH) '{}' + && \
+		find "$$LIMINE_UEFI_CD_TMP" -exec touch -t $(SOURCE_DATE_EPOCH_TOUCH) '{}' + && \
 		mcopy -D o -s -m -i '$(call SHESCAPE,$(BINDIR))/limine-uefi-cd.bin' "$$LIMINE_UEFI_CD_TMP"/EFI :: && \
 		rm -rf "$$LIMINE_UEFI_CD_TMP"
 endif

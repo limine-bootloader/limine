@@ -1,3 +1,15 @@
+2024-02-14  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.0.4 ***
+
+    Noteworthy changes compared to the previous release, 7.0.3:
+
+    Bug fixes:
+        - Minor build system related fixes and improvements.
+
+    Miscellaneous:
+        - Significantly improve reproducibility of builds.
+
 2024-02-08  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.0.3 ***

@@ -1,3 +1,13 @@
+2024-02-15  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.0.5 ***
+
+    Noteworthy changes compared to the previous release, 7.0.4:
+
+    Bug fixes:
+        - Build system related fixes and improvements. This fixes an issue that
+          caused Limine 7.0.4 to fail building on Busybox systems.
+
 2024-02-14  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.0.4 ***

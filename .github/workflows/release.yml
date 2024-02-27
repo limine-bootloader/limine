@@ -26,6 +26,9 @@ jobs:
       - name: Get tag name
         run: echo "TAG_NAME=$(git describe --exact-match --tags $(git log -n1 --pretty='%h'))" >> $GITHUB_ENV
 
+      - name: Get branch name
+        run: echo "BRANCH_NAME=$(echo "$TAG_NAME" | grep -o 'v[0-9]\+\.')x-branch" >> $GITHUB_ENV
+
       - name: Regenerate
         run: ./bootstrap
 
@@ -65,15 +68,15 @@ jobs:
           git config user.email 'mintsuki@users.noreply.github.com'
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/limine-bootloader/limine.git
           git fetch --all
-          git checkout binary || git checkout --orphan binary
+          git checkout $BRANCH_NAME-binary || git checkout --orphan $BRANCH_NAME-binary
           rm -rf $(ls -a | grep -v '^\.git$' | grep -v '^\.\.$' | grep -v '^\.$' | grep -v '^build$')
           cp -r build/bin/. ./
           rm -rf build
           git add -f .
           git commit -m "Binary release $TAG_NAME"
-          git push origin binary
+          git push origin $BRANCH_NAME-binary
           git tag $TAG_NAME-binary
-          git push origin binary --tags
+          git push origin $BRANCH_NAME-binary --tags
           git checkout v6.x-branch-binary
           git rebase binary
           git push origin v6.x-branch-binary

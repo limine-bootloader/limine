@@ -27,7 +27,7 @@ jobs:
         run: echo "TAG_NAME=$(git describe --exact-match --tags $(git log -n1 --pretty='%h'))" >> $GITHUB_ENV
 
       - name: Get branch name
-        run: echo "BRANCH_NAME=$(echo "$TAG_NAME" | grep -o 'v[0-9]\+\.')x-branch" >> $GITHUB_ENV
+        run: echo "BRANCH_NAME=$(echo "$TAG_NAME" | grep -o 'v[0-9]\+\.')x" >> $GITHUB_ENV
 
       - name: Regenerate
         run: ./bootstrap
@@ -78,7 +78,7 @@ jobs:
           git tag $TAG_NAME-binary
           git push origin $BRANCH_NAME-binary --tags
           git checkout v6.x-branch-binary
-          git rebase binary
+          git rebase $BRANCH_NAME-binary
           git push origin v6.x-branch-binary
 
       - name: Cleanup source tree

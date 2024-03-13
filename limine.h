@@ -44,6 +44,9 @@ extern "C" {
 #  define LIMINE_DEPRECATED_IGNORE_END
 #endif
 
+#define LIMINE_REQUESTS_DELIMITER \
+    uint64_t limine_requests_delimiter[2] = { 0xadc0e0531bb10d03, 0x9572709f31764c62 };
+
 #define LIMINE_BASE_REVISION(N) \
     uint64_t limine_base_revision[3] = { 0xf9562b2d5c95a6c8, 0x6a7b384944536bdc, (N) };
 

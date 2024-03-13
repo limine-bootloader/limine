@@ -79,7 +79,9 @@ struct limine_example_request {
 bootloader will scan for inside the executable file to find requests. Requests
 may be located anywhere inside the executable as long as they are 8-byte
 aligned. There may only be 1 of the same request. The bootloader will refuse
-to boot an executable with multiple of the same request IDs. Alternatively, it is possible to provide a list of requests explicitly via an executable file section. See "Limine Requests Section".
+to boot an executable with multiple of the same request IDs. Alternatively,
+it is possible to provide a list of requests explicitly via an executable file section.
+See "Limine Requests Section". (Note: this is deprecated and removed in base revision 1)
 * `revision` - The revision of the request that the kernel provides. This starts at 0 and is
 bumped whenever new members or functionality are added to the request structure.
 Bootloaders process requests in a backwards compatible manner, *always*. This
@@ -108,6 +110,21 @@ revisions do.
 
 This is all there is to features. For a list of official Limine features, read
 the "Feature List" section below.
+
+## Requests Delimiter
+
+The bootloader can be told to stop searching for requests (including base
+revision tags) in an executable by placing a set of 2 8-byte values called the
+"requests delimiter" on an 8-byte aligned boundary.
+```c
+#define LIMINE_REQUESTS_DELIMITER \
+    uint64_t limine_requests_delimiter[2] = { 0xadc0e0531bb10d03, 0x9572709f31764c62 };
+```
+
+The requests delimiter is *a hint*. The bootloader can still search for
+requests and base revision tags past this point if it doesn't support the hint.
+When it comes to the Limine bootloader, this means versions starting from 7.1.x
+support it, while older ones do not.
 
 ## Limine Requests Section
 

@@ -355,11 +355,18 @@ noreturn void limine_load(char *config, char *cmdline) {
 
     kaslr = kaslr && is_reloc;
 
+    LIMINE_REQUESTS_DELIMITER;
+
     // Determine base revision
-    LIMINE_BASE_REVISION(0)
+    LIMINE_BASE_REVISION(0);
     int base_revision = 0;
     for (size_t i = 0; i < ALIGN_DOWN(image_size_before_bss, 8); i += 8) {
         uint64_t *p = (void *)(uintptr_t)physical_base + i;
+
+        // Check if delimiter hit
+        if (p[0] == limine_requests_delimiter[0] && p[1] == limine_requests_delimiter[1]) {
+            break;
+        }
 
         if (p[0] == limine_base_revision[0] && p[1] == limine_base_revision[1]) {
             if (base_revision != 0) {
@@ -392,6 +399,11 @@ noreturn void limine_load(char *config, char *cmdline) {
         uint64_t common_magic[2] = { LIMINE_COMMON_MAGIC };
         for (size_t i = 0; i < ALIGN_DOWN(image_size_before_bss, 8); i += 8) {
             uint64_t *p = (void *)(uintptr_t)physical_base + i;
+
+            // Check if delimiter hit
+            if (p[0] == limine_requests_delimiter[0] && p[1] == limine_requests_delimiter[1]) {
+                break;
+            }
 
             if (p[0] != common_magic[0]) {
                 continue;

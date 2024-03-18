@@ -93,12 +93,12 @@ struct iso9660_contexts_node {
 
 static struct iso9660_contexts_node *contexts = NULL;
 
-static void iso9660_find_PVD(struct iso9660_volume_descriptor *desc, struct volume *vol) {
+static void iso9660_find_PVD(struct iso9660_primary_volume *desc, struct volume *vol) {
     uint32_t lba = ISO9660_FIRST_VOLUME_DESCRIPTOR;
     while (true) {
-        volume_read(vol, desc, lba * ISO9660_SECTOR_SIZE, ISO9660_SECTOR_SIZE);
+        volume_read(vol, desc, lba * ISO9660_SECTOR_SIZE, sizeof(struct iso9660_primary_volume));
 
-        switch (desc->type) {
+        switch (desc->volume_descriptor.type) {
         case ISO9660_VDT_PRIMARY:
             return;
         case ISO9660_VDT_TERMINATOR:
@@ -114,7 +114,7 @@ static void iso9660_cache_root(struct volume *vol,
                                void **root,
                                uint32_t *root_size) {
     struct iso9660_primary_volume pv;
-    iso9660_find_PVD((struct iso9660_volume_descriptor *)&pv, vol);
+    iso9660_find_PVD(&pv, vol);
 
     *root_size = pv.root.extent_size.little;
     *root = ext_mem_alloc(*root_size);
@@ -139,7 +139,7 @@ static struct iso9660_context *iso9660_get_context(struct volume *vol) {
     return &node->context;
 }
 
-static bool load_name(char *buf, struct iso9660_directory_entry *entry) {
+static bool load_name(char *buf, size_t limit, struct iso9660_directory_entry *entry) {
     unsigned char* sysarea = ((unsigned char*)entry) + sizeof(struct iso9660_directory_entry) + entry->filename_size;
     int sysarea_len = entry->length - sizeof(struct iso9660_directory_entry) - entry->filename_size;
     if ((entry->filename_size & 0x1) == 0) {
@@ -161,11 +161,17 @@ static bool load_name(char *buf, struct iso9660_directory_entry *entry) {
     if (rrnamelen) {
         /* rock ridge naming scheme */
         name_len = rrnamelen;
+        if (name_len >= limit) {
+            panic(false, "iso9660: Filename size exceeded");
+        }
         memcpy(buf, sysarea + 5, name_len);
         buf[name_len] = 0;
         return true;
     } else {
         name_len = entry->filename_size;
+        if (name_len >= limit) {
+            panic(false, "iso9660: Filename size exceeded");
+        }
         size_t j;
         for (j = 0; j < name_len; j++) {
             if (entry->name[j] == ';')
@@ -192,8 +198,8 @@ static struct iso9660_directory_entry *iso9660_find(void *buffer, uint32_t size,
             continue;
         }
 
-        char entry_filename[128];
-        bool rr = load_name(entry_filename, entry);
+        char entry_filename[256];
+        bool rr = load_name(entry_filename, 256, entry);
 
         if (rr && !case_insensitive_fopen) {
             if (strcmp(filename, entry_filename) == 0) {

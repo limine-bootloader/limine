@@ -47,3 +47,7 @@
 /common-uefi-riscv64
 /decompressor-build
 /stage1.stamp
+
+# Nix
+/.direnv
+/result*

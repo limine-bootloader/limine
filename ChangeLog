@@ -1,3 +1,15 @@
+2024-03-19  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.1.0 ***
+
+    Noteworthy changes compared to the previous release, 7.0.5:
+
+    New features:
+        - Limine boot protocol: Add support for requests delimiter.
+
+    Bug fixes:
+        - Fixed a potential security vulnerability in the ISO9660 driver.
+
 2024-02-15  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.0.5 ***

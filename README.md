@@ -3,7 +3,7 @@
 ### What is Limine?
 
 Limine (pronounced as shown [here](https://www.merriam-webster.com/dictionary/in%20limine))
-is a modern, advanced, portable, multiprotocol bootloader, also used
+is a modern, advanced, portable, multiprotocol bootloader and boot manager, also used
 as the reference implementation for the [Limine boot protocol](/PROTOCOL.md).
 
 ### Donate
@@ -52,6 +52,8 @@ All x86-64, aarch64, and riscv64 (UEFI) systems are supported.
 
 ## Packaging status
 
+All Limine releases since 7.x use [Semantic Versioning](https://semver.org/spec/v2.0.0.html) for their naming.
+
 [![Packaging status](https://repology.org/badge/vertical-allrepos/limine.svg)](https://repology.org/project/limine/versions)
 
 ## Binary releases
@@ -65,9 +67,9 @@ For example, to clone the latest binary release of the `7.x` branch, one can do:
 ```bash
 git clone https://github.com/limine-bootloader/limine.git --branch=v7.x-binary --depth=1
 ```
-or, to clone a specific binary point release (for example `7.0.5`):
+or, to clone a specific binary point release (for example `7.1.0`):
 ```bash
-git clone https://github.com/limine-bootloader/limine.git --branch=v7.0.5-binary --depth=1
+git clone https://github.com/limine-bootloader/limine.git --branch=v7.1.0-binary --depth=1
 ```
 
 In order to rebuild host utilities like `limine`, simply run `make` in the binary

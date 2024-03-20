@@ -1,5 +1,5 @@
-#ifndef __LIB__REAL_H__
-#define __LIB__REAL_H__
+#ifndef LIB__REAL_H__
+#define LIB__REAL_H__
 
 #include <stdint.h>
 #include <stdnoreturn.h>

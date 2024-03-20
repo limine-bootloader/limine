@@ -1,5 +1,5 @@
-#ifndef __SYS__APIC_H__
-#define __SYS__APIC_H__
+#ifndef SYS__APIC_H__
+#define SYS__APIC_H__
 
 #include <stddef.h>
 #include <stdint.h>

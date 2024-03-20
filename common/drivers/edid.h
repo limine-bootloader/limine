@@ -1,5 +1,5 @@
-#ifndef __DRIVERS__EDID_H__
-#define __DRIVERS__EDID_H__
+#ifndef DRIVERS__EDID_H__
+#define DRIVERS__EDID_H__
 
 #include <stdint.h>
 

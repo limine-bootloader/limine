@@ -1,5 +1,5 @@
-#ifndef __LIB__GTERM_H__
-#define __LIB__GTERM_H__
+#ifndef LIB__GTERM_H__
+#define LIB__GTERM_H__
 
 #include <stddef.h>
 #include <stdbool.h>

@@ -1,5 +1,5 @@
-#ifndef __MENU_H__
-#define __MENU_H__
+#ifndef MENU_H__
+#define MENU_H__
 
 #include <stdbool.h>
 #include <stdnoreturn.h>

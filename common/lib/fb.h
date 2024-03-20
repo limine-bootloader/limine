@@ -1,5 +1,5 @@
-#ifndef __LIB__FB_H__
-#define __LIB__FB_H__
+#ifndef LIB__FB_H__
+#define LIB__FB_H__
 
 #include <stdint.h>
 #include <stddef.h>

@@ -1,5 +1,5 @@
-#ifndef __SYS__SMP_H__
-#define __SYS__SMP_H__
+#ifndef SYS__SMP_H__
+#define SYS__SMP_H__
 
 #include <stdint.h>
 #include <stddef.h>

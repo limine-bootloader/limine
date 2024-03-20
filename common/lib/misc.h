@@ -1,5 +1,5 @@
-#ifndef __LIB__MISC_H__
-#define __LIB__MISC_H__
+#ifndef LIB__MISC_H__
+#define LIB__MISC_H__
 
 #include <stddef.h>
 #include <stdint.h>

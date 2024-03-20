@@ -1,5 +1,5 @@
-#ifndef __PROTOS__MULTIBOOT1_H__
-#define __PROTOS__MULTIBOOT1_H__
+#ifndef PROTOS__MULTIBOOT1_H__
+#define PROTOS__MULTIBOOT1_H__
 
 #include <stdint.h>
 #include <stddef.h>

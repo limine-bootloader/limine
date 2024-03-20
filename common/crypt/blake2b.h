@@ -1,5 +1,5 @@
-#ifndef __CRYPT__BLAKE2B_H__
-#define __CRYPT__BLAKE2B_H__
+#ifndef CRYPT__BLAKE2B_H__
+#define CRYPT__BLAKE2B_H__
 
 #include <stddef.h>
 

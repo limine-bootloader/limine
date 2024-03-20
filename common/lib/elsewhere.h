@@ -1,5 +1,5 @@
-#ifndef __LIB__ELSEWHERE_H__
-#define __LIB__ELSEWHERE_H__
+#ifndef LIB__ELSEWHERE_H__
+#define LIB__ELSEWHERE_H__
 
 #include <stdint.h>
 #include <stddef.h>

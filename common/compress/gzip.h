@@ -1,5 +1,5 @@
-#ifndef __COMPRESS__GZIP_H__
-#define __COMPRESS__GZIP_H__
+#ifndef COMPRESS__GZIP_H__
+#define COMPRESS__GZIP_H__
 
 #include <stdint.h>
 

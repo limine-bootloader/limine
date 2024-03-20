@@ -1,5 +1,5 @@
-#ifndef __MM__MTRR_H__
-#define __MM__MTRR_H__
+#ifndef MM__MTRR_H__
+#define MM__MTRR_H__
 
 #if defined (__x86_64__) || defined (__i386__)
 

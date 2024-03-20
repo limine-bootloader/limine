@@ -1,5 +1,5 @@
-#ifndef __SYS__GDT_H__
-#define __SYS__GDT_H__
+#ifndef SYS__GDT_H__
+#define SYS__GDT_H__
 
 #include <stdint.h>
 

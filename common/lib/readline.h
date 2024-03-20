@@ -1,5 +1,5 @@
-#ifndef __LIB__READLINE_H__
-#define __LIB__READLINE_H__
+#ifndef LIB__READLINE_H__
+#define LIB__READLINE_H__
 
 #include <stddef.h>
 

@@ -5,7 +5,7 @@
 # regarding the packaging in nixpkgs.
 
 {
-  description = "limeboot";
+  description = "limine";
 
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";

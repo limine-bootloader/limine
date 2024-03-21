@@ -23,6 +23,11 @@
 #include <protos/multiboot2.h>
 #include <protos/limine.h>
 
+#if defined (UEFI)
+EFI_GUID limine_efi_vendor_guid =
+    { 0x513ee0d0, 0x6e43, 0xcb05, { 0xb2, 0x72, 0xf1, 0x46, 0xa2, 0xfc, 0xb8, 0x8a } };
+#endif
+
 static char *menu_branding = NULL;
 static char *menu_branding_colour = NULL;
 
@@ -756,12 +761,28 @@ noreturn void _menu(bool first_run) {
     struct menu_entry *selected_menu_entry = NULL;
 
     size_t selected_entry = 0;
+
     char *default_entry = config_get_value(NULL, 0, "DEFAULT_ENTRY");
     if (default_entry != NULL) {
         selected_entry = strtoui(default_entry, NULL, 10);
         if (selected_entry)
             selected_entry--;
     }
+
+#if defined (UEFI)
+    char *remember_last = config_get_value(NULL, 0, "REMEMBER_LAST_ENTRY");
+    if (remember_last != NULL && strcasecmp(remember_last, "yes") == 0) {
+        UINTN getvar_size = sizeof(size_t);
+        size_t last;
+        if (gRT->GetVariable(L"LimineLastBootedEntry",
+                             &limine_efi_vendor_guid,
+                             NULL,
+                             &getvar_size,
+                             &last) == 0 && getvar_size == sizeof(size_t)) {
+            selected_entry = last;
+        }
+    }
+#endif
 
     size_t timeout = 5;
     char *timeout_config = config_get_value(NULL, 0, "TIMEOUT");
@@ -970,6 +991,15 @@ timeout_aborted:
                         reset_term();
                     }
                 }
+
+#if defined (UEFI)
+                gRT->SetVariable(L"LimineLastBootedEntry",
+                                 &limine_efi_vendor_guid,
+                                 EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+                                 sizeof(size_t),
+                                 &selected_entry);
+#endif
+
                 boot(selected_menu_entry->body);
             case 'e':
             case 'E': {

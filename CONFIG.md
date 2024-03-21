@@ -61,6 +61,7 @@ Miscellaneous:
 * `SERIAL` - If set to `yes`, enable serial I/O for the bootloader.
 * `SERIAL_BAUDRATE` - If `SERIAL` is set to `yes`, this specifies the baudrate to use for serial I/O. Defaults to `9600`. BIOS only, ignored with Limine UEFI.
 * `DEFAULT_ENTRY` - 1-based entry index of the entry which will be automatically selected at startup. If unspecified, it is `1`.
+* `REMEMBER_LAST_ENTRY` - If set to `yes`, remember last booted entry. (UEFI only)
 * `GRAPHICS` - If set to `no`, force CGA text mode for the boot menu, else use a video mode. Ignored with Limine UEFI.
 * `VERBOSE` - If set to `yes`, print additional information during boot. Defaults to not verbose.
 * `RANDOMISE_MEMORY` - If set to `yes`, randomise the contents of RAM at bootup in order to find bugs related to non zeroed memory or for security reasons. This option will slow down boot time significantly. For the BIOS port of Limine, this will only randomise memory below 4GiB.

@@ -48,15 +48,15 @@ let
   # TODO: Unfortunately, currently this hash changes for almost every repository
   # change. We need to strip down this derivation further to only contain the
   # changed sources.
-  bootstrappedSrcHash = "sha256-Gk9aZQczc7vkxzhWdOF3ODgXlDyJD8NyiglBUSKfy2Y=";
+  bootstrappedSrcHash = "sha256-kuQGKvBWthSeOIQWqWfKoJKiqtgVUyUjr6oiqBLxils=";
   bootstrappedSrc = stdenvNoCC.mkDerivation {
     pname = "limine-bootstrapped";
     version = "0.0.0";
     src = currentRepoSrc;
     nativeBuildInputs = [
       cacert
-      git
       fd
+      git
     ];
     buildPhase = ''
       runHook preBuild
@@ -71,6 +71,31 @@ let
       # remove all git artifacts (.git dirs) as they affect the hash of the
       # derivation in a non-deterministic way.
       fd -u --type=d "^.git$" --min-depth=2 . --exec rm -rf {}
+
+      # Remove all files that were not changed.
+      #
+      # Iterate through each file in current working dir
+      # and delete everything from this derivation that already comes from
+      # currentRepoSrc. This prevents hash pollution if the Git modules didn't
+      # change.
+      # TODO this needs to be done recursively, then it should be "perfect".
+      shopt -s dotglob # also iterate hidden files
+      for currentFile in ./*; do
+          # Extract the file name from the full path
+          filename=$(basename "$currentFile")
+          # Check if the file exists in reference folder
+          if [[ -e "${currentRepoSrc}/$filename" ]]; then
+              # Check if the content of the file in Folder A is the same as in Folder B
+              if cmp -s "$currentFile" "${currentRepoSrc}/$filename"; then
+                  rm "$currentFile"
+                  echo "Removed $filename"
+              else
+                  echo "Keeping $filename as it was modified by ./bootstrap"
+              fi
+          else
+              echo "$filename was created by ./bootstrap"
+          fi
+      done
 
       # This should report nothing. Othewise, the Nix build will fail.
       # grep -r /nix/store .

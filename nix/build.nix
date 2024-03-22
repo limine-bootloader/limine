@@ -14,6 +14,7 @@
   # Helpers
   fd
 , lib
+, keep-directory-diff
 , nix-gitignore
 , stdenv
 
@@ -28,33 +29,42 @@
 }:
 
 let
+  # The actual current source but close to the repo state, i.e., no files from
+  # the bootstrap step.
   currentRepoSrc = nix-gitignore.gitignoreSource [
     # Additional git ignores:
     "flake.nix" # otherwise
     "flake.lock"
     "nix/"
+
+    # bootstrapped sources from ./bootstrap
+    "/build-aux/freestanding-toolchain"
+    "/freestanding-headers"
+    "/decompressor/cc-runtime"
+    "/limine-efi"
+    "/tinf"
+    "/common/flanterm"
+    "/stb"
   ] ../.;
 
   # Contains the sources downloaded by the Git submodule-like initialation done
   # in ./bootstrap.
   #
   # ALWAYS update the hash when one of the network dependencies in ./bootstrap
-  # changes. Also, before updating, it is recommended to run "make clean"
-  # beforehand.
+  # changes.
   # bootstrappedSrcHash = lib.fakeHash;
-  #
-  # TODO: Unfortunately, currently this hash changes for almost every repository
-  # change. We need to strip down this derivation further to only contain the
-  # changed sources.
-  bootstrappedSrcHash = "sha256-UU5pkdbaKXPs/i/hnuk4vZcxiag1cTsTCcn2LGzPuMs=";
-  bootstrappedSrc = stdenvNoCC.mkDerivation {
-    pname = "limine-bootstrapped";
+  bootstrappedSrcHash = "sha256-uggy1cDftq0tPD777hS+rz2oBnP2Q2AQ9xHdM8QhBQQ=";
+
+  # The full accumulated source tree to build Limine from.
+  bootstrappedSrc = stdenv.mkDerivation {
+    pname = "limine-src-bootstrapped";
     version = "0.0.0";
     src = currentRepoSrc;
     nativeBuildInputs = [
       cacert
-      git
       fd
+      git
+      keep-directory-diff
     ];
     buildPhase = ''
       runHook preBuild
@@ -62,6 +72,8 @@ let
       # `true` refers to the binary/bash-builtin to prevent any configuration
       # steps apart from downloading sources.
       AUTOMAKE=true AUTORECONF=true ./bootstrap
+
+      keep-directory-diff ${currentRepoSrc} .
 
       # When cloning, Git automatically creates hooks. Unfortunately, in a Nix
       # environment / on a NixOS system, this includes Nix store paths.

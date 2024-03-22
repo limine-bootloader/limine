@@ -21,7 +21,8 @@
       systems = nixpkgs.lib.systems.flakeExposed;
       perSystem = { config, pkgs, ... }:
         let
-          limine = pkgs.callPackage ./nix/build.nix { };
+          keep-directory-diff = pkgs.callPackage ./nix/keep-directory-diff.nix { };
+          limine = pkgs.callPackage ./nix/build.nix { inherit keep-directory-diff; };
         in
         {
           devShells = {

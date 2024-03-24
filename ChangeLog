@@ -1,3 +1,13 @@
+2024-03-24  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.2.0 ***
+
+    Noteworthy changes compared to the previous release, 7.1.0:
+
+    New features:
+        - Add support for remembering the last booted entry on UEFI by means
+          of the `REMEMBER_LAST_ENTRY` config option.
+
 2024-03-19  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.1.0 ***

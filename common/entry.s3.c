@@ -28,6 +28,8 @@ void stage3_common(void);
 
 #if defined (UEFI)
 extern symbol __slide;
+extern symbol __image_size;
+extern symbol _start;
 
 noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     gST = SystemTable;
@@ -36,6 +38,28 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
     efi_image_handle = ImageHandle;
 
     EFI_STATUS status;
+
+#if defined (__x86_64__)
+    if ((uintptr_t)__slide >= 0x100000000) {
+        size_t image_size_pages = ALIGN_UP((size_t)__image_size, 4096) / 4096;
+        size_t new_base;
+        for (new_base = 0x1000; new_base + image_size_pages < 0x100000000; new_base += 0x1000) {
+            EFI_PHYSICAL_ADDRESS _new_base = (EFI_PHYSICAL_ADDRESS)new_base;
+            status = gBS->AllocatePages(AllocateAddress, EfiLoaderData, image_size_pages, &_new_base);
+            if (status == 0) {
+                goto new_base_gotten;
+            }
+        }
+        panic(false, "Limine does not support being loaded above 4GiB");
+new_base_gotten:
+        memcpy((void *)new_base, __slide, (size_t)__image_size);
+        __attribute__((ms_abi))
+        void (*new_entry_point)(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable);
+        new_entry_point = (void *)(new_base + ((uintptr_t)_start - (uintptr_t)__slide));
+        new_entry_point(ImageHandle, SystemTable);
+        __builtin_unreachable();
+    }
+#endif
 
     gST->ConOut->EnableCursor(gST->ConOut, false);
 
@@ -50,12 +74,6 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 
 #if defined (__x86_64__) || defined (__i386__)
     init_gdt();
-#endif
-
-#if defined (__x86_64__)
-    if ((uintptr_t)__slide >= 0x100000000) {
-        panic(false, "Limine does not support being loaded above 4GiB");
-    }
 #endif
 
     disk_create_index();

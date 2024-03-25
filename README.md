@@ -82,7 +82,19 @@ Host utility binaries are provided for Windows.
 *The following steps are not necessary if cloning a binary release. If so, skip to*
 *"Installing Limine binaries".*
 
-### Prerequisites
+### Building with Nix
+
+This repository provides [Nix](https://nixos.org/)-based tooling for a convenient 
+development environment and building Limine using Nix.
+
+- `$ nix build .#\limine` (build with clang and `--enable-all`)
+
+To use the regular build flow using a toolchain obtained by Nix, simply
+run `$ nix develop` to open a Nix shell. Then follow the guide below.
+
+### Regular build
+
+#### Prerequisites
 
 In order to build Limine, the following programs have to be installed:
 common UNIX tools (also known as `coreutils`),
@@ -91,7 +103,7 @@ common UNIX tools (also known as `coreutils`),
 Furthermore, `gcc` or `llvm/clang` must also be installed, alongside
 the respective binutils.
 
-### Configure
+#### Configure
 
 If using a release tarball (recommended, see https://github.com/limine-bootloader/limine/releases),
 run `./configure` directly.
@@ -109,7 +121,7 @@ Limine supports both in-tree and out-of-tree builds. Simply run the `configure`
 script from the directory you wish to execute the build in. The following `make`
 commands are supposed to be run inside the build directory.
 
-### Building Limine
+#### Building Limine
 
 To build Limine, run:
 ```bash
@@ -131,6 +143,19 @@ make install    # (or gmake where applicable)
 ```
 
 ## How to use
+
+### Consume via Nix
+
+Limine is not yet in `nixpkgs`.
+
+You can consume this as Nix flake:
+
+```nix
+{
+  inputs.limine.url = "github:limine-bootloader/limine/<branch>";
+  inputs.limine.inputs.nixpkgs.follows = "nixpkgs";
+}
+```
 
 ### UEFI
 The `BOOT*.EFI` files are valid EFI applications that can be simply copied to

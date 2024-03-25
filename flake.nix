@@ -20,6 +20,26 @@
       # will notice it soon enough.
       systems = nixpkgs.lib.systems.flakeExposed;
       perSystem = { config, pkgs, ... }:
+        let
+          project = import ./nix/build.nix {
+            inherit (pkgs)
+              clangStdenv
+              fd
+              lib
+              nix-gitignore
+              stdenvNoCC
+
+              autoconf
+              automake
+              cacert
+              git
+              gnumake
+              llvmPackages
+              mtools
+              nasm
+              pkg-config;
+          };
+        in
         {
           devShells = {
             default = pkgs.mkShell {
@@ -38,6 +58,7 @@
                 # gcc toolchain (comes as default, here only for completness)
                 binutils
                 gcc
+                gnumake
 
                 # llvm toolchain (with TOOLCHAIN_FOR_TARGET=llvm)
                 llvmPackages.bintools
@@ -52,6 +73,9 @@
 
           # `$ nix fmt`
           formatter = pkgs.nixpkgs-fmt;
+
+          # `$ nix build .#<attr>`
+          packages = project // { };
         };
     };
 }

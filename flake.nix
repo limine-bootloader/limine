@@ -23,6 +23,7 @@
         let
           project = import ./nix/build.nix {
             inherit (pkgs)
+              clangStdenv
               fd
               lib
               nix-gitignore

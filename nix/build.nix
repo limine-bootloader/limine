@@ -12,7 +12,8 @@
 
 {
   # Helpers
-  fd
+  clangStdenv
+, fd
 , lib
 , nix-gitignore
 , stdenvNoCC
@@ -133,18 +134,15 @@ in
 {
   inherit bootstrappedSrc;
   # Full build with all platforms.
-  limine = lib.makeOverridable stdenvNoCC.mkDerivation {
+  limine = lib.makeOverridable clangStdenv.mkDerivation {
     pname = "limine-dev";
     version = "0.0.0";
     src = bootstrappedSrc;
     nativeBuildInputs = commonBuildDeps ++ [
       llvmPackages.bintools
-      llvmPackages.clang
       llvmPackages.lld
     ];
-    configurePhase = ''
-      runHook preConfigure
-
+    preConfigure = ''
       # The default input source of this derivation is what we aggregated
       # from `./bootstrap`. As this derivation holds all files but we are only
       # interested in the ones that are not in `currentRepoSrc`, we just
@@ -162,30 +160,12 @@ in
       #
       # TODO, we could also do this in ./bootstrap but add a special flag.
       autoreconf -fvi -Wall
-
-      echo Using clang:
-      clang --version
-      export TOOLCHAIN_FOR_TARGET=llvm
-      ./configure --enable-all
-
-      runHook postConfigure
     '';
-    buildPhase = ''
-      runHook preBuild
-
-      make all -j $(nproc)
-
-      runHook postBuild
-    '';
-    installPhase = ''
-      runHook preInstall
-
-      mkdir -p $out/bin
-      cp -R bin/. $out
-
-      ln -s $out/limine $out/bin/limine
-
-      runHook postInstall
-    '';
+    configureFlags = [
+      "TOOLCHAIN_FOR_TARGET=llvm"
+      "--enable-all"
+    ];
+    installFlags = [ "destdir=$out" "manprefix=/share" ];
+    outputs = [ "out" "doc" "dev" "man" ];
   };
 }

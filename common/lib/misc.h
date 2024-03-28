@@ -28,8 +28,6 @@ extern bool efi_boot_services_exited;
 bool efi_exit_boot_services(void);
 #endif
 
-extern const char bsd_2_clause[];
-
 extern struct volume *boot_volume;
 
 #if defined (BIOS)

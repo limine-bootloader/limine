@@ -1,3 +1,13 @@
+2024-03-28  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.2.1 ***
+
+    Noteworthy changes compared to the previous release, 7.2.0:
+
+    Bug fixes:
+        - Implement workaround to allow Limine loaded above 4GiB by UEFI on
+          x86-64 to work in some configurations, instead of panicking.
+
 2024-03-24  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.2.0 ***

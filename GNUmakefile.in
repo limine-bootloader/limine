@@ -321,8 +321,11 @@ dist:
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/screenshot.png"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/bochsrc"
 	echo "$(LIMINE_VERSION)" > '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/version"
-	cd '$(call SHESCAPE,$(BUILDDIR))' && tar -Jcf "limine-$(LIMINE_VERSION).tar.xz" "limine-$(LIMINE_VERSION)"
-	cd '$(call SHESCAPE,$(BUILDDIR))' && tar -zcf "limine-$(LIMINE_VERSION).tar.gz" "limine-$(LIMINE_VERSION)"
+	cd '$(call SHESCAPE,$(BUILDDIR))' && tar -cf "limine-$(LIMINE_VERSION).tar" "limine-$(LIMINE_VERSION)"
+	cd '$(call SHESCAPE,$(BUILDDIR))' && gzip < "limine-$(LIMINE_VERSION).tar" > "limine-$(LIMINE_VERSION).tar.gz"
+	cd '$(call SHESCAPE,$(BUILDDIR))' && ( lzip < "limine-$(LIMINE_VERSION).tar" > "limine-$(LIMINE_VERSION).tar.lz" || true )
+	cd '$(call SHESCAPE,$(BUILDDIR))' && ( bzip2 < "limine-$(LIMINE_VERSION).tar" > "limine-$(LIMINE_VERSION).tar.bz2" || true )
+	cd '$(call SHESCAPE,$(BUILDDIR))' && rm "limine-$(LIMINE_VERSION).tar"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"
 
 .PHONY: distclean
@@ -331,7 +334,7 @@ distclean: clean
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf common/flanterm common/lib/stb_image.h decompressor/tinf tinf stb freestanding-headers common/cc-runtime decompressor/cc-runtime limine-efi configure build-aux *'~' autom4te.cache aclocal.m4 *.tar.xz *.tar.gz
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf common/flanterm common/lib/stb_image.h decompressor/tinf tinf stb freestanding-headers common/cc-runtime decompressor/cc-runtime limine-efi configure build-aux *'~' autom4te.cache aclocal.m4 *.tar*
 
 .PHONY: common-uefi-x86-64
 common-uefi-x86-64:

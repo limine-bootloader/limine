@@ -39,18 +39,21 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 
     EFI_STATUS status;
 
+    const char *deferred_error = NULL;
+
 #if defined (__x86_64__)
     if ((uintptr_t)__slide >= 0x100000000) {
         size_t image_size_pages = ALIGN_UP((size_t)__image_size, 4096) / 4096;
         size_t new_base;
-        for (new_base = 0x1000; new_base + image_size_pages < 0x100000000; new_base += 0x1000) {
+        for (new_base = 0x1000; new_base + (size_t)__image_size < 0x100000000; new_base += 0x1000) {
             EFI_PHYSICAL_ADDRESS _new_base = (EFI_PHYSICAL_ADDRESS)new_base;
             status = gBS->AllocatePages(AllocateAddress, EfiLoaderData, image_size_pages, &_new_base);
             if (status == 0) {
                 goto new_base_gotten;
             }
         }
-        panic(false, "Limine does not support being loaded above 4GiB");
+        deferred_error = "Limine does not support being loaded above 4GiB and no alternative loading spot found";
+        goto defer_error;
 new_base_gotten:
         memcpy((void *)new_base, __slide, (size_t)__image_size);
         __attribute__((ms_abi))
@@ -61,6 +64,7 @@ new_base_gotten:
     }
 #endif
 
+defer_error:
     gST->ConOut->EnableCursor(gST->ConOut, false);
 
     init_memmap();
@@ -70,6 +74,10 @@ new_base_gotten:
     status = gBS->SetWatchdogTimer(0, 0x10000, 0, NULL);
     if (status) {
         print("WARNING: Failed to disable watchdog timer!\n");
+    }
+
+    if (deferred_error != NULL) {
+        panic(false, "%s", deferred_error);
     }
 
 #if defined (__x86_64__) || defined (__i386__)

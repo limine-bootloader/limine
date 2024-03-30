@@ -62,9 +62,10 @@ new_base_gotten:
         new_entry_point(ImageHandle, SystemTable);
         __builtin_unreachable();
     }
-#endif
 
 defer_error:
+#endif
+
     gST->ConOut->EnableCursor(gST->ConOut, false);
 
     init_memmap();

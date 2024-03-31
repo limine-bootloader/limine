@@ -123,6 +123,9 @@ Editor control options:
   * `MODULE_CMDLINE` - A command line to be passed to a module. This key can also be specified multiple times. It applies to the module described by the last module key assigned.
   * `RESOLUTION` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
   * `KASLR` - For relocatable kernels, if set to `no`, disable kernel address space layout randomisation. KASLR is enabled by default.
+  * `MAX_PAGING_MODE` - Limit the maximum paging mode to one of the following:
+    - x86-64 and aarch64: `4level`, `5level`.
+    - riscv64: `sv39`, `sv48`, `sv57`.
 
 * multiboot1 and multiboot2 protocols:
   * `KERNEL_PATH` - The URI path of the kernel.

@@ -440,22 +440,22 @@ noreturn void limine_load(char *config, char *cmdline) {
     printv("limine: Requests count:  %u\n", requests_count);
 
     // Paging Mode
-    int paging_mode, max_paging_mode;
+    int paging_mode, max_supported_paging_mode;
 
 #if defined (__x86_64__) || defined (__i386__)
-    paging_mode = max_paging_mode = PAGING_MODE_X86_64_4LVL;
+    paging_mode = max_supported_paging_mode = PAGING_MODE_X86_64_4LVL;
     if (cpuid(0x00000007, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 16))) {
         printv("limine: CPU has 5-level paging support\n");
-        max_paging_mode = PAGING_MODE_X86_64_5LVL;
+        max_supported_paging_mode = PAGING_MODE_X86_64_5LVL;
     }
 
 #elif defined (__aarch64__)
-    paging_mode = max_paging_mode = PAGING_MODE_AARCH64_4LVL;
+    paging_mode = max_supported_paging_mode = PAGING_MODE_AARCH64_4LVL;
     // TODO(qookie): aarch64 also has optional 5 level paging when using 4K pages
 
 #elif defined (__riscv64)
-    max_paging_mode = vmm_max_paging_mode();
-    paging_mode = max_paging_mode >= PAGING_MODE_RISCV_SV48 ? PAGING_MODE_RISCV_SV48 : PAGING_MODE_RISCV_SV39;
+    max_supported_paging_mode = vmm_max_paging_mode();
+    paging_mode = max_supported_paging_mode >= PAGING_MODE_RISCV_SV48 ? PAGING_MODE_RISCV_SV48 : PAGING_MODE_RISCV_SV39;
 
 #else
 #error Unknown architecture
@@ -475,14 +475,45 @@ FEAT_START
     if (pm_request == NULL)
         break;
 
-    if (pm_request->mode > LIMINE_PAGING_MODE_MAX) {
-        print("warning: ignoring invalid mode in paging mode request\n");
-        break;
+    uint64_t paging_mode_max = LIMINE_PAGING_MODE_MAX;
+
+    char *max_paging_mode_s = config_get_value(config, 0, "MAX_PAGING_MODE");
+    if (max_paging_mode_s != NULL) {
+#if defined (__x86_64__) || defined (__i386__)
+        if (strcasecmp(max_paging_mode_s, "4level") == 0) {
+            paging_mode_max = LIMINE_PAGING_MODE_X86_64_4LVL;
+        } else if (strcasecmp(max_paging_mode_s, "5level") == 0) {
+            paging_mode_max = LIMINE_PAGING_MODE_X86_64_5LVL;
+        }
+#elif defined (__aarch64__)
+        if (strcasecmp(max_paging_mode_s, "4level") == 0) {
+            paging_mode_max = LIMINE_PAGING_MODE_AARCH64_4LVL;
+        } else if (strcasecmp(max_paging_mode_s, "5level") == 0) {
+            paging_mode_max = LIMINE_PAGING_MODE_AARCH64_5LVL;
+        }
+#elif defined (__riscv64)
+        if (strcasecmp(max_paging_mode_s, "sv39") == 0) {
+            paging_mode_max = LIMINE_PAGING_MODE_RISCV_SV39;
+        } else if (strcasecmp(max_paging_mode_s, "sv48") == 0) {
+            paging_mode_max = LIMINE_PAGING_MODE_RISCV_SV48;
+        } else if (strcasecmp(max_paging_mode_s, "sv57") == 0) {
+            paging_mode_max = LIMINE_PAGING_MODE_RISCV_SV57;
+        }
+#endif
+        else {
+            panic(true, "limine: Invalid MAX_PAGING_MODE: `%s`", max_paging_mode_s);
+        }
     }
 
-    paging_mode = paging_mode_limine_to_vmm(pm_request->mode);
-    if (paging_mode > max_paging_mode)
-        paging_mode = max_paging_mode;
+    uint64_t target_mode = pm_request->mode;
+    if (pm_request->mode > paging_mode_max) {
+        target_mode = paging_mode_max;
+    }
+
+    paging_mode = paging_mode_limine_to_vmm(target_mode);
+    if (paging_mode > max_supported_paging_mode) {
+        paging_mode = max_supported_paging_mode;
+    }
 
     set_paging_mode(paging_mode, kaslr);
     paging_mode_set = true;

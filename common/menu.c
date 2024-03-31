@@ -101,6 +101,7 @@ static const char *VALID_KEYS[] = {
     "RESOLUTION",
     "TEXTMODE",
     "KASLR",
+    "MAX_PAGING_MODE",
     "DRIVE",
     "PARTITION",
     "MBR_ID",

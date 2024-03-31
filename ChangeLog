@@ -1,3 +1,21 @@
+2024-03-31  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.3.0 ***
+
+    Noteworthy changes compared to the previous release, 7.2.1:
+
+    New features:
+        - Limine boot protocol: Add a `MAX_PAGING_MODE` configuration option
+          to override kernel/bootloader selected paging mode.
+
+    Bug fixes:
+        - Fix a couple of minor bugs with the 4GiB workaround introduced in
+          version 7.2.1.
+
+    Miscellaneous:
+        - No longer produce xz compressed release tarballs. Add bzip2, lzip,
+          and zstd as alternatives in its place.
+
 2024-03-28  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.2.1 ***

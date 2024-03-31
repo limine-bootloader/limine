@@ -325,6 +325,7 @@ dist:
 	cd '$(call SHESCAPE,$(BUILDDIR))' && gzip < "limine-$(LIMINE_VERSION).tar" > "limine-$(LIMINE_VERSION).tar.gz"
 	cd '$(call SHESCAPE,$(BUILDDIR))' && ( lzip < "limine-$(LIMINE_VERSION).tar" > "limine-$(LIMINE_VERSION).tar.lz" || rm -f "limine-$(LIMINE_VERSION).tar.lz" )
 	cd '$(call SHESCAPE,$(BUILDDIR))' && ( bzip2 < "limine-$(LIMINE_VERSION).tar" > "limine-$(LIMINE_VERSION).tar.bz2" || rm -f "limine-$(LIMINE_VERSION).tar.bz2" )
+	cd '$(call SHESCAPE,$(BUILDDIR))' && ( zstd < "limine-$(LIMINE_VERSION).tar" > "limine-$(LIMINE_VERSION).tar.zst" || rm -f "limine-$(LIMINE_VERSION).tar.zst" )
 	cd '$(call SHESCAPE,$(BUILDDIR))' && rm "limine-$(LIMINE_VERSION).tar"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)"
 

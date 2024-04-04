@@ -96,7 +96,7 @@ level4:
     pml3 = get_next_level(pagemap, pml4, virt_addr, pg_size, 3, pml4_entry);
 
     if (pg_size == Size1GiB) {
-        // Check if 1GiB pages are avaliable.
+        // Check if 1GiB pages are available.
         if (is_1gib_page_supported()) {
             pml3[pml3_entry] = (pt_entry_t)(phys_addr | flags | PT_FLAG_LARGE);
         } else {

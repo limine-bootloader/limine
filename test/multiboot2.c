@@ -92,7 +92,7 @@ void multiboot2_main(uint32_t magic, struct multiboot_info* mb_info_addr) {
 
                 // For now we only print the usable memory map entries since
                 // printing the whole memory map blows my terminal up. We also
-                // iterate through the avaliable memory map entries and add up
+                // iterate through the available memory map entries and add up
                 // to find the total amount of usable memory.
                 for (size_t i = 0; i < entry_count; i++) {
                     e9_printf("\t\t\t addr=%x", m[i].addr);

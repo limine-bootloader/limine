@@ -39,7 +39,7 @@
                 nasm
                 pkg-config # Checked for by ./configure but seems unused?
 
-                # gcc toolchain (comes as default, here only for completness)
+                # gcc toolchain (comes as default, here only for completeness)
                 binutils
                 gcc
                 gnumake

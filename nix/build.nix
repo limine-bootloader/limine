@@ -7,7 +7,7 @@
 # stable release. Further, unlike the nixpkgs derivation, this derivation runs
 # the ./bootstrap step which needs network access. Due to the nature of the
 # self-hacked Git submodules download approach, packaging this project in Nix
-# is especailly complicated. The complicated multi-derivation approach below
+# is especially complicated. The complicated multi-derivation approach below
 # is the best I can get after multiple hours of trying. :).
 
 {
@@ -84,7 +84,7 @@ let
       # derivation in a non-deterministic way.
       fd -u --type=d "^.git$" --min-depth=2 . --exec rm -rf {}
 
-      # This should report nothing. Othewise, the Nix build will fail.
+      # This should report nothing. Otherwise, the Nix build will fail.
       # grep -r /nix/store .
 
       runHook postBuild

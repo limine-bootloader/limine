@@ -78,7 +78,7 @@
 
     Bug fixes:
         - multiboot2 protocol: Do not panic if there is a ENTRY_ADDRESS_EFI64
-          tag, but there is a valid alternatve entry point. This further aligns
+          tag, but there is a valid alternative entry point. This further aligns
           our behaviour with GRUB2.
 
     Miscellaneous:
@@ -128,7 +128,7 @@
     Bug fixes:
         - Minor fix of newline handling when reading user input lines.
 
-    Miscellanous:
+    Miscellaneous:
         - Bump major version to 7. Note: There is no breaking change in 7.x
           compared to 6.x; the major version bump is done due to a change in
           the versioning scheme used by Limine (move to proper Semantic

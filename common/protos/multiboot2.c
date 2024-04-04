@@ -743,7 +743,7 @@ skip_modeset:;
         // NOTE: The multiboot2 specification does not say anything about if both
         // smbios 32 and 64 bit entry points are present, then we pass both of them + smbios
         // support for grub2 is unimplemented. So, we are going to assume they expect us to
-        // pass both of them if avaliable. Oh well...
+        // pass both of them if available. Oh well...
         if (smbios_entry_32 != NULL) {
             struct multiboot_tag_smbios *tag = (struct multiboot_tag_smbios *)(mb2_info + info_idx);
 

@@ -1,0 +1,22 @@
+# Configuration for https://github.com/crate-ci/typos
+
+[files]
+extend-exclude = [
+  # Typos already uses .gitignore. These excludes are additional:
+]
+
+[default.extend-words]
+hda = "hda"
+Nd = "Nd"
+sie = "sie"
+SIE = "SIE"
+ist = "ist"
+rela = "rela"
+RELA = "RELA"
+guid = "guid"
+GUID = "GUID"
+pn = "pn"
+hd = "hd"
+htpt = "htpt"
+
+[default.extend-identifiers]

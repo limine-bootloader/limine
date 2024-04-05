@@ -34,7 +34,7 @@ void *acpi_get_rsdp(void) {
     return NULL;
 }
 
-/// Returns the RSDP v1 pointer if avaliable or else NULL.
+/// Returns the RSDP v1 pointer if available or else NULL.
 void *acpi_get_rsdp_v1(void) {
     // In BIOS according to the ACPI spec (see ACPI 6.2 section
     // 5.2.5.1 'Finding the RSDP on IA-PC Systems') it either contains
@@ -120,7 +120,7 @@ void *acpi_get_rsdp(void) {
     return rsdp;
 }
 
-/// Returns the RSDP v1 pointer if avaliable or else NULL.
+/// Returns the RSDP v1 pointer if available or else NULL.
 void *acpi_get_rsdp_v1(void) {
     // To maintain GRUB compatibility we will need to probe for the RSDP
     // again since UEFI can contain both XSDP and RSDP (see ACPI 6.2 section
@@ -188,7 +188,7 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
 
 #endif
 
-/// Returns the RSDP v2 pointer if avaliable or else NULL.
+/// Returns the RSDP v2 pointer if available or else NULL.
 void *acpi_get_rsdp_v2(void) {
     // Since the acpi_get_rsdp function already looks for the XSDP we can
     // just check if it has the correct revision and return the pointer :^)

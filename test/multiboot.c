@@ -42,7 +42,7 @@ void multiboot_main(uint32_t magic, struct multiboot1_info *info) {
 
         // For now we only print the usable memory map entries since
         // printing the whole memory map blows my terminal up. We also
-        // iterate through the avaliable memory map entries and add up
+        // iterate through the available memory map entries and add up
         // to find the total amount of usable memory.
         for (struct multiboot1_mmap_entry* entry = start; entry < end; entry++) {
             // Check if the memory map entry is marked as usable!

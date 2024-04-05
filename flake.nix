@@ -11,9 +11,10 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   };
 
-  outputs = inputs@{ self, nixpkgs, flake-parts }:
+  outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, flake-parts }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       flake = { };
       # Don't artificially limit users at this point. If a build fails, they
@@ -39,7 +40,7 @@
                 nasm
                 pkg-config # Checked for by ./configure but seems unused?
 
-                # gcc toolchain (comes as default, here only for completness)
+                # gcc toolchain (comes as default, here only for completeness)
                 binutils
                 gcc
                 gnumake
@@ -51,6 +52,10 @@
 
                 # Nix
                 nixpkgs-fmt
+
+                # Misc
+                # typos is not yet frequently updated in the stable channel
+                nixpkgs-unstable.legacyPackages.${pkgs.system}.typos
               ];
             };
           };

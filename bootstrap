@@ -5,6 +5,9 @@ set -ex
 srcdir="$(dirname "$0")"
 test -z "$srcdir" && srcdir=.
 
+: "${AUTORECONF:=autoreconf}"
+: "${AUTOMAKE:=automake}"
+
 cd "$srcdir"
 
 FREESTANDING_TOOLCHAIN_COMMIT_HASH=18a5e52483344e117d45738c9afb2b34792cbced
@@ -67,20 +70,25 @@ for auxfile in $AUXFILES; do
     rm -f build-aux/$auxfile
 done
 
-autoreconf -fvi -Wall
+$AUTORECONF -fvi -Wall
 
 # Older versions of autoreconf have a bug where they do not
 # install auxiliary files, sometimes... Check if that is the
 # case and work around...
 for auxfile in $AUXFILES; do
     if ! [ -f build-aux/$auxfile ]; then
-        if ! automake --print-libdir >/dev/null 2>&1; then
+        if ! $AUTOMAKE --print-libdir >/dev/null 2>&1; then
             echo "error: Broken autoreconf detected, but missing or broken automake."
             echo "       Please make sure automake is installed and working."
             exit 1
         fi
+        AUTOMAKE_LIBDIR="$($AUTOMAKE --print-libdir)"
+        if [ -z "$AUTOMAKE_LIBDIR" ]; then
+            # Assume `true` was passed as $AUTOMAKE
+            continue
+        fi
         mkdir -p build-aux
-        cp -v "$(automake --print-libdir)/$auxfile" build-aux/
+        cp -v "$AUTOMAKE_LIBDIR/$auxfile" build-aux/
         chmod +x build-aux/$auxfile
     fi
 done

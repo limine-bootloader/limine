@@ -13,8 +13,8 @@
 {
   # Helpers
   fd
-, lib
 , keep-directory-diff
+, limine # derivation from nixpkgs
 , nix-gitignore
 , stdenv
 
@@ -23,9 +23,6 @@
 , automake
 , cacert
 , git
-, llvmPackages
-, mtools
-, nasm
 }:
 
 let
@@ -105,28 +102,13 @@ let
     outputHashMode = "recursive";
     outputHash = bootstrappedSrcHash;
   };
-
-  # Common build dependencies apart from the compiler toolchain.
-  commonBuildDeps = [
-    autoconf
-    automake
-
-    mtools
-    nasm
-  ];
 in
-stdenv.mkDerivation {
+# Reuse the build-derivation from nixpkgs but with the current repo source.
+limine.overrideAttrs({
   pname = "limine-dev";
   version = "0.0.0";
   src = bootstrappedSrc;
-  nativeBuildInputs = commonBuildDeps ++ [
-    # gcc is used to build the host tools and clang to (cross)compile all
-    # the bootloader files
-    llvmPackages.bintools
-    llvmPackages.clang
-    llvmPackages.lld
-  ];
-  enableParallelBuilding = true;
+  nativeBuildInputs = [ autoconf automake  ] ++ limine.nativeBuildInputs;
   preConfigure = ''
     # The default input source of this derivation is what we aggregated
     # from `./bootstrap`. As this derivation holds all files but we are only
@@ -146,6 +128,4 @@ stdenv.mkDerivation {
     # TODO, we could also do this in ./bootstrap but add a special flag.
     autoreconf -fvi -Wall
   '';
-  configureFlags = [ "--enable-all" ];
-  outputs = [ "out" "doc" "dev" "man" ];
-}
+})

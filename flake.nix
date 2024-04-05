@@ -5,7 +5,7 @@
 # regarding the packaging in nixpkgs.
 
 {
-  description = "limine";
+  description = "Limine";
 
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";
@@ -20,6 +20,10 @@
       # will notice it soon enough.
       systems = nixpkgs.lib.systems.flakeExposed;
       perSystem = { config, pkgs, ... }:
+        let
+          keep-directory-diff = pkgs.callPackage ./nix/keep-directory-diff.nix { };
+          limine = pkgs.callPackage ./nix/build.nix { inherit keep-directory-diff; };
+        in
         {
           devShells = {
             default = pkgs.mkShell {
@@ -38,6 +42,7 @@
                 # gcc toolchain (comes as default, here only for completness)
                 binutils
                 gcc
+                gnumake
 
                 # llvm toolchain (with TOOLCHAIN_FOR_TARGET=llvm)
                 llvmPackages.bintools
@@ -52,6 +57,12 @@
 
           # `$ nix fmt`
           formatter = pkgs.nixpkgs-fmt;
+
+          # `$ nix build .#<attr>`
+          packages = {
+            inherit limine;
+            default = limine;
+          };
         };
     };
 }

@@ -84,7 +84,7 @@ Host utility binaries are provided for Windows.
 
 ### Building with Nix
 
-This repository provides [Nix](https://nixos.org/)-based tooling for a convenient 
+This repository provides [Nix](https://nixos.org/)-based tooling for a convenient
 development environment and building Limine using Nix.
 
 - `$ nix build .#\limine` (build with clang and `--enable-all`)
@@ -125,7 +125,7 @@ commands are supposed to be run inside the build directory.
 
 To build Limine, run:
 ```bash
-make    # (or gmake where applicable)
+make -j $(nproc)    # (or gmake where applicable)
 ```
 
 The generated bootloader files are going to be in `./bin`.
@@ -146,9 +146,11 @@ make install    # (or gmake where applicable)
 
 ### Consume via Nix
 
-Limine is not yet in `nixpkgs`.
+Limine is in `nixpkgs` (starting from `nixos-24.05`) as `pkgs.limine`
+(recommended).
 
-You can consume this as Nix flake:
+You can also consume this as Nix flake directly to get the freshest development
+version:
 
 ```nix
 {

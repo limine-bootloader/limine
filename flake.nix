@@ -23,7 +23,11 @@
       perSystem = { config, pkgs, ... }:
         let
           keep-directory-diff = pkgs.callPackage ./nix/keep-directory-diff.nix { };
-          limine = pkgs.callPackage ./nix/build.nix { inherit keep-directory-diff; };
+          limine = pkgs.callPackage ./nix/build.nix {
+            inherit keep-directory-diff;
+            # TODO: Remove once 24.05 (which has pkgs.limine) is released.
+            limine = nixpkgs-unstable.legacyPackages.${pkgs.system}.limine;
+          };
         in
         {
           devShells = {

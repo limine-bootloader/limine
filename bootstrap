@@ -66,6 +66,20 @@ if ! [ -f version ]; then
     rm -f common/lib/stb_image.h.orig
 fi
 
+# Create timestamps file
+if git log -1 >/dev/null 2>&1; then
+    cat >timestamps <<EOF
+REGEN_DATE="$(git log -1 --pretty=%cd --date='format:%B %Y')"
+SOURCE_DATE_EPOCH="$(git log -1 --pretty=%ct)"
+SOURCE_DATE_EPOCH_TOUCH="$(git log -1 --pretty=%cI | sed 's/-//g;s/T//g;s/://g;s/[0-9][0-9]+.*//g')"
+EOF
+fi
+
+if ! test -f timestamps; then
+    echo "error: Not a Git repository and 'timestamps' file missing."
+    exit 1
+fi
+
 for auxfile in $AUXFILES; do
     rm -f build-aux/$auxfile
 done

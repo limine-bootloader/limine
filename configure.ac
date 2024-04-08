@@ -10,13 +10,10 @@ BUILDDIR="$(pwd -P)"
 AC_SUBST([SRCDIR])
 AC_SUBST([BUILDDIR])
 
-REGEN_DATE="m4_esyscmd([date '+%B %Y' | tr -d '\n'])"
+. "$SRCDIR"/timestamps
+
 AC_SUBST([REGEN_DATE])
-
-SOURCE_DATE_EPOCH="m4_esyscmd([if git log -1 >/dev/null 2>&1; then git log -1 --pretty=%ct | tr -d '\n'; else printf 1546300800; fi])"
 AC_SUBST([SOURCE_DATE_EPOCH])
-
-SOURCE_DATE_EPOCH_TOUCH="m4_esyscmd([if git log -1 >/dev/null 2>&1; then git log -1 --pretty=%cI | sed 's/-//g;s/T//g;s/://g;s/[0-9][0-9]+.*//g' | tr -d '\n'; else printf 201901010000; fi])"
 AC_SUBST([SOURCE_DATE_EPOCH_TOUCH])
 
 AC_CANONICAL_HOST

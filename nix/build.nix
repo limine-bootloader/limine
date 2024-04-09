@@ -30,18 +30,9 @@ let
   # the bootstrap step.
   currentRepoSrc = nix-gitignore.gitignoreSource [
     # Additional git ignores:
-    "flake.nix" # otherwise
+    "flake.nix"
     "flake.lock"
     "nix/"
-
-    # bootstrapped sources from ./bootstrap
-    "/build-aux/freestanding-toolchain"
-    "/freestanding-headers"
-    "/decompressor/cc-runtime"
-    "/limine-efi"
-    "/tinf"
-    "/common/flanterm"
-    "/stb"
   ] ../.;
 
   # Contains the sources downloaded by the Git submodule-like initialation done

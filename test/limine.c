@@ -231,17 +231,20 @@ static void limine_main(void) {
 
     struct limine_framebuffer *fb = framebuffer_request.response->framebuffers[0];
 
-    ft_ctx = flanterm_fb_simple_init(
-        fb->address,
-        fb->width,
-        fb->height,
-        fb->pitch,
-        fb->red_mask_size,
-        fb->red_mask_shift,
-        fb->green_mask_size,
-        fb->green_mask_shift,
-        fb->blue_mask_size,
-        fb->blue_mask_shift
+    ft_ctx = flanterm_fb_init(
+        NULL,
+        NULL,
+        fb->address, fb->width, fb->height, fb->pitch,
+        fb->red_mask_size, fb->red_mask_shift,
+        fb->green_mask_size, fb->green_mask_shift,
+        fb->blue_mask_size, fb->blue_mask_shift,
+        NULL,
+        NULL, NULL,
+        NULL, NULL,
+        NULL, NULL,
+        NULL, 0, 0, 1,
+        0, 0,
+        0
     );
 
     uint64_t kernel_slide = (uint64_t)kernel_start - 0xffffffff80000000;

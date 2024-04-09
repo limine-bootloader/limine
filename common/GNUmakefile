@@ -60,7 +60,6 @@ override CPPFLAGS_FOR_TARGET := \
 
 $(call MKESCAPE,$(BUILDDIR))/./flanterm/backends/fb.o: override CPPFLAGS_FOR_TARGET += \
     -DFLANTERM_FB_DISABLE_BUMP_ALLOC \
-    -DFLANTERM_FB_SUPPORT_BPP \
     -DFLANTERM_FB_ENABLE_MASKING
 
 ifeq ($(TARGET),bios)

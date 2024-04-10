@@ -7,7 +7,7 @@
 
 #if defined(__x86_64__) || defined(__i386__)
 
-inline bool cpuid(uint32_t leaf, uint32_t subleaf,
+static inline bool cpuid(uint32_t leaf, uint32_t subleaf,
           uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
     uint32_t cpuid_max;
     asm volatile ("cpuid"
@@ -22,37 +22,37 @@ inline bool cpuid(uint32_t leaf, uint32_t subleaf,
     return true;
 }
 
-inline void outb(uint16_t port, uint8_t value) {
+static inline void outb(uint16_t port, uint8_t value) {
     asm volatile ("outb %%al, %1"  : : "a" (value), "Nd" (port) : "memory");
 }
 
-inline void outw(uint16_t port, uint16_t value) {
+static inline void outw(uint16_t port, uint16_t value) {
     asm volatile ("outw %%ax, %1"  : : "a" (value), "Nd" (port) : "memory");
 }
 
-inline void outd(uint16_t port, uint32_t value) {
+static inline void outd(uint16_t port, uint32_t value) {
     asm volatile ("outl %%eax, %1" : : "a" (value), "Nd" (port) : "memory");
 }
 
-inline uint8_t inb(uint16_t port) {
+static inline uint8_t inb(uint16_t port) {
     uint8_t value;
     asm volatile ("inb %1, %%al"  : "=a" (value) : "Nd" (port) : "memory");
     return value;
 }
 
-inline uint16_t inw(uint16_t port) {
+static inline uint16_t inw(uint16_t port) {
     uint16_t value;
     asm volatile ("inw %1, %%ax"  : "=a" (value) : "Nd" (port) : "memory");
     return value;
 }
 
-inline uint32_t ind(uint16_t port) {
+static inline uint32_t ind(uint16_t port) {
     uint32_t value;
     asm volatile ("inl %1, %%eax" : "=a" (value) : "Nd" (port) : "memory");
     return value;
 }
 
-inline void mmoutb(uintptr_t addr, uint8_t value) {
+static inline void mmoutb(uintptr_t addr, uint8_t value) {
     asm volatile (
         "movb %1, (%0)"
         :
@@ -61,7 +61,7 @@ inline void mmoutb(uintptr_t addr, uint8_t value) {
     );
 }
 
-inline void mmoutw(uintptr_t addr, uint16_t value) {
+static inline void mmoutw(uintptr_t addr, uint16_t value) {
     asm volatile (
         "movw %1, (%0)"
         :
@@ -70,7 +70,7 @@ inline void mmoutw(uintptr_t addr, uint16_t value) {
     );
 }
 
-inline void mmoutd(uintptr_t addr, uint32_t value) {
+static inline void mmoutd(uintptr_t addr, uint32_t value) {
     asm volatile (
         "movl %1, (%0)"
         :
@@ -80,7 +80,7 @@ inline void mmoutd(uintptr_t addr, uint32_t value) {
 }
 
 #if defined (__x86_64__)
-inline void mmoutq(uintptr_t addr, uint64_t value) {
+static inline void mmoutq(uintptr_t addr, uint64_t value) {
     asm volatile (
         "movq %1, (%0)"
         :
@@ -90,7 +90,7 @@ inline void mmoutq(uintptr_t addr, uint64_t value) {
 }
 #endif
 
-inline uint8_t mminb(uintptr_t addr) {
+static inline uint8_t mminb(uintptr_t addr) {
     uint8_t ret;
     asm volatile (
         "movb (%1), %0"
@@ -101,7 +101,7 @@ inline uint8_t mminb(uintptr_t addr) {
     return ret;
 }
 
-inline uint16_t mminw(uintptr_t addr) {
+static inline uint16_t mminw(uintptr_t addr) {
     uint16_t ret;
     asm volatile (
         "movw (%1), %0"
@@ -112,7 +112,7 @@ inline uint16_t mminw(uintptr_t addr) {
     return ret;
 }
 
-inline uint32_t mmind(uintptr_t addr) {
+static inline uint32_t mmind(uintptr_t addr) {
     uint32_t ret;
     asm volatile (
         "movl (%1), %0"
@@ -124,7 +124,7 @@ inline uint32_t mmind(uintptr_t addr) {
 }
 
 #if defined (__x86_64__)
-inline uint64_t mminq(uintptr_t addr) {
+static inline uint64_t mminq(uintptr_t addr) {
     uint64_t ret;
     asm volatile (
         "movq (%1), %0"
@@ -136,7 +136,7 @@ inline uint64_t mminq(uintptr_t addr) {
 }
 #endif
 
-inline uint64_t rdmsr(uint32_t msr) {
+static inline uint64_t rdmsr(uint32_t msr) {
     uint32_t edx, eax;
     asm volatile ("rdmsr"
                   : "=a" (eax), "=d" (edx)
@@ -145,7 +145,7 @@ inline uint64_t rdmsr(uint32_t msr) {
     return ((uint64_t)edx << 32) | eax;
 }
 
-inline void wrmsr(uint32_t msr, uint64_t value) {
+static inline void wrmsr(uint32_t msr, uint64_t value) {
     uint32_t edx = value >> 32;
     uint32_t eax = (uint32_t)value;
     asm volatile ("wrmsr"
@@ -154,13 +154,13 @@ inline void wrmsr(uint32_t msr, uint64_t value) {
                   : "memory");
 }
 
-inline uint64_t rdtsc(void) {
+static inline uint64_t rdtsc(void) {
     uint32_t edx, eax;
     asm volatile ("rdtsc" : "=a" (eax), "=d" (edx));
     return ((uint64_t)edx << 32) | eax;
 }
 
-inline void delay(uint64_t cycles) {
+static inline void delay(uint64_t cycles) {
     uint64_t next_stop = rdtsc() + cycles;
 
     while (rdtsc() < next_stop);
@@ -221,7 +221,7 @@ inline void delay(uint64_t cycles) {
 
 #elif defined (__aarch64__)
 
-inline uint64_t rdtsc(void) {
+static inline uint64_t rdtsc(void) {
     uint64_t v;
     asm volatile ("mrs %0, cntpct_el0" : "=r" (v));
     return v;
@@ -238,14 +238,14 @@ inline uint64_t rdtsc(void) {
     locked_read__ret; \
 })
 
-inline size_t icache_line_size(void) {
+static inline size_t icache_line_size(void) {
     uint64_t ctr;
     asm volatile ("mrs %0, ctr_el0" : "=r"(ctr));
 
     return (ctr & 0b1111) << 4;
 }
 
-inline size_t dcache_line_size(void) {
+static inline size_t dcache_line_size(void) {
     uint64_t ctr;
     asm volatile ("mrs %0, ctr_el0" : "=r"(ctr));
 
@@ -253,7 +253,7 @@ inline size_t dcache_line_size(void) {
 }
 
 // Clean D-Cache to Point of Coherency
-inline void clean_dcache_poc(uintptr_t start, uintptr_t end) {
+static inline void clean_dcache_poc(uintptr_t start, uintptr_t end) {
     size_t dsz = dcache_line_size();
 
     uintptr_t addr = start & ~(dsz - 1);
@@ -266,7 +266,7 @@ inline void clean_dcache_poc(uintptr_t start, uintptr_t end) {
 }
 
 // Invalidate I-Cache to Point of Unification
-inline void inval_icache_pou(uintptr_t start, uintptr_t end) {
+static inline void inval_icache_pou(uintptr_t start, uintptr_t end) {
     size_t isz = icache_line_size();
 
     uintptr_t addr = start & ~(isz - 1);
@@ -278,7 +278,7 @@ inline void inval_icache_pou(uintptr_t start, uintptr_t end) {
     asm volatile ("dsb sy\n\tisb");
 }
 
-inline int current_el(void) {
+static inline int current_el(void) {
     uint64_t v;
 
     asm volatile ("mrs %0, currentel" : "=r"(v));
@@ -289,7 +289,7 @@ inline int current_el(void) {
 
 #elif defined (__riscv64)
 
-inline uint64_t rdtsc(void) {
+static inline uint64_t rdtsc(void) {
     uint64_t v;
     asm ("rdtime %0" : "=r"(v));
     return v;

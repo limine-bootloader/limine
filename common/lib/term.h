@@ -37,7 +37,7 @@ extern int term_backend;
     } \
 } while (0)
 
-inline void reset_term(void) {
+static inline void reset_term(void) {
     for (size_t i = 0; i < terms_i; i++) {
         struct flanterm_context *term = terms[i];
 
@@ -48,7 +48,7 @@ inline void reset_term(void) {
     }
 }
 
-inline void set_cursor_pos_helper(size_t x, size_t y) {
+static inline void set_cursor_pos_helper(size_t x, size_t y) {
     print("\e[%u;%uH", (int)y + 1, (int)x + 1);
 }
 

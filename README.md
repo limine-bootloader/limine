@@ -87,10 +87,9 @@ Host utility binaries are provided for Windows.
 This repository provides [Nix](https://nixos.org/)-based tooling for a convenient
 development environment and building Limine using Nix.
 
-- `$ nix build .#\limine` (build with clang and `--enable-all`)
-
 To use the regular build flow using a toolchain obtained by Nix, simply
-run `$ nix develop` to open a Nix shell. Then follow the guide below.
+run `$ nix develop` to open a Nix shell. Then follow the guide below,
+skipping the "Prerequisites" step.
 
 ### Regular build
 
@@ -125,7 +124,7 @@ commands are supposed to be run inside the build directory.
 
 To build Limine, run:
 ```bash
-make -j $(nproc)    # (or gmake where applicable)
+make    # (or gmake where applicable)
 ```
 
 The generated bootloader files are going to be in `./bin`.
@@ -143,21 +142,6 @@ make install    # (or gmake where applicable)
 ```
 
 ## How to use
-
-### Consume via Nix
-
-Limine is in `nixpkgs` (starting from `nixos-24.05`) as `pkgs.limine`
-(recommended).
-
-You can also consume this as Nix flake directly to get the freshest development
-version:
-
-```nix
-{
-  inputs.limine.url = "github:limine-bootloader/limine/<branch>";
-  inputs.limine.inputs.nixpkgs.follows = "nixpkgs";
-}
-```
 
 ### UEFI
 The `BOOT*.EFI` files are valid EFI applications that can be simply copied to

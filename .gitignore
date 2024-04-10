@@ -31,6 +31,7 @@
 /configure
 /configure.ac.save
 /timestamps
+/version
 /build-aux
 /aclocal.m4
 /*~

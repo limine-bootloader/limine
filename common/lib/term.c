@@ -106,7 +106,9 @@ static size_t cursor_x = 0, cursor_y = 0;
 
 static void fallback_scroll(struct flanterm_context *ctx) {
     (void)ctx;
-    gST->ConOut->SetCursorPosition(gST->ConOut, ctx->cols - 1, ctx->rows - 1);
+    UINTN uefi_x_size, uefi_y_size;
+    gST->ConOut->QueryMode(gST->ConOut, gST->ConOut->Mode->Mode, &uefi_x_size, &uefi_y_size);
+    gST->ConOut->SetCursorPosition(gST->ConOut, uefi_x_size - 1, uefi_y_size - 1);
     CHAR16 string[2];
     string[0] = ' ';
     string[1] = 0;

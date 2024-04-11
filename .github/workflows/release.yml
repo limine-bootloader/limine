@@ -94,7 +94,7 @@ jobs:
           echo "Binary release can be found [here](https://github.com/limine-bootloader/limine/tree/$TAG_NAME-binary)." >> rel_notes.txt
 
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           body_path: rel_notes.txt
           files: |

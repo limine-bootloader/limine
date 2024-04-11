@@ -1,3 +1,16 @@
+2024-04-11  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.3.1 ***
+
+    Noteworthy changes compared to the previous release, 7.3.0:
+
+    Bug fixes:
+        - Fix a minor issue with scrolling when using the EFI console fallback.
+
+    Miscellaneous:
+        - Bump the Flanterm revision to current latest.
+        - Some dead code removal.
+
 2024-03-31  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.3.0 ***

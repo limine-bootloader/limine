@@ -5,3 +5,4 @@ updates:
     schedule:
       interval: monthly # not so critical, be less spammy
     open-pull-requests-limit: 10
+    target-branch: trunk

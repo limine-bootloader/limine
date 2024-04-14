@@ -2,9 +2,6 @@
 
 set -ex
 
-LC_ALL=C
-export LC_ALL
-
 srcdir="$(dirname "$0")"
 test -z "$srcdir" && srcdir=.
 
@@ -69,7 +66,7 @@ if ! [ -f version ]; then
     rm -f common/lib/stb_image.h.orig
 fi
 
-# Create timestamps and version file
+# Create timestamps file
 if git log -1 >/dev/null 2>&1; then
     cat >timestamps <<EOF
 REGEN_DATE="$(git log -1 --pretty=%cd --date='format:%B %Y')"
@@ -80,17 +77,6 @@ fi
 
 if ! test -f timestamps; then
     echo "error: Not a Git repository and 'timestamps' file missing."
-    exit 1
-fi
-
-if git describe --exact-match --tags $(git log -n1 --pretty='%h') >/dev/null 2>&1; then
-    git describe --exact-match --tags $(git log -n1 --pretty='%h') | sed 's/^v//g' >version
-elif git log -n1 --pretty='%h' >/dev/null 2>&1; then
-    echo g$(git log -n1 --pretty='%h') >version
-fi
-
-if ! test -f version; then
-    echo "error: Not a Git repository and 'version' file missing."
     exit 1
 fi
 

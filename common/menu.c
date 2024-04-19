@@ -15,7 +15,6 @@
 #include <mm/pmm.h>
 #include <drivers/vbe.h>
 #include <drivers/vga_textmode.h>
-#include <console.h>
 #include <protos/linux.h>
 #include <protos/chainload.h>
 #include <protos/chainload_next.h>
@@ -856,21 +855,13 @@ refresh:
         print("\n\n\n\n");
     }
 
-    while (menu_tree == NULL) {
+    if (menu_tree == NULL) {
         if (quiet) {
             quiet = false;
             menu_init_term();
             FOR_TERM(TERM->autoflush = false);
             FOR_TERM(TERM->cursor_enabled = false);
         }
-        print("Config file %s.\n\n", config_ready ? "contains no valid entries" : "not found");
-        print("For information on the format of Limine config entries, consult CONFIG.md in\n");
-        print("the root of the Limine source repository.\n\n");
-        print("Press a key to enter the Limine console...");
-        FOR_TERM(TERM->double_buffer_flush(TERM));
-        getchar();
-        reset_term();
-        console();
     }
 
     size_t max_tree_len, max_tree_height;
@@ -899,12 +890,14 @@ refresh:
 
         if (!help_hidden) {
             set_cursor_pos_helper(0, 3);
-            if (selected_menu_entry->sub == NULL) {
-                print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m Boot    %s",
-                      editor_enabled ? "\e[32mE\e[0m Edit" : "");
-            } else {
-                print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m %s",
-                      selected_menu_entry->expanded ? "Collapse" : "Expand");
+            if (selected_menu_entry != NULL) {
+                if (selected_menu_entry->sub == NULL) {
+                    print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m Boot    %s",
+                          editor_enabled ? "\e[32mE\e[0m Edit" : "");
+                } else {
+                    print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m %s",
+                          selected_menu_entry->expanded ? "Collapse" : "Expand");
+                }
             }
 #if defined(UEFI)
             if (reboot_to_firmware_supported) {
@@ -920,7 +913,7 @@ refresh:
         set_cursor_pos_helper(x, y);
     }
 
-    if (selected_menu_entry->sub != NULL)
+    if (selected_menu_entry == NULL || selected_menu_entry->sub != NULL)
         skip_timeout = true;
 
     int c;
@@ -949,7 +942,7 @@ refresh:
     }
 
     set_cursor_pos_helper(0, terms[0]->rows - 1);
-    if (selected_menu_entry->comment != NULL) {
+    if (selected_menu_entry != NULL && selected_menu_entry->comment != NULL) {
         FOR_TERM(TERM->scroll_enabled = false);
         print("\e[36m%s\e[0m", selected_menu_entry->comment);
         FOR_TERM(TERM->scroll_enabled = true);
@@ -992,6 +985,9 @@ timeout_aborted:
             case '\n':
             case ' ':
             autoboot:
+                if (selected_menu_entry == NULL) {
+                    break;
+                }
                 if (selected_menu_entry->sub != NULL) {
                     selected_menu_entry->expanded = !selected_menu_entry->expanded;
                     goto refresh;
@@ -1022,8 +1018,9 @@ timeout_aborted:
             case 'e':
             case 'E': {
                 if (editor_enabled) {
-                    if (selected_menu_entry->sub != NULL)
-                        goto refresh;
+                    if (selected_menu_entry == NULL || selected_menu_entry->sub != NULL) {
+                        break;
+                    }
                     editor_no_term_reset = true;
                     char *new_body = config_entry_editor(selected_menu_entry->name, selected_menu_entry->body);
                     if (new_body == NULL)
@@ -1053,12 +1050,6 @@ timeout_aborted:
                     goto refresh;
                 }
                 break;
-            }
-            case 'c':
-            case 'C': {
-                reset_term();
-                console();
-                goto refresh;
             }
         }
     }

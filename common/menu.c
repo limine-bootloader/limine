@@ -855,13 +855,9 @@ refresh:
         print("\n\n\n\n");
     }
 
-    if (menu_tree == NULL) {
-        if (quiet) {
-            quiet = false;
-            menu_init_term();
-            FOR_TERM(TERM->autoflush = false);
-            FOR_TERM(TERM->cursor_enabled = false);
-        }
+    if (menu_tree == NULL && quiet) {
+        quiet = false;
+        menu_init_term();
     }
 
     size_t max_tree_len, max_tree_height;

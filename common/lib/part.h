@@ -60,7 +60,6 @@ struct volume {
     char *fslabel;
 };
 
-void list_volumes(void);
 bool is_valid_mbr(struct volume *volume);
 
 extern struct volume **volume_index;

@@ -897,7 +897,7 @@ refresh:
             }
 #if defined(UEFI)
             if (reboot_to_firmware_supported) {
-                set_cursor_pos_helper(terms[0]->cols - 37, 3);
+                set_cursor_pos_helper(terms[0]->cols - (editor_enabled ? 37 : 20), 3);
                 print("\e[32mS\e[0m Firmware Setup");
             }
 #endif

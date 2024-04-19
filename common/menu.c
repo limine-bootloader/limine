@@ -893,12 +893,14 @@ refresh:
             }
 #if defined(UEFI)
             if (reboot_to_firmware_supported) {
-                set_cursor_pos_helper(terms[0]->cols - 33, 3);
+                set_cursor_pos_helper(terms[0]->cols - 37, 3);
                 print("\e[32mS\e[0m Firmware Setup");
             }
 #endif
-            set_cursor_pos_helper(terms[0]->cols - 13, 3);
-            print("\e[32mC\e[0m Console");
+            if (editor_enabled) {
+                set_cursor_pos_helper(terms[0]->cols - 17, 3);
+                print("\e[32mB\e[0m Blank Entry");
+            }
         }
         set_cursor_pos_helper(x, y);
     }
@@ -1025,6 +1027,18 @@ timeout_aborted:
                 break;
             }
 #endif
+            case 'b':
+            case 'B': {
+                if (editor_enabled) {
+                    char *new_entry = config_entry_editor("Blank Entry", "");
+                    if (new_entry != NULL) {
+                        config_ready = true;
+                        boot(new_entry);
+                    }
+                    goto refresh;
+                }
+                break;
+            }
             case 'c':
             case 'C': {
                 reset_term();

@@ -132,7 +132,9 @@ __attribute__((section(".limine_requests")))
 static volatile struct limine_paging_mode_request _pm_request = {
     .id = LIMINE_PAGING_MODE_REQUEST,
     .revision = 0, .response = NULL,
+#if defined (__x86_64__)
     .mode = LIMINE_PAGING_MODE_X86_64_5LVL,
+#endif
     .flags = 0,
 };
 

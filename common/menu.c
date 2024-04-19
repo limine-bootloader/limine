@@ -750,7 +750,22 @@ noreturn void _menu(bool first_run) {
 
     menu_branding = config_get_value(NULL, 0, "INTERFACE_BRANDING");
     if (menu_branding == NULL)
-        menu_branding = "Limine " LIMINE_VERSION;
+        menu_branding = "Limine " LIMINE_VERSION " ("
+#if defined (__x86_64__)
+            "x86-64"
+#elif defined (__i386__)
+            "ia-32"
+#elif defined (__riscv64)
+            "riscv64"
+#elif defined (__aarch64__)
+            "aarch64"
+#endif
+#if defined (BIOS)
+            ", BIOS)"
+#elif defined (UEFI)
+            ", UEFI)"
+#endif
+        ;
 
     menu_branding_colour = config_get_value(NULL, 0, "INTERFACE_BRANDING_COLOUR");
     if (menu_branding_colour == NULL)

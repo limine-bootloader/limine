@@ -8,7 +8,7 @@
 #   include <efi.h>
 #endif
 #include <lib/misc.h>
-#include <lib/readline.h>
+#include <lib/getchar.h>
 #include <lib/gterm.h>
 #include <lib/term.h>
 #include <mm/pmm.h>

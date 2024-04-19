@@ -10,7 +10,7 @@
 #include <lib/config.h>
 #include <lib/term.h>
 #include <lib/gterm.h>
-#include <lib/readline.h>
+#include <lib/getchar.h>
 #include <lib/uri.h>
 #include <mm/pmm.h>
 #include <drivers/vbe.h>

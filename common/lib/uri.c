@@ -10,7 +10,7 @@
 #include <pxe/tftp.h>
 #include <compress/gzip.h>
 #include <menu.h>
-#include <lib/readline.h>
+#include <lib/getchar.h>
 #include <crypt/blake2b.h>
 
 // A URI takes the form of: resource://root/path#hash

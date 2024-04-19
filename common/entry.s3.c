@@ -21,7 +21,7 @@
 #include <pxe/tftp.h>
 #include <drivers/disk.h>
 #include <sys/lapic.h>
-#include <lib/readline.h>
+#include <lib/getchar.h>
 #include <sys/cpu.h>
 
 void stage3_common(void);

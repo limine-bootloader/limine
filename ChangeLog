@@ -1,3 +1,20 @@
+2024-04-20  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.4.0 ***
+
+    Noteworthy changes compared to the previous release, 7.3.1:
+
+    New features:
+        - ISA name and firmware type is now printed as part of the default
+          bootloader branding.
+        - Add 'B' key shortcut to menu to open up a blank entry.
+
+    Bug fixes:
+        - Fix missing NULL pointer check in configuration related function.
+
+    Miscellaneous:
+        - Console has been removed.
+
 2024-04-11  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.3.1 ***

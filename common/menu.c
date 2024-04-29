@@ -21,6 +21,7 @@
 #include <protos/multiboot1.h>
 #include <protos/multiboot2.h>
 #include <protos/limine.h>
+#include <sys/cpu.h>
 
 #if defined (UEFI)
 EFI_GUID limine_efi_vendor_guid =
@@ -748,23 +749,39 @@ noreturn void _menu(bool first_run) {
     }
 
     menu_branding = config_get_value(NULL, 0, "INTERFACE_BRANDING");
-    if (menu_branding == NULL)
+    if (menu_branding == NULL) {
+#if defined (BIOS)
+        {
+            uint32_t eax, ebx, ecx, edx;
+            if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
+                menu_branding = "Limine " LIMINE_VERSION " (ia-32, BIOS)";
+            } else {
+                menu_branding = "Limine " LIMINE_VERSION " (x86-64, BIOS)";
+            }
+        }
+#elif defined (UEFI)
+#if defined (__i386__)
+        {
+            uint32_t eax, ebx, ecx, edx;
+            if (!cpuid(0x80000001, 0, &eax, &ebx, &ecx, &edx) || !(edx & (1 << 29))) {
+                menu_branding = "Limine " LIMINE_VERSION " (ia-32, UEFI32)";
+            } else {
+                menu_branding = "Limine " LIMINE_VERSION " (x86-64, UEFI32)";
+            }
+        }
+#else
         menu_branding = "Limine " LIMINE_VERSION " ("
 #if defined (__x86_64__)
             "x86-64"
-#elif defined (__i386__)
-            "ia-32"
 #elif defined (__riscv64)
             "riscv64"
 #elif defined (__aarch64__)
             "aarch64"
 #endif
-#if defined (BIOS)
-            ", BIOS)"
-#elif defined (UEFI)
-            ", UEFI)"
+            ", UEFI)";
 #endif
-        ;
+#endif
+    }
 
     menu_branding_colour = config_get_value(NULL, 0, "INTERFACE_BRANDING_COLOUR");
     if (menu_branding_colour == NULL)

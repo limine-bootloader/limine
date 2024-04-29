@@ -1,3 +1,14 @@
+2024-04-29  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.4.1 ***
+
+    Noteworthy changes compared to the previous release, 7.4.0:
+
+    Miscellaneous:
+        - Bump max volume limit for UEFI from 64 to 256.
+        - Improve how ISA name and firmware type is reported as part of the
+          default branding.
+
 2024-04-20  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.4.0 ***

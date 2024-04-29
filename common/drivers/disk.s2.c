@@ -19,9 +19,9 @@
 #define DEFAULT_FASTEST_XFER_SIZE 64
 #define MAX_FASTEST_XFER_SIZE 512
 
-#define MAX_VOLUMES 64
-
 #if defined (BIOS)
+
+#define MAX_VOLUMES 64
 
 struct bios_drive_params {
     uint16_t buf_size;
@@ -306,6 +306,8 @@ void disk_create_index(void) {
 #endif
 
 #if defined (UEFI)
+
+#define MAX_VOLUMES 256
 
 int disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t count) {
     EFI_STATUS status;

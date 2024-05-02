@@ -17,7 +17,7 @@ Donations welcome, but absolutely not mandatory!
 
 ![Reference screenshot](/screenshot.png?raw=true "Reference screenshot")
 
-[Photo by Pixabay](https://www.pexels.com/photo/painting-of-black-cloud-during-sunset-164175/)
+[Photo by Mo Eid](https://www.pexels.com/photo/a-pavilion-n-the-middle-of-a-sea-8832898/)
 
 ### Supported architectures
 * IA-32 (32-bit x86)

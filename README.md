@@ -8,7 +8,7 @@ as the reference implementation for the [Limine boot protocol](/PROTOCOL.md).
 
 ### Donate
 
-If you want to support the work I (@mintsuki) do on Limine, feel free to donate to me on Liberapay:
+If you want to support the work I ([@mintsuki](https://github.com/mintsuki)) do on Limine, feel free to donate to me on Liberapay:
 <a href="https://liberapay.com/mintsuki/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a>
 
 Donations welcome, but absolutely not mandatory!
@@ -54,7 +54,7 @@ All x86-64, aarch64, and riscv64 (UEFI) systems are supported.
 
 All Limine releases since 7.x use [Semantic Versioning](https://semver.org/spec/v2.0.0.html) for their naming.
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/limine.svg)](https://repology.org/project/limine/versions)
+[![Packaging status](https://repology.org/badge/vertical-allrepos/limine.svg?columns=3)](https://repology.org/project/limine/versions)
 
 ## Binary releases
 

@@ -130,7 +130,7 @@ marker found.
 ```
 
 The requests delimiters are *a hint*. The bootloader can still search for
-requests and base revision tags outside the delimted area if it doesn't support the hint.
+requests and base revision tags outside the delimited area if it doesn't support the hint.
 
 ## Limine Requests Section
 

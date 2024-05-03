@@ -22,14 +22,14 @@ The calling convention matches the C ABI for the specific architecture
 
 ## Base protocol revisions
 
-The Limine boot protocol comes in several base revisions; so far only 2
-base revisions are specified: 0 and 1.
+The Limine boot protocol comes in several base revisions; so far, 3
+base revisions are specified: 0, 1, and 2.
 
 Base protocol revisions change certain behaviours of the Limine boot protocol
 outside any specific feature. The specifics are going to be described as
 needed throughout this specification.
 
-Base revision 0 is considered deprecated, and it is the default base revision
+Base revision 0 and 1 are considered deprecated. Base revision 0 is the default base revision
 a kernel is assumed to be requesting and complying to if no base revision tag
 is provided by the kernel, for backwards compatibility.
 
@@ -129,8 +129,12 @@ marker found.
     uint64_t limine_requests_end_marker[2] = { 0xadc0e0531bb10d03, 0x9572709f31764c62 };
 ```
 
-The requests delimiters are *a hint*. The bootloader can still search for
-requests and base revision tags outside the delimited area if it doesn't support the hint.
+For base revisions 0 and 1, the requests delimiters are *hints*. The bootloader can still search for
+requests and base revision tags outside the delimited area if it doesn't support the hints.
+
+Base revision 2's sole difference compared to base revision 1 is that support for
+request delimiters has to be provided and the delimiters must be honoured, if present,
+rather than them just being a hint.
 
 ## Limine Requests Section
 

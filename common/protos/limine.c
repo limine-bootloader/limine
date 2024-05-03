@@ -383,12 +383,12 @@ noreturn void limine_load(char *config, char *cmdline) {
                 panic(true, "limine: Duplicated base revision tag");
             }
             base_revision = p[2];
-            // We only support up to revision 1
-            if (p[2] <= 1) {
+            // We only support up to revision 2
+            if (p[2] <= 2) {
                 // Set to 0 to mean "supported"
                 base_rev_p2_ptr = &p[2];
             } else {
-                base_revision = 1;
+                base_revision = 2;
             }
         }
     }

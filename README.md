@@ -1,10 +1,14 @@
 # Limine
 
+<p align="center">
+    <img src="https://github.com/limine-bootloader/limine/blob/trunk/logo.png?raw=true" alt="Limine's logo"/>
+</p>
+
 ### What is Limine?
 
-Limine (pronounced as shown [here](https://www.merriam-webster.com/dictionary/in%20limine))
+Limine (pronounced as demonstrated [here](https://www.merriam-webster.com/dictionary/in%20limine))
 is a modern, advanced, portable, multiprotocol bootloader and boot manager, also used
-as the reference implementation for the [Limine boot protocol](/PROTOCOL.md).
+as the reference implementation for the [Limine boot protocol](PROTOCOL.md).
 
 ### Donate
 
@@ -15,7 +19,7 @@ Donations welcome, but absolutely not mandatory!
 
 ### Limine's boot menu
 
-![Reference screenshot](/screenshot.png?raw=true "Reference screenshot")
+![Reference screenshot](screenshot.png?raw=true "Reference screenshot")
 
 [Photo by Mo Eid](https://www.pexels.com/photo/a-pavilion-n-the-middle-of-a-sea-8832898/)
 
@@ -27,7 +31,7 @@ Donations welcome, but absolutely not mandatory!
 
 ### Supported boot protocols
 * Linux
-* [Limine](/PROTOCOL.md)
+* [Limine](PROTOCOL.md)
 * Multiboot 1
 * Multiboot 2
 * Chainloading
@@ -41,7 +45,7 @@ Donations welcome, but absolutely not mandatory!
 * FAT12/16/32
 * ISO9660 (CDs/DVDs)
 
-If your filesystem isn't listed here, please read [the philosophy](/PHILOSOPHY.md) first, especially before
+If your filesystem isn't listed here, please read [the philosophy](PHILOSOPHY.md) first, especially before
 opening issues or pull requests related to this.
 
 ### Minimum system requirements
@@ -158,7 +162,7 @@ Limine can be booted with secure boot if the executable is signed and the key us
 sign it is added to the firmware's keychain. This should be done in combination with enrolling
 the BLAKE2B hash of the Limine config file into the Limine EFI executable image itself for
 verification purposes.
-For more information see the `limine enroll-config` program and [the philosophy](/PHILOSOPHY.md).
+For more information see the `limine enroll-config` program and [the philosophy](PHILOSOPHY.md).
 
 ### BIOS/MBR
 In order to install Limine on a MBR device (which can just be a raw image file),
@@ -249,9 +253,9 @@ except that the `limine-bios.sys` file is not needed on the server.
 ### Configuration
 The `limine.cfg` file contains Limine's configuration.
 
-An example `limine.cfg` file can be found in [`test/limine.cfg`](https://github.com/limine-bootloader/limine/blob/trunk/test/limine.cfg).
+An example `limine.cfg` file can be found in [`test/limine.cfg`](test/limine.cfg).
 
-More info on the format of `limine.cfg` can be found in [`CONFIG.md`](https://github.com/limine-bootloader/limine/blob/trunk/CONFIG.md).
+More info on the format of `limine.cfg` can be found in [`CONFIG.md`](CONFIG.md).
 
 ## Acknowledgments
 Limine uses a stripped-down version of [tinf](https://github.com/jibsen/tinf) for early GZIP decompression.

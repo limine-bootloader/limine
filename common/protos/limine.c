@@ -415,9 +415,7 @@ noreturn void limine_load(char *config, char *cmdline) {
 
             // Check if start marker hit
             if (p[0] == limine_requests_start_marker[0] && p[1] == limine_requests_start_marker[1]
-             && p[2] == limine_requests_start_marker[2] && p[3] == limine_requests_start_marker[3]
-             && p[4] == limine_requests_start_marker[4] && p[5] == limine_requests_start_marker[5]
-             && p[6] == limine_requests_start_marker[6] && p[7] == limine_requests_start_marker[7]) {
+             && p[2] == limine_requests_start_marker[2] && p[3] == limine_requests_start_marker[3]) {
                 requests_count = 0;
                 continue;
             }

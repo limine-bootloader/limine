@@ -1,3 +1,24 @@
+2024-05-03  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.5.0 ***
+
+    Noteworthy changes compared to the previous release, 7.4.1:
+
+    New features:
+        - Limine boot protocol: Add support for requests start marker, to
+          complement the previously called delimiter, now renamed to "end
+          marker".
+        - Limine boot protocol: Add base revision 2. The sole difference
+          compared to base revision 1 being that it mandates bootloaders to
+          support request delimiters.
+
+    Bug fixes:
+        - Fix an issue regarding commit date parsing in the bootstrap script.
+
+    Miscellaneous:
+        - General documentation updates and improvements; split USAGE.md from
+          README.md and install the former only.
+
 2024-04-29  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.4.1 ***

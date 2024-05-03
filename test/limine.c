@@ -11,8 +11,10 @@ static volatile LIMINE_BASE_REVISION(1);
 
 static void limine_main(void);
 
-__attribute__((used))
-__attribute__((section(".limine_requests")))
+__attribute__((used, section(".limine_requests_start_marker")))
+static volatile LIMINE_REQUESTS_START_MARKER;
+
+__attribute__((used, section(".limine_requests")))
 static volatile struct limine_entry_point_request entry_point_request = {
     .id = LIMINE_ENTRY_POINT_REQUEST,
     .revision = 0, .response = NULL,
@@ -138,9 +140,8 @@ static volatile struct limine_paging_mode_request _pm_request = {
     .flags = 0,
 };
 
-__attribute__((used))
-__attribute__((section(".limine_requests_delimiter")))
-static volatile LIMINE_REQUESTS_DELIMITER;
+__attribute__((used, section(".limine_requests_end_marker")))
+static volatile LIMINE_REQUESTS_END_MARKER;
 
 static char *get_memmap_type(uint64_t type) {
     switch (type) {

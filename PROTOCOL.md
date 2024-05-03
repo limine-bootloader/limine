@@ -111,20 +111,26 @@ revisions do.
 This is all there is to features. For a list of official Limine features, read
 the "Feature List" section below.
 
-## Requests Delimiter
+## Requests Delimiters
 
-The bootloader can be told to stop searching for requests (including base
-revision tags) in an executable by placing a set of 2 8-byte values called the
-"requests delimiter" on an 8-byte aligned boundary.
+The bootloader can be told to start and/or stop searching for requests (including base
+revision tags) in an executable's loaded image by placing start and/or end markers,
+on an 8-byte aligned boundary.
+
+The bootloader will only accept requests placed between the last start marker found (if
+there happen to be more than 1, which there should not, ideally) and the first end
+marker found.
 ```c
-#define LIMINE_REQUESTS_DELIMITER \
-    uint64_t limine_requests_delimiter[2] = { 0xadc0e0531bb10d03, 0x9572709f31764c62 };
+#define LIMINE_REQUESTS_START_MARKER \
+    uint64_t limine_requests_start_marker[4] = { 0xf6b8f4b39de7d1ae, 0xfab91a6940fcb9cf, \
+                                                 0x785c6ed015d3e316, 0x181e920a7852b9d9 };
+
+#define LIMINE_REQUESTS_END_MARKER \
+    uint64_t limine_requests_end_marker[2] = { 0xadc0e0531bb10d03, 0x9572709f31764c62 };
 ```
 
-The requests delimiter is *a hint*. The bootloader can still search for
-requests and base revision tags past this point if it doesn't support the hint.
-When it comes to the Limine bootloader, this means versions starting from 7.1.x
-support it, while older ones do not.
+The requests delimiters are *a hint*. The bootloader can still search for
+requests and base revision tags outside the delimted area if it doesn't support the hint.
 
 ## Limine Requests Section
 

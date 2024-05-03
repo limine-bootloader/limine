@@ -355,16 +355,26 @@ noreturn void limine_load(char *config, char *cmdline) {
 
     kaslr = kaslr && is_reloc;
 
-    LIMINE_REQUESTS_DELIMITER;
+    LIMINE_REQUESTS_START_MARKER;
+    LIMINE_REQUESTS_END_MARKER;
 
     // Determine base revision
     LIMINE_BASE_REVISION(0);
     int base_revision = 0;
+    uint64_t *base_rev_p2_ptr = NULL;
     for (size_t i = 0; i < ALIGN_DOWN(image_size_before_bss, 8); i += 8) {
         uint64_t *p = (void *)(uintptr_t)physical_base + i;
 
-        // Check if delimiter hit
-        if (p[0] == limine_requests_delimiter[0] && p[1] == limine_requests_delimiter[1]) {
+        // Check if start marker hit
+        if (p[0] == limine_requests_start_marker[0] && p[1] == limine_requests_start_marker[1]
+         && p[2] == limine_requests_start_marker[2] && p[3] == limine_requests_start_marker[3]) {
+            base_revision = 0;
+            base_rev_p2_ptr = NULL;
+            continue;
+        }
+
+        // Check if end marker hit
+        if (p[0] == limine_requests_end_marker[0] && p[1] == limine_requests_end_marker[1]) {
             break;
         }
 
@@ -376,11 +386,14 @@ noreturn void limine_load(char *config, char *cmdline) {
             // We only support up to revision 1
             if (p[2] <= 1) {
                 // Set to 0 to mean "supported"
-                p[2] = 0;
+                base_rev_p2_ptr = &p[2];
             } else {
                 base_revision = 1;
             }
         }
+    }
+    if (base_rev_p2_ptr != NULL) {
+        *base_rev_p2_ptr = 0;
     }
 
     // Load requests
@@ -400,8 +413,17 @@ noreturn void limine_load(char *config, char *cmdline) {
         for (size_t i = 0; i < ALIGN_DOWN(image_size_before_bss, 8); i += 8) {
             uint64_t *p = (void *)(uintptr_t)physical_base + i;
 
-            // Check if delimiter hit
-            if (p[0] == limine_requests_delimiter[0] && p[1] == limine_requests_delimiter[1]) {
+            // Check if start marker hit
+            if (p[0] == limine_requests_start_marker[0] && p[1] == limine_requests_start_marker[1]
+             && p[2] == limine_requests_start_marker[2] && p[3] == limine_requests_start_marker[3]
+             && p[4] == limine_requests_start_marker[4] && p[5] == limine_requests_start_marker[5]
+             && p[6] == limine_requests_start_marker[6] && p[7] == limine_requests_start_marker[7]) {
+                requests_count = 0;
+                continue;
+            }
+
+            // Check if end marker hit
+            if (p[0] == limine_requests_end_marker[0] && p[1] == limine_requests_end_marker[1]) {
                 break;
             }
 

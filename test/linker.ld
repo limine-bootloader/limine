@@ -1,7 +1,5 @@
 PHDRS
 {
-    limine_requests PT_LOAD FLAGS((1 << 1) | (1 << 2)) ; /* Write + Read */
-
     text    PT_LOAD    FLAGS((1 << 0) | (1 << 2)) ; /* Execute + Read */
     rodata  PT_LOAD    FLAGS((1 << 2)) ;            /* Read only */
     data    PT_LOAD    FLAGS((1 << 1) | (1 << 2)) ; /* Write + Read */
@@ -12,16 +10,6 @@ SECTIONS
 {
     . = 0xffffffff80000000;
     kernel_start = .;
-
-    .limine_requests : {
-        *(.limine_requests .limine_requests.*)
-    } :limine_requests
-
-    .limine_requests_delimiter : {
-        *(.limine_requests_delimiter .limine_requests_delimiter.*)
-    } :limine_requests
-
-    . += 0x1000;
 
     .text : {
         *(.text .text.*)
@@ -37,6 +25,11 @@ SECTIONS
 
     .data : {
         *(.data .data.*)
+
+        *(.limine_requests_start_marker)
+        *(.limine_requests)
+        *(.limine_requests_end_marker)
+
         *(.sdata .sdata.*)
     } :data
 

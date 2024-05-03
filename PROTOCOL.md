@@ -138,7 +138,7 @@ rather than them just being a hint.
 
 ## Limine Requests Section
 
-Note: *This behaviour is deprecated as of base protocol revision 1*
+Note: *This behaviour is deprecated and removed as of base protocol revision 1*
 
 For kernels requesting deprecated base revision 0,
 if the executable kernel file contains a `.limine_reqs` section, the bootloader
@@ -179,7 +179,7 @@ These mappings are supervisor, read, write, execute (-rwx).
 For base revision 0, the above-4GiB identity and HHDM mappings cover any memory
 map region.
 
-For base revision 1, the above-4GiB HHDM mappings do not comprise memory map regions
+For base revisions 1 and 2, the above-4GiB HHDM mappings do not comprise memory map regions
 of types:
  - Reserved
  - Bad memory

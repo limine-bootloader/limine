@@ -262,10 +262,6 @@ void disk_create_index(void) {
             continue;
         }
 
-        if (disk_read_sectors(block, xfer_buf, 0, 1) != DISK_SUCCESS) {
-            continue;
-        }
-
         block->is_optical = is_removable;
 
         if (block->is_optical) {

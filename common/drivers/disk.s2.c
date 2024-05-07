@@ -242,7 +242,7 @@ void disk_create_index(void) {
             dpte = (void *)rm_desegment(drive_params.dpte_seg, drive_params.dpte_off);
             if ((dpte->control_port & 0xff00) != 0xa000) {
                 // Check for removable (5) or ATAPI (6)
-                is_removable = is_removable && ((dpte->flags & (1 << 5)) || (dpte->flags & (1 << 6)));
+                is_removable = is_removable || ((dpte->flags & (1 << 5)) || (dpte->flags & (1 << 6)));
             }
         }
 

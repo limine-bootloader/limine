@@ -212,7 +212,7 @@ void disk_create_index(void) {
     volume_index = ext_mem_alloc(sizeof(struct volume) * MAX_VOLUMES);
 
     // Disk count (only non-removable) at 0040:0075
-    uint8_t *bda_disk_count = (void *)rm_desegment(0x0040, 0x0075);
+    uint8_t bda_disk_count = mminb(rm_desegment(0x0040, 0x0075));
 
     int optical_indices = 1, hdd_indices = 1;
 
@@ -246,7 +246,7 @@ void disk_create_index(void) {
             }
         }
 
-        if (!is_removable && hdd_indices > *bda_disk_count) {
+        if (!is_removable && hdd_indices > bda_disk_count) {
             continue;
         }
 

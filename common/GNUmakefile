@@ -576,29 +576,29 @@ endif
 ifeq ($(TARGET),bios)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_ia32
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -Wall $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_bios_ia32
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -Wall $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_x86
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -Wall $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-x86-64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_x86_64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf64 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -Wall $(NASM_TARGET) -f elf64 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_uefi_x86_64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf64 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -Wall $(NASM_TARGET) -f elf64 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_x86
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf64 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -Wall $(NASM_TARGET) -f elf64 -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-aarch64)
@@ -624,13 +624,13 @@ endif
 ifeq ($(TARGET),uefi-ia32)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_ia32
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -Wall $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_uefi_ia32
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -Wall $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_x86
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -Wall $(WERROR_FLAG) $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' -Wall $(NASM_TARGET) -f elf32 -o '$(call SHESCAPE,$@)'
 endif

@@ -6,7 +6,7 @@
 
     Bug fixes:
         - Workarounds for issues related to drive iteration on BIOS. Discovered
-          on an HP Pavillion dv6-3152er.
+          on an HP Pavilion dv6-3152er.
 
 2024-05-03  mintsuki  <mintsuki@protonmail.com>
 

@@ -647,7 +647,7 @@ fail:
 
         struct volume *block = ext_mem_alloc(sizeof(struct volume));
 
-        if (status || drive->Media->ReadOnly) {
+        if ((status || drive->Media->ReadOnly) && drive->Media->BlockSize == 2048) {
             block->index = optical_indices++;
             block->is_optical = true;
         } else {

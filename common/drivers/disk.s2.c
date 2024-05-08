@@ -143,6 +143,39 @@ int disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t c
     return DISK_SUCCESS;
 }
 
+static int disk_write_sectors(struct volume *volume, void *buf, uint64_t block, size_t count) {
+    struct dap dap = {0};
+
+    if (count * volume->sector_size > XFER_BUF_SIZE)
+        panic(false, "XFER");
+
+    if (xfer_buf == NULL)
+        xfer_buf = conv_mem_alloc(XFER_BUF_SIZE);
+
+    dap.size    = 16;
+    dap.count   = count;
+    dap.segment = rm_seg(xfer_buf);
+    dap.offset  = rm_off(xfer_buf);
+    dap.lba     = block;
+
+    struct rm_regs r = {0};
+    r.eax = 0x4301;
+    r.edx = volume->drive;
+    r.esi = (uint32_t)rm_off(&dap);
+    r.ds  = rm_seg(&dap);
+
+    if (buf != NULL)
+        memcpy(xfer_buf, buf, count * volume->sector_size);
+
+    rm_int(0x13, &r, &r);
+
+    if (r.eflags & EFLAGS_CF) {
+        return DISK_FAILURE;
+    }
+
+    return DISK_SUCCESS;
+}
+
 static bool detect_sector_size(struct volume *volume) {
     struct dap dap = {0};
 
@@ -214,7 +247,7 @@ void disk_create_index(void) {
     // Disk count (only non-removable) at 0040:0075
     uint8_t bda_disk_count = mminb(rm_desegment(0x0040, 0x0075));
 
-    int optical_indices = 1, hdd_indices = 1;
+    int optical_indices = 1, hdd_indices = 1, consumed_bda_disks = 0;
 
     for (uint8_t drive = 0x80; drive != 0 /* overflow */; drive++) {
         struct rm_regs r = {0};
@@ -246,10 +279,6 @@ void disk_create_index(void) {
             }
         }
 
-        if (!is_removable && hdd_indices > bda_disk_count) {
-            continue;
-        }
-
         struct volume *block = ext_mem_alloc(sizeof(struct volume));
 
         block->drive = drive;
@@ -262,7 +291,19 @@ void disk_create_index(void) {
             continue;
         }
 
-        block->is_optical = is_removable;
+        if (disk_read_sectors(block, xfer_buf, 0, 1) != DISK_SUCCESS) {
+            continue;
+        }
+
+        block->is_optical = (disk_write_sectors(block, xfer_buf, 0, 1) != DISK_SUCCESS) && block->sector_size == 2048;
+
+        if (!is_removable && !block->is_optical) {
+            if (consumed_bda_disks == bda_disk_count) {
+                pmm_free(block, sizeof(struct volume));
+                continue;
+            }
+            consumed_bda_disks++;
+        }
 
         if (block->is_optical) {
             block->index = optical_indices++;

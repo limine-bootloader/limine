@@ -1,3 +1,13 @@
+2024-05-08  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.5.1 ***
+
+    Noteworthy changes compared to the previous release, 7.5.0:
+
+    Bug fixes:
+        - Workarounds for issues related to drive iteration on BIOS. Discovered
+          on an HP Pavillion dv6-3152er.
+
 2024-05-03  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.5.0 ***

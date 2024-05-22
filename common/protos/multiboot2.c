@@ -592,15 +592,15 @@ reloc_fail:
 #if defined (UEFI)
     {
     #if defined (__i386__)
-        struct multiboot_tag_efi64_ih *tag = (struct multiboot_tag_efi64_ih *)(mb2_info + info_idx);
-
-        tag->type = MULTIBOOT_TAG_TYPE_EFI64_IH;
-        tag->size = sizeof(struct multiboot_tag_efi64_ih);
-    #elif defined (__x86_64__)
         struct multiboot_tag_efi32_ih *tag = (struct multiboot_tag_efi32_ih *)(mb2_info + info_idx);
 
         tag->type = MULTIBOOT_TAG_TYPE_EFI32_IH;
         tag->size = sizeof(struct multiboot_tag_efi32_ih);
+    #elif defined (__x86_64__)
+        struct multiboot_tag_efi64_ih *tag = (struct multiboot_tag_efi64_ih *)(mb2_info + info_idx);
+
+        tag->type = MULTIBOOT_TAG_TYPE_EFI64_IH;
+        tag->size = sizeof(struct multiboot_tag_efi64_ih);
     #endif
 
         tag->pointer = (uintptr_t)efi_image_handle;

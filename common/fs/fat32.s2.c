@@ -104,24 +104,49 @@ static int fat32_init_context(struct fat32_context* context, struct volume *part
     struct fat32_bpb bpb;
     volume_read(context->part, &bpb, 0, sizeof(struct fat32_bpb));
 
+    // Sanity check of bpb
+
     // Checks for FAT12/16
     if (strncmp((((void *)&bpb) + 0x36), "FAT", 3) == 0) {
-        goto valid;
+        goto signature_valid;
     }
 
     // Checks for FAT32
     if (strncmp((((void *)&bpb) + 0x52), "FAT", 3) == 0) {
-        goto valid;
+        goto signature_valid;
     }
 
     // Checks for FAT32 (with 64-bit sector count)
     if (strncmp((((void *)&bpb) + 0x03), "FAT32", 5) == 0) {
-        goto valid;
+        goto signature_valid;
     }
 
     return 1;
 
-valid:;
+signature_valid:;
+
+    const uint8_t sector_per_cluster_valid_values[] = { 1, 2, 4, 8, 16, 32, 64, 128 };
+    for (size_t i = 0; i < SIZEOF_ARRAY(sector_per_cluster_valid_values); i++) {
+        if (bpb.sectors_per_cluster == sector_per_cluster_valid_values[i]) {
+            goto sector_per_cluster_valid;
+        }
+    }
+
+    return 1;
+
+sector_per_cluster_valid:;
+
+    const uint16_t bytes_per_sector_valid_values[] = { 512, 1024, 2048, 4096 };
+    for (size_t i = 0; i < SIZEOF_ARRAY(bytes_per_sector_valid_values); i++) {
+        if (bpb.bytes_per_sector == bytes_per_sector_valid_values[i]) {
+            goto bytes_per_sector_valid;
+        }
+    }
+
+    return 1;
+
+bytes_per_sector_valid:;
+
     // The following mess to identify the FAT type is from the FAT spec
     // at paragraph 3.5
     size_t root_dir_sects = ((bpb.root_entries_count * 32) + (bpb.bytes_per_sector - 1)) / bpb.bytes_per_sector;

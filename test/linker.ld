@@ -8,7 +8,7 @@ PHDRS
 
 SECTIONS
 {
-    . = 0xffffffff80000000;
+    . = 0;
     kernel_start = .;
 
     .text : {

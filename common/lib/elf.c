@@ -366,6 +366,8 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, struct elf_range **_r
         panic(true, "elf: phdr_size < sizeof(struct elf64_phdr)");
     }
 
+    bool is_reloc = elf64_is_relocatable(elf, hdr);
+
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
@@ -374,7 +376,9 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, struct elf_range **_r
         }
 
         if (phdr->p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
-            continue;
+            if (!is_reloc || phdr->p_vaddr >= 0x80000000) {
+                continue;
+            }
         }
 
         ranges_count++;
@@ -395,7 +399,9 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, struct elf_range **_r
         }
 
         if (phdr->p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
-            continue;
+            if (!is_reloc || phdr->p_vaddr >= 0x80000000) {
+                continue;
+            }
         }
 
         uint64_t load_addr = phdr->p_vaddr + slide;
@@ -443,6 +449,11 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
     if (is_reloc) {
         *is_reloc = false;
     }
+    if (elf64_is_relocatable(elf, hdr)) {
+        if (is_reloc) {
+            *is_reloc = true;
+        }
+    }
 
     uint64_t slide = 0;
     size_t try_count = 0;
@@ -458,6 +469,8 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
         panic(true, "elf: phdr_size < sizeof(struct elf64_phdr)");
     }
 
+    bool lower_to_higher = false;
+
     uint64_t min_vaddr = (uint64_t)-1;
     uint64_t max_vaddr = 0;
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
@@ -467,9 +480,16 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
             continue;
         }
 
-        // Drop entries not in the higher half
         if (phdr->p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
-            continue;
+            if (!*is_reloc || phdr->p_vaddr >= 0x80000000) {
+                continue;
+            }
+            lower_to_higher = true;
+            slide = FIXED_HIGHER_HALF_OFFSET_64;
+        } else {
+            if (lower_to_higher) {
+                panic(true, "elf: Mix of lower and higher half PHDRs");
+            }
         }
 
         // check for overlapping phdrs
@@ -480,9 +500,10 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
                 continue;
             }
 
-            // Drop entries not in the higher half
             if (phdr_in->p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
-                continue;
+                if (!*is_reloc || phdr->p_vaddr >= 0x80000000) {
+                    continue;
+                }
             }
 
             if (phdr_in == phdr) {
@@ -524,8 +545,8 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
         }
     }
 
-    if (max_vaddr == 0 || min_vaddr == (uint64_t)-1) {
-        panic(true, "elf: No higher half PHDRs exist");
+    if (min_vaddr == (uint64_t)-1) {
+        panic(true, "elf: No usable PHDRs exist");
     }
 
     image_size = max_vaddr - min_vaddr;
@@ -537,17 +558,11 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
         *_image_size = image_size;
     }
 
-    if (elf64_is_relocatable(elf, hdr)) {
-        if (is_reloc) {
-            *is_reloc = true;
-        }
-    }
-
 again:
     if (*is_reloc && kaslr) {
-        slide = rand32() & ~(max_align - 1);
+        slide = (rand32() & ~(max_align - 1)) + (lower_to_higher ? FIXED_HIGHER_HALF_OFFSET_64 : 0);
 
-        if ((*virtual_base - FIXED_HIGHER_HALF_OFFSET_64) + slide + image_size >= 0x80000000) {
+        if (*virtual_base + slide + image_size < 0xffffffff80000000 /* this comparison relies on overflow */) {
             if (++try_count == max_simulated_tries) {
                 panic(true, "elf: Image wants to load too high");
             }
@@ -564,9 +579,10 @@ again:
             continue;
         }
 
-        // Drop entries not in the higher half
         if (phdr->p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
-            continue;
+            if (!*is_reloc || phdr->p_vaddr >= 0x80000000) {
+                continue;
+            }
         }
 
         // Sanity checks

@@ -149,7 +149,8 @@ inside said section.
 ## Entry memory layout
 
 The protocol mandates kernels to load themselves at or above
-`0xffffffff80000000`. Lower half kernels are *not supported*.
+`0xffffffff80000000`. Lower half kernels are *not supported*. For relocatable kernels
+asking to be loaded at address 0, a minimum slide of `0xffffffff80000000` is applied.
 
 At handoff, the kernel will be properly loaded and mapped with appropriate
 MMU permissions, as supervisor, at the requested virtual memory address (provided it is at

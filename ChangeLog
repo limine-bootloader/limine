@@ -1,3 +1,18 @@
+2024-05-22  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.5.2 ***
+
+    Noteworthy changes compared to the previous release, 7.5.1:
+
+    Bug fixes:
+        - Fix missing checks in the FAT filesystem driver that could cause
+          divide-by-0 exceptions when parsing malformed/corrupted filesystems.
+        - Limine boot protocol: Do not reject relocatable kernels with ELF PHDR
+          load addresses at or around 0, instead slide them all the way to the
+          topmost 2GiB (0xffffffff80000000). This allows setting a base load
+          address of 0 in LD BFD/LLD linker scripts which makes LD BFD (the
+          default GNU LD) actually emit an ELF with ET_DYN type.
+
 2024-05-08  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.5.1 ***

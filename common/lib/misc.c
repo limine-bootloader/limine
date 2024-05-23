@@ -242,7 +242,7 @@ retry:
 
                     new_entry->NumberOfPages -= (base - untouched_memmap[j].base) / 4096;
                     new_entry->PhysicalStart = base;
-                    new_entry->VirtualStart = new_entry->PhysicalStart;
+                    new_entry->VirtualStart = 0;
 
                     length = new_entry->NumberOfPages * 4096;
                     top = base + length;
@@ -260,7 +260,7 @@ retry:
 
                     new_entry->NumberOfPages -= (untouched_memmap[j].base - base) / 4096;
                     new_entry->PhysicalStart = untouched_memmap[j].base;
-                    new_entry->VirtualStart = new_entry->PhysicalStart;
+                    new_entry->VirtualStart = 0;
 
                     base = new_entry->PhysicalStart;
                     length = new_entry->NumberOfPages * 4096;
@@ -289,7 +289,7 @@ retry:
 
                 new_entry->NumberOfPages = (length - untouched_memmap[j].length) / 4096;
                 new_entry->PhysicalStart = base + untouched_memmap[j].length;
-                new_entry->VirtualStart = new_entry->PhysicalStart;
+                new_entry->VirtualStart = 0;
 
                 break;
             }

@@ -87,17 +87,46 @@ void multiboot2_main(uint32_t magic, struct multiboot_info* mb_info_addr) {
 
                 struct multiboot_mmap_entry *m = (struct multiboot_mmap_entry *)(mmap->entries);
 
-                size_t entry_count = mmap->size / sizeof(struct multiboot_mmap_entry);
+                size_t entry_count = (mmap->size - sizeof(struct multiboot_tag_mmap)) / sizeof(struct multiboot_mmap_entry);
                 e9_printf("\t\t entry count: %d", entry_count);
 
-                // For now we only print the usable memory map entries since
-                // printing the whole memory map blows my terminal up. We also
-                // iterate through the available memory map entries and add up
-                // to find the total amount of usable memory.
                 for (size_t i = 0; i < entry_count; i++) {
                     e9_printf("\t\t\t addr=%x", m[i].addr);
                     e9_printf("\t\t\t len=%x", m[i].len);
                     e9_printf("\t\t\t type=%x", m[i].type);
+                }
+
+                break;
+            }
+
+            case MULTIBOOT_TAG_TYPE_EFI_MMAP: {
+                struct multiboot_tag_efi_mmap *mmap = (struct multiboot_tag_efi_mmap *)tag;
+                e9_printf("\t efi_mmap:");
+                e9_printf("\t\t descr_vers=%d", mmap->descr_vers);
+                e9_printf("\t\t descr_size=%d", mmap->descr_size);
+                e9_printf("\t\t size=%d", mmap->size);
+                e9_printf("\t\t entries:");
+
+                struct memory_descriptor {
+                    uint32_t type;
+                    uint32_t pad;
+                    uint64_t physical_start;
+                    uint64_t virtual_start;
+                    uint64_t pages;
+                    uint64_t attribute;
+                };
+
+                size_t entry_count = (mmap->size - sizeof(struct multiboot_tag_efi_mmap)) / mmap->descr_size;
+                e9_printf("\t\t entry count: %d", entry_count);
+
+                for (size_t i = 0; i < entry_count; i++) {
+                    struct memory_descriptor *m = (struct memory_descriptor *)(mmap->efi_mmap + i * mmap->descr_size);
+
+                    e9_printf("\t\t\t type=%x", m->type);
+                    e9_printf("\t\t\t physical_start=%x", m->physical_start);
+                    e9_printf("\t\t\t virtual_start=%x", m->virtual_start);
+                    e9_printf("\t\t\t pages=%x", m->pages);
+                    e9_printf("\t\t\t attribute=%x", m->attribute);
                 }
 
                 break;

@@ -1163,7 +1163,7 @@ cleanup:
     return ret;
 }
 
-#define LIMINE_VERSION "7.5.2"
+#define LIMINE_VERSION "7.5.3"
 #define LIMINE_COPYRIGHT "Copyright (C) 2019-2024 mintsuki and contributors."
 
 static void version_usage(void) {

@@ -10,6 +10,11 @@
 #include <mm/pmm.h>
 #include <fs/file.h>
 
+#define ET_NONE     0
+#define ET_REL      1
+#define ET_EXEC     2
+#define ET_DYN      3
+
 #define PT_LOAD     0x00000001
 #define PT_DYNAMIC  0x00000002
 #define PT_INTERP   0x00000003
@@ -31,7 +36,6 @@
 #define ARCH_RISCV   0xf3
 #define BITS_LE      0x01
 #define ELFCLASS64   0x02
-#define ET_DYN       0x0003
 #define SHT_RELA     0x00000004
 #define R_X86_64_RELATIVE  0x00000008
 #define R_AARCH64_RELATIVE 0x00000403
@@ -152,6 +156,10 @@ static bool elf64_is_relocatable(uint8_t *elf, struct elf64_hdr *hdr) {
 
         if (phdr->p_type != PT_DYNAMIC) {
             continue;
+        }
+
+        if (hdr->type == ET_DYN) {
+            return true;
         }
 
         for (uint16_t j = 0; j < phdr->p_filesz / sizeof(struct elf64_dyn); j++) {

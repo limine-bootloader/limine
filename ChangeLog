@@ -1,3 +1,19 @@
+2024-05-24  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.5.3 ***
+
+    Noteworthy changes compared to the previous release, 7.5.2:
+
+    Bug fixes:
+        - Multiboot 2 protocol: Fix an issue where the 32-bit EFI Image Handle
+          tag would be generated under 64-bit EFI and vice versa.
+        - Do not set VirtualStart to PhysicalStart when generating the EFI
+          memory map; set it to 0 instead.
+        - Do not perform additional checks when loading relocatable ELF files
+          after verifying that they are of type ET_DYN and have a PT_DYNAMIC
+          segment. This ensures that certain relocatable ELF files that were
+          previously misidentified as non-relocatable are recognised as such.
+
 2024-05-22  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.5.2 ***

@@ -1,6 +1,7 @@
 #include <e9print.h>
 #include <stdint.h>
 #include <multiboot2.h>
+#include <efi.h>
 
 struct multiboot_info {
     uint32_t size;
@@ -98,6 +99,32 @@ void multiboot2_main(uint32_t magic, struct multiboot_info* mb_info_addr) {
                     e9_printf("\t\t\t addr=%x", m[i].addr);
                     e9_printf("\t\t\t len=%x", m[i].len);
                     e9_printf("\t\t\t type=%x", m[i].type);
+                }
+
+                break;
+            }
+
+            case MULTIBOOT_TAG_TYPE_EFI_MMAP: {
+                struct multiboot_tag_efi_mmap *mmap = (struct multiboot_tag_efi_mmap *)tag;
+                e9_printf("\t efi mmap:");
+                e9_printf("\t\t map_size    = %d", mmap->size);
+                e9_printf("\t\t desc_size   = %d", mmap->descr_size);
+                e9_printf("\t\t desc_version= %d", mmap->descr_vers);
+
+                size_t entry_count = mmap->size / mmap->descr_size;
+
+                e9_printf("\t\t entry count = %d", entry_count);
+                e9_printf("\t\t entries:");
+
+                for (size_t i = 0; i < entry_count; i++) {
+                    EFI_MEMORY_DESCRIPTOR * e = (EFI_MEMORY_DESCRIPTOR * ) (mmap->efi_mmap + i * mmap->descr_size);
+                    e9_printf(
+                        "\t\t\t addr=%x, len=%x type=%x attr=%x",
+                        e->PhysicalStart,
+                        e->NumberOfPages * 4096,
+                        e->Type,
+                        e->Attribute
+                    );
                 }
 
                 break;

@@ -96,7 +96,8 @@ override CFLAGS_MB := \
     -mgeneral-regs-only \
     -I../freestanding-headers \
     -I. \
-    -I../common/protos
+    -I../common/protos \
+    -I../limine-efi/inc
 
 ifneq ($(findstring 86,$(shell $(CC_FOR_TARGET) -dumpmachine)),)
 all: test.elf multiboot2.elf multiboot.elf

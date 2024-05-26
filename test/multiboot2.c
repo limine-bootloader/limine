@@ -82,23 +82,26 @@ void multiboot2_main(uint32_t magic, struct multiboot_info* mb_info_addr) {
             case MULTIBOOT_TAG_TYPE_MMAP: {
                 struct multiboot_tag_mmap *mmap = (struct multiboot_tag_mmap *)tag;
                 e9_printf("\t mmap:");
-                e9_printf("\t\t entry_size=%d", mmap->entry_size);
-                e9_printf("\t\t entry_version=%d", mmap->entry_version);
-                e9_printf("\t\t entries:");
+                e9_printf("\t\t entry_size    = %d", mmap->entry_size);
+                e9_printf("\t\t entry_version = %d", mmap->entry_version);
 
                 struct multiboot_mmap_entry *m = (struct multiboot_mmap_entry *)(mmap->entries);
 
                 size_t entry_count = mmap->size / sizeof(struct multiboot_mmap_entry);
-                e9_printf("\t\t entry count: %d", entry_count);
+                e9_printf("\t\t entry count=%d", entry_count);
 
+                e9_printf("\t\t entries:");
                 // For now we only print the usable memory map entries since
                 // printing the whole memory map blows my terminal up. We also
                 // iterate through the available memory map entries and add up
                 // to find the total amount of usable memory.
                 for (size_t i = 0; i < entry_count; i++) {
-                    e9_printf("\t\t\t addr=%x", m[i].addr);
-                    e9_printf("\t\t\t len=%x", m[i].len);
-                    e9_printf("\t\t\t type=%x", m[i].type);
+                    e9_printf(
+                        "\t\t\t addr=%x, len=%x, type=%x",
+                        m[i].addr,
+                        m[i].len,
+                        m[i].type
+                    );
                 }
 
                 break;

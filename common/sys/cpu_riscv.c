@@ -8,6 +8,7 @@
 #include <mm/pmm.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <libfdt/libfdt.h>
 
 // ACPI RISC-V Hart Capabilities Table
 struct rhct {
@@ -81,11 +82,11 @@ static inline struct rhct_hart_info *rhct_get_hart_info(struct rhct *rhct, uint3
     return NULL;
 }
 
-void init_riscv(void) {
+static void init_riscv_acpi(void) {
     struct madt *madt = acpi_get_table("APIC", 0);
     struct rhct *rhct = acpi_get_table("RHCT", 0);
     if (madt == NULL || rhct == NULL) {
-        panic(false, "riscv: requires acpi");
+        panic(false, "riscv: requires `APIC` and `RHCT` ACPI tables");
     }
 
     for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
@@ -152,6 +153,85 @@ void init_riscv(void) {
         if (hart->hartid == bsp_hartid) {
             bsp_hart = hart;
         }
+    }
+}
+
+static void init_riscv_fdt(const void *fdt) {
+    if (fdt_check_header(fdt)) {
+        panic(false, "riscv: invalid device tree");
+    }
+
+    int cpus = fdt_path_offset(fdt, "/cpus");
+    if (cpus < 0) {
+        panic(false, "riscv: missing `/cpus` node");
+    }
+
+    int node;
+    fdt_for_each_subnode(node, fdt, cpus) {
+        const void *prop;
+
+        if (!(prop = fdt_getprop(fdt, node, "device_type", NULL)) || strcmp(prop, "cpu")) {
+            continue;
+        }
+
+        if (!(prop = fdt_getprop(fdt, node, "reg", NULL))) {
+            continue;
+        }
+        size_t hartid = fdt32_ld(prop);
+
+        uint8_t flags = 0;
+        uint8_t mmu_type = 0;
+        if ((prop = fdt_getprop(fdt, node, "mmu-type", NULL))) {
+            if (!strcmp(prop, "riscv,sv39")) {
+                mmu_type = RISCV_MMU_TYPE_SV39;
+                flags |= RISCV_HART_HAS_MMU;
+            } else if (!strcmp(prop, "riscv,sv48")) {
+                mmu_type = RISCV_MMU_TYPE_SV48;
+                flags |= RISCV_HART_HAS_MMU;
+            } else if (!strcmp(prop, "riscv,sv57")) {
+                mmu_type = RISCV_MMU_TYPE_SV57;
+                flags |= RISCV_HART_HAS_MMU;
+            }
+        }
+
+        const char *isa_string = fdt_getprop(fdt, node, "riscv,isa", NULL);
+        if (isa_string == NULL) {
+            print("riscv: missing isa string for hartid %u, skipping.\n", hartid);
+            continue;
+        }
+
+        if (strncmp("rv64", isa_string, 4) && strncmp("rv32", isa_string, 4)) {
+            print("riscv: skipping hartid %u with invalid isa string: %s", hartid, isa_string);
+        }
+
+        struct riscv_hart *hart = ext_mem_alloc(sizeof(struct riscv_hart));
+        if (hart == NULL) {
+            panic(false, "out of memory");
+        }
+
+        hart->hartid = hartid;
+        hart->acpi_uid = 0;
+        hart->isa_string = isa_string;
+        hart->mmu_type = mmu_type;
+        hart->flags = flags;
+
+        hart->next = hart_list;
+        hart_list = hart;
+
+        if (hart->hartid == bsp_hartid) {
+            bsp_hart = hart;
+        }
+    }
+}
+
+void init_riscv(void) {
+    void *fdt = get_device_tree_blob();
+    if (fdt != NULL) {
+        init_riscv_fdt(fdt);
+    } else if (acpi_get_rsdp()) {
+        init_riscv_acpi();
+    } else {
+        panic(false, "riscv: requires DTB or ACPI");
     }
 
     if (bsp_hart == NULL) {

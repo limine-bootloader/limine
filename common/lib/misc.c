@@ -110,6 +110,18 @@ uint32_t hex2bin(uint8_t *str, uint32_t size) {
 
 #if defined (UEFI)
 
+void *get_device_tree_blob(void) {
+    EFI_GUID dtb_guid = EFI_DTB_TABLE_GUID;
+    for (size_t i = 0; i < gST->NumberOfTableEntries; i++) {
+        EFI_CONFIGURATION_TABLE *cur_table = &gST->ConfigurationTable[i];
+        if (memcmp(&cur_table->VendorGuid, &dtb_guid, sizeof(EFI_GUID)))
+            continue;
+        printv("efi: found dtb at %p\n", cur_table->VendorTable);
+        return cur_table->VendorTable;
+    }
+    return NULL;
+}
+
 #if defined (__riscv)
 
 RISCV_EFI_BOOT_PROTOCOL *get_riscv_boot_protocol(void) {

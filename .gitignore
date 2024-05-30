@@ -4,6 +4,7 @@
 /limine-efi
 /freestanding-headers
 /common/flanterm
+/common/libfdt
 /common/lib/stb_image.h
 /common/cc-runtime
 /decompressor/tinf

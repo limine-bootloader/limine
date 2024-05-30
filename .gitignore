@@ -9,6 +9,7 @@
 /common/cc-runtime
 /decompressor/tinf
 /decompressor/cc-runtime
+/dtc
 /tinf
 /stb
 /ovmf*

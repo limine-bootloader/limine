@@ -337,7 +337,7 @@ distclean: clean
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf common/flanterm common/libfdt common/lib/stb_image.h decompressor/tinf tinf stb freestanding-headers common/cc-runtime decompressor/cc-runtime limine-efi configure timestamps build-aux *'~' autom4te.cache aclocal.m4 *.tar*
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf common/flanterm common/libfdt common/lib/stb_image.h decompressor/tinf tinf stb dtc freestanding-headers common/cc-runtime decompressor/cc-runtime limine-efi configure timestamps build-aux *'~' autom4te.cache aclocal.m4 *.tar*
 
 .PHONY: common-uefi-x86-64
 common-uefi-x86-64:

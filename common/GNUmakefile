@@ -166,27 +166,21 @@ endif
 ifeq ($(TARGET),uefi-x86-64)
     override LDFLAGS_FOR_TARGET += \
         -m elf_x86_64 \
-        -static \
         -pie \
-        --no-dynamic-linker \
         -z text
 endif
 
 ifeq ($(TARGET),uefi-ia32)
     override LDFLAGS_FOR_TARGET += \
         -m elf_i386 \
-        -static \
         -pie \
-        --no-dynamic-linker \
         -z text
 endif
 
 ifeq ($(TARGET),uefi-aarch64)
     override LDFLAGS_FOR_TARGET += \
         -m aarch64elf \
-        -static \
         -pie \
-        --no-dynamic-linker \
         -z text
 endif
 
@@ -194,9 +188,7 @@ ifeq ($(TARGET),uefi-riscv64)
     override LDFLAGS_FOR_TARGET += \
         -m elf64lriscv \
         --no-relax \
-        -static \
         -pie \
-        --no-dynamic-linker \
         -z text
 endif
 

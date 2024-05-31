@@ -29,9 +29,7 @@ override LDFLAGS += \
     -Tlinker.ld \
     -nostdlib \
     -zmax-page-size=0x1000 \
-    -static \
     -pie \
-    --no-dynamic-linker \
     -ztext
 
 override LDFLAGS_MB2 := \

@@ -310,6 +310,7 @@ dist:
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/decompressor/cc-runtime/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/limine-efi/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/limine-efi/.gitignore"
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/dtc"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/tinf"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/stb"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"limine-$(LIMINE_VERSION)/.git"

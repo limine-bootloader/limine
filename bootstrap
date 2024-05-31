@@ -71,6 +71,7 @@ if ! [ -f version ]; then
     cp -rp dtc/libfdt common/
     find common/libfdt/ -type f -not -name '*.c' -not -name '*.h' -delete
     patch -p1 < common/libfdt.patch
+    rm -f common/libfdt/*.orig
 fi
 
 # Create timestamps file

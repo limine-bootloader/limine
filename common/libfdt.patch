@@ -1,0 +1,177 @@
+--- a/common/libfdt/fdt.c	2023-02-09 11:01:35.000000000 +0100
++++ b/common/libfdt/fdt.c	2023-11-27 14:45:52.372043771 +0100
+@@ -5,8 +5,8 @@
+  */
+ #include "libfdt_env.h"
+
+-#include <fdt.h>
+-#include <libfdt.h>
++#include "fdt.h"
++#include "libfdt.h"
+
+ #include "libfdt_internal.h"
+
+--- a/common/libfdt/fdt_addresses.c	2023-02-09 11:01:35.000000000 +0100
++++ b/common/libfdt/fdt_addresses.c	2023-11-27 14:45:52.372043771 +0100
+@@ -6,8 +6,8 @@
+  */
+ #include "libfdt_env.h"
+
+-#include <fdt.h>
+-#include <libfdt.h>
++#include "fdt.h"
++#include "libfdt.h"
+
+ #include "libfdt_internal.h"
+
+--- a/common/libfdt/fdt_check.c	2023-02-09 11:01:35.000000000 +0100
++++ b/common/libfdt/fdt_check.c	2023-11-27 14:45:52.372043771 +0100
+@@ -5,8 +5,8 @@
+  */
+ #include "libfdt_env.h"
+
+-#include <fdt.h>
+-#include <libfdt.h>
++#include "fdt.h"
++#include "libfdt.h"
+
+ #include "libfdt_internal.h"
+
+--- a/common/libfdt/fdt_empty_tree.c	2023-02-09 11:01:35.000000000 +0100
++++ b/common/libfdt/fdt_empty_tree.c	2023-11-27 14:45:52.372043771 +0100
+@@ -5,8 +5,8 @@
+  */
+ #include "libfdt_env.h"
+
+-#include <fdt.h>
+-#include <libfdt.h>
++#include "fdt.h"
++#include "libfdt.h"
+
+ #include "libfdt_internal.h"
+
+--- a/common/libfdt/fdt_overlay.c	2023-02-09 11:01:35.000000000 +0100
++++ b/common/libfdt/fdt_overlay.c	2023-11-27 14:45:52.372043771 +0100
+@@ -6,8 +6,8 @@
+  */
+ #include "libfdt_env.h"
+
+-#include <fdt.h>
+-#include <libfdt.h>
++#include "fdt.h"
++#include "libfdt.h"
+
+ #include "libfdt_internal.h"
+
+@@ -461,7 +461,7 @@
+ 		if (!name_len)
+ 			return -FDT_ERR_BADOVERLAY;
+
+-		poffset = strtoul(sep + 1, &endptr, 10);
++		poffset = strtoui(sep + 1, (const char **)&endptr, 10);
+ 		if ((*endptr != '\0') || (endptr <= (sep + 1)))
+ 			return -FDT_ERR_BADOVERLAY;
+
+--- a/common/libfdt/fdt_ro.c	2023-02-09 11:01:35.000000000 +0100
++++ b/common/libfdt/fdt_ro.c	2023-11-27 14:45:52.372043771 +0100
+@@ -5,8 +5,8 @@
+  */
+ #include "libfdt_env.h"
+
+-#include <fdt.h>
+-#include <libfdt.h>
++#include "fdt.h"
++#include "libfdt.h"
+
+ #include "libfdt_internal.h"
+
+--- a/common/libfdt/fdt_rw.c	2023-02-09 11:01:35.000000000 +0100
++++ b/common/libfdt/fdt_rw.c	2023-11-27 14:45:52.372043771 +0100
+@@ -5,8 +5,8 @@
+  */
+ #include "libfdt_env.h"
+
+-#include <fdt.h>
+-#include <libfdt.h>
++#include "fdt.h"
++#include "libfdt.h"
+
+ #include "libfdt_internal.h"
+
+--- a/common/libfdt/fdt_strerror.c	2023-02-09 11:01:35.000000000 +0100
++++ b/common/libfdt/fdt_strerror.c	2023-11-27 14:45:52.372043771 +0100
+@@ -6,8 +6,8 @@
+  */
+ #include "libfdt_env.h"
+
+-#include <fdt.h>
+-#include <libfdt.h>
++#include "fdt.h"
++#include "libfdt.h"
+
+ #include "libfdt_internal.h"
+
+--- a/common/libfdt/fdt_sw.c	2023-02-09 11:01:35.000000000 +0100
++++ b/common/libfdt/fdt_sw.c	2023-11-27 14:45:52.372043771 +0100
+@@ -5,8 +5,8 @@
+  */
+ #include "libfdt_env.h"
+
+-#include <fdt.h>
+-#include <libfdt.h>
++#include "fdt.h"
++#include "libfdt.h"
+
+ #include "libfdt_internal.h"
+
+--- a/common/libfdt/fdt_wip.c	2023-02-09 11:01:35.000000000 +0100
++++ b/common/libfdt/fdt_wip.c	2023-11-27 14:45:52.375377052 +0100
+@@ -5,8 +5,8 @@
+  */
+ #include "libfdt_env.h"
+
+-#include <fdt.h>
+-#include <libfdt.h>
++#include "fdt.h"
++#include "libfdt.h"
+
+ #include "libfdt_internal.h"
+
+--- a/common/libfdt/libfdt.h	2023-02-09 11:01:35.000000000 +0100
++++ b/common/libfdt/libfdt.h	2023-11-27 14:45:52.375377052 +0100
+@@ -6,8 +6,8 @@
+  * Copyright (C) 2006 David Gibson, IBM Corporation.
+  */
+
+-#include <libfdt_env.h>
+-#include <fdt.h>
++#include "libfdt_env.h"
++#include "fdt.h"
+
+ #ifdef __cplusplus
+ extern "C" {
+--- a/common/libfdt/libfdt_env.h	2023-02-09 11:01:35.000000000 +0100
++++ b/common/libfdt/libfdt_env.h	2023-11-27 14:45:52.375377052 +0100
+@@ -10,9 +10,9 @@
+ #include <stdbool.h>
+ #include <stddef.h>
+ #include <stdint.h>
+-#include <stdlib.h>
+-#include <string.h>
+ #include <limits.h>
++#include <lib/libc.h>
++#include <lib/misc.h>
+
+ #ifdef __CHECKER__
+ #define FDT_FORCE __attribute__((force))
+--- a/common/libfdt/libfdt_internal.h	2023-02-09 11:01:35.000000000 +0100
++++ b/common/libfdt/libfdt_internal.h	2023-11-27 14:45:52.375377052 +0100
+@@ -5,7 +5,7 @@
+  * libfdt - Flat Device Tree manipulation
+  * Copyright (C) 2006 David Gibson, IBM Corporation.
+  */
+-#include <fdt.h>
++#include "fdt.h"
+
+ #define FDT_ALIGN(x, a)		(((x) + (a) - 1) & ~((a) - 1))
+ #define FDT_TAGALIGN(x)		(FDT_ALIGN((x), FDT_TAGSIZE))

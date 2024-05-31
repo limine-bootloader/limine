@@ -26,6 +26,8 @@ extern UINT32 efi_desc_ver;
 
 extern bool efi_boot_services_exited;
 bool efi_exit_boot_services(void);
+
+void *get_device_tree_blob(void);
 #endif
 
 extern struct volume *boot_volume;

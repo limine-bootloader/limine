@@ -34,7 +34,7 @@ SECTIONS
     } :data
 
     /DISCARD/ : {
-        *(.eh_frame)
+        *(.eh_frame*)
         *(.note .note.*)
     }
 }

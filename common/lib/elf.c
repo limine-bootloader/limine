@@ -51,6 +51,7 @@
 #define R_RISCV_JUMP_SLOT  0x00000005
 #define R_X86_64_64        0x00000001
 #define R_RISCV_64         0x00000002
+#define R_AARCH64_ABS64    0x00000101
 
 /* Indices into identification array */
 #define EI_CLASS    4
@@ -329,12 +330,17 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
 #elif defined (__aarch64__)
                 case R_AARCH64_GLOB_DAT:
                 case R_AARCH64_JUMP_SLOT:
+                case R_AARCH64_ABS64:
 #elif defined (__riscv64)
                 case R_RISCV_JUMP_SLOT:
 #endif
                 {
                     struct elf64_sym *s = (void *)elf + symtab_offset + symtab_ent * relocation->r_symbol;
-                    *ptr = slide + s->st_value;
+                    *ptr = slide + s->st_value
+#if defined (__aarch64__)
+                           + relocation->r_addend;
+#endif
+                    ;
                     break;
                 }
 #if defined (__x86_64__) || defined (__i386__) || defined (__riscv64)

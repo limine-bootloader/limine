@@ -338,7 +338,7 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
                     struct elf64_sym *s = (void *)elf + symtab_offset + symtab_ent * relocation->r_symbol;
                     *ptr = slide + s->st_value
 #if defined (__aarch64__)
-                           + relocation->r_addend;
+                           + relocation->r_addend
 #endif
                     ;
                     break;

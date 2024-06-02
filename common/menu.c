@@ -1115,5 +1115,5 @@ noreturn void boot(char *config) {
         chainload(config, cmdline);
     }
 
-    panic(true, "Unsupported protocol specified for kernel.");
+    panic(true, "Unsupported protocol specified.");
 }

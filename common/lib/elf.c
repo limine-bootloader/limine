@@ -330,7 +330,6 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
 #elif defined (__aarch64__)
                 case R_AARCH64_GLOB_DAT:
                 case R_AARCH64_JUMP_SLOT:
-                case R_AARCH64_ABS64:
 #elif defined (__riscv64)
                 case R_RISCV_JUMP_SLOT:
 #endif
@@ -343,9 +342,10 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
                     ;
                     break;
                 }
-#if defined (__x86_64__) || defined (__i386__) || defined (__riscv64)
 #if defined (__x86_64__) || defined (__i386__)
                 case R_X86_64_64:
+#elif defined (__aarch64__)
+                case R_AARCH64_ABS64:
 #elif defined (__riscv64)
                 case R_RISCV_64:
 #endif
@@ -354,7 +354,6 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
                     *ptr = slide + s->st_value + relocation->r_addend;
                     break;
                 }
-#endif
                 default: {
                     print("elf: Unknown RELA type: %x\n", relocation->r_info);
                     return false;

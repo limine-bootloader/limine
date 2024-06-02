@@ -281,7 +281,10 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
             }
         }
 
-        size_t relocs_i = rela_size / rela_ent + dt_pltrelsz / rela_ent;
+        size_t relocs_i = rela_size / rela_ent;
+        if (dt_jmprel != 0) {
+            relocs_i += dt_pltrelsz / rela_ent;
+        }
         struct elf64_rela **relocs = ext_mem_alloc(relocs_i * sizeof(struct elf64_rela *));
 
         for (uint64_t j = 0, offset = 0; offset < rela_size; offset += rela_ent) {

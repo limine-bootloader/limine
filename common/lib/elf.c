@@ -25,6 +25,9 @@
 #define DT_RELA     0x00000007
 #define DT_RELASZ   0x00000008
 #define DT_RELAENT  0x00000009
+#define DT_RELR     0x00000024
+#define DT_RELRSZ   0x00000023
+#define DT_RELRENT  0x00000025
 #define DT_SYMTAB   0x00000006
 #define DT_SYMENT   0x0000000b
 #define DT_PLTRELSZ 0x00000002
@@ -55,6 +58,8 @@
 #define R_X86_64_64        0x00000001
 #define R_RISCV_64         0x00000002
 #define R_AARCH64_ABS64    0x00000101
+
+#define R_INTERNAL_RELR    0xfffffff0
 
 /* Indices into identification array */
 #define EI_CLASS    4
@@ -248,6 +253,20 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
         panic(true, "elf: phdr_size < sizeof(struct elf64_phdr)");
     }
 
+    uint64_t symtab_offset = 0;
+    uint64_t symtab_ent = 0;
+
+    uint64_t dt_pltrelsz = 0;
+    uint64_t dt_jmprel = 0;
+
+    uint64_t relr_offset = 0;
+    uint64_t relr_size = 0;
+    uint64_t relr_ent = 0;
+
+    uint64_t rela_offset = 0;
+    uint64_t rela_size = 0;
+    uint64_t rela_ent = 0;
+
     // Find DYN segment
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
@@ -255,15 +274,6 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
         if (phdr->p_type != PT_DYNAMIC)
             continue;
 
-        uint64_t symtab_offset = 0;
-        uint64_t symtab_ent = 0;
-
-        uint64_t dt_pltrelsz = 0;
-        uint64_t dt_jmprel = 0;
-
-        uint64_t rela_offset = 0;
-        uint64_t rela_size = 0;
-        uint64_t rela_ent = 0;
         for (uint16_t j = 0; j < phdr->p_filesz / sizeof(struct elf64_dyn); j++) {
             struct elf64_dyn *dyn = (void *)elf + (phdr->p_offset + j * sizeof(struct elf64_dyn));
 
@@ -276,6 +286,15 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
                     break;
                 case DT_RELASZ:
                     rela_size = dyn->d_un;
+                    break;
+                case DT_RELR:
+                    relr_offset = dyn->d_un;
+                    break;
+                case DT_RELRENT:
+                    relr_ent = dyn->d_un;
+                    break;
+                case DT_RELRSZ:
+                    relr_size = dyn->d_un;
                     break;
                 case DT_SYMTAB:
                     symtab_offset = dyn->d_un;
@@ -292,16 +311,16 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
             }
         }
 
-        if (rela_offset == 0) {
-            break;
-        }
+        break;
+    }
 
+    if (rela_offset != 0) {
         if (rela_ent < sizeof(struct elf64_rela)) {
-            panic(true, "elf: sh_entsize < sizeof(struct elf64_rela)");
+            panic(true, "elf: rela_ent < sizeof(struct elf64_rela)");
         }
 
-        for (uint16_t j = 0; j < hdr->ph_num; j++) {
-            struct elf64_phdr *_phdr = (void *)elf + (hdr->phoff + j * hdr->phdr_size);
+        for (uint16_t i = 0; i < hdr->ph_num; i++) {
+            struct elf64_phdr *_phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
             if (_phdr->p_vaddr <= rela_offset && _phdr->p_vaddr + _phdr->p_filesz > rela_offset) {
                 rela_offset -= _phdr->p_vaddr;
@@ -309,132 +328,195 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
                 break;
             }
         }
-
-        if (symtab_ent < sizeof(struct elf64_sym)) {
-            symtab_offset = 0;
-        }
-
-        if (symtab_offset != 0) {
-            for (uint16_t j = 0; j < hdr->ph_num; j++) {
-                struct elf64_phdr *_phdr = (void *)elf + (hdr->phoff + j * hdr->phdr_size);
-
-                if (_phdr->p_vaddr <= symtab_offset && _phdr->p_vaddr + _phdr->p_filesz > symtab_offset) {
-                    symtab_offset -= _phdr->p_vaddr;
-                    symtab_offset += _phdr->p_offset;
-                    break;
-                }
-            }
-        }
-
-        if (dt_pltrelsz == 0) {
-            dt_jmprel = 0;
-        }
-
-        if (dt_jmprel != 0) {
-            for (uint16_t j = 0; j < hdr->ph_num; j++) {
-                struct elf64_phdr *_phdr = (void *)elf + (hdr->phoff + j * hdr->phdr_size);
-
-                if (_phdr->p_vaddr <= dt_jmprel && _phdr->p_vaddr + _phdr->p_filesz > dt_jmprel) {
-                    dt_jmprel -= _phdr->p_vaddr;
-                    dt_jmprel += _phdr->p_offset;
-                    break;
-                }
-            }
-        }
-
-        size_t relocs_i = rela_size / rela_ent;
-        if (dt_jmprel != 0) {
-            relocs_i += dt_pltrelsz / rela_ent;
-        }
-        struct elf64_rela **relocs = ext_mem_alloc(relocs_i * sizeof(struct elf64_rela *));
-
-        for (uint64_t j = 0, offset = 0; offset < rela_size; offset += rela_ent) {
-            relocs[j++] = (void *)elf + (rela_offset + offset);
-        }
-
-        if (dt_jmprel != 0) {
-            for (uint64_t j = rela_size / rela_ent, offset = 0; offset < dt_pltrelsz; offset += rela_ent) {
-                relocs[j++] = (void *)elf + (dt_jmprel + offset);
-            }
-        }
-
-        for (size_t j = 0; j < relocs_i; j++) {
-            struct elf64_rela *relocation = relocs[j];
-
-            // Relocation is before buffer
-            if (relocation->r_addr < vaddr)
-                continue;
-
-            // Relocation is after buffer
-            if (vaddr + size < relocation->r_addr + 8)
-                continue;
-
-            // It's inside it, calculate where it is
-            uint64_t *ptr = (uint64_t *)((buffer - vaddr) + relocation->r_addr);
-
-            switch (relocation->r_info) {
-#if defined (__x86_64__) || defined (__i386__)
-                case R_X86_64_NONE:
-#elif defined (__aarch64__)
-                case R_AARCH64_NONE:
-#elif defined (__riscv64)
-                case R_RISCV_NONE:
-#endif
-                {
-                    break;
-                }
-#if defined (__x86_64__) || defined (__i386__)
-                case R_X86_64_RELATIVE:
-#elif defined (__aarch64__)
-                case R_AARCH64_RELATIVE:
-#elif defined (__riscv64)
-                case R_RISCV_RELATIVE:
-#endif
-                {
-                    *ptr = slide + relocation->r_addend;
-                    break;
-                }
-#if defined (__x86_64__) || defined (__i386__)
-                case R_X86_64_GLOB_DAT:
-                case R_X86_64_JUMP_SLOT:
-#elif defined (__aarch64__)
-                case R_AARCH64_GLOB_DAT:
-                case R_AARCH64_JUMP_SLOT:
-#elif defined (__riscv64)
-                case R_RISCV_JUMP_SLOT:
-#endif
-                {
-                    struct elf64_sym *s = (void *)elf + symtab_offset + symtab_ent * relocation->r_symbol;
-                    *ptr = slide + s->st_value
-#if defined (__aarch64__)
-                           + relocation->r_addend
-#endif
-                    ;
-                    break;
-                }
-#if defined (__x86_64__) || defined (__i386__)
-                case R_X86_64_64:
-#elif defined (__aarch64__)
-                case R_AARCH64_ABS64:
-#elif defined (__riscv64)
-                case R_RISCV_64:
-#endif
-                {
-                    struct elf64_sym *s = (void *)elf + symtab_offset + symtab_ent * relocation->r_symbol;
-                    *ptr = slide + s->st_value + relocation->r_addend;
-                    break;
-                }
-                default: {
-                    print("elf: Unknown RELA type: %x\n", relocation->r_info);
-                    return false;
-                }
-            }
-        }
-
-        pmm_free(relocs, relocs_i * sizeof(struct elf64_rela *));
-
-        break;
     }
+
+    if (relr_offset != 0) {
+        if (relr_ent != 8) {
+            panic(true, "elf: relr_ent != 8");
+        }
+
+        for (uint16_t i = 0; i < hdr->ph_num; i++) {
+            struct elf64_phdr *_phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
+
+            if (_phdr->p_vaddr <= relr_offset && _phdr->p_vaddr + _phdr->p_filesz > relr_offset) {
+                relr_offset -= _phdr->p_vaddr;
+                relr_offset += _phdr->p_offset;
+                break;
+            }
+        }
+    }
+
+    if (symtab_offset != 0) {
+        if (symtab_ent < sizeof(struct elf64_sym)) {
+            panic(true, "elf: symtab_ent < sizeof(struct elf64_sym)");
+        }
+
+        for (uint16_t i = 0; i < hdr->ph_num; i++) {
+            struct elf64_phdr *_phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
+
+            if (_phdr->p_vaddr <= symtab_offset && _phdr->p_vaddr + _phdr->p_filesz > symtab_offset) {
+                symtab_offset -= _phdr->p_vaddr;
+                symtab_offset += _phdr->p_offset;
+                break;
+            }
+        }
+    }
+
+    if (dt_jmprel != 0) {
+        if (rela_ent < sizeof(struct elf64_rela)) {
+            panic(true, "elf: rela_ent < sizeof(struct elf64_rela)");
+        }
+
+        for (uint16_t i = 0; i < hdr->ph_num; i++) {
+            struct elf64_phdr *_phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
+
+            if (_phdr->p_vaddr <= dt_jmprel && _phdr->p_vaddr + _phdr->p_filesz > dt_jmprel) {
+                dt_jmprel -= _phdr->p_vaddr;
+                dt_jmprel += _phdr->p_offset;
+                break;
+            }
+        }
+    }
+
+    size_t relocs_i = 0;
+    if (relr_offset != 0) {
+        for (size_t i = 0; i < relr_size / relr_ent; i++) {
+            uint64_t entry = *((uint64_t *)(elf + relr_offset + i * relr_ent));
+
+            if ((entry & 1) == 0) {
+                relocs_i++;
+            } else {
+                relocs_i += __builtin_popcount(entry) - 1;
+            }
+        }
+    }
+    size_t relr_count = relocs_i;
+    if (rela_offset != 0) {
+        relocs_i += rela_size / rela_ent;
+    }
+    if (dt_jmprel != 0) {
+        relocs_i += dt_pltrelsz / rela_ent;
+    }
+    struct elf64_rela **relocs = ext_mem_alloc(relocs_i * sizeof(struct elf64_rela *));
+
+    if (relr_offset != 0) {
+        size_t relr_i;
+        for (relr_i = 0; relr_i < relr_count; relr_i++) {
+            relocs[relr_i] = ext_mem_alloc(sizeof(struct elf64_rela));
+            relocs[relr_i]->r_info = R_INTERNAL_RELR;
+        }
+
+        // This logic is partially lifted from https://maskray.me/blog/2021-10-31-relative-relocations-and-relr
+        uint64_t where;
+        relr_i = 0;
+        for (size_t i = 0; i < relr_size / relr_ent; i++) {
+            uint64_t entry = *((uint64_t *)(elf + relr_offset + i * relr_ent));
+
+            if ((entry & 1) == 0) {
+                where = entry;
+                relocs[relr_i++]->r_addr = where;
+                where += 8;
+            } else {
+                for (size_t j = 0; (entry >>= 1) != 0; j++) {
+                    if ((entry & 1) != 0) {
+                        relocs[relr_i++]->r_addr = where + j * 8;
+                    }
+                }
+                where += 63 * 8;
+            }
+        }
+    }
+
+    if (rela_offset != 0) {
+        for (uint64_t i = relr_count, offset = 0; offset < rela_size; offset += rela_ent) {
+            relocs[i++] = (void *)elf + (rela_offset + offset);
+        }
+    }
+
+    if (dt_jmprel != 0) {
+        for (uint64_t i = relr_count + rela_size / rela_ent, offset = 0; offset < dt_pltrelsz; offset += rela_ent) {
+            relocs[i++] = (void *)elf + (dt_jmprel + offset);
+        }
+    }
+
+    for (size_t i = 0; i < relocs_i; i++) {
+        struct elf64_rela *relocation = relocs[i];
+
+        // Relocation is before buffer
+        if (relocation->r_addr < vaddr)
+            continue;
+
+        // Relocation is after buffer
+        if (vaddr + size < relocation->r_addr + 8)
+            continue;
+
+        // It's inside it, calculate where it is
+        uint64_t *ptr = (uint64_t *)((buffer - vaddr) + relocation->r_addr);
+
+        switch (relocation->r_info) {
+#if defined (__x86_64__) || defined (__i386__)
+            case R_X86_64_NONE:
+#elif defined (__aarch64__)
+            case R_AARCH64_NONE:
+#elif defined (__riscv64)
+            case R_RISCV_NONE:
+#endif
+            {
+                break;
+            }
+#if defined (__x86_64__) || defined (__i386__)
+            case R_X86_64_RELATIVE:
+#elif defined (__aarch64__)
+            case R_AARCH64_RELATIVE:
+#elif defined (__riscv64)
+            case R_RISCV_RELATIVE:
+#endif
+            {
+                *ptr = slide + relocation->r_addend;
+                break;
+            }
+            case R_INTERNAL_RELR:
+            {
+                *ptr += slide;
+                break;
+            }
+#if defined (__x86_64__) || defined (__i386__)
+            case R_X86_64_GLOB_DAT:
+            case R_X86_64_JUMP_SLOT:
+#elif defined (__aarch64__)
+            case R_AARCH64_GLOB_DAT:
+            case R_AARCH64_JUMP_SLOT:
+#elif defined (__riscv64)
+            case R_RISCV_JUMP_SLOT:
+#endif
+            {
+                struct elf64_sym *s = (void *)elf + symtab_offset + symtab_ent * relocation->r_symbol;
+                *ptr = slide + s->st_value
+#if defined (__aarch64__)
+                       + relocation->r_addend
+#endif
+                ;
+                break;
+            }
+#if defined (__x86_64__) || defined (__i386__)
+            case R_X86_64_64:
+#elif defined (__aarch64__)
+            case R_AARCH64_ABS64:
+#elif defined (__riscv64)
+            case R_RISCV_64:
+#endif
+            {
+                struct elf64_sym *s = (void *)elf + symtab_offset + symtab_ent * relocation->r_symbol;
+                *ptr = slide + s->st_value + relocation->r_addend;
+                break;
+            }
+            default: {
+                panic(true, "elf: Unknown relocation type: %x", relocation->r_info);
+            }
+        }
+    }
+
+    pmm_free(relocs, relocs_i * sizeof(struct elf64_rela *));
 
     return true;
 }

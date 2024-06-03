@@ -41,6 +41,9 @@
 #define BITS_LE      0x01
 #define ELFCLASS64   0x02
 #define SHT_RELA     0x00000004
+#define R_X86_64_NONE      0x00000000
+#define R_AARCH64_NONE     0x00000000
+#define R_RISCV_NONE       0x00000000
 #define R_X86_64_RELATIVE  0x00000008
 #define R_AARCH64_RELATIVE 0x00000403
 #define R_RISCV_RELATIVE   0x00000003
@@ -313,6 +316,16 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
             uint64_t *ptr = (uint64_t *)((buffer - vaddr) + relocation->r_addr);
 
             switch (relocation->r_info) {
+#if defined (__x86_64__) || defined (__i386__)
+                case R_X86_64_NONE:
+#elif defined (__aarch64__)
+                case R_AARCH64_NONE:
+#elif defined (__riscv64)
+                case R_RISCV_NONE:
+#endif
+                {
+                    break;
+                }
 #if defined (__x86_64__) || defined (__i386__)
                 case R_X86_64_RELATIVE:
 #elif defined (__aarch64__)

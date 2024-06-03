@@ -183,10 +183,10 @@ static bool elf64_is_relocatable(uint8_t *elf, struct elf64_hdr *hdr) {
                         return true;
                     }
                     break;
-                case DT_RELA:
-                    return true;
             }
         }
+
+        break;
     }
 
     return false;

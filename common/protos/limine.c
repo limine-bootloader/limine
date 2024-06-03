@@ -330,12 +330,6 @@ noreturn void limine_load(char *config, char *cmdline) {
     if (kaslr_s != NULL && strcmp(kaslr_s, "no") == 0)
         kaslr = false;
 
-    int bits = elf_bits(kernel);
-
-    if (bits == -1 || bits == 32) {
-        panic(true, "limine: Kernel in unrecognised format");
-    }
-
     // ELF loading
     uint64_t entry_point = 0;
     struct elf_range *ranges;

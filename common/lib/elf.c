@@ -113,6 +113,50 @@ struct elf64_dyn {
     uint64_t d_un;
 };
 
+static bool elf32_validate(struct elf32_hdr *hdr) {
+    if (strncmp((char *)hdr->ident, "\177ELF", 4)) {
+        panic(true, "elf: Not a valid ELF file.");
+    }
+
+    if (hdr->ident[EI_DATA] != BITS_LE) {
+        panic(true, "elf: Not a Little-endian ELF file.");
+    }
+
+    if (hdr->machine != ARCH_X86_32) {
+        panic(true, "elf: Not an IA-32 ELF file.");
+    }
+
+    return true;
+}
+
+static bool elf64_validate(struct elf64_hdr *hdr) {
+    if (strncmp((char *)hdr->ident, "\177ELF", 4)) {
+        panic(true, "elf: Not a valid ELF file.");
+    }
+
+    if (hdr->ident[EI_DATA] != BITS_LE) {
+        panic(true, "elf: Not a Little-endian ELF file.");
+    }
+
+#if defined (__x86_64__) || defined (__i386__)
+    if (hdr->machine != ARCH_X86_64) {
+        panic(true, "elf: Not an x86-64 ELF file.");
+    }
+#elif defined (__aarch64__)
+    if (hdr->machine != ARCH_AARCH64) {
+        panic(true, "elf: Not an aarch64 ELF file.");
+    }
+#elif defined (__riscv64)
+    if (hdr->machine != ARCH_RISCV && hdr->ident[EI_CLASS] == ELFCLASS64) {
+        panic(true, "elf: Not a riscv64 ELF file.");
+    }
+#else
+#error Unknown architecture
+#endif
+
+    return true;
+}
+
 int elf_bits(uint8_t *elf) {
     struct elf64_hdr *hdr = (void *)elf;
 
@@ -139,6 +183,8 @@ struct elf_section_hdr_info elf64_section_hdr_info(uint8_t *elf) {
 
     struct elf64_hdr *hdr = (void *)elf;
 
+    elf64_validate(hdr);
+
     info.num = hdr->sh_num;
     info.section_entry_size = hdr->shdr_size;
     info.str_section_idx = hdr->shstrndx;
@@ -151,6 +197,8 @@ struct elf_section_hdr_info elf32_section_hdr_info(uint8_t *elf) {
     struct elf_section_hdr_info info = {0};
 
     struct elf32_hdr *hdr = (void *)elf;
+
+    elf32_validate(hdr);
 
     info.num = hdr->sh_num;
     info.section_entry_size = hdr->shdr_size;
@@ -248,9 +296,8 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
             break;
         }
 
-        if (rela_ent != sizeof(struct elf64_rela)) {
-            print("elf: Unknown sh_entsize for RELA section!\n");
-            return false;
+        if (rela_ent < sizeof(struct elf64_rela)) {
+            panic(true, "elf: sh_entsize < sizeof(struct elf64_rela)");
         }
 
         for (uint16_t j = 0; j < hdr->ph_num; j++) {
@@ -263,14 +310,24 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
             }
         }
 
-        for (uint16_t j = 0; j < hdr->ph_num; j++) {
-            struct elf64_phdr *_phdr = (void *)elf + (hdr->phoff + j * hdr->phdr_size);
+        if (symtab_ent < sizeof(struct elf64_sym)) {
+            symtab_offset = 0;
+        }
 
-            if (_phdr->p_vaddr <= symtab_offset && _phdr->p_vaddr + _phdr->p_filesz > symtab_offset) {
-                symtab_offset -= _phdr->p_vaddr;
-                symtab_offset += _phdr->p_offset;
-                break;
+        if (symtab_offset != 0) {
+            for (uint16_t j = 0; j < hdr->ph_num; j++) {
+                struct elf64_phdr *_phdr = (void *)elf + (hdr->phoff + j * hdr->phdr_size);
+
+                if (_phdr->p_vaddr <= symtab_offset && _phdr->p_vaddr + _phdr->p_filesz > symtab_offset) {
+                    symtab_offset -= _phdr->p_vaddr;
+                    symtab_offset += _phdr->p_offset;
+                    break;
+                }
             }
+        }
+
+        if (dt_pltrelsz == 0) {
+            dt_jmprel = 0;
         }
 
         if (dt_jmprel != 0) {
@@ -385,34 +442,7 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
 bool elf64_load_section(uint8_t *elf, void *buffer, const char *name, size_t limit, uint64_t slide) {
     struct elf64_hdr *hdr = (void *)elf;
 
-    if (strncmp((char *)hdr->ident, "\177ELF", 4)) {
-        printv("elf: Not a valid ELF file.\n");
-        return false;
-    }
-
-    if (hdr->ident[EI_DATA] != BITS_LE) {
-        printv("elf: Not a Little-endian ELF file.\n");
-        return false;
-    }
-
-#if defined (__x86_64__) || defined (__i386__)
-    if (hdr->machine != ARCH_X86_64) {
-        printv("elf: Not an x86-64 ELF file.\n");
-        return false;
-    }
-#elif defined (__aarch64__)
-    if (hdr->machine != ARCH_AARCH64) {
-        printv("elf: Not an aarch64 ELF file.\n");
-        return false;
-    }
-#elif defined (__riscv64)
-    if (hdr->machine != ARCH_RISCV && hdr->ident[EI_CLASS] == ELFCLASS64) {
-        printv("elf: Not a riscv64 ELF file.\n");
-        return false;
-    }
-#else
-#error Unknown architecture
-#endif
+    elf64_validate(hdr);
 
     if (hdr->sh_num == 0) {
         return false;
@@ -538,30 +568,7 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, struct elf_range **_r
 bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t alloc_type, bool kaslr, struct elf_range **ranges, uint64_t *ranges_count, uint64_t *physical_base, uint64_t *virtual_base, uint64_t *_image_size, uint64_t *_image_size_before_bss, bool *is_reloc) {
     struct elf64_hdr *hdr = (void *)elf;
 
-    if (strncmp((char *)hdr->ident, "\177ELF", 4)) {
-        printv("elf: Not a valid ELF file.\n");
-        return false;
-    }
-
-    if (hdr->ident[EI_DATA] != BITS_LE) {
-        panic(true, "elf: Not a Little-endian ELF file.\n");
-    }
-
-#if defined (__x86_64__) || defined (__i386__)
-    if (hdr->machine != ARCH_X86_64) {
-        panic(true, "elf: Not an x86-64 ELF file.\n");
-    }
-#elif defined (__aarch64__)
-    if (hdr->machine != ARCH_AARCH64) {
-        panic(true, "elf: Not an aarch64 ELF file.\n");
-    }
-#elif defined (__riscv64)
-    if (hdr->machine != ARCH_RISCV && hdr->ident[EI_CLASS] == ELFCLASS64) {
-        panic(true, "elf: Not a riscv64 ELF file.\n");
-    }
-#else
-#error Unknown architecture
-#endif
+    elf64_validate(hdr);
 
     if (is_reloc) {
         *is_reloc = false;
@@ -753,20 +760,7 @@ bool elf32_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
                           struct elsewhere_range **ranges) {
     struct elf32_hdr *hdr = (void *)elf;
 
-    if (strncmp((char *)hdr->ident, "\177ELF", 4)) {
-        printv("elf: Not a valid ELF file.\n");
-        return false;
-    }
-
-    if (hdr->ident[EI_DATA] != BITS_LE) {
-        printv("elf: Not a Little-endian ELF file.\n");
-        return false;
-    }
-
-    if (hdr->machine != ARCH_X86_32) {
-        printv("elf: Not an x86_32 ELF file.\n");
-        return false;
-    }
+    elf32_validate(hdr);
 
     *entry_point = hdr->entry;
     bool entry_adjusted = false;
@@ -831,20 +825,7 @@ bool elf64_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
                           struct elsewhere_range **ranges) {
     struct elf64_hdr *hdr = (void *)elf;
 
-    if (strncmp((char *)hdr->ident, "\177ELF", 4)) {
-        printv("elf: Not a valid ELF file.\n");
-        return false;
-    }
-
-    if (hdr->ident[EI_DATA] != BITS_LE) {
-        printv("elf: Not a Little-endian ELF file.\n");
-        return false;
-    }
-
-    if (hdr->machine != ARCH_X86_64) {
-        printv("elf: Not an x86-64 ELF file.\n");
-        return false;
-    }
+    elf64_validate(hdr);
 
     *entry_point = hdr->entry;
     bool entry_adjusted = false;

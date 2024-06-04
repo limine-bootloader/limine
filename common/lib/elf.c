@@ -407,7 +407,7 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
         }
 
         // This logic is partially lifted from https://maskray.me/blog/2021-10-31-relative-relocations-and-relr
-        uint64_t where;
+        uint64_t where = 0;
         relr_i = 0;
         for (size_t i = 0; i < relr_size / relr_ent; i++) {
             uint64_t entry = *((uint64_t *)(elf + relr_offset + i * relr_ent));

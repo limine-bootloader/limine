@@ -1,3 +1,22 @@
+2024-06-04  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.7.0 ***
+
+    Noteworthy changes compared to the previous release, 7.6.0:
+
+    New features:
+        - Limine boot protocol/ELF: Add support for GLOB_DAT, JUMP_SLOT, 64,
+          and NONE relocation types.
+        - Limine boot protocol/ELF: Add RELR (packed relative relocations)
+          support.
+
+    Bug fixes:
+        - Limine boot protocol/ELF: Reject ELFs that depend on external
+          dynamically linked libraries.
+
+    Miscellaneous:
+        - Bring back .xz compressed release tarball.
+
 2024-06-01  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.6.0 ***

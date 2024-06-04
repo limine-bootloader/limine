@@ -516,6 +516,9 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
         }
     }
 
+    for (size_t i = 0; i < relr_count; i++) {
+        pmm_free(relocs[i], sizeof(struct elf64_rela));
+    }
     pmm_free(relocs, relocs_i * sizeof(struct elf64_rela *));
 
     return true;

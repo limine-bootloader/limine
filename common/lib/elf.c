@@ -313,6 +313,8 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
                 case DT_JMPREL:
                     dt_jmprel = dyn->d_un;
                     break;
+                case DT_NEEDED:
+                    panic(true, "elf: ELF file attempts to load a dynamically linked library");
             }
         }
 

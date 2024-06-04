@@ -386,7 +386,7 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
             if ((entry & 1) == 0) {
                 relocs_i++;
             } else {
-                relocs_i += __builtin_popcount(entry) - 1;
+                relocs_i += __builtin_popcountg(entry) - 1;
             }
         }
     }

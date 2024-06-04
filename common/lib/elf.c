@@ -30,6 +30,7 @@
 #define DT_RELRENT  0x00000025
 #define DT_SYMTAB   0x00000006
 #define DT_SYMENT   0x0000000b
+#define DT_PLTREL   0x00000014
 #define DT_PLTRELSZ 0x00000002
 #define DT_JMPREL   0x00000017
 #define DT_FLAGS_1  0x6ffffffb
@@ -256,6 +257,7 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
     uint64_t symtab_offset = 0;
     uint64_t symtab_ent = 0;
 
+    uint64_t dt_pltrel = 0;
     uint64_t dt_pltrelsz = 0;
     uint64_t dt_jmprel = 0;
 
@@ -301,6 +303,9 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
                     break;
                 case DT_SYMENT:
                     symtab_ent = dyn->d_un;
+                    break;
+                case DT_PLTREL:
+                    dt_pltrel = dyn->d_un;
                     break;
                 case DT_PLTRELSZ:
                     dt_pltrelsz = dyn->d_un;
@@ -365,6 +370,10 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
     if (dt_jmprel != 0) {
         if (rela_ent < sizeof(struct elf64_rela)) {
             panic(true, "elf: rela_ent < sizeof(struct elf64_rela)");
+        }
+
+        if (dt_pltrel != DT_RELA) {
+            panic(true, "elf: dt_pltrel != DT_RELA");
         }
 
         for (uint16_t i = 0; i < hdr->ph_num; i++) {

@@ -28,6 +28,7 @@ Donations welcome, but absolutely not mandatory!
 * x86-64
 * aarch64 (arm64)
 * riscv64
+* loongarch64
 
 ### Supported boot protocols
 * Linux
@@ -52,7 +53,7 @@ opening issues or pull requests related to this.
 For 32-bit x86 systems, support is only ensured starting with those with
 Pentium Pro (i686) class CPUs.
 
-All x86-64, aarch64, and riscv64 (UEFI) systems are supported.
+All x86-64, aarch64, riscv64 and loongarch64 (UEFI) systems are supported.
 
 ## Packaging status
 

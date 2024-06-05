@@ -193,7 +193,9 @@ extern symbol limine_spinup_32;
                             | ((uint64_t)1 << 8)             /* TTBR0 Inner WB RW-Allocate */ \
                             | ((uint64_t)(tsz) << 0))        /* Address bits in TTBR0 */
 
-#elif !defined (__riscv64)
+#elif defined (__riscv64)
+#elif defined (__loongarch64)
+#else
 #error Unknown architecture
 #endif
 
@@ -471,6 +473,10 @@ noreturn void limine_load(char *config, char *cmdline) {
     max_supported_paging_mode = vmm_max_paging_mode();
     paging_mode = max_supported_paging_mode >= PAGING_MODE_RISCV_SV48 ? PAGING_MODE_RISCV_SV48 : PAGING_MODE_RISCV_SV39;
 
+#elif defined (__loongarch64)
+
+    paging_mode = PAGING_MODE_LOONGARCH64_4LVL;
+
 #else
 #error Unknown architecture
 #endif
@@ -512,6 +518,10 @@ FEAT_START
             paging_mode_max = LIMINE_PAGING_MODE_RISCV_SV48;
         } else if (strcasecmp(max_paging_mode_s, "sv57") == 0) {
             paging_mode_max = LIMINE_PAGING_MODE_RISCV_SV57;
+        }
+#elif defined (__loongarch64)
+        if (strcasecmp(max_paging_mode_s, "4level") == 0) {
+            paging_mode_max = LIMINE_PAGING_MODE_LOONGARCH64_4LVL;
         }
 #endif
         else {
@@ -1077,6 +1087,8 @@ FEAT_START
                         direct_map_offset);
 #elif defined (__riscv64)
     smp_info = init_smp(&cpu_count, pagemap, direct_map_offset);
+#elif defined (__loongarch64)
+    smp_info = NULL; // TODO: LoongArch SMP
 #else
 #error Unknown architecture
 #endif
@@ -1100,6 +1112,7 @@ FEAT_START
     smp_response->bsp_mpidr = bsp_mpidr;
 #elif defined (__riscv64)
     smp_response->bsp_hartid = bsp_hartid;
+#elif defined (__loongarch64)
 #else
 #error Unknown architecture
 #endif
@@ -1232,6 +1245,11 @@ FEAT_END
     uint64_t satp = make_satp(pagemap.paging_mode, pagemap.top_level);
 
     riscv_spinup(entry_point, reported_stack, satp, direct_map_offset);
+#elif defined (__loongarch64)
+    uint64_t reported_stack = reported_addr(stack);
+
+    loongarch_spinup(entry_point, reported_stack, (uint64_t)pagemap.pgd[0], (uint64_t)pagemap.pgd[1],
+                     direct_map_offset);
 #else
 #error Unknown architecture
 #endif

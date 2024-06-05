@@ -356,7 +356,7 @@ void init_memmap(void) {
         uint64_t base = entry->PhysicalStart;
         uint64_t length = entry->NumberOfPages * 4096;
 
-#if !defined (__x86_64__) && !defined (__aarch64__) && !defined (__riscv64)
+#if !defined (__x86_64__) && !defined (__aarch64__) && !defined (__riscv64) && !defined (__loongarch64)
         // We only manage memory below 4GiB. For anything above that, make it
         // EFI reclaimable.
         if (our_type == MEMMAP_USABLE) {

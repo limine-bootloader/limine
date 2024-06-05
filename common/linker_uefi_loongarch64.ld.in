@@ -1,0 +1,81 @@
+OUTPUT_FORMAT("elf64-loongarch", "elf64-loongarch", "elf64-loongarch")
+OUTPUT_ARCH(loongarch)
+ENTRY(_start)
+
+PHDRS
+{
+    text    PT_LOAD    FLAGS((1 << 0) | (1 << 2)) ;
+    rodata  PT_LOAD    FLAGS((1 << 2)) ;
+    data    PT_LOAD    FLAGS((1 << 1) | (1 << 2)) ;
+    dynamic PT_DYNAMIC FLAGS((1 << 1) | (1 << 2)) ;
+}
+
+SECTIONS
+{
+    . = 0;
+    __slide = .;
+    __image_base = ABSOLUTE(.);
+    __image_size = ABSOLUTE(__image_end - __image_base);
+
+    .text : {
+        KEEP(*(.pe_header))
+
+        . = ALIGN(0x1000);
+
+        __text_start = ABSOLUTE(.);
+        *(.text .text.*)
+    } :text
+
+    . = ALIGN(0x1000);
+    __text_end = ABSOLUTE(.);
+    __text_size = ABSOLUTE(__text_end - __text_start);
+
+    .rodata : {
+        __reloc_start = ABSOLUTE(.);
+        *(.dummy_reloc)
+
+        . = ALIGN(0x1000);
+        __reloc_end = ABSOLUTE(.);
+        __reloc_size = ABSOLUTE(__reloc_end - __reloc_start);
+
+        __data_start = ABSOLUTE(.);
+        *(.rodata .rodata.*)
+
+#ifdef LINKER_NOMAP
+   full_map = .;
+#else
+   *(.full_map)
+#endif
+    } :rodata
+
+    .data : {
+   data_begin = .;
+        *(.data .data.*)
+        *(.sdata .sdata.*)
+        *(.sbss .sbss.*)
+        *(.bss .bss.*)
+        *(COMMON)
+   data_end = .;
+
+   *(.no_unwind)
+    } :data
+
+    .got : {
+        *(.got .got.*)
+    } :data
+
+    .dynamic : {
+        *(.dynamic)
+        . = ALIGN(0x1000);
+    } :data :dynamic
+
+    __data_end = ABSOLUTE(.);
+    __data_size = ABSOLUTE(__data_end - __data_start);
+
+    __image_end = ABSOLUTE(.);
+
+    /DISCARD/ : {
+        *(.eh_frame)
+        *(.note .note.*)
+    }
+}

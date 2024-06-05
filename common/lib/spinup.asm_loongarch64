@@ -1,0 +1,110 @@
+.section .text
+
+#define PAGE_SHIFT      12
+#define PT_SHIFT        (PAGE_SHIFT - 3)
+#define PT_BASE(level)  (PAGE_SHIFT + PT_SHIFT * (level))
+
+#define MAKE_PWCL(Dir2_width, Dir2_base, Dirl_width, Dirl_base, PTwidth, PTbase) \
+        ((Dir2_width) << 25) | ((Dir2_base) << 20) | ((Dirl_width) << 15) | \
+        ((Dirl_base) << 10) | ((PTwidth) << 5) | ((PTbase) << 0)
+
+#define MAKE_PWCH(Dir4_width, Dir4_base, Dir3_width, Dir3_base) \
+        ((Dir4_width) << 18) | ((Dir4_base) << 12) | ((Dir3_width) << 6) | \
+        ((Dir3_base) << 0)
+
+#define CSR_CRMD        0x00
+#define CSR_EENTRY      0xc
+#define CSR_PGDL        0x19
+#define CSR_PGDH        0x1a
+#define CSR_PGD         0x1b
+#define CSR_PWCL        0x1c
+#define CSR_PWCH        0x1d
+#define CSR_STLBPS      0x1e
+#define CSR_TLBRENTRY   0x88
+#define CSR_TLBRSAVE    0x8b
+#define CSR_TLBREHI     0x8e
+#define CSR_MERRENTRY   0x93
+#define CSR_DMW0        0x180
+#define CSR_DMW1        0x181
+#define CSR_DMW2        0x182
+#define CSR_DMW3        0x183
+
+.global loongarch_spinup
+loongarch_spinup:
+        li.d    $t0, 0b010001           // MAT=01, PLV1..3=0, PLV0=1
+        csrwr   $t0, CSR_DMW0
+        csrwr   $zero, CSR_DMW1
+        csrwr   $zero, CSR_DMW2
+        csrwr   $zero, CSR_DMW3
+
+        li.d    $t0, 0b010110000        // DATF=01, DATM=01, PG=1, DA=0, IE=0, PLV=00
+        csrwr   $t0, CSR_CRMD
+
+        invtlb  0, $zero, $zero
+        li.d    $t0, PAGE_SHIFT
+        csrwr   $t0, CSR_STLBPS
+        csrwr   $t0, CSR_TLBREHI
+
+        csrwr   $a2, CSR_PGDL
+        csrwr   $a3, CSR_PGDH
+
+        li.d    $t0, MAKE_PWCL(PT_SHIFT, PT_BASE(2), PT_SHIFT, PT_BASE(1), PT_SHIFT, PT_BASE(0))
+        csrwr   $t0, CSR_PWCL
+        li.d    $t0, MAKE_PWCH(0, 0, PT_SHIFT, PT_BASE(3))
+        csrwr   $t0, CSR_PWCH
+
+        la      $t0, loongarch_handle_refill
+        csrwr   $t0, CSR_TLBRENTRY
+
+        csrwr   $zero, CSR_EENTRY
+        csrwr   $zero, CSR_MERRENTRY
+
+        move    $t0, $a0
+        move    $sp, $a1
+
+        move    $ra, $zero
+        move    $tp, $zero
+        move    $a0, $zero
+        move    $a1, $zero
+        move    $a2, $zero
+        move    $a3, $zero
+        move    $a4, $zero
+        move    $a5, $zero
+        move    $a6, $zero
+        move    $a7, $zero
+        move    $t1, $zero
+        move    $t2, $zero
+        move    $t3, $zero
+        move    $t4, $zero
+        move    $t5, $zero
+        move    $t6, $zero
+        move    $t7, $zero
+        move    $t8, $zero
+        move    $fp, $zero
+        move    $s0, $zero
+        move    $s1, $zero
+        move    $s2, $zero
+        move    $s3, $zero
+        move    $s4, $zero
+        move    $s5, $zero
+        move    $s6, $zero
+        move    $s7, $zero
+        move    $s8, $zero
+
+        jirl    $zero, $t0, 0
+
+.global loongarch_handle_refill
+.align 4
+loongarch_handle_refill:
+        csrwr   $t0, CSR_TLBRSAVE
+        csrrd   $t0, CSR_PGD
+        lddir   $t0, $t0, 3
+        lddir   $t0, $t0, 2
+        lddir   $t0, $t0, 1
+        ldpte   $t0, 0
+        ldpte   $t0, 1
+        tlbfill
+        csrrd   $t0, CSR_TLBRSAVE
+        ertn
+
+.section .note.GNU-stack,"",%progbits

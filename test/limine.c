@@ -422,6 +422,8 @@ FEAT_START
     e9_printf("Boot time: %d", boot_time_response->boot_time);
 FEAT_END
 
+// TODO: LoongArch SMP
+#ifndef __loongarch__
 FEAT_START
     e9_printf("");
     if (_smp_request.response == NULL) {
@@ -468,6 +470,7 @@ FEAT_START
         }
     }
 FEAT_END
+#endif
 
 FEAT_START
     e9_printf("");

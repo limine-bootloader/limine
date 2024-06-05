@@ -389,6 +389,97 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
     }
 }
 
+#elif defined (__loongarch64)
+
+#define INVALID_PAGE    0
+
+#define PT_FLAG_VALID   ((uint64_t)1 << 0)
+#define PT_FLAG_DIRTY   ((uint64_t)1 << 1)
+#define PT_FLAG_MAT_CC  ((uint64_t)1 << 4)
+#define PT_FLAG_MAT_WUC ((uint64_t)1 << 5)
+#define PT_FLAG_GLOBAL  ((uint64_t)1 << 6)
+#define PT_FLAG_HUGE    ((uint64_t)1 << 6)
+#define PT_FLAG_WRITE   ((uint64_t)1 << 8)
+#define PT_FLAG_HGLOBAL ((uint64_t)1 << 12)
+#define PT_FLAG_NX      ((uint64_t)1 << 62)
+#define PT_PADDR_MASK   ((uint64_t)0x0000FFFFFFFFF000)
+#define PT_PADDR_HMASK  ((uint64_t)0x0000FFFFFF000000)
+
+#define PT_TABLE_FLAGS      0
+#define PT_IS_TABLE(x)      ((level_idx > 0) && (((x) & PT_FLAG_VALID) == 0) && ((x) != INVALID_PAGE))
+#define PT_IS_LARGE(x)      (((x) & (PT_FLAG_HGLOBAL | PT_FLAG_HUGE)) == (PT_FLAG_HGLOBAL | PT_FLAG_HUGE))
+#define PT_TO_VMM_FLAGS(x)  (pt_to_vmm_flags_internal(x))
+
+#define pte_new(addr, flags)    (pt_entry_t)((addr) | (flags))
+
+static inline uint64_t pte_addr(uint64_t pte) {
+    if (PT_IS_LARGE(pte)) {
+        return pte & PT_PADDR_HMASK;
+    }
+    return pte & PT_PADDR_MASK;
+}
+
+static uint64_t pt_to_vmm_flags_internal(pt_entry_t entry) {
+    uint64_t flags = 0;
+
+    if (entry & PT_FLAG_WRITE)
+        flags |= VMM_FLAG_WRITE;
+    if (entry & PT_FLAG_NX)
+        flags |= VMM_FLAG_NOEXEC;
+    if (entry & PT_FLAG_MAT_WUC)
+        flags |= VMM_FLAG_FB;
+
+    return flags;
+}
+
+pagemap_t new_pagemap(int paging_mode) {
+    pagemap_t pagemap;
+    pagemap.pgd[0] = ext_mem_alloc(PT_SIZE);
+    pagemap.pgd[1] = ext_mem_alloc(PT_SIZE);
+    return pagemap;
+}
+
+void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags, enum page_size pg_size) {
+    size_t pml4_entry = (virt_addr & ((uint64_t)0x1ff << 39)) >> 39;
+    size_t pml3_entry = (virt_addr & ((uint64_t)0x1ff << 30)) >> 30;
+    size_t pml2_entry = (virt_addr & ((uint64_t)0x1ff << 21)) >> 21;
+    size_t pml1_entry = (virt_addr & ((uint64_t)0x1ff << 12)) >> 12;
+
+    pt_entry_t *pml4, *pml3, *pml2, *pml1;
+
+    bool is_higher_half = virt_addr & ((uint64_t)1 << 63);
+
+    uint64_t real_flags = PT_FLAG_VALID | PT_FLAG_GLOBAL;
+    if (flags & VMM_FLAG_WRITE)
+        real_flags |= PT_FLAG_DIRTY | PT_FLAG_WRITE;
+    if (flags & VMM_FLAG_NOEXEC)
+        real_flags |= PT_FLAG_NX;
+    if (flags & VMM_FLAG_FB)
+        real_flags |= PT_FLAG_MAT_WUC;
+    else
+        real_flags |= PT_FLAG_MAT_CC;
+
+    pml4 = pagemap.pgd[is_higher_half];
+
+    pml3 = get_next_level(pagemap, pml4, virt_addr, pg_size, 3, pml4_entry);
+
+    if (pg_size == Size1GiB) {
+        pml3[pml3_entry] = pte_new(phys_addr, real_flags | PT_FLAG_HGLOBAL | PT_FLAG_HUGE);
+        return;
+    }
+
+    pml2 = get_next_level(pagemap, pml3, virt_addr, pg_size, 2, pml3_entry);
+
+    if (pg_size == Size2MiB) {
+        pml2[pml2_entry] = pte_new(phys_addr, real_flags | PT_FLAG_HGLOBAL | PT_FLAG_HUGE);
+        return;
+    }
+
+    pml1 = get_next_level(pagemap, pml2, virt_addr, pg_size, 1, pml2_entry);
+
+    pml1[pml1_entry] = pte_new(phys_addr, real_flags);
+}
+
 #else
 #error Unknown architecture
 #endif

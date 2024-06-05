@@ -777,6 +777,8 @@ noreturn void _menu(bool first_run) {
             "riscv64"
 #elif defined (__aarch64__)
             "aarch64"
+#elif defined (__loongarch64)
+            "loongarch64"
 #endif
             ", UEFI)";
 #endif
@@ -1089,21 +1091,21 @@ noreturn void boot(char *config) {
         linux_load(config, cmdline);
 #else
         quiet = false;
-        print("TODO: Linux is not available on aarch64 or riscv64.\n\n");
+        print("TODO: Linux is not available on non-x86.\n\n");
 #endif
     } else if (!strcmp(proto, "multiboot1") || !strcmp(proto, "multiboot")) {
 #if defined (__x86_64__) || defined (__i386__)
         multiboot1_load(config, cmdline);
 #else
         quiet = false;
-        print("Multiboot 1 is not available on aarch64 or riscv64.\n\n");
+        print("Multiboot 1 is not available on non-x86.\n\n");
 #endif
     } else if (!strcmp(proto, "multiboot2")) {
 #if defined (__x86_64__) || defined (__i386__)
         multiboot2_load(config, cmdline);
 #else
         quiet = false;
-        print("Multiboot 2 is not available on aarch64 or riscv64.\n\n");
+        print("Multiboot 2 is not available on non-x86.\n\n");
 #endif
     } else if (!strcmp(proto, "chainload_next")) {
         chainload_next(config, cmdline);

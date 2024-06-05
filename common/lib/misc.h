@@ -60,7 +60,7 @@ uint64_t strtoui(const char *s, const char **end, int base);
 
 #if defined (__i386__)
 void memcpy32to64(uint64_t, uint64_t, uint64_t);
-#elif defined (__x86_64__) || defined (__aarch64__) || defined(__riscv64)
+#elif defined (__x86_64__) || defined (__aarch64__) || defined(__riscv64) || defined(__loongarch64)
 #  define memcpy32to64(X, Y, Z) memcpy((void *)(uintptr_t)(X), (void *)(uintptr_t)(Y), Z)
 #else
 #error Unknown architecture
@@ -103,6 +103,9 @@ noreturn void riscv_spinup(uint64_t entry, uint64_t sp, uint64_t satp, uint64_t 
 #if defined (UEFI)
 RISCV_EFI_BOOT_PROTOCOL *get_riscv_boot_protocol(void);
 #endif
+#elif defined (__loongarch64)
+noreturn void loongarch_spinup(uint64_t entry, uint64_t sp, uint64_t pgdl,
+                               uint64_t pgdh, uint64_t direct_map_offset);
 #else
 #error Unknown architecture
 #endif

@@ -344,6 +344,16 @@ static inline bool riscv_check_isa_extension(const char *ext, size_t *maj, size_
 
 void init_riscv(void);
 
+#elif defined (__loongarch64)
+
+#define LOONGARCH_CSR_TVAL 0x42
+
+static inline uint64_t rdtsc(void) {
+    uint64_t v;
+    asm volatile ("csrrd %0, %1" : "=r" (v) : "i" (LOONGARCH_CSR_TVAL));
+    return v;
+}
+
 #else
 #error Unknown architecture
 #endif

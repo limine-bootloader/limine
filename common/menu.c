@@ -22,14 +22,13 @@
 #include <protos/multiboot2.h>
 #include <protos/limine.h>
 #include <sys/cpu.h>
+#include <lib/misc.h>
+
 
 #if defined (UEFI)
 EFI_GUID limine_efi_vendor_guid =
     { 0x513ee0d0, 0x6e43, 0xcb05, { 0xb2, 0x72, 0xf1, 0x46, 0xa2, 0xfc, 0xb8, 0x8a } };
 #endif
-
-static char *menu_branding = NULL;
-static char *menu_branding_colour = NULL;
 
 #define EDITOR_MAX_BUFFER_SIZE 4096
 #define TOK_KEY 0
@@ -37,6 +36,13 @@ static char *menu_branding_colour = NULL;
 #define TOK_VALUE 2
 #define TOK_BADKEY 3
 #define TOK_COMMENT 4
+
+static char *menu_branding = NULL;
+static char *menu_branding_colour = NULL;
+static no_unwind bool booting_from_editor = false;
+static no_unwind char cfg_buffer[EDITOR_MAX_BUFFER_SIZE];
+
+
 
 static size_t get_line_offset(size_t *displacement, size_t index, const char *buffer) {
     size_t offset = 0;
@@ -168,6 +174,10 @@ char *config_entry_editor(const char *title, const char *orig_entry) {
     FOR_TERM(TERM->cursor_enabled = true);
 
     print("\e[2J\e[H");
+
+    if(booting_from_editor){
+        orig_entry = cfg_buffer;
+    }
 
     size_t cursor_offset  = 0;
     size_t entry_size     = strlen(orig_entry);
@@ -463,11 +473,13 @@ refresh:
             }
             break;
         case GETCHAR_F10:
+            memcpy(cfg_buffer, buffer, buffer_len);
             editor_no_term_reset ? editor_no_term_reset = false : reset_term();
             return buffer;
         case GETCHAR_ESCAPE:
             pmm_free(buffer, EDITOR_MAX_BUFFER_SIZE);
             editor_no_term_reset ? editor_no_term_reset = false : reset_term();
+            booting_from_editor = false;
             return NULL;
         default:
             if (buffer_len < EDITOR_MAX_BUFFER_SIZE - 1) {
@@ -963,6 +975,9 @@ refresh:
 
     FOR_TERM(TERM->double_buffer_flush(TERM));
 
+    if (booting_from_editor) {
+        goto editor;
+    }
     for (;;) {
         c = getchar();
 timeout_aborted:
@@ -1031,6 +1046,7 @@ timeout_aborted:
             case 'e':
             case 'E': {
                 if (editor_enabled) {
+                    editor:
                     if (selected_menu_entry == NULL || selected_menu_entry->sub != NULL) {
                         break;
                     }
@@ -1039,6 +1055,7 @@ timeout_aborted:
                     if (new_body == NULL)
                         goto refresh;
                     selected_menu_entry->body = new_body;
+                    booting_from_editor = true;
                     goto autoboot;
                 }
                 break;

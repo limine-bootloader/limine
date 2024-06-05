@@ -60,14 +60,14 @@ SECTIONS
    *(.no_unwind)
     } :data
 
-    .got : {
-        *(.got .got.*)
-    } :data
-
     .dynamic : {
         *(.dynamic)
-        . = ALIGN(0x1000);
     } :data :dynamic
+
+    .padding : {
+        KEEP(*(.padding))
+        . = ALIGN(0x1000);
+    } :data
 
     __data_end = ABSOLUTE(.);
     __data_size = ABSOLUTE(__data_end - __data_start);

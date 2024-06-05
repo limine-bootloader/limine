@@ -315,11 +315,14 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
                     break;
                 case DT_NEEDED:
                     panic(true, "elf: ELF file attempts to load a dynamically linked library");
+                case DT_NULL:
+                    goto end_of_pt_segment;
             }
         }
 
         break;
     }
+end_of_pt_segment:
 
     if (rela_offset != 0) {
         if (rela_ent < sizeof(struct elf64_rela)) {

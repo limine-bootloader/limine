@@ -185,6 +185,7 @@ char *config_entry_editor(const char *title, const char *orig_entry) {
     size_t line_size      = terms[0]->cols - 2;
 
     bool display_overflow_error = false;
+    booting_from_editor = true;
 
     // Skip leading newlines
     while (*orig_entry == '\n') {
@@ -474,7 +475,9 @@ refresh:
             break;
         case GETCHAR_F10:
             memcpy(saved_orig_entry, buffer, buffer_len);
+            saved_orig_entry[buffer_len] = 0;
             memcpy(saved_title, title, title_length);
+            saved_title[title_length] = 0;
             editor_no_term_reset ? editor_no_term_reset = false : reset_term();
             return buffer;
         case GETCHAR_ESCAPE:
@@ -974,11 +977,12 @@ refresh:
         FOR_TERM(TERM->scroll_enabled = true);
     }
 
-    FOR_TERM(TERM->double_buffer_flush(TERM));
-
     if (booting_from_editor) {
         goto editor;
     }
+
+    FOR_TERM(TERM->double_buffer_flush(TERM));
+
     for (;;) {
         c = getchar();
 timeout_aborted:
@@ -1056,7 +1060,6 @@ timeout_aborted:
                     if (new_body == NULL)
                         goto refresh;
                     selected_menu_entry->body = new_body;
-                    booting_from_editor = true;
                     goto autoboot;
                 }
                 break;

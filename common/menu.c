@@ -185,7 +185,6 @@ char *config_entry_editor(const char *title, const char *orig_entry) {
     size_t line_size      = terms[0]->cols - 2;
 
     bool display_overflow_error = false;
-    booting_from_editor = true;
 
     // Skip leading newlines
     while (*orig_entry == '\n') {
@@ -434,7 +433,6 @@ refresh:
 
     int c = getchar();
     size_t buffer_len = strlen(buffer);
-    size_t title_length = strlen(title);
     switch (c) {
         case GETCHAR_CURSOR_DOWN:
             cursor_offset = get_next_line(cursor_offset, buffer);
@@ -476,9 +474,9 @@ refresh:
         case GETCHAR_F10:
             memcpy(saved_orig_entry, buffer, buffer_len);
             saved_orig_entry[buffer_len] = 0;
-            memcpy(saved_title, title, title_length);
-            saved_title[title_length] = 0;
+            strcpy(saved_title, title);
             editor_no_term_reset ? editor_no_term_reset = false : reset_term();
+            booting_from_editor = true;
             return buffer;
         case GETCHAR_ESCAPE:
             pmm_free(buffer, EDITOR_MAX_BUFFER_SIZE);

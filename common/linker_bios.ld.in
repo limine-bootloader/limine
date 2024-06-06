@@ -36,6 +36,7 @@ SECTIONS
         full_map = .;
         getchar = .;
         menu = .;
+        booting_from_editor = .;
         flanterm_write = .;
         term_backend = .;
         term_fallback = .;

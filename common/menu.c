@@ -38,7 +38,7 @@ EFI_GUID limine_efi_vendor_guid =
 
 static char *menu_branding = NULL;
 static char *menu_branding_colour = NULL;
-static no_unwind bool booting_from_editor = false;
+no_unwind bool booting_from_editor = false;
 static no_unwind char saved_orig_entry[EDITOR_MAX_BUFFER_SIZE];
 static no_unwind char saved_title[64];
 

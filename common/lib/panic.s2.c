@@ -50,10 +50,10 @@ noreturn void panic(bool allow_menu, const char *fmt, ...) {
       stage3_loaded == true &&
 #endif
       allow_menu == true) {
-        if(booting_from_editor == true){
+        if (booting_from_editor == true) {
             print("Press a key to return to editor.");
         }
-        else{
+        else {
             print("Press a key to return to menu.");
         }
 

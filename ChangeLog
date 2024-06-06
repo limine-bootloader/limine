@@ -1,3 +1,13 @@
+2024-06-06  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.7.1 ***
+
+    Noteworthy changes compared to the previous release, 7.7.0:
+
+    Bug fixes:
+        - Limine boot protocol/ELF: Stop parsing PT_DYNAMIC segment once
+          DT_NULL is reached.
+
 2024-06-04  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.7.0 ***

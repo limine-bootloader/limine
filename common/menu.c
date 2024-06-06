@@ -24,7 +24,6 @@
 #include <sys/cpu.h>
 #include <lib/misc.h>
 
-
 #if defined (UEFI)
 EFI_GUID limine_efi_vendor_guid =
     { 0x513ee0d0, 0x6e43, 0xcb05, { 0xb2, 0x72, 0xf1, 0x46, 0xa2, 0xfc, 0xb8, 0x8a } };
@@ -40,9 +39,8 @@ EFI_GUID limine_efi_vendor_guid =
 static char *menu_branding = NULL;
 static char *menu_branding_colour = NULL;
 static no_unwind bool booting_from_editor = false;
-static no_unwind char cfg_buffer[EDITOR_MAX_BUFFER_SIZE];
-
-
+static no_unwind char saved_orig_entry[EDITOR_MAX_BUFFER_SIZE];
+static no_unwind char saved_title[64];
 
 static size_t get_line_offset(size_t *displacement, size_t index, const char *buffer) {
     size_t offset = 0;
@@ -175,8 +173,9 @@ char *config_entry_editor(const char *title, const char *orig_entry) {
 
     print("\e[2J\e[H");
 
-    if(booting_from_editor){
-        orig_entry = cfg_buffer;
+    if (booting_from_editor) {
+        orig_entry = saved_orig_entry;
+        title = saved_title;
     }
 
     size_t cursor_offset  = 0;
@@ -434,6 +433,7 @@ refresh:
 
     int c = getchar();
     size_t buffer_len = strlen(buffer);
+    size_t title_length = strlen(title);
     switch (c) {
         case GETCHAR_CURSOR_DOWN:
             cursor_offset = get_next_line(cursor_offset, buffer);
@@ -473,7 +473,8 @@ refresh:
             }
             break;
         case GETCHAR_F10:
-            memcpy(cfg_buffer, buffer, buffer_len);
+            memcpy(saved_orig_entry, buffer, buffer_len);
+            memcpy(saved_title, title, title_length);
             editor_no_term_reset ? editor_no_term_reset = false : reset_term();
             return buffer;
         case GETCHAR_ESCAPE:

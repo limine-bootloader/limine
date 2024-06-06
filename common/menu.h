@@ -10,10 +10,8 @@ noreturn void reboot_to_fw_ui(void);
 #endif
 
 noreturn void menu(bool first_run);
-
 noreturn void boot(char *config);
 
 char *config_entry_editor(const char *title, const char *orig_entry);
-
 
 #endif

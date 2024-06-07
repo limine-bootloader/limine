@@ -15,4 +15,6 @@ noreturn void boot(char *config);
 
 char *config_entry_editor(const char *title, const char *orig_entry);
 
+extern bool booting_from_editor;
+
 #endif

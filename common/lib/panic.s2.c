@@ -52,7 +52,12 @@ noreturn void panic(bool allow_menu, const char *fmt, ...) {
       efi_boot_services_exited == false &&
 #endif
       allow_menu == true) {
-        print("Press a key to return to menu.");
+        if (booting_from_editor == true) {
+            print("Press a key to return to editor.");
+        }
+        else {
+            print("Press a key to return to menu.");
+        }
 
         getchar();
 

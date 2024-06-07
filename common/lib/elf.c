@@ -587,7 +587,7 @@ static uint64_t elf64_max_align(uint8_t *elf) {
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
-        if (phdr->p_type != PT_LOAD) {
+        if (phdr->p_type != PT_LOAD || phdr->p_memsz == 0) {
             continue;
         }
 
@@ -617,7 +617,7 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, struct elf_range **_r
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
-        if (phdr->p_type != PT_LOAD) {
+        if (phdr->p_type != PT_LOAD || phdr->p_memsz == 0) {
             continue;
         }
 
@@ -640,7 +640,7 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, struct elf_range **_r
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
-        if (phdr->p_type != PT_LOAD) {
+        if (phdr->p_type != PT_LOAD || phdr->p_memsz == 0) {
             continue;
         }
 
@@ -699,7 +699,7 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
-        if (phdr->p_type != PT_LOAD) {
+        if (phdr->p_type != PT_LOAD || phdr->p_memsz == 0) {
             continue;
         }
 
@@ -719,7 +719,7 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
         for (uint16_t j = 0; j < hdr->ph_num; j++) {
             struct elf64_phdr *phdr_in = (void *)elf + (hdr->phoff + j * hdr->phdr_size);
 
-            if (phdr_in->p_type != PT_LOAD) {
+            if (phdr_in->p_type != PT_LOAD || phdr->p_memsz == 0) {
                 continue;
             }
 
@@ -798,7 +798,7 @@ again:
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
-        if (phdr->p_type != PT_LOAD) {
+        if (phdr->p_type != PT_LOAD || phdr->p_memsz == 0) {
             continue;
         }
 
@@ -874,7 +874,7 @@ bool elf32_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf32_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
-        if (phdr->p_type != PT_LOAD)
+        if (phdr->p_type != PT_LOAD || phdr->p_memsz == 0)
             continue;
 
         if (phdr->p_paddr < min_paddr) {
@@ -898,7 +898,7 @@ bool elf32_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf32_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
-        if (phdr->p_type != PT_LOAD)
+        if (phdr->p_type != PT_LOAD || phdr->p_memsz == 0)
             continue;
 
         // Sanity checks
@@ -939,7 +939,7 @@ bool elf64_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
-        if (phdr->p_type != PT_LOAD)
+        if (phdr->p_type != PT_LOAD || phdr->p_memsz == 0)
             continue;
 
         if (phdr->p_paddr < min_paddr) {
@@ -963,7 +963,7 @@ bool elf64_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
     for (uint16_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
-        if (phdr->p_type != PT_LOAD)
+        if (phdr->p_type != PT_LOAD || phdr->p_memsz == 0)
             continue;
 
         // Sanity checks

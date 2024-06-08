@@ -375,10 +375,6 @@ end_of_pt_segment:
     }
 
     if (dt_jmprel != 0) {
-        if (rela_ent < sizeof(struct elf64_rela)) {
-            panic(true, "elf: rela_ent < sizeof(struct elf64_rela)");
-        }
-
         if (dt_pltrel != DT_RELA) {
             panic(true, "elf: dt_pltrel != DT_RELA");
         }

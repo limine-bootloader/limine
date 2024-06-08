@@ -45,6 +45,8 @@
 #define BITS_LE      0x01
 #define ELFCLASS64   0x02
 #define SHT_RELA     0x00000004
+#define SHN_UNDEF    0x00000000
+#define STB_WEAK     0x00000002
 #define R_X86_64_NONE      0x00000000
 #define R_AARCH64_NONE     0x00000000
 #define R_RISCV_NONE       0x00000000
@@ -505,6 +507,13 @@ end_of_pt_segment:
 #endif
             {
                 struct elf64_sym *s = (void *)elf + symtab_offset + symtab_ent * relocation->r_symbol;
+                if (s->st_shndx == SHN_UNDEF) {
+                    if ((s->st_info >> 4) == STB_WEAK) {
+                        *ptr = 0;
+                        break;
+                    }
+                    panic(true, "elf: Unresolved symbol");
+                }
                 *ptr = slide + s->st_value
 #if defined (__aarch64__)
                        + relocation->r_addend
@@ -521,6 +530,13 @@ end_of_pt_segment:
 #endif
             {
                 struct elf64_sym *s = (void *)elf + symtab_offset + symtab_ent * relocation->r_symbol;
+                if (s->st_shndx == SHN_UNDEF) {
+                    if ((s->st_info >> 4) == STB_WEAK) {
+                        *ptr = 0;
+                        break;
+                    }
+                    panic(true, "elf: Unresolved symbol");
+                }
                 *ptr = slide + s->st_value + relocation->r_addend;
                 break;
             }

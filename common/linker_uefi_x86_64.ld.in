@@ -62,15 +62,10 @@ SECTIONS
         *(.dynamic)
     } :data :dynamic
 
-    .padding : {
-        KEEP(*(.padding))
-        . = ALIGN(0x1000);
-    } :data
-
-    __data_end = ABSOLUTE(.);
+    __data_end = ABSOLUTE(ALIGN(0x1000));
     __data_size = ABSOLUTE(__data_end - __data_start);
 
-    __image_end = ABSOLUTE(.);
+    __image_end = ABSOLUTE(ALIGN(0x1000));
 
     /DISCARD/ : {
         *(.eh_frame*)

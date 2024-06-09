@@ -1,3 +1,16 @@
+2024-06-09  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.7.2 ***
+
+    Noteworthy changes compared to the previous release, 7.7.1:
+
+    Bug fixes:
+        - Limine boot protocol/ELF: Ignore PT_LOAD segments with 0 memory size.
+        - Limine boot protocol/ELF: Panic on non-weak unresolved symbols.
+        - Limine boot protocol/ELF: Do not sanity check DT_RELAENT size for non
+          DT_RELA relocations. This is because DT_RELAENT may not be present.
+        - multiboot 1 and 2 protocols: Reject relocatable ELFs.
+
 2024-06-06  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.7.1 ***

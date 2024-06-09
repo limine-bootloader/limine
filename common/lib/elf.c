@@ -771,7 +771,7 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
         for (uint16_t j = 0; j < hdr->ph_num; j++) {
             struct elf64_phdr *phdr_in = (void *)elf + (hdr->phoff + j * hdr->phdr_size);
 
-            if (phdr_in->p_type != PT_LOAD || phdr->p_memsz == 0) {
+            if (phdr_in->p_type != PT_LOAD || phdr_in->p_memsz == 0) {
                 continue;
             }
 

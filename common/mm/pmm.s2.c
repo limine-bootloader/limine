@@ -405,13 +405,13 @@ void init_memmap(void) {
 
         EFI_PHYSICAL_ADDRESS base = untouched_memmap[i].base;
 
-        status = gBS->AllocatePages(AllocateAddress, EfiLoaderData,
+        status = gBS->AllocatePages(AllocateAddress, EfiLoaderCode,
                                     untouched_memmap[i].length / 4096, &base);
 
         if (status) {
             for (size_t j = 0; j < untouched_memmap[i].length; j += 4096) {
                 base = untouched_memmap[i].base + j;
-                status = gBS->AllocatePages(AllocateAddress, EfiLoaderData, 1, &base);
+                status = gBS->AllocatePages(AllocateAddress, EfiLoaderCode, 1, &base);
                 if (status) {
                     memmap_alloc_range(base, 4096, MEMMAP_EFI_RECLAIMABLE, MEMMAP_USABLE, true, false, false);
                 }

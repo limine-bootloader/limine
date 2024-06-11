@@ -345,6 +345,9 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
                     break;
                 case DT_SYMENT:
                     symtab_ent = dyn->d_un;
+                    if (symtab_ent < sizeof(struct elf64_sym)) {
+                        panic(true, "elf: symtab_ent < sizeof(struct elf64_sym)");
+                    }
                     break;
                 case DT_PLTREL:
                     dt_pltrel = dyn->d_un;
@@ -367,10 +370,6 @@ static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *b
 end_of_pt_segment:
 
     if (rela_offset != 0) {
-        if (rela_ent < sizeof(struct elf64_rela)) {
-            panic(true, "elf: rela_ent < sizeof(struct elf64_rela)");
-        }
-
         for (uint16_t i = 0; i < hdr->ph_num; i++) {
             struct elf64_phdr *_phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
@@ -383,10 +382,6 @@ end_of_pt_segment:
     }
 
     if (relr_offset != 0) {
-        if (relr_ent != 8) {
-            panic(true, "elf: relr_ent != 8");
-        }
-
         for (uint16_t i = 0; i < hdr->ph_num; i++) {
             struct elf64_phdr *_phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
@@ -399,10 +394,6 @@ end_of_pt_segment:
     }
 
     if (symtab_offset != 0) {
-        if (symtab_ent < sizeof(struct elf64_sym)) {
-            panic(true, "elf: symtab_ent < sizeof(struct elf64_sym)");
-        }
-
         for (uint16_t i = 0; i < hdr->ph_num; i++) {
             struct elf64_phdr *_phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
@@ -415,10 +406,6 @@ end_of_pt_segment:
     }
 
     if (dt_jmprel != 0) {
-        if (dt_pltrel != DT_RELA) {
-            panic(true, "elf: dt_pltrel != DT_RELA");
-        }
-
         for (uint16_t i = 0; i < hdr->ph_num; i++) {
             struct elf64_phdr *_phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
@@ -431,7 +418,10 @@ end_of_pt_segment:
     }
 
     size_t relocs_i = 0;
-    if (relr_offset != 0) {
+    if (relr_size != 0) {
+        if (relr_ent != 8) {
+            panic(true, "elf: relr_ent != 8");
+        }
         for (size_t i = 0; i < relr_size / relr_ent; i++) {
             uint64_t entry = *((uint64_t *)(elf + relr_offset + i * relr_ent));
 
@@ -443,15 +433,21 @@ end_of_pt_segment:
         }
     }
     size_t relr_count = relocs_i;
-    if (rela_offset != 0) {
+    if (rela_size != 0) {
+        if (rela_ent < sizeof(struct elf64_rela)) {
+            panic(true, "elf: rela_ent < sizeof(struct elf64_rela)");
+        }
         relocs_i += rela_size / rela_ent;
     }
-    if (dt_jmprel != 0) {
+    if (dt_pltrelsz != 0) {
+        if (dt_pltrel != DT_RELA) {
+            panic(true, "elf: dt_pltrel != DT_RELA");
+        }
         relocs_i += dt_pltrelsz / rela_ent;
     }
     struct elf64_rela **relocs = ext_mem_alloc(relocs_i * sizeof(struct elf64_rela *));
 
-    if (relr_offset != 0) {
+    if (relr_size != 0) {
         size_t relr_i;
         for (relr_i = 0; relr_i < relr_count; relr_i++) {
             relocs[relr_i] = ext_mem_alloc(sizeof(struct elf64_rela));
@@ -479,13 +475,13 @@ end_of_pt_segment:
         }
     }
 
-    if (rela_offset != 0) {
+    if (rela_size != 0) {
         for (uint64_t i = relr_count, offset = 0; offset < rela_size; offset += rela_ent) {
             relocs[i++] = (void *)elf + (rela_offset + offset);
         }
     }
 
-    if (dt_jmprel != 0) {
+    if (dt_pltrelsz != 0) {
         for (uint64_t i = relr_count + rela_size / rela_ent, offset = 0; offset < dt_pltrelsz; offset += rela_ent) {
             relocs[i++] = (void *)elf + (dt_jmprel + offset);
         }

@@ -8,6 +8,7 @@
 
 int fdt_set_chosen_string(void *fdt, const char *name, const char *value);
 int fdt_set_chosen_uint64(void *fdt, const char *name, uint64_t value);
+int fdt_set_chosen_uint32(void *fdt, const char *name, uint32_t value);
 
 #endif
 

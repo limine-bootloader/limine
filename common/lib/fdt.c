@@ -32,4 +32,13 @@ int fdt_set_chosen_uint64(void *fdt, const char *name, uint64_t value) {
     return fdt_setprop_u64(fdt, chosen_offset, name, value);
 }
 
+int fdt_set_chosen_uint32(void *fdt, const char *name, uint32_t value) {
+    int chosen_offset = fdt_get_or_add_chosen_node(fdt);
+    if (chosen_offset < 0) {
+        return chosen_offset;
+    }
+
+    return fdt_setprop_u32(fdt, chosen_offset, name, value);
+}
+
 #endif

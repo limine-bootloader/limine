@@ -1,4 +1,4 @@
-#if defined(__riscv64)
+#if defined(__riscv64) || defined(__aarch64__)
 
 #include <stdint.h>
 #include <stddef.h>
@@ -38,9 +38,13 @@ struct linux_header {
 
 // End of Linux code
 
+#if defined(__riscv64)
 #define LINUX_HEADER_MAGIC2             0x05435352
 #define LINUX_HEADER_MAJOR_VER(ver)     (((ver) >> 16) & 0xffff)
 #define LINUX_HEADER_MINOR_VER(ver)     (((ver) >> 0)  & 0xffff)
+#elif defined(__aarch64__)
+#define LINUX_HEADER_MAGIC2             0x644d5241
+#endif
 
 void *prepare_device_tree_blob(char *config, char *cmdline) {
     void *dtb = get_device_tree_blob();
@@ -192,12 +196,15 @@ noreturn void linux_load(char *config, char *cmdline) {
         panic(true, "linux: kernel header magic does not match");
     }
 
+    // Version fields are RV-specific
+#if defined(__riscv64)
     printv("linux: boot protocol version %d.%d\n",
            LINUX_HEADER_MAJOR_VER(header.version),
            LINUX_HEADER_MINOR_VER(header.version));
     if (LINUX_HEADER_MINOR_VER(header.version) < 2) {
         panic(true, "linux: protocols < 0.2 are not supported");
     }
+#endif
 
     size_t kernel_size = kernel_file->size;
     void *kernel_base = ext_mem_alloc_type_aligned(
@@ -212,12 +219,20 @@ noreturn void linux_load(char *config, char *cmdline) {
         panic(true, "linux: failed to prepare the device tree blob");
     }
 
+#if defined(__riscv64)
     printv("linux: bsp hart %d, device tree blob at %x\n", bsp_hartid, dtb);
 
     void (*kernel_entry)(uint64_t hartid, uint64_t dtb) = kernel_base;
     asm ("csrci   sstatus, 0x2\n\t"
          "csrw    sie, zero\n\t");
     kernel_entry(bsp_hartid, (uint64_t)dtb);
+#elif defined(__aarch64__)
+    printv("linux: device tree blob at %x\n", dtb);
+
+    void (*kernel_entry)(uint64_t dtb, uint64_t res0, uint64_t res1, uint64_t res2) = kernel_base;
+    asm ("msr daifset, 0xF");
+    kernel_entry((uint64_t)dtb, 0, 0, 0);
+#endif
     __builtin_unreachable();
 }
 

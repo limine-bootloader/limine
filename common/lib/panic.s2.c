@@ -48,6 +48,8 @@ noreturn void panic(bool allow_menu, const char *fmt, ...) {
     if (
 #if defined (BIOS)
       stage3_loaded == true &&
+#elif defined (UEFI)
+      efi_boot_services_exited == false &&
 #endif
       allow_menu == true) {
         print("Press a key to return to %s.", booting_from_editor ? "editor" : "menu");

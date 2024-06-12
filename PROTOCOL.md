@@ -14,11 +14,14 @@ languages.
 
 ## General Notes
 
-All pointers are 64-bit wide. All pointers point to the object with the
+All pointers are 64-bit wide. All non-NULL pointers point to the object with the
 higher half direct map offset already added to them, unless otherwise noted.
 
+All responses and associated data structures are placed in bootloader-reclaimable
+memory regions.
+
 The calling convention matches the C ABI for the specific architecture
-(SysV for x86, AAPCS for aarch64).
+(SysV for x86, AAPCS LP64 for aarch64, LP64 for riscv64).
 
 ## Base protocol revisions
 
@@ -33,8 +36,8 @@ Base revision 0 and 1 are considered deprecated. Base revision 0 is the default 
 a kernel is assumed to be requesting and complying to if no base revision tag
 is provided by the kernel, for backwards compatibility.
 
-A base revision tag is a set of 3 64-bit values placed somewhere in the kernel
-binary on an 8-byte aligned boundary; the first 2 values are a magic number
+A base revision tag is a set of 3 64-bit values placed somewhere in the loaded kernel
+image on an 8-byte aligned boundary; the first 2 values are a magic number
 for the bootloader to be able to identify the tag, and the last value is the
 requested base revision number. Lack of base revision tag implies revision 0.
 
@@ -64,7 +67,7 @@ named "features" - where the kernel requests some action or information from
 the bootloader, and the bootloader responds accordingly, if it is capable of
 doing so.
 
-In C terms, a feature is composed of 2 structure: the request, and the response.
+In C terms, a feature is comprised of 2 structures: the request, and the response.
 
 A request has 3 mandatory members at the beginning of the structure:
 ```c
@@ -76,8 +79,8 @@ struct limine_example_request {
 };
 ```
 * `id` - The ID of the request. This is an 8-byte aligned magic number that the
-bootloader will scan for inside the executable file to find requests. Requests
-may be located anywhere inside the executable as long as they are 8-byte
+bootloader will scan for inside the loaded executable image to find requests. Requests
+may be located anywhere inside the loaded executable image as long as they are 8-byte
 aligned. There may only be 1 of the same request. The bootloader will refuse
 to boot an executable with multiple of the same request IDs. Alternatively,
 it is possible to provide a list of requests explicitly via an executable file section.
@@ -156,7 +159,7 @@ At handoff, the kernel will be properly loaded and mapped with appropriate
 MMU permissions, as supervisor, at the requested virtual memory address (provided it is at
 or above `0xffffffff80000000`).
 
-No specific physical memory placement is guaranteed, except that the kernel
+No specific physical memory placement is guaranteed, except that the loaded kernel image
 is guaranteed to be physically contiguous. In order to determine
 where the kernel is loaded in physical memory, see the Kernel Address feature
 below.

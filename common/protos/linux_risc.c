@@ -201,7 +201,8 @@ noreturn void linux_load(char *config, char *cmdline) {
     printv("linux: boot protocol version %d.%d\n",
            LINUX_HEADER_MAJOR_VER(header.version),
            LINUX_HEADER_MINOR_VER(header.version));
-    if (LINUX_HEADER_MINOR_VER(header.version) < 2) {
+    if (LINUX_HEADER_MAJOR_VER(header.version) == 0
+     && LINUX_HEADER_MINOR_VER(header.version) < 2) {
         panic(true, "linux: protocols < 0.2 are not supported");
     }
 #endif

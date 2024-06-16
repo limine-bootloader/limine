@@ -163,15 +163,17 @@ void *prepare_device_tree_blob(char *config, char *cmdline) {
         panic(true, "linux: failed to set UEFI secure boot state: '%s'", fdt_strerror(ret));
     }
 
-    // TODO(qookie): We should fill out VirtualStart for runtime entries and do
-    // SetVirtualMap here. Not doing this works, but Linux can't use UEFI
-    // runtime services.
     size_t efi_mmap_entry_count = efi_mmap_size / efi_desc_size;
     for (size_t i = 0; i < efi_mmap_entry_count; i++) {
         EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
 
         if (entry->Attribute & EFI_MEMORY_RUNTIME)
-            entry->VirtualStart = 0xFFFFFFFFFFFFFFFF;
+            entry->VirtualStart = entry->PhysicalStart;
+    }
+
+    EFI_STATUS status = gRT->SetVirtualAddressMap(efi_mmap_size, efi_desc_size, efi_desc_ver, efi_mmap);
+    if (status != EFI_SUCCESS) {
+        panic(false, "linux: failed to set UEFI virtual address map: '%x'", status);
     }
 
     return dtb;

@@ -66,6 +66,7 @@ Place any other file you want to be on the final ISO in said directory, then
 run:
 ```
 xorriso -as mkisofs -b <relative path of limine-bios-cd.bin> \
+        -hfsplus -apm-block-size 2048 \
         -no-emul-boot -boot-load-size 4 -boot-info-table \
         --efi-boot <relative path of limine-uefi-cd.bin> \
         -efi-boot-part --efi-boot-image --protective-msdos-label \

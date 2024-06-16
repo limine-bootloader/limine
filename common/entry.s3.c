@@ -47,7 +47,7 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
         size_t new_base;
         for (new_base = 0x1000; new_base + (size_t)__image_size < 0x100000000; new_base += 0x1000) {
             EFI_PHYSICAL_ADDRESS _new_base = (EFI_PHYSICAL_ADDRESS)new_base;
-            status = gBS->AllocatePages(AllocateAddress, EfiLoaderData, image_size_pages, &_new_base);
+            status = gBS->AllocatePages(AllocateAddress, EfiLoaderCode, image_size_pages, &_new_base);
             if (status == 0) {
                 goto new_base_gotten;
             }

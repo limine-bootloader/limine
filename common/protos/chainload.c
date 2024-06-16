@@ -257,7 +257,7 @@ noreturn void efi_chainload_file(char *config, char *cmdline, struct file_handle
     memdev_path[0].Header.Length[0] = sizeof(MEMMAP_DEVICE_PATH);
     memdev_path[0].Header.Length[1] = sizeof(MEMMAP_DEVICE_PATH) >> 8;
 
-    memdev_path[0].MemoryType       = EfiLoaderData;
+    memdev_path[0].MemoryType       = EfiLoaderCode;
     memdev_path[0].StartingAddress  = (uintptr_t)ptr;
     memdev_path[0].EndingAddress    = (uintptr_t)ptr + image_size;
 

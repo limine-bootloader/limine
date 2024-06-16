@@ -10,7 +10,6 @@
 #include <lib/image.h>
 #include <mm/pmm.h>
 #include <flanterm/flanterm.h>
-#define FLANTERM_FB_SUPPORT_BPP
 #include <flanterm/backends/fb.h>
 #include <lib/term.h>
 

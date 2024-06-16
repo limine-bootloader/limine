@@ -6,7 +6,7 @@ export OBJCOPY_FOR_TARGET
 export READELF_FOR_TARGET
 
 override CC := $(CC_FOR_TARGET)
-CFLAGS = -O2 -g -Wall -Wextra -DFLANTERM_FB_SUPPORT_BPP
+CFLAGS = -O2 -g -Wall -Wextra
 LDFLAGS =
 override LD := $(LD_FOR_TARGET)
 override QEMU := qemu-system-x86_64

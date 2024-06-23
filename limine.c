@@ -720,41 +720,41 @@ static int bios_install(int argc, char *argv[]) {
             if (!force_mbr) {
                 mbr = 0;
             } else {
-                hint8 = hint8 & 0x80 ? 0x80 : 0x00;
+                hint8 &= 0x80;
                 device_write(&hint8, 446, sizeof(uint8_t));
             }
         }
-        any_active = any_active ? any_active : (hint8 & 0x80) != 0;
+        any_active = any_active || (hint8 & 0x80) != 0;
         device_read(&hint8, 462, sizeof(uint8_t));
         if (hint8 != 0x00 && hint8 != 0x80) {
             if (!force_mbr) {
                 mbr = 0;
             } else {
-                hint8 = hint8 & 0x80 ? 0x80 : 0x00;
+                hint8 &= 0x80;
                 device_write(&hint8, 462, sizeof(uint8_t));
             }
         }
-        any_active = any_active ? any_active : (hint8 & 0x80) != 0;
+        any_active = any_active || (hint8 & 0x80) != 0;
         device_read(&hint8, 478, sizeof(uint8_t));
         if (hint8 != 0x00 && hint8 != 0x80) {
             if (!force_mbr) {
                 mbr = 0;
             } else {
-                hint8 = hint8 & 0x80 ? 0x80 : 0x00;
+                hint8 &= 0x80;
                 device_write(&hint8, 478, sizeof(uint8_t));
             }
         }
-        any_active = any_active ? any_active : (hint8 & 0x80) != 0;
+        any_active = any_active || (hint8 & 0x80) != 0;
         device_read(&hint8, 494, sizeof(uint8_t));
         if (hint8 != 0x00 && hint8 != 0x80) {
             if (!force_mbr) {
                 mbr = 0;
             } else {
-                hint8 = hint8 & 0x80 ? 0x80 : 0x00;
+                hint8 &= 0x80;
                 device_write(&hint8, 494, sizeof(uint8_t));
             }
         }
-        any_active = any_active ? any_active : (hint8 & 0x80) != 0;
+        any_active = any_active || (hint8 & 0x80) != 0;
 
         char hintc[64];
         device_read(hintc, 4, 8);
@@ -822,6 +822,14 @@ static int bios_install(int argc, char *argv[]) {
             hint8 = 0x80;
             device_write(&hint8, 446, sizeof(uint8_t));
         }
+    }
+
+    if (gpt) {
+        if (!quiet) {
+            fprintf(stderr, "Marking protective MBR wrapper partition as active...\n");
+        }
+        uint8_t hint8 = 0x80;
+        device_write(&hint8, 446, sizeof(uint8_t));
     }
 
     if (gpt == 0 && mbr == 0) {
@@ -1163,7 +1171,7 @@ cleanup:
     return ret;
 }
 
-#define LIMINE_VERSION "7.7.2"
+#define LIMINE_VERSION "7.8.0"
 #define LIMINE_COPYRIGHT "Copyright (C) 2019-2024 mintsuki and contributors."
 
 static void version_usage(void) {

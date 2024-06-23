@@ -1,3 +1,19 @@
+2024-06-24  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.8.0 ***
+
+    Noteworthy changes compared to the previous release, 7.7.2:
+
+    New features:
+        - Return to booted edited entry on panic.
+
+    Bug fixes:
+        - `limine`: Mark protective MBR wrapper partition as active on GPT.
+
+    Miscellaneous:
+        - UEFI: Allocate most memory as EfiLoaderCode instead of EfiLoaderData.
+        - Smaller fixes and improvements.
+
 2024-06-09  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.7.2 ***

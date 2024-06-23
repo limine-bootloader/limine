@@ -824,6 +824,14 @@ static int bios_install(int argc, char *argv[]) {
         }
     }
 
+    if (gpt) {
+        if (!quiet) {
+            fprintf(stderr, "Marking protective MBR wrapper partition as active...\n");
+        }
+        uint8_t hint8 = 0x80;
+        device_write(&hint8, 446, sizeof(uint8_t));
+    }
+
     if (gpt == 0 && mbr == 0) {
         fprintf(stderr, "error: Could not determine if the device has a valid partition table.\n");
         fprintf(stderr, "       Please ensure the device has a valid MBR or GPT.\n");

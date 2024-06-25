@@ -310,7 +310,7 @@ again:
         kd.KeyState.KeyShiftState = 0;
     }
 
-    if (kd.Key.ScanCode == 0x08) {
+    if (serial == true && kd.Key.ScanCode == 0x08) {
         return '\b';
     }
 

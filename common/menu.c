@@ -1110,14 +1110,14 @@ noreturn void boot(char *config) {
         multiboot1_load(config, cmdline);
 #else
         quiet = false;
-        print("Multiboot 1 is not available on aarch64 or riscv64.\n\n");
+        print("Multiboot 1 is not available on non-x86 architectures.\n\n");
 #endif
     } else if (!strcmp(proto, "multiboot2")) {
 #if defined (__x86_64__) || defined (__i386__)
         multiboot2_load(config, cmdline);
 #else
         quiet = false;
-        print("Multiboot 2 is not available on aarch64 or riscv64.\n\n");
+        print("Multiboot 2 is not available on non-x86 architectures.\n\n");
 #endif
     } else if (!strcmp(proto, "chainload_next")) {
         chainload_next(config, cmdline);

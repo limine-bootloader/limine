@@ -58,14 +58,6 @@ int pit_sleep_and_quit_on_keypress(int seconds);
 
 uint64_t strtoui(const char *s, const char **end, int base);
 
-#if defined (__i386__)
-void memcpy32to64(uint64_t, uint64_t, uint64_t);
-#elif defined (__x86_64__) || defined (__aarch64__) || defined(__riscv64)
-#  define memcpy32to64(X, Y, Z) memcpy((void *)(uintptr_t)(X), (void *)(uintptr_t)(Y), Z)
-#else
-#error Unknown architecture
-#endif
-
 #define DIV_ROUNDUP(a, b) ({ \
     __auto_type DIV_ROUNDUP_a = (a); \
     __auto_type DIV_ROUNDUP_b = (b); \

@@ -221,71 +221,24 @@ struct elf_section_hdr_info elf32_section_hdr_info(uint8_t *elf) {
     return info;
 }
 
-static bool elf32_is_relocatable(uint8_t *elf, struct elf32_hdr *hdr) {
-    if (hdr->phdr_size < sizeof(struct elf32_phdr)) {
-        panic(true, "elf: phdr_size < sizeof(struct elf32_phdr)");
-    }
-
-    // Find DYN segment
-    for (uint16_t i = 0; i < hdr->ph_num; i++) {
-        struct elf32_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
-
-        if (phdr->p_type != PT_DYNAMIC) {
-            continue;
-        }
-
-        if (hdr->type == ET_DYN) {
-            return true;
-        }
-
-        for (uint16_t j = 0; j < phdr->p_filesz / sizeof(struct elf32_dyn); j++) {
-            struct elf32_dyn *dyn = (void *)elf + (phdr->p_offset + j * sizeof(struct elf32_dyn));
-
-            switch (dyn->d_tag) {
-                case DT_FLAGS_1:
-                    if (dyn->d_un & DF_1_PIE) {
-                        return true;
-                    }
-                    break;
-            }
-        }
-
-        break;
-    }
-
-    return false;
-}
-
 static bool elf64_is_relocatable(uint8_t *elf, struct elf64_hdr *hdr) {
     if (hdr->phdr_size < sizeof(struct elf64_phdr)) {
         panic(true, "elf: phdr_size < sizeof(struct elf64_phdr)");
     }
 
-    // Find DYN segment
-    for (uint16_t i = 0; i < hdr->ph_num; i++) {
+    if (hdr->type != ET_DYN) {
+        return false;
+    }
+
+    // Find PT_DYNAMIC segment
+    for (size_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
         if (phdr->p_type != PT_DYNAMIC) {
             continue;
         }
 
-        if (hdr->type == ET_DYN) {
-            return true;
-        }
-
-        for (uint16_t j = 0; j < phdr->p_filesz / sizeof(struct elf64_dyn); j++) {
-            struct elf64_dyn *dyn = (void *)elf + (phdr->p_offset + j * sizeof(struct elf64_dyn));
-
-            switch (dyn->d_tag) {
-                case DT_FLAGS_1:
-                    if (dyn->d_un & DF_1_PIE) {
-                        return true;
-                    }
-                    break;
-            }
-        }
-
-        break;
+        return true;
     }
 
     return false;
@@ -909,8 +862,12 @@ bool elf32_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
 
     elf32_validate(hdr);
 
-    if (elf32_is_relocatable(elf, hdr)) {
-        panic(true, "elf: Cannot load relocatable ELF executables");
+    for (size_t i = 0; i < hdr->ph_num; i++) {
+        struct elf32_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
+
+        if (phdr->p_type == PT_DYNAMIC) {
+            panic(true, "elf: Cannot load ELFs with PT_DYNAMIC segment");
+        }
     }
 
     *entry_point = hdr->entry;
@@ -978,8 +935,12 @@ bool elf64_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
 
     elf64_validate(hdr);
 
-    if (elf64_is_relocatable(elf, hdr)) {
-        panic(true, "elf: Cannot load relocatable ELF executables");
+    for (size_t i = 0; i < hdr->ph_num; i++) {
+        struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
+
+        if (phdr->p_type == PT_DYNAMIC) {
+            panic(true, "elf: Cannot load ELFs with PT_DYNAMIC segment");
+        }
     }
 
     *entry_point = hdr->entry;

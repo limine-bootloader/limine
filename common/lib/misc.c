@@ -112,6 +112,8 @@ uint32_t hex2bin(uint8_t *str, uint32_t size) {
 #if defined (UEFI)
 
 void *get_device_tree_blob(size_t extra_size) {
+    int ret;
+
     EFI_GUID dtb_guid = EFI_DTB_TABLE_GUID;
     for (size_t i = 0; i < gST->NumberOfTableEntries; i++) {
         EFI_CONFIGURATION_TABLE *cur_table = &gST->ConfigurationTable[i];
@@ -122,9 +124,15 @@ void *get_device_tree_blob(size_t extra_size) {
 
         printv("efi: found dtb at %p, size %x\n", cur_table->VendorTable, s);
 
+        if (extra_size == (size_t)-1) {
+            extra_size = 0;
+        }
         void *new_tab = ext_mem_alloc(s + extra_size);
 
-        fdt_resize(cur_table->VendorTable, new_tab, s + extra_size);
+        ret = fdt_resize(cur_table->VendorTable, new_tab, s + extra_size);
+        if (ret < 0) {
+            panic(true, "dtb: failed to resize new DTB");
+        }
 
         return new_tab;
     }
@@ -134,8 +142,6 @@ void *get_device_tree_blob(size_t extra_size) {
     }
 
     void *dtb = ext_mem_alloc(extra_size);
-
-    int ret;
 
     ret = fdt_create_empty_tree(dtb, extra_size);
     if (ret < 0) {

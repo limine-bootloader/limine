@@ -41,10 +41,10 @@ clone_repo_commit() {
 }
 
 if ! [ -f version ]; then
-    clone_repo_commit https://github.com/mintsuki/freestanding-toolchain.git build-aux/freestanding-toolchain $FREESTANDING_TOOLCHAIN_COMMIT_HASH
-    clone_repo_commit https://github.com/mintsuki/freestanding-headers.git freestanding-headers $FREESTANDING_HEADERS_COMMIT_HASH
+    clone_repo_commit https://github.com/osdev0/freestanding-toolchain.git build-aux/freestanding-toolchain $FREESTANDING_TOOLCHAIN_COMMIT_HASH
+    clone_repo_commit https://github.com/osdev0/freestanding-headers.git freestanding-headers $FREESTANDING_HEADERS_COMMIT_HASH
 
-    clone_repo_commit https://github.com/mintsuki/cc-runtime.git decompressor/cc-runtime $CC_RUNTIME_COMMIT_HASH
+    clone_repo_commit https://github.com/osdev0/cc-runtime.git decompressor/cc-runtime $CC_RUNTIME_COMMIT_HASH
     rm -rf common/cc-runtime
     cp -rp decompressor/cc-runtime common/
     for f in common/cc-runtime/*.c; do

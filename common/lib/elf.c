@@ -238,10 +238,14 @@ static bool elf64_is_relocatable(uint8_t *elf, struct elf64_hdr *hdr) {
             continue;
         }
 
+        if (phdr->p_filesz == 0) {
+            panic(true, "elf: ELF file type is ET_DYN, but PT_DYNAMIC segment has 0 size");
+        }
+
         return true;
     }
 
-    return false;
+    panic(true, "elf: ELF file type is ET_DYN, but PT_DYNAMIC segment missing");
 }
 
 static bool elf64_apply_relocations(uint8_t *elf, struct elf64_hdr *hdr, void *buffer, uint64_t vaddr, size_t size, uint64_t slide) {
@@ -670,6 +674,10 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
 
     elf64_validate(hdr);
 
+    if (hdr->type != ET_EXEC && hdr->type != ET_DYN) {
+        panic(true, "elf: ELF file not of type ET_EXEC nor ET_DYN");
+    }
+
     if (is_reloc) {
         *is_reloc = false;
     }
@@ -862,6 +870,10 @@ bool elf32_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
 
     elf32_validate(hdr);
 
+    if (hdr->type != ET_EXEC) {
+        panic(true, "elf: ELF file not of type ET_EXEC");
+    }
+
     for (size_t i = 0; i < hdr->ph_num; i++) {
         struct elf32_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
 
@@ -934,6 +946,10 @@ bool elf64_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
     struct elf64_hdr *hdr = (void *)elf;
 
     elf64_validate(hdr);
+
+    if (hdr->type != ET_EXEC) {
+        panic(true, "elf: ELF file not of type ET_EXEC");
+    }
 
     for (size_t i = 0; i < hdr->ph_num; i++) {
         struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);

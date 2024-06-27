@@ -47,31 +47,9 @@ struct linux_header {
 #endif
 
 void *prepare_device_tree_blob(char *config, char *cmdline) {
-    void *dtb = get_device_tree_blob();
+    // Hopefully 4K should be enough (mainly depends on the length of cmdline).
+    void *dtb = get_device_tree_blob(0x1000);
     int ret;
-
-    if (!dtb) {
-        // Hopefully 4K should be enough (mainly depends on the length of cmdline).
-        dtb = ext_mem_alloc_type(0x1000, MEMMAP_KERNEL_AND_MODULES);
-        if (!dtb) {
-            panic(true, "linux: failed to allocate memory for a device tree blob");
-        }
-
-        ret = fdt_create_empty_tree(dtb, 0x1000);
-        if (ret < 0) {
-            panic(true, "linux: failed to create a device tree blob: '%s'", fdt_strerror(ret));
-        }
-
-        ret = fdt_setprop_u32(dtb, 0, "#address-cells", 2);
-        if (ret < 0) {
-            panic(true, "linux: failed to set #address-cells: '%s'", fdt_strerror(ret));
-        }
-
-        ret = fdt_setprop_u32(dtb, 0, "#size-cells", 1);
-        if (ret < 0) {
-            panic(true, "linux: failed to set #size-cells: '%s'", fdt_strerror(ret));
-        }
-    }
 
     // Delete all /memory@... nodes. Linux will use the given UEFI memory map
     // instead.

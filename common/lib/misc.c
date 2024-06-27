@@ -124,9 +124,10 @@ void *get_device_tree_blob(size_t extra_size) {
 
         printv("efi: found dtb at %p, size %x\n", cur_table->VendorTable, s);
 
-        if (extra_size == (size_t)-1) {
-            extra_size = 0;
+        if (extra_size == 0) {
+            return cur_table->VendorTable;
         }
+
         void *new_tab = ext_mem_alloc(s + extra_size);
 
         ret = fdt_resize(cur_table->VendorTable, new_tab, s + extra_size);
@@ -137,7 +138,7 @@ void *get_device_tree_blob(size_t extra_size) {
         return new_tab;
     }
 
-    if (extra_size == (size_t)-1) {
+    if (extra_size == 0) {
         return NULL;
     }
 

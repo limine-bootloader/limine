@@ -1,3 +1,23 @@
+2024-06-28  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.9.0 ***
+
+    Noteworthy changes compared to the previous release, 7.8.0:
+
+    New features:
+        - Linux boot protocol: Add support on aarch64 and riscv64.
+
+    Bug fixes:
+        - multiboot1/2: Relax ELF file type requirements (mainly for multiboot2
+          relocatable kernels).
+        - UEFI: Fix bug that caused delete key to behave as if it was backspace
+          even when the SERIAL config option was not "yes".
+
+    Miscellaneous:
+        - Limine boot protocol/ELF: Do not consider ELFs relocatable unless the
+          ELF file type is ET_DYN.
+        - Some dead code removal.
+
 2024-06-24  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.8.0 ***

@@ -180,7 +180,11 @@ void *prepare_device_tree_blob(char *config, char *cmdline) {
         panic(true, "linux: failed to set UEFI memory map descriptor version: '%s'", fdt_strerror(ret));
     }
 
-    // TODO(qookie): Figure out whether secure boot is actually enabled.
+    // This property is not required by mainline Linux, but is required by
+    // Debian (and derivative) kernels, because Debian has a patch that adds
+    // this flag, and the existing logic that deals with it will just outright
+    // fail if any of the properties is missing.  We don't care about Debian's
+    // hardening or whatever, so just always report that secure boot is off.
     ret = fdt_set_chosen_uint32(dtb, "linux,uefi-secure-boot", 0);
     if (ret < 0) {
         panic(true, "linux: failed to set UEFI secure boot state: '%s'", fdt_strerror(ret));

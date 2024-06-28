@@ -46,6 +46,35 @@ struct linux_header {
 #define LINUX_HEADER_MAGIC2             0x644d5241
 #endif
 
+void add_framebuffer(struct fb_info *fb) {
+    struct screen_info *screen_info = ext_mem_alloc(sizeof(struct screen_info));
+
+    screen_info->capabilities   = VIDEO_CAPABILITY_64BIT_BASE | VIDEO_CAPABILITY_SKIP_QUIRKS;
+    screen_info->flags          = VIDEO_FLAGS_NOCURSOR;
+    screen_info->lfb_base       = (uint32_t)fb->framebuffer_addr;
+    screen_info->ext_lfb_base   = (uint32_t)(fb->framebuffer_addr >> 32);
+    screen_info->lfb_size       = fb->framebuffer_pitch * fb->framebuffer_height;
+    screen_info->lfb_width      = fb->framebuffer_width;
+    screen_info->lfb_height     = fb->framebuffer_height;
+    screen_info->lfb_depth      = fb->framebuffer_bpp;
+    screen_info->lfb_linelength = fb->framebuffer_pitch;
+    screen_info->red_size       = fb->red_mask_size;
+    screen_info->red_pos        = fb->red_mask_shift;
+    screen_info->green_size     = fb->green_mask_size;
+    screen_info->green_pos      = fb->green_mask_shift;
+    screen_info->blue_size      = fb->blue_mask_size;
+    screen_info->blue_pos       = fb->blue_mask_shift;
+
+    screen_info->orig_video_isVGA = VIDEO_TYPE_EFI;
+
+    EFI_GUID screen_info_table_guid = {0xe03fc20a, 0x85dc, 0x406e, {0xb9, 0x0e, 0x4a, 0xb5, 0x02, 0x37, 0x1d, 0x95}};
+    EFI_STATUS ret = gBS->InstallConfigurationTable(&screen_info_table_guid, screen_info);
+
+    if (ret != EFI_SUCCESS) {
+        panic(true, "linux: failed to install screen info configuration table: '%x'", ret);
+    }
+}
+
 void *prepare_device_tree_blob(char *config, char *cmdline) {
     // Hopefully 4K should be enough (mainly depends on the length of cmdline).
     void *dtb = get_device_tree_blob(0x1000);
@@ -68,6 +97,25 @@ void *prepare_device_tree_blob(char *config, char *cmdline) {
         if (ret < 0) {
             panic(true, "linux: failed to delete memory node: '%s'", fdt_strerror(ret));
         }
+    }
+
+    size_t req_width = 0, req_height = 0, req_bpp = 0;
+
+    char *resolution = config_get_value(config, 0, "RESOLUTION");
+    if (resolution != NULL) {
+        parse_resolution(&req_width, &req_height, &req_bpp, resolution);
+    }
+
+    struct fb_info *fbs;
+    size_t fbs_count;
+
+    term_notready();
+
+    fb_init(&fbs, &fbs_count, req_width, req_height, req_bpp);
+
+    // TODO(qookie): Let the user pick a framebuffer if there's > 1
+    if (fbs_count > 0) {
+        add_framebuffer(&fbs[0]);
     }
 
     // Load an initrd if requested and add it to the device tree.
@@ -103,9 +151,6 @@ void *prepare_device_tree_blob(char *config, char *cmdline) {
     if (ret < 0) {
         panic(true, "linux: failed to set bootargs: '%s'", fdt_strerror(ret));
     }
-
-    // TODO(qookie): Once I figure out how, give Linux the framebuffer through
-    // the device tree here.
 
     efi_exit_boot_services();
 

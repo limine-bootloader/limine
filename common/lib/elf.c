@@ -870,16 +870,8 @@ bool elf32_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
 
     elf32_validate(hdr);
 
-    if (hdr->type != ET_EXEC) {
-        panic(true, "elf: ELF file not of type ET_EXEC");
-    }
-
-    for (size_t i = 0; i < hdr->ph_num; i++) {
-        struct elf32_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
-
-        if (phdr->p_type == PT_DYNAMIC) {
-            panic(true, "elf: Cannot load ELFs with PT_DYNAMIC segment");
-        }
+    if (hdr->type != ET_EXEC && hdr->type != ET_DYN) {
+        panic(true, "elf: ELF file not of type ET_EXEC nor ET_DYN");
     }
 
     *entry_point = hdr->entry;
@@ -947,16 +939,8 @@ bool elf64_load_elsewhere(uint8_t *elf, uint64_t *entry_point,
 
     elf64_validate(hdr);
 
-    if (hdr->type != ET_EXEC) {
-        panic(true, "elf: ELF file not of type ET_EXEC");
-    }
-
-    for (size_t i = 0; i < hdr->ph_num; i++) {
-        struct elf64_phdr *phdr = (void *)elf + (hdr->phoff + i * hdr->phdr_size);
-
-        if (phdr->p_type == PT_DYNAMIC) {
-            panic(true, "elf: Cannot load ELFs with PT_DYNAMIC segment");
-        }
+    if (hdr->type != ET_EXEC && hdr->type != ET_DYN) {
+        panic(true, "elf: ELF file not of type ET_EXEC nor ET_DYN");
     }
 
     *entry_point = hdr->entry;

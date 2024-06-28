@@ -8,6 +8,7 @@
 #include <lib/real.h>
 #include <fs/file.h>
 #include <mm/pmm.h>
+#include <libfdt/libfdt.h>
 
 #if defined (UEFI)
 EFI_SYSTEM_TABLE *gST;
@@ -110,16 +111,55 @@ uint32_t hex2bin(uint8_t *str, uint32_t size) {
 
 #if defined (UEFI)
 
-void *get_device_tree_blob(void) {
+void *get_device_tree_blob(size_t extra_size) {
+    int ret;
+
     EFI_GUID dtb_guid = EFI_DTB_TABLE_GUID;
     for (size_t i = 0; i < gST->NumberOfTableEntries; i++) {
         EFI_CONFIGURATION_TABLE *cur_table = &gST->ConfigurationTable[i];
         if (memcmp(&cur_table->VendorGuid, &dtb_guid, sizeof(EFI_GUID)))
             continue;
-        printv("efi: found dtb at %p\n", cur_table->VendorTable);
-        return cur_table->VendorTable;
+
+        size_t s = fdt_totalsize(cur_table->VendorTable);
+
+        printv("efi: found dtb at %p, size %x\n", cur_table->VendorTable, s);
+
+        if (extra_size == 0) {
+            return cur_table->VendorTable;
+        }
+
+        void *new_tab = ext_mem_alloc(s + extra_size);
+
+        ret = fdt_resize(cur_table->VendorTable, new_tab, s + extra_size);
+        if (ret < 0) {
+            panic(true, "dtb: failed to resize new DTB");
+        }
+
+        return new_tab;
     }
-    return NULL;
+
+    if (extra_size == 0) {
+        return NULL;
+    }
+
+    void *dtb = ext_mem_alloc(extra_size);
+
+    ret = fdt_create_empty_tree(dtb, extra_size);
+    if (ret < 0) {
+        panic(true, "dtb: failed to create a device tree blob: '%s'", fdt_strerror(ret));
+    }
+
+    ret = fdt_setprop_u32(dtb, 0, "#address-cells", 2);
+    if (ret < 0) {
+        panic(true, "dtb: failed to set #address-cells: '%s'", fdt_strerror(ret));
+    }
+
+    ret = fdt_setprop_u32(dtb, 0, "#size-cells", 1);
+    if (ret < 0) {
+        panic(true, "dtb: failed to set #size-cells: '%s'", fdt_strerror(ret));
+    }
+
+    return dtb;
 }
 
 #if defined (__riscv)

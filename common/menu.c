@@ -1104,12 +1104,7 @@ noreturn void boot(char *config) {
     if (!strcmp(proto, "limine")) {
         limine_load(config, cmdline);
     } else if (!strcmp(proto, "linux")) {
-#if defined (__x86_64__) || defined (__i386__)
         linux_load(config, cmdline);
-#else
-        quiet = false;
-        print("TODO: Linux is not available on aarch64 or riscv64.\n\n");
-#endif
     } else if (!strcmp(proto, "multiboot1") || !strcmp(proto, "multiboot")) {
 #if defined (__x86_64__) || defined (__i386__)
         multiboot1_load(config, cmdline);

@@ -1,3 +1,13 @@
+2024-06-29  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.9.1 ***
+
+    Noteworthy changes compared to the previous release, 7.9.0:
+
+    Bug fixes:
+        - `limine`: Revert change that marked protective MBR wrapper partition
+          as active on GPT.
+
 2024-06-28  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.9.0 ***

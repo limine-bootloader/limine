@@ -177,6 +177,10 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
         }
     }
 
+    if (max_cpus == 0) {
+        return NULL;
+    }
+
     struct limine_smp_info *ret = ext_mem_alloc(max_cpus * sizeof(struct limine_smp_info));
     *cpu_count = 0;
 
@@ -259,6 +263,11 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
                 continue;
             }
         }
+    }
+
+    if (*cpu_count == 0) {
+        pmm_free(ret, max_cpus * sizeof(struct limine_smp_info));
+        return NULL;
     }
 
     return ret;

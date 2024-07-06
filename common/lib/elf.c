@@ -627,7 +627,7 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, struct elf_range **_r
         }
 
         if (phdr->p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
-            if (!is_reloc || phdr->p_vaddr >= 0x80000000) {
+            if (!is_reloc) {
                 continue;
             }
         }
@@ -650,7 +650,7 @@ static void elf64_get_ranges(uint8_t *elf, uint64_t slide, struct elf_range **_r
         }
 
         if (phdr->p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
-            if (!is_reloc || phdr->p_vaddr >= 0x80000000) {
+            if (!is_reloc) {
                 continue;
             }
         }
@@ -713,14 +713,13 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
         }
 
         if (phdr->p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
-            if (!*is_reloc || phdr->p_vaddr >= 0x80000000) {
-                continue;
+            if (!*is_reloc) {
+                panic(true, "elf: Lower half PHDRs are not allowed");
             }
             lower_to_higher = true;
-            slide = FIXED_HIGHER_HALF_OFFSET_64;
         } else {
             if (lower_to_higher) {
-                panic(true, "elf: Mix of lower and higher half PHDRs");
+                panic(true, "elf: Mix of lower and higher half PHDRs in relocatable kernel");
             }
         }
 
@@ -733,7 +732,7 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
             }
 
             if (phdr_in->p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
-                if (!*is_reloc || phdr->p_vaddr >= 0x80000000) {
+                if (!*is_reloc) {
                     continue;
                 }
             }
@@ -781,6 +780,10 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
         panic(true, "elf: No usable PHDRs exist");
     }
 
+    if (lower_to_higher) {
+        slide = FIXED_HIGHER_HALF_OFFSET_64 - min_vaddr;
+    }
+
     image_size = max_vaddr - min_vaddr;
 
     *physical_base = (uintptr_t)ext_mem_alloc_type_aligned(image_size, alloc_type, max_align);
@@ -792,7 +795,7 @@ bool elf64_load(uint8_t *elf, uint64_t *entry_point, uint64_t *_slide, uint32_t 
 
 again:
     if (*is_reloc && kaslr) {
-        slide = (rand32() & ~(max_align - 1)) + (lower_to_higher ? FIXED_HIGHER_HALF_OFFSET_64 : 0);
+        slide = (rand32() & ~(max_align - 1)) + (lower_to_higher ? FIXED_HIGHER_HALF_OFFSET_64 - min_vaddr : 0);
 
         if (*virtual_base + slide + image_size < 0xffffffff80000000 /* this comparison relies on overflow */) {
             if (++try_count == max_simulated_tries) {
@@ -809,12 +812,6 @@ again:
 
         if (phdr->p_type != PT_LOAD || phdr->p_memsz == 0) {
             continue;
-        }
-
-        if (phdr->p_vaddr < FIXED_HIGHER_HALF_OFFSET_64) {
-            if (!*is_reloc || phdr->p_vaddr >= 0x80000000) {
-                continue;
-            }
         }
 
         // Sanity checks

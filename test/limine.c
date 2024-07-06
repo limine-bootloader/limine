@@ -252,6 +252,7 @@ static void limine_main(void) {
 
     uint64_t kernel_slide = (uint64_t)kernel_start - 0xffffffff80000000;
 
+    e9_printf("Kernel start: %x", kernel_start);
     e9_printf("Kernel slide: %x", kernel_slide);
 
 FEAT_START

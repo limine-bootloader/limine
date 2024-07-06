@@ -1,7 +1,7 @@
 SECTIONS
 {
     . = SIZEOF_HEADERS;
-    kernel_start = .;
+    kernel_start = . - SIZEOF_HEADERS;
 
     .rodata ALIGN(CONSTANT(MAXPAGESIZE)) : {
         *(.rodata .rodata.*)

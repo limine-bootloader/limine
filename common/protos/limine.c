@@ -467,7 +467,6 @@ noreturn void limine_load(char *config, char *cmdline) {
     // TODO(qookie): aarch64 also has optional 5 level paging when using 4K pages
 #elif defined (__riscv64)
     max_supported_paging_mode = vmm_max_paging_mode();
-    max_supported_paging_mode >= PAGING_MODE_RISCV_SV48 ? PAGING_MODE_RISCV_SV48 : PAGING_MODE_RISCV_SV39;
 #else
 #error Unknown architecture
 #endif

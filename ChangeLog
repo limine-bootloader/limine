@@ -1,3 +1,22 @@
+2024-07-06  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.9.2 ***
+
+    Noteworthy changes compared to the previous release, 7.9.1:
+
+    Bug fixes:
+        - Limine boot protocol: Return NULL response instead of a response with
+          erroneous CPU count of 0 for SMP on x86-64, if x2APIC support not
+          enabled and missing xAPIC fallback.
+        - Limine boot protocol: Do not ignore MAX_PAGING_MODE config setting if
+          paging mode request missing from loaded kernel.
+
+    Miscellaneous:
+        - Limine boot protocol/ELF: Apply a slide of 0xffffffff80000000 minus
+          the ELF-reported base load address for relocatable kernels that have
+          lower half load addresses, instead of always applying a slide of
+          0xffffffff80000000.
+
 2024-06-29  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.9.1 ***

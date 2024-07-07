@@ -1,3 +1,28 @@
+# We don't want to ignore the following files
+!/common/font.bin
+!.clang-format
+!.editorconfig
+!.envrc
+!.gitattributes
+!.gitignore
+!.typos.toml
+
+
+# Generated files
+*.o
+*.d
+*.a
+*.exe
+*.EFI
+*.bin
+*.bin.gz
+*.tar*
+*.elf
+*.hdd
+*.iso
+*.sys
+*~
+
 /bin
 /build
 /toolchain-files
@@ -13,29 +38,14 @@
 /tinf
 /stb
 /ovmf*
-*.o
-*.d
-*.a
-*.exe
-*.EFI
-*.bin
-*.bin.gz
-*.tar*
-*.elf
-*.hdd
-*.iso
-*.sys
 /bochsout.txt
 /bx_enh_dbg.ini
-/.vscode
 /test_image
-!/common/font.bin
 /configure
 /configure.ac.save
 /timestamps
 /build-aux
 /aclocal.m4
-/*~
 /config.status
 /config.log
 /autom4te.cache
@@ -49,6 +59,20 @@
 /common-uefi-riscv64
 /decompressor-build
 /stage1.stamp
+
+
+# For local development
+/.vscode
+/.gdb_history
+/tags
+/TAGS
+
+# Clang's compilation database file
+compile_commands.json
+
+# clangd caches
+/.clangd
+/.cache/clangd
 
 # Nix
 /.direnv

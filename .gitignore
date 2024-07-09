@@ -1,5 +1,4 @@
 # We don't want to ignore the following files
-!/common/font.bin
 !.clang-format
 !.editorconfig
 !.envrc

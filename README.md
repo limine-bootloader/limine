@@ -131,12 +131,9 @@ To build Limine, run:
 make    # (or gmake where applicable)
 ```
 
-The generated bootloader files are going to be in `./bin`.
+## Installing Limine
 
-## Installing Limine binaries
-
-This step is optional as the bootloader binaries can be used from the `./bin` or
-release directory just fine. This step will only install them to `share`, `include`, and
+This step will install Limine files to `share`, `include`, and
 `bin` directories in the specified prefix (default is `/usr/local`, see
 `./configure --help`, or the `PREFIX` variable if installing from a binary release).
 

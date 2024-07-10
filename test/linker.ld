@@ -1,9 +1,10 @@
 PHDRS
 {
-    text    PT_LOAD    FLAGS(0x05); /* Execute + Read */
-    rodata  PT_LOAD    FLAGS(0x04); /* Read only */
-    data    PT_LOAD    FLAGS(0x06); /* Write + Read */
-    dynamic PT_DYNAMIC FLAGS(0x06); /* Dynamic segment needed for PIE */
+    headers PT_PHDR PHDRS;
+    text    PT_LOAD FILEHDR PHDRS;
+    rodata  PT_LOAD;
+    data    PT_LOAD;
+    dynamic PT_DYNAMIC;
 }
 
 SECTIONS
@@ -15,20 +16,20 @@ SECTIONS
         *(.text .text.*)
     } :text
 
-    . += 0x1000;
+    . = ALIGN(CONSTANT(MAXPAGESIZE));
 
     .rodata : {
         *(.rodata .rodata.*)
     } :rodata
 
-    . += 0x1000;
+    . = ALIGN(CONSTANT(MAXPAGESIZE));
 
     .data : {
         *(.data .data.*)
 
-        *(.limine_requests_start_marker)
-        *(.limine_requests)
-        *(.limine_requests_end_marker)
+        KEEP(*(.limine_requests_start_marker))
+        KEEP(*(.limine_requests))
+        KEEP(*(.limine_requests_end_marker))
 
         *(.sdata .sdata.*)
     } :data
@@ -42,4 +43,10 @@ SECTIONS
         *(.bss .bss.*)
         *(COMMON)
     } :data
+
+    /DISCARD/ : {
+        *(.eh_frame*)
+        *(.note .note.*)
+        *(.interp)
+    }
 }

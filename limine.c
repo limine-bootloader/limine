@@ -712,6 +712,7 @@ static int bios_install(int argc, char *argv[]) {
 
         uint8_t hint8 = 0;
         uint16_t hint16 = 0;
+        uint32_t hint32 = 0;
 
         bool any_active = false;
 
@@ -725,6 +726,14 @@ static int bios_install(int argc, char *argv[]) {
             }
         }
         any_active = any_active || (hint8 & 0x80) != 0;
+        device_read(&hint8, 446 + 4, sizeof(uint8_t));
+        if (hint8 != 0x00) {
+            device_read(&hint32, 446 + 8, sizeof(uint32_t));
+            hint32 = ENDSWAP(hint32);
+            if (hint32 < 63) {
+                goto part_too_low;
+            }
+        }
         device_read(&hint8, 462, sizeof(uint8_t));
         if (hint8 != 0x00 && hint8 != 0x80) {
             if (!force_mbr) {
@@ -735,6 +744,14 @@ static int bios_install(int argc, char *argv[]) {
             }
         }
         any_active = any_active || (hint8 & 0x80) != 0;
+        device_read(&hint8, 462 + 4, sizeof(uint8_t));
+        if (hint8 != 0x00) {
+            device_read(&hint32, 462 + 8, sizeof(uint32_t));
+            hint32 = ENDSWAP(hint32);
+            if (hint32 < 63) {
+                goto part_too_low;
+            }
+        }
         device_read(&hint8, 478, sizeof(uint8_t));
         if (hint8 != 0x00 && hint8 != 0x80) {
             if (!force_mbr) {
@@ -745,6 +762,14 @@ static int bios_install(int argc, char *argv[]) {
             }
         }
         any_active = any_active || (hint8 & 0x80) != 0;
+        device_read(&hint8, 478 + 4, sizeof(uint8_t));
+        if (hint8 != 0x00) {
+            device_read(&hint32, 478 + 8, sizeof(uint32_t));
+            hint32 = ENDSWAP(hint32);
+            if (hint32 < 63) {
+                goto part_too_low;
+            }
+        }
         device_read(&hint8, 494, sizeof(uint8_t));
         if (hint8 != 0x00 && hint8 != 0x80) {
             if (!force_mbr) {
@@ -755,6 +780,20 @@ static int bios_install(int argc, char *argv[]) {
             }
         }
         any_active = any_active || (hint8 & 0x80) != 0;
+        device_read(&hint8, 494 + 4, sizeof(uint8_t));
+        if (hint8 != 0x00) {
+            device_read(&hint32, 494 + 8, sizeof(uint32_t));
+            hint32 = ENDSWAP(hint32);
+            if (hint32 < 63) {
+                goto part_too_low;
+            }
+        }
+
+        if (0) {
+part_too_low:
+            fprintf(stderr, "%s: error: A partition's start sector is less than 63, aborting.\n", program_name);
+            goto cleanup;
+        }
 
         char hintc[64];
         device_read(hintc, 4, 8);
@@ -1163,7 +1202,7 @@ cleanup:
     return ret;
 }
 
-#define LIMINE_VERSION "7.9.2"
+#define LIMINE_VERSION "7.10.0"
 #define LIMINE_COPYRIGHT "Copyright (C) 2019-2024 mintsuki and contributors."
 
 static void version_usage(void) {

@@ -632,13 +632,15 @@ FEAT_START
         break; // next feature
     }
 
+    void *rsdp = acpi_get_rsdp();
+    if (rsdp == NULL) {
+        break;
+    }
+
     struct limine_rsdp_response *rsdp_response =
         ext_mem_alloc(sizeof(struct limine_rsdp_response));
 
-    void *rsdp = acpi_get_rsdp();
-    if (rsdp) {
-        rsdp_response->address = reported_addr(rsdp);
-    }
+    rsdp_response->address = reported_addr(rsdp);
 
     rsdp_request->response = reported_addr(rsdp_response);
 FEAT_END

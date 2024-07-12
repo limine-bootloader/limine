@@ -124,13 +124,9 @@ void *get_device_tree_blob(size_t extra_size) {
 
         printv("efi: found dtb at %p, size %x\n", cur_table->VendorTable, s);
 
-        if (extra_size == 0) {
-            return cur_table->VendorTable;
-        }
-
         void *new_tab = ext_mem_alloc(s + extra_size);
 
-        ret = fdt_resize(cur_table->VendorTable, new_tab, s + extra_size);
+        ret = fdt_open_into(cur_table->VendorTable, new_tab, s + extra_size);
         if (ret < 0) {
             panic(true, "dtb: failed to resize new DTB");
         }

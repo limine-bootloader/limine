@@ -1,3 +1,21 @@
+2024-07-12  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.10.0 ***
+
+    Noteworthy changes compared to the previous release, 7.9.2:
+
+    New features:
+        - SMP: Support SMP on AArch64 without ACPI.
+
+    Bug fixes:
+        - SMP: Do not allocate a useless stack for the BSP.
+
+    Miscellaneous:
+        - Limine boot protocol: Do not pass responses if RSDP or SMBIOS not
+          available instead of returning responses with NULL pointers.
+        - Limine boot protocol: Do not pass a framebuffer response if no
+          framebuffers are available.
+
 2024-07-06  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.9.2 ***

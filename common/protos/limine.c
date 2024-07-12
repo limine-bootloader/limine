@@ -879,6 +879,10 @@ FEAT_START
         break; // next feature
     }
 
+    if (fbs_count == 0) {
+        break;
+    }
+
     struct limine_framebuffer *fbp = ext_mem_alloc(fbs_count * sizeof(struct limine_framebuffer));
 
     struct limine_framebuffer_response *framebuffer_response =
@@ -921,9 +925,7 @@ FEAT_START
     framebuffer_response->framebuffer_count = fbs_count;
     framebuffer_response->framebuffers = reported_addr(fb_list);
 
-    if (framebuffer_request != NULL) {
-        framebuffer_request->response = reported_addr(framebuffer_response);
-    }
+    framebuffer_request->response = reported_addr(framebuffer_response);
 FEAT_END
 
 no_fb:

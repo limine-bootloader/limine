@@ -652,11 +652,14 @@ FEAT_START
         break; // next feature
     }
 
-    struct limine_smbios_response *smbios_response =
-        ext_mem_alloc(sizeof(struct limine_smbios_response));
-
     void *smbios_entry_32 = NULL, *smbios_entry_64 = NULL;
     acpi_get_smbios(&smbios_entry_32, &smbios_entry_64);
+    if (smbios_entry_32 == NULL && smbios_entry_64 == NULL) {
+        break;
+    }
+
+    struct limine_smbios_response *smbios_response =
+        ext_mem_alloc(sizeof(struct limine_smbios_response));
 
     if (smbios_entry_32) {
         smbios_response->entry_32 = reported_addr(smbios_entry_32);
@@ -665,11 +668,7 @@ FEAT_START
         smbios_response->entry_64 = reported_addr(smbios_entry_64);
     }
 
-    if (smbios_entry_32 == NULL && smbios_entry_64 == NULL) {
-        pmm_free(smbios_response, sizeof(struct limine_smbios_response));
-    } else {
-        smbios_request->response = reported_addr(smbios_response);
-    }
+    smbios_request->response = reported_addr(smbios_response);
 FEAT_END
 
 #if defined (UEFI)

@@ -1080,6 +1080,22 @@ FEAT_START
     }
 
     for (size_t i = 0; i < cpu_count; i++) {
+#if defined (__x86_64__) || defined (__i386__)
+        if (smp_info[i].lapic_id == bsp_lapic_id) {
+            continue;
+        }
+#elif defined (__aarch64__)
+        if (smp_info[i].mpidr == bsp_mpidr) {
+            continue;
+        }
+#elif defined (__riscv64)
+        if (smp_info[i].hartid == bsp_hartid) {
+            continue;
+        }
+#else
+#error Unknown architecture
+#endif
+
         void *cpu_stack = ext_mem_alloc(stack_size) + stack_size;
         smp_info[i].reserved = reported_addr(cpu_stack);
     }

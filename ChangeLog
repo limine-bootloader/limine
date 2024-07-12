@@ -1,5 +1,14 @@
 2024-07-12  mintsuki  <mintsuki@protonmail.com>
 
+    *** Release 7.10.1 ***
+
+    Noteworthy changes compared to the previous release, 7.10.0:
+
+    Bug fixes:
+        - DTB: Never pass UEFI DTB buffer directly; fix misuse of libfdt API.
+
+2024-07-12  mintsuki  <mintsuki@protonmail.com>
+
     *** Release 7.10.0 ***
 
     Noteworthy changes compared to the previous release, 7.9.2:

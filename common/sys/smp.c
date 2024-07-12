@@ -483,7 +483,6 @@ static struct limine_smp_info *try_acpi_smp(size_t   *cpu_count,
                 struct limine_smp_info *info_struct = &ret[*cpu_count];
 
                 info_struct->processor_id = gicc->acpi_uid;
-                info_struct->gic_iface_no = gicc->iface_no;
                 info_struct->mpidr = gicc->mpidr;
 
                 // Do not try to restart the BSP

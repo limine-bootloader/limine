@@ -334,7 +334,7 @@ struct limine_smp_response {
 
 struct limine_smp_info {
     uint32_t processor_id;
-    uint32_t gic_iface_no;
+    uint32_t reserved1;
     uint64_t mpidr;
     uint64_t reserved;
     LIMINE_PTR(limine_goto_address) goto_address;

@@ -708,7 +708,7 @@ typedef void (*limine_goto_address)(struct limine_smp_info *);
 
 struct limine_smp_info {
     uint32_t processor_id;
-    uint32_t gic_iface_no;
+    uint32_t reserved1;
     uint64_t mpidr;
     uint64_t reserved;
     limine_goto_address goto_address;
@@ -716,8 +716,7 @@ struct limine_smp_info {
 };
 ```
 
-* `processor_id` - ACPI Processor UID as specified by the MADT
-* `gic_iface_no` - GIC CPU Interface number of the processor as specified by the MADT (possibly always 0)
+* `processor_id` - ACPI Processor UID as specified by the MADT (always 0 on non-ACPI systems)
 * `mpidr` - MPIDR of the processor as specified by the MADT or device tree
 * `goto_address` - An atomic write to this field causes the parked CPU to
 jump to the written address, on a 64KiB (or Stack Size Request size) stack. A pointer to the

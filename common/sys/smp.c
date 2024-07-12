@@ -17,6 +17,9 @@
 #if defined (__riscv64)
 #include <sys/sbi.h>
 #endif
+#if defined (__aarch64__)
+#include <libfdt/libfdt.h>
+#endif
 
 extern symbol smp_trampoline_start;
 extern size_t smp_trampoline_size;
@@ -513,6 +516,187 @@ static struct limine_smp_info *try_acpi_smp(size_t   *cpu_count,
     return ret;
 }
 
+static struct limine_smp_info *try_dtb_smp(size_t   *cpu_count,
+                                           uint64_t *_bsp_mpidr,
+                                           pagemap_t pagemap,
+                                           uint64_t  mair,
+                                           uint64_t  tcr,
+                                           uint64_t  sctlr,
+                                           uint64_t  hhdm_offset) {
+    void *dtb = get_device_tree_blob(0);
+
+    uint64_t bsp_mpidr;
+    asm volatile ("mrs %0, mpidr_el1" : "=r"(bsp_mpidr));
+
+    // This bit is Res1 in the system reg, but not included in the MPIDR from DT
+    bsp_mpidr &= ~((uint64_t)1 << 31);
+
+    *_bsp_mpidr = bsp_mpidr;
+
+    printv("smp: BSP MPIDR is %X\n", bsp_mpidr);
+
+    *cpu_count = 0;
+
+    int cpus = fdt_path_offset(dtb, "/cpus");
+    if (cpus < 0) {
+        printv("smp: failed to find /cpus node: %s\n", fdt_strerror(cpus));
+        return NULL;
+    }
+
+    int psci = fdt_path_offset(dtb, "/psci");
+
+    if (psci > 0 && !fdt_node_check_compatible(dtb, psci, "arm,psci")) {
+        const void *prop;
+        if (!(prop = fdt_getprop(dtb, psci, "cpu_on", NULL))) {
+            printv("smp: failed to find PSCI cpu_on prop\n");
+            return NULL;
+        }
+
+        const uint8_t *bytes = prop;
+
+        psci_cpu_on = ((uint64_t)bytes[0] << 24)
+            | ((uint64_t)bytes[1] << 16)
+            | ((uint64_t)bytes[2] << 8)
+            | ((uint64_t)bytes[3]);
+    }
+
+    int address_cells = fdt_address_cells(dtb, cpus);
+    if (address_cells < 0) {
+        printv("smp: fdt_address_cells failed: %s\n", fdt_strerror(address_cells));
+        return NULL;
+    }
+    if (address_cells > 2) {
+        printv("smp: illegal #address-cells value: %d\n", address_cells);
+        return NULL;
+    }
+
+    uint64_t max_cpus = 0;
+    int node;
+    fdt_for_each_subnode(node, dtb, cpus) {
+        const void *prop;
+
+        if (!(prop = fdt_getprop(dtb, node, "device_type", NULL)) || strcmp(prop, "cpu")) {
+            continue;
+        }
+
+        if (!(prop = fdt_getprop(dtb, node, "reg", NULL))) {
+            continue;
+        }
+
+        max_cpus++;
+    }
+
+    struct limine_smp_info *ret = ext_mem_alloc(max_cpus * sizeof(struct limine_smp_info));
+
+    fdt_for_each_subnode(node, dtb, cpus) {
+        const void *prop;
+
+        if (!(prop = fdt_getprop(dtb, node, "device_type", NULL)) || strcmp(prop, "cpu")) {
+            continue;
+        }
+
+        if (!(prop = fdt_getprop(dtb, node, "reg", NULL))) {
+            continue;
+        }
+
+        uint64_t mpidr = 0;
+
+        if (address_cells == 1) {
+            const uint8_t *bytes = prop;
+
+            mpidr = ((uint64_t)bytes[0] << 24)
+                | ((uint64_t)bytes[1] << 16)
+                | ((uint64_t)bytes[2] << 8)
+                | ((uint64_t)bytes[3]);
+        } else if (address_cells == 2) {
+            const uint8_t *bytes = prop;
+
+            mpidr = ((uint64_t)bytes[3] << 32)
+                | ((uint64_t)bytes[4] << 24)
+                | ((uint64_t)bytes[5] << 16)
+                | ((uint64_t)bytes[6] << 8)
+                | ((uint64_t)bytes[7]);
+        }
+
+
+        struct limine_smp_info *info_struct = &ret[*cpu_count];
+
+        info_struct->processor_id = 0;
+        info_struct->mpidr = mpidr;
+
+        // Do not try to restart the BSP
+        if (mpidr == bsp_mpidr) {
+            (*cpu_count)++;
+            continue;
+        }
+
+        if (!(prop = fdt_getprop(dtb, node, "enable-method", NULL))) {
+            printv("smp: missing enable-method\n");
+            continue;
+        }
+
+        int boot_method = -1;
+        uint64_t method_ptr = 0;
+
+        if (!strcmp(prop, "psci")) {
+            if (psci < 0) {
+                printv("smp: failed to find /psci: %s\n", fdt_strerror(psci));
+                continue;
+            }
+
+            const void *psci_method = fdt_getprop(dtb, psci, "method", NULL);
+
+            if (!strcmp(psci_method, "smc")) {
+                boot_method = BOOT_WITH_PSCI_SMC;
+            } else if (!strcmp(psci_method, "hvc")) {
+                boot_method = BOOT_WITH_PSCI_HVC;
+            } else {
+                printv("smp: illegal PSCI method: '%s'\n", psci_method);
+            }
+
+        } else if (!strcmp(prop, "spin-table")) {
+            boot_method = BOOT_WITH_SPIN_TBL;
+
+            if (!(prop = fdt_getprop(dtb, node, "cpu-release-addr", NULL))) {
+                printv("smp: missing cpu-release-addr\n");
+                continue;
+            }
+
+            const uint8_t *bytes = prop;
+
+            method_ptr = ((uint64_t)bytes[0] << 56)
+                | ((uint64_t)bytes[1] << 48)
+                | ((uint64_t)bytes[2] << 40)
+                | ((uint64_t)bytes[3] << 32)
+                | ((uint64_t)bytes[4] << 24)
+                | ((uint64_t)bytes[5] << 16)
+                | ((uint64_t)bytes[6] << 8)
+                | ((uint64_t)bytes[7]);
+        } else {
+            printv("smp: illegal enable-method: '%s'\n", prop);
+            continue;
+        }
+
+        printv("smp: Found candidate AP for bring-up. MPIDR: %X\n", mpidr);
+
+        // Try to start the AP
+        if (!try_start_ap(boot_method, method_ptr, info_struct,
+                                        (uint64_t)(uintptr_t)pagemap.top_level[0],
+                                        (uint64_t)(uintptr_t)pagemap.top_level[1],
+                                        mair, tcr, sctlr, hhdm_offset)) {
+            print("smp: FAILED to bring-up AP\n");
+            continue;
+        }
+
+        printv("smp: Successfully brought up AP\n");
+
+        (*cpu_count)++;
+    }
+
+    return ret;
+}
+
+
 struct limine_smp_info *init_smp(size_t   *cpu_count,
                                  uint64_t *bsp_mpidr,
                                  pagemap_t pagemap,
@@ -522,14 +706,15 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
                                  uint64_t  hhdm_offset) {
     struct limine_smp_info *info = NULL;
 
-    //if (dtb_is_present() && (info = try_dtb_smp(cpu_count,
-    //                _bsp_iface_no, pagemap, mair, tcr, sctlr, hhdm_offset)))
-    //    return info;
-
-    // No RSDP means no ACPI
     if (acpi_get_rsdp() && (info = try_acpi_smp(
                                     cpu_count, bsp_mpidr, pagemap,
                                     mair, tcr, sctlr, hhdm_offset)))
+        return info;
+
+    // No RSDP means no ACPI, try device trees in that case.
+    if (get_device_tree_blob(0) && (info = try_dtb_smp(
+                                        cpu_count, bsp_mpidr, pagemap,
+                                        mair, tcr, sctlr, hhdm_offset)))
         return info;
 
     printv("Failed to figure out how to start APs.");

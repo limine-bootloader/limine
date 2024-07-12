@@ -9,6 +9,8 @@
 
     Bug fixes:
         - SMP: Do not allocate a useless stack for the BSP.
+        - `limine`: Protect against overwriting MBR partitions beginning at
+          exceedingly low sector values (outside de facto specification).
 
     Miscellaneous:
         - Limine boot protocol: Do not pass responses if RSDP or SMBIOS not

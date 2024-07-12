@@ -206,7 +206,6 @@ void ap_entry(struct limine_smp_info *info) {
 #if defined (__x86_64__)
     e9_printf("My LAPIC ID: %x", info->lapic_id);
 #elif defined (__aarch64__)
-    e9_printf("My GIC CPU Interface no.: %x", info->gic_iface_no);
     e9_printf("My MPIDR: %x", info->mpidr);
 #elif defined (__riscv)
     e9_printf("My Hart ID: %x", info->hartid);
@@ -446,7 +445,6 @@ FEAT_START
 #if defined (__x86_64__)
         e9_printf("LAPIC ID: %x", cpu->lapic_id);
 #elif defined (__aarch64__)
-        e9_printf("GIC CPU Interface no.: %x", cpu->gic_iface_no);
         e9_printf("MPIDR: %x", cpu->mpidr);
 #elif defined (__riscv)
         e9_printf("Hart ID: %x", cpu->hartid);

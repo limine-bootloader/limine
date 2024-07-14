@@ -99,25 +99,6 @@ void *prepare_device_tree_blob(char *config, char *cmdline) {
         }
     }
 
-    size_t req_width = 0, req_height = 0, req_bpp = 0;
-
-    char *resolution = config_get_value(config, 0, "RESOLUTION");
-    if (resolution != NULL) {
-        parse_resolution(&req_width, &req_height, &req_bpp, resolution);
-    }
-
-    struct fb_info *fbs;
-    size_t fbs_count;
-
-    term_notready();
-
-    fb_init(&fbs, &fbs_count, req_width, req_height, req_bpp);
-
-    // TODO(qookie): Let the user pick a framebuffer if there's > 1
-    if (fbs_count > 0) {
-        add_framebuffer(&fbs[0]);
-    }
-
     // Load an initrd if requested and add it to the device tree.
     char *module_path = config_get_value(config, 0, "MODULE_PATH");
     if (module_path) {
@@ -146,6 +127,25 @@ void *prepare_device_tree_blob(char *config, char *cmdline) {
         if (ret < 0) {
             panic(true, "linux: cannot set initrd parameter: '%s'", fdt_strerror(ret));
         }
+    }
+
+    size_t req_width = 0, req_height = 0, req_bpp = 0;
+
+    char *resolution = config_get_value(config, 0, "RESOLUTION");
+    if (resolution != NULL) {
+        parse_resolution(&req_width, &req_height, &req_bpp, resolution);
+    }
+
+    struct fb_info *fbs;
+    size_t fbs_count;
+
+    term_notready();
+
+    fb_init(&fbs, &fbs_count, req_width, req_height, req_bpp);
+
+    // TODO(qookie): Let the user pick a framebuffer if there's > 1
+    if (fbs_count > 0) {
+        add_framebuffer(&fbs[0]);
     }
 
     // Set the kernel command line arguments.

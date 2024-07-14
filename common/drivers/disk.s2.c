@@ -398,7 +398,23 @@ static struct volume *pxe_from_efi_handle(EFI_HANDLE efi_handle) {
 #define UNIQUE_SECTOR_POOL_SIZE 65536
 static alignas(4096) uint8_t unique_sector_pool[UNIQUE_SECTOR_POOL_SIZE];
 
+static struct volume *volume_by_unique_sector(void *b2b) {
+    for (size_t i = 0; i < volume_index_i; i++) {
+        if (volume_index[i]->unique_sector_valid == false) {
+            continue;
+        }
+
+        if (memcmp(volume_index[i]->unique_sector_b2b, b2b, BLAKE2B_OUT_BYTES) == 0) {
+            return volume_index[i];
+        }
+    }
+
+    return NULL;
+}
+
 struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
+    struct volume *ret;
+
     EFI_STATUS status;
 
     EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
@@ -416,25 +432,20 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
         goto fallback;
     }
 
-    for (size_t i = 0; i < volume_index_i; i++) {
-        if (volume_index[i]->unique_sector_valid == false) {
-            continue;
-        }
+    status = block_io->ReadBlocks(block_io, block_io->Media->MediaId,
+                                  0,
+                                  UNIQUE_SECTOR_POOL_SIZE,
+                                  unique_sector_pool);
+    if (status != 0) {
+        goto fallback;
+    }
 
-        status = block_io->ReadBlocks(block_io, block_io->Media->MediaId,
-                                      0,
-                                      UNIQUE_SECTOR_POOL_SIZE,
-                                      unique_sector_pool);
-        if (status != 0) {
-            continue;
-        }
+    uint8_t b2b[BLAKE2B_OUT_BYTES];
+    blake2b(b2b, unique_sector_pool, UNIQUE_SECTOR_POOL_SIZE);
 
-        uint8_t b2b[BLAKE2B_OUT_BYTES];
-        blake2b(b2b, unique_sector_pool, UNIQUE_SECTOR_POOL_SIZE);
-
-        if (memcmp(b2b, volume_index[i]->unique_sector_b2b, BLAKE2B_OUT_BYTES) == 0) {
-            return volume_index[i];
-        }
+    ret = volume_by_unique_sector(b2b);
+    if (ret != NULL) {
+        return ret;
     }
 
     // Fallback to read-back method
@@ -456,7 +467,7 @@ fallback:;
         return NULL;
     }
 
-    struct volume *ret = NULL;
+    ret = NULL;
     for (size_t i = 0; i < volume_index_i; i++) {
         uint64_t compare;
 
@@ -519,20 +530,6 @@ fallback:;
 
     if (ret != NULL) {
         return ret;
-    }
-
-    return NULL;
-}
-
-static struct volume *volume_by_unique_sector(void *b2b) {
-    for (size_t i = 0; i < volume_index_i; i++) {
-        if (volume_index[i]->unique_sector_valid == false) {
-            continue;
-        }
-
-        if (memcmp(volume_index[i]->unique_sector_b2b, b2b, BLAKE2B_OUT_BYTES) == 0) {
-            return volume_index[i];
-        }
     }
 
     return NULL;

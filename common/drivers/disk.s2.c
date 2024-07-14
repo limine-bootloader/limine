@@ -569,13 +569,8 @@ static void find_unique_sectors(void) {
             continue;
         }
 
-        // Invalidate collision
-        for (size_t j = 0; j < volume_index_i; j++) {
-            if (volume_index[j] != collision) {
-                continue;
-            }
-            volume_index[j]->unique_sector_valid = false;
-        }
+        // Invalidate collision's unique sector
+        collision->unique_sector_valid = false;
     }
 }
 

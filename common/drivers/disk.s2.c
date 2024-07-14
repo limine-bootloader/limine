@@ -410,6 +410,8 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
 
     block_io->Media->WriteCaching = false;
 
+    struct volume *candidate = NULL;
+    size_t candidate_index = (size_t)-1;
     for (size_t i = 0; i < volume_index_i; i++) {
         if (volume_index[i]->unique_sector_valid == false) {
             continue;
@@ -420,6 +422,10 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
         }
 
         size_t unique_sector = volume_index[i]->unique_sector / block_io->Media->BlockSize;
+
+        if (candidate != NULL && unique_sector <= candidate_index) {
+            continue;
+        }
 
         status = block_io->ReadBlocks(block_io, block_io->Media->MediaId,
                                       unique_sector,
@@ -433,8 +439,15 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
         blake2b(b2b, unique_sector_pool, 4096);
 
         if (memcmp(b2b, volume_index[i]->unique_sector_b2b, BLAKE2B_OUT_BYTES) == 0) {
-            return volume_index[i];
+            if (candidate == NULL || unique_sector > candidate_index) {
+                candidate = volume_index[i];
+                candidate_index = unique_sector;
+            }
         }
+    }
+
+    if (candidate != NULL) {
+        return candidate;
     }
 
     // Fallback to read-back method

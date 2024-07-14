@@ -395,7 +395,8 @@ static struct volume *pxe_from_efi_handle(EFI_HANDLE efi_handle) {
     return vol;
 }
 
-static alignas(4096) uint8_t unique_sector_pool[4096];
+#define UNIQUE_SECTOR_POOL_SIZE 65536
+static alignas(4096) uint8_t unique_sector_pool[UNIQUE_SECTOR_POOL_SIZE];
 
 struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
     EFI_STATUS status;
@@ -410,48 +411,34 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
 
     block_io->Media->WriteCaching = false;
 
-    struct volume *candidate = NULL;
-    size_t candidate_index = (size_t)-1;
+    uint64_t bdev_size = ((uint64_t)block_io->Media->LastBlock + 1) * (uint64_t)block_io->Media->BlockSize;
+    if (bdev_size < UNIQUE_SECTOR_POOL_SIZE) {
+        goto fallback;
+    }
+
     for (size_t i = 0; i < volume_index_i; i++) {
         if (volume_index[i]->unique_sector_valid == false) {
             continue;
         }
 
-        if (volume_index[i]->unique_sector % block_io->Media->BlockSize) {
-            continue;
-        }
-
-        size_t unique_sector = volume_index[i]->unique_sector / block_io->Media->BlockSize;
-
-        if (candidate != NULL && unique_sector <= candidate_index) {
-            continue;
-        }
-
         status = block_io->ReadBlocks(block_io, block_io->Media->MediaId,
-                                      unique_sector,
-                                      4096,
+                                      0,
+                                      UNIQUE_SECTOR_POOL_SIZE,
                                       unique_sector_pool);
         if (status != 0) {
             continue;
         }
 
         uint8_t b2b[BLAKE2B_OUT_BYTES];
-        blake2b(b2b, unique_sector_pool, 4096);
+        blake2b(b2b, unique_sector_pool, UNIQUE_SECTOR_POOL_SIZE);
 
         if (memcmp(b2b, volume_index[i]->unique_sector_b2b, BLAKE2B_OUT_BYTES) == 0) {
-            if (candidate == NULL || unique_sector > candidate_index) {
-                candidate = volume_index[i];
-                candidate_index = unique_sector;
-            }
+            return volume_index[i];
         }
     }
 
-    if (candidate != NULL) {
-        return candidate;
-    }
-
     // Fallback to read-back method
-
+fallback:;
     uint64_t signature = rand64();
     uint64_t new_signature;
     do { new_signature = rand64(); } while (new_signature == signature);
@@ -537,14 +524,13 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
     return NULL;
 }
 
-static struct volume *volume_by_unique_sector(uint64_t sect, void *b2b) {
+static struct volume *volume_by_unique_sector(void *b2b) {
     for (size_t i = 0; i < volume_index_i; i++) {
         if (volume_index[i]->unique_sector_valid == false) {
             continue;
         }
 
-        if (volume_index[i]->unique_sector == sect
-         && memcmp(volume_index[i]->unique_sector_b2b, b2b, BLAKE2B_OUT_BYTES) == 0) {
+        if (memcmp(volume_index[i]->unique_sector_b2b, b2b, BLAKE2B_OUT_BYTES) == 0) {
             return volume_index[i];
         }
     }
@@ -552,40 +538,46 @@ static struct volume *volume_by_unique_sector(uint64_t sect, void *b2b) {
     return NULL;
 }
 
-#define UNIQUE_SECT_MAX_SEARCH_RANGE 0x1000
-
 static void find_unique_sectors(void) {
     EFI_STATUS status;
 
     for (size_t i = 0; i < volume_index_i; i++) {
-        for (size_t j = 0; j < UNIQUE_SECT_MAX_SEARCH_RANGE; j++) {
-            if ((volume_index[i]->first_sect * 512) % volume_index[i]->block_io->Media->BlockSize) {
-                break;
+        if ((volume_index[i]->first_sect * 512) % volume_index[i]->sector_size) {
+            continue;
+        }
+
+        size_t first_sect = (volume_index[i]->first_sect * 512) / volume_index[i]->sector_size;
+
+        if (volume_index[i]->sect_count * volume_index[i]->sector_size < UNIQUE_SECTOR_POOL_SIZE) {
+            continue;
+        }
+
+        status = volume_index[i]->block_io->ReadBlocks(
+                            volume_index[i]->block_io,
+                            volume_index[i]->block_io->Media->MediaId,
+                            first_sect,
+                            UNIQUE_SECTOR_POOL_SIZE,
+                            unique_sector_pool);
+        if (status != 0) {
+            continue;
+        }
+
+        uint8_t b2b[BLAKE2B_OUT_BYTES];
+        blake2b(b2b, unique_sector_pool, UNIQUE_SECTOR_POOL_SIZE);
+
+        struct volume *collision = volume_by_unique_sector(b2b);
+        if (collision == NULL) {
+            volume_index[i]->unique_sector_valid = true;
+            memcpy(volume_index[i]->unique_sector_b2b, b2b, BLAKE2B_OUT_BYTES);
+            continue;
+        }
+
+        // Invalidate collision
+        for (size_t j = 0; j < volume_index_i; j++) {
+            if (volume_index[j] != collision) {
+                continue;
             }
-
-            size_t first_sect = (volume_index[i]->first_sect * 512) / volume_index[i]->block_io->Media->BlockSize;
-
-            status = volume_index[i]->block_io->ReadBlocks(
-                                volume_index[i]->block_io,
-                                volume_index[i]->block_io->Media->MediaId,
-                                first_sect + j,
-                                4096,
-                                unique_sector_pool);
-            if (status != 0) {
-                break;
-            }
-
-            uint8_t b2b[BLAKE2B_OUT_BYTES];
-            blake2b(b2b, unique_sector_pool, 4096);
-
-            uint64_t uniq = (uint64_t)j * volume_index[i]->block_io->Media->BlockSize;
-
-            if (volume_by_unique_sector(uniq, b2b) == NULL) {
-                volume_index[i]->unique_sector_valid = true;
-                volume_index[i]->unique_sector = uniq;
-                memcpy(volume_index[i]->unique_sector_b2b, b2b, BLAKE2B_OUT_BYTES);
-                break;
-            }
+            volume_index[j]->unique_sector_valid = false;
         }
     }
 }

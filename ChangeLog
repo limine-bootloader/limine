@@ -1,3 +1,15 @@
+2024-07-14  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.10.2 ***
+
+    Noteworthy changes compared to the previous release, 7.10.1:
+
+    Bug fixes:
+        - Fix a long standing issue with volume detection on UEFI.
+        - Fix issue returning to editor after a panic when coming from a blank
+          entry without a valid config.
+        - Add missing "loading" prints when booting Linux on non-x86.
+
 2024-07-12  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.10.1 ***

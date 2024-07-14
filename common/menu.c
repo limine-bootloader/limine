@@ -39,6 +39,7 @@ EFI_GUID limine_efi_vendor_guid =
 static char *menu_branding = NULL;
 static char *menu_branding_colour = NULL;
 no_unwind bool booting_from_editor = false;
+static no_unwind bool booting_from_blank = false;
 static no_unwind char saved_orig_entry[EDITOR_MAX_BUFFER_SIZE];
 static no_unwind char saved_title[64];
 
@@ -976,6 +977,9 @@ refresh:
     }
 
     if (booting_from_editor) {
+        if (booting_from_blank) {
+            goto editor_blank;
+        }
         goto editor;
     }
 
@@ -1074,11 +1078,14 @@ timeout_aborted:
             case 'b':
             case 'B': {
                 if (editor_enabled) {
+                    editor_blank:
+                    booting_from_blank = true;
                     char *new_entry = config_entry_editor("Blank Entry", "");
                     if (new_entry != NULL) {
                         config_ready = true;
                         boot(new_entry);
                     }
+                    booting_from_blank = false;
                     goto refresh;
                 }
                 break;

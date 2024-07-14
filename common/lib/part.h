@@ -26,7 +26,6 @@ struct volume {
     EFI_PXE_BASE_CODE_PROTOCOL *pxe_base_code;
 
     bool unique_sector_valid;
-    uint64_t unique_sector;
     uint8_t unique_sector_b2b[BLAKE2B_OUT_BYTES];
 #elif defined (BIOS)
     int drive;

@@ -168,7 +168,7 @@ void *prepare_device_tree_blob(char *config, char *cmdline) {
         rsv->next = 0;
 
         EFI_GUID memreserve_table_guid = {0x888eb0c6, 0x8ede, 0x4ff5, {0xa8, 0xf0, 0x9a, 0xee, 0x5c, 0xb9, 0x77, 0xc2}};
-        EFI_STATUS ret = gBS->InstallConfigurationTable(&memreserve_table_guid, rsv);
+        ret = gBS->InstallConfigurationTable(&memreserve_table_guid, rsv);
 
         if (ret != EFI_SUCCESS) {
             panic(true, "linux: failed to install memory reservation configuration table: '%x'", ret);

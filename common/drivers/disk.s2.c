@@ -396,7 +396,7 @@ static struct volume *pxe_from_efi_handle(EFI_HANDLE efi_handle) {
 }
 
 #define UNIQUE_SECTOR_POOL_SIZE 65536
-static alignas(4096) uint8_t unique_sector_pool[UNIQUE_SECTOR_POOL_SIZE];
+static uint8_t *unique_sector_pool;
 
 static struct volume *volume_by_unique_sector(void *b2b) {
     for (size_t i = 0; i < volume_index_i; i++) {
@@ -586,6 +586,8 @@ static void find_part_handles(EFI_HANDLE *handles, size_t handle_count) {
 
 void disk_create_index(void) {
     EFI_STATUS status;
+
+    unique_sector_pool = ext_mem_alloc(UNIQUE_SECTOR_POOL_SIZE);
 
     EFI_HANDLE tmp_handles[1];
 

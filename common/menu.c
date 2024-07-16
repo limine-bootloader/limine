@@ -866,8 +866,8 @@ noreturn void _menu(bool first_run) {
     size_t tree_offset = 0;
 
 refresh:
-    if (selected_entry >= tree_offset + terms[0]->rows - 10) {
-        tree_offset = selected_entry - (terms[0]->rows - 11);
+    if (selected_entry >= tree_offset + terms[0]->rows - 8) {
+        tree_offset = selected_entry - (terms[0]->rows - 9);
     }
     if (selected_entry < tree_offset) {
         tree_offset = selected_entry;
@@ -893,16 +893,20 @@ refresh:
     }
 
     size_t max_tree_len, max_tree_height;
-    print_tree(tree_offset, terms[0]->rows - 10, NULL, 0, 0, selected_entry, menu_tree,
+    print_tree(tree_offset, terms[0]->rows - 8, NULL, 0, 0, selected_entry, menu_tree,
                &selected_menu_entry, &max_tree_len, &max_tree_height);
 
     size_t tree_prefix_len = (terms[0]->cols / 2 - DIV_ROUNDUP(max_tree_len, 2)) - 2;
     char *tree_prefix = ext_mem_alloc(tree_prefix_len + 1);
     memset(tree_prefix, ' ', tree_prefix_len);
 
-    set_cursor_pos_helper(0, terms[0]->rows / 2 - DIV_ROUNDUP(max_tree_height, 2));
+    if (max_tree_height > terms[0]->rows - 10) {
+        max_tree_height = terms[0]->rows - 10;
+    }
 
-    size_t max_entries = print_tree(tree_offset, terms[0]->rows - 10, tree_prefix, 0, 0, selected_entry, menu_tree,
+    set_cursor_pos_helper(0, terms[0]->rows / 2 - max_tree_height / 2);
+
+    size_t max_entries = print_tree(tree_offset, terms[0]->rows - 8, tree_prefix, 0, 0, selected_entry, menu_tree,
                                     &selected_menu_entry, NULL, NULL);
 
     pmm_free(tree_prefix, tree_prefix_len);
@@ -911,8 +915,13 @@ refresh:
         size_t x, y;
         terms[0]->get_cursor_pos(terms[0], &x, &y);
 
-        if (tree_offset + (terms[0]->rows - 10) < max_entries) {
-            set_cursor_pos_helper(2, terms[0]->rows - 2);
+        if (tree_offset > 0) {
+            set_cursor_pos_helper(terms[0]->cols / 2 - 1, 4);
+            print(serial ? "^^^" : "↑↑↑");
+        }
+
+        if (tree_offset + (terms[0]->rows - 8) < max_entries) {
+            set_cursor_pos_helper(terms[0]->cols / 2 - 1, terms[0]->rows - 3);
             print(serial ? "vvv" : "↓↓↓");
         }
 

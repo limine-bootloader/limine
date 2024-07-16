@@ -1,3 +1,19 @@
+2024-07-16  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.10.3 ***
+
+    Noteworthy changes compared to the previous release, 7.10.2:
+
+    Bug fixes:
+        - Menu: Fix high menu entry count support that was previously broken in
+          a regression.
+        - Linux boot protocol: Install "memory reservation" EFI configuration
+          table on aarch64/riscv64.
+
+    Miscellaneous:
+        - Miscellaneous improvements and optimisations of code introduced in
+          version 7.10.2.
+
 2024-07-14  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.10.2 ***

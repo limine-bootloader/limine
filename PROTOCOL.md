@@ -396,6 +396,37 @@ struct limine_bootloader_info_response {
 `name` and `version` are 0-terminated ASCII strings containing the name and
 version of the loading bootloader.
 
+### Firmware Type Feature
+
+ID:
+```c
+#define LIMINE_FIRMWARE_TYPE_REQUEST { LIMINE_COMMON_MAGIC, 0x8c2f75d90bef28a8, 0x7045a4688eac00c3 }
+```
+
+Request:
+```c
+struct limine_firmware_type_request {
+    uint64_t id[4];
+    uint64_t revision;
+    struct limine_firmware_type_response *response;
+};
+```
+
+Response:
+```c
+struct limine_firmware_type_response {
+    uint64_t revision;
+    uint64_t firmware_type;
+};
+```
+
+`firmware_type` is an enumeration that can have one of the following values:
+```c
+#define LIMINE_FIRMWARE_TYPE_X86BIOS 0
+#define LIMINE_FIRMWARE_TYPE_UEFI32 1
+#define LIMINE_FIRMWARE_TYPE_UEFI64 2
+```
+
 ### Stack Size Feature
 
 ID:

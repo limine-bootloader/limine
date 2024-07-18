@@ -139,11 +139,14 @@ static volatile struct limine_dtb_request _dtb_request = {
 __attribute__((section(".limine_requests")))
 static volatile struct limine_paging_mode_request _pm_request = {
     .id = LIMINE_PAGING_MODE_REQUEST,
-    .revision = 0, .response = NULL,
+    .revision = 1, .response = NULL,
 #if defined (__x86_64__)
     .mode = LIMINE_PAGING_MODE_X86_64_5LVL,
+#else
+    .mode = LIMINE_PAGING_MODE_DEFAULT,
 #endif
-    .flags = 0,
+    .max_mode = LIMINE_PAGING_MODE_MAX,
+    .min_mode = LIMINE_PAGING_MODE_MIN
 };
 
 __attribute__((used, section(".limine_requests_end_marker")))
@@ -518,7 +521,6 @@ FEAT_START
     struct limine_paging_mode_response *pm_response = _pm_request.response;
     e9_printf("Paging mode feature, revision %d", pm_response->revision);
     e9_printf("  mode: %d", pm_response->mode);
-    e9_printf("  flags: %x", pm_response->flags);
 FEAT_END
 
     for (;;);

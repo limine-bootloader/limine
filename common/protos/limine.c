@@ -454,7 +454,7 @@ noreturn void limine_load(char *config, char *cmdline) {
     printv("limine: Requests count:  %u\n", requests_count);
 
     // Paging Mode
-    int paging_mode, max_supported_paging_mode;
+    int paging_mode, max_supported_paging_mode, min_supported_paging_mode;
 
 #if defined (__x86_64__) || defined (__i386__)
     max_supported_paging_mode = PAGING_MODE_X86_64_4LVL;
@@ -462,18 +462,28 @@ noreturn void limine_load(char *config, char *cmdline) {
         printv("limine: CPU has 5-level paging support\n");
         max_supported_paging_mode = PAGING_MODE_X86_64_5LVL;
     }
+    min_supported_paging_mode = PAGING_MODE_X86_64_4LVL;
 #elif defined (__aarch64__)
     max_supported_paging_mode = PAGING_MODE_AARCH64_4LVL;
+    min_supported_paging_mode = PAGING_MODE_AARCH64_4LVL;
     // TODO(qookie): aarch64 also has optional 5 level paging when using 4K pages
 #elif defined (__riscv64)
     max_supported_paging_mode = vmm_max_paging_mode();
+    min_supported_paging_mode = PAGING_MODE_RISCV_SV39;
 #else
 #error Unknown architecture
 #endif
 
+    char *user_paging_mode_s = config_get_value(config, 0, "PAGING_MODE");
+
     int user_max_paging_mode = PAGING_MODE_MAX;
 
-    char *user_max_paging_mode_s = config_get_value(config, 0, "MAX_PAGING_MODE");
+    char *user_max_paging_mode_s;
+    if (user_paging_mode_s != NULL) {
+        user_max_paging_mode_s = user_paging_mode_s;
+    } else {
+        user_max_paging_mode_s = config_get_value(config, 0, "MAX_PAGING_MODE");
+    }
     if (user_max_paging_mode_s != NULL) {
 #if defined (__x86_64__) || defined (__i386__)
         if (strcasecmp(user_max_paging_mode_s, "4level") == 0) {
@@ -501,16 +511,64 @@ noreturn void limine_load(char *config, char *cmdline) {
         }
     }
 
+    int user_min_paging_mode = PAGING_MODE_MIN;
+
+    char *user_min_paging_mode_s;
+    if (user_paging_mode_s != NULL) {
+        user_min_paging_mode_s = user_paging_mode_s;
+    } else {
+        user_min_paging_mode_s = config_get_value(config, 0, "MIN_PAGING_MODE");
+    }
+    if (user_min_paging_mode_s != NULL) {
+#if defined (__x86_64__) || defined (__i386__)
+        if (strcasecmp(user_min_paging_mode_s, "4level") == 0) {
+            user_min_paging_mode = PAGING_MODE_X86_64_4LVL;
+        } else if (strcasecmp(user_min_paging_mode_s, "5level") == 0) {
+            user_min_paging_mode = PAGING_MODE_X86_64_5LVL;
+        }
+#elif defined (__aarch64__)
+        if (strcasecmp(user_min_paging_mode_s, "4level") == 0) {
+            user_min_paging_mode = PAGING_MODE_AARCH64_4LVL;
+        } else if (strcasecmp(user_min_paging_mode_s, "5level") == 0) {
+            user_min_paging_mode = PAGING_MODE_AARCH64_5LVL;
+        }
+#elif defined (__riscv64)
+        if (strcasecmp(user_min_paging_mode_s, "sv39") == 0) {
+            user_min_paging_mode = PAGING_MODE_RISCV_SV39;
+        } else if (strcasecmp(user_min_paging_mode_s, "sv48") == 0) {
+            user_min_paging_mode = PAGING_MODE_RISCV_SV48;
+        } else if (strcasecmp(user_min_paging_mode_s, "sv57") == 0) {
+            user_min_paging_mode = PAGING_MODE_RISCV_SV57;
+        }
+#endif
+        else {
+            panic(true, "limine: Invalid MIN_PAGING_MODE: `%s`", user_min_paging_mode_s);
+        }
+    }
+
+    if (user_max_paging_mode < user_min_paging_mode) {
+        panic(true, "limine: MAX_PAGING_MODE is lower than MIN_PAGING_MODE");
+    }
+
     if (user_max_paging_mode < max_supported_paging_mode) {
+        if (user_max_paging_mode < min_supported_paging_mode) {
+            panic(true, "limine: User set MAX_PAGING_MODE less than minimum supported paging mode");
+        }
         max_supported_paging_mode = user_max_paging_mode;
+    }
+    if (user_min_paging_mode > min_supported_paging_mode) {
+        if (user_min_paging_mode > max_supported_paging_mode) {
+            panic(true, "limine: User set MIN_PAGING_MODE greater than maximum supported paging mode");
+        }
+        min_supported_paging_mode = user_min_paging_mode;
     }
 
 #if defined (__x86_64__) || defined (__i386__)
     paging_mode = PAGING_MODE_X86_64_4LVL;
 #elif defined (__riscv64)
     paging_mode = max_supported_paging_mode >= PAGING_MODE_RISCV_SV48 ? PAGING_MODE_RISCV_SV48 : PAGING_MODE_RISCV_SV39;
-#else
-    paging_mode = max_supported_paging_mode;
+#elif defined (__aarch64__)
+    paging_mode = PAGING_MODE_AARCH64_4LVL;
 #endif
 
 #if defined (__riscv64)
@@ -530,8 +588,34 @@ FEAT_START
     uint64_t target_mode = pm_request->mode;
     paging_mode = paging_mode_limine_to_vmm(target_mode);
 
+    int kern_min_mode = PAGING_MODE_MIN, kern_max_mode = paging_mode;
+    if (pm_request->revision >= 1) {
+        kern_min_mode = (int)paging_mode_limine_to_vmm(pm_request->min_mode);
+        kern_max_mode = (int)paging_mode_limine_to_vmm(pm_request->max_mode);
+    }
+
     if (paging_mode > max_supported_paging_mode) {
         paging_mode = max_supported_paging_mode;
+    }
+    if (paging_mode < min_supported_paging_mode) {
+        paging_mode = min_supported_paging_mode;
+    }
+
+    if (kern_max_mode < kern_min_mode) {
+        panic(true, "limine: Kernel's paging max_mode lower than min_mode");
+    }
+
+    if (paging_mode > kern_max_mode) {
+        if (kern_max_mode < min_supported_paging_mode) {
+            panic(true, "limine: Kernel's maximum supported paging mode lower than minimum allowable paging mode");
+        }
+        paging_mode = kern_max_mode;
+    }
+    if (paging_mode < kern_min_mode) {
+        if (kern_min_mode > max_supported_paging_mode) {
+            panic(true, "limine: Kernel's minimum supported paging mode higher than maximum allowable paging mode");
+        }
+        paging_mode = kern_min_mode;
     }
 
     set_paging_mode(paging_mode, kaslr);

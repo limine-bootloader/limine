@@ -103,6 +103,25 @@ struct limine_bootloader_info_request {
     LIMINE_PTR(struct limine_bootloader_info_response *) response;
 };
 
+/* Firmware type */
+
+#define LIMINE_FIRMWARE_TYPE_REQUEST { LIMINE_COMMON_MAGIC, 0x8c2f75d90bef28a8, 0x7045a4688eac00c3 }
+
+#define LIMINE_FIRMWARE_TYPE_X86BIOS 0
+#define LIMINE_FIRMWARE_TYPE_UEFI32 1
+#define LIMINE_FIRMWARE_TYPE_UEFI64 2
+
+struct limine_firmware_type_response {
+    uint64_t revision;
+    uint64_t firmware_type;
+};
+
+struct limine_firmware_type_request {
+    uint64_t id[4];
+    uint64_t revision;
+    LIMINE_PTR(struct limine_firmware_type_response *) response;
+};
+
 /* Stack size */
 
 #define LIMINE_STACK_SIZE_REQUEST { LIMINE_COMMON_MAGIC, 0x224ef0460a8e8926, 0xe1cb0fc25f46ea3d }
@@ -254,17 +273,20 @@ LIMINE_DEPRECATED_IGNORE_END
 #define LIMINE_PAGING_MODE_X86_64_4LVL 0
 #define LIMINE_PAGING_MODE_X86_64_5LVL 1
 #define LIMINE_PAGING_MODE_MAX LIMINE_PAGING_MODE_X86_64_5LVL
+#define LIMINE_PAGING_MODE_MIN LIMINE_PAGING_MODE_X86_64_4LVL
 #define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_X86_64_4LVL
 #elif defined (__aarch64__)
 #define LIMINE_PAGING_MODE_AARCH64_4LVL 0
 #define LIMINE_PAGING_MODE_AARCH64_5LVL 1
 #define LIMINE_PAGING_MODE_MAX LIMINE_PAGING_MODE_AARCH64_5LVL
+#define LIMINE_PAGING_MODE_MIN LIMINE_PAGING_MODE_AARCH64_4LVL
 #define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_AARCH64_4LVL
 #elif defined (__riscv) && (__riscv_xlen == 64)
 #define LIMINE_PAGING_MODE_RISCV_SV39 0
 #define LIMINE_PAGING_MODE_RISCV_SV48 1
 #define LIMINE_PAGING_MODE_RISCV_SV57 2
 #define LIMINE_PAGING_MODE_MAX LIMINE_PAGING_MODE_RISCV_SV57
+#define LIMINE_PAGING_MODE_MIN LIMINE_PAGING_MODE_RISCV_SV39
 #define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_RISCV_SV48
 #else
 #error Unknown architecture
@@ -273,7 +295,6 @@ LIMINE_DEPRECATED_IGNORE_END
 struct limine_paging_mode_response {
     uint64_t revision;
     uint64_t mode;
-    uint64_t flags;
 };
 
 struct limine_paging_mode_request {
@@ -281,7 +302,8 @@ struct limine_paging_mode_request {
     uint64_t revision;
     LIMINE_PTR(struct limine_paging_mode_response *) response;
     uint64_t mode;
-    uint64_t flags;
+    uint64_t max_mode;
+    uint64_t min_mode;
 };
 
 /* 5-level paging */

@@ -594,6 +594,31 @@ FEAT_START
     bootloader_info_request->response = reported_addr(bootloader_info_response);
 FEAT_END
 
+    // Firmware type feature
+FEAT_START
+    struct limine_firmware_type_request *firmware_type_request = get_request(LIMINE_FIRMWARE_TYPE_REQUEST);
+    if (firmware_type_request == NULL) {
+        break; // next feature
+    }
+
+    struct limine_firmware_type_response *firmware_type_response =
+        ext_mem_alloc(sizeof(struct limine_firmware_type_response));
+
+    firmware_type_response->firmware_type =
+#if defined (UEFI)
+#if defined (__i386__)
+        LIMINE_FIRMWARE_TYPE_UEFI32
+#else
+        LIMINE_FIRMWARE_TYPE_UEFI64
+#endif
+#else
+        LIMINE_FIRMWARE_TYPE_X86BIOS
+#endif
+    ;
+
+    firmware_type_request->response = reported_addr(firmware_type_response);
+FEAT_END
+
     // Kernel address feature
 FEAT_START
     struct limine_kernel_address_request *kernel_address_request = get_request(LIMINE_KERNEL_ADDRESS_REQUEST);

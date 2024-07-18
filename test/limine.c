@@ -35,6 +35,12 @@ static volatile struct limine_bootloader_info_request bootloader_info_request = 
 };
 
 __attribute__((section(".limine_requests")))
+static volatile struct limine_firmware_type_request firmware_type_request = {
+    .id = LIMINE_FIRMWARE_TYPE_REQUEST,
+    .revision = 0, .response = NULL
+};
+
+__attribute__((section(".limine_requests")))
 static volatile struct limine_hhdm_request hhdm_request = {
     .id = LIMINE_HHDM_REQUEST,
     .revision = 0, .response = NULL
@@ -166,6 +172,19 @@ static char *get_memmap_type(uint64_t type) {
     }
 }
 
+static char *firmware_type_str(uint64_t t) {
+    switch (t) {
+        case LIMINE_FIRMWARE_TYPE_X86BIOS:
+            return "x86 BIOS";
+        case LIMINE_FIRMWARE_TYPE_UEFI32:
+            return "32-bit UEFI";
+        case LIMINE_FIRMWARE_TYPE_UEFI64:
+            return "64-bit UEFI";
+        default:
+            return "???";
+    }
+}
+
 static void print_file(struct limine_file *file) {
     e9_printf("File->Revision: %d", file->revision);
     e9_printf("File->Address: %x", file->address);
@@ -264,6 +283,17 @@ FEAT_START
     e9_printf("Bootloader info feature, revision %d", bootloader_info_response->revision);
     e9_printf("Bootloader name: %s", bootloader_info_response->name);
     e9_printf("Bootloader version: %s", bootloader_info_response->version);
+FEAT_END
+
+FEAT_START
+    e9_printf("");
+    if (firmware_type_request.response == NULL) {
+        e9_printf("Firmware type not passed");
+        break;
+    }
+    struct limine_firmware_type_response *firmware_type_response = firmware_type_request.response;
+    e9_printf("Firmware type feature, revision %d", firmware_type_response->revision);
+    e9_printf("Firmware type: %s", firmware_type_str(firmware_type_response->firmware_type));
 FEAT_END
 
 FEAT_START

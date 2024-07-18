@@ -103,6 +103,25 @@ struct limine_bootloader_info_request {
     LIMINE_PTR(struct limine_bootloader_info_response *) response;
 };
 
+/* Firmware type */
+
+#define LIMINE_FIRMWARE_TYPE_REQUEST { LIMINE_COMMON_MAGIC, 0x8c2f75d90bef28a8, 0x7045a4688eac00c3 }
+
+#define LIMINE_FIRMWARE_TYPE_X86BIOS 0
+#define LIMINE_FIRMWARE_TYPE_UEFI32 1
+#define LIMINE_FIRMWARE_TYPE_UEFI64 2
+
+struct limine_firmware_type_response {
+    uint64_t revision;
+    uint64_t firmware_type;
+};
+
+struct limine_firmware_type_request {
+    uint64_t id[4];
+    uint64_t revision;
+    LIMINE_PTR(struct limine_firmware_type_response *) response;
+};
+
 /* Stack size */
 
 #define LIMINE_STACK_SIZE_REQUEST { LIMINE_COMMON_MAGIC, 0x224ef0460a8e8926, 0xe1cb0fc25f46ea3d }

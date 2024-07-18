@@ -15,6 +15,7 @@
 #define PAGING_MODE_X86_64_4LVL 0
 #define PAGING_MODE_X86_64_5LVL 1
 
+#define PAGING_MODE_MIN PAGING_MODE_X86_64_4LVL
 #define PAGING_MODE_MAX PAGING_MODE_X86_64_5LVL
 
 #define paging_mode_va_bits(mode) ((mode) ? 57 : 48)
@@ -54,6 +55,7 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
 #define PAGING_MODE_AARCH64_4LVL 0
 #define PAGING_MODE_AARCH64_5LVL 1
 
+#define PAGING_MODE_MIN PAGING_MODE_AARCH64_4LVL
 #define PAGING_MODE_MAX PAGING_MODE_AARCH64_5LVL
 
 #define paging_mode_va_bits(mode) ((mode) ? 52 : 48)
@@ -95,6 +97,7 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
 #define PAGING_MODE_RISCV_SV48 9
 #define PAGING_MODE_RISCV_SV57 10
 
+#define PAGING_MODE_MIN PAGING_MODE_RISCV_SV39
 #define PAGING_MODE_MAX PAGING_MODE_RISCV_SV57
 
 int paging_mode_va_bits(int paging_mode);

@@ -88,12 +88,19 @@ struct vbe_mode_info_struct {
     uint8_t  reserved2[189];
 } __attribute__((packed));
 
-static void get_vbe_info(struct vbe_info_struct *buf) {
+static bool get_vbe_info(struct vbe_info_struct *buf) {
     struct rm_regs r = {0};
 
     r.eax = 0x4f00;
     r.edi = (uint32_t)buf;
     rm_int(0x10, &r, &r);
+
+    if ((r.eax & 0xff00) >> 8 != 0
+     || (r.eax & 0x00ff) != 0x4f) {
+        return false;
+    }
+
+    return true;
 }
 
 static void get_vbe_mode_info(struct vbe_mode_info_struct *buf,
@@ -118,7 +125,9 @@ static int set_vbe_mode(uint16_t mode) {
 
 struct fb_info *vbe_get_mode_list(size_t *count) {
     struct vbe_info_struct vbe_info;
-    get_vbe_info(&vbe_info);
+    if (!get_vbe_info(&vbe_info)) {
+        return NULL;
+    }
 
     uint16_t *vid_modes = (uint16_t *)rm_desegment(vbe_info.vid_modes_seg,
                                                    vbe_info.vid_modes_off);
@@ -190,7 +199,9 @@ bool init_vbe(struct fb_info *ret,
     size_t current_fallback = 0;
 
     struct vbe_info_struct vbe_info;
-    get_vbe_info(&vbe_info);
+    if (!get_vbe_info(&vbe_info)) {
+        return false;
+    }
 
     printv("vbe: Version: %u.%u\n", vbe_info.version_maj, vbe_info.version_min);
     printv("vbe: OEM: %s\n", (char *)rm_desegment(vbe_info.oem_seg, vbe_info.oem_off));

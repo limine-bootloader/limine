@@ -63,6 +63,17 @@ bool a20_enable(void) {
     if (a20_check())
         return true;
 
+    // Fast A20 method
+    b = inb(0x92);
+    if ((b & 0x02) == 0) {
+        b &= ~0x01;
+        b |= 0x02;
+        outb(0x92, b);
+    }
+
+    if (a20_check())
+        return true;
+
     return false;
 }
 

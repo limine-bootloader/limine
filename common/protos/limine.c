@@ -34,6 +34,37 @@
 
 #define MAX_REQUESTS 128
 
+static uint64_t get_hhdm_span_top(int base_revision) {
+    uint64_t ret = 0x100000000;
+    for (size_t i = 0; i < memmap_entries; i++) {
+        if (base_revision >= 1 && (
+            memmap[i].type == MEMMAP_RESERVED
+         || memmap[i].type == MEMMAP_BAD_MEMORY)) {
+            continue;
+        }
+
+        uint64_t base = memmap[i].base;
+        uint64_t length = memmap[i].length;
+        uint64_t top = base + length;
+
+        if (base < 0x100000000) {
+            base = 0x100000000;
+        }
+
+        if (base >= top) {
+            continue;
+        }
+
+        uint64_t aligned_top = ALIGN_UP(top, 0x40000000);
+
+        if (aligned_top > ret) {
+            ret = aligned_top;
+        }
+    }
+
+    return ret;
+}
+
 static pagemap_t build_pagemap(int base_revision,
                                int paging_mode, bool nx, struct elf_range *ranges, size_t ranges_count,
                                uint64_t physical_base, uint64_t virtual_base,
@@ -204,7 +235,8 @@ static void **requests;
 static void set_paging_mode(int paging_mode, bool kaslr) {
     direct_map_offset = paging_mode_higher_half(paging_mode);
     if (kaslr) {
-        uint64_t mask = ((uint64_t)1 << (paging_mode_va_bits(paging_mode) - 4)) - 1;
+        // Half of the higher half of wiggle room for KASLR, align to 1GiB steps.
+        uint64_t mask = ((uint64_t)1 << (paging_mode_va_bits(paging_mode) - 2)) - 1;
         direct_map_offset += (rand64() & ~((uint64_t)0x40000000 - 1)) & mask;
     }
 }
@@ -446,12 +478,15 @@ noreturn void limine_load(char *config, char *cmdline) {
     }
 #endif
 
+    uint64_t hhdm_span_top = get_hhdm_span_top(base_revision);
+
     printv("limine: Physical base:   %X\n", physical_base);
     printv("limine: Virtual base:    %X\n", virtual_base);
     printv("limine: Slide:           %X\n", slide);
     printv("limine: ELF entry point: %X\n", entry_point);
     printv("limine: Base revision:   %u\n", base_revision);
     printv("limine: Requests count:  %u\n", requests_count);
+    printv("limine: Top of HHDM:     %X\n", hhdm_span_top);
 
     // Paging Mode
     int paging_mode, max_supported_paging_mode, min_supported_paging_mode;
@@ -463,16 +498,48 @@ noreturn void limine_load(char *config, char *cmdline) {
         max_supported_paging_mode = PAGING_MODE_X86_64_5LVL;
     }
     min_supported_paging_mode = PAGING_MODE_X86_64_4LVL;
+    if (hhdm_span_top >= ((uint64_t)1 << paging_mode_va_bits(min_supported_paging_mode)) - (kaslr ? 2 : 1)) {
+        min_supported_paging_mode = PAGING_MODE_X86_64_5LVL;
+        if (min_supported_paging_mode > max_supported_paging_mode) {
+            goto hhdm_fail;
+        }
+    }
+    if (hhdm_span_top >= ((uint64_t)1 << paging_mode_va_bits(min_supported_paging_mode)) - (kaslr ? 2 : 1)) {
+        goto hhdm_fail;
+    }
 #elif defined (__aarch64__)
     max_supported_paging_mode = PAGING_MODE_AARCH64_4LVL;
     min_supported_paging_mode = PAGING_MODE_AARCH64_4LVL;
+    if (hhdm_span_top >= ((uint64_t)1 << paging_mode_va_bits(min_supported_paging_mode)) - (kaslr ? 2 : 1)) {
+        goto hhdm_fail;
+    }
     // TODO(qookie): aarch64 also has optional 5 level paging when using 4K pages
 #elif defined (__riscv64)
     max_supported_paging_mode = vmm_max_paging_mode();
     min_supported_paging_mode = PAGING_MODE_RISCV_SV39;
+    if (hhdm_span_top >= ((uint64_t)1 << paging_mode_va_bits(min_supported_paging_mode)) - (kaslr ? 2 : 1)) {
+        min_supported_paging_mode = PAGING_MODE_RISCV_SV48;
+        if (min_supported_paging_mode > max_supported_paging_mode) {
+            goto hhdm_fail;
+        }
+    }
+    if (hhdm_span_top >= ((uint64_t)1 << paging_mode_va_bits(min_supported_paging_mode)) - (kaslr ? 2 : 1)) {
+        min_supported_paging_mode = PAGING_MODE_RISCV_SV57;
+        if (min_supported_paging_mode > max_supported_paging_mode) {
+            goto hhdm_fail;
+        }
+    }
+    if (hhdm_span_top >= ((uint64_t)1 << paging_mode_va_bits(min_supported_paging_mode)) - (kaslr ? 2 : 1)) {
+        goto hhdm_fail;
+    }
 #else
 #error Unknown architecture
 #endif
+
+    if (0) {
+hhdm_fail:
+        panic(true, "limine: Unable to allocate higher half direct map (too much memory?)");
+    }
 
     char *user_paging_mode_s = config_get_value(config, 0, "PAGING_MODE");
 

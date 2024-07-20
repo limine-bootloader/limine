@@ -8,15 +8,26 @@
 #include <lib/real.h>
 
 bool a20_check(void) {
-    if (mminw(0x7dfe) != mminw(0x7dfe + 0x100000))
-        return true;
+    bool ret = false;
+    uint16_t orig = mminw(0x7dfe);
+
+    mmoutw(0x7dfe, 0x1234);
+
+    if (mminw(0x7dfe) != mminw(0x7dfe + 0x100000)) {
+        ret = true;
+        goto out;
+    }
 
     mmoutw(0x7dfe, ~mminw(0x7dfe));
 
-    if (mminw(0x7dfe) != mminw(0x7dfe + 0x100000))
-        return true;
+    if (mminw(0x7dfe) != mminw(0x7dfe + 0x100000)) {
+        ret = true;
+        goto out;
+    }
 
-    return false;
+out:
+    mmoutw(0x7dfe, orig);
+    return ret;
 }
 
 // Keyboard controller method code below taken from:

@@ -321,7 +321,10 @@ instructions or registers.
 
 Higher ELs do not interfere with accesses to the generic timer and counter.
 
-The used translation granule size is undefined.
+The used translation granule size for both `TTBR0_EL1` and `TTBR1_EL1` is 4KiB.
+
+For base revisions &gt; 0, `TCR_EL1.T0SZ` is set to 16, and `TTBR0_EL1`
+is left undefined.
 
 If booted by EFI/UEFI, boot services are exited.
 

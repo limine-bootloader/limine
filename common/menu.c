@@ -245,7 +245,7 @@ refresh:
             default: {
                 size_t title_length = strlen(title);
                 if (i == (terms[0]->cols / 2) - DIV_ROUNDUP(title_length, 2) - 1 - 1) {
-                    print("┤%s├", title);
+                    print(serial ? "|%s|" : "┤%s├", title);
                     i += (title_length + 2) - 1;
                 } else {
                     print(serial ? "-" : "─");

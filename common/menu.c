@@ -889,9 +889,19 @@ refresh:
         print("\n\n\n\n");
     }
 
-    if (menu_tree == NULL && quiet) {
-        quiet = false;
-        menu_init_term();
+    if (menu_tree == NULL) {
+        if (quiet) {
+            quiet = false;
+            menu_init_term();
+        }
+        const char *msg;
+        if (config_ready) {
+            msg = "[config file contains no valid entries]";
+        } else {
+            msg = "[config file not found]";
+        }
+        set_cursor_pos_helper(terms[0]->cols / 2 - strlen(msg) / 2, terms[0]->rows / 2);
+        print("%s\n", msg);
     }
 
     size_t max_tree_len, max_tree_height;

@@ -103,7 +103,7 @@ static bool get_vbe_info(struct vbe_info_struct *buf) {
     return true;
 }
 
-static void get_vbe_mode_info(struct vbe_mode_info_struct *buf,
+static bool get_vbe_mode_info(struct vbe_mode_info_struct *buf,
                               uint16_t mode) {
     struct rm_regs r = {0};
 
@@ -111,16 +111,28 @@ static void get_vbe_mode_info(struct vbe_mode_info_struct *buf,
     r.ecx = (uint32_t)mode;
     r.edi = (uint32_t)buf;
     rm_int(0x10, &r, &r);
+
+    if ((r.eax & 0xff00) >> 8 != 0
+     || (r.eax & 0x00ff) != 0x4f) {
+        return false;
+    }
+
+    return true;
 }
 
-static int set_vbe_mode(uint16_t mode) {
+static bool set_vbe_mode(uint16_t mode) {
     struct rm_regs r = {0};
 
     r.eax = 0x4f02;
     r.ebx = (uint32_t)mode | (1 << 14);
     rm_int(0x10, &r, &r);
 
-    return r.eax & 0xff;
+    if ((r.eax & 0xff00) >> 8 != 0
+     || (r.eax & 0x00ff) != 0x4f) {
+        return false;
+    }
+
+    return true;
 }
 
 struct fb_info *vbe_get_mode_list(size_t *count) {
@@ -135,7 +147,9 @@ struct fb_info *vbe_get_mode_list(size_t *count) {
     size_t modes_count = 0;
     for (size_t i = 0; vid_modes[i] != 0xffff; i++) {
         struct vbe_mode_info_struct vbe_mode_info;
-        get_vbe_mode_info(&vbe_mode_info, vid_modes[i]);
+        if (!get_vbe_mode_info(&vbe_mode_info, vid_modes[i])) {
+            continue;
+        }
 
         // We only support RGB for now
         if (vbe_mode_info.memory_model != 0x06)
@@ -151,7 +165,9 @@ struct fb_info *vbe_get_mode_list(size_t *count) {
 
     for (size_t i = 0, j = 0; vid_modes[i] != 0xffff; i++) {
         struct vbe_mode_info_struct vbe_mode_info;
-        get_vbe_mode_info(&vbe_mode_info, vid_modes[i]);
+        if (!get_vbe_mode_info(&vbe_mode_info, vid_modes[i])) {
+            continue;
+        }
 
         // We only support RGB for now
         if (vbe_mode_info.memory_model != 0x06)
@@ -249,7 +265,9 @@ bool init_vbe(struct fb_info *ret,
 retry:
     for (size_t i = 0; vid_modes[i] != 0xffff; i++) {
         struct vbe_mode_info_struct vbe_mode_info;
-        get_vbe_mode_info(&vbe_mode_info, vid_modes[i]);
+        if (!get_vbe_mode_info(&vbe_mode_info, vid_modes[i])) {
+            continue;
+        }
         if  (vbe_mode_info.res_x == target_width
           && vbe_mode_info.res_y == target_height
           && vbe_mode_info.bpp   == target_bpp) {
@@ -262,7 +280,7 @@ retry:
             printv("vbe: Found matching mode %x, attempting to set...\n", vid_modes[i]);
             if (vid_modes[i] == current_video_mode) {
                 printv("vbe: Mode was already set, perfect!\n");
-            } else if (set_vbe_mode(vid_modes[i]) == 0x01) {
+            } else if (!set_vbe_mode(vid_modes[i])) {
                 current_video_mode = -1;
                 printv("vbe: Failed to set video mode %x, moving on...\n", vid_modes[i]);
                 continue;

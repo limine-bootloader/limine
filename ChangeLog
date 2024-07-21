@@ -1,3 +1,33 @@
+2024-07-21  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.12.0 ***
+
+    Noteworthy changes compared to the previous release, 7.11.0:
+
+    New features:
+        - Reinstate support for ext2/3/4, albeit in an unsupported and
+          unmaintained state, at least for the time being.
+        - Menu: Add vertical bars around entry title in entry editor.
+        - Menu: Add clearer indications of what is wrong when config invalid or
+          missing.
+
+    Bug fixes:
+        - Terminal: Fix long standing wallpaper drawing related bug that under
+          certain circumstances could cause memory corruption.
+        - Miscellaneous VBE related bug fixes.
+        - Miscellaneous A20 line related improvements/fixes.
+
+    Miscellaneous:
+        - Limine boot protocol: perform appropriate checks to ensure that the
+          higher half direct map fits in the higher half; enforce paging modes
+          as needed.
+        - Limine boot protocol: aarch64: Specify that the granule size for both
+          TTBR0_EL1 and TTBR1_EL1 is 4KiB.
+        - Limine boot protocol: aarch64: Specify the values of TCR_EL1.T0SZ and
+          TCR_EL1.T1SZ depending on the paging mode used.
+        - Limine boot protocol: aarch64: Specify the condition of TTBR0_EL1 and
+          TTBR1_EL1 at entry.
+
 2024-07-18  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.11.0 ***

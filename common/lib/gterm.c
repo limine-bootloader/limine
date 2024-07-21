@@ -344,6 +344,17 @@ __attribute__((always_inline)) static inline void genloop(struct fb_info *fb, si
     uint8_t *img = background->img;
     const size_t img_width = background->img_width, img_height = background->img_height, img_pitch = background->pitch, colsize = background->bpp / 8;
 
+    if (xstart > xend) {
+        size_t tmp = xstart;
+        xstart = xend;
+        xend = tmp;
+    }
+    if (ystart > yend) {
+        size_t tmp = ystart;
+        ystart = yend;
+        yend = tmp;
+    }
+
     switch (background->type) {
     case IMAGE_TILED:
         for (size_t y = ystart; y < yend; y++) {

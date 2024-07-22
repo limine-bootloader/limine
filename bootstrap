@@ -40,7 +40,7 @@ clone_repo_commit() {
     fi
 }
 
-if test -d .git; then
+if ! test -f version; then
     clone_repo_commit https://github.com/osdev0/freestanding-toolchain.git build-aux/freestanding-toolchain $FREESTANDING_TOOLCHAIN_COMMIT_HASH
     clone_repo_commit https://github.com/osdev0/freestanding-headers.git freestanding-headers $FREESTANDING_HEADERS_COMMIT_HASH
 
@@ -81,11 +81,14 @@ REGEN_DATE="$(git log -1 --pretty=%cd --date='format:%B %Y')"
 SOURCE_DATE_EPOCH="$(git log -1 --pretty=%ct)"
 SOURCE_DATE_EPOCH_TOUCH="$(git log -1 --pretty=%cI | head -c 16 | sed 's/-//g;s/T//g;s/://g')"
 EOF
-fi
-
-if ! test -f timestamps; then
-    echo "error: Not a Git repository and 'timestamps' file missing."
-    exit 1
+else
+    if ! test -f timestamps; then
+        cat >timestamps <<EOF
+REGEN_DATE="UNVERSIONED"
+SOURCE_DATE_EPOCH="1546297200"
+SOURCE_DATE_EPOCH_TOUCH="201901010000"
+EOF
+    fi
 fi
 
 for auxfile in $AUXFILES; do

@@ -62,6 +62,12 @@ ifeq ($(LD_FOR_TARGET_HAS_NO_PIE),yes)
     override LDFLAGS_FOR_TARGET += -no-pie
 endif
 
+override NASMFLAGS_FOR_TARGET += \
+    -Wall \
+    -w-reloc \
+    $(WERROR_FLAG) \
+    -f elf32
+
 override C_FILES := $(shell find . -type f -name '*.c' | LC_ALL=C sort)
 override ASM_FILES := $(shell find . -type f -name '*.asm' | LC_ALL=C sort)
 override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(ASM_FILES:.asm=.o) $(C_FILES:.c=.o))
@@ -82,4 +88,4 @@ $(call MKESCAPE,$(BUILDDIR))/%.o: %.c
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm '$(call SHESCAPE,$<)' -Wall -f elf32 -o '$(call SHESCAPE,$@)'
+	nasm '$(call SHESCAPE,$<)' $(NASMFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'

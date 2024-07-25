@@ -45,8 +45,7 @@ override CFLAGS_FOR_TARGET += \
     -fno-stack-check \
     -fno-omit-frame-pointer \
     -fno-strict-aliasing \
-    -fno-lto \
-    -ffile-prefix-map='$(call SHESCAPE,$(SRCDIR))'=.
+    -fno-lto
 
 override CPPFLAGS_FOR_TARGET := \
     -isystem ../freestanding-headers \

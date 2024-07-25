@@ -111,6 +111,9 @@ export CPPFLAGS_FOR_TARGET
 override DEFAULT_LDFLAGS_FOR_TARGET := @LDFLAGS_FOR_TARGET@
 $(eval $(call DEFAULT_VAR,LDFLAGS_FOR_TARGET,$(DEFAULT_LDFLAGS_FOR_TARGET)))
 export LDFLAGS_FOR_TARGET
+override DEFAULT_NASMFLAGS_FOR_TARGET := @NASMFLAGS_FOR_TARGET@
+$(eval $(call DEFAULT_VAR,NASMFLAGS_FOR_TARGET,$(DEFAULT_NASMFLAGS_FOR_TARGET)))
+export NASMFLAGS_FOR_TARGET
 
 override LIMINE_VERSION := @PACKAGE_VERSION@
 
@@ -210,12 +213,12 @@ uninstall:
 
 $(call MKESCAPE,$(BUILDDIR))/stage1.stamp: $(STAGE1_FILES) $(call MKESCAPE,$(BUILDDIR))/decompressor-build/decompressor.bin $(call MKESCAPE,$(BUILDDIR))/common-bios/stage2.bin.gz
 	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
-	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm -Wall -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-bios-hdd.bin'
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/hdd' && nasm bootsect.asm -Wall -w-reloc $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-bios-hdd.bin'
 ifneq ($(BUILD_BIOS_CD),no)
-	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm -Wall -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-bios-cd.bin'
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/cd'  && nasm bootsect.asm -Wall -w-reloc $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-bios-cd.bin'
 endif
 ifneq ($(BUILD_BIOS_PXE),no)
-	cd '$(call SHESCAPE,$(SRCDIR))/stage1/pxe' && nasm bootsect.asm -Wall -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-bios-pxe.bin'
+	cd '$(call SHESCAPE,$(SRCDIR))/stage1/pxe' && nasm bootsect.asm -Wall -w-reloc $(WERROR_FLAG) -fbin -DBUILDDIR="'"'$(call NASMESCAPE,$(BUILDDIR))'"'" -o '$(call SHESCAPE,$(BINDIR))/limine-bios-pxe.bin'
 endif
 	cp '$(call SHESCAPE,$(BUILDDIR))/common-bios/limine-bios.sys' '$(call SHESCAPE,$(BINDIR))/'
 	touch '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'

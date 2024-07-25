@@ -138,7 +138,7 @@ parking64:
     add rdi, qword [rbx + (passed_info.hhdm - smp_trampoline_start)]
 
     mov eax, 1
-    lock xchg dword [rbx + (passed_info.booted_flag - smp_trampoline_start)], eax
+    xchg dword [rbx + (passed_info.booted_flag - smp_trampoline_start)], eax
 
     xor eax, eax
   .loop:

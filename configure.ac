@@ -24,7 +24,7 @@ AC_DEFUN([PROG_ABSPATH], [
     esac
 ])
 
-test "x$CFLAGS" = "x" && CFLAGS='-g -O2 -pipe'
+test "${CFLAGS-unset}" = "unset" && CFLAGS='-g -O2 -pipe'
 
 AC_LANG([C])
 AC_PROG_CC
@@ -339,16 +339,16 @@ for cflag in $CFLAGS; do
 done
 
 AC_ARG_VAR([CFLAGS_FOR_TARGET], [C flags for Limine])
-test "x$CFLAGS_FOR_TARGET" = "x" && CFLAGS_FOR_TARGET="$BORROWED_CFLAGS"
+test "${CFLAGS_FOR_TARGET-unset}" = "unset" && CFLAGS_FOR_TARGET="$BORROWED_CFLAGS"
 
 AC_ARG_VAR([CPPFLAGS_FOR_TARGET], [C preprocessor flags for Limine])
-test "x$CPPFLAGS_FOR_TARGET" = "x" && CPPFLAGS_FOR_TARGET=""
+test "${CPPFLAGS_FOR_TARGET-unset}" = "unset" && CPPFLAGS_FOR_TARGET=""
 
 AC_ARG_VAR([LDFLAGS_FOR_TARGET], [linker flags for Limine])
-test "x$LDFLAGS_FOR_TARGET" = "x" && LDFLAGS_FOR_TARGET=""
+test "${LDFLAGS_FOR_TARGET-unset}" = "unset" && LDFLAGS_FOR_TARGET=""
 
 AC_ARG_VAR([NASMFLAGS_FOR_TARGET], [nasm flags for Limine])
-test "x$NASMFLAGS_FOR_TARGET" = "x" && NASMFLAGS_FOR_TARGET="-F dwarf -g"
+test "${NASMFLAGS_FOR_TARGET-unset}" = "unset" && NASMFLAGS_FOR_TARGET="-F dwarf -g"
 
 LIMINE_COPYRIGHT=$($GREP Copyright "$SRCDIR/COPYING")
 AC_SUBST([LIMINE_COPYRIGHT])

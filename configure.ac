@@ -329,21 +329,26 @@ if test "x$NEED_GZIP" = "xyes"; then
     fi
 fi
 
-m4_define([DEFAULT_CFLAGS_FOR_TARGET], [-g -O2 -pipe])
-AC_ARG_VAR([CFLAGS_FOR_TARGET], [C flags for Limine @<:@default: ]DEFAULT_CFLAGS_FOR_TARGET[@:>@])
-test "x$CFLAGS_FOR_TARGET" = "x" && CFLAGS_FOR_TARGET="DEFAULT_CFLAGS_FOR_TARGET"
+BORROWED_CFLAGS=""
+for cflag in $CFLAGS; do
+    case $cflag in
+        -O*|-pipe|-g|-ffile-prefix-map*)
+            BORROWED_CFLAGS="$BORROWED_CFLAGS $cflag"
+            ;;
+    esac
+done
 
-m4_define([DEFAULT_CPPFLAGS_FOR_TARGET], [])
-AC_ARG_VAR([CPPFLAGS_FOR_TARGET], [C preprocessor flags for Limine @<:@default: ]DEFAULT_CPPFLAGS_FOR_TARGET[@:>@])
-test "x$CPPFLAGS_FOR_TARGET" = "x" && CPPFLAGS_FOR_TARGET="DEFAULT_CPPFLAGS_FOR_TARGET"
+AC_ARG_VAR([CFLAGS_FOR_TARGET], [C flags for Limine])
+test "x$CFLAGS_FOR_TARGET" = "x" && CFLAGS_FOR_TARGET="$BORROWED_CFLAGS"
 
-m4_define([DEFAULT_LDFLAGS_FOR_TARGET], [])
-AC_ARG_VAR([LDFLAGS_FOR_TARGET], [linker flags for Limine @<:@default: ]DEFAULT_LDFLAGS_FOR_TARGET[@:>@])
-test "x$LDFLAGS_FOR_TARGET" = "x" && LDFLAGS_FOR_TARGET="DEFAULT_LDFLAGS_FOR_TARGET"
+AC_ARG_VAR([CPPFLAGS_FOR_TARGET], [C preprocessor flags for Limine])
+test "x$CPPFLAGS_FOR_TARGET" = "x" && CPPFLAGS_FOR_TARGET=""
 
-m4_define([DEFAULT_NASMFLAGS_FOR_TARGET], [-F dwarf -g])
-AC_ARG_VAR([NASMFLAGS_FOR_TARGET], [nasm flags for Limine @<:@default: ]DEFAULT_NASMFLAGS_FOR_TARGET[@:>@])
-test "x$NASMFLAGS_FOR_TARGET" = "x" && NASMFLAGS_FOR_TARGET="DEFAULT_NASMFLAGS_FOR_TARGET"
+AC_ARG_VAR([LDFLAGS_FOR_TARGET], [linker flags for Limine])
+test "x$LDFLAGS_FOR_TARGET" = "x" && LDFLAGS_FOR_TARGET=""
+
+AC_ARG_VAR([NASMFLAGS_FOR_TARGET], [nasm flags for Limine])
+test "x$NASMFLAGS_FOR_TARGET" = "x" && NASMFLAGS_FOR_TARGET="-F dwarf -g"
 
 LIMINE_COPYRIGHT=$($GREP Copyright "$SRCDIR/COPYING")
 AC_SUBST([LIMINE_COPYRIGHT])

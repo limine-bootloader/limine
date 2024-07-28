@@ -10,15 +10,6 @@ test -z "$srcdir" && srcdir=.
 
 cd "$srcdir"
 
-FREESTANDING_TOOLCHAIN_COMMIT_HASH=18a5e52483344e117d45738c9afb2b34792cbced
-FREESTANDING_HEADERS_COMMIT_HASH=dd3abd2d7147efc4170dff478d3b7730bed14147
-CC_RUNTIME_COMMIT_HASH=aa5854cebb4a5a561f35252cdda741919fc9c3f6
-LIMINE_EFI_COMMIT_HASH=d8257094947b0edefe9fa4dcb15255235e3c5193
-TINF_COMMIT_HASH=57ffa1f1d5e3dde19011b2127bd26d01689b694b
-FLANTERM_COMMIT_HASH=ef07a10cc38b34aa003d17be97a9f3542e275069
-STB_COMMIT_HASH=013ac3beddff3dbffafd5177e7972067cd2b5083
-DTC_COMMIT_HASH=039a99414e778332d8f9c04cbd3072e1dcc62798
-
 AUXFILES="config.guess config.sub install-sh"
 
 clone_repo_commit() {
@@ -40,33 +31,87 @@ clone_repo_commit() {
     fi
 }
 
-if ! test -f version; then
-    clone_repo_commit https://github.com/osdev0/freestanding-toolchain.git build-aux/freestanding-toolchain $FREESTANDING_TOOLCHAIN_COMMIT_HASH
-    clone_repo_commit https://github.com/osdev0/freestanding-headers.git freestanding-headers $FREESTANDING_HEADERS_COMMIT_HASH
+download_by_hash() {
+    DOWNLOAD_COMMAND="curl -Lo"
+    if ! command -v $DOWNLOAD_COMMAND >/dev/null 2>&1; then
+        DOWNLOAD_COMMAND="wget -O"
+        if ! command -v $DOWNLOAD_COMMAND >/dev/null 2>&1; then
+            echo "error: Neither curl nor wget found"
+            exit 1
+        fi
+    fi
+    SHA256_COMMAND="sha256sum"
+    if ! command -v $SHA256_COMMAND >/dev/null 2>&1; then
+        SHA256_COMMAND="sha256"
+        if ! command -v $SHA256_COMMAND >/dev/null 2>&1; then
+            echo "error: Cannot find sha256(sum) command"
+            exit 1
+        fi
+    fi
+    if ! test -f $2 || ! $SHA256_COMMAND $2 | grep $3 >/dev/null 2>&1; then
+        rm -f $2
+        mkdir -p $2 && rm -rf $2
+        $DOWNLOAD_COMMAND $2 $1
+        if ! $SHA256_COMMAND $2 | grep $3 >/dev/null 2>&1; then
+            echo "error: Cannot download file '$2' by hash"
+            exit 1
+        fi
+    fi
+}
 
-    clone_repo_commit https://github.com/osdev0/cc-runtime.git decompressor/cc-runtime $CC_RUNTIME_COMMIT_HASH
+if ! test -f version; then
+    clone_repo_commit \
+        https://github.com/osdev0/freestanding-headers.git \
+        freestanding-headers \
+        dd3abd2d7147efc4170dff478d3b7730bed14147
+
+    clone_repo_commit \
+        https://github.com/osdev0/cc-runtime.git \
+        decompressor/cc-runtime \
+        aa5854cebb4a5a561f35252cdda741919fc9c3f6
     rm -rf common/cc-runtime
     cp -rp decompressor/cc-runtime common/
     for f in common/cc-runtime/*.c; do
         mv "$f" "$(echo "$f" | sed 's/\.c/.s2.c/g')"
     done
 
-    clone_repo_commit https://github.com/limine-bootloader/limine-efi.git limine-efi $LIMINE_EFI_COMMIT_HASH
+    download_by_hash \
+        https://github.com/osdev0/freestanding-toolchain/raw/18a5e52483344e117d45738c9afb2b34792cbced/freestanding-toolchain \
+        build-aux/freestanding-toolchain \
+        b5b66c4e94d463116e549b10e78fb96cdb97530cc165f9b5babe31a97a78e90c
+    chmod +x build-aux/freestanding-toolchain
 
-    clone_repo_commit https://github.com/jibsen/tinf.git tinf $TINF_COMMIT_HASH
+    clone_repo_commit \
+        https://github.com/limine-bootloader/limine-efi.git \
+        limine-efi \
+        d8257094947b0edefe9fa4dcb15255235e3c5193
+
+    clone_repo_commit \
+        https://github.com/jibsen/tinf.git \
+        tinf \
+        57ffa1f1d5e3dde19011b2127bd26d01689b694b
     mkdir -p decompressor/tinf
     cp tinf/src/tinf.h tinf/src/tinflate.c tinf/src/tinfgzip.c decompressor/tinf/
     patch -p0 < decompressor/tinf.patch
     rm -f tinf/src/tinf.h.orig tinf/src/tinflate.c.orig tinf/src/tinfgzip.c.orig
 
-    clone_repo_commit https://github.com/mintsuki/flanterm.git common/flanterm $FLANTERM_COMMIT_HASH
+    clone_repo_commit \
+        https://github.com/mintsuki/flanterm.git \
+        common/flanterm \
+        ef07a10cc38b34aa003d17be97a9f3542e275069
 
-    clone_repo_commit https://github.com/nothings/stb.git stb $STB_COMMIT_HASH
-    cp stb/stb_image.h common/lib/
+    download_by_hash \
+        https://github.com/nothings/stb/raw/f7f20f39fe4f206c6f19e26ebfef7b261ee59ee4/stb_image.h \
+        common/lib/stb_image.h.nopatch \
+        594c2fe35d49488b4382dbfaec8f98366defca819d916ac95becf3e75f4200b3
+    cp common/lib/stb_image.h.nopatch common/lib/stb_image.h
     patch -p0 < common/stb_image.patch
     rm -f common/lib/stb_image.h.orig
 
-    clone_repo_commit https://git.kernel.org/pub/scm/utils/dtc/dtc.git dtc $DTC_COMMIT_HASH
+    clone_repo_commit \
+        https://git.kernel.org/pub/scm/utils/dtc/dtc.git \
+        dtc \
+        039a99414e778332d8f9c04cbd3072e1dcc62798
     rm -rf common/libfdt
     cp -rp dtc/libfdt common/
     find common/libfdt/ -type f -not -name '*.c' -not -name '*.h' -delete

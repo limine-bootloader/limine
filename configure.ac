@@ -24,7 +24,7 @@ AC_DEFUN([PROG_ABSPATH], [
     esac
 ])
 
-test "${CFLAGS-unset}" = "unset" && CFLAGS='-g -O2 -pipe'
+test "x${CFLAGS+set}" = "x" && CFLAGS='-g -O2 -pipe'
 
 AC_LANG([C])
 AC_PROG_CC
@@ -174,7 +174,7 @@ else
         FREESTANDING_OBJDUMP="$OBJDUMP_FOR_TARGET" \
         WANT_FREESTANDING_READELF=yes \
         FREESTANDING_READELF="$READELF_FOR_TARGET" \
-        "$SRCDIR/build-aux/freestanding-toolchain/freestanding-toolchain" 2>"toolchain-files/bios-i686-toolchain.mk" || exit 1
+        "$SRCDIR/build-aux/freestanding-toolchain" 2>"toolchain-files/bios-i686-toolchain.mk" || exit 1
     BUILD_BIOS="limine-bios"
     NEED_NASM=yes
     NEED_GZIP=yes
@@ -204,7 +204,7 @@ else
         FREESTANDING_OBJCOPY="$OBJCOPY_FOR_TARGET" \
         WANT_FREESTANDING_OBJDUMP=yes \
         FREESTANDING_OBJDUMP="$OBJDUMP_FOR_TARGET" \
-        "$SRCDIR/build-aux/freestanding-toolchain/freestanding-toolchain" 2>"toolchain-files/uefi-i686-toolchain.mk" || exit 1
+        "$SRCDIR/build-aux/freestanding-toolchain" 2>"toolchain-files/uefi-i686-toolchain.mk" || exit 1
     BUILD_UEFI_IA32="limine-uefi-ia32"
     NEED_NASM=yes
 fi
@@ -233,7 +233,7 @@ else
         FREESTANDING_OBJCOPY="$OBJCOPY_FOR_TARGET" \
         WANT_FREESTANDING_OBJDUMP=yes \
         FREESTANDING_OBJDUMP="$OBJDUMP_FOR_TARGET" \
-        "$SRCDIR/build-aux/freestanding-toolchain/freestanding-toolchain" 2>"toolchain-files/uefi-x86_64-toolchain.mk" || exit 1
+        "$SRCDIR/build-aux/freestanding-toolchain" 2>"toolchain-files/uefi-x86_64-toolchain.mk" || exit 1
     BUILD_UEFI_X86_64="limine-uefi-x86-64"
     NEED_NASM=yes
 fi
@@ -262,7 +262,7 @@ else
         FREESTANDING_OBJCOPY="$OBJCOPY_FOR_TARGET" \
         WANT_FREESTANDING_OBJDUMP=yes \
         FREESTANDING_OBJDUMP="$OBJDUMP_FOR_TARGET" \
-        "$SRCDIR/build-aux/freestanding-toolchain/freestanding-toolchain" 2>"toolchain-files/uefi-aarch64-toolchain.mk" || exit 1
+        "$SRCDIR/build-aux/freestanding-toolchain" 2>"toolchain-files/uefi-aarch64-toolchain.mk" || exit 1
     BUILD_UEFI_AARCH64="limine-uefi-aarch64"
 fi
 
@@ -290,7 +290,7 @@ else
         FREESTANDING_OBJCOPY="$OBJCOPY_FOR_TARGET" \
         WANT_FREESTANDING_OBJDUMP=yes \
         FREESTANDING_OBJDUMP="$OBJDUMP_FOR_TARGET" \
-        "$SRCDIR/build-aux/freestanding-toolchain/freestanding-toolchain" 2>"toolchain-files/uefi-riscv64-toolchain.mk" || exit 1
+        "$SRCDIR/build-aux/freestanding-toolchain" 2>"toolchain-files/uefi-riscv64-toolchain.mk" || exit 1
     BUILD_UEFI_RISCV64="limine-uefi-riscv64"
 fi
 
@@ -332,23 +332,23 @@ fi
 BORROWED_CFLAGS=""
 for cflag in $CFLAGS; do
     case $cflag in
-        -O*|-pipe|-g|-ffile-prefix-map*)
+        -O*|-pipe|-g|-f*-prefix-map*)
             BORROWED_CFLAGS="$BORROWED_CFLAGS $cflag"
             ;;
     esac
 done
 
 AC_ARG_VAR([CFLAGS_FOR_TARGET], [C flags for Limine])
-test "${CFLAGS_FOR_TARGET-unset}" = "unset" && CFLAGS_FOR_TARGET="$BORROWED_CFLAGS"
+test "x${CFLAGS_FOR_TARGET+set}" = "x" && CFLAGS_FOR_TARGET="$BORROWED_CFLAGS"
 
 AC_ARG_VAR([CPPFLAGS_FOR_TARGET], [C preprocessor flags for Limine])
-test "${CPPFLAGS_FOR_TARGET-unset}" = "unset" && CPPFLAGS_FOR_TARGET=""
+test "x${CPPFLAGS_FOR_TARGET+set}" = "x" && CPPFLAGS_FOR_TARGET=""
 
 AC_ARG_VAR([LDFLAGS_FOR_TARGET], [linker flags for Limine])
-test "${LDFLAGS_FOR_TARGET-unset}" = "unset" && LDFLAGS_FOR_TARGET=""
+test "x${LDFLAGS_FOR_TARGET+set}" = "x" && LDFLAGS_FOR_TARGET=""
 
 AC_ARG_VAR([NASMFLAGS_FOR_TARGET], [nasm flags for Limine])
-test "${NASMFLAGS_FOR_TARGET-unset}" = "unset" && NASMFLAGS_FOR_TARGET="-F dwarf -g"
+test "x${NASMFLAGS_FOR_TARGET+set}" = "x" && NASMFLAGS_FOR_TARGET="-F dwarf -g"
 
 LIMINE_COPYRIGHT=$($GREP Copyright "$SRCDIR/COPYING")
 AC_SUBST([LIMINE_COPYRIGHT])

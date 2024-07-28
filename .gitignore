@@ -29,13 +29,13 @@
 /freestanding-headers
 /common/flanterm
 /common/libfdt
+/common/lib/stb_image.h.nopatch
 /common/lib/stb_image.h
 /common/cc-runtime
 /decompressor/tinf
 /decompressor/cc-runtime
 /dtc
 /tinf
-/stb
 /ovmf*
 /bochsout.txt
 /bx_enh_dbg.ini

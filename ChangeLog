@@ -1,5 +1,16 @@
 2024-07-29  mintsuki  <mintsuki@protonmail.com>
 
+    *** Release 7.13.1 ***
+
+    Noteworthy changes compared to the previous release, 7.13.0:
+
+    Bug fixes:
+        - Limine boot protocol: Fix a bug introduced in 7.13.0 that made the
+          protocol unusable with the BIOS port when loading any modules, when
+          Limine was linked using ld.bfd.
+
+2024-07-29  mintsuki  <mintsuki@protonmail.com>
+
     *** Release 7.13.0 ***
 
     Noteworthy changes compared to the previous release, 7.12.1:

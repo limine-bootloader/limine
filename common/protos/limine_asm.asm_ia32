@@ -13,7 +13,8 @@ local_gdt:
 
 local_gdt_ptr:
     dw local_gdt.top - local_gdt - 1
-    dq local_gdt
+    dd local_gdt
+    dd 0
 
 old_gdt_ptr:
     dw 0

@@ -124,11 +124,19 @@ limine_memcpy_to_64_asm:
     mov cr0, eax
 
     ; Save old segments
+%ifdef UEFI
     mov [ebx + old_ss wrt ..gotoff], ss
     mov [ebx + old_gs wrt ..gotoff], gs
     mov [ebx + old_fs wrt ..gotoff], fs
     mov [ebx + old_es wrt ..gotoff], es
     mov [ebx + old_ds wrt ..gotoff], ds
+%else
+    mov [old_ss], ss
+    mov [old_gs], gs
+    mov [old_fs], fs
+    mov [old_es], es
+    mov [old_ds], ds
+%endif
 
     ; Save old CS
     mov eax, cs
@@ -182,11 +190,19 @@ bits 64
 %endif
 
     ; Restore old segments
+%ifdef UEFI
     mov ds, [ebx + old_ds wrt ..gotoff]
     mov es, [ebx + old_es wrt ..gotoff]
     mov fs, [ebx + old_fs wrt ..gotoff]
     mov gs, [ebx + old_gs wrt ..gotoff]
     mov ss, [ebx + old_ss wrt ..gotoff]
+%else
+    mov ds, [old_ds]
+    mov es, [old_es]
+    mov fs, [old_fs]
+    mov gs, [old_gs]
+    mov ss, [old_ss]
+%endif
 
     ; Go 32
 %ifdef UEFI

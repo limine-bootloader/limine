@@ -558,6 +558,10 @@ void *ext_mem_alloc_type_aligned(size_t count, uint32_t type, size_t alignment) 
 
 // Allocate memory top down.
 void *ext_mem_alloc_type_aligned_mode(size_t count, uint32_t type, size_t alignment, bool allow_high_allocs) {
+#if !defined (__x86_64__) && !defined (__i386__)
+    (void)allow_high_allocs;
+#endif
+
     count = ALIGN_UP(count, alignment);
 
     if (allocations_disallowed)
@@ -572,9 +576,7 @@ void *ext_mem_alloc_type_aligned_mode(size_t count, uint32_t type, size_t alignm
 
 #if defined(__x86_64__) || defined(__i386__)
         // Let's make sure the entry is not > 4GiB
-        if (entry_top >= 0x100000000
-         && !allow_high_allocs
-        ) {
+        if (entry_top >= 0x100000000 && !allow_high_allocs) {
             entry_top = 0x100000000;
             if (entry_base >= entry_top)
                 continue;

@@ -36,6 +36,10 @@ struct file_handle *fopen(struct volume *part, const char *filename);
 void fread(struct file_handle *fd, void *buf, uint64_t loc, uint64_t count);
 void fclose(struct file_handle *fd);
 void *freadall(struct file_handle *fd, uint32_t type);
-void *freadall_mode(struct file_handle *fd, uint32_t type, bool allow_high_allocs);
+void *freadall_mode(struct file_handle *fd, uint32_t type, bool allow_high_allocs
+#if defined (__i386__)
+    , void (*memcpy_to_64)(uint64_t dst, void *src, size_t count)
+#endif
+);
 
 #endif

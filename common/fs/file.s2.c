@@ -96,10 +96,26 @@ void fread(struct file_handle *fd, void *buf, uint64_t loc, uint64_t count) {
 }
 
 void *freadall(struct file_handle *fd, uint32_t type) {
-    return freadall_mode(fd, type, false);
+    return freadall_mode(fd, type, false
+#if defined (__i386__)
+        , NULL
+#endif
+    );
 }
 
-void *freadall_mode(struct file_handle *fd, uint32_t type, bool allow_high_allocs) {
+void *freadall_mode(struct file_handle *fd, uint32_t type, bool allow_high_allocs
+#if defined (__i386__)
+    , void (*memcpy_to_64)(uint64_t dst, void *src, size_t count)
+#endif
+) {
+#if defined (__i386__)
+    static uint64_t high_ret;
+
+    if (memcpy_to_64 == NULL) {
+        allow_high_allocs = false;
+    }
+#endif
+
     if (fd->is_memfile) {
         if (fd->readall) {
             return fd->fd;
@@ -109,11 +125,39 @@ void *freadall_mode(struct file_handle *fd, uint32_t type, bool allow_high_alloc
         return fd->fd;
     } else {
         void *ret = ext_mem_alloc_type_aligned_mode(fd->size, type, 4096, allow_high_allocs);
+#if defined (__i386__)
+        if (allow_high_allocs == true) {
+            high_ret = *(uint64_t *)ret;
+            if (high_ret < 0x100000000) {
+                ret = (void *)(uintptr_t)high_ret;
+                goto low_ret;
+            }
+            void *pool = ext_mem_alloc(0x100000);
+            for (size_t i = 0; i < fd->size; i += 0x100000) {
+                size_t count;
+                if (fd->size - i < 0x100000) {
+                    count = fd->size - i;
+                } else {
+                    count = 0x100000;
+                }
+                fd->read(fd, pool, i, count);
+                memcpy_to_64(high_ret + i, pool, count);
+            }
+            pmm_free(pool, 0x100000);
+            return &high_ret;
+        }
+low_ret:
+#endif
         fd->read(fd, ret, 0, fd->size);
         fd->close(fd);
         fd->fd = ret;
         fd->readall = true;
         fd->is_memfile = true;
+#if defined (__i386__)
+        if (allow_high_allocs == true) {
+            return &high_ret;
+        }
+#endif
         return ret;
     }
 }

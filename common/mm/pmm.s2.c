@@ -356,27 +356,6 @@ void init_memmap(void) {
         uint64_t base = entry->PhysicalStart;
         uint64_t length = entry->NumberOfPages * 4096;
 
-#if !defined (__x86_64__) && !defined (__aarch64__) && !defined (__riscv64)
-        // We only manage memory below 4GiB. For anything above that, make it
-        // EFI reclaimable.
-        if (our_type == MEMMAP_USABLE) {
-            if (base + length > 0x100000000) {
-                if (base < 0x100000000) {
-                    memmap[memmap_entries].base = base;
-                    memmap[memmap_entries].length = 0x100000000 - base;
-                    memmap[memmap_entries].type = our_type;
-
-                    base = 0x100000000;
-                    length -= memmap[memmap_entries].length;
-
-                    memmap_entries++;
-                }
-
-                our_type = MEMMAP_EFI_RECLAIMABLE;
-            }
-        }
-#endif
-
         memmap[memmap_entries].base = base;
         memmap[memmap_entries].length = length;
         memmap[memmap_entries].type = our_type;
@@ -404,6 +383,12 @@ void init_memmap(void) {
             continue;
 
         EFI_PHYSICAL_ADDRESS base = untouched_memmap[i].base;
+
+#if defined (__i386__)
+        if (untouched_memmap[i].base + untouched_memmap[i].length > 0x100000000) {
+            continue;
+        }
+#endif
 
         status = gBS->AllocatePages(AllocateAddress, EfiLoaderCode,
                                     untouched_memmap[i].length / 4096, &base);
@@ -573,10 +558,6 @@ void *ext_mem_alloc_type_aligned(size_t count, uint32_t type, size_t alignment) 
 
 // Allocate memory top down.
 void *ext_mem_alloc_type_aligned_mode(size_t count, uint32_t type, size_t alignment, bool allow_high_allocs) {
-#if !defined (__x86_64__)
-    (void)allow_high_allocs;
-#endif
-
     count = ALIGN_UP(count, alignment);
 
     if (allocations_disallowed)
@@ -592,9 +573,7 @@ void *ext_mem_alloc_type_aligned_mode(size_t count, uint32_t type, size_t alignm
 #if defined(__x86_64__) || defined(__i386__)
         // Let's make sure the entry is not > 4GiB
         if (entry_top >= 0x100000000
-#if defined (__x86_64__)
          && !allow_high_allocs
-#endif
         ) {
             entry_top = 0x100000000;
             if (entry_base >= entry_top)
@@ -612,10 +591,22 @@ void *ext_mem_alloc_type_aligned_mode(size_t count, uint32_t type, size_t alignm
         int64_t aligned_length = entry_top - alloc_base;
         memmap_alloc_range((uint64_t)alloc_base, (uint64_t)aligned_length, type, MEMMAP_USABLE, true, false, false);
 
-        void *ret = (void *)(size_t)alloc_base;
+        void *ret;
+
+#if defined (__i386__)
+        if (!allow_high_allocs) {
+#endif
+        ret = (void *)(size_t)alloc_base;
 
         // Zero out allocated space
         memset(ret, 0, count);
+#if defined (__i386__)
+        } else {
+            static uint64_t above64_ret;
+            above64_ret = alloc_base;
+            ret = &above64_ret;
+        }
+#endif
 
         sanitise_entries(memmap, &memmap_entries, false);
 

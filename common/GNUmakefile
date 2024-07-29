@@ -78,7 +78,8 @@ ifeq ($(TARGET),bios)
         -DBIOS
     override NASMFLAGS_FOR_TARGET += \
         -f elf32 \
-        -DIA32_TARGET
+        -DIA32_TARGET \
+        -DBIOS
 endif
 
 ifeq ($(TARGET),uefi-x86-64)
@@ -99,7 +100,8 @@ ifeq ($(TARGET),uefi-x86-64)
         -DUEFI
     override NASMFLAGS_FOR_TARGET += \
         -f elf64 \
-        -DX86_64_TARGET
+        -DX86_64_TARGET \
+        -DUEFI
 endif
 
 ifeq ($(TARGET),uefi-ia32)
@@ -116,7 +118,8 @@ ifeq ($(TARGET),uefi-ia32)
         -DUEFI
     override NASMFLAGS_FOR_TARGET += \
         -f elf32 \
-        -DIA32_TARGET
+        -DIA32_TARGET \
+        -DUEFI
 endif
 
 ifeq ($(TARGET),uefi-aarch64)

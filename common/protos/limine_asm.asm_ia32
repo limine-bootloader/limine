@@ -1,0 +1,261 @@
+%ifdef UEFI
+extern _GLOBAL_OFFSET_TABLE_
+%endif
+
+section .data
+
+local_gdt:
+    dq 0
+
+    dq 0x00209b0000000000
+    dq 0x0000930000000000
+  .top:
+
+local_gdt_ptr:
+    dw local_gdt.top - local_gdt - 1
+    dq local_gdt
+
+old_gdt_ptr:
+    dw 0
+    dq 0
+
+old_cs:
+    dq 0
+
+interrupt_state:
+    dd 0
+
+old_ds:
+    dq 0
+old_es:
+    dq 0
+old_fs:
+    dq 0
+old_gs:
+    dq 0
+old_ss:
+    dq 0
+
+%ifdef UEFI
+paging_state:
+    dd 0
+
+pae_state:
+    dd 0
+
+old_pagemap:
+    dd 0
+%endif
+
+section .text
+
+; void limine_memcpy_to_64_asm(int paging_mode, void *pagemap, uint64_t dst, void *src, size_t count);
+
+global limine_memcpy_to_64_asm
+limine_memcpy_to_64_asm:
+    push ebp
+    mov ebp, esp
+
+    pusha
+
+%ifdef UEFI
+    call .get_got
+  .get_got:
+    pop ebx
+    add ebx, _GLOBAL_OFFSET_TABLE_ + $$ - .get_got wrt ..gotpc
+%endif
+
+    pushfd
+    mov eax, dword [esp]
+    add esp, 4
+    and eax, 0x200
+%ifdef UEFI
+    mov dword [ebx + interrupt_state wrt ..gotoff], eax
+%else
+    mov dword [interrupt_state], eax
+%endif
+
+    cli
+
+%ifdef UEFI
+    ; Disable paging if needed and save old pagemap
+    mov eax, cr0
+    and eax, (1 << 31)
+    mov dword [ebx + paging_state wrt ..gotoff], eax
+    mov eax, cr0
+    btr eax, 31
+    mov cr0, eax
+
+    mov eax, cr3
+    mov dword [ebx + old_pagemap wrt ..gotoff], eax
+%endif
+
+    mov eax, [ebp+12] ; pagemap
+    mov cr3, eax
+
+    ; Enable CR4.LA57
+    cmp dword [ebp+8], 0 ; paging_mode
+    je .no_la57
+    mov eax, cr4
+    bts eax, 12
+    mov cr4, eax
+  .no_la57:
+
+    ; Enable CR4.PAE
+%ifdef UEFI
+    mov eax, cr4
+    and eax, (1 << 5)
+    mov [ebx + pae_state wrt ..gotoff], eax
+%endif
+    mov eax, cr4
+    bts eax, 5
+    mov cr4, eax
+
+    ; Enable EFER.LME
+    mov ecx, 0xc0000080
+    rdmsr
+    bts eax, 8
+    wrmsr
+
+    ; Enable CR0.PG
+    mov eax, cr0
+    bts eax, 31
+    mov cr0, eax
+
+    ; Save old segments
+    mov [ebx + old_ss wrt ..gotoff], ss
+    mov [ebx + old_gs wrt ..gotoff], gs
+    mov [ebx + old_fs wrt ..gotoff], fs
+    mov [ebx + old_es wrt ..gotoff], es
+    mov [ebx + old_ds wrt ..gotoff], ds
+
+    ; Save old CS
+    mov eax, cs
+%ifdef UEFI
+    mov dword [ebx + old_cs wrt ..gotoff], eax
+%else
+    mov dword [old_cs], eax
+%endif
+
+    ; Save old GDT
+%ifdef UEFI
+    sgdt [ebx + old_gdt_ptr wrt ..gotoff]
+%else
+    sgdt [old_gdt_ptr]
+%endif
+
+    ; Load new GDT
+%ifdef UEFI
+    lgdt [ebx + local_gdt_ptr wrt ..gotoff]
+%else
+    lgdt [local_gdt_ptr]
+%endif
+
+    ; Go 64
+    push 0x08
+    call .p1
+  .p1:
+    add dword [esp], .mode64 - .p1
+    retf
+
+bits 64
+  .mode64:
+    mov eax, 0x10
+    mov ds, eax
+    mov es, eax
+    mov fs, eax
+    mov gs, eax
+    mov ss, eax
+
+    mov rdi, qword [rbp+16]
+    mov esi, dword [rbp+24]
+    mov ecx, dword [rbp+28]
+
+    rep movsb
+
+    ; Restore old GDT
+%ifdef UEFI
+    lgdt [ebx + old_gdt_ptr wrt ..gotoff]
+%else
+    lgdt [old_gdt_ptr]
+%endif
+
+    ; Restore old segments
+    mov ds, [ebx + old_ds wrt ..gotoff]
+    mov es, [ebx + old_es wrt ..gotoff]
+    mov fs, [ebx + old_fs wrt ..gotoff]
+    mov gs, [ebx + old_gs wrt ..gotoff]
+    mov ss, [ebx + old_ss wrt ..gotoff]
+
+    ; Go 32
+%ifdef UEFI
+    push qword [ebx + old_cs wrt ..gotoff]
+%else
+    push qword [old_cs]
+%endif
+    call .p2
+  .p2:
+    add qword [rsp], .mode32 - .p2
+    retfq
+
+bits 32
+  .mode32:
+    ; Disable CR0.PG
+    mov eax, cr0
+    btr eax, 31
+    mov cr0, eax
+
+    ; Disable EFER.LME
+    mov ecx, 0xc0000080
+    rdmsr
+    btr eax, 8
+    wrmsr
+
+    ; Disable CR4.PAE
+%ifdef UEFI
+    cmp dword [ebx + pae_state wrt ..gotoff], 0
+    jne .no_disable_pae
+%endif
+    mov eax, cr4
+    btr eax, 5
+    mov cr4, eax
+%ifdef UEFI
+  .no_disable_pae:
+%endif
+
+    ; Disable CR4.LA57
+    mov eax, cr4
+    btr eax, 12
+    mov cr4, eax
+
+    ; Invalidate pagemap
+    xor eax, eax
+    mov cr3, eax
+
+%ifdef UEFI
+    mov eax, dword [ebx + old_pagemap wrt ..gotoff]
+    mov cr3, eax
+
+    cmp dword [ebx + paging_state wrt ..gotoff], 0
+    je .no_paging
+    mov eax, cr0
+    bts eax, 31
+    mov cr0, eax
+  .no_paging:
+%endif
+
+%ifdef UEFI
+    cmp dword [ebx + interrupt_state wrt ..gotoff], 0
+%else
+    cmp dword [interrupt_state], 0
+%endif
+    je .no_ints
+    sti
+  .no_ints:
+
+    popa
+    pop ebp
+
+    ret
+
+section .note.GNU-stack noalloc noexec nowrite progbits

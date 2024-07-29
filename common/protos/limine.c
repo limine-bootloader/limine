@@ -34,6 +34,8 @@
 
 #define MAX_REQUESTS 128
 
+static int paging_mode;
+
 static uint64_t get_hhdm_span_top(int base_revision) {
     uint64_t ret = 0x100000000;
     for (size_t i = 0; i < memmap_entries; i++) {
@@ -65,8 +67,70 @@ static uint64_t get_hhdm_span_top(int base_revision) {
     return ret;
 }
 
+#if defined (__i386__)
+static pagemap_t build_identity_map(void) {
+    pagemap_t pagemap = new_pagemap(paging_mode);
+
+    for (uint64_t i = 0; i < 0x100000000; i += 0x40000000) {
+        map_page(pagemap, i, i, VMM_FLAG_WRITE, Size1GiB);
+    }
+
+
+    size_t _memmap_entries = memmap_entries;
+    struct memmap_entry *_memmap =
+        ext_mem_alloc(_memmap_entries * sizeof(struct memmap_entry));
+    for (size_t i = 0; i < _memmap_entries; i++) {
+        _memmap[i] = memmap[i];
+    }
+
+    for (size_t i = 0; i < _memmap_entries; i++) {
+        if (_memmap[i].type == MEMMAP_RESERVED
+         || _memmap[i].type == MEMMAP_BAD_MEMORY) {
+            continue;
+        }
+
+        uint64_t base   = _memmap[i].base;
+        uint64_t length = _memmap[i].length;
+        uint64_t top    = base + length;
+
+        if (base < 0x100000000) {
+            base = 0x100000000;
+        }
+
+        if (base >= top) {
+            continue;
+        }
+
+        uint64_t aligned_base   = ALIGN_DOWN(base, 0x40000000);
+        uint64_t aligned_top    = ALIGN_UP(top, 0x40000000);
+        uint64_t aligned_length = aligned_top - aligned_base;
+
+        for (uint64_t j = 0; j < aligned_length; j += 0x40000000) {
+            uint64_t page = aligned_base + j;
+            map_page(pagemap, page, page, VMM_FLAG_WRITE, Size1GiB);
+        }
+    }
+
+    return pagemap;
+}
+
+void limine_memcpy_to_64_asm(int paging_mode, void *pagemap, uint64_t dst, void *src, size_t count);
+
+static void limine_memcpy_to_64(uint64_t dst, void *src, size_t count) {
+    static bool identity_map_ready = false;
+    static pagemap_t identity_map;
+
+    if (!identity_map_ready) {
+        identity_map = build_identity_map();
+        identity_map_ready = true;
+    }
+
+    limine_memcpy_to_64_asm(paging_mode, identity_map.top_level, dst, src, count);
+}
+#endif
+
 static pagemap_t build_pagemap(int base_revision,
-                               int paging_mode, bool nx, struct elf_range *ranges, size_t ranges_count,
+                               bool nx, struct elf_range *ranges, size_t ranges_count,
                                uint64_t physical_base, uint64_t virtual_base,
                                uint64_t direct_map_offset) {
     pagemap_t pagemap = new_pagemap(paging_mode);
@@ -232,7 +296,7 @@ static uint64_t physical_base, virtual_base, slide, direct_map_offset;
 static size_t requests_count;
 static void **requests;
 
-static void set_paging_mode(int paging_mode, bool kaslr) {
+static void set_paging_mode(bool kaslr) {
     direct_map_offset = paging_mode_higher_half(paging_mode);
     if (kaslr) {
         // A quarter of the higher half of wiggle room for KASLR, align to 1GiB steps.
@@ -245,6 +309,12 @@ static uint64_t reported_addr(void *addr) {
     return (uint64_t)(uintptr_t)addr + direct_map_offset;
 }
 
+#if defined (__i386__)
+static uint64_t reported_addr_64(uint64_t addr) {
+    return addr + direct_map_offset;
+}
+#endif
+
 #define get_phys_addr(addr) ({ \
     __auto_type get_phys_addr__addr = (addr); \
     uintptr_t get_phys_addr__r; \
@@ -256,7 +326,7 @@ static uint64_t reported_addr(void *addr) {
     get_phys_addr__r; \
 })
 
-static struct limine_file get_file(struct file_handle *file, char *cmdline) {
+static struct limine_file get_file(struct file_handle *file, char *cmdline, bool kernel) {
     struct limine_file ret = {0};
 
     if (file->pxe) {
@@ -294,7 +364,17 @@ static struct limine_file get_file(struct file_handle *file, char *cmdline) {
 
     ret.path = reported_addr(path);
 
-    ret.address = reported_addr(freadall_mode(file, MEMMAP_KERNEL_AND_MODULES, true));
+    void *freadall_ret = freadall_mode(file, MEMMAP_KERNEL_AND_MODULES, !kernel
+#if defined (__i386__)
+        , limine_memcpy_to_64
+#endif
+    );
+#if defined (__i386__)
+    ret.address = kernel ? reported_addr(freadall_ret) : reported_addr_64(*(uint64_t *)freadall_ret);
+#else
+    ret.address = reported_addr(freadall_ret);
+#endif
+
     ret.size = file->size;
 
     ret.cmdline = reported_addr(cmdline);
@@ -489,7 +569,7 @@ noreturn void limine_load(char *config, char *cmdline) {
     printv("limine: Top of HHDM:     %X\n", hhdm_span_top);
 
     // Paging Mode
-    int paging_mode, max_supported_paging_mode, min_supported_paging_mode;
+    int max_supported_paging_mode, min_supported_paging_mode;
 
 #if defined (__x86_64__) || defined (__i386__)
     max_supported_paging_mode = PAGING_MODE_X86_64_4LVL;
@@ -685,7 +765,7 @@ FEAT_START
         paging_mode = kern_min_mode;
     }
 
-    set_paging_mode(paging_mode, kaslr);
+    set_paging_mode(kaslr);
     paging_mode_set = true;
 
     struct limine_paging_mode_response *pm_response =
@@ -696,7 +776,7 @@ FEAT_START
 FEAT_END
 
     if (!paging_mode_set) {
-        set_paging_mode(paging_mode, kaslr);
+        set_paging_mode(kaslr);
     }
 
 #if defined (__aarch64__)
@@ -709,7 +789,7 @@ FEAT_END
 #endif
 
     struct limine_file *kf = ext_mem_alloc(sizeof(struct limine_file));
-    *kf = get_file(kernel_file, cmdline);
+    *kf = get_file(kernel_file, cmdline, true);
     fclose(kernel_file);
 
     // Entry point feature
@@ -1009,7 +1089,7 @@ FEAT_START
         }
 
         struct limine_file *l = &modules[final_module_count++];
-        *l = get_file(f, module_cmdline);
+        *l = get_file(f, module_cmdline, false);
 
         fclose(f);
     }
@@ -1197,7 +1277,7 @@ FEAT_END
 #endif
 
     pagemap_t pagemap = {0};
-    pagemap = build_pagemap(base_revision, paging_mode, nx_available, ranges, ranges_count,
+    pagemap = build_pagemap(base_revision, nx_available, ranges, ranges_count,
                             physical_base, virtual_base, direct_map_offset);
 
 #if defined (UEFI)

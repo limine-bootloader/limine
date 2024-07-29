@@ -1,3 +1,16 @@
+2024-07-29  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.13.0 ***
+
+    Noteworthy changes compared to the previous release, 7.12.1:
+
+    New features:
+        - Limine boot protocol: Allow above-4GiB load of modules on IA-32
+          ports.
+
+    Miscellaneous:
+        - Build system improvements.
+
 2024-07-27  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.12.1 ***

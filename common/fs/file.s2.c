@@ -118,10 +118,22 @@ void *freadall_mode(struct file_handle *fd, uint32_t type, bool allow_high_alloc
 
     if (fd->is_memfile) {
         if (fd->readall) {
+#if defined (__i386__)
+            if (allow_high_allocs == true) {
+                high_ret = (uintptr_t)fd->fd;
+                return &high_ret;
+            }
+#endif
             return fd->fd;
         }
         memmap_alloc_range((uint64_t)(size_t)fd->fd, ALIGN_UP(fd->size, 4096), type, 0, true, false, false);
         fd->readall = true;
+#if defined (__i386__)
+        if (allow_high_allocs == true) {
+            high_ret = (uintptr_t)fd->fd;
+            return &high_ret;
+        }
+#endif
         return fd->fd;
     } else {
         void *ret = ext_mem_alloc_type_aligned_mode(fd->size, type, 4096, allow_high_allocs);

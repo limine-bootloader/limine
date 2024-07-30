@@ -1,3 +1,13 @@
+2024-07-30  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.13.2 ***
+
+    Noteworthy changes compared to the previous release, 7.13.1:
+
+    Bug fixes:
+        - Limine boot protocol: Fix a bug introduced in 7.13.0 that made
+          compressed modules not work on IA-32 ports.
+
 2024-07-29  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.13.1 ***

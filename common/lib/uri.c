@@ -8,7 +8,6 @@
 #include <mm/pmm.h>
 #include <lib/print.h>
 #include <pxe/tftp.h>
-#include <compress/gzip.h>
 #include <menu.h>
 #include <lib/getchar.h>
 #include <crypt/blake2b.h>
@@ -218,12 +217,6 @@ struct file_handle *uri_open(char *uri) {
         panic(true, "No resource specified for URI `%#`.", uri);
     }
 
-    bool compressed = false;
-    if (*resource == '$') {
-        compressed = true;
-        resource++;
-    }
-
     if (!strcmp(resource, "bios")) {
         panic(true, "bios:// resource is no longer supported. Check CONFIG.md for hdd:// and odd://");
     } else if (!strcmp(resource, "hdd")) {
@@ -268,23 +261,6 @@ struct file_handle *uri_open(char *uri) {
                 print("\n");
             }
         }
-    }
-
-    if (compressed && ret != NULL) {
-        struct file_handle *compressed_fd = ext_mem_alloc(sizeof(struct file_handle));
-        void *src = freadall(ret, MEMMAP_BOOTLOADER_RECLAIMABLE);
-        if ((compressed_fd->fd = gzip_uncompress(src, ret->size, &compressed_fd->size)) == NULL) {
-            panic(true, "GZip error");
-        }
-        compressed_fd->vol = ret->vol;
-        compressed_fd->path = ext_mem_alloc(ret->path_len);
-        memcpy(compressed_fd->path, ret->path, ret->path_len);
-        compressed_fd->path_len = ret->path_len;
-        compressed_fd->is_memfile = true;
-        uint64_t src_size = ret->size;
-        fclose(ret);
-        pmm_free(src, src_size);
-        ret = compressed_fd;
     }
 
     return ret;

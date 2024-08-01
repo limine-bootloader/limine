@@ -580,44 +580,44 @@ noreturn void limine_load(char *config, char *cmdline) {
         max_supported_paging_mode = PAGING_MODE_X86_64_5LVL;
     }
     min_supported_paging_mode = PAGING_MODE_X86_64_4LVL;
-    if (hhdm_span_top >= ((uint64_t)1 << paging_mode_va_bits(min_supported_paging_mode)) - 2) {
+    if (hhdm_span_top >= (uint64_t)1 << (paging_mode_va_bits(min_supported_paging_mode) - 2)) {
         min_supported_paging_mode = PAGING_MODE_X86_64_5LVL;
         if (min_supported_paging_mode > max_supported_paging_mode) {
             goto hhdm_fail;
         }
     }
-    if (hhdm_span_top >= ((uint64_t)1 << paging_mode_va_bits(min_supported_paging_mode)) - 2) {
+    if (hhdm_span_top >= (uint64_t)1 << (paging_mode_va_bits(min_supported_paging_mode) - 2)) {
         goto hhdm_fail;
     }
 #elif defined (__aarch64__)
     max_supported_paging_mode = PAGING_MODE_AARCH64_4LVL;
     min_supported_paging_mode = PAGING_MODE_AARCH64_4LVL;
-    if (hhdm_span_top >= ((uint64_t)1 << paging_mode_va_bits(min_supported_paging_mode)) - 2) {
+    if (hhdm_span_top >= (uint64_t)1 << (paging_mode_va_bits(min_supported_paging_mode) - 2)) {
         goto hhdm_fail;
     }
     // TODO(qookie): aarch64 also has optional 5 level paging when using 4K pages
 #elif defined (__riscv64)
     max_supported_paging_mode = vmm_max_paging_mode();
     min_supported_paging_mode = PAGING_MODE_RISCV_SV39;
-    if (hhdm_span_top >= ((uint64_t)1 << paging_mode_va_bits(min_supported_paging_mode)) - 2) {
+    if (hhdm_span_top >= (uint64_t)1 << (paging_mode_va_bits(min_supported_paging_mode) - 2)) {
         min_supported_paging_mode = PAGING_MODE_RISCV_SV48;
         if (min_supported_paging_mode > max_supported_paging_mode) {
             goto hhdm_fail;
         }
     }
-    if (hhdm_span_top >= ((uint64_t)1 << paging_mode_va_bits(min_supported_paging_mode)) - 2) {
+    if (hhdm_span_top >= (uint64_t)1 << (paging_mode_va_bits(min_supported_paging_mode) - 2)) {
         min_supported_paging_mode = PAGING_MODE_RISCV_SV57;
         if (min_supported_paging_mode > max_supported_paging_mode) {
             goto hhdm_fail;
         }
     }
-    if (hhdm_span_top >= ((uint64_t)1 << paging_mode_va_bits(min_supported_paging_mode)) - 2) {
+    if (hhdm_span_top >= (uint64_t)1 << (paging_mode_va_bits(min_supported_paging_mode) - 2)) {
         goto hhdm_fail;
     }
 #elif defined (__loongarch64)
     max_supported_paging_mode = PAGING_MODE_LOONGARCH64_4LVL;
     min_supported_paging_mode = PAGING_MODE_LOONGARCH64_4LVL;
-    if (hhdm_span_top >= ((uint64_t)1 << paging_mode_va_bits(min_supported_paging_mode)) - 2) {
+    if (hhdm_span_top >= (uint64_t)1 << (paging_mode_va_bits(min_supported_paging_mode) - 2)) {
         goto hhdm_fail;
     }
 #else

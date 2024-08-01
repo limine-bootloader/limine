@@ -62,9 +62,9 @@ static int is_child(char *buf, size_t limit,
     if (strlen(buf) < current_depth + 1)
         return NOT_CHILD;
     for (size_t j = 0; j < current_depth; j++)
-        if (buf[j] != ':')
+        if (buf[j] != '/')
             return NOT_CHILD;
-    if (buf[current_depth] == ':')
+    if (buf[current_depth] == '/')
         return INDIRECT_CHILD;
     return DIRECT_CHILD;
 }
@@ -347,7 +347,7 @@ overflow:
     size_t s;
     char *c = config_get_entry(&s, 0);
     if (c != NULL) {
-        while (*c != ':') {
+        while (*c != '/') {
             c--;
         }
         if (c > config_addr) {
@@ -365,7 +365,7 @@ static bool config_get_entry_name(char *ret, size_t index, size_t limit) {
     char *p = config_addr;
 
     for (size_t i = 0; i <= index; i++) {
-        while (*p != ':') {
+        while (*p != '/') {
             if (!*p)
                 return false;
             p++;
@@ -396,7 +396,7 @@ static char *config_get_entry(size_t *size, size_t index) {
     char *p = config_addr;
 
     for (size_t i = 0; i <= index; i++) {
-        while (*p != ':') {
+        while (*p != '/') {
             if (!*p)
                 return NULL;
             p++;
@@ -413,7 +413,7 @@ static char *config_get_entry(size_t *size, size_t index) {
     ret = p;
 
 cont:
-    while (*p != ':' && *p)
+    while (*p != '/' && *p)
         p++;
 
     if (*p && *(p - 1) != '\n') {

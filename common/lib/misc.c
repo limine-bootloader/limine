@@ -253,6 +253,8 @@ retry:
     asm volatile ("msr daifset, #15" ::: "memory");
 #elif defined (__riscv64)
     asm volatile ("csrci sstatus, 0x2" ::: "memory");
+#elif defined (__loongarch64)
+    asm volatile ("csrxchg $r0, %0, 0x0" :: "r" (0x4) : "memory");
 #else
 #error Unknown architecture
 #endif

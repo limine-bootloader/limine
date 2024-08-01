@@ -121,6 +121,41 @@ int vmm_max_paging_mode(void);
 pagemap_t new_pagemap(int paging_mode);
 void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags, enum page_size page_size);
 
+#elif defined (__loongarch64)
+
+#define paging_mode_va_bits(mode) 48
+
+static inline uint64_t paging_mode_higher_half(int paging_mode) {
+    (void)paging_mode;
+    return 0xffff000000000000;
+}
+
+// We use fake flags here because these don't properly map onto the
+// LoongArch flags.
+#define VMM_FLAG_WRITE   ((uint64_t)1 << 0)
+#define VMM_FLAG_NOEXEC  ((uint64_t)1 << 1)
+#define VMM_FLAG_FB      ((uint64_t)1 << 2)
+
+#define VMM_MAX_LEVEL 3
+
+#define PAGING_MODE_LOONGARCH64_4LVL 0
+
+#define PAGING_MODE_MIN PAGING_MODE_LOONGARCH64_4LVL
+#define PAGING_MODE_MAX PAGING_MODE_LOONGARCH64_4LVL
+
+enum page_size {
+    Size4KiB,
+    Size2MiB,
+    Size1GiB
+};
+
+typedef struct {
+    void *pgd[2];
+} pagemap_t;
+
+pagemap_t new_pagemap(int paging_mode);
+void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags, enum page_size page_size);
+
 #else
 #error Unknown architecture
 #endif

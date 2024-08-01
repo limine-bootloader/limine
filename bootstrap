@@ -76,15 +76,15 @@ if ! test -f version; then
     done
 
     download_by_hash \
-        https://github.com/osdev0/freestanding-toolchain/raw/18a5e52483344e117d45738c9afb2b34792cbced/freestanding-toolchain \
+        https://github.com/osdev0/freestanding-toolchain/raw/a8b871c2a952f7efe89bd38658f8356bc00d4d29/freestanding-toolchain \
         build-aux/freestanding-toolchain \
-        b5b66c4e94d463116e549b10e78fb96cdb97530cc165f9b5babe31a97a78e90c
+        6e167855d2ea68ebaf1e3d7450f3297bec2ab3f425e56ed11ed7c72396f6b540
     chmod +x build-aux/freestanding-toolchain
 
     clone_repo_commit \
         https://github.com/limine-bootloader/limine-efi.git \
         limine-efi \
-        d8257094947b0edefe9fa4dcb15255235e3c5193
+        f31f942b6f1390777102af28ad0aabde7695a466
 
     clone_repo_commit \
         https://github.com/jibsen/tinf.git \

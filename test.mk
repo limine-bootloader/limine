@@ -19,6 +19,10 @@ ovmf-ia32:
 	$(MKDIR_P) ovmf-ia32
 	cd ovmf-ia32 && curl -o OVMF.fd https://retrage.github.io/edk2-nightly/bin/RELEASEIa32_OVMF.fd
 
+ovmf-loongarch64:
+	$(MKDIR_P) ovmf-loongarch64
+	cd ovmf-loongarch64 && curl -o OVMF.fd https://raw.githubusercontent.com/limine-bootloader/firmware/trunk/loongarch64/QEMU_EFI.fd
+
 .PHONY: test.hdd
 test.hdd:
 	rm -f test.hdd
@@ -263,6 +267,30 @@ uefi-rv64-test:
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
 	qemu-system-riscv64 -m 512M -M virt -cpu rv64 -drive if=pflash,unit=0,format=raw,file=ovmf-rv64/OVMF.fd -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd -device virtio-blk-device,drive=hd0 -drive id=hd0,format=raw,file=test.hdd -serial stdio
+
+.PHONY: uefi-loongarch64-test
+uefi-loongarch64-test:
+	$(MAKE) ovmf-loongarch64
+	$(MAKE) test-clean
+	$(MAKE) test.hdd
+	$(MAKE) limine-uefi-loongarch64
+	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-loongarch64-toolchain.mk'
+	rm -rf test_image/
+	mkdir test_image
+	sudo losetup -Pf --show test.hdd > loopback_dev
+	sudo partprobe `cat loopback_dev`
+	sudo mkfs.fat -F 32 `cat loopback_dev`p1
+	sudo mount `cat loopback_dev`p1 test_image
+	sudo mkdir test_image/boot
+	sudo cp -rv $(BINDIR)/* test_image/boot/
+	sudo cp -rv test/* test_image/boot/
+	sudo $(MKDIR_P) test_image/EFI/BOOT
+	sudo cp $(BINDIR)/BOOTLOONGARCH64.EFI test_image/EFI/BOOT/
+	sync
+	sudo umount test_image/
+	sudo losetup -d `cat loopback_dev`
+	rm -rf test_image loopback_dev
+	qemu-system-loongarch64 -m 1G -net none -M virt -cpu la464 -device ramfb -device qemu-xhci -device usb-kbd -bios ovmf-loongarch64/OVMF.fd -hda test.hdd -serial stdio
 
 .PHONY: uefi-ia32-test
 uefi-ia32-test:

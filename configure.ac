@@ -296,6 +296,34 @@ fi
 
 AC_SUBST([BUILD_UEFI_RISCV64])
 
+BUILD_UEFI_LOONGARCH64="$BUILD_ALL"
+
+AC_ARG_ENABLE([uefi-loongarch64],
+    [AS_HELP_STRING([--enable-uefi-loongarch64], [enable building the loongarch64 UEFI port])],
+    [BUILD_UEFI_LOONGARCH64="$enableval"])
+
+if test "x$BUILD_UEFI_LOONGARCH64" = "xno"; then
+    BUILD_UEFI_LOONGARCH64=""
+else
+    mkdir -p toolchain-files
+    CC="$CC" \
+        ARCHITECTURE=loongarch64 \
+        FREESTANDING_TOOLCHAIN_SUFFIX="_FOR_TARGET" \
+        FREESTANDING_TOOLCHAIN="$TOOLCHAIN_FOR_TARGET" \
+        WANT_FREESTANDING_CC=yes \
+        FREESTANDING_CC="$CC_FOR_TARGET" \
+        WANT_FREESTANDING_LD=yes \
+        FREESTANDING_LD="$LD_FOR_TARGET" \
+        WANT_FREESTANDING_OBJCOPY=yes \
+        FREESTANDING_OBJCOPY="$OBJCOPY_FOR_TARGET" \
+        WANT_FREESTANDING_OBJDUMP=yes \
+        FREESTANDING_OBJDUMP="$OBJDUMP_FOR_TARGET" \
+        "$SRCDIR/build-aux/freestanding-toolchain" 2>"toolchain-files/uefi-loongarch64-toolchain.mk" || exit 1
+    BUILD_UEFI_LOONGARCH64="limine-uefi-loongarch64"
+fi
+
+AC_SUBST([BUILD_UEFI_LOONGARCH64])
+
 BUILD_UEFI_CD="$BUILD_ALL"
 
 AC_ARG_ENABLE([uefi-cd],

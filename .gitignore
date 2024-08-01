@@ -56,6 +56,7 @@
 /common-uefi-x86-64
 /common-uefi-aarch64
 /common-uefi-riscv64
+/common-uefi-loongarch64
 /decompressor-build
 /stage1.stamp
 

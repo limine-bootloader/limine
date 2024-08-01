@@ -95,6 +95,9 @@ noreturn void riscv_spinup(uint64_t entry, uint64_t sp, uint64_t satp, uint64_t 
 #if defined (UEFI)
 RISCV_EFI_BOOT_PROTOCOL *get_riscv_boot_protocol(void);
 #endif
+#elif defined (__loongarch64)
+noreturn void loongarch_spinup(uint64_t entry, uint64_t sp, uint64_t pgdl,
+                               uint64_t pgdh, uint64_t direct_map_offset);
 #else
 #error Unknown architecture
 #endif

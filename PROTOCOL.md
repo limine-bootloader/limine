@@ -247,6 +247,15 @@ with the default `PBMT=PMA`.
 If the `Svpbmt` extension is not available, no PMAs can be overridden (effectively,
 everything is mapped with `PBMT=PMA`).
 
+### loongarch64
+
+The kernel executable, loaded at or above `0xffffffff80000000`, sees all of its
+segments mapped using the Coherent Cached (CC) memory access type (MAT).
+
+All HHDM and identity map memory regions are mapped using the Coherent Cached (CC)
+MAT, except for the framebuffer regions, which are mapped in using the
+Weakly-ordered UnCached (WUC) MAT.
+
 ## Machine state at entry
 
 ### x86-64
@@ -367,6 +376,30 @@ If booted by EFI/UEFI, boot services are exited.
 Paging is enabled with the paging mode specified by the Paging Mode feature (see below).
 
 The (A)PLIC, if present, is in an undefined state.
+
+### loongarch64
+
+At entry the machine is executing in PLV0.
+
+`$pc` will be the entry point as defined as part of the executable file format,
+unless the Entry Point feature is requested (see below), in which case, the
+value of `$pc` is going to be taken from there.
+
+`$r1`(`$ra`) is set to 0, the kernel must not return from the entry point.
+
+`$r3`(`$sp`) is set to point to a stack, in bootloader-reclaimable memory, which is
+at least 64KiB (65536 bytes) in size, or the size specified in the Stack
+Size Request (see below).
+
+All other general purpose registers, with the exception of `$r12`(`$t0`), are set to 0.
+
+If booted by EFI/UEFI, boot services are exited.
+
+`CSR.EENTRY`, `CSR.MERRENTRY` and `CSR.DWM0-3` are in an undefined state.
+
+`PG` in `CSR.CRMD` is 1, `DA` is 0, `IE` is 0 and `PLV` is 0 but is otherwise unspecified.
+
+`CSR.TLBRENTRY` is filled with a provided TLB refill handler.
 
 ## Feature List
 
@@ -662,6 +695,17 @@ Values for `mode`, `max_mode`, and `min_mode`:
 #define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_RISCV_SV48
 #define LIMINE_PAGING_MODE_MIN LIMINE_PAGING_MODE_RISCV_SV39
 #define LIMINE_PAGING_MODE_MAX LIMINE_PAGING_MODE_RISCV_SV57
+```
+
+### loongarch64
+
+Values for `mode`, `max_mode`, and `min_mode`:
+```c
+#define LIMINE_PAGING_MODE_LOONGARCH64_4LVL 0
+
+#define LIMINE_PAGING_MODE_MAX LIMINE_PAGING_MODE_LOONGARCH64_4LVL
+#define LIMINE_PAGING_MODE_MIN LIMINE_PAGING_MODE_LOONGARCH64_4LVL
+#define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_LOONGARCH64_4LVL
 ```
 
 ### SMP (multiprocessor) Feature

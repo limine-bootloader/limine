@@ -1,0 +1,25 @@
+.section .data
+
+.align 3
+stack_at_first_entry:
+    .quad 0
+
+.section .text
+
+.global menu
+.extern _menu
+
+menu:
+    la $t0, stack_at_first_entry
+    ld.d $t1, $t0, 0
+    beqz $t1, 1f
+    move $sp, $t1
+    b 2f
+1:
+    st.d $sp, $t0, 0
+2:
+    move $fp, $r0
+    move $ra, $r0
+    b _menu
+
+.section .note.GNU-stack,"",%progbits

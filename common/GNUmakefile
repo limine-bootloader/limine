@@ -157,6 +157,21 @@ ifeq ($(TARGET),uefi-riscv64)
         -D__riscv64
 endif
 
+ifeq ($(TARGET),uefi-loongarch64)
+    override CFLAGS_FOR_TARGET += \
+        -fPIE \
+        -fshort-wchar \
+        -march=loongarch64 \
+        -mabi=lp64s
+
+    override CPPFLAGS_FOR_TARGET := \
+        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
+        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/loongarch64' \
+        $(CPPFLAGS_FOR_TARGET) \
+        -DUEFI \
+        -D__loongarch64
+endif
+
 override LDFLAGS_FOR_TARGET += \
     -nostdlib \
     -z max-page-size=0x1000 \
@@ -202,6 +217,14 @@ ifeq ($(TARGET),uefi-riscv64)
         -z text
 endif
 
+ifeq ($(TARGET),uefi-loongarch64)
+    override LDFLAGS_FOR_TARGET += \
+        -m elf64loongarch \
+        --no-relax \
+        -pie \
+        -z text
+endif
+
 override C_FILES := $(shell find . -type f -name '*.c' | LC_ALL=C sort)
 ifeq ($(TARGET),bios)
     override ASMX86_FILES := $(shell find . -type f -name '*.asm_x86' | LC_ALL=C sort)
@@ -237,6 +260,12 @@ ifeq ($(TARGET),uefi-riscv64)
 
     override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.o) $(ASM64_FILES:.asm_riscv64=.o) $(ASM64U_FILES:.asm_uefi_riscv64=.o))
 endif
+ifeq ($(TARGET),uefi-loongarch64)
+    override ASM64_FILES := $(shell find . -type f -name '*.asm_loongarch64' | LC_ALL=C sort)
+    override ASM64U_FILES := $(shell find . -type f -name '*.asm_uefi_loongarch64' | LC_ALL=C sort)
+
+    override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.o) $(ASM64_FILES:.asm_loongarch64=.o) $(ASM64U_FILES:.asm_uefi_loongarch64=.o))
+endif
 
 override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=.d))
 
@@ -252,6 +281,8 @@ else ifeq ($(TARGET),uefi-aarch64)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTAA64.EFI
 else ifeq ($(TARGET),uefi-riscv64)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTRISCV64.EFI
+else ifeq ($(TARGET),uefi-loongarch64)
+all: $(call MKESCAPE,$(BUILDDIR))/BOOTLOONGARCH64.EFI
 endif
 
 ifeq ($(TARGET),bios)
@@ -490,6 +521,52 @@ $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
 endif
 
+ifeq ($(TARGET),uefi-loongarch64)
+
+$(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
+	cd '$(call SHESCAPE,$(BUILDDIR))' && \
+		'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' '$(call SHESCAPE,$<)' full 64 '\.text'
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$(BUILDDIR))/full.map.S' -o '$(call SHESCAPE,$@)'
+	rm -f '$(call SHESCAPE,$(BUILDDIR))/full.map.S' '$(call SHESCAPE,$(BUILDDIR))/full.map.d'
+
+$(call MKESCAPE,$(BUILDDIR))/BOOTLOONGARCH64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.elf
+	$(OBJCOPY_FOR_TARGET) -O binary '$(call SHESCAPE,$<)' '$(call SHESCAPE,$@)'
+	chmod -x '$(call SHESCAPE,$@)'
+	dd if=/dev/zero of='$(call SHESCAPE,$@)' bs=4096 count=0 seek=$$(( ($$(wc -c < '$(call SHESCAPE,$@)') + 4095) / 4096 ))
+
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-loongarch64.S.o: limine-efi
+
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_loongarch64.c.o: limine-efi
+
+.PHONY: limine-efi
+limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
+		CC="$(CC_FOR_TARGET)" \
+		CFLAGS="$(BASE_CFLAGS)" \
+		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
+		ARCH=loongarch64
+
+$(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_loongarch64.ld.in
+	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
+	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_loongarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-loongarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_loongarch64.c.o $(OBJ)
+	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+	$(LD_FOR_TARGET) \
+		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
+		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
+
+$(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_loongarch64.ld.in
+	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
+	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_loongarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-loongarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_loongarch64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
+	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+	$(LD_FOR_TARGET) \
+		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
+		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
+endif
+
 ifeq ($(TARGET),uefi-ia32)
 
 $(call MKESCAPE,$(BUILDDIR))/full.map.o: $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf
@@ -552,6 +629,12 @@ $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
 endif
 
 ifeq ($(TARGET),uefi-riscv64)
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
+	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+endif
+
+ifeq ($(TARGET),uefi-loongarch64)
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
@@ -623,6 +706,16 @@ $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_riscv64
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_uefi_riscv64
+	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+endif
+
+ifeq ($(TARGET),uefi-loongarch64)
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_loongarch64
+	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
+	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
+
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.asm_uefi_loongarch64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif

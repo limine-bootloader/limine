@@ -139,7 +139,7 @@ fail:
 found_equals:
     if (i < 64) keybuf[i] = 0;
     for (i = 0; VALID_KEYS[i]; i++) {
-        if (!strcmp(keybuf, VALID_KEYS[i])) {
+        if (!strcasecmp(keybuf, VALID_KEYS[i])) {
             return TOK_KEY;
         }
     }

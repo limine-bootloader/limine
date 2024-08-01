@@ -464,7 +464,7 @@ char *config_get_value(const char *config, size_t index, const char *key) {
     size_t key_len = strlen(key);
 
     for (size_t i = 0; config[i]; i++) {
-        if (!strncmp(&config[i], key, key_len) && config[i + key_len] == ':') {
+        if (!strncasecmp(&config[i], key, key_len) && config[i + key_len] == ':') {
             if (i && config[i - 1] != SEPARATOR)
                 continue;
             if (index--)

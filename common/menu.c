@@ -128,12 +128,12 @@ static int validate_line(const char *buffer) {
     char keybuf[64];
     size_t i;
     for (i = 0; buffer[i] && i < 64; i++) {
-        if (buffer[i] == '=') goto found_equals;
+        if (buffer[i] == ':') goto found_equals;
         keybuf[i] = buffer[i];
     }
 fail:
     if (i < 64) keybuf[i] = 0;
-    if (keybuf[0] == '\n' || (!keybuf[0] && buffer[0] != '=')) return TOK_KEY; // blank line is valid
+    if (keybuf[0] == '\n' || (!keybuf[0] && buffer[0] != ':')) return TOK_KEY; // blank line is valid
     invalid_syntax = true;
     return TOK_BADKEY;
 found_equals:
@@ -296,7 +296,7 @@ refresh:
         }
 
         // switch to token type 1 if equals sign
-        if (token_type == TOK_KEY && buffer[i] == '=') token_type = TOK_EQUALS;
+        if (token_type == TOK_KEY && buffer[i] == ':') token_type = TOK_EQUALS;
 
         if (buffer[i] != 0 && line_offset % line_size == line_size - 1) {
             if (current_line <  window_offset + window_size

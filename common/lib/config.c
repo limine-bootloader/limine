@@ -464,12 +464,15 @@ char *config_get_value(const char *config, size_t index, const char *key) {
     size_t key_len = strlen(key);
 
     for (size_t i = 0; config[i]; i++) {
-        if (!strncmp(&config[i], key, key_len) && config[i + key_len] == '=') {
+        if (!strncmp(&config[i], key, key_len) && config[i + key_len] == ':') {
             if (i && config[i - 1] != SEPARATOR)
                 continue;
             if (index--)
                 continue;
             i += key_len + 1;
+            while (config[i] == ' ') {
+                i++;
+            }
             size_t value_len;
             for (value_len = 0;
                  config[i + value_len] != SEPARATOR && config[i + value_len];

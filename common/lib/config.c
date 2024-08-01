@@ -208,6 +208,8 @@ skip_loop:
     strcpy(arch_macro->value, "aarch64");
 #elif defined (__riscv64)
     strcpy(arch_macro->value, "riscv64");
+#elif defined (__loongarch64)
+    strcpy(arch_macro->value, "loongarch64");
 #else
 #error "Unspecified architecture"
 #endif

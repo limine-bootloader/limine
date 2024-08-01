@@ -78,6 +78,8 @@ noreturn void panic(bool allow_menu, const char *fmt, ...) {
             asm ("hlt");
 #elif defined (__aarch64__) || defined (__riscv64)
             asm ("wfi");
+#elif defined (__loongarch64)
+            asm ("idle 0");
 #else
 #error Unknown architecture
 #endif

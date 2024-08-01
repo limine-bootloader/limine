@@ -1,0 +1,10 @@
+.section .text
+
+.global efi_main
+.extern uefi_entry
+efi_main:
+    move $fp, $r0
+    move $ra, $r0
+    b uefi_entry
+
+.section .note.GNU-stack,"",%progbits

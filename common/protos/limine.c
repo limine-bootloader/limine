@@ -288,7 +288,9 @@ extern symbol limine_spinup_32;
                             | ((uint64_t)1 << 8)             /* TTBR0 Inner WB RW-Allocate */ \
                             | ((uint64_t)(tsz) << 0))        /* Address bits in TTBR0 */
 
-#elif !defined (__riscv64)
+#elif defined (__riscv64)
+#elif defined (__loongarch64)
+#else
 #error Unknown architecture
 #endif
 
@@ -612,6 +614,12 @@ noreturn void limine_load(char *config, char *cmdline) {
     if (hhdm_span_top >= ((uint64_t)1 << paging_mode_va_bits(min_supported_paging_mode)) - 2) {
         goto hhdm_fail;
     }
+#elif defined (__loongarch64)
+    max_supported_paging_mode = PAGING_MODE_LOONGARCH64_4LVL;
+    min_supported_paging_mode = PAGING_MODE_LOONGARCH64_4LVL;
+    if (hhdm_span_top >= ((uint64_t)1 << paging_mode_va_bits(min_supported_paging_mode)) - 2) {
+        goto hhdm_fail;
+    }
 #else
 #error Unknown architecture
 #endif
@@ -652,6 +660,10 @@ hhdm_fail:
         } else if (strcasecmp(user_max_paging_mode_s, "sv57") == 0) {
             user_max_paging_mode = PAGING_MODE_RISCV_SV57;
         }
+#elif defined (__loongarch64)
+        if (strcasecmp(user_max_paging_mode_s, "4level") == 0) {
+            user_max_paging_mode = PAGING_MODE_LOONGARCH64_4LVL;
+        }
 #endif
         else {
             panic(true, "limine: Invalid MAX_PAGING_MODE: `%s`", user_max_paging_mode_s);
@@ -687,6 +699,10 @@ hhdm_fail:
         } else if (strcasecmp(user_min_paging_mode_s, "sv57") == 0) {
             user_min_paging_mode = PAGING_MODE_RISCV_SV57;
         }
+#elif defined (__loongarch64)
+        if (strcasecmp(user_min_paging_mode_s, "4level") == 0) {
+            user_min_paging_mode = PAGING_MODE_LOONGARCH64_4LVL;
+        }
 #endif
         else {
             panic(true, "limine: Invalid MIN_PAGING_MODE: `%s`", user_min_paging_mode_s);
@@ -716,6 +732,8 @@ hhdm_fail:
     paging_mode = max_supported_paging_mode >= PAGING_MODE_RISCV_SV48 ? PAGING_MODE_RISCV_SV48 : PAGING_MODE_RISCV_SV39;
 #elif defined (__aarch64__)
     paging_mode = PAGING_MODE_AARCH64_4LVL;
+#elif defined (__loongarch64)
+    paging_mode = PAGING_MODE_LOONGARCH64_4LVL;
 #endif
 
 #if defined (__riscv64)
@@ -1327,6 +1345,9 @@ FEAT_START
                         direct_map_offset);
 #elif defined (__riscv64)
     smp_info = init_smp(&cpu_count, pagemap, direct_map_offset);
+#elif defined (__loongarch64)
+    cpu_count = 0;
+    smp_info = NULL; // TODO: LoongArch SMP
 #else
 #error Unknown architecture
 #endif
@@ -1348,6 +1369,7 @@ FEAT_START
         if (smp_info[i].hartid == bsp_hartid) {
             continue;
         }
+#elif defined (__loongarch64)
 #else
 #error Unknown architecture
 #endif
@@ -1366,6 +1388,7 @@ FEAT_START
     smp_response->bsp_mpidr = bsp_mpidr;
 #elif defined (__riscv64)
     smp_response->bsp_hartid = bsp_hartid;
+#elif defined (__loongarch64)
 #else
 #error Unknown architecture
 #endif
@@ -1498,6 +1521,11 @@ FEAT_END
     uint64_t satp = make_satp(pagemap.paging_mode, pagemap.top_level);
 
     riscv_spinup(entry_point, reported_stack, satp, direct_map_offset);
+#elif defined (__loongarch64)
+    uint64_t reported_stack = reported_addr(stack);
+
+    loongarch_spinup(entry_point, reported_stack, (uint64_t)pagemap.pgd[0], (uint64_t)pagemap.pgd[1],
+                     direct_map_offset);
 #else
 #error Unknown architecture
 #endif

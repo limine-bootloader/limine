@@ -24,6 +24,10 @@ ifneq ($(findstring riscv64,$(shell $(CC_FOR_TARGET) -dumpmachine)),)
 override LDFLAGS += \
     -m elf64lriscv
 endif
+ifneq ($(findstring loongarch64,$(shell $(CC_FOR_TARGET) -dumpmachine)),)
+override LDFLAGS += \
+    -m elf64loongarch
+endif
 
 override LDFLAGS += \
     -Tlinker.ld \
@@ -76,6 +80,14 @@ override CFLAGS += \
     -march=rv64imac \
     -mabi=lp64 \
     -mno-relax
+override LDFLAGS += \
+    --no-relax
+endif
+
+ifneq ($(findstring loongarch64,$(shell $(CC_FOR_TARGET) -dumpmachine)),)
+override CFLAGS += \
+    -march=loongarch64 \
+    -mabi=lp64s
 override LDFLAGS += \
     --no-relax
 endif

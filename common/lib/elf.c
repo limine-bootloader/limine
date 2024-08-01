@@ -42,6 +42,7 @@
 #define ARCH_X86_32  0x03
 #define ARCH_AARCH64 0xb7
 #define ARCH_RISCV   0xf3
+#define ARCH_LOONGARCH 0x102
 #define BITS_LE      0x01
 #define ELFCLASS64   0x02
 #define SHT_RELA     0x00000004
@@ -50,16 +51,20 @@
 #define R_X86_64_NONE      0x00000000
 #define R_AARCH64_NONE     0x00000000
 #define R_RISCV_NONE       0x00000000
+#define R_LARCH_NONE       0x00000000
 #define R_X86_64_RELATIVE  0x00000008
 #define R_AARCH64_RELATIVE 0x00000403
 #define R_RISCV_RELATIVE   0x00000003
+#define R_LARCH_RELATIVE   0x00000003
 #define R_X86_64_GLOB_DAT  0x00000006
 #define R_AARCH64_GLOB_DAT 0x00000401
 #define R_X86_64_JUMP_SLOT 0x00000007
 #define R_AARCH64_JUMP_SLOT 0x00000402
 #define R_RISCV_JUMP_SLOT  0x00000005
+#define R_LARCH_JUMP_SLOT  0x00000005
 #define R_X86_64_64        0x00000001
 #define R_RISCV_64         0x00000002
+#define R_LARCH_64         0x00000002
 #define R_AARCH64_ABS64    0x00000101
 
 #define R_INTERNAL_RELR    0xfffffff0
@@ -163,6 +168,10 @@ static bool elf64_validate(struct elf64_hdr *hdr) {
     if (hdr->machine != ARCH_RISCV && hdr->ident[EI_CLASS] == ELFCLASS64) {
         panic(true, "elf: Not a riscv64 ELF file.");
     }
+#elif defined (__loongarch64)
+    if (hdr->machine != ARCH_LOONGARCH && hdr->ident[EI_CLASS] == ELFCLASS64) {
+        panic(true, "elf: Not a loongarch64 ELF file.");
+    }
 #else
 #error Unknown architecture
 #endif
@@ -183,6 +192,7 @@ int elf_bits(uint8_t *elf) {
         case ARCH_AARCH64:
             return 64;
         case ARCH_RISCV:
+        case ARCH_LOONGARCH:
             return (hdr->ident[EI_CLASS] == ELFCLASS64) ? 64 : 32;
         case ARCH_X86_32:
             return 32;
@@ -465,6 +475,8 @@ end_of_pt_segment:
             case R_AARCH64_NONE:
 #elif defined (__riscv64)
             case R_RISCV_NONE:
+#elif defined (__loongarch64)
+            case R_LARCH_NONE:
 #endif
             {
                 break;
@@ -475,6 +487,8 @@ end_of_pt_segment:
             case R_AARCH64_RELATIVE:
 #elif defined (__riscv64)
             case R_RISCV_RELATIVE:
+#elif defined (__loongarch64)
+            case R_LARCH_RELATIVE:
 #endif
             {
                 *ptr = slide + relocation->r_addend;
@@ -493,6 +507,8 @@ end_of_pt_segment:
             case R_AARCH64_JUMP_SLOT:
 #elif defined (__riscv64)
             case R_RISCV_JUMP_SLOT:
+#elif defined (__loongarch64)
+            case R_LARCH_JUMP_SLOT:
 #endif
             {
                 struct elf64_sym *s = (void *)elf + symtab_offset + symtab_ent * relocation->r_symbol;
@@ -516,6 +532,8 @@ end_of_pt_segment:
             case R_AARCH64_ABS64:
 #elif defined (__riscv64)
             case R_RISCV_64:
+#elif defined (__loongarch64)
+            case R_LARCH_64:
 #endif
             {
                 struct elf64_sym *s = (void *)elf + symtab_offset + symtab_ent * relocation->r_symbol;

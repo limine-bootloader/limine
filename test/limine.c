@@ -124,11 +124,13 @@ static volatile struct limine_kernel_address_request kernel_address_request = {
     .revision = 0, .response = NULL
 };
 
+#ifndef __loongarch__
 __attribute__((section(".limine_requests")))
 static volatile struct limine_smp_request _smp_request = {
     .id = LIMINE_SMP_REQUEST,
     .revision = 0, .response = NULL
 };
+#endif
 
 __attribute__((section(".limine_requests")))
 static volatile struct limine_dtb_request _dtb_request = {
@@ -231,6 +233,8 @@ void ap_entry(struct limine_smp_info *info) {
     e9_printf("My MPIDR: %x", info->mpidr);
 #elif defined (__riscv)
     e9_printf("My Hart ID: %x", info->hartid);
+#elif defined (__loongarch__)
+    (void)info;
 #endif
 
     __atomic_fetch_add(&ctr, 1, __ATOMIC_SEQ_CST);
@@ -455,6 +459,8 @@ FEAT_START
     e9_printf("Boot time: %d", boot_time_response->boot_time);
 FEAT_END
 
+// TODO: LoongArch SMP
+#ifndef __loongarch__
 FEAT_START
     e9_printf("");
     if (_smp_request.response == NULL) {
@@ -500,6 +506,7 @@ FEAT_START
         }
     }
 FEAT_END
+#endif
 
 FEAT_START
     e9_printf("");

@@ -126,6 +126,7 @@ Editor control options:
   * `MAX_PAGING_MODE`, `MIN_PAGING_MODE` - Limit the maximum and minimum paging modes to one of the following:
     - x86-64 and aarch64: `4level`, `5level`.
     - riscv64: `sv39`, `sv48`, `sv57`.
+    - loongarch64: `4level`.
   * `PAGING_MODE` - Equivalent to setting both `MAX_PAGING_MODE` and `MIN_PAGING_MODE` to the same value.
 
 * multiboot1 and multiboot2 protocols:
@@ -194,4 +195,4 @@ Macros must always be placed inside `${...}` where `...` is the arbitrary macro 
 
 Limine automatically defines these macros:
 
-* `ARCH` - This built-in macro expands to the architecture of the machine. Possible values are: `x86-64`, `ia-32`, `aarch64`, `riscv64`. In the case of IA-32, BIOS or UEFI, the macro will always expand to `x86-64` if the 64-bit extensions are available, else `ia-32`.
+* `ARCH` - This built-in macro expands to the architecture of the machine. Possible values are: `x86-64`, `ia-32`, `aarch64`, `riscv64`, `loongarch64`. In the case of IA-32, BIOS or UEFI, the macro will always expand to `x86-64` if the 64-bit extensions are available, else `ia-32`.

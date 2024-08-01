@@ -87,18 +87,7 @@ Host utility binaries are provided for Windows.
 *The following steps are not necessary if cloning a binary release. If so, skip to*
 *"Installing Limine binaries".*
 
-### Building with Nix
-
-This repository provides [Nix](https://nixos.org/)-based tooling for a convenient
-development environment and building Limine using Nix.
-
-To use the regular build flow using a toolchain obtained by Nix, simply
-run `$ nix develop` to open a Nix shell. Then follow the guide below,
-skipping the "Prerequisites" step.
-
-### Regular build
-
-#### Prerequisites
+### Prerequisites
 
 In order to build Limine, the following programs have to be installed:
 common UNIX tools (also known as `coreutils`),
@@ -107,7 +96,7 @@ common UNIX tools (also known as `coreutils`),
 Furthermore, `gcc` or `llvm/clang` must also be installed, alongside
 the respective binutils.
 
-#### Configure
+### Configure
 
 If using a release tarball (recommended, see https://github.com/limine-bootloader/limine/releases),
 run `./configure` directly.
@@ -125,7 +114,7 @@ Limine supports both in-tree and out-of-tree builds. Simply run the `configure`
 script from the directory you wish to execute the build in. The following `make`
 commands are supposed to be run inside the build directory.
 
-#### Building Limine
+### Building Limine
 
 To build Limine, run:
 ```bash

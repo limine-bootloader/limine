@@ -1,7 +1,6 @@
 # We don't want to ignore the following files
 !.clang-format
 !.editorconfig
-!.envrc
 !.gitattributes
 !.gitignore
 !.typos.toml
@@ -72,7 +71,3 @@ compile_commands.json
 # clangd caches
 /.clangd
 /.cache/clangd
-
-# Nix
-/.direnv
-/result*

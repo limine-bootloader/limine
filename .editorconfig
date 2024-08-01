@@ -14,5 +14,5 @@ max_line_length = 80
 [{Makefile,GNUmakefile*}]
 indent_style = tab
 
-[{*.nix,*.toml,*.yml}]
+[{*.toml,*.yml}]
 indent_size = 2

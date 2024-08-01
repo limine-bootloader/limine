@@ -29,12 +29,3 @@ jobs:
 
       - name: Build the bootloader (GNU, riscv64)
         run: ./bootstrap && ./configure TOOLCHAIN_FOR_TARGET=riscv64-linux-gnu --enable-werror --enable-uefi-riscv64 && make all && make maintainer-clean
-
-  build_nix_shell:
-    name: Build with Nix shell toolchain
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: cachix/install-nix-action@V27
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-      - run: nix develop --command bash -c "./bootstrap && ./configure --enable-all && make -j $(nproc)"

@@ -803,7 +803,7 @@ FEAT_END
 
     uint64_t pa = aa64mmfr0 & 0xF;
 
-    uint64_t tsz = 64 - paging_mode_va_bits(paging_mode);
+    uint64_t tsz = 64 - (paging_mode_va_bits(paging_mode) - 1);
 #endif
 
     struct limine_file *kf = ext_mem_alloc(sizeof(struct limine_file));

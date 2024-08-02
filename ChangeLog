@@ -1,5 +1,25 @@
 2024-08-02  mintsuki  <mintsuki@protonmail.com>
 
+    *** Release 8.0.0 ***
+
+    Noteworthy changes compared to the previous release, 7.13.3:
+
+    New features:
+        - Add loongarch64 support.
+
+    Bug fixes:
+        - Limine boot protocol: Ensure higher half direct map size does not
+          exceed MAXPHYADDR on x86.
+
+    Miscellaneous:
+        - Extensive changes to the config syntax. (See CONFIG.md).
+        - Rename term_wallpaper, term_wallpaper_style, and term_backdrop config
+          options to remove the term_ prefix.
+        - Removed support for GZ-compressed files (and internal Limine
+          protocol modules).
+
+2024-08-02  mintsuki  <mintsuki@protonmail.com>
+
     *** Release 7.13.3 ***
 
     Noteworthy changes compared to the previous release, 7.13.2:

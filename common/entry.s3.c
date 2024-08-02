@@ -101,6 +101,14 @@ could_not_match:
 
                 bool old_cif = case_insensitive_fopen;
                 case_insensitive_fopen = true;
+                if ((f = fopen(volume_index[i], "/limine.conf")) != NULL
+                 || (f = fopen(volume_index[i], "/limine/limine.conf")) != NULL
+                 || (f = fopen(volume_index[i], "/boot/limine.conf")) != NULL
+                 || (f = fopen(volume_index[i], "/boot/limine/limine.conf")) != NULL
+                 || (f = fopen(volume_index[i], "/EFI/BOOT/limine.conf")) != NULL) {
+                    goto opened;
+                }
+
                 if ((f = fopen(volume_index[i], "/limine.cfg")) == NULL
                  && (f = fopen(volume_index[i], "/limine/limine.cfg")) == NULL
                  && (f = fopen(volume_index[i], "/boot/limine.cfg")) == NULL
@@ -109,6 +117,8 @@ could_not_match:
                     case_insensitive_fopen = old_cif;
                     continue;
                 }
+
+opened:
                 case_insensitive_fopen = old_cif;
 
                 fclose(f);

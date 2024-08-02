@@ -4,6 +4,7 @@
 #include <lib/misc.h>
 #include <lib/part.h>
 #include <lib/libc.h>
+#include <lib/config.h>
 #include <fs/file.h>
 #include <mm/pmm.h>
 #include <lib/print.h>
@@ -24,26 +25,26 @@ bool uri_resolve(char *uri, char **resource, char **root, char **path, char **ha
 
     // Get resource
     for (size_t i = 0; ; i++) {
-        if (strlen(uri + i) < 1)
+        if (strlen(uri + i) < (config_format_old ? 3 : 1))
             return false;
 
-        if (!memcmp(uri + i, "(", 1)) {
+        if (!memcmp(uri + i, (config_format_old ? "://" : "("), (config_format_old ? 3 : 1))) {
             *resource = uri;
             uri[i] = 0;
-            uri += i + 1;
+            uri += i + (config_format_old ? 3 : 1);
             break;
         }
     }
 
     // Get root
     for (size_t i = 0; ; i++) {
-        if (strlen(uri + i) < 3)
+        if (strlen(uri + i) < (config_format_old ? 1 : 3))
             return false;
 
-        if (!memcmp(uri + i, "):/", 3)) {
+        if (!memcmp(uri + i, (config_format_old ? "/" : "):/"), (config_format_old ? 1 : 3))) {
             *root = uri;
             uri[i] = 0;
-            uri += i + 3;
+            uri += i + (config_format_old ? 1 : 3);
             break;
         }
     }

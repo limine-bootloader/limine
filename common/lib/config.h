@@ -23,6 +23,7 @@ struct conf_tuple {
     char *value2;
 };
 
+extern bool config_format_old;
 extern struct menu_entry *menu_tree;
 
 int init_config_disk(struct volume *part);

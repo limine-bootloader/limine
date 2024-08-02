@@ -128,18 +128,18 @@ static int validate_line(const char *buffer) {
     char keybuf[64];
     size_t i;
     for (i = 0; buffer[i] && i < 64; i++) {
-        if (buffer[i] == ':') goto found_equals;
+        if (buffer[i] == (config_format_old ? '=' : ':')) goto found_equals;
         keybuf[i] = buffer[i];
     }
 fail:
     if (i < 64) keybuf[i] = 0;
-    if (keybuf[0] == '\n' || (!keybuf[0] && buffer[0] != ':')) return TOK_KEY; // blank line is valid
+    if (keybuf[0] == '\n' || (!keybuf[0] && buffer[0] != (config_format_old ? '=' : ':'))) return TOK_KEY; // blank line is valid
     invalid_syntax = true;
     return TOK_BADKEY;
 found_equals:
     if (i < 64) keybuf[i] = 0;
     for (i = 0; VALID_KEYS[i]; i++) {
-        if (!strcasecmp(keybuf, VALID_KEYS[i])) {
+        if (!(config_format_old ? strcmp : strcasecmp)(keybuf, VALID_KEYS[i])) {
             return TOK_KEY;
         }
     }
@@ -296,7 +296,7 @@ refresh:
         }
 
         // switch to token type 1 if equals sign
-        if (token_type == TOK_KEY && buffer[i] == ':') token_type = TOK_EQUALS;
+        if (token_type == TOK_KEY && buffer[i] == (config_format_old ? '=' : ':')) token_type = TOK_EQUALS;
 
         if (buffer[i] != 0 && line_offset % line_size == line_size - 1) {
             if (current_line <  window_offset + window_size
@@ -868,6 +868,18 @@ noreturn void _menu(bool first_run) {
     menu_init_term();
 
     size_t tree_offset = 0;
+
+    if (config_format_old) {
+        print("The format of the config file has changed in Limine version 8.x.\n");
+        print("\n");
+        print("If the config file is named limine.cfg, Limine will still support the old\n");
+        print("configuration format for the time being, but this warning and associated 20\n");
+        print("second timeout will persist.\n");
+        print("\n");
+        print("To get rid of this warning, please update the config to the new format and\n");
+        print("rename it to limine.conf instead.\n");
+        pit_sleep_and_quit_on_keypress(20);
+    }
 
 refresh:
     if (selected_entry >= tree_offset + terms[0]->rows - 8) {

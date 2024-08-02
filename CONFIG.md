@@ -65,6 +65,9 @@ Miscellaneous:
 * `default_entry` - 1-based entry index of the entry which will be automatically selected at startup. If unspecified, it is `1`.
 * `remember_last_entry` - If set to `yes`, remember last booted entry. (UEFI only)
 * `graphics` - If set to `no`, force CGA text mode for the boot menu, else use a video mode. Ignored with Limine UEFI.
+* `wallpaper` - Path where to find the file to use as wallpaper. BMP, PNG, and JPEG formats are supported.
+* `wallpaper_style` - The style which will be used to display the wallpaper image: `tiled`, `centered`, or `stretched`. Default is `stretched`.
+* `backdrop` - When the background style is `centered`, this specifies the colour of the backdrop for parts of the screen not covered by the background image, in RRGGBB format.
 * `verbose` - If set to `yes`, print additional information during boot. Defaults to not verbose.
 * `randomise_memory` - If set to `yes`, randomise the contents of RAM at bootup in order to find bugs related to non zeroed memory or for security reasons. This option will slow down boot time significantly. For the BIOS port of Limine, this will only randomise memory below 4GiB.
 * `randomize_memory` - Alias of `randomise_memory`.
@@ -94,9 +97,6 @@ These are ignored if using text mode.
 * `term_foreground_bright` - Terminal text foreground bright colour (RRGGBB).
 * `term_margin` - Set the amount of margin around the terminal.
 * `term_margin_gradient` - Set the thickness in pixel for the gradient around the terminal.
-* `term_wallpaper` - Path where to find the file to use as wallpaper. BMP, PNG, and JPEG formats are supported.
-* `term_wallpaper_style` - The style which will be used to display the wallpaper image: `tiled`, `centered`, or `stretched`. Default is `stretched`.
-* `term_backdrop` - When the background style is `centered`, this specifies the colour of the backdrop for parts of the screen not covered by the background image, in RRGGBB format.
 
 Editor control options:
 

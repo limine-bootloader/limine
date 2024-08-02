@@ -588,7 +588,7 @@ bool gterm_init(struct fb_info **_fbs, size_t *_fbs_count,
     }
 
     background = NULL;
-    char *background_path = config_get_value(config, 0, "TERM_WALLPAPER");
+    char *background_path = config_get_value(config, 0, "WALLPAPER");
     if (background_path != NULL) {
         struct file_handle *bg_file;
         if ((bg_file = uri_open(background_path)) != NULL) {
@@ -690,9 +690,9 @@ no_load_font:;
         }
 
         if (background != NULL) {
-            char *background_layout = config_get_value(config, 0, "TERM_WALLPAPER_STYLE");
+            char *background_layout = config_get_value(config, 0, "WALLPAPER_STYLE");
             if (background_layout != NULL && strcmp(background_layout, "centered") == 0) {
-                char *background_colour = config_get_value(config, 0, "TERM_BACKDROP");
+                char *background_colour = config_get_value(config, 0, "BACKDROP");
                 if (background_colour == NULL)
                     background_colour = "0";
                 uint32_t bg_col = strtoui(background_colour, NULL, 16);

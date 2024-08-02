@@ -6,7 +6,7 @@ the `/EFI/BOOT` directory of a FAT formatted EFI system partition. These files c
 be installed there and coexist with a BIOS installation of Limine (see below) so
 that the disk will be bootable on both BIOS and UEFI systems.
 
-The boot device must contain the `limine.cfg` files in
+The boot device must contain the `limine.conf` files in
 either the root, `limine`, `boot`, or `boot/limine` directory of one of the
 partitions, formatted with a supported file system (the ESP partition is recommended).
 
@@ -25,7 +25,7 @@ run `limine bios-install` as such:
 limine bios-install <path to device/image>
 ```
 
-The boot device must contain the `limine-bios.sys` and `limine.cfg` files in
+The boot device must contain the `limine-bios.sys` and `limine.conf` files in
 either the root, `limine`, `boot`, or `boot/limine` directory of one of the
 partitions, formatted with a supported file system.
 
@@ -47,15 +47,15 @@ In case one wants to let `limine bios-install` embed stage 2 within GPT's struct
 simply omit the partition number, and invoke `limine bios-install` the same as one
 would do for an MBR partitioned device.
 
-The boot device must contain the `limine-bios.sys` and `limine.cfg` files in
+The boot device must contain the `limine-bios.sys` and `limine.conf` files in
 either the root, `limine`, `boot`, or `boot/limine` directory of one of the
 partitions, formatted with a supported file system.
 
 ### BIOS/UEFI hybrid ISO creation
 In order to create a hybrid ISO with Limine, place the
-`limine-uefi-cd.bin`, `limine-bios-cd.bin`, `limine-bios.sys`, and `limine.cfg` files
+`limine-uefi-cd.bin`, `limine-bios-cd.bin`, `limine-bios.sys`, and `limine.conf` files
 into a directory which will serve as the root of the created ISO.
-(`limine-bios.sys` and `limine.cfg` must either be in the root, `limine`, `boot`, or
+(`limine-bios.sys` and `limine.conf` must either be in the root, `limine`, `boot`, or
 `boot/limine` directory; `limine-uefi-cd.bin` and `limine-bios-cd.bin` can reside
 anywhere).
 
@@ -96,7 +96,7 @@ In order to boot Limine from PXE it is necessary to setup a DHCP server with
 support for PXE booting. This can either be accomplished using a single DHCP
 server or your existing DHCP server and a proxy DHCP server such as dnsmasq.
 
-`limine.cfg` and `limine-bios.sys` are expected to be on the server used for boot.
+`limine.conf` and `limine-bios.sys` are expected to be on the server used for boot.
 
 ### UEFI/PXE boot
 The `BOOT*.EFI` files are compatible with UEFI PXE.
@@ -104,6 +104,6 @@ The steps needed to boot Limine are the same as with BIOS PXE,
 except that the `limine-bios.sys` file is not needed on the server.
 
 ### Configuration
-The `limine.cfg` file contains Limine's configuration.
+The `limine.conf` file contains Limine's configuration.
 
-More info on the format of `limine.cfg` can be found in [`CONFIG.md`](CONFIG.md).
+More info on the format of `limine.conf` can be found in [`CONFIG.md`](CONFIG.md).

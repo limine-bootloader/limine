@@ -562,6 +562,19 @@ noreturn void limine_load(char *config, char *cmdline) {
 
     uint64_t hhdm_span_top = get_hhdm_span_top(base_revision);
 
+#if defined (__x86_64__) || defined (__i386__)
+    uint64_t maxphyaddr;
+    if (!cpuid(0x80000008, 0, &eax, &ebx, &ecx, &edx)) {
+        maxphyaddr = 36;
+    } else {
+        maxphyaddr = eax & 0xff;
+    }
+
+    if (hhdm_span_top >= (uint64_t)1 << maxphyaddr) {
+        panic(true, "limine: Top of HHDM exceeds maximum allowable MAXPHYADDR value");
+    }
+#endif
+
     printv("limine: Physical base:   %X\n", physical_base);
     printv("limine: Virtual base:    %X\n", virtual_base);
     printv("limine: Slide:           %X\n", slide);

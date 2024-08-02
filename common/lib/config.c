@@ -108,7 +108,12 @@ static struct menu_entry *create_menu_tree(struct menu_entry *parent,
 
         bool default_expanded = name[current_depth] == '+';
 
-        strcpy(entry->name, name + current_depth + default_expanded);
+        char *n = &name[current_depth + default_expanded];
+        while (*n == ' ') {
+            n++;
+        }
+
+        strcpy(entry->name, n);
         entry->parent = parent;
 
         size_t entry_size;

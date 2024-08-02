@@ -12,7 +12,7 @@
 #include <lib/getchar.h>
 #include <crypt/blake2b.h>
 
-// A URI takes the form of: resource://root/path#hash
+// A URI takes the form of: resource(root):/path#hash
 // The following function splits up a URI into its components
 bool uri_resolve(char *uri, char **resource, char **root, char **path, char **hash) {
     size_t length = strlen(uri) + 1;
@@ -24,26 +24,26 @@ bool uri_resolve(char *uri, char **resource, char **root, char **path, char **ha
 
     // Get resource
     for (size_t i = 0; ; i++) {
-        if (strlen(uri + i) < 3)
+        if (strlen(uri + i) < 1)
             return false;
 
-        if (!memcmp(uri + i, "://", 3)) {
+        if (!memcmp(uri + i, "(", 1)) {
             *resource = uri;
             uri[i] = 0;
-            uri += i + 3;
+            uri += i + 1;
             break;
         }
     }
 
     // Get root
     for (size_t i = 0; ; i++) {
-        if (uri[i] == 0)
+        if (strlen(uri + i) < 3)
             return false;
 
-        if (uri[i] == '/') {
+        if (!memcmp(uri + i, "):/", 3)) {
             *root = uri;
             uri[i] = 0;
-            uri += i + 1;
+            uri += i + 3;
             break;
         }
     }
@@ -86,7 +86,7 @@ static bool parse_bios_partition(char *loc, int *drive, int *partition) {
         if (loc[i] == ':') {
             loc[i] = 0;
             if (*loc == 0) {
-                panic(true, "Drive number cannot be omitted for hdd:// and odd://");
+                panic(true, "Drive number cannot be omitted for hdd():/ and odd():/");
             } else {
                 val = strtoui(loc, NULL, 10);
                 if (val < 1 || val > 256) {
@@ -217,9 +217,7 @@ struct file_handle *uri_open(char *uri) {
         panic(true, "No resource specified for URI `%#`.", uri);
     }
 
-    if (!strcmp(resource, "bios")) {
-        panic(true, "bios:// resource is no longer supported. Check CONFIG.md for hdd:// and odd://");
-    } else if (!strcmp(resource, "hdd")) {
+    if (!strcmp(resource, "hdd")) {
         ret = uri_hdd_dispatch(root, path);
     } else if (!strcmp(resource, "odd")) {
         ret = uri_odd_dispatch(root, path);

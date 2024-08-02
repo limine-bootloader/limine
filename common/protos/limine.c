@@ -1079,10 +1079,12 @@ FEAT_START
             }
             strcpy(module_path_abs_p, k_resource);
             module_path_abs_p += strlen(k_resource);
-            strcpy(module_path_abs_p, "://");
-            module_path_abs_p += 3;
+            strcpy(module_path_abs_p, "(");
+            module_path_abs_p += 1;
             strcpy(module_path_abs_p, k_root);
             module_path_abs_p += strlen(k_root);
+            strcpy(module_path_abs_p, "):");
+            module_path_abs_p += 2;
             get_absolute_path(module_path_abs_p, module_path, k_path);
 
             module_path = module_path_abs;

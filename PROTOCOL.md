@@ -1027,7 +1027,7 @@ the kernel.
 * `cmdline` - Command line for the given module.
 * `flags` - Flags changing module loading behaviour:
   - `LIMINE_INTERNAL_MODULE_REQUIRED`: Fail if the requested module is not found.
-  - `LIMINE_INTERNAL_MODULE_COMPRESSED`: The module is GZ-compressed and should be decompressed by the bootloader. This is honoured if the response is revision 2 or greater.
+  - `LIMINE_INTERNAL_MODULE_COMPRESSED`: Deprecated. Bootloader may not support it and panic instead (from Limine 8.x onwards). Alternatively: the module is GZ-compressed and should be decompressed by the bootloader. This is honoured if the response is revision 2 or greater.
 
 Internal Limine modules are guaranteed to be loaded *before* user-specified
 (configuration) modules, and thus they are guaranteed to appear before user-specified

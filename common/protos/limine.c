@@ -1074,8 +1074,7 @@ FEAT_START
             char *module_path_abs = ext_mem_alloc(1024);
             char *module_path_abs_p = module_path_abs;
             if (internal_module->flags & LIMINE_INTERNAL_MODULE_COMPRESSED) {
-                strcpy(module_path_abs_p, "$");
-                module_path_abs_p += 1;
+                panic(true, "limine: Compressed internal modules no longer supported");
             }
             strcpy(module_path_abs_p, k_resource);
             module_path_abs_p += strlen(k_resource);

@@ -1,4 +1,4 @@
-OUTPUT_FORMAT("elf64-loongarch", "elf64-loongarch", "elf64-loongarch")
+OUTPUT_FORMAT(elf64-loongarch)
 OUTPUT_ARCH(loongarch)
 ENTRY(_start)
 
@@ -51,8 +51,6 @@ SECTIONS
     .data : {
    data_begin = .;
         *(.data .data.*)
-        *(.sdata .sdata.*)
-        *(.sbss .sbss.*)
         *(.bss .bss.*)
         *(COMMON)
    data_end = .;

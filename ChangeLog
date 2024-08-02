@@ -1,3 +1,18 @@
+2024-08-02  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 7.13.3 ***
+
+    Noteworthy changes compared to the previous release, 7.13.2:
+
+    Bug fixes:
+        - Limine boot protocol: Fix broken comparison that could cause an HHDM
+          too large to not be properly detected.
+        - Limine boot protocol: aarch64: Fix incorrect macro value that would
+          cause the size of the higher half to be incorrectly detected as half.
+
+    Miscellaneous:
+        - Remove Nix flake stuff from repository/tarball.
+
 2024-07-30  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 7.13.2 ***

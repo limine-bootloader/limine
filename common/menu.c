@@ -855,7 +855,6 @@ noreturn void _menu(bool first_run) {
 
     if (first_run && config_format_old) {
         quiet = false;
-        menu_init_term();
         print("The format of the config file has changed in Limine version 8.x.\n");
         print("\n");
         print("If the config file is named limine.cfg, Limine will still support the old\n");
@@ -875,7 +874,6 @@ noreturn void _menu(bool first_run) {
         print_tree(0, 0, NULL, 0, 0, selected_entry, menu_tree, &selected_menu_entry, NULL, NULL);
         if (selected_menu_entry == NULL || selected_menu_entry->sub != NULL) {
             quiet = false;
-            menu_init_term();
             print("Default entry is not valid or directory, booting to menu.\n");
             skip_timeout = true;
         } else {
@@ -883,9 +881,9 @@ noreturn void _menu(bool first_run) {
         }
     }
 
-    size_t tree_offset = 0;
-
     menu_init_term();
+
+    size_t tree_offset = 0;
 
 refresh:
     if (selected_entry >= tree_offset + terms[0]->rows - 8) {
@@ -1154,7 +1152,6 @@ noreturn void boot(char *config) {
     } else if (!strcmp(proto, "linux")) {
 #if defined (__loongarch64)
         quiet = false;
-        menu_init_term();
         print("TODO: Linux is not available on LoongArch64.\n\n");
 #else
         linux_load(config, cmdline);
@@ -1164,7 +1161,6 @@ noreturn void boot(char *config) {
         multiboot1_load(config, cmdline);
 #else
         quiet = false;
-        menu_init_term();
         print("Multiboot 1 is not available on non-x86 architectures.\n\n");
 #endif
     } else if (!strcmp(proto, "multiboot2")) {
@@ -1172,7 +1168,6 @@ noreturn void boot(char *config) {
         multiboot2_load(config, cmdline);
 #else
         quiet = false;
-        menu_init_term();
         print("Multiboot 2 is not available on non-x86 architectures.\n\n");
 #endif
     } else if (!strcmp(proto, "chainload_next")) {

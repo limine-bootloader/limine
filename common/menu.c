@@ -864,6 +864,8 @@ noreturn void _menu(bool first_run) {
         print("\n");
         print("To get rid of this warning, please update the config to the new format and\n");
         print("rename it to limine.conf instead.\n");
+        print("\n");
+        print("[press a key to dismiss this warning]\n");
         pit_sleep_and_quit_on_keypress(20);
     }
 

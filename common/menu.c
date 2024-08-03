@@ -852,6 +852,20 @@ noreturn void _menu(bool first_run) {
         skip_timeout = true;
     }
 
+    if (first_run && config_format_old) {
+        quiet = false;
+        menu_init_term();
+        print("The format of the config file has changed in Limine version 8.x.\n");
+        print("\n");
+        print("If the config file is named limine.cfg, Limine will still support the old\n");
+        print("configuration format for the time being, but this warning and associated 20\n");
+        print("second timeout will persist.\n");
+        print("\n");
+        print("To get rid of this warning, please update the config to the new format and\n");
+        print("rename it to limine.conf instead.\n");
+        pit_sleep_and_quit_on_keypress(20);
+    }
+
     if (!skip_timeout && !timeout) {
         // Use print tree to load up selected_menu_entry and determine if the
         // default entry is valid.
@@ -867,20 +881,6 @@ noreturn void _menu(bool first_run) {
     }
 
     size_t tree_offset = 0;
-
-    if (config_format_old) {
-        quiet = false;
-        menu_init_term();
-        print("The format of the config file has changed in Limine version 8.x.\n");
-        print("\n");
-        print("If the config file is named limine.cfg, Limine will still support the old\n");
-        print("configuration format for the time being, but this warning and associated 20\n");
-        print("second timeout will persist.\n");
-        print("\n");
-        print("To get rid of this warning, please update the config to the new format and\n");
-        print("rename it to limine.conf instead.\n");
-        pit_sleep_and_quit_on_keypress(20);
-    }
 
     menu_init_term();
 

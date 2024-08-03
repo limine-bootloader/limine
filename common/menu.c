@@ -849,6 +849,7 @@ noreturn void _menu(bool first_run) {
 #endif
 
     if (!first_run) {
+        quiet = false;
         skip_timeout = true;
     }
 

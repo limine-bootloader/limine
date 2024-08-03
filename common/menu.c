@@ -835,6 +835,13 @@ noreturn void _menu(bool first_run) {
     }
 #endif
 
+    // Use print tree to load up selected_menu_entry and determine if the
+    // default entry is valid.
+    size_t max_entries = print_tree(0, 0, NULL, 0, 0, selected_entry, menu_tree, &selected_menu_entry, NULL, NULL);
+    if (selected_entry >= max_entries) {
+        selected_entry = 0;
+    }
+
     size_t timeout = 5;
     char *timeout_config = config_get_value(NULL, 0, "TIMEOUT");
     if (timeout_config != NULL) {
@@ -869,10 +876,7 @@ noreturn void _menu(bool first_run) {
     }
 
     if (!skip_timeout && !timeout) {
-        // Use print tree to load up selected_menu_entry and determine if the
-        // default entry is valid.
-        print_tree(0, 0, NULL, 0, 0, selected_entry, menu_tree, &selected_menu_entry, NULL, NULL);
-        if (selected_menu_entry == NULL || selected_menu_entry->sub != NULL) {
+        if (max_entries == 0 || selected_menu_entry->sub != NULL) {
             quiet = false;
             print("Default entry is not valid or directory, booting to menu.\n");
             skip_timeout = true;
@@ -907,7 +911,7 @@ refresh:
         print("\n\n\n\n");
     }
 
-    if (menu_tree == NULL) {
+    if (max_entries == 0) {
         if (quiet) {
             quiet = false;
             menu_init_term();
@@ -923,41 +927,45 @@ refresh:
     }
 
     size_t max_tree_len, max_tree_height;
-    print_tree(tree_offset, terms[0]->rows - 8, NULL, 0, 0, selected_entry, menu_tree,
-               &selected_menu_entry, &max_tree_len, &max_tree_height);
+    max_entries = print_tree(tree_offset, terms[0]->rows - 8, NULL, 0, 0, selected_entry, menu_tree,
+                             &selected_menu_entry, &max_tree_len, &max_tree_height);
 
-    size_t tree_prefix_len = (terms[0]->cols / 2 - DIV_ROUNDUP(max_tree_len, 2)) - 2;
-    char *tree_prefix = ext_mem_alloc(tree_prefix_len + 1);
-    memset(tree_prefix, ' ', tree_prefix_len);
+    if (max_entries != 0) {
+        size_t tree_prefix_len = (terms[0]->cols / 2 - DIV_ROUNDUP(max_tree_len, 2)) - 2;
+        char *tree_prefix = ext_mem_alloc(tree_prefix_len + 1);
+        memset(tree_prefix, ' ', tree_prefix_len);
 
-    if (max_tree_height > terms[0]->rows - 10) {
-        max_tree_height = terms[0]->rows - 10;
+        if (max_tree_height > terms[0]->rows - 10) {
+            max_tree_height = terms[0]->rows - 10;
+        }
+
+        set_cursor_pos_helper(0, terms[0]->rows / 2 - max_tree_height / 2);
+
+        max_entries = print_tree(tree_offset, terms[0]->rows - 8, tree_prefix, 0, 0, selected_entry, menu_tree,
+                                 &selected_menu_entry, NULL, NULL);
+
+        pmm_free(tree_prefix, tree_prefix_len);
     }
-
-    set_cursor_pos_helper(0, terms[0]->rows / 2 - max_tree_height / 2);
-
-    size_t max_entries = print_tree(tree_offset, terms[0]->rows - 8, tree_prefix, 0, 0, selected_entry, menu_tree,
-                                    &selected_menu_entry, NULL, NULL);
-
-    pmm_free(tree_prefix, tree_prefix_len);
 
     {
         size_t x, y;
         terms[0]->get_cursor_pos(terms[0], &x, &y);
 
-        if (tree_offset > 0) {
-            set_cursor_pos_helper(terms[0]->cols / 2 - 1, 4);
-            print(serial ? "^^^" : "↑↑↑");
-        }
+        if (max_entries != 0) {
+            if (tree_offset > 0) {
+                set_cursor_pos_helper(terms[0]->cols / 2 - 1, 4);
+                print(serial ? "^^^" : "↑↑↑");
+            }
 
-        if (tree_offset + (terms[0]->rows - 8) < max_entries) {
-            set_cursor_pos_helper(terms[0]->cols / 2 - 1, terms[0]->rows - 3);
-            print(serial ? "vvv" : "↓↓↓");
+            if (tree_offset + (terms[0]->rows - 8) < max_entries) {
+                set_cursor_pos_helper(terms[0]->cols / 2 - 1, terms[0]->rows - 3);
+                print(serial ? "vvv" : "↓↓↓");
+            }
         }
 
         if (!help_hidden) {
             set_cursor_pos_helper(0, 3);
-            if (selected_menu_entry != NULL) {
+            if (max_entries != 0) {
                 if (selected_menu_entry->sub == NULL) {
                     print("    \e[32mARROWS\e[0m Select    \e[32mENTER\e[0m Boot    %s",
                           editor_enabled ? "\e[32mE\e[0m Edit" : "");
@@ -980,7 +988,7 @@ refresh:
         set_cursor_pos_helper(x, y);
     }
 
-    if (selected_menu_entry == NULL || selected_menu_entry->sub != NULL)
+    if (max_entries == 0 || selected_menu_entry->sub != NULL)
         skip_timeout = true;
 
     int c;
@@ -1009,7 +1017,7 @@ refresh:
     }
 
     set_cursor_pos_helper(0, terms[0]->rows - 1);
-    if (selected_menu_entry != NULL && selected_menu_entry->comment != NULL) {
+    if (max_entries != 0 && selected_menu_entry->comment != NULL) {
         FOR_TERM(TERM->scroll_enabled = false);
         print("\e[36m%s\e[0m", selected_menu_entry->comment);
         FOR_TERM(TERM->scroll_enabled = true);
@@ -1027,6 +1035,15 @@ refresh:
     for (;;) {
         c = getchar();
 timeout_aborted:
+        if (max_entries == 0) {
+            switch (c) {
+                case 'b': case 'B': case 's': case 'S':
+                    break;
+                default:
+                    continue;
+
+            }
+        }
         switch (c) {
             case '1': case '2': case '3': case '4': case '5':
             case '6': case '7': case '8': case '9': {
@@ -1059,7 +1076,7 @@ timeout_aborted:
             case '\n':
             case ' ':
             autoboot:
-                if (selected_menu_entry == NULL) {
+                if (max_entries == 0) {
                     break;
                 }
                 if (selected_menu_entry->sub != NULL) {
@@ -1093,7 +1110,7 @@ timeout_aborted:
             case 'E': {
                 if (editor_enabled) {
                     editor:
-                    if (selected_menu_entry == NULL || selected_menu_entry->sub != NULL) {
+                    if (max_entries == 0 || selected_menu_entry->sub != NULL) {
                         break;
                     }
                     editor_no_term_reset = true;

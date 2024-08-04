@@ -84,7 +84,7 @@ if ! test -f version; then
     clone_repo_commit \
         https://github.com/limine-bootloader/limine-efi.git \
         limine-efi \
-        f31f942b6f1390777102af28ad0aabde7695a466
+        73f0c38b4ad07608ece0766a1c8d6886a83ded64
 
     clone_repo_commit \
         https://github.com/jibsen/tinf.git \

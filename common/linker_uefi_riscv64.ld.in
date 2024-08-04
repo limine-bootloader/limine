@@ -1,5 +1,4 @@
 OUTPUT_FORMAT(elf64-littleriscv)
-OUTPUT_ARCH(riscv:rv64)
 ENTRY(_start)
 
 PHDRS

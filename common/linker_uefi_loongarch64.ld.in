@@ -1,5 +1,4 @@
 OUTPUT_FORMAT(elf64-loongarch)
-OUTPUT_ARCH(loongarch)
 ENTRY(_start)
 
 PHDRS

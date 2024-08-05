@@ -1,3 +1,16 @@
+2024-08-05  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 8.0.1 ***
+
+    Noteworthy changes compared to the previous release, 8.0.0:
+
+    Bug fixes:
+        - Assortment of menu fixes to issues that could cause things not to
+          render as they should.
+
+    Miscellaneous:
+        - Documentation fixes for 8.x.
+
 2024-08-02  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 8.0.0 ***

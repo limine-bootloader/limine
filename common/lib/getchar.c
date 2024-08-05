@@ -78,6 +78,8 @@ int getchar_internal(uint8_t scancode, uint8_t ascii, uint32_t shift_state) {
             return '\n';
         case '\b':
             return '\b';
+        case '\t':
+            return '\t';
     }
 
     if (shift_state & (GETCHAR_LCTRL | GETCHAR_RCTRL)) {

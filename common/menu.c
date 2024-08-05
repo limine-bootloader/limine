@@ -488,7 +488,7 @@ refresh:
             return NULL;
         default:
             if (buffer_len < EDITOR_MAX_BUFFER_SIZE - 1) {
-                if (isprint(c) || c == '\n') {
+                if (isprint(c) || c == '\n' || c == '\t') {
                     for (size_t i = buffer_len; ; i--) {
                         buffer[i+1] = buffer[i];
                         if (i == cursor_offset)

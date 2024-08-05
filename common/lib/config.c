@@ -490,7 +490,7 @@ char *config_get_value(const char *config, size_t index, const char *key) {
                 continue;
             i += key_len + 1;
             if (!config_format_old) {
-                while (config[i] == ' ') {
+                while (config[i] == ' ' || config[i] == '\t') {
                     i++;
                 }
             }

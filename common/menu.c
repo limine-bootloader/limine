@@ -265,7 +265,18 @@ refresh:
     bool printed_cursor = false;
     bool printed_early = false;
     int token_type = validate_line(buffer);
+    size_t tab_space_count = 0;
     for (size_t i = 0; ; i++) {
+        // tab
+        if (buffer[i] == '\t') {
+            size_t x, y;
+            terms[0]->get_cursor_pos(terms[0], &x, &y);
+
+            tab_space_count = 8 - ((x - 1) % 8);
+
+            goto tab_part;
+        }
+
         // newline
         if (buffer[i] == '\n'
          && current_line <  window_offset + window_size
@@ -298,6 +309,7 @@ refresh:
         // switch to token type 1 if equals sign
         if (token_type == TOK_KEY && buffer[i] == (config_format_old ? '=' : ':')) token_type = TOK_EQUALS;
 
+tab_part:
         if (buffer[i] != 0 && line_offset % line_size == line_size - 1) {
             if (current_line <  window_offset + window_size
              && current_line >= window_offset) {
@@ -306,9 +318,9 @@ refresh:
                     printed_cursor = true;
                 }
                 if (syntax_highlighting_enabled) {
-                    putchar_tokencol(token_type, buffer[i]);
+                    putchar_tokencol(token_type, tab_space_count ? ' ' : buffer[i]);
                 } else {
-                    print("%c", buffer[i]);
+                    print("%c", tab_space_count ? ' ' : buffer[i]);
                 }
                 printed_early = true;
                 size_t x, y;
@@ -321,6 +333,9 @@ refresh:
                     print(serial ? ">" : "→");
                     set_cursor_pos_helper(0, y + 1);
                     print(serial ? "<" : "←");
+                }
+                if (tab_space_count != 0) {
+                    tab_space_count--;
                 }
             }
             window_size--;
@@ -361,9 +376,9 @@ refresh:
             // syntax highlighting
             if (!printed_early) {
                 if (syntax_highlighting_enabled) {
-                    putchar_tokencol(token_type, buffer[i]);
+                    putchar_tokencol(token_type, tab_space_count ? ' ' : buffer[i]);
                 } else {
-                    print("%c", buffer[i]);
+                    print("%c", tab_space_count ? ' ' : buffer[i]);
                 }
             }
 
@@ -371,6 +386,14 @@ refresh:
 
             // switch to token type 2 after equals sign
             if (token_type == TOK_EQUALS) token_type = TOK_VALUE;
+
+            if (tab_space_count != 0) {
+                tab_space_count--;
+            }
+        }
+
+        if (tab_space_count != 0) {
+            goto tab_part;
         }
     }
 

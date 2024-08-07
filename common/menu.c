@@ -561,7 +561,7 @@ static size_t print_tree(size_t offset, size_t window, const char *shift, size_t
         if (current_entry->sub) {
             if (!no_print) print(current_entry->expanded ? "[-]" : "[+]");
         } else if (level) {
-            if (!no_print) print(serial ? "-> " : "─► ");
+            if (!no_print) print(serial ? "-->" : "──►");
         } else {
             if (!no_print) print("   ");
         }

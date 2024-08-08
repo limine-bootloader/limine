@@ -269,11 +269,7 @@ refresh:
     for (size_t i = 0; ; i++) {
         // tab
         if (buffer[i] == '\t') {
-            size_t x, y;
-            terms[0]->get_cursor_pos(terms[0], &x, &y);
-
-            tab_space_count = 8 - ((x - 1) % 8);
-
+            tab_space_count = 8 - (line_offset % 8);
             goto tab_part;
         }
 
@@ -313,7 +309,7 @@ tab_part:
         if (buffer[i] != 0 && line_offset % line_size == line_size - 1) {
             if (current_line <  window_offset + window_size
              && current_line >= window_offset) {
-                if (i == cursor_offset) {
+                if (i == cursor_offset && !printed_cursor) {
                     terms[0]->get_cursor_pos(terms[0], &cursor_x, &cursor_y);
                     printed_cursor = true;
                 }
@@ -321,6 +317,9 @@ tab_part:
                     putchar_tokencol(token_type, tab_space_count ? ' ' : buffer[i]);
                 } else {
                     print("%c", tab_space_count ? ' ' : buffer[i]);
+                }
+                if (tab_space_count != 0) {
+                    tab_space_count--;
                 }
                 printed_early = true;
                 size_t x, y;
@@ -333,9 +332,6 @@ tab_part:
                     print(serial ? ">" : "→");
                     set_cursor_pos_helper(0, y + 1);
                     print(serial ? "<" : "←");
-                }
-                if (tab_space_count != 0) {
-                    tab_space_count--;
                 }
             }
             window_size--;
@@ -380,6 +376,10 @@ tab_part:
                 } else {
                     print("%c", tab_space_count ? ' ' : buffer[i]);
                 }
+
+	        if (tab_space_count != 0) {
+                    tab_space_count--;
+                }
             }
 
             printed_early = false;
@@ -387,9 +387,6 @@ tab_part:
             // switch to token type 2 after equals sign
             if (token_type == TOK_EQUALS) token_type = TOK_VALUE;
 
-            if (tab_space_count != 0) {
-                tab_space_count--;
-            }
         }
 
         if (tab_space_count != 0) {

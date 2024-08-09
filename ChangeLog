@@ -1,3 +1,13 @@
+2024-08-09  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 8.0.3 ***
+
+    Noteworthy changes compared to the previous release, 8.0.2:
+
+    Bug fixes:
+        - AArch64, riscv64: SMP: Fix BSP potentially timing out while waiting
+          for APs due to missing delay.
+
 2024-08-08  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 8.0.2 ***

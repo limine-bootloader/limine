@@ -99,7 +99,6 @@ override CFLAGS_MB := \
     -fno-stack-protector \
     -fno-stack-check \
     -fno-lto \
-    -fno-PIE \
     -fno-PIC \
     -m32 \
     -march=i686 \

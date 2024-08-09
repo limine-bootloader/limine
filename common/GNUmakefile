@@ -68,7 +68,6 @@ override NASMFLAGS_FOR_TARGET += \
 
 ifeq ($(TARGET),bios)
     override CFLAGS_FOR_TARGET += \
-        -fno-PIE \
         -fno-PIC \
         -m32 \
         -march=i686 \

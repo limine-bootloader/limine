@@ -36,7 +36,6 @@ override CFLAGS_FOR_TARGET += \
     -fomit-frame-pointer \
     -fno-strict-aliasing \
     -fno-lto \
-    -fno-PIE \
     -fno-PIC \
     -m32 \
     -march=i686 \

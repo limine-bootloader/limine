@@ -57,10 +57,6 @@ override LDFLAGS_FOR_TARGET += \
     -static \
     -T linker.ld
 
-ifeq ($(LD_FOR_TARGET_HAS_NO_PIE),yes)
-    override LDFLAGS_FOR_TARGET += -no-pie
-endif
-
 override NASMFLAGS_FOR_TARGET += \
     -Wall \
     -w-reloc \

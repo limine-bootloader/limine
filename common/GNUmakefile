@@ -181,10 +181,6 @@ ifeq ($(TARGET),bios)
         -m elf_i386 \
         -static \
         --build-id=sha1
-
-    ifeq ($(LD_FOR_TARGET_HAS_NO_PIE),yes)
-        override LDFLAGS_FOR_TARGET += -no-pie
-    endif
 endif
 
 ifeq ($(TARGET),uefi-x86-64)

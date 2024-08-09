@@ -160,12 +160,6 @@ static inline uint64_t rdtsc(void) {
     return ((uint64_t)edx << 32) | eax;
 }
 
-static inline void delay(uint64_t cycles) {
-    uint64_t next_stop = rdtsc() + cycles;
-
-    while (rdtsc() < next_stop);
-}
-
 #define rdrand(type) ({ \
     type rdrand__ret; \
     asm volatile ( \
@@ -225,12 +219,6 @@ static inline uint64_t rdtsc(void) {
     uint64_t v;
     asm volatile ("mrs %0, cntpct_el0" : "=r" (v));
     return v;
-}
-
-static inline void delay(uint64_t cycles) {
-    uint64_t next_stop = rdtsc() + cycles;
-
-    while (rdtsc() < next_stop);
 }
 
 #define locked_read(var) ({ \
@@ -297,7 +285,7 @@ static inline int current_el(void) {
 
 static inline uint64_t rdtsc(void) {
     uint64_t v;
-    asm ("rdtime %0" : "=r"(v));
+    asm volatile ("rdcycle %0" : "=r"(v));
     return v;
 }
 
@@ -363,5 +351,11 @@ static inline uint64_t rdtsc(void) {
 #else
 #error Unknown architecture
 #endif
+
+static inline void delay(uint64_t cycles) {
+    uint64_t next_stop = rdtsc() + cycles;
+
+    while (rdtsc() < next_stop);
+}
 
 #endif

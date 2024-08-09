@@ -749,6 +749,8 @@ static bool smp_start_ap(size_t hartid, size_t satp, struct limine_smp_info *inf
     for (int i = 0; i < 1000000; i++) {
         if (locked_read(&passed_info.smp_tpl_booted_flag) == 1)
             return true;
+
+        delay(100000);
     }
 
     return false;
@@ -763,9 +765,6 @@ struct limine_smp_info *init_smp(size_t *cpu_count, pagemap_t pagemap, uint64_t 
     }
 
     struct limine_smp_info *ret = ext_mem_alloc(num_cpus * sizeof(struct limine_smp_info));
-    if (ret == NULL) {
-        panic(false, "out of memory");
-    }
 
     *cpu_count = 0;
     for (struct riscv_hart *hart = hart_list; hart != NULL; hart = hart->next) {

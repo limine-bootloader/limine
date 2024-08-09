@@ -396,12 +396,12 @@ static bool try_start_ap(int boot_method, uint64_t method_ptr,
 
     for (int i = 0; i < 1000000; i++) {
         // We do not need cache invalidation here as by the time the AP gets to
-        // set this flag, it has enabled it's caches
+        // set this flag, it has enabled its caches
 
         if (locked_read(&passed_info->smp_tpl_booted_flag) == 1) {
             return true;
         }
-        //delay(10000000);
+        delay(100000);
     }
 
     return false;

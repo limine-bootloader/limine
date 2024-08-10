@@ -1,3 +1,16 @@
+2024-08-10  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 8.0.4 ***
+
+    Noteworthy changes compared to the previous release, 8.0.3:
+
+    Bug fixes:
+        - Limine boot protocol: Fix off-by-1 error in HHDM MAXPHYADDR bounds
+          check.
+
+    Miscellaneous:
+        - Updated cc-runtime dependency to latest, packed version.
+
 2024-08-09  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 8.0.3 ***

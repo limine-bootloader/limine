@@ -65,15 +65,11 @@ if ! test -f version; then
         freestanding-headers \
         dd3abd2d7147efc4170dff478d3b7730bed14147
 
-    clone_repo_commit \
-        https://github.com/osdev0/cc-runtime.git \
-        decompressor/cc-runtime \
-        aa5854cebb4a5a561f35252cdda741919fc9c3f6
-    rm -rf common/cc-runtime
-    cp -rp decompressor/cc-runtime common/
-    for f in common/cc-runtime/*.c; do
-        mv "$f" "$(echo "$f" | sed 's/\.c/.s2.c/g')"
-    done
+    download_by_hash \
+        https://github.com/osdev0/cc-runtime/raw/dcdf5d82973e77edee597a047a3ef66300903de9/cc-runtime.c \
+        decompressor/cc-runtime.c \
+        199907f5303ab15a963377fabcc1f2ee736e4ed18d54c59aab08345aa5485e8a
+    cp decompressor/cc-runtime.c common/cc-runtime.s2.c
 
     download_by_hash \
         https://github.com/osdev0/freestanding-toolchain/raw/278277e9ade987528f95e011f233837a31233ff6/freestanding-toolchain \

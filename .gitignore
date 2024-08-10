@@ -30,9 +30,9 @@
 /common/libfdt
 /common/lib/stb_image.h.nopatch
 /common/lib/stb_image.h
-/common/cc-runtime
+/common/cc-runtime.s2.c
 /decompressor/tinf
-/decompressor/cc-runtime
+/decompressor/cc-runtime.c
 /dtc
 /tinf
 /ovmf*

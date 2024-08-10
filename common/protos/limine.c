@@ -570,7 +570,10 @@ noreturn void limine_load(char *config, char *cmdline) {
         maxphyaddr = eax & 0xff;
     }
 
-    if (hhdm_span_top >= (uint64_t)1 << maxphyaddr) {
+    if (maxphyaddr > 64) {
+        panic(true, "limine: MAXPHYADDR > 64");
+    }
+    if (maxphyaddr < 64 && hhdm_span_top > (uint64_t)1 << maxphyaddr) {
         panic(true, "limine: Top of HHDM exceeds maximum allowable MAXPHYADDR value");
     }
 #endif

@@ -288,7 +288,7 @@ extern symbol limine_spinup_32;
                             | ((uint64_t)1 << 8)             /* TTBR0 Inner WB RW-Allocate */ \
                             | ((uint64_t)(tsz) << 0))        /* Address bits in TTBR0 */
 
-#elif defined (__riscv64)
+#elif defined (__riscv)
 #elif defined (__loongarch64)
 #else
 #error Unknown architecture
@@ -612,7 +612,7 @@ noreturn void limine_load(char *config, char *cmdline) {
         goto hhdm_fail;
     }
     // TODO(qookie): aarch64 also has optional 5 level paging when using 4K pages
-#elif defined (__riscv64)
+#elif defined (__riscv)
     max_supported_paging_mode = vmm_max_paging_mode();
     min_supported_paging_mode = PAGING_MODE_RISCV_SV39;
     if (hhdm_span_top >= (uint64_t)1 << (paging_mode_va_bits(min_supported_paging_mode) - 2)) {
@@ -668,7 +668,7 @@ hhdm_fail:
         } else if (strcasecmp(user_max_paging_mode_s, "5level") == 0) {
             user_max_paging_mode = PAGING_MODE_AARCH64_5LVL;
         }
-#elif defined (__riscv64)
+#elif defined (__riscv)
         if (strcasecmp(user_max_paging_mode_s, "sv39") == 0) {
             user_max_paging_mode = PAGING_MODE_RISCV_SV39;
         } else if (strcasecmp(user_max_paging_mode_s, "sv48") == 0) {
@@ -707,7 +707,7 @@ hhdm_fail:
         } else if (strcasecmp(user_min_paging_mode_s, "5level") == 0) {
             user_min_paging_mode = PAGING_MODE_AARCH64_5LVL;
         }
-#elif defined (__riscv64)
+#elif defined (__riscv)
         if (strcasecmp(user_min_paging_mode_s, "sv39") == 0) {
             user_min_paging_mode = PAGING_MODE_RISCV_SV39;
         } else if (strcasecmp(user_min_paging_mode_s, "sv48") == 0) {
@@ -744,7 +744,7 @@ hhdm_fail:
 
 #if defined (__x86_64__) || defined (__i386__)
     paging_mode = PAGING_MODE_X86_64_4LVL;
-#elif defined (__riscv64)
+#elif defined (__riscv)
     paging_mode = max_supported_paging_mode >= PAGING_MODE_RISCV_SV48 ? PAGING_MODE_RISCV_SV48 : PAGING_MODE_RISCV_SV39;
 #elif defined (__aarch64__)
     paging_mode = PAGING_MODE_AARCH64_4LVL;
@@ -752,7 +752,7 @@ hhdm_fail:
     paging_mode = PAGING_MODE_LOONGARCH64_4LVL;
 #endif
 
-#if defined (__riscv64)
+#if defined (__riscv)
 #define paging_mode_limine_to_vmm(x) (PAGING_MODE_RISCV_SV39 + (x))
 #define paging_mode_vmm_to_limine(x) ((x) - PAGING_MODE_RISCV_SV39)
 #else
@@ -1362,7 +1362,7 @@ FEAT_START
     smp_info = init_smp(&cpu_count, &bsp_mpidr,
                         pagemap, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa), LIMINE_SCTLR,
                         direct_map_offset);
-#elif defined (__riscv64)
+#elif defined (__riscv)
     smp_info = init_smp(&cpu_count, pagemap, direct_map_offset);
 #elif defined (__loongarch64)
     cpu_count = 0;
@@ -1384,7 +1384,7 @@ FEAT_START
         if (smp_info[i].mpidr == bsp_mpidr) {
             continue;
         }
-#elif defined (__riscv64)
+#elif defined (__riscv)
         if (smp_info[i].hartid == bsp_hartid) {
             continue;
         }
@@ -1405,7 +1405,7 @@ FEAT_START
     smp_response->bsp_lapic_id = bsp_lapic_id;
 #elif defined (__aarch64__)
     smp_response->bsp_mpidr = bsp_mpidr;
-#elif defined (__riscv64)
+#elif defined (__riscv)
     smp_response->bsp_hartid = bsp_hartid;
 #elif defined (__loongarch64)
 #else
@@ -1535,7 +1535,7 @@ FEAT_END
                  (uint64_t)pagemap.top_level[0],
                  (uint64_t)pagemap.top_level[1],
                  direct_map_offset);
-#elif defined (__riscv64)
+#elif defined (__riscv)
     uint64_t reported_stack = reported_addr(stack);
     uint64_t satp = make_satp(pagemap.paging_mode, pagemap.top_level);
 

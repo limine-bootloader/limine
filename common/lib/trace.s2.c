@@ -54,7 +54,7 @@ void print_stacktrace(size_t *base_ptr) {
             "movq %%rbp, %0"
 #elif defined (__aarch64__)
             "mov %0, x29"
-#elif defined (__riscv64)
+#elif defined (__riscv)
             "mv %0, fp;  addi %0, %0, -16"
 #elif defined (__loongarch64)
             "move %0, $fp;  addi.d %0, %0, -16"

@@ -281,7 +281,7 @@ static inline int current_el(void) {
     return v;
 }
 
-#elif defined (__riscv64)
+#elif defined (__riscv)
 
 static inline uint64_t rdtsc(void) {
     uint64_t v;

@@ -1,4 +1,4 @@
-#if defined(__riscv64) || defined(__aarch64__)
+#if defined(__riscv) || defined(__aarch64__)
 
 #include <stdint.h>
 #include <stddef.h>
@@ -44,7 +44,7 @@ struct linux_efi_memreserve {
 
 // End of Linux code
 
-#if defined(__riscv64)
+#if defined(__riscv)
 #define LINUX_HEADER_MAGIC2             0x05435352
 #define LINUX_HEADER_MAJOR_VER(ver)     (((ver) >> 16) & 0xffff)
 #define LINUX_HEADER_MINOR_VER(ver)     (((ver) >> 0)  & 0xffff)
@@ -251,7 +251,7 @@ noreturn void linux_load(char *config, char *cmdline) {
     }
 
     // Version fields are RV-specific
-#if defined(__riscv64)
+#if defined(__riscv)
     printv("linux: boot protocol version %d.%d\n",
            LINUX_HEADER_MAJOR_VER(header.version),
            LINUX_HEADER_MINOR_VER(header.version));
@@ -274,7 +274,7 @@ noreturn void linux_load(char *config, char *cmdline) {
         panic(true, "linux: failed to prepare the device tree blob");
     }
 
-#if defined(__riscv64)
+#if defined(__riscv)
     printv("linux: bsp hart %d, device tree blob at %x\n", bsp_hartid, dtb);
 
     void (*kernel_entry)(uint64_t hartid, uint64_t dtb) = kernel_base;

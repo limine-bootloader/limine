@@ -10,7 +10,7 @@
 #include <lib/libc.h>
 #if defined (UEFI)
 #  include <efi.h>
-#  if defined (__riscv64)
+#  if defined (__riscv)
 #    include <protocol/riscv/efiboot.h>
 #  endif
 #endif
@@ -90,7 +90,7 @@ noreturn void common_spinup(void *fnptr, int args, ...);
 noreturn void enter_in_el1(uint64_t entry, uint64_t sp, uint64_t sctlr,
                            uint64_t mair, uint64_t tcr, uint64_t ttbr0,
                            uint64_t ttbr1, uint64_t target_x0);
-#elif defined (__riscv64)
+#elif defined (__riscv)
 noreturn void riscv_spinup(uint64_t entry, uint64_t sp, uint64_t satp, uint64_t direct_map_offset);
 #if defined (UEFI)
 RISCV_EFI_BOOT_PROTOCOL *get_riscv_boot_protocol(void);

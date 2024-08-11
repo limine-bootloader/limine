@@ -152,8 +152,7 @@ ifeq ($(TARGET),uefi-riscv64)
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/riscv64' \
         $(CPPFLAGS_FOR_TARGET) \
-        -DUEFI \
-        -D__riscv64
+        -DUEFI
 endif
 
 ifeq ($(TARGET),uefi-loongarch64)

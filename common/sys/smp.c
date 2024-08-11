@@ -14,7 +14,7 @@
 #include <mm/mtrr.h>
 #define LIMINE_NO_POINTERS
 #include <limine.h>
-#if defined (__riscv64)
+#if defined (__riscv)
 #include <sys/sbi.h>
 #endif
 #if defined (__aarch64__)
@@ -710,7 +710,7 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
     return NULL;
 }
 
-#elif defined (__riscv64)
+#elif defined (__riscv)
 
 struct trampoline_passed_info {
     uint64_t smp_tpl_booted_flag;

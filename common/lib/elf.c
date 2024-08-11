@@ -164,7 +164,7 @@ static bool elf64_validate(struct elf64_hdr *hdr) {
     if (hdr->machine != ARCH_AARCH64) {
         panic(true, "elf: Not an aarch64 ELF file.");
     }
-#elif defined (__riscv64)
+#elif defined (__riscv)
     if (hdr->machine != ARCH_RISCV && hdr->ident[EI_CLASS] == ELFCLASS64) {
         panic(true, "elf: Not a riscv64 ELF file.");
     }
@@ -473,7 +473,7 @@ end_of_pt_segment:
             case R_X86_64_NONE:
 #elif defined (__aarch64__)
             case R_AARCH64_NONE:
-#elif defined (__riscv64)
+#elif defined (__riscv)
             case R_RISCV_NONE:
 #elif defined (__loongarch64)
             case R_LARCH_NONE:
@@ -485,7 +485,7 @@ end_of_pt_segment:
             case R_X86_64_RELATIVE:
 #elif defined (__aarch64__)
             case R_AARCH64_RELATIVE:
-#elif defined (__riscv64)
+#elif defined (__riscv)
             case R_RISCV_RELATIVE:
 #elif defined (__loongarch64)
             case R_LARCH_RELATIVE:
@@ -505,7 +505,7 @@ end_of_pt_segment:
 #elif defined (__aarch64__)
             case R_AARCH64_GLOB_DAT:
             case R_AARCH64_JUMP_SLOT:
-#elif defined (__riscv64)
+#elif defined (__riscv)
             case R_RISCV_JUMP_SLOT:
 #elif defined (__loongarch64)
             case R_LARCH_JUMP_SLOT:
@@ -530,7 +530,7 @@ end_of_pt_segment:
             case R_X86_64_64:
 #elif defined (__aarch64__)
             case R_AARCH64_ABS64:
-#elif defined (__riscv64)
+#elif defined (__riscv)
             case R_RISCV_64:
 #elif defined (__loongarch64)
             case R_LARCH_64:

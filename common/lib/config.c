@@ -225,7 +225,7 @@ skip_loop:
     }
 #elif defined (__aarch64__)
     strcpy(arch_macro->value, "aarch64");
-#elif defined (__riscv64)
+#elif defined (__riscv)
     strcpy(arch_macro->value, "riscv64");
 #elif defined (__loongarch64)
     strcpy(arch_macro->value, "loongarch64");

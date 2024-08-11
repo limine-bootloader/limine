@@ -808,7 +808,7 @@ noreturn void _menu(bool first_run) {
         menu_branding = "Limine " LIMINE_VERSION " ("
 #if defined (__x86_64__)
             "x86-64"
-#elif defined (__riscv64)
+#elif defined (__riscv)
             "riscv64"
 #elif defined (__aarch64__)
             "aarch64"

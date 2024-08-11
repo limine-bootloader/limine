@@ -243,7 +243,7 @@ level4:
     pml1[pml1_entry] = (pt_entry_t)(phys_addr | real_flags | PT_FLAG_4K_PAGE);
 }
 
-#elif defined (__riscv64)
+#elif defined (__riscv)
 
 #define PT_FLAG_VALID       ((uint64_t)1 << 0)
 #define PT_FLAG_READ        ((uint64_t)1 << 1)

@@ -83,7 +83,7 @@ void vmm_assert_4k_pages(void);
 pagemap_t new_pagemap(int lv);
 void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags, enum page_size page_size);
 
-#elif defined (__riscv64)
+#elif defined (__riscv)
 
 // We use fake flags here because these don't properly map onto the
 // RISC-V flags.

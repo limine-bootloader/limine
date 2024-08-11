@@ -121,28 +121,16 @@ struct limine_smp_info *init_smp(size_t   *cpu_count,
 
     struct gdtr gdtr = gdt;
 
-    uint32_t eax, ebx, ecx, edx;
-
-    if (!cpuid(1, 0, &eax, &ebx, &ecx, &edx))
-        return NULL;
-
-    uint8_t bsp_lapic_id = ebx >> 24;
+    uint8_t bsp_lapic_id = lapic_read(LAPIC_REG_ID) >> 24;
+    *_bsp_lapic_id = bsp_lapic_id;
 
     x2apic = x2apic && x2apic_enable();
 
-    uint32_t bsp_x2apic_id = 0;
+    uint32_t bsp_x2apic_id = bsp_lapic_id;
+
     if (x2apic) {
-        // The Intel manual recommends checking if leaf 0x1f exists first, and
-        // using that in place of 0xb if that's the case
-        if (!cpuid(0x1f, 0, &eax, &ebx, &ecx, &edx))
-            if (!cpuid(0xb, 0, &eax, &ebx, &ecx, &edx))
-                return NULL;
-
-        bsp_x2apic_id = edx;
-
+        bsp_x2apic_id = x2apic_read(LAPIC_REG_ID);
         *_bsp_lapic_id = bsp_x2apic_id;
-    } else {
-        *_bsp_lapic_id = bsp_lapic_id;
     }
 
     *cpu_count = 0;

@@ -9,6 +9,7 @@
 #define LAPIC_REG_ICR1     0x310
 #define LAPIC_REG_SPURIOUS 0x0f0
 #define LAPIC_REG_EOI      0x0b0
+#define LAPIC_REG_ID       0x020
 
 bool lapic_check(void);
 void lapic_eoi(void);

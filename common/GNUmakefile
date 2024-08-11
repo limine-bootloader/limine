@@ -167,8 +167,7 @@ ifeq ($(TARGET),uefi-loongarch64)
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/loongarch64' \
         $(CPPFLAGS_FOR_TARGET) \
-        -DUEFI \
-        -D__loongarch64
+        -DUEFI
 endif
 
 override LDFLAGS_FOR_TARGET += \

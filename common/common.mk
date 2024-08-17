@@ -307,7 +307,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_stage2only.ld: linker_bios.ld.in
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_STAGE2ONLY linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_stage2only.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_stage2only.elf: $(OBJ_S2)
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_stage2only.ld'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker_stage2only.ld'
 	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker_stage2only.ld' -o '$(call SHESCAPE,$@)' || \
 		( echo "This error may mean that stage 2 was trying to use stage 3 symbols before loading stage 3" && \
 		  false )
@@ -320,8 +320,8 @@ $(call MKESCAPE,$(BUILDDIR))/empty:
 	touch '$(call SHESCAPE,$@)'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(OBJ)
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/empty'
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nos2map.ld'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/empty'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker_nos2map.ld'
 	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nos2map.ld' -o '$(call SHESCAPE,$@)'
 	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
@@ -338,8 +338,8 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_bios.ld.in
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nos3map.elf: $(OBJ) $(call MKESCAPE,$(BUILDDIR))/stage2.map.o
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/empty'
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/empty'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' -o '$(call SHESCAPE,$@)'
 	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
@@ -356,8 +356,8 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_bios.ld.in
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_bios.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(OBJ) $(call MKESCAPE,$(BUILDDIR))/stage2.map.o $(call MKESCAPE,$(BUILDDIR))/full.map.o
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/empty'
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/empty'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) '$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' -o '$(call SHESCAPE,$@)'
 	$(OBJCOPY_FOR_TARGET) -O binary --only-section=.note.gnu.build-id '$(call SHESCAPE,$@)' '$(call SHESCAPE,$(BUILDDIR))/build-id.s2.bin'
 	cd '$(call SHESCAPE,$(BUILDDIR))' && \
@@ -405,7 +405,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_x86_64.ld.in
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_x86_64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_x86_64.c.o $(OBJ)
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
 		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
@@ -415,7 +415,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_x86_64.ld.in
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_x86_64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_x86_64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
 		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
@@ -452,7 +452,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_aarch64.ld.in
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_aarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-aarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_aarch64.c.o $(OBJ)
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
 		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
@@ -462,7 +462,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_aarch64.ld.in
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_aarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-aarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_aarch64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
 		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
@@ -498,7 +498,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_riscv64.ld.in
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_riscv64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-riscv64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_riscv64.c.o $(OBJ)
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
 		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
@@ -508,7 +508,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_riscv64.ld.in
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_riscv64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-riscv64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_riscv64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
 		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
@@ -544,7 +544,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_loongarch64.ld.in
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_loongarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-loongarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_loongarch64.c.o $(OBJ)
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
 		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
@@ -554,7 +554,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_loongarch64.ld.in
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_loongarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-loongarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_loongarch64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
 		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
@@ -590,7 +590,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_ia32.ld.in
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_ia32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_ia32.c.o $(OBJ)
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
 		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
@@ -600,7 +600,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_ia32.ld.in
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_ia32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
 $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_ia32.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
-	$(MAKE) '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
+	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
 		'$(call OBJESCAPE,$^)' $(LDFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'

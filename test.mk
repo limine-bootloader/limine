@@ -1,6 +1,6 @@
 .PHONY: test-clean
 test-clean:
-	$(MAKE) -C test clean
+	$(MAKE) -C test -f test/test.mk clean
 	rm -rf test_image test.hdd test.iso
 
 ovmf-x64:
@@ -38,11 +38,11 @@ mbrtest.hdd:
 
 .PHONY: ext2-test
 ext2-test:
-	$(MAKE) test-clean
-	$(MAKE) test.hdd
-	$(MAKE) limine-bios
-	$(MAKE) limine
-	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
+	$(MAKE) -f test.mk test-clean
+	$(MAKE) -f test.mk test.hdd
+	$(MAKE) -f test.mk limine-bios
+	$(MAKE) -f test.mk limine
+	$(MAKE) -C test -f test/test.mk TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -61,11 +61,11 @@ ext2-test:
 
 .PHONY: fat12-test
 fat12-test:
-	$(MAKE) test-clean
-	$(MAKE) test.hdd
-	$(MAKE) limine-bios
-	$(MAKE) limine
-	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
+	$(MAKE) -f test.mk test-clean
+	$(MAKE) -f test.mk test.hdd
+	$(MAKE) -f test.mk limine-bios
+	$(MAKE) -f test.mk limine
+	$(MAKE) -C test -f test/test.mk TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -84,11 +84,11 @@ fat12-test:
 
 .PHONY: fat16-test
 fat16-test:
-	$(MAKE) test-clean
-	$(MAKE) test.hdd
-	$(MAKE) limine-bios
-	$(MAKE) limine
-	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
+	$(MAKE) -f test.mk test-clean
+	$(MAKE) -f test.mk test.hdd
+	$(MAKE) -f test.mk limine-bios
+	$(MAKE) -f test.mk limine
+	$(MAKE) -C test -f test/test.mk TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -107,12 +107,12 @@ fat16-test:
 
 .PHONY: legacy-fat16-test
 legacy-fat16-test:
-	$(MAKE) test-clean
-	$(MAKE) mbrtest.hdd
+	$(MAKE) -f test.mk test-clean
+	$(MAKE) -f test.mk mbrtest.hdd
 	fdisk -l mbrtest.hdd
-	$(MAKE) limine-bios
-	$(MAKE) limine
-	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
+	$(MAKE) -f test.mk limine-bios
+	$(MAKE) -f test.mk limine
+	$(MAKE) -C test -f test/test.mk TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show mbrtest.hdd > loopback_dev
@@ -131,11 +131,11 @@ legacy-fat16-test:
 
 .PHONY: fat32-test
 fat32-test:
-	$(MAKE) test-clean
-	$(MAKE) test.hdd
-	$(MAKE) limine-bios
-	$(MAKE) limine
-	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
+	$(MAKE) -f test.mk test-clean
+	$(MAKE) -f test.mk test.hdd
+	$(MAKE) -f test.mk limine-bios
+	$(MAKE) -f test.mk limine
+	$(MAKE) -C test -f test/test.mk TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -154,10 +154,10 @@ fat32-test:
 
 .PHONY: iso9660-test
 iso9660-test:
-	$(MAKE) test-clean
-	$(MAKE) test.hdd
-	$(MAKE) limine-bios
-	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
+	$(MAKE) -f test.mk test-clean
+	$(MAKE) -f test.mk test.hdd
+	$(MAKE) -f test.mk limine-bios
+	$(MAKE) -C test -f test/test.mk TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
 	rm -rf test_image/
 	$(MKDIR_P) test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
@@ -167,11 +167,11 @@ iso9660-test:
 
 .PHONY: full-hybrid-test
 full-hybrid-test:
-	$(MAKE) ovmf-x64
-	$(MAKE) ovmf-ia32
-	$(MAKE) test-clean
-	$(MAKE) all
-	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
+	$(MAKE) -f test.mk ovmf-x64
+	$(MAKE) -f test.mk ovmf-ia32
+	$(MAKE) -f test.mk test-clean
+	$(MAKE) -f test.mk all
+	$(MAKE) -C test -f test/test.mk TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
 	rm -rf test_image/
 	$(MKDIR_P) test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
@@ -187,9 +187,9 @@ full-hybrid-test:
 
 .PHONY: pxe-test
 pxe-test:
-	$(MAKE) test-clean
-	$(MAKE) limine-bios
-	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
+	$(MAKE) -f test.mk test-clean
+	$(MAKE) -f test.mk limine-bios
+	$(MAKE) -C test -f test/test.mk TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
 	rm -rf test_image/
 	$(MKDIR_P) test_image/boot
 	sudo cp -rv $(BINDIR)/* test_image/boot/
@@ -198,11 +198,11 @@ pxe-test:
 
 .PHONY: uefi-x86-64-test
 uefi-x86-64-test:
-	$(MAKE) ovmf-x64
-	$(MAKE) test-clean
-	$(MAKE) test.hdd
-	$(MAKE) limine-uefi-x86-64
-	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
+	$(MAKE) -f test.mk ovmf-x64
+	$(MAKE) -f test.mk test-clean
+	$(MAKE) -f test.mk test.hdd
+	$(MAKE) -f test.mk limine-uefi-x86-64
+	$(MAKE) -C test -f test/test.mk TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -222,11 +222,11 @@ uefi-x86-64-test:
 
 .PHONY: uefi-aa64-test
 uefi-aa64-test:
-	$(MAKE) ovmf-aa64
-	$(MAKE) test-clean
-	$(MAKE) test.hdd
-	$(MAKE) limine-uefi-aarch64
-	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-aarch64-toolchain.mk'
+	$(MAKE) -f test.mk ovmf-aa64
+	$(MAKE) -f test.mk test-clean
+	$(MAKE) -f test.mk test.hdd
+	$(MAKE) -f test.mk limine-uefi-aarch64
+	$(MAKE) -C test -f test/test.mk TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-aarch64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -246,11 +246,11 @@ uefi-aa64-test:
 
 .PHONY: uefi-rv64-test
 uefi-rv64-test:
-	$(MAKE) ovmf-rv64
-	$(MAKE) test-clean
-	$(MAKE) test.hdd
-	$(MAKE) limine-uefi-riscv64
-	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-riscv64-toolchain.mk'
+	$(MAKE) -f test.mk ovmf-rv64
+	$(MAKE) -f test.mk test-clean
+	$(MAKE) -f test.mk test.hdd
+	$(MAKE) -f test.mk limine-uefi-riscv64
+	$(MAKE) -C test -f test/test.mk TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-riscv64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -270,11 +270,11 @@ uefi-rv64-test:
 
 .PHONY: uefi-loongarch64-test
 uefi-loongarch64-test:
-	$(MAKE) ovmf-loongarch64
-	$(MAKE) test-clean
-	$(MAKE) test.hdd
-	$(MAKE) limine-uefi-loongarch64
-	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-loongarch64-toolchain.mk'
+	$(MAKE) -f test.mk ovmf-loongarch64
+	$(MAKE) -f test.mk test-clean
+	$(MAKE) -f test.mk test.hdd
+	$(MAKE) -f test.mk limine-uefi-loongarch64
+	$(MAKE) -C test -f test/test.mk TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-loongarch64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev
@@ -294,11 +294,11 @@ uefi-loongarch64-test:
 
 .PHONY: uefi-ia32-test
 uefi-ia32-test:
-	$(MAKE) ovmf-ia32
-	$(MAKE) test-clean
-	$(MAKE) test.hdd
-	$(MAKE) limine-uefi-ia32
-	$(MAKE) -C test TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
+	$(MAKE) -f test.mk ovmf-ia32
+	$(MAKE) -f test.mk test-clean
+	$(MAKE) -f test.mk test.hdd
+	$(MAKE) -f test.mk limine-uefi-ia32
+	$(MAKE) -C test -f test/test.mk TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
 	rm -rf test_image/
 	mkdir test_image
 	sudo losetup -Pf --show test.hdd > loopback_dev

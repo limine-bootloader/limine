@@ -388,13 +388,13 @@ $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.el
 	chmod -x '$(call SHESCAPE,$@)'
 	dd if=/dev/zero of='$(call SHESCAPE,$@)' bs=4096 count=0 seek=$$(( ($$(wc -c < '$(call SHESCAPE,$@)') + 4095) / 4096 ))
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.S.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-x86_64.S.o: limine-efi
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_x86_64.c.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_x86_64.c.o: limine-efi
 
 .PHONY: limine-efi
 limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
-	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/src' -f limine-efi.mk \
 		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
 		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
@@ -404,7 +404,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_x86_64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_x86_64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_x86_64.c.o $(OBJ)
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-x86_64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_x86_64.c.o $(OBJ)
 	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
@@ -414,7 +414,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_x86_64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_x86_64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-x86_64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_x86_64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-x86_64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_x86_64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
@@ -435,13 +435,13 @@ $(call MKESCAPE,$(BUILDDIR))/BOOTAA64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.e
 	chmod -x '$(call SHESCAPE,$@)'
 	dd if=/dev/zero of='$(call SHESCAPE,$@)' bs=4096 count=0 seek=$$(( ($$(wc -c < '$(call SHESCAPE,$@)') + 4095) / 4096 ))
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-aarch64.S.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-aarch64.S.o: limine-efi
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_aarch64.c.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_aarch64.c.o: limine-efi
 
 .PHONY: limine-efi
 limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
-	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/src' -f limine-efi.mk \
 		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
 		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
@@ -451,7 +451,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_aarch64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_aarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-aarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_aarch64.c.o $(OBJ)
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-aarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_aarch64.c.o $(OBJ)
 	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
@@ -461,7 +461,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_aarch64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_aarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-aarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_aarch64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-aarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_aarch64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
@@ -481,13 +481,13 @@ $(call MKESCAPE,$(BUILDDIR))/BOOTRISCV64.EFI: $(call MKESCAPE,$(BUILDDIR))/limin
 	chmod -x '$(call SHESCAPE,$@)'
 	dd if=/dev/zero of='$(call SHESCAPE,$@)' bs=4096 count=0 seek=$$(( ($$(wc -c < '$(call SHESCAPE,$@)') + 4095) / 4096 ))
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-riscv64.S.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-riscv64.S.o: limine-efi
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_riscv64.c.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_riscv64.c.o: limine-efi
 
 .PHONY: limine-efi
 limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
-	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/src' -f limine-efi.mk \
 		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
 		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
@@ -497,7 +497,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_riscv64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_riscv64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-riscv64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_riscv64.c.o $(OBJ)
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-riscv64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_riscv64.c.o $(OBJ)
 	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
@@ -507,7 +507,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_riscv64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_riscv64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-riscv64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_riscv64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-riscv64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_riscv64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
@@ -527,13 +527,13 @@ $(call MKESCAPE,$(BUILDDIR))/BOOTLOONGARCH64.EFI: $(call MKESCAPE,$(BUILDDIR))/l
 	chmod -x '$(call SHESCAPE,$@)'
 	dd if=/dev/zero of='$(call SHESCAPE,$@)' bs=4096 count=0 seek=$$(( ($$(wc -c < '$(call SHESCAPE,$@)') + 4095) / 4096 ))
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-loongarch64.S.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-loongarch64.S.o: limine-efi
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_loongarch64.c.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_loongarch64.c.o: limine-efi
 
 .PHONY: limine-efi
 limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
-	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/src' -f limine-efi.mk \
 		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
 		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
@@ -543,7 +543,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_loongarch64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_loongarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-loongarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_loongarch64.c.o $(OBJ)
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-loongarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_loongarch64.c.o $(OBJ)
 	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
@@ -553,7 +553,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_loongarch64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_loongarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-loongarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_loongarch64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-loongarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_loongarch64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
@@ -573,13 +573,13 @@ $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.e
 	chmod -x '$(call SHESCAPE,$@)'
 	dd if=/dev/zero of='$(call SHESCAPE,$@)' bs=4096 count=0 seek=$$(( ($$(wc -c < '$(call SHESCAPE,$@)') + 4095) / 4096 ))
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.S.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-ia32.S.o: limine-efi
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_ia32.c.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_ia32.c.o: limine-efi
 
 .PHONY: limine-efi
 limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
-	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/gnuefi' \
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/src' -f limine-efi.mk \
 		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
 		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
@@ -589,7 +589,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_ia32.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_ia32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_ia32.c.o $(OBJ)
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-ia32.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_ia32.c.o $(OBJ)
 	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
@@ -599,7 +599,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_ia32.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_ia32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/crt0-efi-ia32.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/gnuefi/reloc_ia32.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-ia32.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_ia32.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) -f '$(call SHESCAPE,$(SRCDIR))/common.mk' '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \

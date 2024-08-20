@@ -5,23 +5,32 @@ test-clean:
 
 ovmf-x64:
 	$(MKDIR_P) ovmf-x64
-	cd ovmf-x64 && curl -Lo OVMF.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-x86_64.fd
+	curl -Lo ovmf-x64/OVMF_CODE.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-x86_64.fd
+	curl -Lo ovmf-x64/OVMF_VARS.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-x86_64.fd
 
 ovmf-aa64:
 	$(MKDIR_P) ovmf-aa64
-	cd ovmf-aa64 && curl -Lo OVMF.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-aarch64.fd
+	curl -Lo ovmf-aa64/OVMF_CODE.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-aarch64.fd
+	curl -Lo ovmf-aa64/OVMF_VARS.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-aarch64.fd
+	dd if=/dev/zero of=ovmf-aa64/OVMF_CODE.fd bs=1 count=0 seek=67108864 2>/dev/null
+	dd if=/dev/zero of=ovmf-aa64/OVMF_VARS.fd bs=1 count=0 seek=67108864 2>/dev/null
 
 ovmf-rv64:
 	$(MKDIR_P) ovmf-rv64
-	cd ovmf-rv64 && curl -Lo OVMF.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-riscv64.fd
+	curl -Lo ovmf-rv64/OVMF_CODE.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-riscv64.fd
+	curl -Lo ovmf-rv64/OVMF_VARS.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-riscv64.fd
+	dd if=/dev/zero of=ovmf-rv64/OVMF_CODE.fd bs=1 count=0 seek=33554432 2>/dev/null
+	dd if=/dev/zero of=ovmf-rv64/OVMF_VARS.fd bs=1 count=0 seek=33554432 2>/dev/null
 
 ovmf-ia32:
 	$(MKDIR_P) ovmf-ia32
-	cd ovmf-ia32 && curl -Lo OVMF.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-ia32.fd
+	curl -Lo ovmf-ia32/OVMF_CODE.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-ia32.fd
+	curl -Lo ovmf-ia32/OVMF_VARS.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-ia32.fd
 
 ovmf-loongarch64:
 	$(MKDIR_P) ovmf-loongarch64
-	cd ovmf-loongarch64 && curl -Lo OVMF.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-loongarch64.fd
+	curl -Lo ovmf-loongarch64/OVMF_CODE.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-loongarch64.fd
+	curl -Lo ovmf-loongarch64/OVMF_VARS.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-loongarch64.fd
 
 .PHONY: test.hdd
 test.hdd:
@@ -178,10 +187,10 @@ full-hybrid-test:
 	sudo cp -rv test/* test_image/boot/
 	xorriso -as mkisofs -b boot/limine-bios-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine-uefi-cd.bin -efi-boot-part --efi-boot-image --protective-msdos-label test_image/ -o test.iso
 	$(BINDIR)/limine bios-install test.iso
-	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -cdrom test.iso -debugcon stdio
-	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -hda test.iso -debugcon stdio
-	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4   -cdrom test.iso -debugcon stdio
-	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4   -hda test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=ovmf-x64/OVMF_CODE.fd,readonly=on -drive if=pflash,unit=1,format=raw,file=ovmf-x64/OVMF_VARS.fd -net none -smp 4   -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=ovmf-x64/OVMF_CODE.fd,readonly=on -drive if=pflash,unit=1,format=raw,file=ovmf-x64/OVMF_VARS.fd -net none -smp 4   -hda test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=ovmf-ia32/OVMF_CODE.fd,readonly=on -drive if=pflash,unit=1,format=raw,file=ovmf-ia32/OVMF_VARS.fd -net none -smp 4   -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=ovmf-ia32/OVMF_CODE.fd,readonly=on -drive if=pflash,unit=1,format=raw,file=ovmf-ia32/OVMF_VARS.fd -net none -smp 4   -hda test.iso -debugcon stdio
 	qemu-system-x86_64 -m 512M -M q35 -net none -smp 4   -cdrom test.iso -debugcon stdio
 	qemu-system-x86_64 -m 512M -M q35 -net none -smp 4   -hda test.iso -debugcon stdio
 
@@ -218,7 +227,7 @@ uefi-x86-64-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-x64/OVMF.fd -net none -smp 4   -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=ovmf-x64/OVMF_CODE.fd,readonly=on -drive if=pflash,unit=1,format=raw,file=ovmf-x64/OVMF_VARS.fd -net none -smp 4   -hda test.hdd -debugcon stdio
 
 .PHONY: uefi-aa64-test
 uefi-aa64-test:
@@ -242,7 +251,7 @@ uefi-aa64-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-aarch64 -m 512M -M virt -cpu cortex-a72 -bios ovmf-aa64/OVMF.fd -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd  -hda test.hdd -serial stdio
+	qemu-system-aarch64 -m 512M -M virt -cpu cortex-a72 -drive if=pflash,unit=0,format=raw,file=ovmf-aa64/OVMF_CODE.fd,readonly=on -drive if=pflash,unit=1,format=raw,file=ovmf-aa64/OVMF_VARS.fd -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd  -hda test.hdd -serial stdio
 
 .PHONY: uefi-rv64-test
 uefi-rv64-test:
@@ -266,7 +275,7 @@ uefi-rv64-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-riscv64 -m 512M -M virt -cpu rv64 -drive if=pflash,unit=0,format=raw,file=ovmf-rv64/OVMF.fd -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd -device virtio-blk-device,drive=hd0 -drive id=hd0,format=raw,file=test.hdd -serial stdio
+	qemu-system-riscv64 -m 512M -M virt -cpu rv64 -drive if=pflash,unit=0,format=raw,file=ovmf-rv64/OVMF_CODE.fd,readonly=on -drive if=pflash,unit=1,format=raw,file=ovmf-rv64/OVMF_VARS.fd -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd -device virtio-blk-device,drive=hd0 -drive id=hd0,format=raw,file=test.hdd -serial stdio
 
 .PHONY: uefi-loongarch64-test
 uefi-loongarch64-test:
@@ -290,7 +299,7 @@ uefi-loongarch64-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-loongarch64 -m 1G -net none -M virt -cpu la464 -device ramfb -device qemu-xhci -device usb-kbd -bios ovmf-loongarch64/OVMF.fd -hda test.hdd -serial stdio
+	qemu-system-loongarch64 -m 1G -net none -M virt -cpu la464 -device ramfb -device qemu-xhci -device usb-kbd -drive if=pflash,unit=0,format=raw,file=ovmf-loongarch64/OVMF_CODE.fd,readonly=on -drive if=pflash,unit=1,format=raw,file=ovmf-loongarch64/OVMF_VARS.fd -hda test.hdd -serial stdio
 
 .PHONY: uefi-ia32-test
 uefi-ia32-test:
@@ -314,4 +323,4 @@ uefi-ia32-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-x86_64 -m 512M -M q35 -bios ovmf-ia32/OVMF.fd -net none -smp 4   -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=ovmf-ia32/OVMF_CODE.fd,readonly=on -drive if=pflash,unit=1,format=raw,file=ovmf-ia32/OVMF_VARS.fd -net none -smp 4   -hda test.hdd -debugcon stdio

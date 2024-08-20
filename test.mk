@@ -5,23 +5,23 @@ test-clean:
 
 ovmf-x64:
 	$(MKDIR_P) ovmf-x64
-	cd ovmf-x64 && curl -o OVMF.fd https://retrage.github.io/edk2-nightly/bin/RELEASEX64_OVMF.fd
+	cd ovmf-x64 && curl -Lo OVMF.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-x86_64.fd
 
 ovmf-aa64:
 	$(MKDIR_P) ovmf-aa64
-	cd ovmf-aa64 && curl -o OVMF.fd https://retrage.github.io/edk2-nightly/bin/RELEASEAARCH64_QEMU_EFI.fd
+	cd ovmf-aa64 && curl -Lo OVMF.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-aarch64.fd
 
 ovmf-rv64:
 	$(MKDIR_P) ovmf-rv64
-	cd ovmf-rv64 && curl -o OVMF.fd https://retrage.github.io/edk2-nightly/bin/RELEASERISCV64_VIRT_CODE.fd && dd if=/dev/zero of=OVMF.fd bs=1 count=0 seek=33554432
+	cd ovmf-rv64 && curl -Lo OVMF.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-riscv64.fd
 
 ovmf-ia32:
 	$(MKDIR_P) ovmf-ia32
-	cd ovmf-ia32 && curl -o OVMF.fd https://retrage.github.io/edk2-nightly/bin/RELEASEIa32_OVMF.fd
+	cd ovmf-ia32 && curl -Lo OVMF.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-ia32.fd
 
 ovmf-loongarch64:
 	$(MKDIR_P) ovmf-loongarch64
-	cd ovmf-loongarch64 && curl -o OVMF.fd https://raw.githubusercontent.com/limine-bootloader/firmware/trunk/loongarch64/QEMU_EFI.fd
+	cd ovmf-loongarch64 && curl -Lo OVMF.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-loongarch64.fd
 
 .PHONY: test.hdd
 test.hdd:

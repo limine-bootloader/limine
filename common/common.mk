@@ -94,7 +94,6 @@ ifeq ($(TARGET),uefi-x86-64)
         -mno-red-zone
     override CPPFLAGS_FOR_TARGET := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
-        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/x86_64' \
         $(CPPFLAGS_FOR_TARGET) \
         -DUEFI
     override NASMFLAGS_FOR_TARGET += \
@@ -112,7 +111,6 @@ ifeq ($(TARGET),uefi-ia32)
         -mno-80387
     override CPPFLAGS_FOR_TARGET := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
-        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/ia32' \
         $(CPPFLAGS_FOR_TARGET) \
         -DUEFI
     override NASMFLAGS_FOR_TARGET += \
@@ -128,7 +126,6 @@ ifeq ($(TARGET),uefi-aarch64)
         -mgeneral-regs-only
     override CPPFLAGS_FOR_TARGET := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
-        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/aarch64' \
         $(CPPFLAGS_FOR_TARGET) \
         -DUEFI
 endif
@@ -150,7 +147,6 @@ ifeq ($(TARGET),uefi-riscv64)
 
     override CPPFLAGS_FOR_TARGET := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
-        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/riscv64' \
         $(CPPFLAGS_FOR_TARGET) \
         -DUEFI
 endif
@@ -164,7 +160,6 @@ ifeq ($(TARGET),uefi-loongarch64)
 
     override CPPFLAGS_FOR_TARGET := \
         -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
-        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc/loongarch64' \
         $(CPPFLAGS_FOR_TARGET) \
         -DUEFI
 endif

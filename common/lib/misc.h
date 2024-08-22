@@ -11,7 +11,7 @@
 #if defined (UEFI)
 #  include <efi.h>
 #  if defined (__riscv)
-#    include <protocol/riscv/efiboot.h>
+#    include <riscv64/efiboot.h>
 #  endif
 #endif
 

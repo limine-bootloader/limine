@@ -1,3 +1,17 @@
+2024-08-25  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 8.0.6 ***
+
+    Noteworthy changes compared to the previous release, 8.0.5:
+
+    Bug fixes:
+        - Fix issue with makefiles that would cause, among others, issues with
+          job control on older GNU make versions.
+
+    Miscellaneous:
+        - Update limine-efi dependency to latest.
+        - Minor build system improvements.
+
 2024-08-12  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 8.0.5 ***

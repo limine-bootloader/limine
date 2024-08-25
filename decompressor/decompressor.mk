@@ -1,4 +1,5 @@
-override MAKEFLAGS += -rR
+MAKEFLAGS += -rR
+.SUFFIXES:
 
 include $(TOOLCHAIN_FILE)
 export CC_FOR_TARGET

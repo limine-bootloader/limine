@@ -1,4 +1,5 @@
-override MAKEFLAGS += -rR
+MAKEFLAGS += -rR
+.SUFFIXES:
 
 override MAKEVER_MAJOR := $(shell echo $(MAKE_VERSION) | cut -f1 -d.)
 override MAKEVER_MINOR := $(shell echo $(MAKE_VERSION) | cut -f2 -d.)

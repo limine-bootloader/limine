@@ -72,9 +72,9 @@ if ! test -f version; then
     cp decompressor/cc-runtime.c common/cc-runtime.s2.c
 
     download_by_hash \
-        https://github.com/osdev0/freestanding-toolchain/raw/278277e9ade987528f95e011f233837a31233ff6/freestanding-toolchain \
+        https://github.com/osdev0/freestanding-toolchain/raw/d68bd5dfd47e8ccb6a69cf1e3d40e84e9cf2e8f4/freestanding-toolchain \
         build-aux/freestanding-toolchain \
-        89efde3df328d8e2eaa2e6893195a95c0472cd96217805d7fee0a5738ddc5908
+        0eaab0ff59b87342804420552e2d84cb5b2cac834dad5bef994ba2db70e36567
     chmod +x build-aux/freestanding-toolchain
 
     clone_repo_commit \

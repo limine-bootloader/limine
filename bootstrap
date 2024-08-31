@@ -72,15 +72,15 @@ if ! test -f version; then
     cp decompressor/cc-runtime.c common/cc-runtime.s2.c
 
     download_by_hash \
-        https://github.com/osdev0/freestanding-toolchain/raw/d68bd5dfd47e8ccb6a69cf1e3d40e84e9cf2e8f4/freestanding-toolchain \
+        https://github.com/osdev0/freestanding-toolchain/raw/729281786413dc16529d87bd4ea13f03a71e004e/freestanding-toolchain \
         build-aux/freestanding-toolchain \
-        0eaab0ff59b87342804420552e2d84cb5b2cac834dad5bef994ba2db70e36567
+        1176b458cac5a7e72b4237fbe22f2245d96f1ac851408f834dc549ebc2d7076b
     chmod +x build-aux/freestanding-toolchain
 
     clone_repo_commit \
         https://github.com/limine-bootloader/limine-efi.git \
         limine-efi \
-        73f724af317f058739570ab213f182a8872ec48f
+        8f36aa3414b6ae95ec341cae518cbada1ebb6372
 
     clone_repo_commit \
         https://github.com/jibsen/tinf.git \

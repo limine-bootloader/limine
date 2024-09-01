@@ -3,6 +3,5 @@ updates:
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: monthly # not so critical, be less spammy
-    open-pull-requests-limit: 10
+      interval: "daily"
     target-branch: trunk

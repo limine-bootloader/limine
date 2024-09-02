@@ -5,32 +5,32 @@ test-clean:
 
 ovmf-x64:
 	$(MKDIR_P) ovmf-x64
-	curl -Lo ovmf-x64/OVMF_CODE.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-x86_64.fd
-	curl -Lo ovmf-x64/OVMF_VARS.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-x86_64.fd
+	curl -Lo ovmf-x64/OVMF_CODE.fd https://github.com/osdev0/edk2-ovmf-nightly/releases/latest/download/ovmf-code-x86_64.fd
+	curl -Lo ovmf-x64/OVMF_VARS.fd https://github.com/osdev0/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-x86_64.fd
 
 ovmf-aa64:
 	$(MKDIR_P) ovmf-aa64
-	curl -Lo ovmf-aa64/OVMF_CODE.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-aarch64.fd
-	curl -Lo ovmf-aa64/OVMF_VARS.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-aarch64.fd
+	curl -Lo ovmf-aa64/OVMF_CODE.fd https://github.com/osdev0/edk2-ovmf-nightly/releases/latest/download/ovmf-code-aarch64.fd
+	curl -Lo ovmf-aa64/OVMF_VARS.fd https://github.com/osdev0/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-aarch64.fd
 	dd if=/dev/zero of=ovmf-aa64/OVMF_CODE.fd bs=1 count=0 seek=67108864 2>/dev/null
 	dd if=/dev/zero of=ovmf-aa64/OVMF_VARS.fd bs=1 count=0 seek=67108864 2>/dev/null
 
 ovmf-rv64:
 	$(MKDIR_P) ovmf-rv64
-	curl -Lo ovmf-rv64/OVMF_CODE.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-riscv64.fd
-	curl -Lo ovmf-rv64/OVMF_VARS.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-riscv64.fd
+	curl -Lo ovmf-rv64/OVMF_CODE.fd https://github.com/osdev0/edk2-ovmf-nightly/releases/latest/download/ovmf-code-riscv64.fd
+	curl -Lo ovmf-rv64/OVMF_VARS.fd https://github.com/osdev0/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-riscv64.fd
 	dd if=/dev/zero of=ovmf-rv64/OVMF_CODE.fd bs=1 count=0 seek=33554432 2>/dev/null
 	dd if=/dev/zero of=ovmf-rv64/OVMF_VARS.fd bs=1 count=0 seek=33554432 2>/dev/null
 
 ovmf-ia32:
 	$(MKDIR_P) ovmf-ia32
-	curl -Lo ovmf-ia32/OVMF_CODE.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-ia32.fd
-	curl -Lo ovmf-ia32/OVMF_VARS.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-ia32.fd
+	curl -Lo ovmf-ia32/OVMF_CODE.fd https://github.com/osdev0/edk2-ovmf-nightly/releases/latest/download/ovmf-code-ia32.fd
+	curl -Lo ovmf-ia32/OVMF_VARS.fd https://github.com/osdev0/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-ia32.fd
 
 ovmf-loongarch64:
 	$(MKDIR_P) ovmf-loongarch64
-	curl -Lo ovmf-loongarch64/OVMF_CODE.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-code-loongarch64.fd
-	curl -Lo ovmf-loongarch64/OVMF_VARS.fd https://github.com/limine-bootloader/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-loongarch64.fd
+	curl -Lo ovmf-loongarch64/OVMF_CODE.fd https://github.com/osdev0/edk2-ovmf-nightly/releases/latest/download/ovmf-code-loongarch64.fd
+	curl -Lo ovmf-loongarch64/OVMF_VARS.fd https://github.com/osdev0/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-loongarch64.fd
 
 .PHONY: test.hdd
 test.hdd:

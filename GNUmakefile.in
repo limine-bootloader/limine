@@ -1,14 +1,6 @@
 MAKEFLAGS += -rR
 .SUFFIXES:
 
-override MAKEVER_MAJOR := $(shell echo $(MAKE_VERSION) | cut -f1 -d.)
-override MAKEVER_MINOR := $(shell echo $(MAKE_VERSION) | cut -f2 -d.)
-override MAKEVER_VALID := $(shell ( [ "$(MAKEVER_MAJOR)" -gt 4 ] || ( [ "$(MAKEVER_MAJOR)" -eq 4 ] && [ "$(MAKEVER_MINOR)" -gt 1 ] ) ) && echo 1)
-
-ifneq ($(MAKEVER_VALID),1)
-$(error GNU Make version 4.2 or greater is required to build Limine)
-endif
-
 override SOURCE_DATE_EPOCH := @SOURCE_DATE_EPOCH@
 export SOURCE_DATE_EPOCH
 

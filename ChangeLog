@@ -1,3 +1,14 @@
+2024-09-02  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 8.0.7 ***
+
+    Noteworthy changes compared to the previous release, 8.0.6:
+
+    Miscellaneous:
+        - Remove GNU make version check as we now support building on older
+          make versions.
+        - Miscellaneous build system improvements.
+
 2024-08-25  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 8.0.6 ***

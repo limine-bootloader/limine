@@ -60,6 +60,7 @@ override LDFLAGS_FOR_TARGET += \
 
 override NASMFLAGS_FOR_TARGET += \
     -Wall \
+    -w-unknown-warning \
     -w-reloc \
     $(WERROR_FLAG) \
     -f elf32

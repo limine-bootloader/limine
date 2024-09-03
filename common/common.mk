@@ -64,6 +64,7 @@ $(call MKESCAPE,$(BUILDDIR))/./flanterm/backends/fb.o: override CPPFLAGS_FOR_TAR
 
 override NASMFLAGS_FOR_TARGET += \
     -Wall \
+    -w-unknown-warning \
     -w-reloc \
     $(WERROR_FLAG)
 

@@ -262,15 +262,20 @@ override HEADER_DEPS := $(addprefix $(call MKESCAPE,$(BUILDDIR))/, $(C_FILES:.c=
 
 ifeq ($(TARGET),bios)
 all: $(call MKESCAPE,$(BUILDDIR))/limine-bios.sys $(call MKESCAPE,$(BUILDDIR))/stage2.bin.gz
-else ifeq ($(TARGET),uefi-x86-64)
+endif
+ifeq ($(TARGET),uefi-x86-64)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI
-else ifeq ($(TARGET),uefi-ia32)
+endif
+ifeq ($(TARGET),uefi-ia32)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI
-else ifeq ($(TARGET),uefi-aarch64)
+endif
+ifeq ($(TARGET),uefi-aarch64)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTAA64.EFI
-else ifeq ($(TARGET),uefi-riscv64)
+endif
+ifeq ($(TARGET),uefi-riscv64)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTRISCV64.EFI
-else ifeq ($(TARGET),uefi-loongarch64)
+endif
+ifeq ($(TARGET),uefi-loongarch64)
 all: $(call MKESCAPE,$(BUILDDIR))/BOOTLOONGARCH64.EFI
 endif
 

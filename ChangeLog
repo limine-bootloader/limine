@@ -1,3 +1,13 @@
+2024-09-03  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 8.0.8 ***
+
+    Noteworthy changes compared to the previous release, 8.0.7:
+
+    Bug fixes:
+        - Work around makefile issues that caused GNU make versions 4.0 and 4.1
+          as well as version 3.80 to fail to build Limine.
+
 2024-09-02  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 8.0.7 ***

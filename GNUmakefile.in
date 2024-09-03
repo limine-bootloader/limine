@@ -29,9 +29,9 @@ override SRCDIR := @SRCDIR@
 override SPACE := $(subst ,, )
 override COMMA := ,
 
-MKESCAPE = $(subst $(SPACE),\ ,$(1))
-SHESCAPE = $(subst ','\'',$(1))
-NASMESCAPE = $(subst ','"'$(COMMA) \"'\"$(COMMA) '"',$(1))
+override MKESCAPE = $(subst $(SPACE),\ ,$(1))
+override SHESCAPE = $(subst ','\'',$(1))
+override NASMESCAPE = $(subst ','"'$(COMMA) \"'\"$(COMMA) '"',$(1))
 
 override USER_VARIABLE = $(if $(filter $(origin $(1)),default undefined),$(eval override $(1) := $(2)))
 

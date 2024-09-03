@@ -15,9 +15,9 @@ override SRCDIR := $(shell pwd -P)
 
 override SPACE := $(subst ,, )
 
-MKESCAPE = $(subst $(SPACE),\ ,$(1))
-SHESCAPE = $(subst ','\'',$(1))
-OBJESCAPE = $(subst .a ,.a' ',$(subst .o ,.o' ',$(call SHESCAPE,$(1))))
+override MKESCAPE = $(subst $(SPACE),\ ,$(1))
+override SHESCAPE = $(subst ','\'',$(1))
+override OBJESCAPE = $(subst .a ,.a' ',$(subst .o ,.o' ',$(call SHESCAPE,$(1))))
 
 ifeq ($(call MKESCAPE,$(BUILDDIR)),)
     $(error BUILDDIR not specified)

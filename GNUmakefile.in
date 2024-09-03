@@ -119,13 +119,11 @@ $(call MKESCAPE,$(BINDIR))/limine-bios-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-
 	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	cd '$(call SHESCAPE,$(BINDIR))' && '$(call SHESCAPE,$(SRCDIR))/host/hgen.sh' >limine-bios-hdd.h
 
-ifeq ($(BUILD_BIOS),limine-bios)
-$(call MKESCAPE,$(BINDIR))/limine: $(call MKESCAPE,$(BINDIR))/Makefile $(call MKESCAPE,$(SRCDIR))/host/limine.c $(call MKESCAPE,$(BINDIR))/limine-bios-hdd.h
-else
+ifneq ($(BUILD_BIOS),limine-bios)
 override LIMINE_NO_BIOS := -DLIMINE_NO_BIOS
-
-$(call MKESCAPE,$(BINDIR))/limine: $(call MKESCAPE,$(BINDIR))/Makefile $(call MKESCAPE,$(SRCDIR))/host/limine.c
 endif
+
+$(call MKESCAPE,$(BINDIR))/limine: $(call MKESCAPE,$(BINDIR))/Makefile $(call MKESCAPE,$(SRCDIR))/host/limine.c $(if $(filter $(BUILD_BIOS),limine-bios),$(call MKESCAPE,$(BINDIR))/limine-bios-hdd.h)
 	$(SED) 's/%VERSION%/@PACKAGE_VERSION@/g;s/%COPYRIGHT%/@LIMINE_COPYRIGHT@/g' <'$(call SHESCAPE,$(SRCDIR))/host/limine.c' >'$(call SHESCAPE,$(BINDIR))/limine.c'
 	CPPFLAGS='$(CPPFLAGS) $(LIMINE_NO_BIOS) -DLIMINE_DATADIR=\"$(call SHESCAPE,$(datarootdir))/limine\"' $(MAKE) -C '$(call SHESCAPE,$(BINDIR))' limine
 

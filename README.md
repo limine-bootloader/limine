@@ -138,9 +138,9 @@ make install    # (or gmake where applicable)
 See [USAGE.md](USAGE.md).
 
 ## Acknowledgments
-Limine uses a stripped-down version of [tinf](https://github.com/jibsen/tinf) for early GZIP decompression.
+Limine uses a stripped-down version of [tinf](https://github.com/jibsen/tinf) for GZIP decompression in early x86 BIOS stages.
 
-Limine relies on [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h) for runtime GZIP decompression and image loading.
+Limine uses [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h) for wallpaper image loading.
 
 Limine uses a patched version of libfdt (can be found in Linux's source tree) for manipulating FDTs.
 

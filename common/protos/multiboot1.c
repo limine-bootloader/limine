@@ -25,6 +25,8 @@
 
 #define LIMINE_BRAND "Limine " LIMINE_VERSION
 
+#define MEMMAP_MAX 256
+
 // Returns the size required to store the multiboot info.
 static size_t get_multiboot1_info_size(
     char *cmdline,
@@ -414,6 +416,10 @@ skip_modeset:;
 
     size_t mb_mmap_count;
     struct memmap_entry *raw_memmap = get_raw_memmap(&mb_mmap_count);
+
+    if (mb_mmap_count > MEMMAP_MAX) {
+        panic(false, "multiboot1: Too many memory map entries.");
+    }
 
     size_t mb_mmap_len = mb_mmap_count * sizeof(struct multiboot1_mmap_entry);
     struct multiboot1_mmap_entry *mmap = mb1_info_alloc(&mb1_info_raw, mb_mmap_len);

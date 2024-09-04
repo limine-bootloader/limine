@@ -28,6 +28,9 @@
 
 #define LIMINE_BRAND "Limine " LIMINE_VERSION
 
+#define MEMMAP_MAX 256
+#define EFI_MEMMAP_MAX 1024
+
 /// Returns the size required to store the multiboot2 info.
 static size_t get_multiboot2_info_size(
     char *cmdline,
@@ -48,7 +51,7 @@ static size_t get_multiboot2_info_size(
         ALIGN_UP(sizeof(struct multiboot_tag_basic_meminfo), MULTIBOOT_TAG_ALIGN) +                                     // basic memory info
         ALIGN_UP(sizeof(struct multiboot_tag_mmap) + sizeof(struct multiboot_mmap_entry) * MEMMAP_MAX, MULTIBOOT_TAG_ALIGN) +  // MMAP
         #if defined (UEFI)
-            ALIGN_UP(sizeof(struct multiboot_tag_efi_mmap) + (efi_desc_size * MEMMAP_MAX), MULTIBOOT_TAG_ALIGN) +              // EFI MMAP
+            ALIGN_UP(sizeof(struct multiboot_tag_efi_mmap) + (efi_desc_size * EFI_MEMMAP_MAX), MULTIBOOT_TAG_ALIGN) +          // EFI MMAP
             #if defined (__i386__)
                 ALIGN_UP(sizeof(struct multiboot_tag_efi32), MULTIBOOT_TAG_ALIGN) +                                     // EFI system table 32
                 ALIGN_UP(sizeof(struct multiboot_tag_efi32_ih), MULTIBOOT_TAG_ALIGN) +                                  // EFI image handle 32
@@ -862,7 +865,7 @@ skip_modeset:;
     //////////////////////////////////////////////
 #if defined (UEFI)
     {
-        if ((efi_mmap_size / efi_desc_size) > MEMMAP_MAX) {
+        if ((efi_mmap_size / efi_desc_size) > EFI_MEMMAP_MAX) {
             panic(false, "multiboot2: too many EFI memory map entries");
         }
 

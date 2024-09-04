@@ -34,6 +34,8 @@
 
 #define MAX_REQUESTS 128
 
+#define MEMMAP_MAX 256
+
 static int paging_mode;
 
 static uint64_t get_hhdm_span_top(int base_revision) {

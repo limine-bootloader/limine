@@ -22,12 +22,6 @@ struct memmap_entry {
 #define MEMMAP_FRAMEBUFFER            0x1002
 #define MEMMAP_EFI_RECLAIMABLE        0x2000
 
-#if defined (BIOS)
-#  define MEMMAP_MAX 256
-#elif defined (UEFI)
-#  define MEMMAP_MAX 1024
-#endif
-
 struct meminfo {
     size_t uppermem;
     size_t lowermem;

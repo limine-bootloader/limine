@@ -1,3 +1,13 @@
+2024-09-04  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 8.0.9 ***
+
+    Noteworthy changes compared to the previous release, 8.0.8:
+
+    Bug fixes:
+        - Fix an issue that could cause Limine to not boot on UEFI systems with
+          too many memory map entries.
+
 2024-09-03  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 8.0.8 ***

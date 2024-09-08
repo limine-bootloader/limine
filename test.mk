@@ -31,6 +31,8 @@ ovmf-loongarch64:
 	$(MKDIR_P) ovmf-loongarch64
 	curl -Lo ovmf-loongarch64/OVMF_CODE.fd https://github.com/osdev0/edk2-ovmf-nightly/releases/latest/download/ovmf-code-loongarch64.fd
 	curl -Lo ovmf-loongarch64/OVMF_VARS.fd https://github.com/osdev0/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-loongarch64.fd
+	dd if=/dev/zero of=ovmf-loongarch64/OVMF_CODE.fd bs=1 count=0 seek=5242880 2>/dev/null
+	dd if=/dev/zero of=ovmf-loongarch64/OVMF_VARS.fd bs=1 count=0 seek=5242880 2>/dev/null
 
 .PHONY: test.hdd
 test.hdd:
@@ -275,7 +277,7 @@ uefi-rv64-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-riscv64 -m 512M -M virt -cpu rv64 -drive if=pflash,unit=0,format=raw,file=ovmf-rv64/OVMF_CODE.fd,readonly=on -drive if=pflash,unit=1,format=raw,file=ovmf-rv64/OVMF_VARS.fd -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd -device virtio-blk-device,drive=hd0 -drive id=hd0,format=raw,file=test.hdd -serial stdio
+	qemu-system-riscv64 -m 512M -M virt -cpu rv64 -drive if=pflash,unit=0,format=raw,file=ovmf-rv64/OVMF_CODE.fd,readonly=on -drive if=pflash,unit=1,format=raw,file=ovmf-rv64/OVMF_VARS.fd -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd -hda test.hdd -serial stdio
 
 .PHONY: uefi-loongarch64-test
 uefi-loongarch64-test:

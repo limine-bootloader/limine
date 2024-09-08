@@ -61,9 +61,9 @@ download_by_hash() {
 
 if ! test -f version; then
     clone_repo_commit \
-        https://github.com/osdev0/freestanding-headers.git \
-        freestanding-headers \
-        4b8b78007533dec6ae3bd8dddcc302f22a21c140
+        https://github.com/osdev0/freestnd-c-hdrs.git \
+        freestnd-c-hdrs \
+        2a75fc37ab374e52bd5862adb785169cc26cdb50
 
     download_by_hash \
         https://github.com/osdev0/cc-runtime/raw/dcdf5d82973e77edee597a047a3ef66300903de9/cc-runtime.c \

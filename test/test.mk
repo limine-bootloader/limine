@@ -58,12 +58,12 @@ override CFLAGS += \
     -fno-stack-check \
     -fno-lto \
     -fPIE \
-    -I../freestanding-headers \
     -I. \
     -D_LIMINE_PROTO
 
 ifneq ($(findstring x86_64,$(shell $(CC_FOR_TARGET) -dumpmachine)),)
 override CFLAGS += \
+    -I../freestnd-c-hdrs/x86_64/include \
     -m64 \
     -march=x86-64 \
     -mgeneral-regs-only \
@@ -72,11 +72,13 @@ endif
 
 ifneq ($(findstring aarch64,$(shell $(CC_FOR_TARGET) -dumpmachine)),)
 override CFLAGS += \
+    -I../freestnd-c-hdrs/aarch64/include \
     -mgeneral-regs-only
 endif
 
 ifneq ($(findstring riscv64,$(shell $(CC_FOR_TARGET) -dumpmachine)),)
 override CFLAGS += \
+    -I../freestnd-c-hdrs/riscv64/include \
     -march=rv64imac \
     -mabi=lp64 \
     -mno-relax
@@ -86,6 +88,7 @@ endif
 
 ifneq ($(findstring loongarch64,$(shell $(CC_FOR_TARGET) -dumpmachine)),)
 override CFLAGS += \
+    -I../freestnd-c-hdrs/loongarch64/include \
     -march=loongarch64 \
     -mabi=lp64s
 override LDFLAGS += \
@@ -103,7 +106,7 @@ override CFLAGS_MB := \
     -m32 \
     -march=i686 \
     -mgeneral-regs-only \
-    -I../freestanding-headers \
+    -I../freestnd-c-hdrs/i686/include \
     -I. \
     -I../common/protos
 

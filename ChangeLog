@@ -1,3 +1,18 @@
+2024-09-09  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 8.0.10 ***
+
+    Noteworthy changes compared to the previous release, 8.0.9:
+
+    Bug fixes:
+        - Fix bug where contents of loaded EFI image size variable could be off
+          significantly compared to actual size when compiled with GCC, causing
+          many issues.
+        - Fix memory manager bug introduced in 2021 during optimisation work.
+
+    Miscellaneous:
+        - Replace "freestanding-headers" with GCC-provided "freestnd-c-hdrs".
+
 2024-09-04  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 8.0.9 ***

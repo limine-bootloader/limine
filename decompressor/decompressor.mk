@@ -43,7 +43,7 @@ override CFLAGS_FOR_TARGET += \
     -mno-80387
 
 override CPPFLAGS_FOR_TARGET := \
-    -isystem ../freestnd-c-hdrs/i686/include \
+    -isystem ../freestanding-headers \
     -I./tinf \
     -I. \
     $(CPPFLAGS_FOR_TARGET) \

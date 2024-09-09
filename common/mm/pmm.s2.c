@@ -159,7 +159,9 @@ static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_
         if (!m[i].length
          || (align_entries && !align_entry(&m[i].base, &m[i].length))) {
             // Remove i from memmap
-            m[i] = m[count - 1];
+            if (i < count) {
+                m[i] = m[count - 1];
+            }
             count--; i--;
         }
     }
@@ -181,7 +183,9 @@ static void sanitise_entries(struct memmap_entry *m, size_t *_count, bool align_
         if (m[i].length == 0) {
 del_mm1:
             // Remove i from memmap
-            m[i] = m[count - 1];
+            if (i < count - 1) {
+                m[i] = m[count - 1];
+            }
             count--; i--;
         }
     }
@@ -661,7 +665,9 @@ static bool pmm_new_entry(struct memmap_entry *m, size_t *_count,
         // Full overlap
         if (base <= entry_base && top >= entry_top) {
             // Remove overlapped entry
-            m[i] = m[count - 1];
+            if (i < count - 1) {
+                m[i] = m[count - 1];
+            }
             count--;
             i--;
             continue;

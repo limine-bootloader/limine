@@ -63,7 +63,7 @@ if ! test -f version; then
     clone_repo_commit \
         https://github.com/osdev0/freestanding-headers.git \
         freestanding-headers \
-        4b8b78007533dec6ae3bd8dddcc302f22a21c140
+        f890bb927859719061fe020119f3d5439d90aecf
 
     download_by_hash \
         https://github.com/osdev0/cc-runtime/raw/dcdf5d82973e77edee597a047a3ef66300903de9/cc-runtime.c \

@@ -27,8 +27,7 @@
 void stage3_common(void);
 
 #if defined (UEFI)
-extern symbol __slide;
-extern symbol __image_size;
+extern symbol __slide, __image_base, __image_end;
 extern symbol _start;
 
 noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
@@ -43,9 +42,10 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
 
 #if defined (__x86_64__)
     if ((uintptr_t)__slide >= 0x100000000) {
-        size_t image_size_pages = ALIGN_UP((size_t)__image_size, 4096) / 4096;
+        size_t image_size = ALIGN_UP((uintptr_t)__image_end - (uintptr_t)__image_base, 4096);
+        size_t image_size_pages = ALIGN_UP((size_t)image_size, 4096) / 4096;
         size_t new_base;
-        for (new_base = 0x1000; new_base + (size_t)__image_size < 0x100000000; new_base += 0x1000) {
+        for (new_base = 0x1000; new_base + (size_t)image_size < 0x100000000; new_base += 0x1000) {
             EFI_PHYSICAL_ADDRESS _new_base = (EFI_PHYSICAL_ADDRESS)new_base;
             status = gBS->AllocatePages(AllocateAddress, EfiLoaderCode, image_size_pages, &_new_base);
             if (status == 0) {
@@ -55,7 +55,7 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
         deferred_error = "Limine does not support being loaded above 4GiB and no alternative loading spot found";
         goto defer_error;
 new_base_gotten:
-        memcpy((void *)new_base, __slide, (size_t)__image_size);
+        memcpy((void *)new_base, __slide, (size_t)image_size);
         __attribute__((ms_abi))
         void (*new_entry_point)(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable);
         new_entry_point = (void *)(new_base + ((uintptr_t)_start - (uintptr_t)__slide));

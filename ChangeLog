@@ -1,3 +1,13 @@
+2024-09-10  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 8.0.11 ***
+
+    Noteworthy changes compared to the previous release, 8.0.10:
+
+    Miscellaneous:
+        - Replace "freestnd-c-hdrs" back with "freestanding-headers" due to
+          GPLv3 with Runtime Exceptions licensing concerns and size.
+
 2024-09-09  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 8.0.10 ***

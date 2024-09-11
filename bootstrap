@@ -13,21 +13,24 @@ cd "$srcdir"
 AUXFILES="config.guess config.sub install-sh"
 
 clone_repo_commit() {
-    if test -d $2/.git; then
-        git -C $2 reset --hard
-        git -C $2 clean -fd
-        if ! git -C $2 checkout $3; then
-            rm -rf $2
+    if test -d "$2/.git"; then
+        git -C "$2" reset --hard
+        git -C "$2" clean -fd
+        if ! git -C "$2" checkout $3; then
+            rm -rf "$2"
         fi
     else
-        if test -d $2; then
+        if test -d "$2"; then
             echo "error: '$2' is not a Git repository"
             exit 1
         fi
     fi
-    if ! test -d $2; then
-        git clone $1 $2
-        git -C $2 checkout $3
+    if ! test -d "$2"; then
+        git clone $1 "$2"
+        if ! git -C "$2" checkout $3; then
+            rm -rf "$2"
+            exit 1
+        fi
     fi
 }
 
@@ -48,12 +51,15 @@ download_by_hash() {
             exit 1
         fi
     fi
-    if ! test -f $2 || ! $SHA256_COMMAND $2 | grep $3 >/dev/null 2>&1; then
-        rm -f $2
-        mkdir -p $2 && rm -rf $2
-        $DOWNLOAD_COMMAND $2 $1
-        if ! $SHA256_COMMAND $2 | grep $3 >/dev/null 2>&1; then
+    if ! test -f "$2" || ! $SHA256_COMMAND "$2" | grep $3 >/dev/null 2>&1; then
+        rm -f "$2"
+        mkdir -p "$2" && rm -rf "$2"
+        $DOWNLOAD_COMMAND "$2" $1
+        if ! $SHA256_COMMAND "$2" | grep $3 >/dev/null 2>&1; then
             echo "error: Cannot download file '$2' by hash"
+            echo "incorrect hash:"
+            $SHA256_COMMAND "$2"
+            rm -f "$2"
             exit 1
         fi
     fi

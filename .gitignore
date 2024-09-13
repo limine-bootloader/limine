@@ -24,7 +24,7 @@
 /bin
 /build
 /toolchain-files
-/limine-efi
+/nyu-efi
 /freestnd-c-hdrs-0bsd
 /common/flanterm
 /common/libfdt

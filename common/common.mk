@@ -95,7 +95,7 @@ ifeq ($(TARGET),uefi-x86-64)
         -mno-sse2 \
         -mno-red-zone
     override CPPFLAGS_FOR_TARGET := \
-        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
+        -I'$(call SHESCAPE,$(BUILDDIR))/nyu-efi/inc' \
         $(CPPFLAGS_FOR_TARGET) \
         -DUEFI
     override NASMFLAGS_FOR_TARGET += \
@@ -112,7 +112,7 @@ ifeq ($(TARGET),uefi-ia32)
         -march=i686 \
         -mno-80387
     override CPPFLAGS_FOR_TARGET := \
-        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
+        -I'$(call SHESCAPE,$(BUILDDIR))/nyu-efi/inc' \
         $(CPPFLAGS_FOR_TARGET) \
         -DUEFI
     override NASMFLAGS_FOR_TARGET += \
@@ -127,7 +127,7 @@ ifeq ($(TARGET),uefi-aarch64)
         -fshort-wchar \
         -mgeneral-regs-only
     override CPPFLAGS_FOR_TARGET := \
-        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
+        -I'$(call SHESCAPE,$(BUILDDIR))/nyu-efi/inc' \
         $(CPPFLAGS_FOR_TARGET) \
         -DUEFI
 endif
@@ -148,7 +148,7 @@ ifeq ($(TARGET),uefi-riscv64)
         -mno-relax
 
     override CPPFLAGS_FOR_TARGET := \
-        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
+        -I'$(call SHESCAPE,$(BUILDDIR))/nyu-efi/inc' \
         $(CPPFLAGS_FOR_TARGET) \
         -DUEFI
 endif
@@ -161,7 +161,7 @@ ifeq ($(TARGET),uefi-loongarch64)
         -mabi=lp64s
 
     override CPPFLAGS_FOR_TARGET := \
-        -I'$(call SHESCAPE,$(BUILDDIR))/limine-efi/inc' \
+        -I'$(call SHESCAPE,$(BUILDDIR))/nyu-efi/inc' \
         $(CPPFLAGS_FOR_TARGET) \
         -DUEFI
 endif
@@ -373,9 +373,9 @@ $(call MKESCAPE,$(BUILDDIR))/limine.elf: $(OBJ) $(call MKESCAPE,$(BUILDDIR))/sta
 
 endif
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi: ../limine-efi/*
+$(call MKESCAPE,$(BUILDDIR))/nyu-efi: ../nyu-efi/*
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
-	cp -r ../limine-efi '$(call SHESCAPE,$(BUILDDIR))/'
+	cp -r ../nyu-efi '$(call SHESCAPE,$(BUILDDIR))/'
 
 ifeq ($(TARGET),uefi-x86-64)
 
@@ -390,13 +390,13 @@ $(call MKESCAPE,$(BUILDDIR))/BOOTX64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.el
 	chmod -x '$(call SHESCAPE,$@)'
 	dd if=/dev/zero of='$(call SHESCAPE,$@)' bs=4096 count=0 seek=$$(( ($$(wc -c < '$(call SHESCAPE,$@)') + 4095) / 4096 ))
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-x86_64.S.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/crt0-efi-x86_64.S.o: nyu-efi
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_x86_64.c.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/reloc_x86_64.c.o: nyu-efi
 
-.PHONY: limine-efi
-limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
-	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/src' -f limine-efi.mk \
+.PHONY: nyu-efi
+nyu-efi: $(call MKESCAPE,$(BUILDDIR))/nyu-efi
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/nyu-efi/src' -f nyu-efi.mk \
 		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
 		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestnd-c-hdrs-0bsd' \
@@ -406,7 +406,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_x86_64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_x86_64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-x86_64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_x86_64.c.o $(OBJ)
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/crt0-efi-x86_64.S.o $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/reloc_x86_64.c.o $(OBJ)
 	$(MAKE) -f common.mk '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
@@ -416,7 +416,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_x86_64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_x86_64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-x86_64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_x86_64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/crt0-efi-x86_64.S.o $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/reloc_x86_64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) -f common.mk '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
@@ -437,13 +437,13 @@ $(call MKESCAPE,$(BUILDDIR))/BOOTAA64.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.e
 	chmod -x '$(call SHESCAPE,$@)'
 	dd if=/dev/zero of='$(call SHESCAPE,$@)' bs=4096 count=0 seek=$$(( ($$(wc -c < '$(call SHESCAPE,$@)') + 4095) / 4096 ))
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-aarch64.S.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/crt0-efi-aarch64.S.o: nyu-efi
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_aarch64.c.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/reloc_aarch64.c.o: nyu-efi
 
-.PHONY: limine-efi
-limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
-	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/src' -f limine-efi.mk \
+.PHONY: nyu-efi
+nyu-efi: $(call MKESCAPE,$(BUILDDIR))/nyu-efi
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/nyu-efi/src' -f nyu-efi.mk \
 		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
 		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestnd-c-hdrs-0bsd' \
@@ -453,7 +453,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_aarch64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_aarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-aarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_aarch64.c.o $(OBJ)
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/crt0-efi-aarch64.S.o $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/reloc_aarch64.c.o $(OBJ)
 	$(MAKE) -f common.mk '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
@@ -463,7 +463,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_aarch64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_aarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-aarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_aarch64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/crt0-efi-aarch64.S.o $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/reloc_aarch64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) -f common.mk '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
@@ -483,13 +483,13 @@ $(call MKESCAPE,$(BUILDDIR))/BOOTRISCV64.EFI: $(call MKESCAPE,$(BUILDDIR))/limin
 	chmod -x '$(call SHESCAPE,$@)'
 	dd if=/dev/zero of='$(call SHESCAPE,$@)' bs=4096 count=0 seek=$$(( ($$(wc -c < '$(call SHESCAPE,$@)') + 4095) / 4096 ))
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-riscv64.S.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/crt0-efi-riscv64.S.o: nyu-efi
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_riscv64.c.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/reloc_riscv64.c.o: nyu-efi
 
-.PHONY: limine-efi
-limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
-	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/src' -f limine-efi.mk \
+.PHONY: nyu-efi
+nyu-efi: $(call MKESCAPE,$(BUILDDIR))/nyu-efi
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/nyu-efi/src' -f nyu-efi.mk \
 		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
 		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestnd-c-hdrs-0bsd' \
@@ -499,7 +499,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_riscv64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_riscv64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-riscv64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_riscv64.c.o $(OBJ)
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/crt0-efi-riscv64.S.o $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/reloc_riscv64.c.o $(OBJ)
 	$(MAKE) -f common.mk '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
@@ -509,7 +509,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_riscv64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_riscv64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-riscv64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_riscv64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/crt0-efi-riscv64.S.o $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/reloc_riscv64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) -f common.mk '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
@@ -529,13 +529,13 @@ $(call MKESCAPE,$(BUILDDIR))/BOOTLOONGARCH64.EFI: $(call MKESCAPE,$(BUILDDIR))/l
 	chmod -x '$(call SHESCAPE,$@)'
 	dd if=/dev/zero of='$(call SHESCAPE,$@)' bs=4096 count=0 seek=$$(( ($$(wc -c < '$(call SHESCAPE,$@)') + 4095) / 4096 ))
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-loongarch64.S.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/crt0-efi-loongarch64.S.o: nyu-efi
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_loongarch64.c.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/reloc_loongarch64.c.o: nyu-efi
 
-.PHONY: limine-efi
-limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
-	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/src' -f limine-efi.mk \
+.PHONY: nyu-efi
+nyu-efi: $(call MKESCAPE,$(BUILDDIR))/nyu-efi
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/nyu-efi/src' -f nyu-efi.mk \
 		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
 		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestnd-c-hdrs-0bsd' \
@@ -545,7 +545,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_loongarch64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_loongarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-loongarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_loongarch64.c.o $(OBJ)
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/crt0-efi-loongarch64.S.o $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/reloc_loongarch64.c.o $(OBJ)
 	$(MAKE) -f common.mk '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
@@ -555,7 +555,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_loongarch64.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_loongarch64.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-loongarch64.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_loongarch64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/crt0-efi-loongarch64.S.o $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/reloc_loongarch64.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) -f common.mk '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
@@ -575,13 +575,13 @@ $(call MKESCAPE,$(BUILDDIR))/BOOTIA32.EFI: $(call MKESCAPE,$(BUILDDIR))/limine.e
 	chmod -x '$(call SHESCAPE,$@)'
 	dd if=/dev/zero of='$(call SHESCAPE,$@)' bs=4096 count=0 seek=$$(( ($$(wc -c < '$(call SHESCAPE,$@)') + 4095) / 4096 ))
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-ia32.S.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/crt0-efi-ia32.S.o: nyu-efi
 
-$(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_ia32.c.o: limine-efi
+$(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/reloc_ia32.c.o: nyu-efi
 
-.PHONY: limine-efi
-limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
-	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/src' -f limine-efi.mk \
+.PHONY: nyu-efi
+nyu-efi: $(call MKESCAPE,$(BUILDDIR))/nyu-efi
+	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/nyu-efi/src' -f nyu-efi.mk \
 		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
 		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestnd-c-hdrs-0bsd' \
@@ -591,7 +591,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_ia32.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef -DLINKER_NOMAP linker_uefi_ia32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-ia32.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_ia32.c.o $(OBJ)
+$(call MKESCAPE,$(BUILDDIR))/limine_nomap.elf: $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/crt0-efi-ia32.S.o $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/reloc_ia32.c.o $(OBJ)
 	$(MAKE) -f common.mk '$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker_nomap.ld' \
@@ -601,7 +601,7 @@ $(call MKESCAPE,$(BUILDDIR))/linker.ld: linker_uefi_ia32.ld.in
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	$(CC_FOR_TARGET) -x c -E -P -undef linker_uefi_ia32.ld.in -o '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 
-$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/crt0-efi-ia32.S.o $(call MKESCAPE,$(BUILDDIR))/limine-efi/src/reloc_ia32.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
+$(call MKESCAPE,$(BUILDDIR))/limine.elf: $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/crt0-efi-ia32.S.o $(call MKESCAPE,$(BUILDDIR))/nyu-efi/src/reloc_ia32.c.o $(OBJ) $(call MKESCAPE,$(BUILDDIR))/full.map.o
 	$(MAKE) -f common.mk '$(call SHESCAPE,$(BUILDDIR))/linker.ld'
 	$(LD_FOR_TARGET) \
 		-T'$(call SHESCAPE,$(BUILDDIR))/linker.ld' \
@@ -612,31 +612,31 @@ endif
 -include $(HEADER_DEPS)
 
 ifeq ($(TARGET),uefi-x86-64)
-$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/nyu-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-aarch64)
-$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/nyu-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-riscv64)
-$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/nyu-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-loongarch64)
-$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/nyu-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-ia32)
-$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/limine-efi
+$(call MKESCAPE,$(BUILDDIR))/%.o: %.c $(call MKESCAPE,$(BUILDDIR))/nyu-efi
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif

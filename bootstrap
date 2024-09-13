@@ -84,9 +84,9 @@ if ! test -f version; then
     chmod +x build-aux/freestanding-toolchain
 
     clone_repo_commit \
-        https://github.com/limine-bootloader/limine-efi.git \
-        limine-efi \
-        8f36aa3414b6ae95ec341cae518cbada1ebb6372
+        https://github.com/osdev0/nyu-efi.git \
+        nyu-efi \
+        d1b3b5a19462e9ad4d3ae195e7a01b294d4bead3
 
     clone_repo_commit \
         https://github.com/jibsen/tinf.git \

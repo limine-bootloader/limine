@@ -31,8 +31,6 @@ ovmf-loongarch64:
 	$(MKDIR_P) ovmf-loongarch64
 	curl -Lo ovmf-loongarch64/OVMF_CODE.fd https://github.com/osdev0/edk2-ovmf-nightly/releases/latest/download/ovmf-code-loongarch64.fd
 	curl -Lo ovmf-loongarch64/OVMF_VARS.fd https://github.com/osdev0/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-loongarch64.fd
-	dd if=/dev/zero of=ovmf-loongarch64/OVMF_CODE.fd bs=1 count=0 seek=5242880 2>/dev/null
-	dd if=/dev/zero of=ovmf-loongarch64/OVMF_VARS.fd bs=1 count=0 seek=5242880 2>/dev/null
 
 .PHONY: test.hdd
 test.hdd:

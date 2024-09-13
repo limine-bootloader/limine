@@ -58,7 +58,7 @@ override CFLAGS += \
     -fno-stack-check \
     -fno-lto \
     -fPIE \
-    -I../freestanding-headers \
+    -I../freestnd-c-hdrs-0bsd \
     -I. \
     -D_LIMINE_PROTO
 
@@ -103,7 +103,7 @@ override CFLAGS_MB := \
     -m32 \
     -march=i686 \
     -mgeneral-regs-only \
-    -I../freestanding-headers \
+    -I../freestnd-c-hdrs-0bsd \
     -I. \
     -I../common/protos
 

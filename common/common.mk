@@ -49,7 +49,7 @@ override CFLAGS_FOR_TARGET += \
     -fno-lto
 
 override CPPFLAGS_FOR_TARGET := \
-    -isystem ../freestanding-headers \
+    -isystem ../freestnd-c-hdrs-0bsd \
     -I'$(call SHESCAPE,$(BUILDDIR))/..' \
     -I. \
     $(CPPFLAGS_FOR_TARGET) \
@@ -399,7 +399,7 @@ limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/src' -f limine-efi.mk \
 		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
-		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
+		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestnd-c-hdrs-0bsd' \
 		ARCH=x86_64
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_x86_64.ld.in
@@ -446,7 +446,7 @@ limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/src' -f limine-efi.mk \
 		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
-		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
+		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestnd-c-hdrs-0bsd' \
 		ARCH=aarch64
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_aarch64.ld.in
@@ -492,7 +492,7 @@ limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/src' -f limine-efi.mk \
 		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
-		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
+		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestnd-c-hdrs-0bsd' \
 		ARCH=riscv64
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_riscv64.ld.in
@@ -538,7 +538,7 @@ limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/src' -f limine-efi.mk \
 		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
-		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
+		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestnd-c-hdrs-0bsd' \
 		ARCH=loongarch64
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_loongarch64.ld.in
@@ -584,7 +584,7 @@ limine-efi: $(call MKESCAPE,$(BUILDDIR))/limine-efi
 	$(MAKE) -C '$(call SHESCAPE,$(BUILDDIR))/limine-efi/src' -f limine-efi.mk \
 		CC="$(CC_FOR_TARGET)" \
 		CFLAGS="$(BASE_CFLAGS)" \
-		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestanding-headers' \
+		CPPFLAGS='-nostdinc -isystem $(call SHESCAPE,$(SRCDIR))/../freestnd-c-hdrs-0bsd' \
 		ARCH=ia32
 
 $(call MKESCAPE,$(BUILDDIR))/linker_nomap.ld: linker_uefi_ia32.ld.in

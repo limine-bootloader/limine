@@ -59,7 +59,12 @@ fi
 AC_ARG_VAR([STRIP], [strip command])
 
 if ! test -z "$STRIP"; then
-    AC_CHECK_PROG([STRIP_USER_FOUND], [$STRIP], [yes])
+    if test -x "$STRIP"; then
+        STRIP_USER_FOUND=yes
+    else
+        AC_CHECK_PROG([STRIP_USER_FOUND], [$STRIP], [yes])
+    fi
+
     if ! test "x$STRIP_USER_FOUND" = "xyes"; then
         AC_MSG_ERROR([$STRIP not found, please install $STRIP before configuring])
     fi

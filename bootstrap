@@ -21,6 +21,7 @@ clone_repo_commit() {
         fi
     else
         if test -d "$2"; then
+            set +x
             echo "error: '$2' is not a Git repository"
             exit 1
         fi
@@ -39,6 +40,7 @@ download_by_hash() {
     if ! command -v $DOWNLOAD_COMMAND >/dev/null 2>&1; then
         DOWNLOAD_COMMAND="wget -O"
         if ! command -v $DOWNLOAD_COMMAND >/dev/null 2>&1; then
+            set +x
             echo "error: Neither curl nor wget found"
             exit 1
         fi
@@ -47,6 +49,7 @@ download_by_hash() {
     if ! command -v $SHA256_COMMAND >/dev/null 2>&1; then
         SHA256_COMMAND="sha256"
         if ! command -v $SHA256_COMMAND >/dev/null 2>&1; then
+            set +x
             echo "error: Cannot find sha256(sum) command"
             exit 1
         fi
@@ -56,6 +59,7 @@ download_by_hash() {
         mkdir -p "$2" && rm -rf "$2"
         $DOWNLOAD_COMMAND "$2" $1
         if ! $SHA256_COMMAND "$2" | grep $3 >/dev/null 2>&1; then
+            set +x
             echo "error: Cannot download file '$2' by hash"
             echo "incorrect hash:"
             $SHA256_COMMAND "$2"
@@ -150,6 +154,7 @@ $AUTORECONF -fvi -Wall
 for auxfile in $AUXFILES; do
     if ! test -f build-aux/$auxfile; then
         if ! $AUTOMAKE --print-libdir >/dev/null 2>&1; then
+            set +x
             echo "error: Broken autoreconf detected, but missing or broken automake."
             echo "       Please make sure automake is installed and working."
             exit 1

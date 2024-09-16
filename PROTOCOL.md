@@ -636,10 +636,6 @@ bootloader will refuse to boot the OS if no paging modes of this type or lower
 bootloader will refuse to boot the OS if no paging modes of this type or greater
 (but equal or lower than `max_mode`) are available.
 
-The `LIMINE_PAGING_MODE_DEFAULT`, `LIMINE_PAGING_MODE_MAX`, and `LIMINE_PAGING_MODE_MIN`
-macros are provided by all architectures, where the latter 2 define the maximum and
-minimum paging modes supported by the current Limine protocol specification.
-
 If no Paging Mode Request is provided, the values of `mode`, `max_mode`, and `min_mode`
 that the bootloader assumes are `LIMINE_PAGING_MODE_DEFAULT`, `LIMINE_PAGING_MODE_DEFAULT`,
 and `LIMINE_PAGING_MODE_MIN`, respectively.
@@ -662,31 +658,29 @@ not supported.
 
 #### x86-64
 
-Values for `mode`, `max_mode`, and `min_mode`:
+Values assignable to `mode`, `max_mode`, and `min_mode`:
 ```c
 #define LIMINE_PAGING_MODE_X86_64_4LVL 0
 #define LIMINE_PAGING_MODE_X86_64_5LVL 1
 
 #define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_X86_64_4LVL
 #define LIMINE_PAGING_MODE_MIN LIMINE_PAGING_MODE_X86_64_4LVL
-#define LIMINE_PAGING_MODE_MAX LIMINE_PAGING_MODE_X86_64_5LVL
 ```
 
 #### aarch64
 
-Values for `mode`, `max_mode`, and `min_mode`:
+Values assignable to `mode`, `max_mode`, and `min_mode`:
 ```c
 #define LIMINE_PAGING_MODE_AARCH64_4LVL 0
 #define LIMINE_PAGING_MODE_AARCH64_5LVL 1
 
 #define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_AARCH64_4LVL
 #define LIMINE_PAGING_MODE_MIN LIMINE_PAGING_MODE_AARCH64_4LVL
-#define LIMINE_PAGING_MODE_MAX LIMINE_PAGING_MODE_AARCH64_5LVL
 ```
 
 #### riscv64
 
-Values for `mode`, `max_mode`, and `min_mode`:
+Values assignable to `mode`, `max_mode`, and `min_mode`:
 ```c
 #define LIMINE_PAGING_MODE_RISCV_SV39 0
 #define LIMINE_PAGING_MODE_RISCV_SV48 1
@@ -694,18 +688,16 @@ Values for `mode`, `max_mode`, and `min_mode`:
 
 #define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_RISCV_SV48
 #define LIMINE_PAGING_MODE_MIN LIMINE_PAGING_MODE_RISCV_SV39
-#define LIMINE_PAGING_MODE_MAX LIMINE_PAGING_MODE_RISCV_SV57
 ```
 
 ### loongarch64
 
-Values for `mode`, `max_mode`, and `min_mode`:
+Values assignable to `mode`, `max_mode`, and `min_mode`:
 ```c
 #define LIMINE_PAGING_MODE_LOONGARCH64_4LVL 0
 
-#define LIMINE_PAGING_MODE_MAX LIMINE_PAGING_MODE_LOONGARCH64_4LVL
-#define LIMINE_PAGING_MODE_MIN LIMINE_PAGING_MODE_LOONGARCH64_4LVL
 #define LIMINE_PAGING_MODE_DEFAULT LIMINE_PAGING_MODE_LOONGARCH64_4LVL
+#define LIMINE_PAGING_MODE_MIN LIMINE_PAGING_MODE_LOONGARCH64_4LVL
 ```
 
 ### SMP (multiprocessor) Feature

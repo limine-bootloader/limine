@@ -356,8 +356,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
             }
         }
 
-        reloc_slide = reloc_ascend ?
-            relocated_base - ranges->target : ranges->target - relocated_base;
+        reloc_slide = relocated_base - ranges->target;
 
         entry_point += reloc_slide;
 

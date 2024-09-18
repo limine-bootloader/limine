@@ -314,7 +314,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
         }
     }
 
-    uint64_t reloc_slide = 0;
+    int64_t reloc_slide = 0;
 
     if (has_reloc_header) {
         bool reloc_ascend;
@@ -324,14 +324,14 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
             default:
             case 0: case 1: // Prefer lowest to highest
                 reloc_ascend = true;
-                relocated_base = ALIGN_UP(reloc_tag.align, reloc_tag.min_addr);
+                relocated_base = ALIGN_UP(reloc_tag.min_addr, reloc_tag.align);
                 if (relocated_base + ranges->length > reloc_tag.max_addr) {
                     goto reloc_fail;
                 }
                 break;
             case 2: // Prefer highest to lowest
                 reloc_ascend = false;
-                relocated_base = ALIGN_DOWN(reloc_tag.align, reloc_tag.max_addr - ranges->length);
+                relocated_base = ALIGN_DOWN(reloc_tag.max_addr - ranges->length, reloc_tag.align);
                 if (relocated_base < reloc_tag.min_addr) {
                     goto reloc_fail;
                 }
@@ -356,8 +356,7 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
             }
         }
 
-        reloc_slide = reloc_ascend ?
-            relocated_base - ranges->target : ranges->target - relocated_base;
+        reloc_slide = (int64_t)relocated_base - ranges->target;
 
         entry_point += reloc_slide;
 

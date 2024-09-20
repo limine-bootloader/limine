@@ -144,10 +144,11 @@ static volatile struct limine_paging_mode_request _pm_request = {
     .revision = 1, .response = NULL,
 #if defined (__x86_64__)
     .mode = LIMINE_PAGING_MODE_X86_64_5LVL,
+    .max_mode = LIMINE_PAGING_MODE_X86_64_5LVL,
 #else
     .mode = LIMINE_PAGING_MODE_DEFAULT,
+    .max_mode = LIMINE_PAGING_MODE_DEFAULT,
 #endif
-    .max_mode = LIMINE_PAGING_MODE_MAX,
     .min_mode = LIMINE_PAGING_MODE_MIN
 };
 

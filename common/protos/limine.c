@@ -34,7 +34,7 @@
 
 #define MAX_REQUESTS 128
 
-#define MEMMAP_MAX 256
+#define MEMMAP_MAX 512
 
 static int paging_mode;
 

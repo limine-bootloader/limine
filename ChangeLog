@@ -1,3 +1,13 @@
+2024-09-29  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 8.0.14 ***
+
+    Noteworthy changes compared to the previous release, 8.0.13:
+
+    Miscellaneous:
+        - Limine boot protocol: Increase maximum memory map entry count from
+          256 to 1024 as it would otherwise cause issues on certain systems.
+
 2024-09-18  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 8.0.13 ***

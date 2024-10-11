@@ -4,6 +4,24 @@ section .text
 
 global limine_spinup_32
 limine_spinup_32:
+    ; If available, set PAT as:
+    ; PAT0 -> WB  (06)
+    ; PAT1 -> WT  (04)
+    ; PAT2 -> UC- (07)
+    ; PAT3 -> UC  (00)
+    ; PAT4 -> WP  (05)
+    ; PAT5 -> WC  (01)
+    mov eax, 1
+    xor ecx, ecx
+    cpuid
+    test edx, 1 << 16
+    jz .no_pat
+    mov eax, 0x00070406
+    mov edx, 0x00000105
+    mov ecx, 0x277
+    wrmsr
+  .no_pat:
+
     ; Enable EFER.NXE
     cmp dword [esp+32], 0 ; nx_available
     je .no_nx

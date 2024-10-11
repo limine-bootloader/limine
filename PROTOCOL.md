@@ -207,7 +207,7 @@ All HHDM and identity map memory regions are mapped using write-back (WB) cachin
 tables level, except framebuffer regions which are mapped using write-combining
 (WC) caching at the page tables level.
 
-The PAT's (Page Attribute Table) layout is specified to be as follows:
+If the CPU supports the PAT (Page Attribute Table), its layout is specified to be as follows:
 ```
 PAT0 -> WB
 PAT1 -> WT

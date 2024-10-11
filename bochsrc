@@ -1,17 +1,7 @@
 cpu: count=2, reset_on_triple_fault=0
-
-display_library: x, options="gui_debug"
-
-megs: 512
-
-clock: sync=realtime, time0=local
-
+memory: guest=1024, host=1024
 ata0-master: type=disk, path="test.hdd", mode=flat
-
 boot: c
-
-log: ./bochsout.txt
-
-mouse: enabled=0
-
+clock: sync=realtime, rtc_sync=1, time0=utc
+port_e9_hack: enabled=1
 magic_break: enabled=1

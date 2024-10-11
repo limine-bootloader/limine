@@ -76,7 +76,19 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
 
     pt_entry_t *pml5, *pml4, *pml3, *pml2, *pml1;
 
+    static bool pat_supported = false, pat_supported_got = false;
+    if (!pat_supported_got) {
+        uint32_t eax, ebx, ecx, edx;
+        if (cpuid(1, 0, &eax, &ebx, &ecx, &edx) && (edx & (1 << 16))) {
+            pat_supported = true;
+        }
+        pat_supported_got = true;
+    }
+
     flags |= PT_FLAG_VALID; // Always present
+    if ((flags & VMM_FLAG_FB) && !pat_supported) {
+        flags &= ~(uint64_t)VMM_FLAG_FB;
+    }
 
     // Paging levels
     switch (pagemap.levels) {

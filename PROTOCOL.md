@@ -205,7 +205,7 @@ segments mapped using write-back (WB) caching at the page tables level.
 
 All HHDM and identity map memory regions are mapped using write-back (WB) caching at the page
 tables level, except framebuffer regions which are mapped using write-combining
-(WC) caching at the page tables level.
+(WC) caching at the page tables level (if the CPU support the PAT, see below).
 
 If the CPU supports the PAT (Page Attribute Table), its layout is specified to be as follows:
 ```

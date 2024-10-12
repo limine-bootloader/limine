@@ -39,10 +39,18 @@ smp_trampoline_start:
     xor eax, eax
     mov cr4, eax
 
+    mov esi, ebx
+    mov eax, 1
+    xor ecx, ecx
+    cpuid
+    test edx, 1 << 16
+    jz .no_pat
     mov ecx, 0x277
     mov eax, 0x00070406
     mov edx, 0x00000105
     wrmsr
+  .no_pat:
+    mov ebx, esi
 
     test dword [ebx + (passed_info.target_mode - smp_trampoline_start)], (1 << 2)
     jz .nox2apic

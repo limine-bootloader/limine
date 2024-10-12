@@ -763,7 +763,7 @@ hhdm_fail:
 #endif
 
     bool paging_mode_set = false;
-    bool randomise_hhdm_base;
+    bool randomise_hhdm_base = false;
 FEAT_START
     struct limine_paging_mode_request *pm_request = get_request(LIMINE_PAGING_MODE_REQUEST);
     if (pm_request == NULL)

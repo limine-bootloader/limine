@@ -106,6 +106,8 @@ static const char *VALID_KEYS[] = {
     "RESOLUTION",
     "TEXTMODE",
     "KASLR",
+    "RANDOMISE_HHDM_BASE",
+    "RANDOMIZE_HHDM_BASE",
     "PAGING_MODE",
     "MAX_PAGING_MODE",
     "MIN_PAGING_MODE",

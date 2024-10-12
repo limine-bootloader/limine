@@ -300,9 +300,9 @@ static uint64_t physical_base, virtual_base, slide, direct_map_offset;
 static size_t requests_count;
 static void **requests;
 
-static void set_paging_mode(bool kaslr) {
+static void set_paging_mode(bool randomise_hhdm_base) {
     direct_map_offset = paging_mode_higher_half(paging_mode);
-    if (kaslr) {
+    if (randomise_hhdm_base) {
         // A quarter of the higher half of wiggle room for KASLR, align to 1GiB steps.
         uint64_t mask = ((uint64_t)1 << (paging_mode_va_bits(paging_mode) - 3)) - 1;
         direct_map_offset += (rand64() & ~((uint64_t)0x40000000 - 1)) & mask;
@@ -763,6 +763,7 @@ hhdm_fail:
 #endif
 
     bool paging_mode_set = false;
+    bool randomise_hhdm_base;
 FEAT_START
     struct limine_paging_mode_request *pm_request = get_request(LIMINE_PAGING_MODE_REQUEST);
     if (pm_request == NULL)
@@ -801,7 +802,17 @@ FEAT_START
         paging_mode = kern_min_mode;
     }
 
-    set_paging_mode(kaslr);
+    char *randomise_hhdm_base_s = config_get_value(config, 0, "RANDOMISE_HHDM_BASE");
+    if (randomise_hhdm_base_s == NULL) {
+        randomise_hhdm_base_s = config_get_value(config, 0, "RANDOMIZE_HHDM_BASE");
+    }
+    if (randomise_hhdm_base_s == NULL) {
+        randomise_hhdm_base = kaslr;
+    } else {
+        randomise_hhdm_base = strcasecmp(randomise_hhdm_base_s, "no") != 0;
+    }
+
+    set_paging_mode(randomise_hhdm_base);
     paging_mode_set = true;
 
     struct limine_paging_mode_response *pm_response =
@@ -812,7 +823,7 @@ FEAT_START
 FEAT_END
 
     if (!paging_mode_set) {
-        set_paging_mode(kaslr);
+        set_paging_mode(randomise_hhdm_base);
     }
 
 #if defined (__aarch64__)

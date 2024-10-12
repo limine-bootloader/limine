@@ -125,6 +125,8 @@ Editor control options:
   * `module_cmdline` - A command line to be passed to a module. This option can also be specified multiple times. It applies to the module described by the last module option specified.
   * `resolution` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
   * `kaslr` - For relocatable kernels, if set to `no`, disable kernel address space layout randomisation. KASLR is enabled by default.
+  * `randomise_hhdm_base` - If set to `yes`, randomise the base address of the higher half direct map. If set to `no`, do not. By default it is `yes` if KASLR is supported and enabled, else it is `no`.
+  * `randomize_hhdm_base` - Alias of `randomise_hhdm_base`.
   * `max_paging_mode`, `min_paging_mode` - Limit the maximum and minimum paging modes to one of the following:
     - x86-64 and aarch64: `4level`, `5level`.
     - riscv64: `sv39`, `sv48`, `sv57`.

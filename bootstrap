@@ -99,7 +99,7 @@ if ! test -f version; then
     mkdir -p decompressor/tinf
     cp tinf/src/tinf.h tinf/src/tinflate.c tinf/src/tinfgzip.c decompressor/tinf/
     patch -p0 < decompressor/tinf.patch
-    rm -f tinf/src/tinf.h.orig tinf/src/tinflate.c.orig tinf/src/tinfgzip.c.orig
+    rm -f decompressor/tinf/*.orig
 
     clone_repo_commit \
         https://github.com/mintsuki/flanterm.git \

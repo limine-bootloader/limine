@@ -1,5 +1,15 @@
 2024-10-12  mintsuki  <mintsuki@protonmail.com>
 
+    *** Release 8.1.1 ***
+
+    Noteworthy changes compared to the previous release, 8.1.0:
+
+    Bug fixes:
+        - Limine boot protocol: Do not hard depend on the CPU supporting the
+          Page Attribute Table (PAT) *for SMP processors as well*.
+
+2024-10-12  mintsuki  <mintsuki@protonmail.com>
+
     *** Release 8.1.0 ***
 
     Noteworthy changes compared to the previous release, 8.0.14:

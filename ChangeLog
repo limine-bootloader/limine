@@ -1,3 +1,19 @@
+2024-10-12  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 8.1.0 ***
+
+    Noteworthy changes compared to the previous release, 8.0.14:
+
+    Bug fixes:
+        - Limine boot protocol: Do not hard depend on the CPU supporting the
+          Page Attribute Table (PAT).
+
+    New features:
+        - Limine boot protocol: Add a `randomise_hhdm_base` config file option.
+
+    Miscellaneous:
+        - Update libfdt (from dtc) to 1.7.1.
+
 2024-09-29  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 8.0.14 ***

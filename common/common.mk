@@ -60,6 +60,9 @@ override CPPFLAGS_FOR_TARGET := \
     -MMD \
     -MP
 
+$(call MKESCAPE,$(BUILDDIR))/./libfdt/fdt_overlay.o: override CFLAGS_FOR_TARGET += \
+    -Wno-unused-parameter
+
 $(call MKESCAPE,$(BUILDDIR))/./flanterm/backends/fb.o: override CPPFLAGS_FOR_TARGET += \
     -DFLANTERM_FB_DISABLE_BUMP_ALLOC \
     -DFLANTERM_FB_ENABLE_MASKING

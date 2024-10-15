@@ -268,6 +268,10 @@ retry:
         EFI_MEMORY_DESCRIPTOR *orig_entry = (void *)efi_mmap + i * efi_desc_size;
         EFI_MEMORY_DESCRIPTOR *new_entry = (void *)efi_copy + efi_copy_i * efi_desc_size;
 
+        if (orig_entry->NumberOfPages == 0) {
+            continue;
+        }
+
         memcpy(new_entry, orig_entry, efi_desc_size);
 
         uint64_t base = orig_entry->PhysicalStart;

@@ -332,6 +332,10 @@ void init_memmap(void) {
     for (size_t i = 0; i < entry_count; i++) {
         EFI_MEMORY_DESCRIPTOR *entry = (void *)efi_mmap + i * efi_desc_size;
 
+        if (entry->NumberOfPages == 0) {
+            continue;
+        }
+
         uint32_t our_type;
         switch (entry->Type) {
             case EfiReservedMemoryType:

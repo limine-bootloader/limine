@@ -85,7 +85,7 @@ struct vbe_mode_info_struct {
     uint8_t  lin_rsvd_mask_shift;
     uint32_t max_pixel_clock;
 
-    uint8_t  reserved2[189];
+    uint8_t  reserved2[190];
 } __attribute__((packed));
 
 static bool get_vbe_info(struct vbe_info_struct *buf) {

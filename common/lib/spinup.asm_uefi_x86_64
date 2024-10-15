@@ -39,7 +39,11 @@ common_spinup:
     push r9
     push rcx
     push rdx
+    push rsi
+    push rdi
     call flush_irqs
+    pop rdi
+    pop rsi
     pop rdx
     pop rcx
     pop r9

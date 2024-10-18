@@ -132,6 +132,7 @@ Editor control options:
     - riscv64: `sv39`, `sv48`, `sv57`.
     - loongarch64: `4level`.
   * `paging_mode` - Equivalent to setting both `max_paging_mode` and `min_paging_mode` to the same value.
+  * `dtb_path` - A device tree blob to pass instead of the one provided by the firmware.
 
 * multiboot1 and multiboot2 protocols:
   * `kernel_path` - The path of the kernel.

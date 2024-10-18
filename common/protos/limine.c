@@ -998,8 +998,22 @@ FEAT_START
         break; // next feature
     }
 
+    void *dtb = NULL;
+    char *dtb_path = config_get_value(config, 0, "DTB_PATH");
+
+    if (dtb_path) {
+        struct file_handle *dtb_file;
+        if ((dtb_file = uri_open(dtb_path)) == NULL)
+            panic(true, "limine: Failed to open device tree blob with path `%#`. Is the path correct?", kernel_path);
+        dtb = freadall_mode(dtb_file, MEMMAP_BOOTLOADER_RECLAIMABLE, false);
+        fclose(dtb_file);
+    } else {
 #if defined (UEFI)
-    void *dtb = get_device_tree_blob(0);
+        dtb = get_device_tree_blob(0);
+#else
+        break;
+#endif
+    }
 
     if (dtb) {
         struct limine_dtb_response *dtb_response =
@@ -1007,7 +1021,6 @@ FEAT_START
         dtb_response->dtb_ptr = reported_addr(dtb);
         dtb_request->response = reported_addr(dtb_response);
     }
-#endif
 
 FEAT_END
 

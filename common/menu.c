@@ -117,6 +117,7 @@ static const char *VALID_KEYS[] = {
     "GPT_GUID",
     "GPT_UUID",
     "IMAGE_PATH",
+	"DTB_PATH",
     NULL
 };
 

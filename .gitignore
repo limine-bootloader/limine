@@ -19,6 +19,7 @@
 *.hdd
 *.iso
 *.sys
+*.dtb
 *~
 
 /bin

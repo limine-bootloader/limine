@@ -1,0 +1,12 @@
+// Example device tree.
+
+/dts-v1/;
+
+/ {
+    soc {
+        limine_node: limine-node@deadbeef {
+            reg = <0xdeadbeef 0x1000>;
+            label = "KANKER";
+        };
+    };
+};

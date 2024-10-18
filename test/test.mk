@@ -108,9 +108,9 @@ override CFLAGS_MB := \
     -I../common/protos
 
 ifneq ($(findstring 86,$(shell $(CC_FOR_TARGET) -dumpmachine)),)
-all: test.elf multiboot2.elf multiboot.elf
+all: test.elf multiboot2.elf multiboot.elf device_tree.dtb
 else
-all: test.elf
+all: test.elf device_tree.dtb
 endif
 
 flanterm:
@@ -141,8 +141,11 @@ multiboot.elf: multiboot_trampoline.o
 %.o: %.asm
 	nasm -felf32 -F dwarf -g $< -o $@
 
+%.dtb: %.dts
+	dtc $< -o $@
+
 clean:
 	rm -rf test.elf limine.o e9print.o memory.o
 	rm -rf multiboot2.o multiboot2.elf multiboot2_trampoline.o
 	rm -rf multiboot.o multiboot_trampoline.o multiboot.elf
-	rm -rf flanterm limine.h
+	rm -rf flanterm limine.h device_tree.dtb

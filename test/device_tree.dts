@@ -4,9 +4,13 @@
 
 / {
     soc {
-        limine_node: limine-node@deadbeef {
+        limine_node: limine@deadbeef {
             reg = <0xdeadbeef 0x1000>;
             label = "KANKER";
+        };
+        fake_memory: memory@ffff0000 {
+            reg = <0xffff0000 0xffff>;
+            label = "This node will be removed by Limine.";
         };
     };
 };

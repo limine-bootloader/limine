@@ -1006,12 +1006,7 @@ FEAT_START
         if ((dtb_file = uri_open(dtb_path)) == NULL)
             panic(true, "limine: Failed to open device tree blob with path `%#`. Is the path correct?", dtb_path);
 
-        dtb = freadall_mode(dtb_file, MEMMAP_BOOTLOADER_RECLAIMABLE, false
-#if defined (__i386__)
-        , limine_memcpy_to_64
-#endif
-        );
-
+        dtb = freadall(dtb_file, MEMMAP_BOOTLOADER_RECLAIMABLE);
         fclose(dtb_file);
     } else {
 #if defined (UEFI)

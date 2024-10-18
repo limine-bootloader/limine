@@ -118,6 +118,7 @@ Editor control options:
   * `module_path` - The path to a module (such as initramfs). This option can be specified multiple times to specify multiple modules.
   * `resolution` - The resolution to be used. This setting takes the form of `<width>x<height>x<bpp>`. If the resolution is not available, Limine will pick another one automatically. Omitting `<bpp>` will default to 32.
   * `textmode` - If set to `yes`, prefer text mode. (BIOS only)
+  * `dtb_path` - A device tree blob to pass instead of the one provided by the firmware.
 
 * Limine protocol:
   * `kernel_path` - The path of the kernel.

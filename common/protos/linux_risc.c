@@ -82,8 +82,25 @@ void add_framebuffer(struct fb_info *fb) {
 }
 
 void *prepare_device_tree_blob(char *config, char *cmdline) {
-    // Hopefully 4K should be enough (mainly depends on the length of cmdline).
-    void *dtb = get_device_tree_blob(0x1000);
+    void *dtb = NULL;
+    char *dtb_path = config_get_value(config, 0, "DTB_PATH");
+
+    if (dtb_path) {
+        struct file_handle *dtb_file;
+        if ((dtb_file = uri_open(dtb_path)) == NULL)
+            panic(true, "limine: Failed to open device tree blob with path `%#`. Is the path correct?", dtb_path);
+
+        dtb = freadall(dtb_file, MEMMAP_BOOTLOADER_RECLAIMABLE);
+        fclose(dtb_file);
+    } else {
+#if defined (UEFI)
+    	// Hopefully 4K should be enough (mainly depends on the length of cmdline).
+    	dtb = get_device_tree_blob(0x1000);
+#else
+        break;
+#endif
+    }
+
     int ret;
 
     // Delete all /memory@... nodes. Linux will use the given UEFI memory map

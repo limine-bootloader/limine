@@ -1005,7 +1005,13 @@ FEAT_START
         struct file_handle *dtb_file;
         if ((dtb_file = uri_open(dtb_path)) == NULL)
             panic(true, "limine: Failed to open device tree blob with path `%#`. Is the path correct?", kernel_path);
-        dtb = freadall_mode(dtb_file, MEMMAP_BOOTLOADER_RECLAIMABLE, false);
+
+        dtb = freadall_mode(dtb_file, MEMMAP_BOOTLOADER_RECLAIMABLE, false
+#if defined (__i386__)
+        , limine_memcpy_to_64
+#endif
+        );
+
         fclose(dtb_file);
     } else {
 #if defined (UEFI)

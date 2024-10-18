@@ -36,8 +36,8 @@ ovmf-loongarch64:
 test.hdd:
 	rm -f test.hdd
 	dd if=/dev/zero bs=1M count=0 seek=64 of=test.hdd
-	sudo parted -s test.hdd mklabel gpt
-	sudo parted -s test.hdd mkpart primary 2048s 100%
+	parted -s test.hdd mklabel gpt
+	parted -s test.hdd mkpart primary 2048s 100%
 
 .PHONY: mbrtest.hdd
 mbrtest.hdd:

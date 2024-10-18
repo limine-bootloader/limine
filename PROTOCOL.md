@@ -1289,3 +1289,6 @@ Note: If the DTB cannot be found, the response will *not* be generated.
 
 Note: Information contained in the `/chosen` node may not reflect the information
 given by bootloader tags, and as such the `/chosen` node properties should be ignored.
+
+Note: If the DTB contained `memory@...` nodes, they will get removed.
+Kernels may not rely on these nodes and should use the Memory Map feature instead.

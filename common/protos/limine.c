@@ -12,6 +12,8 @@
 #include <lib/real.h>
 #include <lib/libc.h>
 #include <lib/gterm.h>
+#include <lib/fdt.h>
+#include <libfdt/libfdt.h>
 #include <lib/uri.h>
 #include <sys/smp.h>
 #include <sys/cpu.h>
@@ -1017,6 +1019,25 @@ FEAT_START
     }
 
     if (dtb) {
+        // Delete all /memory@... nodes.
+        // The kernel must use the given UEFI memory map instead.
+        while (true) {
+            int offset = fdt_subnode_offset_namelen(dtb, 0, "memory@", 7);
+
+            if (offset == -FDT_ERR_NOTFOUND) {
+                break;
+            }
+
+            if (offset < 0) {
+                panic(true, "limine: failed to find node: '%s'", fdt_strerror(offset));
+            }
+
+            int ret = fdt_del_node(dtb, offset);
+            if (ret < 0) {
+                panic(true, "limine: failed to delete memory node: '%s'", fdt_strerror(ret));
+            }
+        }
+
         struct limine_dtb_response *dtb_response =
             ext_mem_alloc(sizeof(struct limine_dtb_response));
         dtb_response->dtb_ptr = reported_addr(dtb);

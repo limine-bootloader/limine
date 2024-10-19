@@ -183,14 +183,16 @@ full-hybrid-test:
 	$(MAKE) -C test -f test.mk TOOLCHAIN_FILE='$(call SHESCAPE,$(BUILDDIR))/toolchain-files/uefi-x86_64-toolchain.mk'
 	rm -rf test_image/
 	$(MKDIR_P) test_image/boot
-	sudo cp -rv $(BINDIR)/* test_image/boot/
-	sudo cp -rv test/* test_image/boot/
+	cp -rv $(BINDIR)/* test_image/boot/
+	cp -rv test/* test_image/boot/
+	$(MKDIR_P) test_image/EFI/BOOT
+	cp -v $(BINDIR)/BOOT*.EFI test_image/EFI/BOOT/
 	xorriso -as mkisofs -b boot/limine-bios-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot boot/limine-uefi-cd.bin -efi-boot-part --efi-boot-image --protective-msdos-label test_image/ -o test.iso
 	$(BINDIR)/limine bios-install test.iso
-	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=ovmf-x64/OVMF_CODE.fd,readonly=on -drive if=pflash,unit=1,format=raw,file=ovmf-x64/OVMF_VARS.fd -net none -smp 4   -cdrom test.iso -debugcon stdio
-	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=ovmf-x64/OVMF_CODE.fd,readonly=on -drive if=pflash,unit=1,format=raw,file=ovmf-x64/OVMF_VARS.fd -net none -smp 4   -hda test.iso -debugcon stdio
-	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=ovmf-ia32/OVMF_CODE.fd,readonly=on -drive if=pflash,unit=1,format=raw,file=ovmf-ia32/OVMF_VARS.fd -net none -smp 4   -cdrom test.iso -debugcon stdio
-	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=ovmf-ia32/OVMF_CODE.fd,readonly=on -drive if=pflash,unit=1,format=raw,file=ovmf-ia32/OVMF_VARS.fd -net none -smp 4   -hda test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=ovmf-x64/OVMF_CODE.fd,readonly=on -net none -smp 4   -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=ovmf-x64/OVMF_CODE.fd,readonly=on -net none -smp 4   -hda test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=ovmf-ia32/OVMF_CODE.fd,readonly=on -net none -smp 4   -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=ovmf-ia32/OVMF_CODE.fd,readonly=on -net none -smp 4   -hda test.iso -debugcon stdio
 	qemu-system-x86_64 -m 512M -M q35 -net none -smp 4   -cdrom test.iso -debugcon stdio
 	qemu-system-x86_64 -m 512M -M q35 -net none -smp 4   -hda test.iso -debugcon stdio
 

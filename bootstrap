@@ -76,9 +76,9 @@ if ! test -f version; then
         0353851fdebe0eb6a4d2c608c5393040d310bf35
 
     download_by_hash \
-        https://github.com/osdev0/cc-runtime/raw/dcdf5d82973e77edee597a047a3ef66300903de9/cc-runtime.c \
+        https://github.com/osdev0/cc-runtime/raw/d5425655388977fa12ff9b903e554a20b20c426e/cc-runtime.c \
         decompressor/cc-runtime.c \
-        199907f5303ab15a963377fabcc1f2ee736e4ed18d54c59aab08345aa5485e8a
+        60bb1af4f6541077b736f19bf0f5a22b5dd8a2f3bed0d9d9d89846a33ef24b74
     cp decompressor/cc-runtime.c common/cc-runtime.s2.c
 
     download_by_hash \

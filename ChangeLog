@@ -1,3 +1,23 @@
+2024-10-23  mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 8.2.0 ***
+
+    Noteworthy changes compared to the previous release, 8.1.2:
+
+    New features:
+        - Add device tree blob override configuration options for the Limine
+          and Linux boot protocols.
+        - Limine boot protocol: Filter `memory@...` nodes out of device trees.
+
+    Miscellaneous:
+        - Documentation: USAGE.md: Update `xorriso` command to produce
+          ISOHYBRIDs with Joliet info and an HFS+ filesystem for broader
+          compatibility.
+        - Increase the size of the `limine-cd-uefi.bin` image to 5760 sectors;
+          this allows more and/or larger EFI executables to fit (like for
+          example those generated when compiling with -O0).
+        - Bump cc-runtime revision to d5425655388977fa12ff9b903e554a20b20c426e.
+
 2024-10-15  mintsuki  <mintsuki@protonmail.com>
 
     *** Release 8.1.2 ***

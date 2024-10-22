@@ -65,9 +65,9 @@ relevant Limine EFI executables over (such as `BOOTX64.EFI`).
 Place any other file you want to be on the final ISO in said directory, then
 run:
 ```
-xorriso -as mkisofs -b <relative path of limine-bios-cd.bin> \
-        -no-emul-boot -boot-load-size 4 -boot-info-table \
-        --efi-boot <relative path of limine-uefi-cd.bin> \
+xorriso -as mkisofs -R -r -J -b <relative path of limine-bios-cd.bin> \
+        -no-emul-boot -boot-load-size 4 -boot-info-table -hfsplus \
+        -apm-block-size 2048 --efi-boot <relative path of limine-uefi-cd.bin> \
         -efi-boot-part --efi-boot-image --protective-msdos-label \
         <root directory> -o image.iso
 ```

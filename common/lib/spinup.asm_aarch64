@@ -5,10 +5,41 @@
 // noreturn void enter_in_el1(uint64_t entry, uint64_t sp, uint64_t sctlr,
 //                            uint64_t mair, uint64_t tcr, uint64_t ttbr0,
 //                            uint64_t ttbr1, uint64_t direct_map_offset)
-// Configure EL1 state and jump to kernel. Must be called at EL1.
+// Configure EL1 state and jump to kernel.
 
 .global enter_in_el1
 enter_in_el1:
+    // Drop EL2 -> EL1
+    mrs x8, currentel
+    cmp x8, #0b1000 // EL2 ?
+    b.ne 0f 
+
+    msr sp_el0, x1
+
+    msr mair_el1, x3
+    msr tcr_el1, x4
+    msr ttbr0_el1, x5
+    msr ttbr1_el1, x6
+    msr sctlr_el1, x2
+    isb
+    dsb sy
+    isb
+
+    tlbi vmalle1
+    dsb nsh
+    isb
+
+    mov x8, #(1 << 31)
+    msr hcr_el2, x8
+
+    mov x8, #0x3c4
+    msr spsr_el2, x8
+
+    msr elr_el2, x0         
+
+    eret
+
+0:
     msr spsel, #0
     mov sp, x1
 

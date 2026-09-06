@@ -510,13 +510,22 @@ static bool try_start_ap(int boot_method, uint64_t method_ptr,
             panic(false, "Invalid boot method specified");
     }
 
+    uint64_t bsp_el = current_el();
+    if (bsp_el == 2) {
+        uint64_t mmfr1;
+        asm volatile ("mrs %0, id_aa64mmfr1_el1" : "=r"(mmfr1));
+        if (!((mmfr1 >> 8) & 0xF)) {
+            bsp_el = 1;
+        }
+    }
+
     for (int i = 0; i < 1000000; i++) {
         // We do not need cache invalidation here as by the time the AP gets to
         // set this flag, it has enabled its caches
 
         if (locked_read(&passed_info->smp_tpl_booted_flag) == 1) {
             uint64_t ap_el = locked_read(&passed_info->smp_tpl_ap_el);
-            uint64_t bsp_el = current_el();
+
             if (ap_el != bsp_el) {
                 panic(false, "smp: AP started at EL%u but BSP is at EL%u",
                       (uint32_t)ap_el, (uint32_t)bsp_el);

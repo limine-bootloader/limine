@@ -530,17 +530,6 @@ noreturn void limine_load(char *config, char *cmdline) {
     uint32_t eax, ebx, ecx, edx;
 #endif
 
-#if defined (__aarch64__)
-    // Booting at EL2 without VHE is not supported.
-    if (current_el() == 2) {
-        uint64_t mmfr1;
-        asm volatile ("mrs %0, id_aa64mmfr1_el1" : "=r"(mmfr1));
-        if (!((mmfr1 >> 8) & 0xF)) {
-            panic(true, "limine: Booting at EL2 without VHE support is not supported");
-        }
-    }
-#endif
-
     char *kernel_path = config_get_value(config, 0, "PATH");
     if (kernel_path == NULL) {
         kernel_path = config_get_value(config, 0, "KERNEL_PATH");
@@ -1942,8 +1931,17 @@ FEAT_END
                             physical_base, virtual_base, direct_map_offset);
 
 #if defined (__aarch64__)
-    // Enter at EL2 with VHE if we are at EL2 (VHE check done at function entry)
-    bool want_el2 = (current_el() == 2);
+    bool want_el2 = false;
+
+    if (current_el() == 2) {
+        uint64_t mmfr1;
+        asm volatile ("mrs %0, id_aa64mmfr1_el1" : "=r"(mmfr1));
+        if (!((mmfr1 >> 8) & 0xF)) {
+            // panic(true, "limine: Booting at EL2 without VHE support is not supported");
+        } else {
+            want_el2 = true;
+        }
+    }
 #endif
 
     // MP

@@ -32,6 +32,24 @@ smp_trampoline_start:
 
     PICK_EL x8, 1f, 0f
 0:
+    // Test VHE support
+
+    mrs x8, id_aa64mmfr1_el1
+    and x8, x8, #(0xF << 8)
+    cbnz x8, 9f
+
+    mov x8, #(1 << 31) // RW bit (EL1 est aarch64)
+    msr hcr_el2, x8
+
+    mov x8, #0x3c5
+    msr spsr_el2, x8
+
+    adr x8, 1f
+    msr elr_el2, x8
+
+    eret
+
+9:
     // EL2 path - enable VHE and stay at EL2
 
     // Enable E2H if not already set

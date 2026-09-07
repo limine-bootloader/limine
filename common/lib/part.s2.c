@@ -602,6 +602,35 @@ struct mbr_entry {
     uint32_t sect_count;
 } __attribute__((packed));
 
+// An entry whose LBAs have been brought into the 512-byte units struct volume
+// keeps.
+struct mbr_part {
+    uint8_t type;
+    uint64_t first_sect;
+    uint64_t sect_count;
+};
+
+// MBR LBAs count the device's logical blocks: UEFI 2.11 Table 5.2 sizes a
+// partition "in LBA units of logical blocks", and Linux scales them by the
+// device's block size in turn. Optical media are the exception, an isohybrid
+// MBR being written in 512-byte units whatever the drive reports.
+static bool mbr_read_entry(struct volume *volume, uint64_t offset,
+                           struct mbr_part *part) {
+    struct mbr_entry entry;
+
+    if (!volume_read(volume, &entry, offset, sizeof(struct mbr_entry))) {
+        return false;
+    }
+
+    uint64_t mult = volume->is_optical ? 1 : (uint64_t)volume->sector_size / 512;
+
+    part->type = entry.type;
+    part->first_sect = (uint64_t)entry.first_sect * mult;
+    part->sect_count = (uint64_t)entry.sect_count * mult;
+
+    return true;
+}
+
 bool is_valid_mbr(struct volume *volume) {
     // Check if actually valid mbr
     uint16_t hint = 0;
@@ -672,7 +701,7 @@ uint32_t mbr_get_id(struct volume *volume) {
 // A data entry's start is relative to the EBR that carries it, where the chain
 // link's is relative to the extended partition.
 static bool mbr_logical_entry_contained(struct volume *extended_part, uint64_t ebr_sector,
-                                        struct mbr_entry *entry, uint64_t *first_sect) {
+                                        struct mbr_part *entry, uint64_t *first_sect) {
     uint64_t rel_first = CHECKED_ADD(ebr_sector, entry->first_sect, return false);
     if (!partition_range_valid(extended_part, rel_first, entry->sect_count)) {
         return false;
@@ -685,7 +714,7 @@ static bool mbr_logical_entry_contained(struct volume *extended_part, uint64_t e
 
 static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part,
                                 int partition) {
-    struct mbr_entry entry;
+    struct mbr_part entry;
 
     // Limit partition index to prevent excessive iteration
     if (partition >= MAX_LOGICAL_PARTITIONS) {
@@ -725,8 +754,8 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
             return END_OF_TABLE;
         }
 
-        uint32_t link_first_sect = 0;
-        uint32_t link_sect_count = 0;
+        uint64_t link_first_sect = 0;
+        uint64_t link_sect_count = 0;
         bool have_link = false;
 
         // The first two entries are a convention rather than a rule: util-linux
@@ -734,7 +763,7 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
         for (int i = 0; i < 4; i++) {
             uint64_t entry_offset = ebr_sector * 512 + 0x1be + sizeof(struct mbr_entry) * i;
 
-            if (!volume_read(extended_part, &entry, entry_offset, sizeof(struct mbr_entry))) {
+            if (!mbr_read_entry(extended_part, entry_offset, &entry)) {
                 return END_OF_TABLE;
             }
 
@@ -760,7 +789,7 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
 
             // Containment in the extended partition does not imply containment
             // in the extent the link that led to this EBR declared.
-            bool within_link = (uint64_t)entry.first_sect + entry.sect_count <= ebr_size;
+            bool within_link = entry.first_sect + entry.sect_count <= ebr_size;
 
             // A number here has to match the one the running system gives the
             // same partition, and the first two slots are counted whether or
@@ -850,7 +879,7 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
         return INVALID_TABLE;
     }
 
-    struct mbr_entry entry;
+    struct mbr_part entry;
 
     if (partition > 3) {
         if (volume->ebr_part != NULL) {
@@ -860,7 +889,7 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
         for (int i = 0; i < 4; i++) {
             uint64_t entry_offset = 0x1be + sizeof(struct mbr_entry) * i;
 
-            if (!volume_read(volume, &entry, entry_offset, sizeof(struct mbr_entry))) {
+            if (!mbr_read_entry(volume, entry_offset, &entry)) {
                 continue;
             }
 
@@ -907,7 +936,7 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
 
     uint64_t entry_offset = 0x1be + sizeof(struct mbr_entry) * partition;
 
-    if (!volume_read(volume, &entry, entry_offset, sizeof(struct mbr_entry))) {
+    if (!mbr_read_entry(volume, entry_offset, &entry)) {
         return END_OF_TABLE;
     }
 

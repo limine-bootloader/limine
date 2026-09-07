@@ -42,9 +42,8 @@ make    # (or gmake where applicable)
 
 ## Installing
 
-This step will install Limine files to `share`, `include`, and `bin`
-directories in the specified prefix (default is `/usr/local`, see
-`./configure --help`.
+This step will install Limine files to `share` and `bin` directories in the
+specified prefix (default is `/usr/local`, see `./configure --help`).
 
 To install Limine, run:
 ```bash

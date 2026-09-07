@@ -200,7 +200,8 @@ void vmm_assert_4k_pages(void) {
 #define PT_FLAG_READONLY ((uint64_t)1 << 7)
 #define PT_FLAG_INNER_SH ((uint64_t)3 << 8)
 #define PT_FLAG_ACCESS   ((uint64_t)1 << 10)
-#define PT_FLAG_XN       ((uint64_t)1 << 54)
+#define PT_FLAG_PXN      ((uint64_t)1 << 53)
+#define PT_FLAG_UXN      ((uint64_t)1 << 54)
 #define PT_FLAG_WB       ((uint64_t)0 << 2)
 #define PT_FLAG_FB       ((uint64_t)1 << 2)
 #define PT_PADDR_MASK    ((uint64_t)0x0000FFFFFFFFF000)
@@ -248,7 +249,7 @@ static uint64_t pt_to_vmm_flags_internal(pt_entry_t entry) {
 
     if (!(entry & PT_FLAG_READONLY))
         flags |= VMM_FLAG_WRITE;
-    if (entry & PT_FLAG_XN)
+    if (entry & PT_FLAG_PXN)
         flags |= VMM_FLAG_NOEXEC;
     if (entry & PT_FLAG_FB)
         flags |= VMM_FLAG_FB;
@@ -300,8 +301,10 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
     }
     if (!(flags & VMM_FLAG_WRITE))
         real_flags |= PT_FLAG_READONLY;
+    // The executable is entered at EL1, or at EL2 under VHE, so PXN is the bit
+    // that governs its own instruction fetches.
     if (flags & VMM_FLAG_NOEXEC)
-        real_flags |= PT_FLAG_XN;
+        real_flags |= PT_FLAG_PXN | PT_FLAG_UXN;
     if (flags & VMM_FLAG_FB)
         real_flags |= PT_FLAG_FB;
 

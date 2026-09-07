@@ -108,6 +108,7 @@ rm_int:
     db 0
 
     cli
+    cld
 
     ; Load out_regs
     mov dword [ss:.esp], esp

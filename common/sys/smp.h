@@ -30,7 +30,8 @@ struct limine_mp_info *init_smp(void     *dtb,
                                  uint64_t  mair,
                                  uint64_t  tcr,
                                  uint64_t  sctlr,
-                                 uint64_t  hhdm_offset);
+                                 uint64_t  hhdm_offset,
+                                 bool      drop_to_el1);
 
 #elif defined (__riscv)
 

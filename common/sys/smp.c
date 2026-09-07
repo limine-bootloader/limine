@@ -388,6 +388,8 @@ struct limine_mp_info *init_smp(size_t   *cpu_count,
 #elif defined (__aarch64__)
 
 struct trampoline_passed_info {
+    uint64_t smp_tpl_drop_to_el1;
+
     uint64_t smp_tpl_ap_el;
 
     uint64_t smp_tpl_booted_flag;
@@ -421,7 +423,7 @@ static bool try_start_ap(int boot_method, uint64_t method_ptr,
                          struct limine_mp_info *info_struct,
                          uint64_t ttbr0, uint64_t ttbr1, uint64_t mair,
                          uint64_t tcr, uint64_t sctlr,
-                         uint64_t hhdm_offset) {
+                         uint64_t hhdm_offset, bool drop_to_el1) {
     // Prepare the trampoline
     static void *trampoline = NULL;
     if (trampoline == NULL) {
@@ -439,6 +441,7 @@ static bool try_start_ap(int boot_method, uint64_t method_ptr,
     passed_info->smp_tpl_info_struct = (uint64_t)(uintptr_t)info_struct;
     passed_info->smp_tpl_booted_flag = 0;
     passed_info->smp_tpl_ap_el       = 0;
+    passed_info->smp_tpl_drop_to_el1 = drop_to_el1 ? 1 : 0;
     passed_info->smp_tpl_ttbr0       = ttbr0;
     passed_info->smp_tpl_ttbr1       = ttbr1;
     passed_info->smp_tpl_mair        = mair;
@@ -516,10 +519,10 @@ static bool try_start_ap(int boot_method, uint64_t method_ptr,
 
         if (locked_read(&passed_info->smp_tpl_booted_flag) == 1) {
             uint64_t ap_el = locked_read(&passed_info->smp_tpl_ap_el);
-            uint64_t bsp_el = current_el();
-            if (ap_el != bsp_el) {
-                panic(false, "smp: AP started at EL%u but BSP is at EL%u",
-                      (uint32_t)ap_el, (uint32_t)bsp_el);
+            uint64_t target_el = drop_to_el1 ? 1 : (uint64_t)current_el();
+            if (ap_el != target_el) {
+                panic(false, "smp: AP settled at EL%u but the kernel is entered at EL%u",
+                      (uint32_t)ap_el, (uint32_t)target_el);
             }
             return true;
         }
@@ -535,7 +538,8 @@ static struct limine_mp_info *try_acpi_smp(size_t   *cpu_count,
                                             uint64_t  mair,
                                             uint64_t  tcr,
                                             uint64_t  sctlr,
-                                            uint64_t  hhdm_offset) {
+                                            uint64_t  hhdm_offset,
+                                            bool      drop_to_el1) {
     int boot_method = BOOT_WITH_ACPI_PARK;
 
     // Search for FADT table
@@ -642,7 +646,8 @@ static struct limine_mp_info *try_acpi_smp(size_t   *cpu_count,
                 if (!try_start_ap(boot_method, gicc->parking_addr, info_struct,
                                   make_ttbr(pagemap, 0),
                                   make_ttbr(pagemap, 1),
-                                  mair, tcr, sctlr, hhdm_offset)) {
+                                  mair, tcr, sctlr, hhdm_offset,
+                                  drop_to_el1)) {
                     print("smp: FAILED to bring-up AP\n");
                     continue;
                 }
@@ -670,7 +675,8 @@ static struct limine_mp_info *try_dtb_smp( void *dtb,
                                            uint64_t  mair,
                                            uint64_t  tcr,
                                            uint64_t  sctlr,
-                                           uint64_t  hhdm_offset) {
+                                           uint64_t  hhdm_offset,
+                                           bool      drop_to_el1) {
     uint64_t bsp_mpidr;
     asm volatile ("mrs %0, mpidr_el1" : "=r"(bsp_mpidr));
 
@@ -836,7 +842,8 @@ static struct limine_mp_info *try_dtb_smp( void *dtb,
         if (!try_start_ap(boot_method, method_ptr, info_struct,
                                         make_ttbr(pagemap, 0),
                                         make_ttbr(pagemap, 1),
-                                        mair, tcr, sctlr, hhdm_offset)) {
+                                        mair, tcr, sctlr, hhdm_offset,
+                                        drop_to_el1)) {
             print("smp: FAILED to bring-up AP\n");
             continue;
         }
@@ -862,18 +869,21 @@ struct limine_mp_info *init_smp(void     *dtb,
                                  uint64_t  mair,
                                  uint64_t  tcr,
                                  uint64_t  sctlr,
-                                 uint64_t  hhdm_offset) {
+                                 uint64_t  hhdm_offset,
+                                 bool      drop_to_el1) {
     struct limine_mp_info *info = NULL;
 
     if (acpi_get_rsdp() && (info = try_acpi_smp(
                                     cpu_count, bsp_mpidr, pagemap,
-                                    mair, tcr, sctlr, hhdm_offset)))
+                                    mair, tcr, sctlr, hhdm_offset,
+                                    drop_to_el1)))
         return info;
 
     if (dtb) {
         info = try_dtb_smp(dtb,
                            cpu_count, bsp_mpidr, pagemap,
-                           mair, tcr, sctlr, hhdm_offset);
+                           mair, tcr, sctlr, hhdm_offset,
+                           drop_to_el1);
         return info;
     }
 

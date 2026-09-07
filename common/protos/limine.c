@@ -344,6 +344,64 @@ extern symbol limine_spinup_32;
                             | ((uint64_t)1 << 8)             /* TTBR0 Inner WB RW-Allocate */ \
                             | ((uint64_t)(tsz) << 0))        /* Address bits in TTBR0 */
 
+// Armv8.1 makes FEAT_VHE mandatory wherever EL2 is implemented, so EL2 without
+// it means Armv8.0, whose EL2 controls over EL1 are the fixed set
+// INIT_EL2_FOR_EL1 covers. Confirm rather than infer: for every extension
+// below, the values written on the way down are wrong, not just incomplete.
+static bool can_drop_to_el1(void) {
+    uint64_t reg;
+
+#define ID_FIELD(v, shift) (((v) >> (shift)) & 0xf)
+
+    // FEAT_RASv1p1 (HCR_EL2.FIEN), FEAT_SVE (CPTR_EL2.TZ), FEAT_MPAM
+    // (MPAM2_EL2), FEAT_AMUv1 (counter enables).
+    asm volatile ("mrs %0, id_aa64pfr0_el1" : "=r"(reg));
+    if (ID_FIELD(reg, 28) >= 2 || ID_FIELD(reg, 32) != 0
+     || ID_FIELD(reg, 40) != 0 || ID_FIELD(reg, 44) != 0) {
+        return false;
+    }
+
+    // FEAT_MTE2 (HCR_EL2.ATA), FEAT_MPAM (MPAM2_EL2), FEAT_SME (CPTR_EL2.TSM),
+    // FEAT_GCS (HCRX_EL2.GCSEn).
+    asm volatile ("mrs %0, id_aa64pfr1_el1" : "=r"(reg));
+    if (ID_FIELD(reg, 8) >= 2 || ID_FIELD(reg, 16) != 0
+     || ID_FIELD(reg, 24) != 0 || ID_FIELD(reg, 44) != 0) {
+        return false;
+    }
+
+    // FEAT_PAuth (HCR_EL2.{APK, API}), FEAT_LS64 (HCRX_EL2 enables).
+    asm volatile ("mrs %0, id_aa64isar1_el1" : "=r"(reg));
+    if (ID_FIELD(reg, 4) != 0 || ID_FIELD(reg, 8) != 0
+     || ID_FIELD(reg, 24) != 0 || ID_FIELD(reg, 28) != 0
+     || ID_FIELD(reg, 60) != 0) {
+        return false;
+    }
+
+    // FEAT_FGT (the HFG and HDFG fine grained trap registers).
+    asm volatile ("mrs %0, id_aa64mmfr0_el1" : "=r"(reg));
+    if (ID_FIELD(reg, 56) != 0) {
+        return false;
+    }
+
+    // FEAT_HCX (HCRX_EL2, several of whose enables trap when clear).
+    asm volatile ("mrs %0, id_aa64mmfr1_el1" : "=r"(reg));
+    if (ID_FIELD(reg, 40) != 0) {
+        return false;
+    }
+
+    // FEAT_SPE (MDCR_EL2.E2PB), FEAT_TRF (MDCR_EL2.TTRF), FEAT_TRBE
+    // (MDCR_EL2.E2TB), FEAT_BRBE (BRBCR_EL2).
+    asm volatile ("mrs %0, id_aa64dfr0_el1" : "=r"(reg));
+    if (ID_FIELD(reg, 32) != 0 || ID_FIELD(reg, 40) != 0
+     || ID_FIELD(reg, 44) != 0 || ID_FIELD(reg, 52) != 0) {
+        return false;
+    }
+
+#undef ID_FIELD
+
+    return true;
+}
+
 #elif defined (__riscv)
 #elif defined (__loongarch64)
 #else
@@ -531,12 +589,20 @@ noreturn void limine_load(char *config, char *cmdline) {
 #endif
 
 #if defined (__aarch64__)
-    // Booting at EL2 without VHE is not supported.
+    // The executable is entered at EL2 only with VHE, where the *_EL1 state the
+    // protocol describes redirects to the EL2 bank.
+    bool want_el2 = false;
+    bool drop_to_el1 = false;
+
     if (current_el() == 2) {
         uint64_t mmfr1;
         asm volatile ("mrs %0, id_aa64mmfr1_el1" : "=r"(mmfr1));
-        if (!((mmfr1 >> 8) & 0xF)) {
-            panic(true, "limine: Booting at EL2 without VHE support is not supported");
+        if ((mmfr1 >> 8) & 0xF) {
+            want_el2 = true;
+        } else if (can_drop_to_el1()) {
+            drop_to_el1 = true;
+        } else {
+            panic(true, "limine: Booting at EL2 without VHE is only supported on Armv8.0 processors");
         }
     }
 #endif
@@ -1941,11 +2007,6 @@ FEAT_END
     pagemap = build_pagemap(base_revision, nx_available, ranges, ranges_count,
                             physical_base, virtual_base, direct_map_offset);
 
-#if defined (__aarch64__)
-    // Enter at EL2 with VHE if we are at EL2 (VHE check done at function entry)
-    bool want_el2 = (current_el() == 2);
-#endif
-
     // MP
 FEAT_START
     struct limine_mp_request *mp_request = get_request(mp_request, LIMINE_MP_REQUEST_ID);
@@ -1967,7 +2028,7 @@ FEAT_START
 
     mp_info = init_smp(smp_dtb, &cpu_count, &bsp_mpidr,
                         pagemap, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa, ds), LIMINE_SCTLR,
-                        direct_map_offset);
+                        direct_map_offset, drop_to_el1);
 #elif defined (__riscv)
     mp_info = init_smp(&cpu_count, pagemap, direct_map_offset);
 #elif defined (__loongarch64)

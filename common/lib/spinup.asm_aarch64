@@ -5,10 +5,13 @@
 // noreturn void enter_in_el1(uint64_t entry, uint64_t sp, uint64_t sctlr,
 //                            uint64_t mair, uint64_t tcr, uint64_t ttbr0,
 //                            uint64_t ttbr1, uint64_t direct_map_offset)
-// Configure EL1 state and jump to kernel. Must be called at EL1.
+// Configure EL1 state and jump to kernel. Called at EL1, or at EL2 without
+// VHE, in which case it drops to EL1 on the way.
 
 .global enter_in_el1
 enter_in_el1:
+    PICK_EL x8, 0f, 2f
+0:
     msr spsel, #0
     mov sp, x1
 
@@ -64,6 +67,37 @@ enter_in_el1:
 
     mov x0, xzr
     ZERO_REGS_EXCEPT_X0
+
+    eret
+
+2:
+    // At EL2 without VHE the EL1 registers are inactive, so the state goes in
+    // whole and the ERET brings it into use, with nothing switched underneath.
+    msr sp_el0, x1
+
+    msr mair_el1, x3
+    msr tcr_el1, x4
+    msr ttbr0_el1, x5
+    msr ttbr1_el1, x6
+    msr sctlr_el1, x2
+
+    INIT_EL2_FOR_EL1 x8, x9
+
+    // The regime only comes into use at the ERET, so retire anything stale
+    // under the VMID selected above before it does.
+    tlbi vmalle1
+    dsb nsh
+    isb
+
+    // The tail is reachable in the higher half once the ERET brings TTBR1_EL1
+    // into use.
+    adrp x8, 1b
+    add x8, x8, #:lo12:1b
+    add x8, x8, x7
+    msr elr_el2, x8
+
+    mov x8, #0x3c4
+    msr spsr_el2, x8
 
     eret
 

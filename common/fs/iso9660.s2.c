@@ -122,6 +122,9 @@ static bool iso9660_find_PVD(struct iso9660_primary_volume *desc, struct volume 
         if (!volume_read(vol, desc, offset, sizeof(struct iso9660_primary_volume))) {
             return false;
         }
+        if (memcmp(desc->volume_descriptor.identifier, "CD001", 5) != 0) {
+            return false;
+        }
 
         switch (desc->volume_descriptor.type) {
         case ISO9660_VDT_PRIMARY:

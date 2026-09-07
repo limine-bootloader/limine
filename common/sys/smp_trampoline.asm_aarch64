@@ -1,5 +1,6 @@
 #include <lib/macros.aarch64_asm.h>
 
+.set tpl_drop_to_el1, -80
 .set tpl_ap_el, -72
 .set tpl_booted_flag, -64
 .set tpl_hhdm_offset, -56
@@ -32,7 +33,24 @@ smp_trampoline_start:
 
     PICK_EL x8, 1f, 0f
 0:
-    // EL2 path - enable VHE and stay at EL2
+    // EL2 path
+
+    ldr x8, [x1, tpl_drop_to_el1]
+    cbz x8, 6f
+
+    // The BSP only asks for this having established the processor is Armv8.0.
+    INIT_EL2_FOR_EL1 x8, x9
+
+    mov x8, #0x3c4
+    msr spsr_el2, x8
+
+    adr x8, 1f
+    msr elr_el2, x8
+
+    eret
+
+6:
+    // Enable VHE and stay at EL2
 
     // Enable E2H if not already set
     mrs x8, hcr_el2

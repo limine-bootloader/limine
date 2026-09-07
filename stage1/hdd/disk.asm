@@ -37,6 +37,17 @@ read_sectors:
     jc .fail
     movzx ebp, word [si+24] ; bytes_per_sect
 
+    ; A zero faults the divides below, and only a power of two from 512 to 4096
+    ; divides the byte offsets the installer writes. Distrust anything else.
+    lea ax, [bp-1]
+    test ax, bp
+    jnz .bad_size
+    test bp, 0x1e00
+    jnz .got_size
+  .bad_size:
+    mov bp, 512
+  .got_size:
+
     ; ECX byte count to CX sector count
     xchg ax, cx
     shr ecx, 16

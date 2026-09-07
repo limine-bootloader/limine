@@ -57,6 +57,7 @@ pxe_call:
     add sp, 6
 
     cli
+    cld
 
     ; Restore GDT
     o32 lgdt [cs:.gdt]

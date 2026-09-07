@@ -141,10 +141,10 @@ full-hybrid-test:
 	cp -v $(BINDIR)/BOOT*.EFI test_image/EFI/BOOT/
 	xorriso -as mkisofs -R -r -J -b boot/limine-bios-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table -hfsplus -apm-block-size 2048 --efi-boot boot/limine-uefi-cd.bin -efi-boot-part --efi-boot-image --protective-msdos-label test_image/ -o test.iso
 	$(BINDIR)/limine bios-install test.iso
-	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-x86_64.fd,readonly=on -net none -smp 4   -cdrom test.iso -debugcon stdio
-	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-x86_64.fd,readonly=on -net none -smp 4   -hda test.iso -debugcon stdio
-	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-ia32.fd,readonly=on -net none -smp 4   -cdrom test.iso -debugcon stdio
-	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-ia32.fd,readonly=on -net none -smp 4   -hda test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-x86_64.fd,readonly=on -net none -smp 4 -device virtio-tablet-pci -device virtio-mouse-pci   -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-x86_64.fd,readonly=on -net none -smp 4 -device virtio-tablet-pci -device virtio-mouse-pci   -hda test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-ia32.fd,readonly=on -net none -smp 4 -device virtio-tablet-pci -device virtio-mouse-pci   -cdrom test.iso -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-ia32.fd,readonly=on -net none -smp 4 -device virtio-tablet-pci -device virtio-mouse-pci   -hda test.iso -debugcon stdio
 	qemu-system-x86_64 -m 512M -M q35 -net none -smp 4   -cdrom test.iso -debugcon stdio
 	qemu-system-x86_64 -m 512M -M q35 -net none -smp 4   -hda test.iso -debugcon stdio
 
@@ -171,7 +171,7 @@ uefi-x86-64-pxe-test:
 	$(MKDIR_P) test_image/boot
 	cp -rv $(BINDIR)/* test_image/boot/
 	cp -rv test/* test_image/boot/
-	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-x86_64.fd,readonly=on -smp 4 -netdev user,id=n0,tftp=./test_image,bootfile=boot/BOOTX64.EFI -device virtio-net-pci,netdev=n0,mac=00:00:00:11:11:11 -object rng-random,filename=/dev/urandom,id=rng0 -device virtio-rng-pci,rng=rng0 -boot n -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-x86_64.fd,readonly=on -smp 4 -device virtio-tablet-pci -device virtio-mouse-pci -netdev user,id=n0,tftp=./test_image,bootfile=boot/BOOTX64.EFI -device virtio-net-pci,netdev=n0,mac=00:00:00:11:11:11 -object rng-random,filename=/dev/urandom,id=rng0 -device virtio-rng-pci,rng=rng0 -boot n -debugcon stdio
 
 .PHONY: uefi-x86-64-test
 uefi-x86-64-test:
@@ -195,7 +195,7 @@ uefi-x86-64-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-x86_64.fd,readonly=on -net none -smp 4   -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-x86_64.fd,readonly=on -net none -smp 4 -device virtio-tablet-pci -device virtio-mouse-pci   -hda test.hdd -debugcon stdio
 
 .PHONY: uefi-aa64-test
 uefi-aa64-test:
@@ -219,7 +219,7 @@ uefi-aa64-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-aarch64 -m 512M -M virt -cpu cortex-a72 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-aarch64.fd,readonly=on -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd  -hda test.hdd -serial stdio
+	qemu-system-aarch64 -m 512M -M virt -cpu cortex-a72 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-aarch64.fd,readonly=on -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd -device virtio-tablet-pci -device virtio-mouse-pci  -hda test.hdd -serial stdio
 
 .PHONY: uefi-rv64-test
 uefi-rv64-test:
@@ -243,7 +243,7 @@ uefi-rv64-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-riscv64 -m 512M -M virt -cpu rv64 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-riscv64.fd,readonly=on -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd -hda test.hdd -serial stdio
+	qemu-system-riscv64 -m 512M -M virt -cpu rv64 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-riscv64.fd,readonly=on -net none -smp 4 -device ramfb -device qemu-xhci -device usb-kbd -device virtio-tablet-pci -device virtio-mouse-pci -hda test.hdd -serial stdio
 
 .PHONY: uefi-loongarch64-test
 uefi-loongarch64-test:
@@ -267,7 +267,7 @@ uefi-loongarch64-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-loongarch64 -m 1G -net none -M virt -cpu la464 -smp 4 -device ramfb -device qemu-xhci -device usb-kbd -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-loongarch64.fd,readonly=on -hda test.hdd -serial stdio
+	qemu-system-loongarch64 -m 1G -net none -M virt -cpu la464 -smp 4 -device ramfb -device qemu-xhci -device usb-kbd -device virtio-tablet-pci -device virtio-mouse-pci -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-loongarch64.fd,readonly=on -hda test.hdd -serial stdio
 
 .PHONY: uefi-ia32-test
 uefi-ia32-test:
@@ -291,4 +291,4 @@ uefi-ia32-test:
 	sudo umount test_image/
 	sudo losetup -d `cat loopback_dev`
 	rm -rf test_image loopback_dev
-	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-ia32.fd,readonly=on -net none -smp 4   -hda test.hdd -debugcon stdio
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-ia32.fd,readonly=on -net none -smp 4 -device virtio-tablet-pci -device virtio-mouse-pci   -hda test.hdd -debugcon stdio

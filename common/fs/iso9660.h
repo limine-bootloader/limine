@@ -6,5 +6,6 @@
 #include <fs/file.h>
 
 struct file_handle *iso9660_open(struct volume *vol, const char *path);
+char *iso9660_get_label(struct volume *vol);
 
 #endif

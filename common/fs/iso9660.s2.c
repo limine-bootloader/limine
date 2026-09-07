@@ -141,6 +141,26 @@ static bool iso9660_find_PVD(struct iso9660_primary_volume *desc, struct volume 
     return false;
 }
 
+char *iso9660_get_label(struct volume *vol) {
+    struct iso9660_primary_volume pv;
+    if (!iso9660_find_PVD(&pv, vol)) {
+        return NULL;
+    }
+
+    char *ret = ext_mem_alloc(sizeof(pv.volume_identifier) + 1);
+    memcpy(ret, pv.volume_identifier, sizeof(pv.volume_identifier));
+
+    // ECMA-119 8.4.7 pads the volume identifier to its full width with spaces.
+    for (int i = sizeof(pv.volume_identifier) - 1; i >= 0; i--) {
+        if (ret[i] != ' ') {
+            break;
+        }
+        ret[i] = 0;
+    }
+
+    return ret;
+}
+
 // fopen() tries this on every volume before FAT, so a descriptor that does not
 // describe a filesystem we can read has to decline rather than end the boot.
 static bool iso9660_cache_root(struct volume *vol,

@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdalign.h>
 #include <drivers/disk.h>
+#include <fs/file.h>
 #include <lib/libc.h>
 #if defined (BIOS)
 #  include <lib/real.h>
@@ -291,6 +292,14 @@ void disk_create_index(void) {
 
         if (gpt_get_guid(&block->guid, block)) {
             block->guid_valid = true;
+        }
+
+        // A filesystem occupying the whole medium, as ISO 9660 does, has no
+        // partition volume to carry its label.
+        char *fslabel = fs_get_label(block);
+        if (fslabel != NULL) {
+            block->fslabel_valid = true;
+            block->fslabel = fslabel;
         }
 
         volume_index = pmm_realloc(
@@ -896,6 +905,14 @@ fail:
 
         if (gpt_get_guid(&block->guid, block)) {
             block->guid_valid = true;
+        }
+
+        // A filesystem occupying the whole medium, as ISO 9660 does, has no
+        // partition volume to carry its label.
+        char *fslabel = fs_get_label(block);
+        if (fslabel != NULL) {
+            block->fslabel_valid = true;
+            block->fslabel = fslabel;
         }
 
         volume_index = pmm_realloc(

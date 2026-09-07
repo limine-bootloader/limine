@@ -141,6 +141,8 @@ static bool iso9660_find_PVD(struct iso9660_primary_volume *desc, struct volume 
     return false;
 }
 
+// fopen() tries this on every volume before FAT, so a descriptor that does not
+// describe a filesystem we can read has to decline rather than end the boot.
 static bool iso9660_cache_root(struct volume *vol,
                                void **root,
                                uint32_t *root_size) {
@@ -155,13 +157,14 @@ static bool iso9660_cache_root(struct volume *vol,
     // sector alignment so directory-traversal sector-skip arithmetic is sound.
     if (*root_size == 0 || *root_size > ISO9660_MAX_DIR_SIZE
      || *root_size % ISO9660_SECTOR_SIZE != 0) {
-        panic(false, "ISO9660: Invalid root directory size");
+        return false;
     }
 
     *root = ext_mem_alloc(*root_size);
     uint64_t offset = (uint64_t)pv.root.extent.little * ISO9660_SECTOR_SIZE;
     if (!volume_read(vol, *root, offset, *root_size)) {
-        panic(false, "ISO9660: failed to read root directory");
+        pmm_free(*root, *root_size);
+        return false;
     }
 
     return true;

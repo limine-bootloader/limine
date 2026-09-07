@@ -143,10 +143,10 @@ Miscellaneous:
 * `randomize_memory` - Alias of `randomise_memory`.
 * `hash_mismatch_panic` - If set to `no`, do not panic if there is a hash
   mismatch for a file, but print a warning instead. Forced to `yes` when
-  Secure Boot is active.
+  Secure Boot is active and a config hash is enrolled.
 * `measured_boot` - If set to `yes`, opt in to measured boot. Forced to `yes`
-  when Secure Boot is active, and forced back to `no` if the firmware does
-  not expose a TPM 2.0/CC measurement interface. See
+  when Secure Boot is active and a config hash is enrolled, and forced back to
+  `no` if the firmware does not expose a TPM 2.0/CC measurement interface. See
   [USAGE.md](USAGE.md#measured-boot).
 * `firmware_logo` - If set to `yes`, restore the OEM firmware boot logo upon
   handoff to the OS, instead of leaving a blank screen, by clearing the
@@ -246,7 +246,7 @@ Editor control options:
 
 * `editor_enabled` - If set to `no`, the editor will not be accessible.
   Defaults to `yes` unless a config hash is enrolled. Unconditionally
-  disabled when Secure Boot is active.
+  disabled when Secure Boot is active and a config hash is enrolled.
 * `editor_highlighting` - If set to `no`, syntax highlighting in the editor
   will be disabled. Defaults to `yes`.
 * `editor_validation` - If set to `no`, the editor will not alert you about
@@ -424,9 +424,11 @@ referenced file, by appending a pound character (`#`) followed by the hash.
 E.g.: `boot():/somemodule.tar#ca6914d2...446b470a`.
 Limine distinguishes hashes by length: 64 hexadecimal characters is standard
 BLAKE3, 128 is BLAKE2b, and 256 is extended-output BLAKE3.
-When Secure Boot is active, all file paths **must** have a hash appended or
-Limine will panic (except for wallpapers and fonts, which are silently skipped
-instead, falling back to defaults).
+When Secure Boot is active and a config hash is enrolled, all file paths
+**must** have a hash appended or Limine will panic (except for wallpapers and
+fonts, which are silently skipped instead, falling back to defaults). Without
+an enrolled hash Limine treats Secure Boot as inactive; see
+[USAGE.md](USAGE.md#secure-boot).
 
 A gzip-compressed resource is indicated by inserting a dollar character (`$`)
 before the resource string. This allows for transparent decompression. For

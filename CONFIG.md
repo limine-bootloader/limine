@@ -20,10 +20,10 @@ candidates in subsequent partitions or directories are ignored.
 It is thus imperative that the intended config file is placed in a location
 that will not be shadowed by another candidate config file.
 
-On EFI, should Limine fail to determine which volume it was booted from - a
-condition it reports as a bug - it instead scans every volume it can see, for
-`/EFI/limine/limine.conf` and `/EFI/BOOT/limine.conf` before the four names
-above.
+On EFI, should Limine fail to determine which volume it was booted from, it
+reports the condition as a bug and waits for a keypress. It then scans every
+volume it can see, for `/EFI/limine/limine.conf` and `/EFI/BOOT/limine.conf`
+before the four names above.
 
 ### Config via SMBIOS
 

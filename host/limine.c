@@ -1544,13 +1544,15 @@ part_too_low:
         goto cleanup;
     }
 
-    // Default location of stage2 for MBR (in post MBR gap)
-    uint64_t stage2_loc = 512;
+    // Default location of stage2 for MBR (in post MBR gap). The boot sector
+    // divides this byte address by the sector size the BIOS reports and drops
+    // the remainder, so it has to be a multiple of every size in use.
+    uint64_t stage2_loc = 4096;
 
     // The MBR sanity checks above reject any partition starting before LBA 63,
-    // so LBAs 1 through 62 are ours. The GPT path narrows this to the size of
-    // the partition it picks.
-    uint64_t stage2_max = 62 * 512;
+    // so the bytes below 63 * 512 are ours. The GPT path narrows this to the
+    // size of the partition it picks.
+    uint64_t stage2_max = 63 * 512 - 4096;
 
     if (gpt) {
         struct gpt_entry gpt_entry;

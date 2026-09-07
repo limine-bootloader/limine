@@ -69,6 +69,26 @@ static size_t get_multiboot2_info_size(
 #undef OVERFLOW
 }
 
+// elsewhere_reserve_target() can only protect what is free when the target is
+// chosen, so a window holding loader allocations is not viable: whatever the
+// loader frees afterwards is handed back out on top of the executable.
+static bool overlaps_loader_memory(uint64_t base, uint64_t top) {
+    for (size_t i = 0; i < memmap_entries; i++) {
+        if (memmap[i].type != MEMMAP_BOOTLOADER_RECLAIMABLE
+         && memmap[i].type != MEMMAP_KERNEL_AND_MODULES) {
+            continue;
+        }
+
+        uint64_t entry_top = CHECKED_ADD(memmap[i].base, memmap[i].length, continue);
+
+        if (memmap[i].base < top && entry_top > base) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 #define append_tag(P, TAG) do { \
     (P) += ALIGN_UP((TAG)->size, MULTIBOOT_TAG_ALIGN, panic(true, "multiboot2: tag size overflow")); \
 } while (0)
@@ -460,7 +480,10 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
         uint64_t reloc_tries = 0;
 
         for (;;) {
-            if (check_usable_memory(relocated_base, CHECKED_ADD(relocated_base, ranges->length, goto reloc_fail))) {
+            uint64_t relocated_top = CHECKED_ADD(relocated_base, ranges->length, goto reloc_fail);
+
+            if (check_usable_memory(relocated_base, relocated_top)
+             && !overlaps_loader_memory(relocated_base, relocated_top)) {
                 break;
             }
 

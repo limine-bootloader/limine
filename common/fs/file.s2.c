@@ -17,6 +17,10 @@ char *fs_get_label(struct volume *part) {
         return ret;
     }
 
+    if ((ret = iso9660_get_label(part)) != NULL) {
+        return ret;
+    }
+
     return NULL;
 }
 

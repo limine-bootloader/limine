@@ -399,7 +399,8 @@ A resource can be one of the following:
   unified namespace.
 * `uuid` - Alias of `guid`.
 * `fslabel` - The `argument` is the name of the filesystem label of a
-  partition.
+  partition, or of a whole volume where the filesystem occupies the entire
+  medium. FAT volume labels and ISO 9660 volume identifiers are both read.
 * `tftp` - The `argument` is the IP address of the tftp server to load the file
   from. If the argument is left empty (`tftp():/...`) the file will be loaded
   from the server Limine booted from. This resource is only available when

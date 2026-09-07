@@ -71,6 +71,9 @@ struct multiboot1_info {
     uint32_t fb_height;
     uint8_t fb_bpp;
     uint8_t fb_type;
+    // The colour union that follows is 4-byte aligned in GRUB's header and in
+    // the specification's own, so kernels built against either find the colour
+    // info at 112, not at the 110 the specification's prose states.
     uint16_t fb_reserved;
 
     uint8_t fb_red_mask_shift;

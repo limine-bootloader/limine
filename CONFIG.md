@@ -410,7 +410,9 @@ that fits the 8.3 short form is matched case insensitively, the short name
 being stored uppercase; a name too long for that form is matched case
 sensitively. On ISO9660 volumes a name carrying no Rock Ridge extension is
 matched case insensitively, ISO9660 names being uppercase. The search for the
-config file itself is case insensitive on every filesystem.
+config file itself is case insensitive on every filesystem. Note that Joliet
+supplementary volume descriptors are not read, so on an ISO9660 volume a long
+name is only available through Rock Ridge.
 
 For MBR, the four primary partitions take the numbers 1 to 4 by the slot they
 occupy, whether or not that slot is used, and logical partitions are numbered

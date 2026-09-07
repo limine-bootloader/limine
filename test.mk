@@ -159,6 +159,20 @@ pxe-test:
 	cp -rv test/* test_image/boot/
 	qemu-system-x86_64  -smp 4  -netdev user,id=n0,tftp=./test_image,bootfile=boot/limine-bios-pxe.bin -device rtl8139,netdev=n0,mac=00:00:00:11:11:11 -debugcon stdio
 
+# OVMF's PXE stack needs an entropy source to come up: without the virtio RNG
+# no network boot option is registered at all.
+.PHONY: uefi-x86-64-pxe-test
+uefi-x86-64-pxe-test:
+	$(MAKE) edk2-ovmf
+	$(MAKE) test-clean
+	$(MAKE) limine-uefi-x86-64
+	$(MAKE) -C test -f test.mk ARCH=x86
+	rm -rf test_image/
+	$(MKDIR_P) test_image/boot
+	cp -rv $(BINDIR)/* test_image/boot/
+	cp -rv test/* test_image/boot/
+	qemu-system-x86_64 -m 512M -M q35 -drive if=pflash,unit=0,format=raw,file=edk2-ovmf/ovmf-code-x86_64.fd,readonly=on -smp 4 -netdev user,id=n0,tftp=./test_image,bootfile=boot/BOOTX64.EFI -device virtio-net-pci,netdev=n0,mac=00:00:00:11:11:11 -object rng-random,filename=/dev/urandom,id=rng0 -device virtio-rng-pci,rng=rng0 -boot n -debugcon stdio
+
 .PHONY: uefi-x86-64-test
 uefi-x86-64-test:
 	$(MAKE) edk2-ovmf

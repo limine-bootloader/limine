@@ -238,7 +238,7 @@ static void insert(struct match_finder *mf, uint32_t pos) {
 }
 
 static unsigned match_length(const struct match_finder *mf, uint32_t pos, uint32_t distance) {
-    unsigned limit = mf->size - pos;
+    uint32_t limit = mf->size - pos;
     if (limit > LIMLZ_MAX_MATCH) {
         limit = LIMLZ_MAX_MATCH;
     }

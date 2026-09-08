@@ -152,7 +152,7 @@ static int gpt2mbr_type(uint64_t gpt_type1, uint64_t gpt_type2) {
 
 static void lba2chs(uint8_t *chs, uint64_t lba) {
     // If LBA is too big to express, use a standard value for CHS.
-    if (lba > 63 * 255 * 1024) {
+    if (lba > UINT64_C(63) * 255 * 1024) {
         goto lba_too_big;
     }
 
@@ -698,7 +698,7 @@ cleanup:
 // A resource limit, not a conformance one: the specification states no maximum,
 // and the geometry that does bound the array is written by the same table. 64
 // times the 16384 bytes UEFI requires be reserved.
-#define GPT_MAX_ARRAY_SIZE (1024 * 1024)
+#define GPT_MAX_ARRAY_SIZE (UINT64_C(1024) * 1024)
 
 // Bitwise: this runs a handful of times per install, so a table would cost more
 // space than the loop costs time.

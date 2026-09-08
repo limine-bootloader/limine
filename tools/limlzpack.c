@@ -356,7 +356,7 @@ static void bcj_encode(uint8_t *data, uint32_t size) {
                 if (!history || (high != 0 && high != 255)) {
                     break;
                 }
-                value ^= (1u << (shift + 8)) - 1;
+                value ^= ~(0xFFFFFF00u << shift);
             }
             /* BCJ canonicalises the high byte from bit 24. */
             data[pos + 4] = (uint8_t)(0u - ((value >> 24) & 1));

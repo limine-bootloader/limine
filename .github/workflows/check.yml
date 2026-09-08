@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Build the bootloader (LLVM, default)
-        run: ./bootstrap && ./configure --enable-werror --enable-all && make all && make distclean
+        run: ./bootstrap && ./configure --enable-werror --enable-all && make all -j$(nproc) && make distclean
 
       - name: Set cross GCC version
         run: echo "GCC_VERSION=16.2.0" >> $GITHUB_ENV

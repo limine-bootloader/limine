@@ -417,4 +417,4 @@ decompressor-clean:
 tools-clean:
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))/tools-build'
 
--include test.mk
+-include $(call MKESCAPE,$(SRCDIR))/test.mk

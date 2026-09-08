@@ -136,7 +136,7 @@ static void shift_low(struct range_encoder *rc) {
         rc->cache = (uint8_t)(low >> 24);
     }
     rc->pending++;
-    rc->low = low << 8;
+    rc->low = (uint32_t)(low << 8);
 }
 
 static void normalise(struct range_encoder *rc) {

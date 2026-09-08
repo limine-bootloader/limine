@@ -330,7 +330,7 @@ static void bcj_encode(uint8_t *data, uint32_t size) {
             pos++;
             continue;
         }
-        unsigned gap = pos - previous;
+        uint32_t gap = pos - previous;
         previous = pos;
         if (gap >= 4) {
             history = 0;

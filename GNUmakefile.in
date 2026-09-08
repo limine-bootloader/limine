@@ -325,7 +325,8 @@ dist:
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"$(DIST_OUTPUT)/screenshot.png"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"$(DIST_OUTPUT)/bochsrc"
 	echo "$(PACKAGE_VERSION)" > '$(call SHESCAPE,$(BUILDDIR))'/"$(DIST_OUTPUT)/version"
-	cd '$(call SHESCAPE,$(BUILDDIR))' && tar -cf "$(DIST_OUTPUT).tar" "$(DIST_OUTPUT)"
+	cd '$(call SHESCAPE,$(BUILDDIR))' && TZ=UTC0 find "$(DIST_OUTPUT)" -exec touch -t $(SOURCE_DATE_EPOCH_TOUCH) '{}' +
+	cd '$(call SHESCAPE,$(BUILDDIR))' && tar -cf "$(DIST_OUTPUT).tar" $$(find "$(DIST_OUTPUT)" ! -type d | LC_ALL=C sort)
 	cd '$(call SHESCAPE,$(BUILDDIR))' && gzip < "$(DIST_OUTPUT).tar" > "$(DIST_OUTPUT).tar.gz"
 	cd '$(call SHESCAPE,$(BUILDDIR))' && ( bzip2 < "$(DIST_OUTPUT).tar" > "$(DIST_OUTPUT).tar.bz2" || rm -f "$(DIST_OUTPUT).tar.bz2" )
 	cd '$(call SHESCAPE,$(BUILDDIR))' && ( xz < "$(DIST_OUTPUT).tar" > "$(DIST_OUTPUT).tar.xz" || rm -f "$(DIST_OUTPUT).tar.xz" )

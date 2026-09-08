@@ -209,7 +209,7 @@ static void encode_distance(struct range_encoder *rc, unsigned length, uint32_t 
     if (slot < 4) {
         return;
     }
-    uint32_t base = (2u | (slot & 1)) << bits;
+    uint32_t base = (uint32_t)(2 | (slot & 1)) << bits;
     uint32_t extra = value - base;
     if (slot < 14) {
         encode_reverse(rc, LIMLZ_SPECIAL + base - slot - 1, bits, extra);

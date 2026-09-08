@@ -1,6 +1,10 @@
 /* limlz: Copyright (C) 2026 Kamila Szewczyk <k@iczelia.net>
  * limine: Copyright (C) 2019-2026 Mintsuki and contributors.
  *
+ * The algorithm is based on LZMA, augmented with a x86 filter and a
+ * Storer-Szymanski backwards optimal parse.  Based on Ilya Kurdyukov's
+ * LZMA decoder (CC-BY 3.0)
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -23,397 +27,529 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdint.h>
-#include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
-typedef unsigned char byte;
+#define LIMLZ_HEADER_SIZE 8
+#define LIMLZ_PROBS 4918
+#define LIMLZ_IS_REP 192
+#define LIMLZ_REP_G0 204
+#define LIMLZ_REP_G1 216
+#define LIMLZ_REP_G2 228
+#define LIMLZ_REP_LONG 240
+#define LIMLZ_SLOT 432
+#define LIMLZ_SPECIAL 688
+#define LIMLZ_ALIGN 802
+#define LIMLZ_LENGTH 818
+#define LIMLZ_REP_LENGTH 1332
+#define LIMLZ_LITERAL 1846
+#define LIMLZ_MAX_MATCH 273
 
-static uint16_t endswap16(uint16_t value) {
-    uint16_t ret = 0;
-    ret |= (value >> 8) & 0x00ff;
-    ret |= (value << 8) & 0xff00;
-    return ret;
+#define HASH_SIZE (1u << 16)
+#define CHAIN_LIMIT 128
+
+static inline uint32_t limlz_read32(const uint8_t *p) {
+    return (uint32_t)p[0] | (uint32_t)p[1] << 8
+        | (uint32_t)p[2] << 16 | (uint32_t)p[3] << 24;
 }
 
-static uint32_t endswap32(uint32_t value) {
-    uint32_t ret = 0;
-    ret |= (value >> 24) & 0x000000ff;
-    ret |= (value >> 8)  & 0x0000ff00;
-    ret |= (value << 8)  & 0x00ff0000;
-    ret |= (value << 24) & 0xff000000;
-    return ret;
-}
-
-static uint64_t endswap64(uint64_t value) {
-    uint64_t ret = 0;
-    ret |= (value >> 56) & 0x00000000000000ff;
-    ret |= (value >> 40) & 0x000000000000ff00;
-    ret |= (value >> 24) & 0x0000000000ff0000;
-    ret |= (value >> 8)  & 0x00000000ff000000;
-    ret |= (value << 8)  & 0x000000ff00000000;
-    ret |= (value << 24) & 0x0000ff0000000000;
-    ret |= (value << 40) & 0x00ff000000000000;
-    ret |= (value << 56) & 0xff00000000000000;
-    return ret;
-}
-
-#ifdef __BYTE_ORDER__
-
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-#define bigendian true
-#else
-#define bigendian false
-#endif
-
-#else /* !__BYTE_ORDER__ */
-
-static bool bigendian = false;
-
-#endif /* !__BYTE_ORDER__ */
-
-#define ENDSWAP(VALUE) (bigendian ? (                    \
-    sizeof(VALUE) == 1 ? (VALUE)          :              \
-    sizeof(VALUE) == 2 ? endswap16(VALUE) :              \
-    sizeof(VALUE) == 4 ? endswap32(VALUE) :              \
-    sizeof(VALUE) == 8 ? endswap64(VALUE) : (abort(), 1) \
-) : (VALUE))
-
-/*  Higher -> better compression with exponentally dimnishing gains.  */
-#define LIMLZ_SA_NEIGHBORS 32
-
-struct sa_cmp_ctx { int32_t *rank; size_t n, k; };
-static struct sa_cmp_ctx g_sa_ctx;
-
-static int32_t sa_cmp_idx(int32_t i, int32_t j) {
-  int32_t ri, rj;
-  if (g_sa_ctx.rank[i] != g_sa_ctx.rank[j])
-    return g_sa_ctx.rank[i] - g_sa_ctx.rank[j];
-  /* k doubles until the ranks separate, so it can exceed INT32_MAX; comparing
-     in size_t keeps the offset arithmetic away from signed overflow. */
-  ri = ((size_t)i + g_sa_ctx.k < g_sa_ctx.n) ? g_sa_ctx.rank[(size_t)i + g_sa_ctx.k] : -1;
-  rj = ((size_t)j + g_sa_ctx.k < g_sa_ctx.n) ? g_sa_ctx.rank[(size_t)j + g_sa_ctx.k] : -1;
-  return ri - rj;
-}
-
-static int sa_qsort_cmp(const void * a, const void * b) {
-  int32_t d = sa_cmp_idx(*(const int32_t *)a, *(const int32_t *)b);
-  return (d > 0) - (d < 0);
-}
-
-static int saca(const byte * s, size_t n, int32_t * sa, int32_t * rank, int32_t * tmp) {
-  size_t i;
-  if (!n)
-    return 0;
-  for (i = 0; i < n; ++i) {
-    sa[i] = (int32_t)i;  rank[i] = (int32_t)s[i];
-  }
-  for (g_sa_ctx.k = 1;; g_sa_ctx.k <<= 1) {
-    g_sa_ctx.rank = rank;  g_sa_ctx.n = n;
-    qsort(sa, n, sizeof(sa[0]), sa_qsort_cmp);
-    tmp[sa[0]] = 0;
-    for (i = 1; i < n; ++i)
-      tmp[sa[i]] = tmp[sa[i - 1]] + (sa_cmp_idx(sa[i - 1], sa[i]) < 0);
-    for (i = 0; i < n; ++i)
-      rank[i] = tmp[i];
-    if ((size_t)rank[sa[n - 1]] == n - 1)
-      break;
-  }
-  return 0;
-}
-
-static size_t lcp_bytes(const byte * s, size_t n, size_t i, size_t j) {
-  size_t l = 0, m = n - (i > j ? i : j);
-  for (; l < m && s[i + l] == s[j + l]; ++l);
-  return l;
-}
-
-struct match_choice { uint32_t len;  uint16_t off; };
-struct parse_choice { uint32_t lit, mlen;  uint16_t off; };
-
-static int longest_matches(const byte * src, size_t n, struct match_choice * mch) {
-  int32_t *sa, *rank, *tmp, *inv;
-  size_t i;
-  if (!n)
-    return 0;
-  sa = malloc(n * sizeof(*sa));
-  rank = malloc(n * sizeof(*rank));
-  tmp = malloc(n * sizeof(*tmp));
-  inv = malloc(n * sizeof(*inv));
-  if (!sa || !rank || !tmp || !inv || saca(src, n, sa, rank, tmp)) {
-    free(sa);  free(rank);  free(tmp);  free(inv);
-    return -1;
-  }
-  for (i = 0; i < n; ++i)
-    inv[sa[i]] = (int32_t)i;
-  for (i = 0; i < n; ++i) {
-    int32_t r = inv[i], rr;
-    int d;
-    size_t best_len = 0;
-    uint16_t best_off = 0;
-    for (d = -LIMLZ_SA_NEIGHBORS; d <= LIMLZ_SA_NEIGHBORS; ++d) {
-      size_t j, l, off;
-      if (!d)
-        continue;
-      rr = r + d;
-      if (rr < 0 || rr >= (int32_t)n)
-        continue;
-      j = (size_t)sa[rr];
-      if (j >= i)
-        continue;
-      off = i - j;
-      if (off == 0 || off > 65535)
-        continue;
-      l = lcp_bytes(src, n, i, j);
-      if (l > best_len) {
-        best_len = l;
-        best_off = (uint16_t)off;
-      }
+static inline uint32_t limlz_crc32(const uint8_t *data, size_t size) {
+    static const uint32_t table[16] = {
+        0x00000000, 0x1db71064, 0x3b6e20c8, 0x26d930ac,
+        0x76dc4190, 0x6b6b51f4, 0x4db26158, 0x5005713c,
+        0xedb88320, 0xf00f9344, 0xd6d6a3e8, 0xcb61b38c,
+        0x9b64c2b0, 0x86d3d2d4, 0xa00ae278, 0xbdbdf21c
+    };
+    uint32_t crc = UINT32_MAX;
+    for (size_t i = 0; i < size; i++) {
+        crc ^= data[i];
+        crc = (crc >> 4) ^ table[crc & 15];
+        crc = (crc >> 4) ^ table[crc & 15];
     }
-    if (best_len >= 4) {
-      mch[i].len = (uint32_t)best_len;
-      mch[i].off = best_off;
-    } else {
-      mch[i].len = mch[i].off = 0;
-    }
-  }
-  free(sa);  free(rank);  free(tmp);  free(inv);
-  return 0;
+    return ~crc;
 }
 
-static int encode_len_tail(byte ** outp, byte * out_end, size_t n) {
-  byte *out = * outp;
-  if (n >= 15) {
-    if (out >= out_end) return -1;
-    *out++ = (byte)(n - 15);
-  }
-  *outp = out;
-  return 0;
-}
-
-static int encode_len_tail_ml(byte ** outp, byte * out_end, size_t n) {
-  byte * out = *outp;
-  if (n >= 7) {
-    if (out >= out_end)
-      return -1;
-    *out++ = (byte)(n - 7);
-  }
-  *outp = out;
-  return 0;
-}
-
-static size_t limlzpack(void * dst, size_t dstcap, const void * srcv, size_t srcsz,
-                        const char ** why) {
-  const byte * src = (const byte *) srcv;
-  byte * dstp = (byte *) dst;
-  byte * out = dstp, * out_end = dstp + dstcap;
-  struct match_choice * mch, * bestm;
-  struct parse_choice * pick;
-  size_t i, * dp;
-  if (!srcsz) {
-    if (dstcap < 1)
-      return 0;
-    dstp[0] = 0;
-    return 1;
-  }
-  mch = calloc(srcsz, sizeof(*mch));
-  pick = calloc(srcsz + 1, sizeof(*pick));
-  bestm = calloc(srcsz, sizeof(*bestm));
-  dp = malloc((srcsz + 1) * sizeof(*dp));
-  if (!mch || !pick || !bestm || !dp || longest_matches(src, srcsz, mch))
-    goto fail;
-  dp[srcsz] = 0;
-  pick[srcsz].lit = pick[srcsz].mlen = pick[srcsz].off = 0;
-  for (i = srcsz; i-- > 0;) {
-    size_t j, best_cost;
-    uint32_t best_lit, best_len;
-    uint16_t best_off;
-    bestm[i].len = bestm[i].off = 0;
-    if (mch[i].len >= 4) {
-      size_t ml, lim = mch[i].len;
-      if (lim > 266) lim = 266;
-      size_t off_bytes = (mch[i].off > 255) ? 2 : 1;
-      size_t mcost = (size_t)-1;
-      uint32_t mlen = 0;
-      if (i + lim > srcsz)
-        lim = srcsz - i;
-      for (ml = 4; ml <= lim; ++ml) {
-        size_t c;
-        /* (size_t)-1 marks a suffix with no encoding. Adding to it wraps, which
-           would make an unusable parse look like the cheapest one. */
-        if (dp[i + ml] == (size_t)-1)
-          continue;
-        c = off_bytes + (ml - 4 >= 7) + dp[i + ml];
-        if (c < mcost) {
-          mcost = c;  mlen = (uint32_t)ml;
-        }
-      }
-      if (mlen) {
-        bestm[i].len = mlen;  bestm[i].off = mch[i].off;
-      }
-    }
-    if (srcsz - i <= 270) { // 256 + 15 - 1
-      best_cost = 1 + (srcsz - i) + (srcsz - i >= 15);
-      best_lit = (uint32_t)(srcsz - i);
-    } else {
-      best_cost = (size_t)-1;
-      best_lit = 0;
-    }
-    best_len = best_off = 0;
-    for (j = i; j < srcsz && j - i <= 270; ++j) {
-      size_t lit = j - i, off_bytes_j, c;
-      if (!bestm[j].len)
-        continue;
-      off_bytes_j = (bestm[j].off > 255) ? 2 : 1;
-      c = 1 + lit + (lit >= 15) +
-                  (off_bytes_j + (bestm[j].len - 4 >= 7) + dp[j + bestm[j].len]);
-      if (c < best_cost) {
-        best_cost = c;  best_lit = (uint32_t)lit;
-        best_len = bestm[j].len;  best_off = bestm[j].off;
-      }
-    }
-    dp[i] = best_cost;  pick[i].lit = best_lit;
-    pick[i].mlen = best_len;  pick[i].off = best_off;
-  }
-  if (dp[0] == (size_t)-1) {
-    *why = "a stretch of over 270 bytes contains no repeated 4-byte sequence";
-    goto fail;
-  }
-  int terminated = 0;
-  for (i = 0; i < srcsz; ) {
-    byte * tokenp;
-    size_t lit = pick[i].lit, ml = pick[i].mlen;
-    uint16_t off = pick[i].off;
-    unsigned token_hi, token_lo;
-    if (i + lit > srcsz)
-      goto fail;
-    if (i + lit < srcsz && ml < 4)
-      goto fail;
-    tokenp = out;
-    if (out >= out_end)
-      goto fail;
-    *out++ = 0;
-    token_hi = (lit < 15) ? (unsigned)lit : 15u;
-    if (encode_len_tail(&out, out_end, lit))
-      goto fail;
-    if ((size_t)(out_end - out) < lit)
-      goto fail;
-    memcpy(out, src + i, lit);
-    out += lit;
-    i += lit;
-    if (i >= srcsz) {
-      *tokenp = (byte)(token_hi << 3);
-      terminated = 1;
-      break;
-    }
-    unsigned mode_bit = (off > 255) ? 1u : 0u;
-    token_lo = (ml - 4 < 7) ? (unsigned)(ml - 4) : 7u;
-    *tokenp = (byte)((mode_bit << 7) | (token_hi << 3) | token_lo);
-    if (off > 255) {
-      if (out_end - out < 2)
-        goto fail;
-      *out++ = (byte)(off & 255);
-      *out++ = (byte)(off >> 8);
-    } else {
-      if (out >= out_end)
-        goto fail;
-      *out++ = (byte)off;
-    }
-    if (encode_len_tail_ml(&out, out_end, ml - 4))
-      goto fail;
-    i += ml;
-  }
-  /* A match-ended parse leaves no trailing token; the decompressor keys
-   * termination off a zero-or-more-byte literal copy reaching ipe, so always
-   * emit a final lit=0 token when the main loop didn't already. */
-  if (!terminated) {
-    if (out >= out_end)
-      goto fail;
-    *out++ = 0;
-  }
-  free(mch);  free(pick);  free(bestm);  free(dp);
-  return (size_t)(out - dstp);
-fail:
-  free(mch);  free(pick);  free(bestm);  free(dp);
-  return 0;
-}
-
-static const uint32_t tab[16] = {
-  0x00000000u, 0x1DB71064u, 0x3B6E20C8u, 0x26D930ACu,
-  0x76DC4190u, 0x6B6B51F4u, 0x4DB26158u, 0x5005713Cu,
-  0xEDB88320u, 0xF00F9344u, 0xD6D6A3E8u, 0xCB61B38Cu,
-  0x9B64C2B0u, 0x86D3D2D4u, 0xA00AE278u, 0xBDBDF21Cu
+struct range_encoder {
+    uint8_t *data;
+    size_t size;
+    size_t capacity;
+    uint64_t low;
+    uint32_t range;
+    size_t pending;
+    uint8_t cache;
+    int error;
+    uint16_t probs[LIMLZ_PROBS];
 };
 
-static uint32_t crc32_nibble(const byte *data, size_t len) {
-  uint32_t crc = ~0u; // faster than decompressor.asm bit-by-bit, same result.
-  while (len--) {
-    crc ^= *data++;
-    crc = (crc >> 4) ^ tab[crc & 0x0Fu];
-    crc = (crc >> 4) ^ tab[crc & 0x0Fu];
-  }
-  return ~crc;
+struct match {
+    unsigned length;
+    uint32_t distance;
+};
+
+struct match_finder {
+    const uint8_t *data;
+    uint32_t size;
+    uint32_t *previous;
+    uint32_t head[HASH_SIZE];
+};
+
+static void put_byte(struct range_encoder *rc, uint8_t value) {
+    if (rc->error) {
+        return;
+    }
+    if (rc->size == rc->capacity) {
+        if (rc->capacity > SIZE_MAX / 2) {
+            rc->error = 1;
+            return;
+        }
+        size_t capacity = rc->capacity ? rc->capacity * 2 : 4096;
+        uint8_t *data = realloc(rc->data, capacity);
+        if (!data) {
+            rc->error = 1;
+            return;
+        }
+        rc->data = data;
+        rc->capacity = capacity;
+    }
+    rc->data[rc->size++] = value;
+}
+
+static void put32(struct range_encoder *rc, uint32_t value) {
+    for (unsigned i = 0; i < 32; i += 8) {
+        put_byte(rc, (uint8_t)(value >> i));
+    }
+}
+
+static void shift_low(struct range_encoder *rc) {
+    uint32_t low = (uint32_t)rc->low;
+    unsigned carry = (unsigned)(rc->low >> 32);
+    /* Delay bytes whose value still depends on a carry from the next interval. */
+    if (low < 0xff000000u || carry) {
+        uint8_t value = rc->cache;
+        do {
+            put_byte(rc, (uint8_t)(value + carry));
+            value = 255;
+        } while (--rc->pending);
+        rc->cache = (uint8_t)(low >> 24);
+    }
+    rc->pending++;
+    rc->low = low << 8;
+}
+
+static void normalise(struct range_encoder *rc) {
+    if (rc->range < (1u << 24)) {
+        rc->range <<= 8;
+        shift_low(rc);
+    }
+}
+
+static void encode_bit(struct range_encoder *rc, unsigned index, unsigned bit) {
+    uint16_t *prob = rc->probs + index;
+    uint32_t bound = (rc->range >> 11) * *prob;
+    if (!bit) {
+        rc->range = bound;
+        *prob += (2048 - *prob) >> 5;
+    } else {
+        rc->low += bound;
+        rc->range -= bound;
+        *prob -= *prob >> 5;
+    }
+    normalise(rc);
+}
+
+static void encode_tree(struct range_encoder *rc, unsigned index, unsigned bits, unsigned value) {
+    unsigned node = 1;
+    while (bits) {
+        unsigned bit = (value >> --bits) & 1;
+        encode_bit(rc, index + node, bit);
+        node = (node << 1) | bit;
+    }
+}
+
+static void encode_reverse(struct range_encoder *rc, unsigned index, unsigned bits, unsigned value) {
+    unsigned node = 1;
+    for (unsigned i = 0; i < bits; i++) {
+        unsigned bit = (value >> i) & 1;
+        encode_bit(rc, index + node, bit);
+        node = (node << 1) | bit;
+    }
+}
+
+static void encode_length(struct range_encoder *rc, unsigned index, unsigned pos, unsigned length) {
+    encode_bit(rc, index, length >= 10);
+    if (length < 10) {
+        encode_tree(rc, index + 2 + pos * 8, 3, length - 2);
+    } else {
+        encode_bit(rc, index + 1, length >= 18);
+        if (length < 18) {
+            encode_tree(rc, index + 130 + pos * 8, 3, length - 10);
+        } else {
+            encode_tree(rc, index + 258, 8, length - 18);
+        }
+    }
+}
+
+static void encode_distance(struct range_encoder *rc, unsigned length, uint32_t distance) {
+    uint32_t value = distance - 1;
+    unsigned slot = value;
+    unsigned bits = 0;
+    if (value >= 4) {
+        uint32_t high = value;
+        while (high >= 4) {
+            high >>= 1;
+            bits++;
+        }
+        slot = (bits + 1) * 2 + (high & 1);
+    }
+    unsigned len_state = length < 6 ? length - 2 : 3;
+    encode_tree(rc, LIMLZ_SLOT + len_state * 64, 6, slot);
+    if (slot < 4) {
+        return;
+    }
+    uint32_t base = (2u | (slot & 1)) << bits;
+    uint32_t extra = value - base;
+    if (slot < 14) {
+        encode_reverse(rc, LIMLZ_SPECIAL + base - slot - 1, bits, extra);
+    } else {
+        for (unsigned i = bits; i > 4; i--) {
+            rc->range >>= 1;
+            if ((extra >> (i - 1)) & 1) {
+                rc->low += rc->range;
+            }
+            normalise(rc);
+        }
+        encode_reverse(rc, LIMLZ_ALIGN, 4, extra & 15);
+    }
+}
+
+static unsigned hash_at(const uint8_t *data) {
+    return (unsigned)data[0] | (unsigned)data[1] << 8;
+}
+
+static void insert(struct match_finder *mf, uint32_t pos) {
+    if (mf->size - pos >= 2) {
+        unsigned hash = hash_at(mf->data + pos);
+        mf->previous[pos] = mf->head[hash];
+        mf->head[hash] = pos + 1;
+    }
+}
+
+static unsigned match_length(const struct match_finder *mf, uint32_t pos, uint32_t distance) {
+    unsigned limit = mf->size - pos;
+    if (limit > LIMLZ_MAX_MATCH) {
+        limit = LIMLZ_MAX_MATCH;
+    }
+    unsigned length = 0;
+    while (length < limit && mf->data[pos + length] == mf->data[pos - distance + length]) {
+        length++;
+    }
+    return length;
+}
+
+static unsigned distance_price(uint32_t distance) {
+    unsigned bits = 0;
+    for (uint32_t value = distance - 1; value >= 4; value >>= 1) {
+        bits++;
+    }
+    return 6 + bits;
+}
+
+static int parse(struct match_finder *mf, struct match *choices) {
+    uint64_t *cost = malloc(((size_t)mf->size + 1) * sizeof(*cost));
+    if (!cost) {
+        return 0;
+    }
+    for (uint32_t pos = 0; pos < mf->size; pos++) {
+        insert(mf, pos);
+    }
+    cost[mf->size] = 0;
+    for (uint32_t pos = mf->size; pos-- > 0;) {
+        cost[pos] = 9 + cost[pos + 1];
+        choices[pos] = (struct match){1, 0};
+        if (mf->size - pos < 2) {
+            continue;
+        }
+        uint32_t candidate = mf->previous[pos];
+        unsigned longest = 1;
+        for (unsigned depth = 0; candidate && depth < CHAIN_LIMIT; depth++) {
+            uint32_t previous = candidate - 1;
+            candidate = mf->previous[previous];
+            if (longest >= mf->size - pos || longest == LIMLZ_MAX_MATCH) {
+                break;
+            }
+            if (mf->data[pos + longest] != mf->data[previous + longest]) {
+                continue;
+            }
+            uint32_t distance = pos - previous;
+            unsigned length = match_length(mf, pos, distance);
+            unsigned price = 2 + distance_price(distance);
+            /* Older candidates cost at least as much for lengths already covered. */
+            for (unsigned len = longest + 1; len <= length; len++) {
+                unsigned length_price = len < 10 ? 4 : len < 18 ? 5 : 10;
+                uint64_t next_cost = price + length_price + cost[pos + len];
+                if (next_cost <= cost[pos]) {
+                    cost[pos] = next_cost;
+                    choices[pos] = (struct match){len, distance};
+                }
+            }
+            if (length > longest) {
+                longest = length;
+            }
+        }
+    }
+    free(cost);
+    return 1;
+}
+
+static void encode_literal(struct range_encoder *rc, const uint8_t *data, uint32_t pos,
+                           unsigned state, uint32_t distance) {
+    unsigned previous = pos ? data[pos - 1] : 0;
+    unsigned index = LIMLZ_LITERAL + (previous >> 6) * 768;
+    unsigned node = 1;
+    unsigned offset = state >= 7 ? 256 : 0;
+    unsigned match = offset ? data[pos - distance] : 0;
+    for (unsigned i = 8; i > 0; i--) {
+        unsigned bit = (data[pos] >> (i - 1)) & 1;
+        match <<= 1;
+        encode_bit(rc, index + node + offset + (match & offset), bit);
+        node = (node << 1) | bit;
+        if (bit != ((match >> 8) & 1)) {
+            offset = 0;
+        }
+    }
+}
+
+static void bcj_encode(uint8_t *data, uint32_t size) {
+    uint32_t previous = UINT32_MAX - 4;
+    unsigned history = 0;
+    for (uint32_t pos = 0; size - pos >= 5;) {
+        if (data[pos] != 0xe8 && data[pos] != 0xe9) {
+            pos++;
+            continue;
+        }
+        unsigned gap = pos - previous;
+        previous = pos;
+        if (gap >= 4) {
+            history = 0;
+        } else {
+            while (gap--) {
+                history = (history & 0x77) << 1;
+            }
+        }
+        unsigned high = data[pos + 4];
+        if ((high == 0 || high == 255) && history <= 8 && history != 6) {
+            uint32_t value = limlz_read32(data + pos + 1);
+            unsigned shift = 0;
+            if (history) {
+                unsigned bit = 0;
+                for (unsigned mask = history; mask >>= 1;) {
+                    bit++;
+                }
+                shift = 24 - bit * 8;
+            }
+            for (;;) {
+                value += pos + 5;
+                high = (value >> shift) & 255;
+                if (!history || (high != 0 && high != 255)) {
+                    break;
+                }
+                value ^= (1u << (shift + 8)) - 1;
+            }
+            /* BCJ canonicalises the high byte from bit 24. */
+            data[pos + 4] = (uint8_t)(0u - ((value >> 24) & 1));
+            for (unsigned i = 0; i < 3; i++) {
+                data[pos + 1 + i] = (uint8_t)(value >> (i * 8));
+            }
+            pos += 5;
+            history = 0;
+        } else {
+            history |= 1;
+            if (high == 0 || high == 255) {
+                history |= 16;
+            }
+            pos++;
+        }
+    }
+}
+
+static int compress(struct range_encoder *rc, uint8_t *data, uint32_t size) {
+    if ((uint64_t)size + 1 > SIZE_MAX / sizeof(uint64_t)
+        || (uint64_t)size + 1 > SIZE_MAX / sizeof(struct match)
+        || (uint64_t)size + 1 > SIZE_MAX / sizeof(uint32_t)) {
+        return 0;
+    }
+    uint32_t checksum = limlz_crc32(data, size);
+    bcj_encode(data, size);
+    struct match_finder *mf = calloc(1, sizeof(*mf));
+    if (!mf) {
+        return 0;
+    }
+    mf->data = data;
+    mf->size = size;
+    size_t count = size ? size : 1;
+    mf->previous = malloc(count * sizeof(*mf->previous));
+    struct match *choices = malloc(count * sizeof(*choices));
+    if (!mf->previous || !choices || !parse(mf, choices)) {
+        free(choices);
+        free(mf->previous);
+        free(mf);
+        return 0;
+    }
+    rc->range = UINT32_MAX;
+    rc->pending = 1;
+    for (unsigned i = 0; i < LIMLZ_PROBS; i++) {
+        rc->probs[i] = 1024;
+    }
+    put32(rc, checksum);
+    put32(rc, size);
+    unsigned state = 0;
+    uint32_t reps[4] = {1, 1, 1, 1};
+    uint32_t pos = 0;
+    while (pos < size && !rc->error) {
+        struct match match = choices[pos];
+        unsigned match_rep = 4;
+        for (unsigned i = 0; i < 4; i++) {
+            if (match.distance == reps[i]) {
+                match_rep = i;
+                break;
+            }
+        }
+        unsigned context = state * 16;
+        if (match.length < 2) {
+            if (reps[0] <= pos && data[pos] == data[pos - reps[0]]) {
+                encode_bit(rc, context, 1);
+                encode_bit(rc, LIMLZ_IS_REP + state, 1);
+                encode_bit(rc, LIMLZ_REP_G0 + state, 0);
+                encode_bit(rc, LIMLZ_REP_LONG + context, 0);
+                state = state < 7 ? 9 : 11;
+            } else {
+                encode_bit(rc, context, 0);
+                encode_literal(rc, data, pos, state, reps[0]);
+                state = state < 4 ? 0 : state < 10 ? state - 3 : state - 6;
+            }
+            pos++;
+            continue;
+        }
+        encode_bit(rc, context, 1);
+        encode_bit(rc, LIMLZ_IS_REP + state, match_rep < 4);
+        if (match_rep < 4) {
+            encode_bit(rc, LIMLZ_REP_G0 + state, match_rep != 0);
+            if (!match_rep) {
+                encode_bit(rc, LIMLZ_REP_LONG + context, 1);
+            } else {
+                encode_bit(rc, LIMLZ_REP_G1 + state, match_rep != 1);
+                if (match_rep >= 2) {
+                    encode_bit(rc, LIMLZ_REP_G2 + state, match_rep == 3);
+                }
+            }
+            encode_length(rc, LIMLZ_REP_LENGTH, 0, match.length);
+            state = state < 7 ? 8 : 11;
+        } else {
+            encode_length(rc, LIMLZ_LENGTH, 0, match.length);
+            encode_distance(rc, match.length, match.distance);
+            state = state < 7 ? 7 : 10;
+        }
+        unsigned rep = match_rep < 4 ? match_rep : 3;
+        for (unsigned i = rep; i > 0; i--) {
+            reps[i] = reps[i - 1];
+        }
+        reps[0] = match.distance;
+        pos += match.length;
+    }
+    for (unsigned i = 0; i < 5; i++) {
+        shift_low(rc);
+    }
+    free(choices);
+    free(mf->previous);
+    free(mf);
+    return !rc->error;
 }
 
 int main(int argc, char *argv[]) {
-#ifndef __BYTE_ORDER__
-  uint32_t endcheck = 0x12345678;
-  unsigned char endbyte = *((unsigned char *)&endcheck);
-  bigendian = endbyte == 0x12;
-#endif
-  if (argc != 3) {
-    fprintf(stderr, "? %s <input> <output>\n", argv[0]);  return 1;
-  }
-  FILE * fin = fopen(argv[1], "rb");
-  FILE * fout = fopen(argv[2], "wb");
-  byte * inbuf, *outbuf;
-  size_t insz, outsz;
-  if (!fin || !fout) {
-    fprintf(stderr, "? fopen\n");  return 1;
-  }
-  if (fseek(fin, 0, SEEK_END)) {
-    fprintf(stderr, "? fseek\n");  return 1;
-  }
-  long inszl = ftell(fin);
-  if (inszl < 0) {
-    fprintf(stderr, "? ftell\n");  return 1;
-  }
-  if (fseek(fin, 0, SEEK_SET)) {
-    fprintf(stderr, "? fseek\n");  return 1;
-  }
-  insz = (size_t)inszl;
-  /* longest_matches() builds a suffix array indexed with int32_t. */
-  if (insz > (size_t)INT32_MAX || insz >= SIZE_MAX / 8) {
-    fprintf(stderr, "? input too large\n");  return 1;
-  }
-  inbuf = malloc(insz);  outbuf = malloc(insz * 2);
-  if (!inbuf || !outbuf) {
-    fprintf(stderr, "? malloc\n");  return 1;
-  }
-  if (fread(inbuf, 1, insz, fin) != insz) {
-    fprintf(stderr, "? fread\n");  return 1;
-  }
-  fclose(fin);
-  const char * why = NULL;
-  outsz = limlzpack(outbuf, insz * 2, inbuf, insz, &why);
-  if (!outsz) {
-    if (why)
-      fprintf(stderr, "? limlzpack: %s\n", why);
-    else
-      fprintf(stderr, "? limlzpack\n");
-    return 1;
-  }
-  uint32_t crc = ENDSWAP(crc32_nibble(inbuf, insz));
-  if (fwrite(&crc, sizeof(crc), 1, fout) != 1
-   || fwrite(outbuf, 1, outsz, fout) != outsz) {
-    fprintf(stderr, "? fwrite\n");  return 1;
-  }
-  if (fclose(fout)) {
-    fprintf(stderr, "? fclose\n");  return 1;
-  }
-  free(inbuf);  free(outbuf);
-  return 0;
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s <input> <output>\n", argv[0]);
+        return 1;
+    }
+    int result = 1;
+    FILE *input = fopen(argv[1], "rb");
+    FILE *output = NULL;
+    uint8_t *data = NULL;
+    struct range_encoder rc = {0};
+    if (!input) {
+        perror(argv[1]);
+        goto done;
+    }
+    size_t limit = SIZE_MAX < UINT32_MAX ? SIZE_MAX : UINT32_MAX;
+    size_t capacity = limit < 65536 ? limit : 65536;
+    size_t size = 0;
+    data = malloc(capacity);
+    if (!data) {
+        fprintf(stderr, "limlzpack: allocation failed\n");
+        goto done;
+    }
+    for (;;) {
+        size += fread(data + size, 1, capacity - size, input);
+        if (size < capacity) {
+            break;
+        }
+        int byte = fgetc(input);
+        if (byte == EOF) {
+            break;
+        }
+        if (size == limit) {
+            fprintf(stderr, "limlzpack: input exceeds format or host size limit\n");
+            goto done;
+        }
+        capacity = capacity > limit / 2 ? limit : capacity * 2;
+        uint8_t *grown = realloc(data, capacity);
+        if (!grown) {
+            fprintf(stderr, "limlzpack: allocation failed\n");
+            goto done;
+        }
+        data = grown;
+        data[size++] = (uint8_t)byte;
+    }
+    if (ferror(input)) {
+        fprintf(stderr, "limlzpack: cannot read input\n");
+        goto done;
+    }
+    if (fclose(input)) {
+        input = NULL;
+        fprintf(stderr, "limlzpack: cannot close input\n");
+        goto done;
+    }
+    input = NULL;
+    if (!compress(&rc, data, (uint32_t)size)) {
+        fprintf(stderr, "limlzpack: allocation failed\n");
+        goto done;
+    }
+    output = fopen(argv[2], "wb");
+    if (!output) {
+        perror(argv[2]);
+        goto done;
+    }
+    if (fwrite(rc.data, 1, rc.size, output) != rc.size) {
+        fprintf(stderr, "limlzpack: cannot write output\n");
+        goto done;
+    }
+    if (fclose(output)) {
+        output = NULL;
+        fprintf(stderr, "limlzpack: cannot close output\n");
+        goto done;
+    }
+    output = NULL;
+    result = 0;
+done:
+    if (input) {
+        fclose(input);
+    }
+    if (output) {
+        fclose(output);
+    }
+    free(data);
+    free(rc.data);
+    return result;
 }

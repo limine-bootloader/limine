@@ -110,10 +110,14 @@ jobs:
 
       - name: Create binary release zip and tarballs
         run: |
+          . ./timestamps
           mv build/bin ./limine-binary
-          zip -r limine-binary.zip limine-binary
-          tar -cvf limine-binary.tar limine-binary
-          gzip < limine-binary.tar > limine-binary.tar.gz
+          find limine-binary ! -type d -perm -100 -exec chmod 755 '{}' +
+          find limine-binary ! -type d ! -perm -100 -exec chmod 644 '{}' +
+          TZ=UTC0 find limine-binary -exec touch -t "$SOURCE_DATE_EPOCH_TOUCH" '{}' +
+          zip -X limine-binary.zip $(find limine-binary ! -type d | LC_ALL=C sort)
+          tar -cf limine-binary.tar $(find limine-binary ! -type d | LC_ALL=C sort)
+          gzip -n < limine-binary.tar > limine-binary.tar.gz
           xz < limine-binary.tar > limine-binary.tar.xz
           rm -rf limine-binary.tar limine-binary
 

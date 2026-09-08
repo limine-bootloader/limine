@@ -19,7 +19,7 @@ test.hdd:
 mbrtest.hdd:
 	rm -f mbrtest.hdd
 	dd if=/dev/zero bs=1M count=0 seek=64 of=mbrtest.hdd
-	echo -e "o\nn\np\n1\n2048\n\nt\n6\na\nw\n" | fdisk mbrtest.hdd -H 16 -S 63
+	printf "o\nn\np\n1\n2048\n\nt\n6\na\nw\n\n" | fdisk mbrtest.hdd -H 16 -S 63
 
 .PHONY: fat12-test
 fat12-test:

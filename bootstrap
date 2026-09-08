@@ -94,7 +94,7 @@ else
     if ! test -f timestamps; then
         cat >timestamps <<EOF
 REGEN_DATE="UNVERSIONED"
-SOURCE_DATE_EPOCH="1546297200"
+SOURCE_DATE_EPOCH="1546300800"
 SOURCE_DATE_EPOCH_TOUCH="201901010000"
 EOF
     fi

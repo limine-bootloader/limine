@@ -151,11 +151,11 @@ static void encode_bit(struct range_encoder *rc, unsigned index, unsigned bit) {
     uint32_t bound = (rc->range >> 11) * *prob;
     if (!bit) {
         rc->range = bound;
-        *prob += (2048 - *prob) >> 5;
+        *prob = (uint16_t)(*prob + ((2048 - *prob) >> 5));
     } else {
         rc->low += bound;
         rc->range -= bound;
-        *prob -= *prob >> 5;
+        *prob = (uint16_t)(*prob - (*prob >> 5));
     }
     normalise(rc);
 }

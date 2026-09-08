@@ -86,7 +86,7 @@ fi
 # Create timestamps file
 if test -d .git && git log -1 >/dev/null 2>&1; then
     cat >timestamps <<EOF
-REGEN_DATE="$(git log -1 --pretty=%cd --date='format:%B %Y')"
+REGEN_DATE="$(LC_ALL=C git log -1 --pretty=%cd --date='format:%B %Y')"
 SOURCE_DATE_EPOCH="$(git log -1 --pretty=%ct)"
 SOURCE_DATE_EPOCH_TOUCH="$(git log -1 --pretty=%cI | head -c 16 | sed 's/-//g;s/T//g;s/://g')"
 EOF

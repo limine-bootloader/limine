@@ -48,7 +48,7 @@
 #define LIMLZ_LITERAL 1846
 #define LIMLZ_MAX_MATCH 273
 
-#define HASH_SIZE (1u << 16)
+#define HASH_SIZE 65536u
 #define CHAIN_LIMIT 128
 
 static inline uint32_t limlz_read32(const uint8_t *p) {
@@ -140,7 +140,7 @@ static void shift_low(struct range_encoder *rc) {
 }
 
 static void normalise(struct range_encoder *rc) {
-    if (rc->range < (1u << 24)) {
+    if (rc->range < UINT32_C(0x1000000)) {
         rc->range <<= 8;
         shift_low(rc);
     }

@@ -32,7 +32,7 @@ rel2abs() {
                     if test -d "$(dirname "$i")"; then
                         printf "%s" "$(cd "$(dirname "$i")" && pwd -P)/$(basename "$i")"
                     else
-                        printf "false"
+                        return 1
                     fi
                     ;;
                 *)
@@ -87,6 +87,10 @@ AC_DEFUN([GET_PROG], [
     if test "x${$1+set}" = "xset"; then
         first_elem="$(rel2abs $(echo "$$1" | cut -f 1 -d " "))"
         case "$first_elem" in
+            "")
+                first_elem="$$1"
+                $1_FOUND=no
+                ;;
             /*)
                 AC_MSG_CHECKING([for $first_elem])
                 if test -f "$first_elem" && test -x "$first_elem"; then
@@ -111,7 +115,12 @@ AC_DEFUN([GET_PROG], [
                 fi
             else
                 first_elem="$(rel2abs $(echo "$2" | cut -f 1 -d " "))"
-                AC_CHECK_PROG([$1_FOUND], [$first_elem], [yes])
+                if test -z "$first_elem"; then
+                    first_elem="$2"
+                    $1_FOUND=no
+                else
+                    AC_CHECK_PROG([$1_FOUND], [$first_elem], [yes])
+                fi
                 if test "x$$1_FOUND" = "xyes"; then
                     $1="$(rel2abs "$2")"
                 fi

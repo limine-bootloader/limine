@@ -97,7 +97,7 @@ all1: $(BUILD_UEFI_X86_64) $(BUILD_UEFI_IA32) $(BUILD_UEFI_AARCH64) $(BUILD_UEFI
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine'
 	$(MAKE) '$(call SHESCAPE,$(BINDIR))/limine-uefi-cd.bin'
 
-$(call MKESCAPE,$(BINDIR))/limine-bios-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-bios-hdd.bin
+$(call MKESCAPE,$(BINDIR))/limine-bios-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-bios-hdd.bin $(call MKESCAPE,$(SRCDIR))/host/hgen.sh
 	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	cd '$(call SHESCAPE,$(BINDIR))' && '$(call SHESCAPE,$(SRCDIR))/host/hgen.sh' >limine-bios-hdd.h
 

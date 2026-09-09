@@ -386,8 +386,8 @@ noreturn void linux_load(char *config, char *cmdline) {
     printv("linux: Boot protocol: %u.%u\n",
            setup_header->version >> 8, setup_header->version & 0xff);
 
-    if (setup_header->version < 0x203) {
-        panic(true, "linux: Protocols < 2.03 are not supported");
+    if (setup_header->version < 0x202) {
+        panic(true, "linux: Protocols < 2.02 are not supported");
     }
 
     setup_header->cmd_line_ptr = (uint32_t)(uintptr_t)cmdline;

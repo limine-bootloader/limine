@@ -300,6 +300,49 @@ struct boot_params {
 
 // End of Linux code
 
+#define LINUX_VER(maj, min) (((uint32_t)(maj) << 16) | (uint32_t)(min))
+
+// Returns the kernel's version as LINUX_VER(), or 0 when it cannot be read.
+// header.S always emits the pointer, so a kernel without one is not Linux.
+static uint32_t linux_version_of(struct file_handle *kernel_file,
+                                 struct setup_header *setup_header) {
+    if (setup_header->kernel_version == 0) {
+        return 0;
+    }
+
+    size_t offset = (size_t)setup_header->kernel_version + 0x200;
+    if (offset >= kernel_file->size) {
+        return 0;
+    }
+
+    char buf[32];
+    size_t avail = kernel_file->size - offset;
+    size_t len = avail < sizeof(buf) - 1 ? avail : sizeof(buf) - 1;
+    fread(kernel_file, buf, offset, len);
+    buf[len] = '\0';
+
+    uint32_t major = 0, minor = 0;
+    size_t i = 0;
+    if (buf[i] < '0' || buf[i] > '9') {
+        return 0;
+    }
+    for (; i < len && buf[i] >= '0' && buf[i] <= '9'; i++) {
+        major = major * 10 + (uint32_t)(buf[i] - '0');
+    }
+    if (i >= len || buf[i] != '.') {
+        return 0;
+    }
+    i++;
+    if (i >= len || buf[i] < '0' || buf[i] > '9') {
+        return 0;
+    }
+    for (; i < len && buf[i] >= '0' && buf[i] <= '9'; i++) {
+        minor = minor * 10 + (uint32_t)(buf[i] - '0');
+    }
+
+    return LINUX_VER(major, minor);
+}
+
 noreturn void linux_load(char *config, char *cmdline) {
     struct file_handle *kernel_file;
 
@@ -396,6 +439,10 @@ noreturn void linux_load(char *config, char *cmdline) {
 
     // vid_mode. 0xffff means "normal"
     setup_header->vid_mode = 0xffff;
+
+    // Read while the file is still open; it is consulted after the handoff
+    // quirks below, long after fclose().
+    uint32_t linux_ver = linux_version_of(kernel_file, setup_header);
 
     if (verbose) {
         char *kernel_version = ext_mem_alloc(128);
@@ -812,9 +859,15 @@ no_fb:;
         }
     }
 
-    // Commented out because Linux shouldn't need it and we don't want to
-    // introduce potential breakages or security weakening.
-    //iommu_disable_all();
+    // Taking over an IOMMU left enabled at entry arrived in 4.2 for VT-d and in
+    // 4.14 for AMD-Vi. Leave it to newer kernels, which keeps the firmware's DMA
+    // protection up across the handoff.
+    if (linux_ver < LINUX_VER(4, 2)) {
+        vtd_disable_all();
+    }
+    if (linux_ver < LINUX_VER(4, 14)) {
+        amdvi_disable_all();
+    }
 
     irq_flush_type = IRQ_PIC_ONLY_FLUSH;
 

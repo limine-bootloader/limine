@@ -61,7 +61,7 @@ static void vtd_disable_unit(uintptr_t reg_base) {
     }
 }
 
-static void vtd_disable_all(void) {
+void vtd_disable_all(void) {
     struct sdt *dmar = acpi_get_table("DMAR", 0);
     if (dmar == NULL) {
         return;
@@ -139,7 +139,7 @@ static void amdvi_disable_unit(uintptr_t mmio_base) {
     mmoutd(mmio_base + AMDVI_CONTROL_REG, ctrl_lo);
 }
 
-static void amdvi_disable_all(void) {
+void amdvi_disable_all(void) {
     struct sdt *ivrs = acpi_get_table("IVRS", 0);
     if (ivrs == NULL) {
         return;

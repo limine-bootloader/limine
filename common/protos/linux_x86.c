@@ -18,6 +18,8 @@
 #include <lib/fb.h>
 #include <lib/acpi.h>
 #include <sys/iommu.h>
+#include <sys/cpu.h>
+#include <sys/lapic.h>
 #include <drivers/edid.h>
 #include <drivers/vga_textmode.h>
 #include <drivers/gop.h>
@@ -798,6 +800,17 @@ no_fb:;
     ///////////////////////////////////////
     // Spin up
     ///////////////////////////////////////
+
+    // Linux enables x2APIC itself where it wants it, but a kernel built without
+    // CONFIG_X86_X2APIC that is entered in x2APIC mode gives up the APIC
+    // entirely, so hand over in xAPIC mode.
+    if (rdmsr(0x1b) & (1 << 10)) {
+        if (x2apic_disable()) {
+            printv("linux: Firmware had x2APIC enabled, reverted to xAPIC mode\n");
+        } else {
+            printv("linux: Firmware has x2APIC enabled and it could not be disabled\n");
+        }
+    }
 
     // Commented out because Linux shouldn't need it and we don't want to
     // introduce potential breakages or security weakening.

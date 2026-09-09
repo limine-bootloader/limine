@@ -256,6 +256,21 @@ static void uri_alloc(uint64_t count, uint32_t type, bool allow_high_mem,
     *out_addr = (uintptr_t)ret;
 }
 
+static void uri_hash_mismatch(const char *uri) {
+    if (hash_mismatch_panic) {
+        panic(true, "Blake2b hash for URI `%#` does not match!", uri);
+    }
+
+    print("WARNING: Blake2b hash for URI `%#` does not match!\n"
+          "         Press Y to continue, press any other key to return to menu...", uri);
+
+    char ch = getchar();
+    if (ch != 'Y' && ch != 'y') {
+        menu(false);
+    }
+    print("\n");
+}
+
 struct file_handle *uri_open(char *uri, uint32_t type, bool allow_high_mem
 #if defined (__i386__)
     , void (*memcpy_to_64)(uint64_t dst, void *src, size_t count)
@@ -333,14 +348,53 @@ struct file_handle *uri_open(char *uri, uint32_t type, bool allow_high_mem
     memcpy(raw_pxe_ip, raw->pxe_ip, 4);
     uint16_t raw_pxe_port = raw->pxe_port;
 
-    // Build the filter chain: raw -> blake2b -> gzip. blake2b hashes on-disk
-    // (compressed) bytes.
     struct file_handle *top = raw;
     struct file_handle *hash_fh = NULL;
-    if (hash != NULL) {
+    if (hash != NULL && gz_compressed) {
+        // The decoder must not parse unvouched-for bytes, and hashing them in
+        // a pass of their own would leave what it then reads unchecked, so the
+        // image is checked where it lies and decoded from that same copy.
+
+        // blake2b() takes a size_t, which is 32 bits on ia32.
+        size_t compressed_size = raw->size;
+        if (compressed_size != raw->size) {
+            panic(true, "Resource `%#` is too large to hash", uri);
+        }
+
+        // Site it where the caller would have let the payload go, rather than
+        // making the input the tighter constraint. ia32 stays low regardless:
+        // fread() writes through a plain pointer.
+#if defined (__i386__)
+        bool compressed_high = false;
+#else
+        bool compressed_high = allow_high_mem;
+#endif
+        void *compressed = ext_mem_alloc_type_aligned_mode(compressed_size,
+            MEMMAP_BOOTLOADER_RECLAIMABLE, 4096, compressed_high);
+        if (fread(raw, compressed, 0, compressed_size) != compressed_size) {
+            panic(false, "uri: short read of compressed resource");
+        }
+        fclose(raw);
+
+        uint8_t digest[BLAKE2B_OUT_BYTES];
+        blake2b(digest, compressed, compressed_size);
+        if (memcmp(digest, hash_buf, BLAKE2B_OUT_BYTES) != 0) {
+            uri_hash_mismatch(uri);
+        }
+
+        // A carrier for the decoder; the metadata the caller gets back was
+        // snapshotted from raw above.
+        top = ext_mem_alloc(sizeof(struct file_handle));
+        top->is_memfile = true;
+        top->fd = compressed;
+        top->size = compressed_size;
+    } else if (hash != NULL) {
+        // An uncompressed resource is copied, never parsed, so it can hash as
+        // it is read.
         hash_fh = blake2b_open(top);
         top = hash_fh;
     }
+
     if (gz_compressed) {
         top = gzip_open(top);
     }
@@ -513,23 +567,9 @@ grew:;
 #endif
     }
 
-    // Finalize hash check now that all compressed bytes have flowed through
-    // the filter.
-    if (hash_fh != NULL) {
-        if (!blake2b_check_hash(hash_fh, hash_buf)) {
-            if (hash_mismatch_panic) {
-                panic(true, "Blake2b hash for URI `%#` does not match!", uri);
-            } else {
-                print("WARNING: Blake2b hash for URI `%#` does not match!\n"
-                      "         Press Y to continue, press any other key to return to menu...", uri);
-
-                char ch = getchar();
-                if (ch != 'Y' && ch != 'y') {
-                    menu(false);
-                }
-                print("\n");
-            }
-        }
+    // Finalise the hash check now that every byte has flowed through the filter.
+    if (hash_fh != NULL && !blake2b_check_hash(hash_fh, hash_buf)) {
+        uri_hash_mismatch(uri);
     }
 
     // Close the filter chain. fclose cascades.

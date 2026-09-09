@@ -253,7 +253,19 @@ LIMINE_PORT([UEFI_RISCV64], [limine-uefi-riscv64])
 LIMINE_ENABLE([uefi-loongarch64], [UEFI_LOONGARCH64], [enable building the loongarch64 UEFI port])
 LIMINE_PORT([UEFI_LOONGARCH64], [limine-uefi-loongarch64])
 
-LIMINE_ENABLE([uefi-cd], [UEFI_CD], [enable building limine-uefi-cd.bin])
+# limine-uefi-cd.bin is a container for the UEFI ports' binaries, so without one
+# it would just be an empty filesystem.
+BUILD_ANY_UEFI="no"
+AS_IF([test -n "$BUILD_UEFI_IA32$BUILD_UEFI_X86_64$BUILD_UEFI_AARCH64$BUILD_UEFI_RISCV64$BUILD_UEFI_LOONGARCH64"],
+    [BUILD_ANY_UEFI="yes"])
+
+UEFI_CD_DEFAULT="$BUILD_ALL"
+AS_IF([test "x$BUILD_ANY_UEFI" = "xno"], [UEFI_CD_DEFAULT="no"])
+
+LIMINE_ENABLE([uefi-cd], [UEFI_CD], [enable building limine-uefi-cd.bin],
+    ["$UEFI_CD_DEFAULT"])
+AS_IF([test "x$BUILD_UEFI_CD" = "xyes" && test "x$BUILD_ANY_UEFI" = "xno"],
+    [AC_MSG_ERROR([limine-uefi-cd.bin needs at least one UEFI port enabled])])
 AS_IF([test "x$BUILD_UEFI_CD" != "xno"], [
     AC_CHECK_PROG([MTOOLS_FOUND], [mcopy], [yes])
     AS_IF([test "x$MTOOLS_FOUND" != "xyes"], [

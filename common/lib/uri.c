@@ -256,6 +256,28 @@ static void uri_alloc(uint64_t count, uint32_t type, bool allow_high_mem,
     *out_addr = (uintptr_t)ret;
 }
 
+#if defined (__i386__)
+// Lets the decoder read a buffer that ia32 cannot address directly.
+struct uri_high_source {
+    uint64_t addr;
+    void (*memcpy_from_64)(void *dst, uint64_t src, size_t count);
+};
+
+static uint64_t uri_high_read(struct file_handle *fh, void *buf, uint64_t loc, uint64_t count) {
+    struct uri_high_source *src = fh->fd;
+
+    src->memcpy_from_64(buf, src->addr + loc, count);
+    return count;
+}
+
+static void uri_high_close(struct file_handle *fh) {
+    struct uri_high_source *src = fh->fd;
+
+    uri_release_range(src->addr, fh->size);
+    pmm_free(src, sizeof(struct uri_high_source));
+}
+#endif
+
 static void uri_hash_mismatch(const char *uri) {
     if (hash_mismatch_panic) {
         panic(true, "Blake2b hash for URI `%#` does not match!", uri);
@@ -362,32 +384,65 @@ struct file_handle *uri_open(char *uri, uint32_t type, bool allow_high_mem
         }
 
         // Site it where the caller would have let the payload go, rather than
-        // making the input the tighter constraint. ia32 stays low regardless:
-        // fread() writes through a plain pointer.
+        // making the input the tighter constraint.
+        void *compressed_low = NULL;
+        uint64_t compressed_addr = 0;
+        uri_alloc(compressed_size, MEMMAP_BOOTLOADER_RECLAIMABLE, allow_high_mem,
+                  &compressed_low, &compressed_addr);
+
 #if defined (__i386__)
-        bool compressed_high = false;
-#else
-        bool compressed_high = allow_high_mem;
+        if (compressed_low == NULL) {
+            // Above 4 GiB, which fread() cannot reach on ia32. Bounce through
+            // low memory, hashing each chunk on the way up so that the digest
+            // still covers exactly what the decoder will read.
+            struct file_handle *hashed = blake2b_open(raw);
+            void *pool = ext_mem_alloc(0x100000);
+
+            for (uint64_t i = 0; i < compressed_size; i += 0x100000) {
+                size_t chunk = compressed_size - i < 0x100000 ? (size_t)(compressed_size - i) : 0x100000;
+                if (fread(hashed, pool, i, chunk) != chunk) {
+                    panic(false, "uri: short read of compressed resource");
+                }
+                memcpy_to_64(compressed_addr + i, pool, chunk);
+            }
+
+            pmm_free(pool, 0x100000);
+
+            if (!blake2b_check_hash(hashed, hash_buf)) {
+                uri_hash_mismatch(uri);
+            }
+            fclose(hashed);
+
+            struct uri_high_source *src = ext_mem_alloc(sizeof(struct uri_high_source));
+            src->addr = compressed_addr;
+            src->memcpy_from_64 = memcpy_from_64;
+
+            top = ext_mem_alloc(sizeof(struct file_handle));
+            top->fd = src;
+            top->read = (void *)uri_high_read;
+            top->close = (void *)uri_high_close;
+            top->size = compressed_size;
+        } else
 #endif
-        void *compressed = ext_mem_alloc_type_aligned_mode(compressed_size,
-            MEMMAP_BOOTLOADER_RECLAIMABLE, 4096, compressed_high);
-        if (fread(raw, compressed, 0, compressed_size) != compressed_size) {
-            panic(false, "uri: short read of compressed resource");
-        }
-        fclose(raw);
+        {
+            if (fread(raw, compressed_low, 0, compressed_size) != compressed_size) {
+                panic(false, "uri: short read of compressed resource");
+            }
+            fclose(raw);
 
-        uint8_t digest[BLAKE2B_OUT_BYTES];
-        blake2b(digest, compressed, compressed_size);
-        if (memcmp(digest, hash_buf, BLAKE2B_OUT_BYTES) != 0) {
-            uri_hash_mismatch(uri);
-        }
+            uint8_t digest[BLAKE2B_OUT_BYTES];
+            blake2b(digest, compressed_low, compressed_size);
+            if (memcmp(digest, hash_buf, BLAKE2B_OUT_BYTES) != 0) {
+                uri_hash_mismatch(uri);
+            }
 
-        // A carrier for the decoder; the metadata the caller gets back was
-        // snapshotted from raw above.
-        top = ext_mem_alloc(sizeof(struct file_handle));
-        top->is_memfile = true;
-        top->fd = compressed;
-        top->size = compressed_size;
+            // A carrier for the decoder; the metadata the caller gets back was
+            // snapshotted from raw above.
+            top = ext_mem_alloc(sizeof(struct file_handle));
+            top->is_memfile = true;
+            top->fd = compressed_low;
+            top->size = compressed_size;
+        }
     } else if (hash != NULL) {
         // An uncompressed resource is copied, never parsed, so it can hash as
         // it is read.

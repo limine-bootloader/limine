@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <mm/pmm.h>
 
+#define MAX_E820_ENTRIES 256
+
 extern struct memmap_entry e820_map[];
 extern size_t e820_entries;
 

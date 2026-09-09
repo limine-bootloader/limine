@@ -657,6 +657,10 @@ struct memmap_entry *get_raw_memmap(size_t *entry_count) {
     *entry_count = e820_entries;
     return e820_map;
 }
+
+size_t get_raw_memmap_max_entries(void) {
+    return MAX_E820_ENTRIES;
+}
 #endif
 
 #if defined (UEFI)
@@ -672,6 +676,10 @@ struct memmap_entry *get_raw_memmap(size_t *entry_count) {
 
     *entry_count = untouched_memmap_entries;
     return untouched_memmap;
+}
+
+size_t get_raw_memmap_max_entries(void) {
+    return memmap_max_entries;
 }
 #endif
 

@@ -33,6 +33,7 @@ noreturn void linux_spinup(void *entry, void *boot_params);
 
 #define EDD_MBR_SIG_MAX 16
 #define E820_MAX_ENTRIES_ZEROPAGE 128
+#define SETUP_E820_EXT 1
 #define EDDMAXNR 6
 
 struct setup_header {
@@ -127,6 +128,13 @@ struct boot_e820_entry {
     uint64_t addr;
     uint64_t size;
     uint32_t type;
+} __attribute__((packed));
+
+struct setup_data {
+    uint64_t next;
+    uint32_t type;
+    uint32_t len;
+    uint8_t data[];
 } __attribute__((packed));
 
 struct edd_device_params {
@@ -701,6 +709,24 @@ no_fb:;
     boot_params->acpi_rsdp_addr = (uintptr_t)acpi_get_rsdp();
 
     ///////////////////////////////////////
+    // e820 overflow table
+    ///////////////////////////////////////
+
+    // Finalising the memory map closes the allocator, and on UEFI that cannot
+    // happen until after ExitBootServices, so reserve the table up front.
+    struct setup_data *e820_ext = NULL;
+    size_t e820_ext_max = 0;
+
+    if (setup_header->version >= 0x209) {
+        size_t max_entries = get_raw_memmap_max_entries();
+        if (max_entries > E820_MAX_ENTRIES_ZEROPAGE) {
+            e820_ext_max = max_entries - E820_MAX_ENTRIES_ZEROPAGE;
+            e820_ext = ext_mem_alloc(sizeof(struct setup_data)
+                                     + e820_ext_max * sizeof(struct boot_e820_entry));
+        }
+    }
+
+    ///////////////////////////////////////
     // UEFI
     ///////////////////////////////////////
 #if defined (UEFI)
@@ -733,18 +759,36 @@ no_fb:;
     size_t mmap_entries;
     struct memmap_entry *mmap = get_raw_memmap(&mmap_entries);
 
-    for (size_t i = 0, j = 0; i < mmap_entries; i++) {
+    struct boot_e820_entry *e820_ext_table = e820_ext == NULL
+        ? NULL : (struct boot_e820_entry *)e820_ext->data;
+    size_t j = 0, k = 0;
+
+    for (size_t i = 0; i < mmap_entries; i++) {
         if (mmap[i].type >= 0x1000) {
             continue;
         }
-        if (j >= E820_MAX_ENTRIES_ZEROPAGE) {
+
+        struct boot_e820_entry *entry;
+        if (j < E820_MAX_ENTRIES_ZEROPAGE) {
+            entry = &e820_table[j++];
+            boot_params->e820_entries = j;
+        } else if (k < e820_ext_max) {
+            entry = &e820_ext_table[k++];
+        } else {
             panic(false, "linux: Too many E820 memory map entries");
         }
-        e820_table[j].addr = mmap[i].base;
-        e820_table[j].size = mmap[i].length;
-        e820_table[j].type = mmap[i].type;
-        j++;
-        boot_params->e820_entries = j;
+
+        entry->addr = mmap[i].base;
+        entry->size = mmap[i].length;
+        entry->type = mmap[i].type;
+    }
+
+    if (k > 0) {
+        // The list may already have entries, so link in front of them.
+        e820_ext->next = setup_header->setup_data;
+        e820_ext->type = SETUP_E820_EXT;
+        e820_ext->len = k * sizeof(struct boot_e820_entry);
+        setup_header->setup_data = (uintptr_t)e820_ext;
     }
 
     ///////////////////////////////////////

@@ -48,6 +48,7 @@ extern bool allocations_disallowed;
 void init_memmap(void);
 struct memmap_entry *get_memmap(size_t *entries);
 struct memmap_entry *get_raw_memmap(size_t *entry_count);
+size_t get_raw_memmap_max_entries(void);
 void print_memmap(struct memmap_entry *mm, size_t size);
 uint64_t pmm_check_type(uint64_t addr);
 bool memmap_alloc_range_in(struct memmap_entry *m, size_t *_count,

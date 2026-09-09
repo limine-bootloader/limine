@@ -355,11 +355,6 @@ int disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t c
 static struct volume *pxe_from_efi_handle(EFI_HANDLE efi_handle) {
     static struct volume *vol = NULL;
 
-    // There's only one PXE volume
-    if (vol) {
-        return vol;
-    }
-
     EFI_STATUS status;
 
     EFI_GUID pxe_base_code_guid = EFI_PXE_BASE_CODE_PROTOCOL_GUID;
@@ -368,6 +363,12 @@ static struct volume *pxe_from_efi_handle(EFI_HANDLE efi_handle) {
     status = gBS->HandleProtocol(efi_handle, &pxe_base_code_guid, (void **)&pxe_base_code);
     if (status) {
         return NULL;
+    }
+
+    // There's only one PXE volume, and it belongs to the handle carrying the
+    // protocol, so the lookup has to gate the reuse.
+    if (vol) {
+        return vol;
     }
 
     if (!pxe_base_code->Mode->DhcpDiscoverValid) {
@@ -661,7 +662,10 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
         }
     }
 
-    return NULL;
+    // A Block I/O matching no volume does not rule out having booted over the
+    // network from this handle: PXE stacks have been known to leave a
+    // non-functional one behind on it.
+    return pxe_from_efi_handle(efi_handle);
 }
 
 static void find_unique_sectors(void) {

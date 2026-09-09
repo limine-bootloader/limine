@@ -4,8 +4,9 @@
 override SRCDIR := $(shell pwd -P)
 
 override SPACE := $(subst ,, )
+override TAB := $(subst ,,	)
 
-override MKESCAPE = $(subst $(SPACE),\ ,$(1))
+override MKESCAPE = $(subst $(TAB),\$(TAB),$(subst $(SPACE),\ ,$(1)))
 override SHESCAPE = $(subst ','\'',$(1))
 override OBJESCAPE = $(subst .a ,.a' ',$(subst .o ,.o' ',$(call SHESCAPE,$(1))))
 

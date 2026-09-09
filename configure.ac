@@ -8,6 +8,28 @@ AC_CONFIG_MACRO_DIRS([m4])
 SRCDIR="$(cd "$srcdir" && pwd -P)"
 BUILDDIR="$(pwd -P)"
 
+# '&' otherwise yields an empty GNUmakefile with configure still exiting 0, and
+# '=' makes make recurse without bound.
+for limine_bad in '"' "'" ':' '`' '#' '$' '&' ';' '|' '='; do
+    case "$SRCDIR" in
+        *"$limine_bad"*)
+            AC_MSG_ERROR([the source directory path contains '$limine_bad', which make or autoconf cannot represent; move the source tree])
+            ;;
+    esac
+done
+
+for limine_bad in "'" '%' ':' '#' '$' '&' ';' '|' '='; do
+    case "$BUILDDIR" in
+        *"$limine_bad"*)
+            AC_MSG_ERROR([the build directory path contains '$limine_bad', which make or autoconf cannot represent; use a different build directory])
+            ;;
+    esac
+done
+
+if test "$(printf '%s' "$SRCDIR$BUILDDIR" | wc -l)" -gt 0; then
+    AC_MSG_ERROR([the source or build directory path contains a newline; move the tree])
+fi
+
 AC_SUBST([SRCDIR])
 AC_SUBST([BUILDDIR])
 

@@ -222,6 +222,12 @@ ifeq ($(TARGET),bios)
         -m elf_i386 \
         -static \
         --build-id=sha1
+
+    override LD_FOR_TARGET_HAS_NO_PIE := $(shell ! $(LD_FOR_TARGET) --help 2>/dev/null | $(GREP) -qE '(^|[[:space:]])--?no-pie([[:space:]]|$$)'; echo $$?)
+
+    ifeq ($(LD_FOR_TARGET_HAS_NO_PIE),1)
+        override LDFLAGS_FOR_TARGET += -no-pie
+    endif
 endif
 
 ifeq ($(TARGET),uefi-x86-64)

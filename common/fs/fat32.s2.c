@@ -392,6 +392,18 @@ static bool read_cluster_chain(struct fat32_context *context,
     return true;
 }
 
+// FAT specification 7.2: an unsigned char rotate right accumulated over all 11
+// bytes of the short name.
+static uint8_t fat32_lfn_checksum(const char *sfn) {
+    uint8_t sum = 0;
+
+    for (int i = 0; i < 11; i++) {
+        sum = ((sum & 1) ? 0x80 : 0) + (sum >> 1) + (uint8_t)sfn[i];
+    }
+
+    return sum;
+}
+
 // Copy ucs-2 characters to char*, with bounds checking
 static void fat32_lfncpy(char* destination, size_t dest_size, size_t dest_offset,
                          const void* source, unsigned int size) {
@@ -436,6 +448,7 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
     size_t block_size = context->sectors_per_cluster * context->bytes_per_sector;
     char current_lfn[FAT32_LFN_MAX_FILENAME_LENGTH] = {0};
     unsigned int lfn_expected = 0;
+    uint8_t lfn_checksum = 0;
 
     size_t dir_chain_len;
     struct fat32_directory_entry *directory_entries;
@@ -527,10 +540,12 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
                 // this lfn is the first entry in the table, clear the lfn buffer
                 memset(current_lfn, ' ', sizeof(current_lfn));
                 lfn_expected = seq_num;
+                lfn_checksum = lfn->dos_checksum;
             }
 
-            if (seq_num == 0 || seq_num != lfn_expected) {
-                lfn_expected = 0;  // Invalidate: out of order or gap
+            if (seq_num == 0 || seq_num != lfn_expected
+             || lfn->dos_checksum != lfn_checksum) {
+                lfn_expected = 0;  // Invalidate: out of order, gap, or mixed set
                 continue;
             }
             lfn_expected--;
@@ -572,6 +587,13 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
                     // Corrupted LFN sequence - expected SFN entry not found
                     ret = -1;
                     goto out;
+                }
+                // A set left behind by a tool that renamed or deleted the file
+                // it belonged to can spell any name at all, so keep looking
+                // rather than opening whatever short entry follows it.
+                if (fat32_lfn_checksum(sfn_entry->file_name_and_ext) != lfn_checksum) {
+                    lfn_expected = 0;
+                    continue;
                 }
                 *file = *sfn_entry;
                 ret = 0;

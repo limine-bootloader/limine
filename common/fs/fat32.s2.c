@@ -574,24 +574,20 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
             int (*strcmpfn)(const char *, const char *) = case_insensitive_fopen ? strcasecmp : strcmp;
 
             if (strcmpfn(current_lfn, name) == 0) {
-                // Ensure i+1 is within bounds before accessing
+                // A set that does not validly name the entry after it decides
+                // nothing: the name being looked for can still appear further
+                // down the directory, so keep scanning rather than give up.
                 if (i + 1 >= (dir_chain_len * block_size) / sizeof(struct fat32_directory_entry)) {
-                    ret = -1;
-                    goto out;
+                    lfn_expected = 0;
+                    continue;
                 }
-                // Validate that the next entry is a valid SFN entry (not LFN, deleted, or end-of-dir)
+                // The next entry has to be a short entry, and has to be the one
+                // this set was created for.
                 struct fat32_directory_entry *sfn_entry = &directory_entries[i+1];
-                if (sfn_entry->file_name_and_ext[0] == 0x00 ||
-                    (uint8_t)sfn_entry->file_name_and_ext[0] == 0xE5 ||
-                    sfn_entry->attribute == FAT32_LFN_ATTRIBUTE) {
-                    // Corrupted LFN sequence - expected SFN entry not found
-                    ret = -1;
-                    goto out;
-                }
-                // A set left behind by a tool that renamed or deleted the file
-                // it belonged to can spell any name at all, so keep looking
-                // rather than opening whatever short entry follows it.
-                if (fat32_lfn_checksum(sfn_entry->file_name_and_ext) != lfn_checksum) {
+                if (sfn_entry->file_name_and_ext[0] == 0x00
+                 || (uint8_t)sfn_entry->file_name_and_ext[0] == 0xE5
+                 || sfn_entry->attribute == FAT32_LFN_ATTRIBUTE
+                 || fat32_lfn_checksum(sfn_entry->file_name_and_ext) != lfn_checksum) {
                     lfn_expected = 0;
                     continue;
                 }

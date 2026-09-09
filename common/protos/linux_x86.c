@@ -436,7 +436,11 @@ noreturn void linux_load(char *config, char *cmdline) {
     // 64-bit entry point and may sit above 4GiB; otherwise the handoff is 32-bit.
     uint64_t kernel_addr_limit = 0xffffffff;
 #if defined (UEFI) && defined (__x86_64__)
-    if ((setup_header->xloadflags & 3) == 3) {
+    // xloadflags only exists from 2.12; below that the field is padding.
+    bool xlf_64bit_entry = setup_header->version >= 0x20c
+                        && (setup_header->xloadflags & 3) == 3;
+
+    if (xlf_64bit_entry) {
         kernel_addr_limit = UINT64_MAX;
     }
 #endif
@@ -566,7 +570,7 @@ noreturn void linux_load(char *config, char *cmdline) {
     for (;;) {
         if (modules_mem_base < 0x100000) {
 #if defined (UEFI) && defined (__x86_64__)
-            if ((setup_header->xloadflags & 3) == 3) {
+            if (xlf_64bit_entry) {
                 modules_mem_base = (uintptr_t)ext_mem_alloc_type_aligned_mode(
                     size_of_all_modules,
                     MEMMAP_BOOTLOADER_RECLAIMABLE,
@@ -802,7 +806,7 @@ no_fb:;
     irq_flush_type = IRQ_PIC_ONLY_FLUSH;
 
 #if defined (UEFI) && defined (__x86_64__)
-    if (use_64_bit_proto == true && (setup_header->xloadflags & 3) == 3) {
+    if (use_64_bit_proto == true && xlf_64bit_entry) {
         flush_irqs();
         linux_spinup64((void *)kernel_load_addr + 0x200, boot_params);
     }

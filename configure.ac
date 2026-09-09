@@ -200,11 +200,11 @@ AC_ARG_ENABLE([all],
     [AS_HELP_STRING([--enable-all], [enable ALL ports and targets])],
     [BUILD_ALL="$enableval"])
 
-# LIMINE_ENABLE(option, VAR, help text)
-# Declares --enable-<option>, defaulting to whatever --enable-all selected, and
-# leaves the resulting yes/no in BUILD_<VAR>.
+# LIMINE_ENABLE(option, VAR, help text, [default])
+# Declares --enable-<option>, defaulting to whatever --enable-all selected unless
+# a default is given, and leaves the resulting yes/no in BUILD_<VAR>.
 AC_DEFUN([LIMINE_ENABLE], [
-    BUILD_$2="$BUILD_ALL"
+    BUILD_$2=m4_default([$4], ["$BUILD_ALL"])
     AC_ARG_ENABLE([$1],
         [AS_HELP_STRING([--enable-$1], [$3])],
         [BUILD_$2="$enableval"])
@@ -221,13 +221,16 @@ AC_DEFUN([LIMINE_PORT], [
     AC_SUBST([BUILD_$1])
 ])
 
-LIMINE_ENABLE([bios-cd], [BIOS_CD], [enable building the x86 BIOS CD image])
+LIMINE_ENABLE([bios], [BIOS], [enable building the x86 BIOS port])
+
+LIMINE_ENABLE([bios-cd], [BIOS_CD], [enable building the x86 BIOS CD image],
+    ["$BUILD_BIOS"])
 AC_SUBST([BUILD_BIOS_CD])
 
-LIMINE_ENABLE([bios-pxe], [BIOS_PXE], [enable building the x86 BIOS PXE image])
+LIMINE_ENABLE([bios-pxe], [BIOS_PXE], [enable building the x86 BIOS PXE image],
+    ["$BUILD_BIOS"])
 AC_SUBST([BUILD_BIOS_PXE])
 
-LIMINE_ENABLE([bios], [BIOS], [enable building the x86 BIOS port])
 # The CD and PXE images are artefacts of the BIOS port, so either one drags it in.
 AS_IF([test "x$BUILD_BIOS" = "xno"], [
     AS_IF([test "x$BUILD_BIOS_CD" = "xyes" || test "x$BUILD_BIOS_PXE" = "xyes"],

@@ -717,6 +717,12 @@ static void find_unique_sectors(void) {
 
 static void find_part_handles(EFI_HANDLE *handles, size_t handle_count) {
     for (size_t i = 0; i < handle_count; i++) {
+        // disk_create_index() clears the handles whose read test failed, and
+        // the unique sector fallback would read 64K more from them.
+        if (handles[i] == NULL) {
+            continue;
+        }
+
         struct volume *vol = disk_volume_from_efi_handle(handles[i]);
         if (vol == NULL) {
             continue;
@@ -865,6 +871,7 @@ fail:
         // Read test to ensure device is responsive (skipping this causes hangs on some systems)
         status = drive->ReadBlocks(drive, drive->Media->MediaId, 0, drive->Media->BlockSize, unique_sector_pool);
         if (status) {
+            handles[i] = NULL;
             continue;
         }
 

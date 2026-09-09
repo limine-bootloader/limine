@@ -223,8 +223,8 @@ void blake2b(void *out, const void *in, size_t in_len) {
 /*  Streaming filter: wraps a source file_handle and hashes bytes as
     they are read sequentially. The hash is finalized and compared via
     blake2b_check_hash(). Non-sequential reads panic -- the filter is
-    meant to sit underneath the gzip bitreader or uri_open's drain loop,
-    both of which advance monotonically.  */
+    meant to sit underneath uri_open's drain loop, which advances
+    monotonically.  */
 struct blake2b_handle {
     struct file_handle  *source;
     struct blake2b_state state;

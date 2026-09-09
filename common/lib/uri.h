@@ -6,10 +6,10 @@
 
 bool uri_resolve(char *uri, char **resource, char **root, char **path, char **hash);
 
-// uri_open resolves the URI, verifies the hash (if present) and
-// gzip-decodes (if the resource is prefixed with `$`) in a single streaming
-// pass, and returns a memfile (is_memfile=true, readall=true) whose payload
-// has been placed in memory of the requested `type`.
+// uri_open resolves the URI, verifies the hash (if present) before anything
+// parses the bytes, gzip-decodes (if the resource is prefixed with `$`), and
+// returns a memfile (is_memfile=true, readall=true) whose payload has been
+// placed in memory of the requested `type`.
 //
 // When `allow_high_mem` is true and the target architecture is i386, the
 // buffer may end up above 4 GiB; in that case the returned handle has

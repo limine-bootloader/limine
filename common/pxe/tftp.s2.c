@@ -208,17 +208,21 @@ struct file_handle *tftp_open(struct volume *part, const char *server_addr, cons
     uint64_t file_size;
     EFI_STATUS status;
 
+    // Firmware from before EDK2 cf9ff46b rejects a NULL BufferPtr for every
+    // Mtftp() opcode, not just the reading ones, so give it somewhere to point.
+    uint8_t size_query_scratch;
+
     status = part->pxe_base_code->Mtftp(
             part->pxe_base_code,
             EFI_PXE_BASE_CODE_TFTP_GET_FILE_SIZE,
-            NULL,
+            &size_query_scratch,
             false,
             &file_size,
             NULL,
             ip,
             (uint8_t *)name,
             NULL,
-            false);
+            true);
 
     if (status) {
         return NULL;

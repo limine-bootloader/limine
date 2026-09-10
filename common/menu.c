@@ -1234,14 +1234,14 @@ static bool find_entry_by_path(const char *path, struct menu_entry *current_entr
         bool name_matches = (strcmp(current_entry->name, comp_name) == 0);
 
         if (name_matches && same_name_count == dup_index) {
-            if (is_last && current_entry->sub == NULL) {
+            if (is_last) {
                 *found_entry = current_entry;
                 if (found_index != NULL) {
                     *found_index = idx;
                 }
                 ret = true;
                 break;
-            } else if (!is_last && current_entry->sub != NULL) {
+            } else if (current_entry->sub != NULL) {
                 if (expand_dirs) {
                     current_entry->expanded = true;
                 }

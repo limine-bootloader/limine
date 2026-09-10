@@ -323,7 +323,6 @@ static const char *VALID_KEYS[] = {
     "PATH",
     "KERNEL_CMDLINE",
     "KERNEL_PATH",
-    "INITRD_PATH",
     "MODULE_PATH",
     "MODULE_STRING",
     "MODULE_CMDLINE",

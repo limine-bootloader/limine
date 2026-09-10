@@ -1842,6 +1842,7 @@ noreturn void _menu(bool first_run) {
     size_t selected_entry = 0;
 
     bool has_entry = false;
+    bool default_entry_unresolved = false;
 
 #if defined (UEFI)
     bli_entries_reset();
@@ -1921,6 +1922,10 @@ noreturn void _menu(bool first_run) {
                 find_entry_by_path(default_entry_path, menu_tree, 0, &found_entry, &found_index, true);
                 if (found_entry != NULL) {
                     selected_entry = found_index;
+                } else {
+                    // Index 0 is a valid entry, so an unresolved path is
+                    // otherwise indistinguishable from one naming the first.
+                    default_entry_unresolved = true;
                 }
             }
         }
@@ -1987,12 +1992,17 @@ noreturn void _menu(bool first_run) {
         skip_timeout = true;
     }
 
-    if (!skip_timeout && !timeout_ms) {
-        if (max_entries == 0 || selected_menu_entry == NULL || selected_menu_entry->sub != NULL) {
+    if (!skip_timeout) {
+        if (default_entry_unresolved || max_entries == 0
+         || selected_menu_entry == NULL) {
             quiet = false;
-            print("Default entry is not valid or directory, booting to menu.\n");
+            print("Default entry is not valid, booting to menu.\n");
             skip_timeout = true;
-        } else {
+        } else if (selected_menu_entry->sub != NULL) {
+            // Selecting a directory is not an error; it just cannot be booted.
+            quiet = false;
+            skip_timeout = true;
+        } else if (!timeout_ms) {
             goto autoboot;
         }
     }

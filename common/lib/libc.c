@@ -7,8 +7,13 @@
 #include <lib/misc.h>
 #include <mm/pmm.h>
 
-// Slightly adapted strtoul() implementation from FreeBSD.
+// Adapted from FreeBSD's strtoul(), and covered by the terms it carries there
+// rather than by COPYING.
 // https://github.com/freebsd/freebsd-src/blob/de1aa3dab23c06fec962a14da3e7b4755c5880cf/lib/libc/stdlib/strtoul.c
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 1990, 1993 The Regents of the University of California.
+// Copyright (c) 2011 The FreeBSD Foundation; portions were developed by David
+// Chisnall under sponsorship from the FreeBSD Foundation.
 unsigned long strtoul(const char *nptr, char **endptr, int base) {
     const char *s;
     unsigned long acc;

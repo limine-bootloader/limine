@@ -1877,6 +1877,7 @@ noreturn void _menu(bool first_run) {
                 selected_entry = strtoui(default_entry, NULL, 10);
                 if (selected_entry)
                     selected_entry--;
+                has_entry = true;
             } else {
                 // Copy the path since find_entry_by_path calls config_get_value
                 // internally (via should_skip_entry), which clobbers the static buffer.
@@ -1892,6 +1893,7 @@ noreturn void _menu(bool first_run) {
                 find_entry_by_path(default_entry_path, menu_tree, 0, &found_entry, &found_index, true);
                 if (found_entry != NULL) {
                     selected_entry = found_index;
+                    has_entry = true;
                 }
             }
         }

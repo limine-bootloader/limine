@@ -352,6 +352,9 @@ Editor control options:
 
 * BIOS Chainload protocol:
   * `drive` - The 1-based drive to chainload, if omitted, assume boot drive.
+    Only hard disks can be chainloaded, so this is always a hard disk index;
+    booted from optical media, an omitted `drive` therefore selects the hard
+    disk of the same index rather than the boot medium.
   * `partition` - The 1-based partition to chainload, if omitted, or set to 0,
     chainload drive (MBR).
   * `mbr_id` - Optional. If passed, use an MBR ID (32-bit hex value) to

@@ -1863,9 +1863,38 @@ noreturn void _menu(bool first_run) {
     }
 #endif
 
+#if defined (UEFI)
+    if (!has_entry) {
+        char *remember_last = config_get_value(NULL, 0, "REMEMBER_LAST_ENTRY");
+        if (remember_last != NULL && strcasecmp(remember_last, "yes") == 0) {
+            char last_entry_path[MENU_PATH_MAX];
+            UINTN getvar_size = sizeof(last_entry_path);
+            if (gRT->GetVariable(L"LimineLastBootedEntry",
+                                 &limine_efi_vendor_guid,
+                                 NULL,
+                                 &getvar_size,
+                                 last_entry_path) == 0 && getvar_size > 0) {
+                // Ensure NUL termination
+                last_entry_path[getvar_size < sizeof(last_entry_path) ? getvar_size : sizeof(last_entry_path) - 1] = '\0';
+                // Find the entry with this path, expand directories, and get its index.
+                struct menu_entry *found_entry = NULL;
+                size_t found_index = 0;
+                find_entry_by_path(last_entry_path, menu_tree, 0, &found_entry, &found_index, true);
+                if (found_entry != NULL) {
+                    selected_entry = found_index;
+                    has_entry = true;
+                }
+            }
+        }
+    }
+#endif
+
     if (!has_entry) {
         char *default_entry = config_get_value(NULL, 0, "DEFAULT_ENTRY");
         if (default_entry != NULL) {
+            // A present but unusable value still counts as set, so
+            // LoaderEntryDefault cannot stand in for it.
+            has_entry = true;
             bool is_index = true;
             for (const char *p = default_entry; *p != '\0'; p++) {
                 if (*p < '0' || *p > '9') {
@@ -1898,29 +1927,6 @@ noreturn void _menu(bool first_run) {
     }
 
 #if defined (UEFI)
-    if (!has_entry) {
-        char *remember_last = config_get_value(NULL, 0, "REMEMBER_LAST_ENTRY");
-        if (remember_last != NULL && strcasecmp(remember_last, "yes") == 0) {
-            char last_entry_path[MENU_PATH_MAX];
-            UINTN getvar_size = sizeof(last_entry_path);
-            if (gRT->GetVariable(L"LimineLastBootedEntry",
-                                 &limine_efi_vendor_guid,
-                                 NULL,
-                                 &getvar_size,
-                                 last_entry_path) == 0 && getvar_size > 0) {
-                // Ensure NUL termination
-                last_entry_path[getvar_size < sizeof(last_entry_path) ? getvar_size : sizeof(last_entry_path) - 1] = '\0';
-                // Find the entry with this path, expand directories, and get its index.
-                struct menu_entry *found_entry = NULL;
-                size_t found_index = 0;
-                find_entry_by_path(last_entry_path, menu_tree, 0, &found_entry, &found_index, true);
-                if (found_entry != NULL) {
-                    selected_entry = found_index;
-                    has_entry = true;
-                }
-            }
-        }
-    }
     if (!has_entry) {
         char path[MENU_PATH_MAX];
         if (bli_get_default_entry(path, MENU_PATH_MAX)) {

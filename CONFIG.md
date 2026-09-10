@@ -115,12 +115,17 @@ Miscellaneous:
   and `\#` respectively. If multiple sibling entries share the same name, append
   `#N` to select the Nth duplicate (e.g. `Arch Linux#1` for the second entry
   named `Arch Linux`). If unspecified, it is `1`. On UEFI, a Boot Loader
-  Interface `LoaderEntryOneShot` request overrides this option for the boot
-  that consumes it, and `remember_last_entry` and the persistent
-  `LoaderEntryDefault` variable are consulted, in that order, only where this
-  option is not set.
-* `remember_last_entry` - If set to `yes`, remember last booted entry.
-  (UEFI only).
+  Interface `LoaderEntryOneShot` request takes precedence over this option, and
+  so does `remember_last_entry` where it has an entry to restore. The
+  persistent `LoaderEntryDefault` variable is consulted only where this option
+  is not set. A value that does not name a bootable entry still counts as set,
+  but disables autoboot (and shows the menu if `timeout` is `0` and/or `quiet`
+  is `yes`): that covers a path or index matching nothing, and a path or index
+  naming a directory.
+* `remember_last_entry` - If set to `yes`, remember last booted entry. Takes
+  precedence over `default_entry` and over the persistent `LoaderEntryDefault`
+  variable; `default_entry` applies only where this option is `no` or no
+  remembered entry resolves. (UEFI only).
 * `graphics` - If set to `no`, force text mode for the boot menu, else use
   a video mode.
 * `wallpaper` - Path to a file to use as a wallpaper. BMP, PNG, JPEG, and QOI

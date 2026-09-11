@@ -24,6 +24,11 @@
 extern symbol smp_trampoline_start;
 extern size_t smp_trampoline_size;
 
+#if !defined (__x86_64__) && !defined (__i386__)
+#define AP_START_TIMEOUT_US 5000000
+#define AP_START_STALL_US 100
+#endif
+
 #if defined (__x86_64__) || defined (__i386__)
 
 struct trampoline_passed_info {
@@ -513,7 +518,7 @@ static bool try_start_ap(int boot_method, uint64_t method_ptr,
             panic(false, "Invalid boot method specified");
     }
 
-    for (int i = 0; i < 1000000; i++) {
+    for (int i = 0; i < AP_START_TIMEOUT_US / AP_START_STALL_US; i++) {
         // We do not need cache invalidation here as by the time the AP gets to
         // set this flag, it has enabled its caches
 
@@ -526,7 +531,7 @@ static bool try_start_ap(int boot_method, uint64_t method_ptr,
             }
             return true;
         }
-        stall(100);
+        stall(AP_START_STALL_US);
     }
 
     return false;
@@ -916,11 +921,11 @@ static bool smp_start_ap(size_t hartid, size_t satp, struct limine_mp_info *info
     if (ret.error != SBI_SUCCESS)
         return false;
 
-    for (int i = 0; i < 1000000; i++) {
+    for (int i = 0; i < AP_START_TIMEOUT_US / AP_START_STALL_US; i++) {
         if (locked_read(&passed_info.smp_tpl_booted_flag) == 1)
             return true;
 
-        stall(100);
+        stall(AP_START_STALL_US);
     }
 
     return false;
@@ -1067,10 +1072,10 @@ static bool smp_start_ap(uint32_t phys_id, struct limine_mp_info *info_struct,
     csr_mail_send(trampoline_entry, phys_id, 0);
     smp_send_ipi(phys_id, SMP_BOOT_CPU);
 
-    for (int i = 0; i < 1000000; i++) {
+    for (int i = 0; i < AP_START_TIMEOUT_US / AP_START_STALL_US; i++) {
         if (locked_read(&loongarch_smp_passed_info.smp_tpl_booted_flag) == 1)
             return true;
-        stall(100);
+        stall(AP_START_STALL_US);
     }
 
     return false;

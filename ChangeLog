@@ -1,3 +1,84 @@
+2026-09-11  Mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 12.9.0 ***
+
+    Noteworthy changes compared to the previous release, 12.8.0:
+
+    New features:
+        - Read the ISO 9660 volume identifier as a filesystem label, so
+          `fslabel()` can name whole-disk volumes such as optical media.
+        - Match filesystem labels case insensitively.
+
+    Bug fixes:
+        - aarch64: Mark non-executable mappings PXN as well as UXN, so `PF_X`
+          is enforced at the privileged level the executable runs at.
+        - aarch64: Enter at EL1 where Armv8.0 EL2 lacks VHE.
+        - Multiboot 2: Keep relocation targets clear of loader memory.
+        - Scale MBR and EBR LBAs by the device block size, fixing 4Kn disks.
+        - BIOS: Place stage 2 at byte 4096 on MBR disks, an offset that divides
+          exactly under every logical sector size in use.
+        - BIOS: Validate the EDD sector size before dividing by it.
+        - BIOS: Index the drive stage 1 booted from regardless of the BDA disk
+          count.
+        - BIOS: Clear the direction flag after a BIOS interrupt.
+        - BIOS: Clear the direction flag after a PXE API call.
+        - ISO 9660: Decline a volume whose root directory is unusable instead
+          of aborting the boot.
+        - FAT: Verify the long name checksum against the short entry. An
+          orphaned long name set could otherwise open an unrelated file under
+          its name.
+        - FAT: Keep scanning a directory past a long name set that names
+          nothing.
+        - Check the hash of a compressed file before decompressing it, so the
+          decoder never parses unverified bytes.
+        - UEFI: Try PXE when a handle matches no disk volume, so a stub Block
+          I/O protocol no longer hides it.
+        - UEFI: Skip handles that failed the responsiveness test rather than
+          reading them again.
+        - UEFI PXE: Give the Mtftp size query a buffer to point at; firmware
+          predating 2018 rejects the call otherwise.
+        - Linux protocol: Pass e820 entries past the 128th in setup_data rather
+          than panicking after ExitBootServices.
+        - Linux protocol: Check the boot protocol revision before reading
+          xloadflags, which only exists from 2.12.
+        - Linux protocol: Lower the minimum boot protocol to 2.02, the oldest
+          revision carrying every field read unconditionally.
+        - Linux protocol: Hand the kernel over in xAPIC mode, as the Multiboot
+          protocols do. A kernel built without CONFIG_X86_X2APIC loses its
+          local APIC entirely if entered with x2APIC on.
+        - Linux protocol: Disable an IOMMU the kernel is too old to take over,
+          gated per vendor at 4.2 for VT-d and 4.14 for AMD-Vi.
+        - `default_entry` now takes precedence over the Boot Loader Interface's
+          LoaderEntryDefault variable.
+        - `default_entry` may name a directory by path, selecting it as the
+          index form already did.
+        - `default_entry` disables autoboot wherever it names nothing bootable,
+          at any timeout.
+        - Do not slide the value of an SHN_ABS symbol when relocating.
+        - Fall back to RDRAND where RDSEED returns no data.
+        - IA-32: Clamp memory randomisation to below 4 GiB; a straddling entry
+          wrapped over low memory.
+        - Bound the aarch64, riscv64 and loongarch64 AP bring-up wait to 5
+          seconds, down from 100.
+        - Drop `initrd_path` from the editor's valid keys; nothing reads it.
+        - Host tool: Avoid int overflow in the CHS and GPT array limits.
+        - Miscellaneous bug fixes.
+
+    Miscellaneous:
+        - Report a failed TPM measurement unconditionally and wait for the
+          user, rather than only under `verbose`.
+        - Pack stage 2 with an LZMA-esque algorithm, freeing about 5.9KiB.
+        - Every shipped artifact and the source tarball are now reproducible
+          across timezone, locale, umask and clock.
+        - `configure` rejects source and build paths make cannot represent.
+        - Source and build paths containing spaces or tabs now work.
+        - `--enable-all --disable-bios` no longer builds the BIOS port.
+        - limine-uefi-cd.bin now requires at least one UEFI port to be enabled.
+        - Pass -no-pie when linking the BIOS port, which would not link at all
+          where the toolchain defaults to a PIE, such as on OpenBSD.
+        - Match CONFIG.md and INSTALL.md to what the code does.
+        - Miscellaneous improvements.
+
 2026-09-05  Mintsuki  <mintsuki@protonmail.com>
 
     *** Release 12.8.0 ***

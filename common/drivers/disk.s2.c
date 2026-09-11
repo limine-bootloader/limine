@@ -207,7 +207,7 @@ static bool detect_sector_size(struct volume *volume) {
     return true;
 }
 
-void disk_create_index(void) {
+void disk_create_index(uint8_t boot_drive) {
     // Disk count (only non-removable) at 0040:0075
     uint8_t bda_disk_count = mminb(rm_desegment(0x0040, 0x0075));
 
@@ -275,7 +275,8 @@ void disk_create_index(void) {
         }
 
         if (!is_removable && !block->is_optical) {
-            if (consumed_bda_disks == bda_disk_count) {
+            // The count can omit the drive the BIOS just booted from, or be 0.
+            if (consumed_bda_disks >= bda_disk_count && drive != boot_drive) {
                 pmm_free(block, sizeof(struct volume));
                 continue;
             }

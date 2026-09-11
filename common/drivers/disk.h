@@ -20,7 +20,13 @@ enum {
     DISK_FAILURE
 };
 
+#if defined (BIOS)
+// `boot_drive` is the drive stage 1 booted from, or 0 where it booted from no
+// drive at all.
+void disk_create_index(uint8_t boot_drive);
+#elif defined (UEFI)
 void disk_create_index(void);
+#endif
 int disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t count);
 
 #endif

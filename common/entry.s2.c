@@ -98,7 +98,7 @@ noreturn void entry(uint8_t boot_drive, int boot_from) {
 
     init_idt();
 
-    disk_create_index();
+    disk_create_index(boot_from == BOOTED_FROM_PXE ? 0 : boot_drive);
 
     if (boot_from == BOOTED_FROM_HDD || boot_from == BOOTED_FROM_CD) {
         boot_volume = volume_get_by_bios_drive(boot_drive);

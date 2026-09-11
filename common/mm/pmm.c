@@ -55,16 +55,21 @@ void pmm_randomise_memory(void) {
         if (memmap[i].type != MEMMAP_USABLE)
             continue;
 
+        uint64_t top = memmap[i].base + memmap[i].length;
+
 #if defined (__i386__)
-        // A 32-bit build cannot address it, and the cast below truncates
+        // A 32-bit build cannot address it, and the casts below truncate
         // rather than failing.
         if (memmap[i].base >= 0x100000000) {
             continue;
         }
+        if (top > 0x100000000) {
+            top = 0x100000000;
+        }
 #endif
 
         uint8_t *ptr = (void *)(uintptr_t)memmap[i].base;
-        size_t len = memmap[i].length;
+        size_t len = top - memmap[i].base;
 
         for (size_t j = 0;;) {
             uint32_t random = rand32();

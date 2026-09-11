@@ -10,6 +10,7 @@
 #include <lib/misc.h>
 #include <lib/print.h>
 #include <lib/libc.h>
+#include <lib/getchar.h>
 #include <mm/pmm.h>
 
 // TCG event log entry layouts (TCG PC Client Platform Firmware Profile).
@@ -99,6 +100,16 @@ bool tpm_present(void) {
     return tcg2 != NULL || cc != NULL;
 }
 
+static void tpm_extend_failed(void) {
+    print("         Press Y to continue, press any other key to panic...");
+
+    char ch = getchar();
+    print("\n");
+    if (ch != 'Y' && ch != 'y') {
+        panic(false, "tpm: refusing to boot with an unmeasured component");
+    }
+}
+
 void tpm_measure(uint32_t pcr, uint32_t event_type,
                  const void *data, size_t data_size,
                  const char *desc_prefix, const char *desc_value) {
@@ -131,8 +142,11 @@ void tpm_measure(uint32_t pcr, uint32_t event_type,
             (EFI_PHYSICAL_ADDRESS)(uintptr_t)data, (UINT64)data_size,
             event);
         if (status != EFI_SUCCESS) {
-            printv("tpm: HashLogExtendEvent for PCR %u failed: %X\n",
-                   pcr, (uint64_t)status);
+            quiet = false;
+            print("WARNING: tpm: HashLogExtendEvent for PCR %u failed: %X\n"
+                  "         This component has not been measured.\n",
+                  pcr, (uint64_t)status);
+            tpm_extend_failed();
         }
 
         pmm_free(event, event_size);
@@ -143,6 +157,11 @@ void tpm_measure(uint32_t pcr, uint32_t event_type,
         EFI_CC_MR_INDEX mr_index;
         EFI_STATUS status = cc->MapPcrToMrIndex(cc, pcr, &mr_index);
         if (status != EFI_SUCCESS) {
+            quiet = false;
+            print("WARNING: tpm: no measurement register for PCR %u: %X\n"
+                  "         This component has not been measured.\n",
+                  pcr, (uint64_t)status);
+            tpm_extend_failed();
             return;
         }
 
@@ -166,8 +185,11 @@ void tpm_measure(uint32_t pcr, uint32_t event_type,
             (EFI_PHYSICAL_ADDRESS)(uintptr_t)data, (UINT64)data_size,
             event);
         if (status != EFI_SUCCESS) {
-            printv("tpm: CC HashLogExtendEvent for PCR %u (MR %u) failed: %X\n",
-                   pcr, (uint32_t)mr_index, (uint64_t)status);
+            quiet = false;
+            print("WARNING: tpm: CC HashLogExtendEvent for PCR %u (MR %u) failed: %X\n"
+                  "         This component has not been measured.\n",
+                  pcr, (uint32_t)mr_index, (uint64_t)status);
+            tpm_extend_failed();
         }
 
         pmm_free(event, event_size);

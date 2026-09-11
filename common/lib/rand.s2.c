@@ -26,8 +26,9 @@ size_t hw_entropy(void *buf, size_t size) {
     bool have_rdrand = cpuid(0x01, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 30));
 
     while (filled < size && (have_rdseed || have_rdrand)) {
-        uint32_t val;
-        bool ok;
+        uint32_t val = 0;
+        bool ok = false;
+
         if (have_rdseed) {
 #if defined (__x86_64__)
             uint64_t wide;
@@ -36,7 +37,11 @@ size_t hw_entropy(void *buf, size_t size) {
 #elif defined (__i386__)
             ok = rdseed(uint32_t, &val);
 #endif
-        } else {
+        }
+
+        // RDSEED draws on the entropy source itself and underflows under load
+        // while RDRAND, served by the conditioned DRBG, keeps delivering.
+        if (!ok && have_rdrand) {
 #if defined (__x86_64__)
             uint64_t wide;
             ok = rdrand(uint64_t, &wide); // As above.

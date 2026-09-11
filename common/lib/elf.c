@@ -49,6 +49,7 @@
 #define ELFCLASS64   0x02
 #define SHT_RELA     0x00000004
 #define SHN_UNDEF    0x00000000
+#define SHN_ABS      0x0000fff1
 #define STB_WEAK     0x00000002
 #define R_X86_64_NONE      0x00000000
 #define R_AARCH64_NONE     0x00000000
@@ -713,7 +714,10 @@ static bool elf64_apply_relocations(const struct elf64_reloc_state *st, uint8_t 
                     }
                     panic(true, "elf: Unresolved symbol \"%S\"", elf + strtab_offset + s->st_name, (size_t)(strtab_size - s->st_name));
                 }
-                uint64_t value = slide + s->st_value;
+                uint64_t value = s->st_value;
+                if (s->st_shndx != SHN_ABS) {
+                    value += slide;
+                }
 #if defined (__aarch64__)
                 value += relocation->r_addend;
 #endif
@@ -758,7 +762,11 @@ static bool elf64_apply_relocations(const struct elf64_reloc_state *st, uint8_t 
                     }
                     panic(true, "elf: Unresolved symbol \"%S\"", elf + strtab_offset + s->st_name, (size_t)(strtab_size - s->st_name));
                 }
-                reloc_store(ptr, slide + s->st_value + relocation->r_addend);
+                uint64_t value = s->st_value;
+                if (s->st_shndx != SHN_ABS) {
+                    value += slide;
+                }
+                reloc_store(ptr, value + relocation->r_addend);
                 break;
             }
             default: {

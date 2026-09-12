@@ -7,6 +7,7 @@
 #include <efi.h>
 #include <lib/bli.h>
 #include <lib/guid.h>
+#include <lib/hii.h>
 #include <lib/misc.h>
 #include <lib/tpm.h>
 #include <menu.h>
@@ -115,6 +116,21 @@ static void bli_set_active_pcr_banks(void) {
     bli_set_string(L"LoaderTpm2ActivePcrBanks", banks_wstr, len);
 }
 
+// Left unset where the firmware does not say, which systemd takes as "no
+// layout known" rather than as a layout of its own.
+static void bli_set_keyboard_layout(void) {
+    wchar_t layout[32];
+
+    if (!hii_get_keyboard_layout(layout, SIZEOF_ARRAY(layout))) {
+        return;
+    }
+
+    size_t len = 0;
+    while (layout[len] != L'\0') len++;
+
+    bli_set_string(L"LoaderKeyboardLayout", layout, len);
+}
+
 void init_bli(void) {
     bli_set_loader_time(L"LoaderTimeInitUSec", usec_at_bootloader_entry);
 
@@ -129,7 +145,8 @@ void init_bli(void) {
                         (1 << 2) | // Default entry control
                         (1 << 3) | // Oneshot entry control
                         (1 << 13) | // menu-disabled support
-                        (1 << 18); // Active TPM2 PCR bank reporting
+                        (1 << 18) | // Active TPM2 PCR bank reporting
+                        (1 << 20); // Keyboard layout reporting
     gRT->SetVariable(L"LoaderFeatures",
             &bli_vendor_guid,
             EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
@@ -137,6 +154,7 @@ void init_bli(void) {
             &features);
 
     bli_set_active_pcr_banks();
+    bli_set_keyboard_layout();
 
     if (boot_volume->part_guid_valid) {
         char part_uuid_str[37];

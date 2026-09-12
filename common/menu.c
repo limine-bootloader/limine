@@ -1209,6 +1209,27 @@ static const char *parse_path_component(const char *path, char **name_out, size_
     return p;
 }
 
+// Walk the full tree (ignoring ->expanded) and return the entry at the given
+// 1-based flat position. Returns NULL when pos is out of range.
+static struct menu_entry *find_entry_by_flat_index(struct menu_entry *node, size_t *pos) {
+    for (; node != NULL; node = node->next) {
+        if (should_skip_entry(node)) {
+            continue;
+        }
+        if (*pos == 1) {
+            return node;
+        }
+        (*pos)--;
+        if (node->sub != NULL) {
+            struct menu_entry *found = find_entry_by_flat_index(node->sub, pos);
+            if (found != NULL) {
+                return found;
+            }
+        }
+    }
+    return NULL;
+}
+
 // Find an entry by its escaped path string. If expand_dirs is true, directories on the
 // path to the target are expanded. Returns true if found, writing the entry and its
 // visible index to *found_entry and *found_index.
@@ -1592,6 +1613,15 @@ static void print_entry_comment(const struct menu_entry *entry, size_t row) {
     FOR_TERM(TERM->scroll_enabled = true);
 }
 
+#define BOOT_KEYBIND_MAX 64
+#define BOOT_KEYBIND_SCAN_LIMIT 256
+
+// Mirrors the case labels in the switch below (digits, e, s, u, b) so a
+// BOOT_KEYBIND can never shadow a built-in action.
+static inline bool is_reserved_firmware_key(int k) {
+    return (k >= '1' && k <= '9') || k == 'e' || k == 's' || k == 'u' || k == 'b';
+}
+
 noreturn void _menu(bool first_run) {
     size_t data_size = (uintptr_t)data_end - (uintptr_t)data_begin;
 #if defined (BIOS)
@@ -1833,6 +1863,68 @@ noreturn void _menu(bool first_run) {
                 format_fg_rgb_escape(menu_branding_colour, rgb);
             }
         }
+    }
+
+    struct {
+        int key;
+        size_t index;
+    } boot_keybinds[BOOT_KEYBIND_MAX];
+    size_t boot_keybind_count = 0;
+
+    for (size_t ki = 0; ki < BOOT_KEYBIND_SCAN_LIMIT && boot_keybind_count < BOOT_KEYBIND_MAX; ki++) {
+        char *val = config_get_value(NULL, ki, "boot_keybind");
+        if (val == NULL) {
+            break;
+        }
+
+        char val_copy[64];
+        size_t vlen = strlen(val);
+        if (vlen >= sizeof(val_copy)) {
+            continue;
+        }
+        memcpy(val_copy, val, vlen + 1);
+
+        char *p = val_copy;
+        while (*p && isspace((unsigned char)*p)) p++;
+        if (*p == '\0') continue;
+        char *q = p + strlen(p) - 1;
+        while (q > p && isspace((unsigned char)*q)) *q-- = '\0';
+
+        // Format: "<key> <1-based index>", e.g. "h 4".
+        char *space = strchr(p, ' ');
+        if (space == NULL) continue;
+        *space = '\0';
+        char *num = space + 1;
+        while (*num && isspace((unsigned char)*num)) num++;
+        if (*num == '\0') continue;
+
+        if (strlen(p) != 1) continue;
+        int norm_key = tolower((unsigned char)p[0]);
+        if (is_reserved_firmware_key(norm_key)) {
+            continue;
+        }
+
+        // First BOOT_KEYBIND for a key wins; later duplicates are ignored.
+        bool dup = false;
+        for (size_t j = 0; j < boot_keybind_count; j++) {
+            if (boot_keybinds[j].key == norm_key) {
+                dup = true;
+                break;
+            }
+        }
+        if (dup) continue;
+
+        // strtoui saturates to UINT64_MAX on overflow; no errno here.
+        const char *endptr = NULL;
+        uint64_t parsed = strtoui(num, &endptr, 10);
+        if (endptr == num || *endptr != '\0' || parsed == 0
+         || parsed == UINT64_MAX || parsed > SIZE_MAX) {
+            continue;
+        }
+
+        boot_keybinds[boot_keybind_count].key = norm_key;
+        boot_keybinds[boot_keybind_count].index = (size_t)parsed;
+        boot_keybind_count++;
     }
 
     bool skip_timeout = false;
@@ -2227,6 +2319,19 @@ timeout_aborted:
                     continue;
 
             }
+        }
+
+        for (size_t ki = 0; ki < boot_keybind_count; ki++) {
+            if (tolower((unsigned char)c) != boot_keybinds[ki].key) {
+                continue;
+            }
+            size_t pos = boot_keybinds[ki].index;
+            struct menu_entry *target = find_entry_by_flat_index(menu_tree, &pos);
+            if (target == NULL || target->sub != NULL) {
+                continue; // try other bindings instead of aborting
+            }
+            selected_menu_entry = target;
+            goto autoboot;
         }
         switch (c) {
             case '1': case '2': case '3': case '4': case '5':

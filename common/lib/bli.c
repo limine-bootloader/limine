@@ -96,6 +96,58 @@ void bli_set_loader_time(wchar_t *variable, uint64_t time) {
             time_wstr);
 }
 
+static size_t wstr_append(wchar_t *buf, size_t len, size_t buf_size, const wchar_t *str) {
+    if (str == NULL) {
+        return len;
+    }
+    for (; *str != L'\0' && len + 1 < buf_size; str++) {
+        buf[len++] = *str;
+    }
+    return len;
+}
+
+static size_t wstr_append_dec(wchar_t *buf, size_t len, size_t buf_size,
+                              uint32_t value, size_t min_digits) {
+    wchar_t digits[11];
+    size_t ndigits = 0;
+
+    do {
+        digits[ndigits++] = L'0' + (value % 10);
+        value /= 10;
+    } while (value > 0);
+
+    while (ndigits < min_digits) {
+        digits[ndigits++] = L'0';
+    }
+
+    for (size_t i = ndigits; i > 0 && len + 1 < buf_size; i--) {
+        buf[len++] = digits[i - 1];
+    }
+    return len;
+}
+
+// Both revisions are packed as major in the high half and minor in the low,
+// and both are spelt with the minor padded to two digits.
+static void bli_set_firmware_info(void) {
+    wchar_t buf[128];
+    size_t len;
+
+    len = wstr_append(buf, 0, SIZEOF_ARRAY(buf), L"UEFI ");
+    len = wstr_append_dec(buf, len, SIZEOF_ARRAY(buf), gST->Hdr.Revision >> 16, 1);
+    len = wstr_append(buf, len, SIZEOF_ARRAY(buf), L".");
+    len = wstr_append_dec(buf, len, SIZEOF_ARRAY(buf), gST->Hdr.Revision & 0xffff, 2);
+    buf[len] = L'\0';
+    bli_set_string(L"LoaderFirmwareType", buf, len);
+
+    len = wstr_append(buf, 0, SIZEOF_ARRAY(buf), gST->FirmwareVendor);
+    len = wstr_append(buf, len, SIZEOF_ARRAY(buf), L" ");
+    len = wstr_append_dec(buf, len, SIZEOF_ARRAY(buf), gST->FirmwareRevision >> 16, 1);
+    len = wstr_append(buf, len, SIZEOF_ARRAY(buf), L".");
+    len = wstr_append_dec(buf, len, SIZEOF_ARRAY(buf), gST->FirmwareRevision & 0xffff, 2);
+    buf[len] = L'\0';
+    bli_set_string(L"LoaderFirmwareInfo", buf, len);
+}
+
 // systemd reads this back with a base 16 parse, so the digits carry no `0x`
 // prefix. All ones says the firmware is too old to know, which is distinct
 // from a zero meaning no TPM 2.0 at all.
@@ -154,6 +206,7 @@ void init_bli(void) {
             sizeof(features),
             &features);
 
+    bli_set_firmware_info();
     bli_set_active_pcr_banks();
     bli_set_keyboard_layout();
 

@@ -155,10 +155,12 @@ jobs:
         run: |
           set -eu
 
+          # An unsigned release is worth having; a failed one is not. Leaving
+          # the fingerprint empty is what the steps below key off.
           if [ -z "$SIGNING_PRIVATE_KEY" ]; then
-            echo "No signing key registered for $GITHUB_ACTOR" >&2
-            echo "Add a ${GITHUB_ACTOR}_PRIVATE_KEY secret to the release-signing environment" >&2
-            exit 1
+            echo "No signing key registered for $GITHUB_ACTOR, releasing unsigned" >&2
+            echo "Add a ${GITHUB_ACTOR}_PRIVATE_KEY secret to the release-signing environment to sign" >&2
+            exit 0
           fi
 
           echo "$SIGNING_PRIVATE_KEY" | gpg --batch --import
@@ -169,6 +171,7 @@ jobs:
           SIGNING_PRIVATE_KEY: ${{ secrets[format('{0}_PRIVATE_KEY', github.actor)] }}
 
       - name: Sign release artifacts
+        if: env.SIGNING_KEY_FPR != ''
         run: |
           set -eu
           for f in dist/limine-*.tar.* dist/limine-binary.zip; do
@@ -183,6 +186,10 @@ jobs:
           cat >rel_notes.txt <<EOF
           Changelog can be found [here](https://github.com/$REPOSITORY/blob/$TAG_NAME/ChangeLog).
           EOF
+
+      - name: Describe the signatures in the release notes
+        if: env.SIGNING_KEY_FPR != ''
+        run: |
           cat <<'EOF' >>rel_notes.txt
 
           Tarballs are signed using key ID `@SIGNING_KEY_FPR@` which can be obtained from a keyserver such as `keyserver.ubuntu.com`.

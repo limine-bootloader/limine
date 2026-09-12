@@ -117,14 +117,14 @@ Miscellaneous:
   named `Arch Linux`). If unspecified, it is `1`. On UEFI, a Boot Loader
   Interface `LoaderEntryOneShot` request takes precedence over this option, and
   so does `remember_last_entry` where it has an entry to restore. The
-  persistent `LoaderEntryDefault` variable is consulted only where this option
-  is not set. A value that does not name a bootable entry still counts as set,
+  persistent `LoaderEntryPreferred` and `LoaderEntryDefault` variables, in
+  that order, are consulted only where this option is not set. A value that does not name a bootable entry still counts as set,
   but disables autoboot (and shows the menu if `timeout` is `0` and/or `quiet`
   is `yes`): that covers a path or index matching nothing, and a path or index
   naming a directory.
 * `remember_last_entry` - If set to `yes`, remember last booted entry. Takes
-  precedence over `default_entry` and over the persistent `LoaderEntryDefault`
-  variable; `default_entry` applies only where this option is `no` or no
+  precedence over `default_entry` and over the persistent
+  `LoaderEntryPreferred` and `LoaderEntryDefault` variables; `default_entry` applies only where this option is `no` or no
   remembered entry resolves. (UEFI only).
 * `graphics` - If set to `no`, force text mode for the boot menu, else use
   a video mode.

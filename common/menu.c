@@ -1933,15 +1933,22 @@ noreturn void _menu(bool first_run) {
 #if defined (UEFI)
     if (!has_entry) {
         char path[MENU_PATH_MAX];
-        if (bli_get_default_entry(path, MENU_PATH_MAX)) {
-            // Find the entry, expand directories, and get its index.
-            struct menu_entry *found_entry = NULL;
-            size_t found_index = 0;
+        struct menu_entry *found_entry = NULL;
+        size_t found_index = 0;
+
+        // Find the entry, expand directories, and get its index. Nothing
+        // here marks an entry bad, so a preferred entry differs from the
+        // default only in being looked at first.
+        if (bli_get_preferred_entry(path, MENU_PATH_MAX)) {
             find_entry_by_bli_id_or_path(path, &found_entry, &found_index);
-            if (found_entry != NULL) {
-                selected_entry = found_index;
-                has_entry = true;
-            }
+        }
+        if (found_entry == NULL && bli_get_default_entry(path, MENU_PATH_MAX)) {
+            find_entry_by_bli_id_or_path(path, &found_entry, &found_index);
+        }
+
+        if (found_entry != NULL) {
+            selected_entry = found_index;
+            has_entry = true;
         }
     }
 #endif

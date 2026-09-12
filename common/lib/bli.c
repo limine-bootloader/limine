@@ -243,6 +243,7 @@ void init_bli(void) {
                         (1 << 7) | // Drop-in driver loading
                         (1 << 13) | // menu-disabled support
                         (1 << 18) | // Active TPM2 PCR bank reporting
+                        (1 << 19) | // Preferred entry control
                         (1 << 20); // Keyboard layout reporting
     gRT->SetVariable(L"LoaderFeatures",
             &bli_vendor_guid,
@@ -414,6 +415,10 @@ static bool handle_entry(wchar_t *variable, bool erase, char *path, size_t buf_s
         return true;
     }
     return false;
+}
+
+bool bli_get_preferred_entry(char *path, size_t buf_size) {
+    return handle_entry(L"LoaderEntryPreferred", false, path, buf_size);
 }
 
 bool bli_get_default_entry(char *path, size_t buf_size) {

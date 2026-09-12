@@ -8,6 +8,7 @@
 #include <lib/bli.h>
 #include <lib/guid.h>
 #include <lib/misc.h>
+#include <lib/tpm.h>
 #include <menu.h>
 
 #define LIMINE_BRAND L"Limine " LIMINE_VERSION
@@ -69,6 +70,14 @@ bool decwstr_to_size(const wchar_t *buf, size_t buf_size, size_t *value) {
     return true;
 }
 
+static void bli_set_string(wchar_t *variable, wchar_t *value, size_t len) {
+    gRT->SetVariable(variable,
+            &bli_vendor_guid,
+            EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+            (len + 1) * sizeof(wchar_t),
+            value);
+}
+
 void bli_set_loader_time(wchar_t *variable, uint64_t time) {
     if (time == 0)
         return;
@@ -86,6 +95,26 @@ void bli_set_loader_time(wchar_t *variable, uint64_t time) {
             time_wstr);
 }
 
+// systemd reads this back with a base 16 parse, so the digits carry no `0x`
+// prefix. All ones says the firmware is too old to know, which is distinct
+// from a zero meaning no TPM 2.0 at all.
+static void bli_set_active_pcr_banks(void) {
+    uint32_t banks = tpm_active_pcr_banks();
+
+    wchar_t banks_wstr[9];
+    size_t len = 0;
+    for (size_t shift = 32; shift > 0; shift -= 4) {
+        uint32_t digit = (banks >> (shift - 4)) & 0xf;
+        if (len == 0 && digit == 0 && shift > 4) {
+            continue;
+        }
+        banks_wstr[len++] = digit < 10 ? L'0' + digit : L'a' + (digit - 10);
+    }
+    banks_wstr[len] = L'\0';
+
+    bli_set_string(L"LoaderTpm2ActivePcrBanks", banks_wstr, len);
+}
+
 void init_bli(void) {
     bli_set_loader_time(L"LoaderTimeInitUSec", usec_at_bootloader_entry);
 
@@ -99,12 +128,15 @@ void init_bli(void) {
                         (1 << 1) | // Oneshot timeout control
                         (1 << 2) | // Default entry control
                         (1 << 3) | // Oneshot entry control
-                        (1 << 13); // menu-disabled support
+                        (1 << 13) | // menu-disabled support
+                        (1 << 18); // Active TPM2 PCR bank reporting
     gRT->SetVariable(L"LoaderFeatures",
             &bli_vendor_guid,
             EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
             sizeof(features),
             &features);
+
+    bli_set_active_pcr_banks();
 
     if (boot_volume->part_guid_valid) {
         char part_uuid_str[37];

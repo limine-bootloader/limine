@@ -3,6 +3,7 @@
 <p align="center">
     <img src="https://github.com/Limine-Bootloader/Limine/blob/trunk/logo.png?raw=true" alt="Limine's logo"/>
 </p>
+
 # IMPORTANT NOTE : The commits I made are vibecoded by Claude Code and verified by myself and tested before making it as a release.
 
 ### What is the difference with the official Limine?

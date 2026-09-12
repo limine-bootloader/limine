@@ -13,6 +13,26 @@ can be installed there and coexist with a BIOS installation of Limine
 A valid config file should also be provided as described in
 [CONFIG.md](CONFIG.md).
 
+## Drop-in EFI drivers
+On UEFI, before it looks at any volume, Limine loads and starts every EFI
+driver found in the `/EFI/systemd/drivers` directory of the volume it was
+itself loaded from, then reconnects the firmware's device handles so that the
+drivers take effect. This is the directory and behaviour `bootctl` reports as
+"Load drop-in drivers"; a filesystem driver placed there can therefore be what
+makes the volume holding the config or the kernel readable.
+
+Only files whose name ends in the UEFI machine type of the running Limine
+binary followed by `.efi` are considered (`x64.efi` on x86-64, `ia32.efi` on
+IA-32, `aa64.efi` on aarch64, `riscv64.efi` on riscv64, and
+`loongarch64.efi` on loongarch64), matched case insensitively. A file that
+turns out not to be a driver is refused, and a driver that fails to load or
+start is skipped; neither is fatal.
+
+Drivers are loaded by path rather than from a buffer, so under Secure Boot the
+firmware verifies each one against its own policy, exactly as it does for an
+EFI application Limine chainloads. Limine's own config-hash enforcement (see
+below) does not cover them.
+
 ## Secure Boot
 Limine can be booted with Secure Boot if the executable is signed and the key
 used to sign it is added to the firmware's keychain. This should be done in

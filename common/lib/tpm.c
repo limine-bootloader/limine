@@ -57,6 +57,8 @@ struct tpm_pcr_event2_head {
 static EFI_TCG2_PROTOCOL *tcg2 = NULL;
 static EFI_CC_MEASUREMENT_PROTOCOL *cc = NULL;
 
+static uint32_t active_pcr_banks = 0;
+
 void tpm_init(void) {
     EFI_GUID tcg2_guid = EFI_TCG2_PROTOCOL_GUID;
     EFI_TCG2_PROTOCOL *tcg2_proto = NULL;
@@ -68,6 +70,12 @@ void tpm_init(void) {
         status = tcg2_proto->GetCapability(tcg2_proto, &cap);
         if (status == EFI_SUCCESS && cap.TPMPresentFlag) {
             tcg2 = tcg2_proto;
+            if (cap.ProtocolVersion.Major > 1
+             || (cap.ProtocolVersion.Major == 1 && cap.ProtocolVersion.Minor >= 1)) {
+                active_pcr_banks = cap.ActivePcrBanks;
+            } else {
+                active_pcr_banks = TPM_ACTIVE_PCR_BANKS_UNKNOWN;
+            }
             printv("tpm: TCG2 protocol located, TPM present (active PCR banks: %x)\n",
                    (uint32_t)cap.ActivePcrBanks);
             return;
@@ -98,6 +106,10 @@ void tpm_init(void) {
 
 bool tpm_present(void) {
     return tcg2 != NULL || cc != NULL;
+}
+
+uint32_t tpm_active_pcr_banks(void) {
+    return active_pcr_banks;
 }
 
 static void tpm_extend_failed(void) {

@@ -21,6 +21,14 @@ void tpm_init(void);
 // True if a TCG2 or CC measurement protocol is available.
 bool tpm_present(void);
 
+// The firmware only reports which PCR banks are active from version 1.1 of
+// the TCG EFI protocol on; this stands in for "it cannot say".
+#define TPM_ACTIVE_PCR_BANKS_UNKNOWN 0xffffffff
+
+// Bitmap of the TPM 2.0 PCR banks in use, in EFI_TCG2_BOOT_HASH_ALG_* terms.
+// Zero where there is no TPM 2.0.
+uint32_t tpm_active_pcr_banks(void);
+
 void tpm_measure(uint32_t pcr, uint32_t event_type,
                  const void *data, size_t data_size,
                  const char *desc_prefix, const char *desc_value);

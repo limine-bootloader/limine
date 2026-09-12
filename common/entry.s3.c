@@ -9,6 +9,7 @@
 #include <lib/config.h>
 #include <lib/trace.h>
 #include <lib/bli.h>
+#include <lib/dropin.h>
 #include <lib/tpm.h>
 #include <sys/e820.h>
 #include <sys/a20.h>
@@ -60,6 +61,18 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
     // Stage the below-4GiB handoff stub while allocations are still permitted.
     prepare_spinup_tramp();
 #endif
+
+    // A drop-in driver may be what makes a volume readable at all, so they
+    // go up before the volume index is built.
+    {
+        EFI_GUID loaded_img_prot_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
+        EFI_LOADED_IMAGE_PROTOCOL *loaded_image = NULL;
+
+        if (gBS->HandleProtocol(ImageHandle, &loaded_img_prot_guid,
+                                (void **)&loaded_image) == EFI_SUCCESS) {
+            dropin_load_drivers(ImageHandle, loaded_image->DeviceHandle);
+        }
+    }
 
     disk_create_index();
 

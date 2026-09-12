@@ -178,9 +178,10 @@ jobs:
       - name: Create release notes
         env:
           TAG_NAME: ${{ needs.validate.outputs.tag }}
+          REPOSITORY: ${{ github.repository }}
         run: |
           cat >rel_notes.txt <<EOF
-          Changelog can be found [here](https://github.com/Limine-Bootloader/Limine/blob/$TAG_NAME/ChangeLog).
+          Changelog can be found [here](https://github.com/$REPOSITORY/blob/$TAG_NAME/ChangeLog).
           EOF
           cat <<'EOF' >>rel_notes.txt
 

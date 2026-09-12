@@ -148,6 +148,50 @@ static void bli_set_firmware_info(void) {
     bli_set_string(L"LoaderFirmwareInfo", buf, len);
 }
 
+// Which binary was run, as a path on the volume it was run from: that is
+// what a loaded image's FilePath holds, spread over its file path nodes.
+static void bli_set_image_identifier(void) {
+    EFI_GUID loaded_img_prot_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
+    EFI_LOADED_IMAGE_PROTOCOL *loaded_image = NULL;
+
+    if (gBS->HandleProtocol(efi_image_handle, &loaded_img_prot_guid,
+                            (void **)&loaded_image) != EFI_SUCCESS
+     || loaded_image->FilePath == NULL) {
+        return;
+    }
+
+    wchar_t path[256];
+    size_t len = 0;
+
+    for (EFI_DEVICE_PATH_PROTOCOL *node = loaded_image->FilePath;
+         !IsDevicePathEnd(node); node = NextDevicePathNode(node)) {
+        size_t node_len = DevicePathNodeLength(node);
+        if (node_len < sizeof(EFI_DEVICE_PATH_PROTOCOL)) {
+            return;
+        }
+        if (DevicePathType(node) != MEDIA_DEVICE_PATH
+         || DevicePathSubType(node) != MEDIA_FILEPATH_DP) {
+            continue;
+        }
+
+        wchar_t *name = (wchar_t *)((FILEPATH_DEVICE_PATH *)node)->PathName;
+        size_t chars = (node_len - sizeof(EFI_DEVICE_PATH_PROTOCOL)) / sizeof(wchar_t);
+        for (size_t i = 0; i < chars && name[i] != L'\0'; i++) {
+            if (len + 1 >= SIZEOF_ARRAY(path)) {
+                return;
+            }
+            path[len++] = name[i];
+        }
+    }
+
+    if (len == 0) {
+        return;
+    }
+
+    path[len] = L'\0';
+    bli_set_string(L"LoaderImageIdentifier", path, len);
+}
+
 // systemd reads this back with a base 16 parse, so the digits carry no `0x`
 // prefix. All ones says the firmware is too old to know, which is distinct
 // from a zero meaning no TPM 2.0 at all.
@@ -207,6 +251,7 @@ void init_bli(void) {
             &features);
 
     bli_set_firmware_info();
+    bli_set_image_identifier();
     bli_set_active_pcr_banks();
     bli_set_keyboard_layout();
 

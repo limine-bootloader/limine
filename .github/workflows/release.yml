@@ -36,7 +36,7 @@ jobs:
         run: |
           set -eu
 
-          if ! printf '%s' "$TAG_INPUT" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+          if ! printf '%s' "$TAG_INPUT" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
             echo "Invalid release tag: $TAG_INPUT" >&2
             exit 1
           fi

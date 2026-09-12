@@ -177,6 +177,7 @@ jobs:
           for f in dist/limine-*.tar.* dist/limine-binary.zip; do
             gpg --batch --default-key "$SIGNING_KEY_FPR" --detach-sign "$f"
           done
+          gpg --export --armor "$SIGNING_KEY_FPR" >dist/signing-key.asc
 
       - name: Create release notes
         env:
@@ -192,11 +193,11 @@ jobs:
         run: |
           cat <<'EOF' >>rel_notes.txt
 
-          Tarballs are signed using key ID `@SIGNING_KEY_FPR@` which can be obtained from a keyserver such as `keyserver.ubuntu.com`.
+          Tarballs are signed using key ID `@SIGNING_KEY_FPR@`, published as `signing-key.asc` among the assets below.
 
           Import the public key with:
           ```bash
-          gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys @SIGNING_KEY_FPR@
+          gpg --import signing-key.asc
           ```
 
           In order to verify the tarball with the given signature, do:
@@ -214,5 +215,6 @@ jobs:
           files: |
             dist/limine-*.tar.*
             dist/limine-binary.zip*
+            dist/signing-key.asc
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

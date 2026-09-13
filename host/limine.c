@@ -1785,7 +1785,9 @@ cleanup:
         fprintf(stderr, "Install failed, undoing work...\n");
         uninstall(true);
     } else if (uninstall_file != NULL) {
-        store_uninstall_data(uninstall_file);
+        if (!store_uninstall_data(uninstall_file)) {
+            ok = EXIT_FAILURE;
+        }
     }
 uninstall_mode_cleanup:
     free_uninstall_data();

@@ -444,9 +444,9 @@ an enrolled hash Limine treats Secure Boot as inactive; see
 
 A gzip-compressed resource is indicated by inserting a dollar character (`$`)
 before the resource string. This allows for transparent decompression. For
-such resources, the hash covers the consumed compressed gzip member bytes,
-not the decompressed data and not trailing bytes outside the consumed member.
-The hash thus authenticates the on-disk payload bytes Limine uses.
+such resources, the hash covers the whole file as stored on disk (its
+compressed bytes, including anything after the gzip data), not the decompressed
+data. The hash is checked before the data is decompressed.
 
 ## Macros
 

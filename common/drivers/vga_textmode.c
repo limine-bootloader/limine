@@ -249,8 +249,24 @@ static void text_putchar(struct flanterm_context *_ctx, uint8_t c) {
     }
 }
 
+// Whether the managed terminal turned blinking off, which deinit undoes so
+// that whatever takes over the screen gets the setting it had.
+static bool blink_disabled;
+
+static void set_blink(bool enabled) {
+    struct rm_regs r = {0};
+    r.eax = 0x1003;
+    r.ebx = enabled;
+    rm_int(0x10, &r, &r);
+}
+
 static void text_deinit(struct flanterm_context *_ctx, void (*_free)(void *, size_t)) {
     struct textmode_context *ctx = (void *)_ctx;
+
+    if (blink_disabled) {
+        set_blink(true);
+        blink_disabled = false;
+    }
 
     if (ctx->back_buffer != NULL) {
         _free(ctx->back_buffer, VD_ROWS * VD_COLS);
@@ -278,6 +294,21 @@ void vga_textmode_init(bool managed) {
         rm_int(0x10, &r, &r);
 
         current_video_mode = 0x3;
+    }
+
+    if (managed) {
+        // Bit 3 of the Attribute Mode Control register (index 0x10, written
+        // with bit 5 set to keep the display on) makes attribute bit 7 blink
+        // rather than select a bright background.
+        inb(0x3da);
+        outb(0x3c0, 0x30);
+        bool blink = inb(0x3c1) & 0x08;
+        inb(0x3da);
+
+        if (blink) {
+            set_blink(false);
+            blink_disabled = true;
+        }
     }
 
     terms = ext_mem_alloc(sizeof(void *));

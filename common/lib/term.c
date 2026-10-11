@@ -242,6 +242,19 @@ static void fallback_set_text_bg_default(struct flanterm_context *ctx) {
     gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
 }
 
+static void fallback_set_text_fg_default_bright(struct flanterm_context *ctx) {
+    (void)ctx;
+    conout_current_fg = EFI_LIGHTGRAY | EFI_BRIGHT;
+    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+}
+
+static void fallback_set_text_bg_default_bright(struct flanterm_context *ctx) {
+    (void)ctx;
+    // bg does not support bright
+    conout_current_bg = EFI_BLACK;
+    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+}
+
 static void fallback_swap_palette(struct flanterm_context *ctx) {
     (void)ctx;
     UINTN tmp = conout_current_bg;
@@ -363,6 +376,8 @@ void term_fallback(void) {
         term->set_text_bg_rgb = dummy_handle_rgb;
         term->set_text_fg_default = dummy_handle;
         term->set_text_bg_default = dummy_handle;
+        term->set_text_fg_default_bright = dummy_handle;
+        term->set_text_bg_default_bright = dummy_handle;
         term->move_character = dummy_handle_move_character;
         term->revscroll = dummy_handle;
         term->swap_palette = dummy_handle;
@@ -393,6 +408,8 @@ void term_fallback(void) {
         term->set_text_bg_bright = fallback_set_text_bg_bright;
         term->set_text_fg_default = fallback_set_text_fg_default;
         term->set_text_bg_default = fallback_set_text_bg_default;
+        term->set_text_fg_default_bright = fallback_set_text_fg_default_bright;
+        term->set_text_bg_default_bright = fallback_set_text_bg_default_bright;
         term->swap_palette = fallback_swap_palette;
 
         term->set_text_fg_default(term);

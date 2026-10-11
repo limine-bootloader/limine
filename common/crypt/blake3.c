@@ -354,7 +354,7 @@ static uint64_t blake3_read(struct file_handle *fh, void *buf, uint64_t loc, uin
     struct blake3_handle *h = fh->fd;
 
     if (loc != h->pos) {
-        panic(false, "blake3 filter: non-sequential read (pos=%x, loc=%x)",
+        panic(false, "blake3 filter: non-sequential read (pos=%X, loc=%X)",
               (uint64_t)h->pos, loc);
     }
 

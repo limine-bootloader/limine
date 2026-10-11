@@ -247,54 +247,60 @@ static UINTN ansi_colours[] = {
 
 static UINTN conout_current_fg, conout_current_bg;
 
+// SetAttribute rejects any background above EFI_LIGHTGRAY. The stored one
+// keeps its bright bit, which reverse video swaps back into the foreground.
+static void fallback_set_attribute(void) {
+    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg & 0x07));
+}
+
 static void fallback_set_text_fg(struct flanterm_context *ctx, size_t fg) {
     (void)ctx;
     conout_current_fg = ansi_colours[fg];
-    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+    fallback_set_attribute();
 }
 
 static void fallback_set_text_bg(struct flanterm_context *ctx, size_t bg) {
     (void)ctx;
     conout_current_bg = ansi_colours[bg];
-    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+    fallback_set_attribute();
 }
 
 static void fallback_set_text_fg_bright(struct flanterm_context *ctx, size_t fg) {
     (void)ctx;
     conout_current_fg = ansi_colours[fg] | EFI_BRIGHT;
-    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+    fallback_set_attribute();
 }
 
 static void fallback_set_text_bg_bright(struct flanterm_context *ctx, size_t bg) {
     (void)ctx;
     // bg does not support bright
     conout_current_bg = ansi_colours[bg];
-    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+    fallback_set_attribute();
 }
 
 static void fallback_set_text_fg_default(struct flanterm_context *ctx) {
     (void)ctx;
     conout_current_fg = EFI_LIGHTGRAY;
-    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+    fallback_set_attribute();
 }
 
 static void fallback_set_text_bg_default(struct flanterm_context *ctx) {
     (void)ctx;
     conout_current_bg = EFI_BLACK;
-    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+    fallback_set_attribute();
 }
 
 static void fallback_set_text_fg_default_bright(struct flanterm_context *ctx) {
     (void)ctx;
     conout_current_fg = EFI_LIGHTGRAY | EFI_BRIGHT;
-    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+    fallback_set_attribute();
 }
 
 static void fallback_set_text_bg_default_bright(struct flanterm_context *ctx) {
     (void)ctx;
     // bg does not support bright
     conout_current_bg = EFI_BLACK;
-    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+    fallback_set_attribute();
 }
 
 static void fallback_swap_palette(struct flanterm_context *ctx) {
@@ -302,7 +308,7 @@ static void fallback_swap_palette(struct flanterm_context *ctx) {
     UINTN tmp = conout_current_bg;
     conout_current_bg = conout_current_fg;
     conout_current_fg = tmp;
-    gST->ConOut->SetAttribute(gST->ConOut, EFI_TEXT_ATTR(conout_current_fg, conout_current_bg));
+    fallback_set_attribute();
 }
 
 #endif

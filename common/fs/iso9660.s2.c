@@ -698,8 +698,8 @@ setup_handle:;
     struct file_handle *handle = ext_mem_alloc(sizeof(struct file_handle));
 
     handle->fd = ret;
-    handle->read = (void *)iso9660_read;
-    handle->close = (void *)iso9660_close;
+    handle->read = iso9660_read;
+    handle->close = iso9660_close;
     handle->size = ret->total_size;
     handle->vol = vol;
 #if defined (UEFI)

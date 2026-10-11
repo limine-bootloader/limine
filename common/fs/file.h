@@ -22,8 +22,8 @@ struct file_handle {
     char      *path;
     size_t     path_len;
     void      *fd;
-    uint64_t (*read)(void *fd, void *buf, uint64_t loc, uint64_t count);
-    void     (*close)(void *fd);
+    uint64_t (*read)(struct file_handle *fd, void *buf, uint64_t loc, uint64_t count);
+    void (*close)(struct file_handle *fd);
     uint64_t   size;
     uint64_t   load_addr_64;
 #if defined (UEFI)

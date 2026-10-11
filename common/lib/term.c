@@ -252,8 +252,31 @@ static void fallback_swap_palette(struct flanterm_context *ctx) {
 
 #endif
 
-static bool dummy_handle(void) {
-    return true;
+static void dummy_handle(struct flanterm_context *ctx) {
+    (void)ctx;
+}
+
+static void dummy_handle_colour(struct flanterm_context *ctx, size_t colour) {
+    (void)ctx;
+    (void)colour;
+}
+
+static void dummy_handle_rgb(struct flanterm_context *ctx, uint32_t rgb) {
+    (void)ctx;
+    (void)rgb;
+}
+
+static void dummy_handle_move_character(struct flanterm_context *ctx, size_t new_x, size_t new_y, size_t old_x, size_t old_y) {
+    (void)ctx;
+    (void)new_x;
+    (void)new_y;
+    (void)old_x;
+    (void)old_y;
+}
+
+static void dummy_handle_deinit(struct flanterm_context *ctx, void (*_free)(void *, size_t)) {
+    (void)ctx;
+    (void)_free;
 }
 
 #if defined (UEFI)
@@ -332,22 +355,22 @@ void term_fallback(void) {
         // and is slow, so...
         //fallback_clear(NULL, true);
 
-        term->set_text_fg = (void *)dummy_handle;
-        term->set_text_bg = (void *)dummy_handle;
-        term->set_text_fg_bright = (void *)dummy_handle;
-        term->set_text_bg_bright = (void *)dummy_handle;
-        term->set_text_fg_rgb = (void *)dummy_handle;
-        term->set_text_bg_rgb = (void *)dummy_handle;
-        term->set_text_fg_default = (void *)dummy_handle;
-        term->set_text_bg_default = (void *)dummy_handle;
-        term->move_character = (void *)dummy_handle;
-        term->revscroll = (void *)dummy_handle;
-        term->swap_palette = (void *)dummy_handle;
-        term->save_state = (void *)dummy_handle;
-        term->restore_state = (void *)dummy_handle;
-        term->double_buffer_flush = (void *)dummy_handle;
-        term->full_refresh = (void *)dummy_handle;
-        term->deinit = (void *)dummy_handle;
+        term->set_text_fg = dummy_handle_colour;
+        term->set_text_bg = dummy_handle_colour;
+        term->set_text_fg_bright = dummy_handle_colour;
+        term->set_text_bg_bright = dummy_handle_colour;
+        term->set_text_fg_rgb = dummy_handle_rgb;
+        term->set_text_bg_rgb = dummy_handle_rgb;
+        term->set_text_fg_default = dummy_handle;
+        term->set_text_bg_default = dummy_handle;
+        term->move_character = dummy_handle_move_character;
+        term->revscroll = dummy_handle;
+        term->swap_palette = dummy_handle;
+        term->save_state = dummy_handle;
+        term->restore_state = dummy_handle;
+        term->double_buffer_flush = dummy_handle;
+        term->full_refresh = dummy_handle;
+        term->deinit = dummy_handle_deinit;
 
         term->raw_putchar = fallback_raw_putchar;
         term->clear = fallback_clear;

@@ -98,8 +98,8 @@ struct file_handle * gzip_open(struct file_handle * compressed) {
   /*  Depends on ext_mem_alloc returning zeroed memory.  */
   struct file_handle * ret = ext_mem_alloc(sizeof(struct file_handle));
   ret->fd = gh;
-  ret->read = (void *) gzip_read;
-  ret->close = (void *) gzip_close;
+  ret->read = gzip_read;
+  ret->close = gzip_close;
   ret->size = UINT64_MAX;
   ret->vol = compressed->vol;
   if (compressed->path != NULL && compressed->path_len > 0) {

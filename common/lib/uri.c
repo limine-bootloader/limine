@@ -421,8 +421,8 @@ struct file_handle *uri_open(char *uri, uint32_t type, bool allow_high_mem
 
             top = ext_mem_alloc(sizeof(struct file_handle));
             top->fd = src;
-            top->read = (void *)uri_high_read;
-            top->close = (void *)uri_high_close;
+            top->read = uri_high_read;
+            top->close = uri_high_close;
             top->size = compressed_size;
         } else
 #endif

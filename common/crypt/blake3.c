@@ -380,8 +380,8 @@ struct file_handle *blake3_open(struct file_handle *source) {
 
     struct file_handle *ret = ext_mem_alloc(sizeof(struct file_handle));
     ret->fd = h;
-    ret->read = (void *)blake3_read;
-    ret->close = (void *)blake3_close;
+    ret->read = blake3_read;
+    ret->close = blake3_close;
     ret->size = source->size;
     ret->vol = source->vol;
     if (source->path != NULL && source->path_len > 0) {
@@ -399,7 +399,7 @@ struct file_handle *blake3_open(struct file_handle *source) {
 }
 
 bool blake3_check_hash(struct file_handle *fh, void *reference_hash, size_t hash_size) {
-    if (fh->read != (void *)blake3_read) {
+    if (fh->read != blake3_read) {
         panic(false, "blake3_check_hash: not a blake3 filter handle");
     }
     if (hash_size > sizeof(((struct blake3_handle *)0)->digest)) {

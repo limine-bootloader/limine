@@ -756,8 +756,8 @@ struct file_handle *fat32_open(struct volume *part, const char *path) {
             }
 
             handle->fd = (void *)ret;
-            handle->read = (void *)fat32_read;
-            handle->close = (void *)fat32_close;
+            handle->read = fat32_read;
+            handle->close = fat32_close;
             handle->size = ret->size_bytes;
             handle->vol = part;
 #if defined (UEFI)

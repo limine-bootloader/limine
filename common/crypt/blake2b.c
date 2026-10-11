@@ -259,8 +259,8 @@ struct file_handle *blake2b_open(struct file_handle *source) {
 
     struct file_handle *ret = ext_mem_alloc(sizeof(struct file_handle));
     ret->fd = h;
-    ret->read = (void *)blake2b_read;
-    ret->close = (void *)blake2b_close;
+    ret->read = blake2b_read;
+    ret->close = blake2b_close;
     ret->size = source->size;
     ret->vol = source->vol;
     if (source->path != NULL && source->path_len > 0) {
@@ -278,7 +278,7 @@ struct file_handle *blake2b_open(struct file_handle *source) {
 }
 
 bool blake2b_check_hash(struct file_handle *fh, void *reference_hash) {
-    if (fh->read != (void *)blake2b_read) {
+    if (fh->read != blake2b_read) {
         panic(false, "blake2b_check_hash: not a blake2b filter handle");
     }
     struct blake2b_handle *h = fh->fd;

@@ -235,7 +235,7 @@ struct blake2b_handle {
 static uint64_t blake2b_read(struct file_handle *fh, void *buf, uint64_t loc, uint64_t count) {
     struct blake2b_handle *h = fh->fd;
     if (loc != h->pos) {
-        panic(false, "blake2b filter: non-sequential read (pos=%x, loc=%x)",
+        panic(false, "blake2b filter: non-sequential read (pos=%X, loc=%X)",
               (uint64_t)h->pos, loc);
     }
     uint64_t got = fread(h->source, buf, loc, count);

@@ -609,6 +609,8 @@ struct file_handle *iso9660_open(struct volume *vol, const char *path) {
             uint32_t extent_count = 1;
             uint64_t total_size = entry->extent_size.little;
             struct iso9660_directory_entry *e = entry;
+            // Interleaved file sections hold gaps between their file units.
+            uint8_t interleaved = entry->interleaved_unit_size | entry->interleaved_gap_size;
 
             // load_name returns false on the ISO-9660 fallback path but
             // still populates the buffer; treat an empty buffer as the only
@@ -631,6 +633,7 @@ struct file_handle *iso9660_open(struct volume *vol, const char *path) {
                 e = next;
                 extent_count++;
                 total_size += e->extent_size.little;
+                interleaved |= e->interleaved_unit_size | e->interleaved_gap_size;
 
                 // Sanity check to prevent runaway on corrupted directories
                 if (extent_count >= ISO9660_MAX_EXTENT_COUNT) {
@@ -638,7 +641,7 @@ struct file_handle *iso9660_open(struct volume *vol, const char *path) {
                 }
             }
 
-            if (e->flags & ISO9660_FLAG_MULTI_EXTENT) {
+            if (interleaved != 0 || (e->flags & ISO9660_FLAG_MULTI_EXTENT)) {
                 if (!first) {
                     pmm_free(current, current_size);
                 }

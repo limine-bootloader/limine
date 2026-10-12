@@ -557,7 +557,8 @@ finish:
     lea esp, [ebp+PROBS*2]
     movzx eax, byte [esp+12]
     mov ecx, [esp+16]
-    mov esp, OUTPUT
+    ; Puts entry()'s arguments on a 16-byte boundary, as the psABI requires.
+    mov esp, OUTPUT - 8
     xor ebp, ebp
     push ecx
     push eax

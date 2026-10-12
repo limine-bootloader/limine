@@ -39,7 +39,10 @@ common_spinup:
     mov gs, eax
     mov ss, eax
 
+    mov esi, esp
+    and esp, -16
     call flush_irqs
+    mov esp, esi
 
     xor eax, eax
     lldt ax

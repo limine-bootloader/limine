@@ -76,6 +76,60 @@ static void append_input_sequence_digit(int *value, int digit) {
     }
 }
 
+static int input_sequence_key(int final, int param) {
+    switch (final) {
+        case 'A': {
+            return GETCHAR_CURSOR_UP;
+        }
+        case 'B': {
+            return GETCHAR_CURSOR_DOWN;
+        }
+        case 'C': {
+            return GETCHAR_CURSOR_RIGHT;
+        }
+        case 'D': {
+            return GETCHAR_CURSOR_LEFT;
+        }
+        case 'F': {
+            return GETCHAR_END;
+        }
+        case 'H': {
+            return GETCHAR_HOME;
+        }
+    }
+
+    // rxvt sends `$`, `^`, or `@` in place of `~` when Shift, Ctrl, or both
+    // are held.
+    if (final != '~' && final != '$' && final != '^' && final != '@') {
+        return 0;
+    }
+
+    switch (param) {
+        case 1:
+        case 7: {
+            return GETCHAR_HOME;
+        }
+        case 3: {
+            return GETCHAR_DELETE;
+        }
+        case 4:
+        case 8: {
+            return GETCHAR_END;
+        }
+        case 5: {
+            return GETCHAR_PGUP;
+        }
+        case 6: {
+            return GETCHAR_PGDOWN;
+        }
+        case 21: {
+            return GETCHAR_F10;
+        }
+    }
+
+    return 0;
+}
+
 int getchar(void) {
     for (;;) {
         int ret = pit_sleep_and_quit_on_keypress(65535);
@@ -190,6 +244,7 @@ int _pit_sleep_and_quit_on_keypress(uint32_t ticks, uint32_t aux_poll,
 
 static int input_sequence(void) {
     int val = 0;
+    bool first_param = true;
 
     for (;;) {
         int ret = -1;
@@ -203,48 +258,18 @@ static int input_sequence(void) {
             return 0;
         }
 
-        switch (ret) {
-            case 'A':
-                return GETCHAR_CURSOR_UP;
-            case 'B':
-                return GETCHAR_CURSOR_DOWN;
-            case 'C':
-                return GETCHAR_CURSOR_RIGHT;
-            case 'D':
-                return GETCHAR_CURSOR_LEFT;
-            case 'F':
-                return GETCHAR_END;
-            case 'H':
-                return GETCHAR_HOME;
+        // Parameter bytes are 0x30-0x3f (ECMA-48 5.4), and parameters past the
+        // first only add modifiers.
+        if (ret < 0x30 || ret > 0x3f) {
+            return input_sequence_key(ret, val);
         }
 
-        if (ret > '9' || ret < '0') {
-            break;
+        if (ret > '9') {
+            first_param = false;
+        } else if (first_param) {
+            append_input_sequence_digit(&val, ret - '0');
         }
-
-        append_input_sequence_digit(&val, ret - '0');
     }
-
-    switch (val) {
-        case 1:
-        case 7: {
-            return GETCHAR_HOME;
-        }
-        case 3:
-            return GETCHAR_DELETE;
-        case 4:
-        case 8: {
-            return GETCHAR_END;
-        }
-        case 5:
-            return GETCHAR_PGUP;
-        case 6:
-            return GETCHAR_PGDOWN;
-        case 21:
-            return GETCHAR_F10;
-    }
-
-    return 0;
 }
 
 static int serial_input(void) {
@@ -361,6 +386,7 @@ static int input_sequence(bool ext,
     EFI_KEY_DATA kd;
 
     int val = 0;
+    bool first_param = true;
 
     for (;;) {
         if (ext == false) {
@@ -373,48 +399,18 @@ static int input_sequence(bool ext,
             return 0;
         }
 
-        switch (kd.Key.UnicodeChar) {
-            case 'A':
-                return GETCHAR_CURSOR_UP;
-            case 'B':
-                return GETCHAR_CURSOR_DOWN;
-            case 'C':
-                return GETCHAR_CURSOR_RIGHT;
-            case 'D':
-                return GETCHAR_CURSOR_LEFT;
-            case 'F':
-                return GETCHAR_END;
-            case 'H':
-                return GETCHAR_HOME;
+        // Parameter bytes are 0x30-0x3f (ECMA-48 5.4), and parameters past the
+        // first only add modifiers.
+        if (kd.Key.UnicodeChar < 0x30 || kd.Key.UnicodeChar > 0x3f) {
+            return input_sequence_key(kd.Key.UnicodeChar, val);
         }
 
-        if (kd.Key.UnicodeChar > '9' || kd.Key.UnicodeChar < '0') {
-            break;
+        if (kd.Key.UnicodeChar > '9') {
+            first_param = false;
+        } else if (first_param) {
+            append_input_sequence_digit(&val, kd.Key.UnicodeChar - '0');
         }
-
-        append_input_sequence_digit(&val, kd.Key.UnicodeChar - '0');
     }
-
-    switch (val) {
-        case 1:
-        case 7: {
-            return GETCHAR_HOME;
-        }
-        case 3:
-            return GETCHAR_DELETE;
-        case 4:
-        case 8: {
-            return GETCHAR_END;
-        }
-        case 5:
-            return GETCHAR_PGUP;
-        case 6:
-            return GETCHAR_PGDOWN;
-        case 21:
-            return GETCHAR_F10;
-    }
-
-    return 0;
 }
 
 static int sleep_ms_core(uint64_t milliseconds, bool deliver_mouse) {

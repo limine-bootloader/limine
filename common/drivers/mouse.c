@@ -336,9 +336,10 @@ static void pointer_draw_sprite(struct pointer_backing *bk) {
         return;
     }
 
-    uint32_t white = ((uint32_t)(0xff >> (8 - ctx->red_mask_size)) << ctx->red_mask_shift)
-                   | ((uint32_t)(0xff >> (8 - ctx->green_mask_size)) << ctx->green_mask_shift)
-                   | ((uint32_t)(0xff >> (8 - ctx->blue_mask_size)) << ctx->blue_mask_shift);
+    // Flanterm points each shift at the top 8 bits of its channel.
+    uint32_t white = (0xffu << ctx->red_mask_shift)
+                   | (0xffu << ctx->green_mask_shift)
+                   | (0xffu << ctx->blue_mask_shift);
     uint32_t black = 0;
 
     size_t w = POINTER_W * sx - clip_x, h = POINTER_H * sy - clip_y;

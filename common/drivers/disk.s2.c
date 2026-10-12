@@ -61,11 +61,24 @@ struct dap {
 static const size_t xfer_sizes[] = { 1, 2, 4, 8, 16, 24, 32, 48, 64 };
 static uint8_t *xfer_buf = NULL;
 
+// Some BIOSes fail a transfer that crosses a 64KiB physical boundary (EDD
+// information flags bit 0 clear), so a buffer that does is passed over.
+static uint8_t *xfer_buf_alloc(void) {
+    for (;;) {
+        uint8_t *buf = conv_mem_alloc(XFER_BUF_SIZE);
+
+        if ((uintptr_t)buf / 0x10000 == ((uintptr_t)buf + XFER_BUF_SIZE - 1) / 0x10000) {
+            return buf;
+        }
+    }
+}
+
 static size_t fastest_xfer_size(struct volume *volume) {
     struct dap dap = {0};
 
-    if (xfer_buf == NULL)
-        xfer_buf = conv_mem_alloc(XFER_BUF_SIZE);
+    if (xfer_buf == NULL) {
+        xfer_buf = xfer_buf_alloc();
+    }
 
     size_t fastest_size = 1;
     uint64_t last_speed = (uint64_t)-1;
@@ -115,8 +128,9 @@ int disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t c
     if (count * volume->sector_size > XFER_BUF_SIZE)
         panic(false, "XFER");
 
-    if (xfer_buf == NULL)
-        xfer_buf = conv_mem_alloc(XFER_BUF_SIZE);
+    if (xfer_buf == NULL) {
+        xfer_buf = xfer_buf_alloc();
+    }
 
     dap.size    = 16;
     dap.count   = count;
@@ -145,8 +159,9 @@ int disk_read_sectors(struct volume *volume, void *buf, uint64_t block, size_t c
 static bool detect_sector_size(struct volume *volume) {
     struct dap dap = {0};
 
-    if (xfer_buf == NULL)
-        xfer_buf = conv_mem_alloc(XFER_BUF_SIZE);
+    if (xfer_buf == NULL) {
+        xfer_buf = xfer_buf_alloc();
+    }
 
     dap.size    = 16;
     dap.count   = 1;

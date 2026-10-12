@@ -8,8 +8,8 @@
     into a freshly allocated XRGB8 pixel buffer. Each output pixel is a 32-bit
     little-endian word laid out as 0x00RRGGBB; the QOI alpha is dropped.
     On success, returns the buffer and writes the decoded width/height into
-    *out_w / *out_h. Returns NULL on malformed input. The returned buffer
-    must be released with qoi_free().  */
+    *out_w / *out_h. Returns NULL on malformed input or when out of memory.
+    The returned buffer must be released with qoi_free().  */
 uint8_t *qoi_decode(const void *src, size_t src_size,
     int *out_w, int *out_h);
 

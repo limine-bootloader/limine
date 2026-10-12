@@ -226,8 +226,16 @@ static int input_sequence(void) {
     }
 
     switch (val) {
+        case 1:
+        case 7: {
+            return GETCHAR_HOME;
+        }
         case 3:
             return GETCHAR_DELETE;
+        case 4:
+        case 8: {
+            return GETCHAR_END;
+        }
         case 5:
             return GETCHAR_PGUP;
         case 6:
@@ -388,8 +396,16 @@ static int input_sequence(bool ext,
     }
 
     switch (val) {
+        case 1:
+        case 7: {
+            return GETCHAR_HOME;
+        }
         case 3:
             return GETCHAR_DELETE;
+        case 4:
+        case 8: {
+            return GETCHAR_END;
+        }
         case 5:
             return GETCHAR_PGUP;
         case 6:

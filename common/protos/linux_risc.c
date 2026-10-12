@@ -304,7 +304,9 @@ static void prepare_device_tree_blob(struct boot_param *p) {
 static void add_framebuffer(struct fb_info *fb) {
     struct linux_efi_screen_info *table;
 
-    EFI_STATUS alloc_ret = gBS->AllocatePool(EfiLoaderData, sizeof(*table), (void **)&table);
+    // Memory of this type is preserved until ACPI is enabled (UEFI 2.11
+    // section 7.2), so the kernel cannot hand it out before copying the table.
+    EFI_STATUS alloc_ret = gBS->AllocatePool(EfiACPIReclaimMemory, sizeof(*table), (void **)&table);
     if (alloc_ret != EFI_SUCCESS) {
         panic(true, "linux: failed to allocate screen info table");
     }

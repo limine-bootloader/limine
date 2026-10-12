@@ -1546,7 +1546,7 @@ noreturn void reboot_to_fw_ui(void) {
             goto not_found;
         }
 
-        panic(true, "Failed to get OsIndications variable, status=%X", status);
+        panic(true, "Failed to get OsIndications variable, status=%X", (uint64_t)status);
     }
 
 not_found:;
@@ -1556,7 +1556,7 @@ not_found:;
         sizeof(new_os_indications), &new_os_indications);
 
     if (status != EFI_SUCCESS) {
-        panic(true, "Failed to set OsIndications variable, status=%X", status);
+        panic(true, "Failed to set OsIndications variable, status=%X", (uint64_t)status);
     }
 
     gRT->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);

@@ -228,7 +228,8 @@ void acpi_map_tables(void) {
     map_single_table((uintptr_t)xsdt, (uint32_t)-1);
 
     for (size_t i = 0; i < xsdt_entry_count; i++) {
-        uint64_t entry = ((uint64_t *)xsdt->ptrs_start)[i];
+        uint64_t entry;
+        memcpy(&entry, xsdt->ptrs_start + i * sizeof(entry), sizeof(entry));
         if (entry == 0)
             continue;
         struct sdt *sdt = (void *)(uintptr_t)entry;
@@ -250,7 +251,8 @@ no_xsdt:;
     map_single_table((uintptr_t)rsdt, (uint32_t)-1);
 
     for (size_t i = 0; i < rsdt_entry_count; i++) {
-        uint32_t entry = ((uint32_t *)rsdt->ptrs_start)[i];
+        uint32_t entry;
+        memcpy(&entry, rsdt->ptrs_start + i * sizeof(entry), sizeof(entry));
         if (entry == 0)
             continue;
         struct sdt *sdt = (void *)(uintptr_t)entry;

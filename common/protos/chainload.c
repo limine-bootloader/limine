@@ -136,13 +136,13 @@ noreturn void chainload(char *config, char *cmdline) {
     }
     if (gpt_guid_s != NULL) {
         struct guid guid;
-        if (!string_to_guid_be(&guid, gpt_guid_s)) {
+        if (!string_to_guid_mixed(&guid, gpt_guid_s)) {
             panic(true, "bios: Malformed GUID");
         }
 
         p = volume_get_by_guid(&guid);
         if (p == NULL) {
-            if (!string_to_guid_mixed(&guid, gpt_guid_s)) {
+            if (!string_to_guid_be(&guid, gpt_guid_s)) {
                 panic(true, "bios: Malformed GUID");
             }
 

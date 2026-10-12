@@ -471,6 +471,7 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
 #define PT_FLAG_MAT_CC  ((uint64_t)1 << 4)
 #define PT_FLAG_MAT_WUC ((uint64_t)1 << 5)
 #define PT_FLAG_HUGE    ((uint64_t)1 << 6)
+#define PT_FLAG_PRESENT ((uint64_t)1 << 7)
 #define PT_FLAG_WRITE   ((uint64_t)1 << 8)
 #define PT_FLAG_NX      ((uint64_t)1 << 62)
 #define PT_PADDR_MASK   ((uint64_t)0x0000FFFFFFFFF000)
@@ -538,7 +539,8 @@ void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_
 
     bool is_higher_half = virt_addr & ((uint64_t)1 << 63);
 
-    uint64_t real_flags = PT_FLAG_VALID;
+    // P never reaches the TLB, but the page walk checks it.
+    uint64_t real_flags = PT_FLAG_VALID | PT_FLAG_PRESENT;
     if (flags & VMM_FLAG_WRITE)
         real_flags |= PT_FLAG_DIRTY | PT_FLAG_WRITE;
     if (flags & VMM_FLAG_NOEXEC)

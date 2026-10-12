@@ -918,14 +918,23 @@ fail:
         block->sect_count = (drive->Media->LastBlock + 1) * (drive->Media->BlockSize / 512);
         block->max_partition = -1;
 
+        size_t granularity = 0;
         if (drive->Revision >= EFI_BLOCK_IO_PROTOCOL_REVISION3) {
-            block->fastest_xfer_size = drive->Media->OptimalTransferLengthGranularity;
+            granularity = drive->Media->OptimalTransferLengthGranularity;
         }
 
-        if (block->fastest_xfer_size == 0) {
+        // UEFI 2.11 13.9: the granularity is what transfers should be a
+        // multiple of, not a transfer size.
+        if (granularity == 0) {
             block->fastest_xfer_size = DEFAULT_FASTEST_XFER_SIZE;
-        } else if (block->fastest_xfer_size >= MAX_FASTEST_XFER_SIZE) {
+        } else if (granularity > MAX_FASTEST_XFER_SIZE) {
             block->fastest_xfer_size = MAX_FASTEST_XFER_SIZE;
+        } else {
+            block->fastest_xfer_size = ALIGN_UP((size_t)DEFAULT_FASTEST_XFER_SIZE, granularity,
+                panic(false, "disk: Transfer size overflow"));
+            if (block->fastest_xfer_size > MAX_FASTEST_XFER_SIZE) {
+                block->fastest_xfer_size = ALIGN_DOWN((size_t)MAX_FASTEST_XFER_SIZE, granularity);
+            }
         }
 
         if (gpt_get_guid(&block->guid, block)) {

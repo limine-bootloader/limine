@@ -211,7 +211,7 @@ static void init_riscv_acpi(void) {
             continue;
         }
 
-        if (strncmp("rv64", isa_string, 4) && strncmp("rv32", isa_string, 4)) {
+        if (strncasecmp("rv64", isa_string, 4) && strncasecmp("rv32", isa_string, 4)) {
             print("riscv: skipping hartid %U with invalid isa string: %s\n", (uint64_t)hartid, isa_string);
             continue;
         }
@@ -328,7 +328,7 @@ static void init_riscv_fdt(const void *fdt, bool entry_dtb) {
             continue;
         }
 
-        if (strncmp("rv64", isa_string, 4) && strncmp("rv32", isa_string, 4)) {
+        if (strncasecmp("rv64", isa_string, 4) && strncasecmp("rv32", isa_string, 4)) {
             print("riscv: skipping hartid %U with invalid isa string: %s\n", (uint64_t)hartid, isa_string);
             continue;
         }

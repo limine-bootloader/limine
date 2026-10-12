@@ -41,6 +41,7 @@ struct BE32_t { uint32_t little, big; } __attribute__((packed));
 // --- Directory entries ---
 struct iso9660_directory_entry {
     uint8_t length;
+    // In logical blocks, recorded at the start of the extent ahead of the data.
     uint8_t extended_attribute_length;
     struct BE32_t extent;
     struct BE32_t extent_size;
@@ -182,7 +183,7 @@ static bool iso9660_cache_root(struct volume *vol,
     }
 
     *root = ext_mem_alloc(*root_size);
-    uint64_t offset = (uint64_t)pv.root.extent.little * ISO9660_SECTOR_SIZE;
+    uint64_t offset = ((uint64_t)pv.root.extent.little + pv.root.extended_attribute_length) * ISO9660_SECTOR_SIZE;
     if (!volume_read(vol, *root, offset, *root_size)) {
         pmm_free(*root, *root_size);
         return false;
@@ -584,7 +585,7 @@ struct file_handle *iso9660_open(struct volume *vol, const char *path) {
             return NULL;    // Not found :(
         }
 
-        next_sector = entry->extent.little;
+        next_sector = entry->extent.little + entry->extended_attribute_length;
         next_size = entry->extent_size.little;
 
         if (*path != '\0' && !(entry->flags & ISO9660_FLAG_DIRECTORY)) {
@@ -648,7 +649,7 @@ struct file_handle *iso9660_open(struct volume *vol, const char *path) {
             // Second pass: populate extent array
             e = entry;
             for (uint32_t i = 0; i < extent_count; i++) {
-                ret->extents[i].LBA = e->extent.little;
+                ret->extents[i].LBA = e->extent.little + e->extended_attribute_length;
                 ret->extents[i].size = e->extent_size.little;
                 if (i + 1 < extent_count) {
                     struct iso9660_directory_entry *next = iso9660_next_entry(e, buffer_end);

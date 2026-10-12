@@ -350,6 +350,11 @@ Editor control options:
     `<width>x<height>x<bpp>`. If the resolution is not available, Limine will
     pick another one automatically. Omitting `<bpp>` will default to 32.
 
+  If the chainloaded application returns, as a UEFI Shell does when exited,
+  Limine does not go back to its menu: it exits in turn, passing the status and
+  exit data the application returned on to whatever started Limine, usually the
+  firmware's boot manager.
+
 * EFI Boot Entry protocol:
   * `entry` - The name of the EFI boot entry to reboot into.
 

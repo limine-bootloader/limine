@@ -12,7 +12,7 @@ section .text
 global menu
 extern _menu
 menu:
-    pop eax
+    mov ecx, [esp + 4]
 %ifdef UEFI
     call .get_got
 .get_got:
@@ -24,14 +24,15 @@ menu:
 %endif
     cmp dword [eax], 0
     jne .L2
+    and esp, -16
+    sub esp, 4
     mov [eax], esp
     jmp .L4
 
 .L2:
-    mov edi, [esp]
     mov esp, [eax]
-    push edi
 
 .L4:
-    push 0
+    mov dword [esp], 0
+    mov [esp + 4], ecx
     jmp _menu

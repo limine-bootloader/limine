@@ -150,7 +150,8 @@ Miscellaneous:
 * `hash_mismatch_panic` - If set to `no`, do not panic if there is a hash
   mismatch for a file. A warning is printed and Limine then waits for a
   keypress: `Y` continues the boot, any other key returns to the menu. Forced
-  to `yes` when Secure Boot is active and a config hash is enrolled.
+  to `yes` when Secure Boot is active and a config hash is enrolled. A
+  wallpaper or font whose hash does not match is skipped either way.
 * `measured_boot` - If set to `yes`, opt in to measured boot. Forced to `yes`
   when Secure Boot is active and a config hash is enrolled, and forced back to
   `no` if the firmware does not expose a TPM 2.0/CC measurement interface. See

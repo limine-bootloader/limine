@@ -14,6 +14,16 @@
 #include <crypt/hash.h>
 #include <compress/gzip.h>
 
+static bool optional_resource = false;
+
+// Only returns for an optional resource, which the caller then backs out of.
+#define URI_ERROR(FMT, ...) do { \
+    if (!optional_resource) { \
+        panic(true, FMT, ##__VA_ARGS__); \
+    } \
+    print(FMT "\n", ##__VA_ARGS__); \
+} while (0)
+
 // A URI takes the form of: resource(root):/path#hash
 // The following function splits up a URI into its components.
 // Note: Returns pointers into a static buffer. Callers must copy values
@@ -24,7 +34,8 @@ bool uri_resolve(char *uri, char **resource, char **root, char **path, char **ha
 
     size_t length = strlen(uri) + 1;
     if (length > URI_BUF_SIZE) {
-        panic(true, "uri_resolve: URI too long (max %u)", URI_BUF_SIZE - 1);
+        URI_ERROR("uri_resolve: URI too long (max %u)", URI_BUF_SIZE - 1);
+        return false;
     }
     memcpy(buf, uri, length);
     uri = buf;
@@ -76,14 +87,14 @@ bool uri_resolve(char *uri, char **resource, char **root, char **path, char **ha
 
         size_t hash_len = strlen(uri + i);
         if (!hash_type_from_hex_length(NULL, NULL, hash_len)) {
-            panic(true, "Hash must be 64 BLAKE3, 128 BLAKE2b, or 256 BLAKE3 characters long");
+            URI_ERROR("Hash must be 64 BLAKE3, 128 BLAKE2b, or 256 BLAKE3 characters long");
             return false;
         }
 
         for (size_t j = 0; j < hash_len; j++) {
             char c = uri[i + j];
             if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
-                panic(true, "Hash contains invalid character at position %d", (int)j);
+                URI_ERROR("Hash contains invalid character at position %d", (int)j);
                 return false;
             }
         }
@@ -104,11 +115,13 @@ static bool parse_bios_partition(char *loc, int *drive, int *partition) {
         if (loc[i] == ':') {
             loc[i] = 0;
             if (*loc == 0) {
-                panic(true, "Drive number cannot be omitted for hdd():/ and odd():/");
+                URI_ERROR("Drive number cannot be omitted for hdd():/ and odd():/");
+                return false;
             } else {
                 val = strtoui(loc, NULL, 10);
                 if (val < 1 || val > 256) {
-                    panic(true, "Drive number outside range 1-256");
+                    URI_ERROR("Drive number outside range 1-256");
+                    return false;
                 }
                 *drive = val;
             }
@@ -119,7 +132,8 @@ static bool parse_bios_partition(char *loc, int *drive, int *partition) {
 
     val = strtoui(loc, NULL, 10);
     if (val > 256) {
-        panic(true, "Partition number outside range 0-256");
+        URI_ERROR("Partition number outside range 0-256");
+        return false;
     }
     *partition = val;
 
@@ -187,7 +201,8 @@ static struct file_handle *uri_tftp_dispatch(char *root, char *path) {
         ip = 0;
     } else {
         if (inet_pton(root, &ip)) {
-            panic(true, "tftp: Invalid ipv4 address: %s", root);
+            URI_ERROR("tftp: Invalid ipv4 address: %s", root);
+            return NULL;
         }
     }
 
@@ -208,7 +223,8 @@ static struct file_handle *uri_boot_dispatch(char *s_part, char *path) {
     if (s_part[0] != '\0') {
         uint64_t val = strtoui(s_part, NULL, 10);
         if (val > 256) {
-            panic(true, "Partition number outside range 0-256");
+            URI_ERROR("Partition number outside range 0-256");
+            return NULL;
         }
         partition = val;
     } else {
@@ -278,10 +294,12 @@ static void uri_high_close(struct file_handle *fh) {
 }
 #endif
 
-static void uri_hash_mismatch(const struct hash_reference *hash_ref, const char *uri) {
-    if (hash_mismatch_panic) {
-        panic(true, "%s hash for URI `%#` does not match!",
-              hash_type_name(hash_ref->type), uri);
+// Returns whether to use the resource anyway.
+static bool uri_hash_mismatch(const struct hash_reference *hash_ref, const char *uri) {
+    if (hash_mismatch_panic || optional_resource) {
+        URI_ERROR("%s hash for URI `%#` does not match!",
+                  hash_type_name(hash_ref->type), uri);
+        return false;
     }
 
     print("WARNING: %s hash for URI `%#` does not match!\n"
@@ -293,6 +311,7 @@ static void uri_hash_mismatch(const struct hash_reference *hash_ref, const char 
         menu(false);
     }
     print("\n");
+    return true;
 }
 
 struct file_handle *uri_open(char *uri, uint32_t type, bool allow_high_mem
@@ -315,7 +334,8 @@ struct file_handle *uri_open(char *uri, uint32_t type, bool allow_high_mem
     }
 
     if (resource == NULL) {
-        panic(true, "No resource specified for URI `%#`.", uri);
+        URI_ERROR("No resource specified for URI `%#`.", uri);
+        return NULL;
     }
 
     bool gz_compressed = *resource == '$';
@@ -338,7 +358,8 @@ struct file_handle *uri_open(char *uri, uint32_t type, bool allow_high_mem
     } else if (!strcmp(resource, "tftp")) {
         raw = uri_tftp_dispatch(root, path);
     } else {
-        panic(true, "Resource `%s` not valid.", resource);
+        URI_ERROR("Resource `%s` not valid.", resource);
+        return NULL;
     }
 
     if (raw == NULL) {
@@ -346,13 +367,17 @@ struct file_handle *uri_open(char *uri, uint32_t type, bool allow_high_mem
     }
 
     if (secure_boot_active && hash == NULL) {
-        panic(true, "Secure Boot is active and URI `%#` has no associated hash!", uri);
+        URI_ERROR("Secure Boot is active and URI `%#` has no associated hash!", uri);
+        fclose(raw);
+        return NULL;
     }
 
     struct hash_reference hash_ref;
     if (hash != NULL) {
         if (!hash_reference_from_hex(&hash_ref, hash, strlen(hash))) {
-            panic(true, "Invalid hash for URI `%#`", uri);
+            URI_ERROR("Invalid hash for URI `%#`", uri);
+            fclose(raw);
+            return NULL;
         }
     }
 
@@ -382,7 +407,10 @@ struct file_handle *uri_open(char *uri, uint32_t type, bool allow_high_mem
         // hash_buffer() takes a size_t, which is 32 bits on ia32.
         size_t compressed_size = raw->size;
         if (compressed_size != raw->size) {
-            panic(true, "Resource `%#` is too large to hash", uri);
+            URI_ERROR("Resource `%#` is too large to hash", uri);
+            fclose(raw);
+            pmm_free(raw_path_copy, raw_path_len);
+            return NULL;
         }
 
         // Site it where the caller would have let the payload go, rather than
@@ -410,8 +438,11 @@ struct file_handle *uri_open(char *uri, uint32_t type, bool allow_high_mem
 
             pmm_free(pool, 0x100000);
 
-            if (!hash_check(hashed, &hash_ref)) {
-                uri_hash_mismatch(&hash_ref, uri);
+            if (!hash_check(hashed, &hash_ref) && !uri_hash_mismatch(&hash_ref, uri)) {
+                fclose(hashed);
+                uri_release_range(compressed_addr, compressed_size);
+                pmm_free(raw_path_copy, raw_path_len);
+                return NULL;
             }
             fclose(hashed);
 
@@ -435,8 +466,11 @@ struct file_handle *uri_open(char *uri, uint32_t type, bool allow_high_mem
             uint8_t digest[HASH_MAX_BYTES];
             hash_buffer(hash_ref.type, digest, hash_ref.digest_size,
                         compressed_low, compressed_size);
-            if (memcmp(digest, hash_ref.digest, hash_ref.digest_size) != 0) {
-                uri_hash_mismatch(&hash_ref, uri);
+            if (memcmp(digest, hash_ref.digest, hash_ref.digest_size) != 0
+             && !uri_hash_mismatch(&hash_ref, uri)) {
+                uri_release_range(compressed_addr, compressed_size);
+                pmm_free(raw_path_copy, raw_path_len);
+                return NULL;
             }
 
             // A carrier for the decoder; the metadata the caller gets back was
@@ -626,8 +660,12 @@ grew:;
     }
 
     // Finalise the hash check now that every byte has flowed through the filter.
-    if (hash_fh != NULL && !hash_check(hash_fh, &hash_ref)) {
-        uri_hash_mismatch(&hash_ref, uri);
+    if (hash_fh != NULL && !hash_check(hash_fh, &hash_ref)
+     && !uri_hash_mismatch(&hash_ref, uri)) {
+        fclose(top);
+        uri_release_range(buf_addr, buf_len);
+        pmm_free(raw_path_copy, raw_path_len);
+        return NULL;
     }
 
     // Close the filter chain. fclose cascades.
@@ -653,4 +691,20 @@ grew:;
     out->pxe_port = raw_pxe_port;
 
     return out;
+}
+
+struct file_handle *uri_open_optional(char *uri, uint32_t type, bool allow_high_mem
+#if defined (__i386__)
+    , void (*memcpy_to_64)(uint64_t dst, void *src, size_t count)
+    , void (*memcpy_from_64)(void *dst, uint64_t src, size_t count)
+#endif
+) {
+    optional_resource = true;
+    struct file_handle *ret = uri_open(uri, type, allow_high_mem
+#if defined (__i386__)
+        , memcpy_to_64, memcpy_from_64
+#endif
+    );
+    optional_resource = false;
+    return ret;
 }

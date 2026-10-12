@@ -168,8 +168,12 @@ enter_in_el2:
     isb
 
     // Must follow the write above: VMALLE1 reaches EL2&0 only once E2H and
-    // TGE are both set, and EL1&0 before that.
+    // TGE are both set, and EL1&0 before that. E2H may be cached in TLB
+    // entries, hence ALLE2, held back until the new tables are in force as
+    // the firmware's TCR_EL2 value is misread under E2H, so nothing may be
+    // re-walked through it.
     tlbi vmalle1
+    tlbi alle2
     dsb nsh
     isb
 

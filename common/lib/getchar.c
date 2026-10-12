@@ -242,7 +242,7 @@ int _pit_sleep_and_quit_on_keypress(uint32_t ticks, uint32_t aux_poll,
 // BDA tick counter at 0x46c wraps at midnight.
 #define BDA_TICKS_PER_DAY 0x1800b0
 
-static int input_sequence(void) {
+static int input_sequence(bool ss3) {
     int val = 0;
     bool first_param = true;
 
@@ -258,9 +258,9 @@ static int input_sequence(void) {
             return 0;
         }
 
-        // Parameter bytes are 0x30-0x3f (ECMA-48 5.4), and parameters past the
-        // first only add modifiers.
-        if (ret < 0x30 || ret > 0x3f) {
+        // Parameter bytes are 0x30-0x3f (ECMA-48 5.4), SS3 takes none, and
+        // parameters past the first only add modifiers.
+        if (ss3 || ret < 0x30 || ret > 0x3f) {
             return input_sequence_key(ret, val);
         }
 
@@ -289,8 +289,8 @@ again:
             if (ret == -1) {
                 return GETCHAR_ESCAPE;
             }
-            if (ret == '[') {
-                return input_sequence();
+            if (ret == '[' || ret == 'O') {
+                return input_sequence(ret == 'O');
             }
             goto again;
         case 0x7f:
@@ -379,7 +379,7 @@ int pit_sleep_and_quit_on_keypress(int seconds) {
 #endif
 
 #if defined (UEFI)
-static int input_sequence(bool ext,
+static int input_sequence(bool ss3, bool ext,
                    EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *exproto,
                    EFI_SIMPLE_TEXT_IN_PROTOCOL *sproto) {
     EFI_STATUS status;
@@ -399,9 +399,9 @@ static int input_sequence(bool ext,
             return 0;
         }
 
-        // Parameter bytes are 0x30-0x3f (ECMA-48 5.4), and parameters past the
-        // first only add modifiers.
-        if (kd.Key.UnicodeChar < 0x30 || kd.Key.UnicodeChar > 0x3f) {
+        // Parameter bytes are 0x30-0x3f (ECMA-48 5.4), SS3 takes none, and
+        // parameters past the first only add modifiers.
+        if (ss3 || kd.Key.UnicodeChar < 0x30 || kd.Key.UnicodeChar > 0x3f) {
             return input_sequence_key(kd.Key.UnicodeChar, val);
         }
 
@@ -526,8 +526,8 @@ again:
             goto restart;
         }
 
-        if (kd.Key.UnicodeChar == '[') {
-            return input_sequence(!use_sproto, exproto, sproto);
+        if (kd.Key.UnicodeChar == '[' || kd.Key.UnicodeChar == 'O') {
+            return input_sequence(kd.Key.UnicodeChar == 'O', !use_sproto, exproto, sproto);
         }
 
         goto restart;

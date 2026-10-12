@@ -22,10 +22,22 @@ static bool cache_block(struct volume *volume, uint64_t block) {
 
     volume->cache_status = CACHE_NOT_READY;
 
-    if (volume->cache == NULL)
-        volume->cache =
-            ext_mem_alloc(CHECKED_MUL((uint64_t)volume->fastest_xfer_size, (uint64_t)volume->sector_size,
-                panic(false, "cache_block: block size overflow")));
+    if (volume->cache == NULL) {
+        size_t alignment = 4096;
+#if defined (UEFI)
+        // ReadBlocks fills the cache directly, so it must be aligned to IoAlign,
+        // which UEFI 2.11 13.9 limits to 0, 1, or a power of two: any other
+        // value is taken as 1, as for the unique sector pool in drivers/disk.
+        uint32_t io_align = volume->block_io->Media->IoAlign;
+        if (io_align > alignment && (io_align & (io_align - 1)) == 0) {
+            alignment = io_align;
+        }
+#endif
+        volume->cache = ext_mem_alloc_type_aligned(
+            CHECKED_MUL((uint64_t)volume->fastest_xfer_size, (uint64_t)volume->sector_size,
+                panic(false, "cache_block: block size overflow")),
+            MEMMAP_BOOTLOADER_RECLAIMABLE, alignment);
+    }
 
     if (volume->first_sect % (volume->sector_size / 512)) {
         return false;

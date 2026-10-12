@@ -422,6 +422,10 @@ enum {
 // also the form ACPI table 5.36 gives the MADT's own field.
 #define MPIDR_AFFINITY_MASK ((uint64_t)0xff00ffffff)
 
+// Nothing past MPIDR is read, and GICC structures from before the fields
+// that follow it end there.
+#define GICC_USED_LENGTH (offsetof(struct madt_gicc, mpidr) + sizeof(uint64_t))
+
 static uint32_t psci_cpu_on = 0xC4000003;
 
 static bool try_start_ap(int boot_method, uint64_t method_ptr,
@@ -595,8 +599,9 @@ static struct limine_mp_info *try_acpi_smp(size_t   *cpu_count,
         switch (*madt_ptr) {
             case 11: {
                 // GIC CPU Interface
-                if (*(madt_ptr + 1) < sizeof(struct madt_gicc))
+                if (*(madt_ptr + 1) < GICC_USED_LENGTH) {
                     continue;
+                }
 
                 struct madt_gicc *gicc = (void *)madt_ptr;
 
@@ -627,8 +632,9 @@ static struct limine_mp_info *try_acpi_smp(size_t   *cpu_count,
         switch (*madt_ptr) {
             case 11: {
                 // GIC CPU Interface
-                if (*(madt_ptr + 1) < sizeof(struct madt_gicc))
+                if (*(madt_ptr + 1) < GICC_USED_LENGTH) {
                     continue;
+                }
 
                 struct madt_gicc *gicc = (void *)madt_ptr;
 

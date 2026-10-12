@@ -280,6 +280,10 @@ static const uint8_t builtin_font[] = {
 
 static struct image *background;
 
+// Kept for the rest of the menu session, whose rewind resets it, so that the
+// parameters handed to an executable reproduce the wallpaper the menu showed.
+static size_t wallpaper_index = (size_t)-1;
+
 static size_t margin = 64;
 static size_t margin_gradient = 4;
 
@@ -609,7 +613,10 @@ static void gterm_parse_config(char *config, struct gterm_config *cfg) {
 
     background = NULL;
     if (wallpaper_count > 0) {
-        char *background_path = config_get_value(config, rand32() % wallpaper_count, "WALLPAPER");
+        if (wallpaper_index >= wallpaper_count) {
+            wallpaper_index = rand32() % wallpaper_count;
+        }
+        char *background_path = config_get_value(config, wallpaper_index, "WALLPAPER");
         if (background_path != NULL) {
             if (secure_boot_active && strchr(background_path, '#') == NULL) {
                 print("Wallpaper skipped: Secure Boot is active and no hash is associated.\n");

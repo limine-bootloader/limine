@@ -87,14 +87,16 @@ Miscellaneous:
 * `timeout` - Specifies the timeout in seconds before the selected *entry* is
   automatically booted (see `default_entry` option). Decimal values such as
   `0.25` are accepted, and the timeout is capped at `9999` seconds. If set to
-  `no`, disable automatic boot. If set to `0`, boot the selected entry
-  instantly, without showing the menu. A value that is neither `no` nor a
-  number is treated as `0`. On UEFI, the Boot Loader Interface's
-  `LoaderConfigTimeoutOneShot` EFI variable, where set (for example by
-  `systemctl reboot --boot-loader-menu=`), overrides this option for the boot
-  that consumes it, and the persistent `LoaderConfigTimeout` variable (for
-  example from `bootctl set-timeout`) is honoured only where this option is
-  not set.
+  `no` (exactly, in lowercase), disable automatic boot. If set to `0`, boot the
+  selected entry instantly, without showing the menu. Any other value is read
+  from its leading digits and an optional `.` followed by fractional digits,
+  ignoring whatever follows: `10s` is 10 seconds, `1e3` is 1 second, and `2,5`
+  is 2 seconds. A value without such digits, such as `No`, is treated as `0`.
+  On UEFI, the Boot Loader Interface's `LoaderConfigTimeoutOneShot` EFI
+  variable, where set (for example by `systemctl reboot --boot-loader-menu=`),
+  overrides this option for the boot that consumes it, and the persistent
+  `LoaderConfigTimeout` variable (for example from `bootctl set-timeout`) is
+  honoured only where this option is not set.
 * `quiet` - If set to `yes`, enable quiet mode, where all screen output except
   panics and important warnings is suppressed. If `timeout` is neither `0` nor
   `no`, the `timeout` still occurs, and pressing any key during the timeout

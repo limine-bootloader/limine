@@ -437,6 +437,32 @@ static void prepare_efi_tables(struct boot_param *p, char *config) {
         }
     }
 
+#if defined (__loongarch__)
+    // The kernel finds a device tree only in its own image or in this table.
+    // With either key set, get_device_tree_blob() loaded the tree from it or
+    // panicked.
+    if (config_get_value(config, 0, "dtb_path") != NULL
+     || config_get_value(NULL, 0, "global_dtb") != NULL) {
+        size_t dtb_size = fdt_totalsize(p->dtb);
+        void *dtb_table;
+
+        // Preserved until ACPI is enabled (UEFI 2.11 section 7.2), unlike the
+        // memory the tree was built in.
+        ret = gBS->AllocatePool(EfiACPIReclaimMemory, dtb_size, &dtb_table);
+        if (ret != EFI_SUCCESS) {
+            panic(true, "linux: failed to allocate device tree table");
+        }
+
+        memcpy(dtb_table, p->dtb, dtb_size);
+
+        EFI_GUID dtb_table_guid = EFI_DTB_TABLE_GUID;
+        ret = gBS->InstallConfigurationTable(&dtb_table_guid, dtb_table);
+        if (ret != EFI_SUCCESS) {
+            panic(true, "linux: failed to install device tree table: '%X'", (uint64_t)ret);
+        }
+    }
+#endif
+
     linux_install_efi_tpm_event_log();
     efi_exit_boot_services();
 }
@@ -457,6 +483,9 @@ static void mark_runtime_unmapped(EFI_MEMORY_DESCRIPTOR *map) {
 #endif
 
 static void prepare_mmap(struct boot_param *p) {
+    // The LoongArch kernel reads the map from its configuration table, and any
+    // tree it gets was copied out before ExitBootServices().
+#if !defined (__loongarch__)
     {
         void *dtb = p->dtb;
         int ret = fdt_set_chosen_uint64(dtb, "linux,uefi-mmap-start", (uint64_t)efi_mmap);
@@ -479,6 +508,7 @@ static void prepare_mmap(struct boot_param *p) {
             panic(true, "linux: failed to set UEFI memory map descriptor version: '%s'", fdt_strerror(ret));
         }
     }
+#endif
 
     if (efi_mmap_size > p->memmap->buff_size - sizeof(struct linux_efi_boot_memmap)) {
         panic(false, "linux: UEFI memory map outgrew its configuration table");

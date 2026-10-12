@@ -388,7 +388,29 @@ static struct volume *pxe_from_efi_handle(EFI_HANDLE efi_handle) {
 
 #define UNIQUE_SECTOR_POOL_SIZE 65536
 static uint8_t *unique_sector_pool;
+static size_t unique_sector_pool_alignment = 0;
 static bool unique_sectors_calculated = false;
+
+// ReadBlocks buffers must be aligned to IoAlign, which UEFI 2.11 13.9 limits
+// to 0, 1, or a power of two: any other value is taken as 1, as for the volume
+// caches. The pool is shared, so it moves when a device needs more alignment.
+static void align_unique_sector_pool(EFI_BLOCK_IO *block_io) {
+    size_t alignment = 4096;
+    uint32_t io_align = block_io->Media->IoAlign;
+    if (io_align > alignment && (io_align & (io_align - 1)) == 0) {
+        alignment = io_align;
+    }
+
+    if (alignment <= unique_sector_pool_alignment) {
+        return;
+    }
+
+    // The allocation was rounded up to its alignment, both powers of two.
+    pmm_free(unique_sector_pool, MAX((size_t)UNIQUE_SECTOR_POOL_SIZE, unique_sector_pool_alignment));
+    unique_sector_pool = ext_mem_alloc_type_aligned(UNIQUE_SECTOR_POOL_SIZE,
+        MEMMAP_BOOTLOADER_RECLAIMABLE, alignment);
+    unique_sector_pool_alignment = alignment;
+}
 
 static void find_unique_sectors(void);
 
@@ -650,6 +672,8 @@ static struct volume *volume_from_efi_handle(EFI_HANDLE efi_handle, bool cdrom_m
         // the pool, since find_unique_sectors() uses the same buffer.
         find_unique_sectors();
 
+        align_unique_sector_pool(block_io);
+
         status = block_io->ReadBlocks(block_io, block_io->Media->MediaId,
                                       0,
                                       UNIQUE_SECTOR_POOL_SIZE,
@@ -700,6 +724,8 @@ static void find_unique_sectors(void) {
         if (volume_index[i]->sect_count * 512 < UNIQUE_SECTOR_POOL_SIZE) {
             continue;
         }
+
+        align_unique_sector_pool(volume_index[i]->block_io);
 
         status = volume_index[i]->block_io->ReadBlocks(
                             volume_index[i]->block_io,
@@ -814,8 +840,6 @@ static bool should_connect_storage_controller(EFI_HANDLE efi_handle) {
 void disk_create_index(void) {
     EFI_STATUS status;
 
-    unique_sector_pool = ext_mem_alloc(UNIQUE_SECTOR_POOL_SIZE);
-
     // Connect the storage controllers the firmware may have left unconnected (see
     // should_connect_storage_controller() and ticket #598), recursively so that
     // their disks and partitions appear, without pulling in unrelated slow drivers.
@@ -885,6 +909,8 @@ fail:
          || drive->Media->BlockSize > UNIQUE_SECTOR_POOL_SIZE) {
             continue;
         }
+
+        align_unique_sector_pool(drive);
 
         // Read test to ensure device is responsive (skipping this causes hangs on some systems)
         status = drive->ReadBlocks(drive, drive->Media->MediaId, 0, drive->Media->BlockSize, unique_sector_pool);

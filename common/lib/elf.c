@@ -50,6 +50,7 @@
 #define SHT_RELA     0x00000004
 #define SHN_UNDEF    0x00000000
 #define SHN_ABS      0x0000fff1
+#define SHN_XINDEX 0x0000ffff
 #define STB_WEAK     0x00000002
 #define R_X86_64_NONE      0x00000000
 #define R_AARCH64_NONE     0x00000000
@@ -228,6 +229,65 @@ int elf_bits(uint8_t *elf, size_t file_size) {
     }
 }
 
+// The gABI moves a section count or name string table index that reaches
+// SHN_LORESERVE into section header 0, as its sh_size or sh_link.
+static bool elf64_section_numbering(uint8_t *elf, size_t file_size, struct elf64_hdr *hdr,
+        uint32_t *sh_num, uint32_t *shstrndx) {
+    *sh_num = hdr->sh_num;
+    *shstrndx = hdr->shstrndx;
+
+    if (hdr->shoff == 0 || (hdr->sh_num != 0 && hdr->shstrndx != SHN_XINDEX)) {
+        return true;
+    }
+
+    if (hdr->shdr_size < sizeof(struct elf64_shdr)
+     || hdr->shoff > file_size || sizeof(struct elf64_shdr) > file_size - hdr->shoff) {
+        return false;
+    }
+
+    struct elf64_shdr *shdr = (void *)elf + hdr->shoff;
+
+    if (hdr->sh_num == 0) {
+        if (shdr->sh_size > UINT32_MAX) {
+            return false;
+        }
+        *sh_num = shdr->sh_size;
+    }
+
+    if (hdr->shstrndx == SHN_XINDEX) {
+        *shstrndx = shdr->sh_link;
+    }
+
+    return true;
+}
+
+static bool elf32_section_numbering(uint8_t *elf, size_t file_size, struct elf32_hdr *hdr,
+        uint32_t *sh_num, uint32_t *shstrndx) {
+    *sh_num = hdr->sh_num;
+    *shstrndx = hdr->shstrndx;
+
+    if (hdr->shoff == 0 || (hdr->sh_num != 0 && hdr->shstrndx != SHN_XINDEX)) {
+        return true;
+    }
+
+    if (hdr->shdr_size < sizeof(struct elf32_shdr)
+     || hdr->shoff > file_size || sizeof(struct elf32_shdr) > file_size - hdr->shoff) {
+        return false;
+    }
+
+    struct elf32_shdr *shdr = (void *)elf + hdr->shoff;
+
+    if (hdr->sh_num == 0) {
+        *sh_num = shdr->sh_size;
+    }
+
+    if (hdr->shstrndx == SHN_XINDEX) {
+        *shstrndx = shdr->sh_link;
+    }
+
+    return true;
+}
+
 struct elf_section_hdr_info elf64_section_hdr_info(uint8_t *elf, size_t file_size) {
     struct elf_section_hdr_info info = {0};
 
@@ -235,14 +295,19 @@ struct elf_section_hdr_info elf64_section_hdr_info(uint8_t *elf, size_t file_siz
 
     elf64_validate(hdr);
 
-    if (CHECKED_ADD((uint64_t)hdr->sh_num * hdr->shdr_size,
+    uint32_t sh_num, shstrndx;
+    if (!elf64_section_numbering(elf, file_size, hdr, &sh_num, &shstrndx)) {
+        return info;
+    }
+
+    if (CHECKED_ADD((uint64_t)sh_num * hdr->shdr_size,
             hdr->shoff, return info) > file_size) {
         return info;
     }
 
-    info.num = hdr->sh_num;
+    info.num = sh_num;
     info.section_entry_size = hdr->shdr_size;
-    info.str_section_idx = hdr->shstrndx;
+    info.str_section_idx = shstrndx;
     info.section_offset = hdr->shoff;
 
     return info;
@@ -255,14 +320,19 @@ struct elf_section_hdr_info elf32_section_hdr_info(uint8_t *elf, size_t file_siz
 
     elf32_validate(hdr);
 
-    if (CHECKED_ADD((uint64_t)hdr->sh_num * hdr->shdr_size,
+    uint32_t sh_num, shstrndx;
+    if (!elf32_section_numbering(elf, file_size, hdr, &sh_num, &shstrndx)) {
+        return info;
+    }
+
+    if (CHECKED_ADD((uint64_t)sh_num * hdr->shdr_size,
             hdr->shoff, return info) > file_size) {
         return info;
     }
 
-    info.num = hdr->sh_num;
+    info.num = sh_num;
     info.section_entry_size = hdr->shdr_size;
-    info.str_section_idx = hdr->shstrndx;
+    info.str_section_idx = shstrndx;
     info.section_offset = hdr->shoff;
 
     return info;
@@ -795,7 +865,8 @@ bool elf64_load_section(uint8_t *elf, size_t file_size, void *buffer, const char
 
     elf64_validate(hdr);
 
-    if (hdr->sh_num == 0) {
+    uint32_t sh_num, shstrndx;
+    if (!elf64_section_numbering(elf, file_size, hdr, &sh_num, &shstrndx) || sh_num == 0) {
         return false;
     }
 
@@ -803,19 +874,19 @@ bool elf64_load_section(uint8_t *elf, size_t file_size, void *buffer, const char
         panic(true, "elf: shdr_size < sizeof(struct elf64_shdr)");
     }
 
-    if (hdr->shstrndx >= hdr->sh_num) {
+    if (shstrndx == SHN_UNDEF || shstrndx >= sh_num) {
         return false;
     }
 
     // Validate section header table is within file bounds
     uint64_t shdr_table_end = CHECKED_ADD(hdr->shoff,
-        CHECKED_MUL((uint64_t)hdr->sh_num, (uint64_t)hdr->shdr_size, return false),
+        CHECKED_MUL((uint64_t)sh_num, (uint64_t)hdr->shdr_size, return false),
         return false);
     if (shdr_table_end > file_size) {
         return false;
     }
 
-    struct elf64_shdr *shstrtab = (void *)elf + (hdr->shoff + hdr->shstrndx * hdr->shdr_size);
+    struct elf64_shdr *shstrtab = (void *)elf + (hdr->shoff + (uint64_t)shstrndx * hdr->shdr_size);
 
     // Validate shstrtab offset and size are within file bounds
     if (shstrtab->sh_offset >= file_size || shstrtab->sh_size > file_size - shstrtab->sh_offset) {
@@ -824,7 +895,7 @@ bool elf64_load_section(uint8_t *elf, size_t file_size, void *buffer, const char
 
     char *names = (void *)elf + shstrtab->sh_offset;
 
-    for (uint16_t i = 0; i < hdr->sh_num; i++) {
+    for (uint64_t i = 0; i < sh_num; i++) {
         struct elf64_shdr *section = (void *)elf + (hdr->shoff + i * hdr->shdr_size);
 
         // Validate sh_name is within the string table

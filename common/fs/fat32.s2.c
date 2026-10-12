@@ -4,6 +4,7 @@
 #include <drivers/disk.h>
 #include <lib/libc.h>
 #include <lib/print.h>
+#include <lib/utf.h>
 #include <mm/pmm.h>
 #include <stdbool.h>
 
@@ -414,18 +415,6 @@ static uint8_t fat32_lfn_checksum(const char *sfn) {
     return sum;
 }
 
-// Copy ucs-2 characters to char*, with bounds checking
-static void fat32_lfncpy(char* destination, size_t dest_size, size_t dest_offset,
-                         const void* source, unsigned int size) {
-    for (unsigned int i = 0; i < size; i++) {
-        if (dest_offset + i >= dest_size) {
-            return;  // Prevent buffer overflow
-        }
-        // ignore high bytes
-        *(((uint8_t*) destination) + dest_offset + i) = *(((uint8_t*) source) + (i * 2));
-    }
-}
-
 static bool fat32_filename_to_8_3(char *dest, const char *src) {
     int i = 0, j = 0;
     bool ext = false;
@@ -456,7 +445,7 @@ static bool fat32_filename_to_8_3(char *dest, const char *src) {
 
 static int fat32_open_in(struct fat32_context* context, struct fat32_directory_entry* directory, struct fat32_directory_entry* file, const char* name) {
     size_t block_size = context->sectors_per_cluster * context->bytes_per_sector;
-    char current_lfn[FAT32_LFN_MAX_FILENAME_LENGTH] = {0};
+    uint16_t current_lfn[FAT32_LFN_MAX_ENTRIES * 13];
     unsigned int lfn_expected = 0;
     uint8_t lfn_checksum = 0;
 
@@ -547,7 +536,7 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
 
             if (lfn->sequence_number & 0b01000000) {
                 // this lfn is the first entry in the table, clear the lfn buffer
-                memset(current_lfn, ' ', sizeof(current_lfn));
+                memset(current_lfn, 0, sizeof(current_lfn));
                 lfn_expected = seq_num;
                 lfn_checksum = lfn->dos_checksum;
             }
@@ -565,24 +554,22 @@ static int fat32_open_in(struct fat32_context* context, struct fat32_directory_e
                 continue;
             }
 
-            fat32_lfncpy(current_lfn, sizeof(current_lfn), lfn_index + 0, lfn->name1, 5);
-            fat32_lfncpy(current_lfn, sizeof(current_lfn), lfn_index + 5, lfn->name2, 6);
-            fat32_lfncpy(current_lfn, sizeof(current_lfn), lfn_index + 11, lfn->name3, 2);
+            memcpy(&current_lfn[lfn_index], lfn->name1, sizeof(lfn->name1));
+            memcpy(&current_lfn[lfn_index + 5], lfn->name2, sizeof(lfn->name2));
+            memcpy(&current_lfn[lfn_index + 11], lfn->name3, sizeof(lfn->name3));
 
             if (seq_num != 1)
                 continue;
 
-            // remove trailing spaces
-            for (int j = SIZEOF_ARRAY(current_lfn) - 2; j >= -1; j--) {
-                if (j == -1 || current_lfn[j] != ' ') {
-                    current_lfn[j + 1] = 0;
-                    break;
-                }
+            // A truncated name would match a request for a prefix of it.
+            char lfn_utf8[FAT32_LFN_MAX_FILENAME_LENGTH];
+            if (!utf16_to_utf8(lfn_utf8, sizeof(lfn_utf8), current_lfn, SIZEOF_ARRAY(current_lfn), NULL)) {
+                continue;
             }
 
             int (*strcmpfn)(const char *, const char *) = case_insensitive_fopen ? strcasecmp : strcmp;
 
-            if (strcmpfn(current_lfn, name) == 0) {
+            if (strcmpfn(lfn_utf8, name) == 0) {
                 // A set that does not validly name the entry after it decides
                 // nothing: the name being looked for can still appear further
                 // down the directory, so keep scanning rather than give up.

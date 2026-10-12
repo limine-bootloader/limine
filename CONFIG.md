@@ -474,7 +474,9 @@ cmdline: something before ${MY_MACRO} something after
 ```
 
 Macros must always be placed inside `${...}` where `...` is the arbitrary macro
-name.
+name. A macro that is not defined expands to an empty string, without any
+warning, so a misspelt `${ROOTDEV}` turns `root=${ROOTDEV} quiet` into
+`root= quiet`.
 
 ### Built-in macros
 

@@ -189,7 +189,11 @@ static void pe64_validate(uint8_t *image, size_t file_size) {
         panic(true, "pe: Not a valid PE32+ file");
     }
 
-    if (nt_hdrs->FileHeader.SizeOfOptionalHeader < sizeof(IMAGE_OPTIONAL_HEADER64)) {
+    // Directories past the ones the header structure holds go unused.
+    size_t directory_count = MIN(nt_hdrs->OptionalHeader.NumberOfRvaAndSizes, SIZEOF_ARRAY(nt_hdrs->OptionalHeader.DataDirectory));
+    size_t directories_size = directory_count * sizeof(IMAGE_DATA_DIRECTORY);
+
+    if (nt_hdrs->FileHeader.SizeOfOptionalHeader < offsetof(IMAGE_OPTIONAL_HEADER64, DataDirectory) + directories_size) {
         panic(true, "pe: SizeOfOptionalHeader too small");
     }
 
@@ -285,6 +289,14 @@ static uint32_t pe_section_virtual_size(IMAGE_SECTION_HEADER *section) {
     }
 
     return section->VirtualSize;
+}
+
+static IMAGE_DATA_DIRECTORY *pe64_data_directory(IMAGE_NT_HEADERS64 *nt_hdrs, size_t index) {
+    if (index >= nt_hdrs->OptionalHeader.NumberOfRvaAndSizes) {
+        return NULL;
+    }
+
+    return &nt_hdrs->OptionalHeader.DataDirectory[index];
 }
 
 bool pe64_load(uint8_t *image, size_t file_size, uint64_t *entry_point, uint64_t *_slide, uint32_t alloc_type, bool kaslr, struct mem_range **_ranges, uint64_t *_ranges_count, uint64_t *physical_base, uint64_t *virtual_base, uint64_t *_image_size, uint64_t *image_size_before_bss, bool *_is_reloc) {
@@ -434,14 +446,10 @@ again:
         }
     }
 
-    if (nt_hdrs->OptionalHeader.NumberOfRvaAndSizes < IMAGE_DIRECTORY_ENTRY_BASERELOC + 1) {
-        panic(true, "pe: NumberOfRvaAndSizes too small for import/reloc directories");
-    }
+    IMAGE_DATA_DIRECTORY *import_dir = pe64_data_directory(nt_hdrs, IMAGE_DIRECTORY_ENTRY_IMPORT);
+    IMAGE_DATA_DIRECTORY *reloc_dir = pe64_data_directory(nt_hdrs, IMAGE_DIRECTORY_ENTRY_BASERELOC);
 
-    IMAGE_DATA_DIRECTORY *import_dir = &nt_hdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
-    IMAGE_DATA_DIRECTORY *reloc_dir = &nt_hdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];
-
-    if (import_dir->Size != 0) {
+    if (import_dir != NULL && import_dir->Size != 0) {
         if (import_dir->VirtualAddress >= image_size ||
             sizeof(IMAGE_IMPORT_DESCRIPTOR) > image_size - import_dir->VirtualAddress) {
             panic(true, "pe: Import directory VirtualAddress out of bounds");
@@ -458,7 +466,7 @@ again:
         }
     }
 
-    if (reloc_dir->VirtualAddress != 0) {
+    if (reloc_dir != NULL && reloc_dir->VirtualAddress != 0) {
         if (reloc_dir->VirtualAddress >= image_size ||
             reloc_dir->Size > image_size - reloc_dir->VirtualAddress) {
             panic(true, "pe: Relocation directory VirtualAddress out of bounds");

@@ -521,6 +521,12 @@ again:
         goto restart;
     }
 
+    // getchar_internal() takes 8-bit codes, and narrowing a wider one would
+    // alias an unrelated key. None of the scan codes it handles is wider.
+    if (kd.Key.ScanCode > 0xff || kd.Key.UnicodeChar > 0xff) {
+        goto again;
+    }
+
     int ret = getchar_internal(kd.Key.ScanCode, kd.Key.UnicodeChar,
                                kd.KeyState.KeyShiftState);
 

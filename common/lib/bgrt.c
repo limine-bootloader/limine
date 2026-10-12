@@ -59,6 +59,14 @@ void bgrt_restore(uint64_t fb_width, uint64_t fb_height) {
         }
 
         if (bmp_width > 0 && bmp_height > 0) {
+            // Status bits [2:1] are the clockwise rotation in quarter turns,
+            // and an odd count lays the image on its side.
+            if (bgrt->status & (1 << 1)) {
+                uint32_t tmp = bmp_width;
+                bmp_width = bmp_height;
+                bmp_height = tmp;
+            }
+
             if (fb_width >= bmp_width) {
                 bgrt->image_offset_x = (fb_width - bmp_width) / 2;
             }

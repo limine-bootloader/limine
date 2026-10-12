@@ -67,7 +67,9 @@ The project follows a relatively standard C coding style. It boils down to:
 - Snake-case for most identifiers.
 - Uppercase snake-case for macros.
 - No pointless `typedef`s, especially for `struct`s. Always use the full `struct name var;`
-  declaration style for those.
+  declaration style for those. Accepted exceptions are typedefs mirroring the names of an
+  external specification, such as the PE/COFF structures in `common/lib/pe.c`, and the
+  `pagemap_t` struct that `common/mm/vmm.h` defines for each architecture.
 - Right aligned pointers (i.e. `struct something *ptr`).
 - Same line curly braces for blocks, including for functions (i.e. `if (...) {`,
   `void func(void) {`, ...).
@@ -109,7 +111,13 @@ The project follows a relatively standard C coding style. It boils down to:
 
   And, as shown, all cases should be curly braced blocks.
 - **Never** do things such as `if()`, `while()`, ... - **Always** put a space between
-  keywords (i.e. not functions/function pointers) and parentheses.
+  keywords (i.e. not functions/function pointers) and parentheses. The exceptions are
+  `sizeof`, `alignof`, `typeof`, `_Static_assert`, and `__attribute__`, which are written
+  without the space (i.e. `sizeof(x)`).
+
+Some older code predates these rules: it has blockless constructs, unbraced `case` labels,
+left-aligned pointers, and unspaced `asm volatile(` and `defined(`. New or modified code
+follows the rules regardless.
 
 ### Final style remarks
 

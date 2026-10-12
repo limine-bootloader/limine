@@ -68,7 +68,10 @@ start:
     ; Make sure int 13h extensions are supported
     mov ah, 0x41
     mov bx, 0x55aa
+    ; Some BIOSes clobber DL in this call
+    push dx
     int 0x13
+    pop dx
     jc err.2
     cmp bx, 0xaa55
     jne err.3

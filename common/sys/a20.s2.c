@@ -17,6 +17,18 @@ static bool a20_kbc_wait(uint8_t mask, uint8_t expected) {
     return false;
 }
 
+// A pending keystroke or mouse byte would otherwise be read back as the output
+// port value.
+static bool a20_kbc_drain(void) {
+    for (int i = 0; i < A20_KBC_TIMEOUT; i++) {
+        if (!(inb(0x64) & 1)) {
+            return true;
+        }
+        inb(0x60);
+    }
+    return false;
+}
+
 bool a20_check(void) {
     bool ret = false;
     uint16_t orig = mminw(0x7dfe);
@@ -62,6 +74,9 @@ bool a20_enable(void) {
     if (!a20_kbc_wait(2, 0)) goto kbc_failed;
     outb(0x64, 0xad);
     if (!a20_kbc_wait(2, 0)) goto kbc_failed;
+    if (!a20_kbc_drain()) {
+        goto kbc_failed;
+    }
     outb(0x64, 0xd0);
     if (!a20_kbc_wait(1, 1)) goto kbc_failed;
     uint8_t b = inb(0x60);

@@ -739,7 +739,7 @@ void *ext_mem_alloc_type_aligned(uint64_t count, uint32_t type, size_t alignment
 }
 
 // Allocate memory top down.
-void *ext_mem_alloc_type_aligned_mode(uint64_t count, uint32_t type, size_t alignment, bool allow_high_allocs) {
+static void *ext_mem_alloc_impl(uint64_t count, uint32_t type, size_t alignment, bool allow_high_allocs, bool do_panic) {
 #if !defined (__x86_64__) && !defined (__i386__)
     (void)allow_high_allocs;
 #endif
@@ -823,7 +823,19 @@ again:
     }
 #endif
 
+    if (!do_panic) {
+        return NULL;
+    }
+
     panic(false, "High memory allocator: Out of memory");
+}
+
+void *ext_mem_alloc_type_aligned_mode(uint64_t count, uint32_t type, size_t alignment, bool allow_high_allocs) {
+    return ext_mem_alloc_impl(count, type, alignment, allow_high_allocs, true);
+}
+
+void *ext_mem_alloc_nopanic(uint64_t count) {
+    return ext_mem_alloc_impl(count, MEMMAP_BOOTLOADER_RECLAIMABLE, 4096, false, false);
 }
 
 // Allocate memory that ends at or below limit, top down, or bottom up if

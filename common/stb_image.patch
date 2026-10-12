@@ -1,6 +1,6 @@
 --- common/lib/stb_image.h
 +++ common/lib/stb_image.h
-@@ -137,6 +137,54 @@
+@@ -137,6 +137,60 @@
  #ifndef STBI_INCLUDE_STB_IMAGE_H
  #define STBI_INCLUDE_STB_IMAGE_H
  
@@ -13,11 +13,17 @@
 +
 +#define STBI_MALLOC(x) ({ \
 +    size_t STBI_MALLOC_alloc_size = (x); \
-+    STBI_MALLOC_alloc_size += 16; \
-+    void *STBI_MALLOC_buf = ext_mem_alloc(STBI_MALLOC_alloc_size); \
-+    size_t *STBI_MALLOC_alloc_size_ptr = STBI_MALLOC_buf; \
-+    *STBI_MALLOC_alloc_size_ptr = STBI_MALLOC_alloc_size; \
-+    STBI_MALLOC_buf + 16; \
++    void *STBI_MALLOC_buf = NULL; \
++    if (STBI_MALLOC_alloc_size <= SIZE_MAX - 16) { \
++        STBI_MALLOC_alloc_size += 16; \
++        STBI_MALLOC_buf = ext_mem_alloc_nopanic(STBI_MALLOC_alloc_size); \
++    } \
++    if (STBI_MALLOC_buf != NULL) { \
++        size_t *STBI_MALLOC_alloc_size_ptr = STBI_MALLOC_buf; \
++        *STBI_MALLOC_alloc_size_ptr = STBI_MALLOC_alloc_size; \
++        STBI_MALLOC_buf += 16; \
++    } \
++    STBI_MALLOC_buf; \
 +})
 +
 +#define STBI_FREE(x) do { \
@@ -35,7 +41,7 @@
 +    void *STBI_REALLOC_buf = (x); \
 +    size_t STBI_REALLOC_alloc_size = (y); \
 +    void *STBI_REALLOC_new_buf = STBI_MALLOC(STBI_REALLOC_alloc_size); \
-+    if (STBI_REALLOC_buf != NULL) { \
++    if (STBI_REALLOC_new_buf != NULL && STBI_REALLOC_buf != NULL) { \
 +        size_t STBI_REALLOC_old_size = (*(size_t *)((void *)STBI_REALLOC_buf - 16)) - 16; \
 +        memcpy(STBI_REALLOC_new_buf, STBI_REALLOC_buf, \
 +               MIN(STBI_REALLOC_alloc_size, STBI_REALLOC_old_size)); \
@@ -55,7 +61,7 @@
  // DOCUMENTATION
  //
  // Limitations:
-@@ -391,7 +439,7 @@
+@@ -391,7 +445,7 @@
     STBI_rgb_alpha  = 4
  };
  
@@ -64,7 +70,7 @@
  typedef unsigned char stbi_uc;
  typedef unsigned short stbi_us;
  
-@@ -594,8 +642,8 @@
+@@ -594,8 +648,8 @@
  
  #include <stdarg.h>
  #include <stddef.h> // ptrdiff_t on osx
@@ -75,7 +81,7 @@
  #include <limits.h>
  
  #if !defined(STBI_NO_LINEAR) || !defined(STBI_NO_HDR)
-@@ -1678,10 +1726,12 @@
+@@ -1678,10 +1732,12 @@
  STBIDEF void   stbi_ldr_to_hdr_scale(float scale) { stbi__l2h_scale = scale; }
  #endif
  

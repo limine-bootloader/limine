@@ -213,7 +213,13 @@ void disk_create_index(uint8_t boot_drive) {
 
     int optical_indices = 1, hdd_indices = 1, consumed_bda_disks = 0;
 
-    for (uint8_t drive = 0x80; drive < 0xf0; drive++) {
+    for (int drive = 0x80; drive <= 0xff; drive++) {
+        // INT 13h has been seen to hang on drives from F0h up on some BIOSes,
+        // while the boot drive is known to answer.
+        if (drive >= 0xf0 && drive != boot_drive) {
+            continue;
+        }
+
         struct rm_regs r = {0};
         struct bios_drive_params drive_params = {0};
 

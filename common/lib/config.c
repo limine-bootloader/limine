@@ -112,7 +112,12 @@ found:
                 continue;
             }
             if (len + separator >= EFI_APP_PATH_LEN - 1) {
-                break;
+                // A directory cut short would be another directory, so only
+                // the file name may be.
+                if (separator) {
+                    return false;
+                }
+                continue;
             }
             if (separator) {
                 path_units[len++] = L'/';

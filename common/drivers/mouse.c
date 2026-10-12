@@ -557,7 +557,9 @@ bool mouse_init(void) {
         return false;
     }
     outb(I8042_COMMAND, 0xa9);
-    if (i8042_read_data(&is_aux) != 0x00) {
+    // Some controllers answer 0xfa rather than 0x00 for a working port.
+    b = i8042_read_data(&is_aux);
+    if (b != 0x00 && b != 0xfa) {
         return false;
     }
 

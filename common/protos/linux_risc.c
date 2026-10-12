@@ -429,7 +429,9 @@ static void prepare_efi_tables(struct boot_param *p, char *config) {
         }
         size_t buff_size = sizeof(struct linux_efi_boot_memmap) + descs_size;
 
-        ret = gBS->AllocatePool(EfiLoaderData, buff_size, (void **)&p->memmap);
+        // Memory of this type is preserved until ACPI is enabled (UEFI 2.11
+        // section 7.2), so the kernel cannot hand it out before reading the map.
+        ret = gBS->AllocatePool(EfiACPIReclaimMemory, buff_size, (void **)&p->memmap);
         if (ret != EFI_SUCCESS) {
             panic(true, "linux: failed to allocate UEFI memory map");
         }

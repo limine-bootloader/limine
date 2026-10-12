@@ -2043,6 +2043,7 @@ FEAT_START
                         paging_mode,
                         pagemap, mp_request->flags & LIMINE_MP_REQUEST_X86_64_X2APIC, nx_available,
                         direct_map_offset, true);
+    bool x2apic_enabled = (mp_request->flags & LIMINE_MP_REQUEST_X86_64_X2APIC) && (rdmsr(0x1b) & (1 << 10));
 #elif defined (__aarch64__)
     uint64_t bsp_mpidr;
 
@@ -2059,8 +2060,37 @@ FEAT_START
 #error Unknown architecture
 #endif
 
+    // PROTOCOL.md promises a response whenever the request is supported, so
+    // the BSP alone stands in where the CPUs could not be enumerated.
     if (mp_info == NULL) {
-        break;
+        mp_info = ext_mem_alloc(sizeof(struct limine_mp_info));
+        cpu_count = 1;
+#if defined (__x86_64__) || defined (__i386__)
+        // init_smp() can give up before it enables x2APIC. Without a local
+        // APIC, the ID is the initial one that CPUID reports.
+        bool have_lapic = lapic_check();
+        x2apic_enabled = have_lapic && (rdmsr(0x1b) & (1 << 10));
+        if (x2apic_enabled) {
+            bsp_lapic_id = x2apic_read(LAPIC_REG_ID);
+        } else if (have_lapic) {
+            bsp_lapic_id = lapic_read(LAPIC_REG_ID) >> 24;
+        } else {
+            bsp_lapic_id = cpuid(1, 0, &eax, &ebx, &ecx, &edx) ? ebx >> 24 : 0;
+        }
+        mp_info->lapic_id = bsp_lapic_id;
+#elif defined (__aarch64__)
+        asm volatile ("mrs %0, mpidr_el1" : "=r"(bsp_mpidr));
+        // The affinity fields alone, as PROTOCOL.md has it.
+        bsp_mpidr &= 0xff00ffffff;
+        mp_info->mpidr = bsp_mpidr;
+#elif defined (__riscv)
+        mp_info->hartid = bsp_hartid;
+#elif defined (__loongarch64)
+        bsp_phys_id = csr_read32(0x20); // CSR.CPUID
+        mp_info->phys_id = bsp_phys_id;
+#else
+#error Unknown architecture
+#endif
     }
 
     for (size_t i = 0; i < cpu_count; i++) {
@@ -2092,8 +2122,7 @@ FEAT_START
         ext_mem_alloc(sizeof(struct limine_mp_response));
 
 #if defined (__x86_64__) || defined (__i386__)
-    mp_response->flags |=
-        (mp_request->flags & LIMINE_MP_REQUEST_X86_64_X2APIC) && (rdmsr(0x1b) & (1 << 10)) ? LIMINE_MP_RESPONSE_X86_64_X2APIC : 0;
+    mp_response->flags |= x2apic_enabled ? LIMINE_MP_RESPONSE_X86_64_X2APIC : 0;
     mp_response->bsp_lapic_id = bsp_lapic_id;
 #elif defined (__aarch64__)
     mp_response->bsp_mpidr = bsp_mpidr;

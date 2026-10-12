@@ -17,6 +17,7 @@
 #include <lib/fb.h>
 #include <lib/acpi.h>
 #include <lib/fdt.h>
+#include <drivers/edid.h>
 #include <libfdt.h>
 
 #if defined(__riscv)
@@ -131,6 +132,16 @@ _Static_assert(offsetof(struct linux_efi_memreserve, count) == 4, "linux_efi_mem
 _Static_assert(offsetof(struct linux_efi_memreserve, next) == 8, "linux_efi_memreserve layout");
 _Static_assert(offsetof(struct linux_efi_memreserve, entries) == 16, "linux_efi_memreserve layout");
 _Static_assert(sizeof(struct linux_efi_memreserve) == 16, "linux_efi_memreserve layout");
+
+// The screen info table holds screen_info, then the display's EDID base
+// block, all of which kernels may read and then clear.
+struct linux_efi_screen_info {
+    struct screen_info screen_info;
+    struct edid_info_struct edid_info;
+};
+
+_Static_assert(offsetof(struct linux_efi_screen_info, edid_info) == 0x40, "linux_efi_screen_info layout");
+_Static_assert(sizeof(struct linux_efi_screen_info) == 0xc0, "linux_efi_screen_info layout");
 
 struct boot_param {
     void *kernel_base;
@@ -291,13 +302,15 @@ static void prepare_device_tree_blob(struct boot_param *p) {
 }
 
 static void add_framebuffer(struct fb_info *fb) {
-    struct screen_info *screen_info;
+    struct linux_efi_screen_info *table;
 
-    EFI_STATUS alloc_ret = gBS->AllocatePool(EfiLoaderData, sizeof(*screen_info), (void **)&screen_info);
+    EFI_STATUS alloc_ret = gBS->AllocatePool(EfiLoaderData, sizeof(*table), (void **)&table);
     if (alloc_ret != EFI_SUCCESS) {
         panic(true, "linux: failed to allocate screen info table");
     }
-    memset(screen_info, 0, sizeof(*screen_info));
+    memset(table, 0, sizeof(*table));
+
+    struct screen_info *screen_info = &table->screen_info;
 
     screen_info->capabilities   = VIDEO_CAPABILITY_64BIT_BASE;
     screen_info->flags          = VIDEO_FLAGS_NOCURSOR;
@@ -317,8 +330,12 @@ static void add_framebuffer(struct fb_info *fb) {
 
     screen_info->orig_video_isVGA = VIDEO_TYPE_EFI;
 
+    if (fb->edid != NULL) {
+        memcpy(&table->edid_info, fb->edid, sizeof(table->edid_info));
+    }
+
     EFI_GUID screen_info_table_guid = {0xe03fc20a, 0x85dc, 0x406e, {0xb9, 0x0e, 0x4a, 0xb5, 0x02, 0x37, 0x1d, 0x95}};
-    EFI_STATUS ret = gBS->InstallConfigurationTable(&screen_info_table_guid, screen_info);
+    EFI_STATUS ret = gBS->InstallConfigurationTable(&screen_info_table_guid, table);
 
     if (ret != EFI_SUCCESS) {
         panic(true, "linux: failed to install screen info configuration table: '%X'", (uint64_t)ret);

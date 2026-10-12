@@ -101,7 +101,7 @@ found:
             if (c == 0) {
                 break;
             }
-            if (c == L'\\') {
+            if (c == L'\\' || c == L'/') {
                 separator = true;
                 continue;
             }

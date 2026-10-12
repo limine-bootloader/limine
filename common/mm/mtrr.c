@@ -80,9 +80,6 @@ void mtrr_save(void) {
     /* save MTRR default type */
     saved_mtrrs[var_reg_count * 2 + 11] = rdmsr(0x2ff);
 
-    /* make sure that the saved MTRR default has MTRRs off */
-    saved_mtrrs[var_reg_count * 2 + 11] &= ~((uint64_t)1 << 11);
-
     if (ints) {
         enable_interrupts();
     }
@@ -145,15 +142,10 @@ void mtrr_restore(void) {
         wrmsr(0x26f, saved_mtrrs[var_reg_count * 2 + 10]);
     }
 
-    /* restore MTRR default type */
+    /* restore MTRR default type, with the E and FE flags as they were saved */
     wrmsr(0x2ff, saved_mtrrs[var_reg_count * 2 + 11]);
 
     /* now do the opposite of the cache disable and flush from above */
-
-    /* re-enable MTRRs */
-    mtrr_def = rdmsr(0x2ff);
-    mtrr_def |= (1 << 11);
-    wrmsr(0x2ff, mtrr_def);
 
     /* flush the TLB */
     flush_tlb();

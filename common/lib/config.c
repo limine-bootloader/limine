@@ -377,6 +377,86 @@ struct macro {
 
 static struct macro *macros = NULL;
 
+// Returns the size of the config with its macro references expanded, and
+// stores the expansion in out unless out is NULL.
+static size_t expand_macros(char *out, size_t config_size) {
+    size_t i, in;
+    for (i = 0, in = 0; i < config_size;) {
+        if ((config_size - i >= 3 && memcmp(config_addr + i, "\n${", 3) == 0)
+         || (config_size - i >= 2 && i == 0 && memcmp(config_addr, "${", 2) == 0)) {
+            size_t orig_i = i;
+            i += i ? 3 : 2;
+            while (i < config_size && config_addr[i] != '}') {
+                i++;
+            }
+            if (i >= config_size) {
+                bad_config = true;
+                panic(true, "config: Malformed macro usage");
+            }
+            i++;
+            if (i >= config_size || config_addr[i++] != '=') {
+                i = orig_i;
+                goto next;
+            }
+            while (config_addr[i] != '\n' && config_addr[i] != 0) {
+                i++;
+                if (i >= config_size) {
+                    bad_config = true;
+                    panic(true, "config: Malformed macro usage");
+                }
+            }
+            continue;
+        }
+
+next:
+        if (config_size - i >= 2 && memcmp(config_addr + i, "${", 2) == 0) {
+            char *macro_name = ext_mem_alloc(1024);
+            i += 2;
+            size_t j;
+            for (j = 0; j < 1023 && config_addr[i] != '}' && config_addr[i] != '\n' && config_addr[i] != 0; j++, i++) {
+                macro_name[j] = config_addr[i];
+            }
+            if (config_addr[i] != '}') {
+                bad_config = true;
+                panic(true, "config: Malformed macro usage");
+            }
+            i++;
+            macro_name[j] = 0;
+            char *macro_value = "";
+            struct macro *macro = macros;
+            for (;;) {
+                if (macro == NULL) {
+                    break;
+                }
+                if (strcmp(macro->name, macro_name) == 0) {
+                    macro_value = macro->value;
+                    break;
+                }
+                macro = macro->next;
+            }
+            pmm_free(macro_name, 1024);
+            size_t value_len = strlen(macro_value);
+            if (out != NULL) {
+                memcpy(out + in, macro_value, value_len);
+            }
+            in = CHECKED_ADD(in, value_len, goto too_large);
+            continue;
+        }
+
+        if (out != NULL) {
+            out[in] = config_addr[i];
+        }
+        in = CHECKED_ADD(in, 1, goto too_large);
+        i++;
+    }
+
+    return in;
+
+too_large:
+    bad_config = true;
+    panic(true, "config: Config file too large for macro expansion");
+}
+
 int init_config(size_t config_size) {
     config_b2sum += sizeof(CONFIG_B2SUM_SIGNATURE) - 1;
 
@@ -501,90 +581,14 @@ skip_loop:
 
     // Expand macros
     if (macros != NULL) {
-        // Check for overflow before multiplication
-        if (config_size > SIZE_MAX / 4) {
-            bad_config = true;
-            panic(true, "config: Config file too large for macro expansion");
-        }
-        size_t new_config_size = config_size * 4;
+        size_t new_config_size = expand_macros(NULL, config_size);
         char *new_config = ext_mem_alloc(new_config_size);
-
-        size_t i, in;
-        for (i = 0, in = 0; i < config_size;) {
-            if ((config_size - i >= 3 && memcmp(config_addr + i, "\n${", 3) == 0)
-             || (config_size - i >= 2 && i == 0 && memcmp(config_addr, "${", 2) == 0)) {
-                size_t orig_i = i;
-                i += i ? 3 : 2;
-                while (i < config_size && config_addr[i] != '}') {
-                    i++;
-                }
-                if (i >= config_size) {
-                    bad_config = true;
-                    panic(true, "config: Malformed macro usage");
-                }
-                i++; // skip '}'
-                if (i >= config_size || config_addr[i++] != '=') {
-                    i = orig_i;
-                    goto next;
-                }
-                while (config_addr[i] != '\n' && config_addr[i] != 0) {
-                    i++;
-                    if (i >= config_size) {
-                        bad_config = true;
-                        panic(true, "config: Malformed macro usage");
-                    }
-                }
-                continue;
-            }
-
-next:
-            if (config_size - i >= 2 && memcmp(config_addr + i, "${", 2) == 0) {
-                char *macro_name = ext_mem_alloc(1024);
-                i += 2;
-                size_t j;
-                for (j = 0; j < 1023 && config_addr[i] != '}' && config_addr[i] != '\n' && config_addr[i] != 0; j++, i++) {
-                    macro_name[j] = config_addr[i];
-                }
-                if (config_addr[i] != '}') {
-                    bad_config = true;
-                    panic(true, "config: Malformed macro usage");
-                }
-                i++;
-                macro_name[j] = 0;
-                char *macro_value = "";
-                struct macro *macro = macros;
-                for (;;) {
-                    if (macro == NULL) {
-                        break;
-                    }
-                    if (strcmp(macro->name, macro_name) == 0) {
-                        macro_value = macro->value;
-                        break;
-                    }
-                    macro = macro->next;
-                }
-                pmm_free(macro_name, 1024);
-                for (j = 0; macro_value[j] != 0; j++, in++) {
-                    if (in >= new_config_size) {
-                        goto overflow;
-                    }
-                    new_config[in] = macro_value[j];
-                }
-                continue;
-            }
-
-            if (in >= new_config_size) {
-overflow:
-                bad_config = true;
-                panic(true, "config: Macro-induced buffer overflow");
-            }
-            new_config[in++] = config_addr[i++];
-        }
+        expand_macros(new_config, config_size);
 
         pmm_free(config_addr, config_alloc_size);
 
         config_addr = new_config;
-        config_size = in;
+        config_size = new_config_size;
 
         // Free macros
         struct macro *macro = macros;

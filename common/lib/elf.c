@@ -451,8 +451,8 @@ static bool elf64_prepare_relocations(uint8_t *elf, size_t file_size, struct elf
     }
 end_of_pt_segment:
 
-    // The stride feeds both the DT_RELA and the DT_JMPREL walk, and both
-    // dereference a full struct elf64_rela at every step.
+    // The stride feeds the DT_RELA walk, which dereferences a full struct
+    // elf64_rela at every step.
     if (rela_ent != 0 && rela_ent < sizeof(struct elf64_rela)) {
         panic(true, "elf: rela_ent < sizeof(struct elf64_rela)");
     }
@@ -493,8 +493,8 @@ end_of_pt_segment:
         panic(true, "elf: DT_PLTRELSZ without DT_JMPREL");
     }
 
-    // Both the table and the stride, since every walk here steps by an entry
-    // size the file supplies.
+    // Both the table and, where the file supplies it, the stride the walk
+    // steps by.
     if (rela_offset % 8 != 0 || rela_ent % 8 != 0
      || relr_offset % 8 != 0
      || symtab_offset % 8 != 0 || symtab_ent % 8 != 0
@@ -527,17 +527,17 @@ end_of_pt_segment:
         }
         elf64_add_relocation_count(&relocs_i, rela_size / rela_ent);
     }
+    // DT_RELAENT need only accompany DT_RELA, and DT_PLTREL already gives the
+    // entry type, whose size is fixed.
+    size_t jmprel_start = relocs_i;
     if (dt_pltrelsz != 0) {
         if (dt_pltrel != DT_RELA) {
             panic(true, "elf: dt_pltrel != DT_RELA");
         }
-        if (rela_ent == 0) {
-            panic(true, "elf: dt_pltrelsz != 0 but rela_ent == 0");
+        if (dt_pltrelsz % sizeof(struct elf64_rela) != 0) {
+            panic(true, "elf: dt_pltrelsz not a multiple of sizeof(struct elf64_rela)");
         }
-        if (dt_pltrelsz % rela_ent != 0) {
-            panic(true, "elf: dt_pltrelsz not a multiple of rela_ent");
-        }
-        elf64_add_relocation_count(&relocs_i, dt_pltrelsz / rela_ent);
+        elf64_add_relocation_count(&relocs_i, dt_pltrelsz / sizeof(struct elf64_rela));
     }
     struct elf64_rela **relocs = ext_mem_alloc_counted(relocs_i, sizeof(struct elf64_rela *));
 
@@ -580,7 +580,7 @@ end_of_pt_segment:
     }
 
     if (dt_pltrelsz != 0) {
-        for (uint64_t i = relr_count + rela_size / rela_ent, offset = 0; offset < dt_pltrelsz; offset += rela_ent) {
+        for (uint64_t i = jmprel_start, offset = 0; offset < dt_pltrelsz; offset += sizeof(struct elf64_rela)) {
             relocs[i++] = (void *)elf + (dt_jmprel + offset);
         }
     }

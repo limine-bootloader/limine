@@ -605,15 +605,6 @@ static int gpt_get_part(struct volume *ret, struct volume *volume, int partition
     return 0;
 }
 
-struct mbr_entry {
-    uint8_t status;
-    uint8_t chs_first_sect[3];
-    uint8_t type;
-    uint8_t chs_last_sect[3];
-    uint32_t first_sect;
-    uint32_t sect_count;
-} __attribute__((packed));
-
 // An entry whose LBAs have been brought into the 512-byte units struct volume
 // keeps.
 struct mbr_part {

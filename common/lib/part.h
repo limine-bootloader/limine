@@ -14,6 +14,15 @@
 #define INVALID_TABLE (-2)
 #define END_OF_TABLE  (-3)
 
+struct mbr_entry {
+    uint8_t status;
+    uint8_t chs_first_sect[3];
+    uint8_t type;
+    uint8_t chs_last_sect[3];
+    uint32_t first_sect;
+    uint32_t sect_count;
+} __attribute__((packed));
+
 struct volume {
 #if defined (UEFI)
     EFI_HANDLE efi_handle;

@@ -14,6 +14,7 @@
 #include <lib/print.h>
 #include <lib/libc.h>
 #include <sys/idt.h>
+#include <sys/cpu.h>
 #include <lib/bli.h>
 #include <lib/utf.h>
 #include <drivers/vga_textmode.h>
@@ -25,7 +26,7 @@
 #if defined (BIOS)
 
 __attribute__((noinline, section(".realmode")))
-noreturn static void spinup(uint8_t drive, void *buf) {
+noreturn static void spinup(uint8_t drive, void *buf, uint16_t part_entry) {
     struct idtr real_mode_idt;
     real_mode_idt.limit = 0x3ff;
     real_mode_idt.ptr   = 0;
@@ -41,6 +42,9 @@ noreturn static void spinup(uint8_t drive, void *buf) {
         "mov $0x7c00, %%edi\n\t"
         "mov $512, %%ecx\n\t"
         "rep movsb\n\t"
+
+        // The boot record's DS:SI, DS being zeroed below
+        "mov %%ebx, %%esi\n\t"
 
         "lidt (%%eax)\n\t"
 
@@ -77,7 +81,7 @@ noreturn static void spinup(uint8_t drive, void *buf) {
 
         ".code32\n\t"
         :
-        : "a" (&real_mode_idt), "d" (drive), "S"(buf)
+        : "a" (&real_mode_idt), "d" (drive), "S"(buf), "b" ((uint32_t)part_entry)
         : "memory"
     );
 
@@ -93,6 +97,108 @@ noreturn void spinup_freebsd(uint32_t drive, uint32_t buf, uint32_t count);
 #define FREEBSD_BOOT_TYPE_GUID "83bd6b9d-7f41-11dc-be0b-001560b84f0f"
 #define FREEBSD_BOOT_LOAD_ADDR 0x7c00
 #define FREEBSD_BOOT_LOAD_TOP 0x90000
+
+// MBR boot code relocates itself to 0x600 before loading a boot record, which
+// leaves its partition table at 0x7BE.
+#define MBR_TABLE_ADDR 0x7be
+
+// Finds a logical partition's EBR entry by its extent and makes the entry's
+// start absolute like an MBR entry's. A link may point backwards, as the one
+// to a partition made in a gap before the others does, so only a repeated EBR
+// marks a loop.
+static bool logical_part_entry(struct volume *p, struct mbr_entry *entry) {
+    struct volume *extended = p->backing_dev->ebr_part;
+    uint64_t mult = (uint64_t)p->sector_size / 512;
+    uint64_t visited[256];
+    uint64_t ebr_sector = 0;
+
+    for (size_t link = 0; link < SIZEOF_ARRAY(visited); link++) {
+        uint16_t signature;
+        struct mbr_entry table[4];
+
+        visited[link] = ebr_sector;
+
+        if (!volume_read(extended, &signature, ebr_sector * 512 + 0x1fe, sizeof(signature))
+         || signature != 0xaa55
+         || !volume_read(extended, table, ebr_sector * 512 + 0x1be, sizeof(table))) {
+            return false;
+        }
+
+        bool have_next = false;
+        uint64_t next = 0;
+
+        for (int i = 0; i < 4; i++) {
+            if (table[i].sect_count == 0) {
+                continue;
+            }
+
+            if (table[i].type == 0x05 || table[i].type == 0x0f || table[i].type == 0x85) {
+                if (!have_next) {
+                    have_next = true;
+                    next = table[i].first_sect * mult;
+                }
+                continue;
+            }
+
+            uint64_t first_sect = extended->first_sect + ebr_sector + table[i].first_sect * mult;
+            if (first_sect != p->first_sect || table[i].sect_count * mult != p->sect_count) {
+                continue;
+            }
+
+            if (first_sect / mult > UINT32_MAX) {
+                return false;
+            }
+
+            *entry = table[i];
+            entry->first_sect = first_sect / mult;
+            return true;
+        }
+
+        if (!have_next) {
+            return false;
+        }
+
+        for (size_t i = 0; i <= link; i++) {
+            if (visited[i] == next) {
+                return false;
+            }
+        }
+
+        ebr_sector = next;
+    }
+
+    return false;
+}
+
+// Returns the segment 0 offset of the entry for DS:SI to point at, 0 if none.
+static uint16_t place_part_entry(struct volume *p) {
+    struct mbr_entry table[4] = {0};
+    int slot = 0;
+
+    if (p->partition == 0 || p->part_guid_valid) {
+        return 0;
+    }
+
+    if (p->partition <= 4) {
+        if (!volume_read(p->backing_dev, table, 0x1be, sizeof(table))) {
+            return 0;
+        }
+        slot = p->partition - 1;
+    } else if (!logical_part_entry(p, &table[0])) {
+        return 0;
+    }
+
+    // MBR code only loads the boot record of the active partition.
+    for (int i = 0; i < 4; i++) {
+        table[i].status = i == slot ? 0x80 : 0x00;
+    }
+
+    for (size_t i = 0; i < sizeof(table); i++) {
+        mmoutb(MBR_TABLE_ADDR + i, ((uint8_t *)table)[i]);
+    }
+
+    return MBR_TABLE_ADDR + sizeof(struct mbr_entry) * slot;
+}
 
 noreturn void chainload(char *config, char *cmdline) {
     (void)cmdline;
@@ -238,7 +344,9 @@ load:
         panic(true, "bios: Volume is not bootable");
     }
 
-    spinup(p->drive, buf);
+    uint16_t part_entry = place_part_entry(p);
+
+    spinup(p->drive, buf, part_entry);
 }
 
 #elif defined (UEFI)

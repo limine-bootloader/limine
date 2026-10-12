@@ -277,6 +277,16 @@ static void reloc_store(void *p, uint64_t v, size_t size) {
     }
 }
 
+// Only object files are meant to have a zero VirtualSize, so an image section
+// with one is taken to span its raw data.
+static uint32_t pe_section_virtual_size(IMAGE_SECTION_HEADER *section) {
+    if (section->VirtualSize == 0) {
+        return section->SizeOfRawData;
+    }
+
+    return section->VirtualSize;
+}
+
 bool pe64_load(uint8_t *image, size_t file_size, uint64_t *entry_point, uint64_t *_slide, uint32_t alloc_type, bool kaslr, struct mem_range **_ranges, uint64_t *_ranges_count, uint64_t *physical_base, uint64_t *virtual_base, uint64_t *_image_size, uint64_t *image_size_before_bss, bool *_is_reloc) {
     pe64_validate(image, file_size);
 
@@ -379,16 +389,17 @@ again:
         IMAGE_SECTION_HEADER *section = &sections[i];
 
         uintptr_t section_base = *physical_base + section->VirtualAddress;
-        uint32_t section_raw_size = section->VirtualSize < section->SizeOfRawData ? section->VirtualSize : section->SizeOfRawData;
+        uint32_t section_size = pe_section_virtual_size(section);
+        uint32_t section_raw_size = section_size < section->SizeOfRawData ? section_size : section->SizeOfRawData;
 
         // Validate section doesn't write past the image buffer
         if ((uint64_t)section->VirtualAddress + section_raw_size > image_size) {
             panic(true, "pe: Section %U exceeds image bounds", (uint64_t)i);
         }
 
-        // The full VirtualSize (not just the raw size copied above) is mapped
+        // The full virtual size (not just the raw size copied above) is mapped
         // by the mem_range pass, so the whole virtual extent must fit too.
-        if ((uint64_t)section->VirtualAddress + section->VirtualSize > image_size) {
+        if ((uint64_t)section->VirtualAddress + section_size > image_size) {
             panic(true, "pe: Section %U virtual size exceeds image bounds", (uint64_t)i);
         }
 
@@ -398,7 +409,7 @@ again:
             panic(true, "pe: Section %U overlaps or is out of order", (uint64_t)i);
         }
 
-        prev_section_top = (uint64_t)section->VirtualAddress + section->VirtualSize;
+        prev_section_top = (uint64_t)section->VirtualAddress + section_size;
 
         if (section->VirtualAddress % alignment != 0) {
             panic(true, "pe: Section %U is not aligned to SectionAlignment", (uint64_t)i);
@@ -582,7 +593,7 @@ again:
             range->base = *virtual_base + section->VirtualAddress;
             // ALIGN_UP accumulates in its first argument's type, so the cast
             // is what keeps a section rounding up past 4 GiB from truncating.
-            range->length = ALIGN_UP((uint64_t)section->VirtualSize, alignment, panic(true, "pe: Alignment overflow"));
+            range->length = ALIGN_UP((uint64_t)pe_section_virtual_size(section), alignment, panic(true, "pe: Alignment overflow"));
 
             if (range->length > image_top - range->base) {
                 range->length = image_top - range->base;

@@ -446,7 +446,7 @@ static bool is_efi_handle_to_skip(EFI_HANDLE efi_handle) {
             break;
         }
 
-        uint16_t len = *(uint16_t *)dp->Length;
+        uint16_t len = DevicePathNodeLength(dp);
 
         // Validate minimum device path node size before accessing type-specific data
         if (len < sizeof(EFI_DEVICE_PATH_PROTOCOL)) {
@@ -491,7 +491,7 @@ static bool is_efi_handle_optical(EFI_HANDLE efi_handle) {
             return true;
         }
 
-        uint16_t len = *(uint16_t *)dp->Length;
+        uint16_t len = DevicePathNodeLength(dp);
         if (len < sizeof(EFI_DEVICE_PATH_PROTOCOL)) {
             break;  // Malformed device path node
         }

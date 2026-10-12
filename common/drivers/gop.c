@@ -349,7 +349,7 @@ void init_gop(struct fb_info **ret, size_t *_fbs_count,
         if (!_target_width || !_target_height || !_target_bpp) {
             goto fallback;
         } else {
-            printv("gop: Requested resolution of %ux%ux%u\n",
+            printv("gop: Requested resolution of %Ux%Ux%U\n",
                    _target_width, _target_height, _target_bpp);
         }
 

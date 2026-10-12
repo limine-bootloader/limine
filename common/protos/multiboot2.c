@@ -223,15 +223,12 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
                         case MULTIBOOT_TAG_TYPE_SMBIOS:
                         case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO:
                             break;
-                        #if defined (UEFI)
                         case MULTIBOOT_TAG_TYPE_EFI_MMAP:
-                            break;
                         case MULTIBOOT_TAG_TYPE_EFI32:
                         case MULTIBOOT_TAG_TYPE_EFI32_IH:
                         case MULTIBOOT_TAG_TYPE_EFI64:
                         case MULTIBOOT_TAG_TYPE_EFI64_IH:
                             break;
-                        #endif
                         case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
                         #if defined (UEFI)
                             is_framebuffer_declared = true;

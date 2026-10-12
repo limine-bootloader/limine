@@ -15,6 +15,7 @@
 #include <lib/libc.h>
 #include <sys/idt.h>
 #include <lib/bli.h>
+#include <lib/utf.h>
 #include <drivers/vga_textmode.h>
 #include <mm/pmm.h>
 #if defined (UEFI)
@@ -251,17 +252,21 @@ static EFI_DEVICE_PATH_PROTOCOL *build_relative_efi_file_path(struct file_handle
 
     size_t original_path_chars = strlen(image->path);
 
+    // UTF-16 never takes more code units than UTF-8 takes bytes.
     size_t efi_file_path_alloc_len = (original_path_chars + 1) * sizeof(CHAR16);
     CHAR16 *efi_file_path = ext_mem_alloc(efi_file_path_alloc_len);
 
+    size_t efi_file_path_chars;
+    utf8_to_utf16(efi_file_path, original_path_chars + 1, image->path, original_path_chars, &efi_file_path_chars);
+
     bool leading_slash = true;
     size_t j = 0;
-    for (size_t i = 0; i < original_path_chars; i++) {
-        if (image->path[i] == '/' && leading_slash) {
+    for (size_t i = 0; i < efi_file_path_chars; i++) {
+        if (efi_file_path[i] == '/' && leading_slash) {
             continue;
         }
         leading_slash = false;
-        efi_file_path[j++] = image->path[i] == '/' ? '\\' : image->path[i];
+        efi_file_path[j++] = efi_file_path[i] == '/' ? '\\' : efi_file_path[i];
     }
     efi_file_path[j] = 0;
 

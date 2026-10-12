@@ -63,7 +63,11 @@ static bool init_efi_app_path(size_t *len_out) {
         return false;
     }
 
+    // NULL for an image loaded from a buffer without a device path.
     path = loaded_image->FilePath;
+    if (path == NULL) {
+        return false;
+    }
 
     while (!(path->Type == END_DEVICE_PATH_TYPE && path->SubType == END_ENTIRE_DEVICE_PATH_SUBTYPE)) {
         if (path->Type == MEDIA_DEVICE_PATH && path->SubType == MEDIA_FILEPATH_DP) {

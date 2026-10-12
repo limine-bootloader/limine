@@ -529,7 +529,47 @@ pagemap_t new_pagemap(int paging_mode) {
     return pagemap;
 }
 
+#define LOONGARCH_CPUCFG1_HP ((uint32_t)1 << 24)
+#define LOONGARCH_CPUCFG3_SPW_HP_HF ((uint32_t)1 << 11)
+#define LOONGARCH_CSR_PRCFG2 0x22
+
+// The page walk fills a huge entry into the TLB as two half-size pages, so a
+// 2MiB entry needs 1MiB TLB pages and a 1GiB entry 512MiB ones. Bit n of
+// PSAVL is set when 2^n byte TLB pages are supported.
+static enum page_size largest_page_size(void) {
+    static bool probed = false;
+    static enum page_size largest = Size4KiB;
+
+    if (!probed) {
+        uint64_t psavl = csr_read64(LOONGARCH_CSR_PRCFG2);
+
+        if ((read_cpucfg(1) & LOONGARCH_CPUCFG1_HP)
+         && (read_cpucfg(3) & LOONGARCH_CPUCFG3_SPW_HP_HF)
+         && (psavl & ((uint64_t)1 << 20))) {
+            largest = Size2MiB;
+
+            if (psavl & ((uint64_t)1 << 29)) {
+                largest = Size1GiB;
+            }
+        }
+
+        probed = true;
+    }
+
+    return largest;
+}
+
 void map_page(pagemap_t pagemap, uint64_t virt_addr, uint64_t phys_addr, uint64_t flags, enum page_size pg_size) {
+    if (pg_size > largest_page_size()) {
+        enum page_size smaller = pg_size - 1;
+
+        for (uint64_t i = 0; i < page_sizes[pg_size]; i += page_sizes[smaller]) {
+            map_page(pagemap, virt_addr + i, phys_addr + i, flags, smaller);
+        }
+
+        return;
+    }
+
     size_t pml4_entry = (virt_addr & ((uint64_t)0x1ff << 39)) >> 39;
     size_t pml3_entry = (virt_addr & ((uint64_t)0x1ff << 30)) >> 30;
     size_t pml2_entry = (virt_addr & ((uint64_t)0x1ff << 21)) >> 21;

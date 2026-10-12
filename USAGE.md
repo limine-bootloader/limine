@@ -49,6 +49,7 @@ in the Limine EFI executable, the following security policies are enforced:
 * Wallpaper and font files without an associated hash are silently skipped
   (falling back to defaults) rather than causing a panic.
 * The config editor is unconditionally disabled.
+* The UEFI Shell key (`U`) is unavailable.
 * `hash_mismatch_panic` is forced to `yes` regardless of the config setting.
 
 If no config checksum is enrolled, Limine treats Secure Boot as inactive and

@@ -1475,6 +1475,11 @@ static const char *uefi_shell_filename(void) {
 }
 
 static bool uefi_shell_available(void) {
+    // Only what the verified config describes may boot under enforcement.
+    if (secure_boot_active) {
+        return false;
+    }
+
     if (uefi_shell_volume == NULL || uefi_shell_volume->pxe) {
         return false;
     }

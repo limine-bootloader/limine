@@ -872,7 +872,8 @@ textmode:
                 tag->common.framebuffer_height = fbs[0].framebuffer_height;
                 tag->common.framebuffer_bpp = fbs[0].framebuffer_bpp;
                 tag->common.framebuffer_type = MULTIBOOT_FRAMEBUFFER_TYPE_RGB; // We only support RGB for VBE
-                tag->common.size = sizeof(struct multiboot_tag_framebuffer);
+                // 6 bytes of colour info; size leaves out the padding after them.
+                tag->common.size = sizeof(struct multiboot_tag_framebuffer_common) + 6;
 
                 tag->framebuffer_red_field_position = fbs[0].red_mask_shift;
                 tag->framebuffer_red_mask_size = fbs[0].red_mask_size;

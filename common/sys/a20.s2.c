@@ -9,6 +9,7 @@
 
 #define A20_KBC_TIMEOUT 50000
 #define A20_WAIT_TIMEOUT 5000
+#define A20_ATTEMPTS 3
 
 static bool a20_kbc_wait(uint8_t mask, uint8_t expected) {
     for (int i = 0; i < A20_KBC_TIMEOUT; i++) {
@@ -71,10 +72,7 @@ static bool a20_wait(void) {
 // opted all their contributions into CC0:
 // https://web.archive.org/web/20150810185946/http://forum.osdev.org/viewtopic.php?f=8&t=23838&start=75#p196942
 
-bool a20_enable(void) {
-    if (a20_check())
-        return true;
-
+static bool a20_try_enable(void) {
     // BIOS method
     struct rm_regs r = {0};
     r.eax = 0x2401;
@@ -117,6 +115,20 @@ kbc_failed:
     }
 
     return a20_wait();
+}
+
+bool a20_enable(void) {
+    if (a20_check()) {
+        return true;
+    }
+
+    for (int i = 0; i < A20_ATTEMPTS; i++) {
+        if (a20_try_enable()) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 #endif

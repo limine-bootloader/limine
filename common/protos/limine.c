@@ -1921,6 +1921,7 @@ FEAT_START
 FEAT_END
 
     // Bootloader Performance
+    struct limine_bootloader_performance_response *perf_response = NULL;
 FEAT_START
     if (usec_at_bootloader_entry == 0) {
         break;
@@ -1931,12 +1932,11 @@ FEAT_START
         break;
     }
 
-    struct limine_bootloader_performance_response *perf_response =
-        ext_mem_alloc(sizeof(struct limine_bootloader_performance_response));
+    perf_response = ext_mem_alloc(sizeof(struct limine_bootloader_performance_response));
 
     perf_response->reset_usec = 0;
     perf_response->init_usec = usec_at_bootloader_entry;
-    perf_response->exec_usec = rdtsc_usec();
+    // exec_usec is taken at the jump to the executable, below.
     perf_request->response = reported_addr(perf_response);
 FEAT_END
 
@@ -2245,6 +2245,10 @@ FEAT_END
     void *spinup_fn = limine_spinup_32;
 #endif
 
+    if (perf_response != NULL) {
+        perf_response->exec_usec = rdtsc_usec();
+    }
+
     common_spinup(spinup_fn, 11,
         paging_mode, (uint32_t)(uintptr_t)pagemap.top_level,
         (uint32_t)entry_point, (uint32_t)(entry_point >> 32),
@@ -2257,6 +2261,10 @@ FEAT_END
     vmm_assert_4k_pages();
 
     uint64_t reported_stack = reported_addr(stack);
+
+    if (perf_response != NULL) {
+        perf_response->exec_usec = rdtsc_usec();
+    }
 
     if (want_el2) {
         enter_in_el2(entry_point, reported_stack, LIMINE_SCTLR, LIMINE_MAIR(fb_attr), LIMINE_TCR(tsz, pa, ds),
@@ -2273,9 +2281,17 @@ FEAT_END
     uint64_t reported_stack = reported_addr(stack);
     uint64_t satp = make_satp(pagemap.paging_mode, pagemap.top_level);
 
+    if (perf_response != NULL) {
+        perf_response->exec_usec = rdtsc_usec();
+    }
+
     riscv_spinup(entry_point, reported_stack, satp, direct_map_offset);
 #elif defined (__loongarch64)
     uint64_t reported_stack = reported_addr(stack);
+
+    if (perf_response != NULL) {
+        perf_response->exec_usec = rdtsc_usec();
+    }
 
     loongarch_spinup(entry_point, reported_stack, (uint64_t)pagemap.pgd[0], (uint64_t)pagemap.pgd[1],
                      direct_map_offset);

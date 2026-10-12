@@ -46,7 +46,9 @@ common_spinup:
     push rdx
     push rsi
     push rdi
+    sub rsp, 8
     call flush_irqs
+    add rsp, 8
     pop rdi
     pop rsi
     pop rdx

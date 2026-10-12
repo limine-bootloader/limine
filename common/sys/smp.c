@@ -171,14 +171,23 @@ struct limine_mp_info *init_smp(size_t   *cpu_count,
     if (!lapic_check())
         return NULL;
 
+    // An x2APIC mode x2apic_check() rejects is reverted just as when the
+    // kernel does not support x2APIC, unless it cannot be: a kernel that
+    // supports it then keeps it.
+    bool x2apic_supported = x2apic;
+    x2apic = x2apic && x2apic_check();
+
     // PROTOCOL.md promises this revert whenever the MP request is present, so
     // it precedes the MADT search, which can return without it.
     if (rdmsr(0x1b) & (1 << 10)) {
         if (!x2apic) {
-            if (!x2apic_disable()) {
+            if (x2apic_disable()) {
+                printv("smp: Firmware had x2APIC enabled, reverted to xAPIC mode\n");
+            } else if (x2apic_supported) {
+                x2apic = true;
+            } else {
                 panic(false, "smp: Kernel does not support x2APIC and x2APIC cannot be disabled");
             }
-            printv("smp: Firmware had x2APIC enabled, reverted to xAPIC mode\n");
         }
     }
 

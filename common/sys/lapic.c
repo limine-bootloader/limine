@@ -370,12 +370,18 @@ bool x2apic_check(void) {
 static bool x2apic_mode = false;
 
 bool x2apic_enable(void) {
-    if (!x2apic_check())
-        return false;
-
     uint64_t ia32_apic_base = rdmsr(0x1b);
-    ia32_apic_base |= (1 << 10);
-    wrmsr(0x1b, ia32_apic_base);
+
+    // On already, it either passed x2apic_check() or could not be turned
+    // off, and is the mode to use either way.
+    if (!(ia32_apic_base & (1 << 10))) {
+        if (!x2apic_check()) {
+            return false;
+        }
+
+        ia32_apic_base |= (1 << 10);
+        wrmsr(0x1b, ia32_apic_base);
+    }
 
     x2apic_mode = true;
 

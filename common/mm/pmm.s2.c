@@ -826,6 +826,65 @@ again:
     panic(false, "High memory allocator: Out of memory");
 }
 
+// Allocate memory that ends at or below limit, top down, or bottom up if
+// bottom_up is set.
+void *ext_mem_alloc_type_aligned_below(uint64_t count, uint32_t type, size_t alignment, uint64_t limit, bool bottom_up) {
+    if (count == 0) {
+        count = 1;
+    }
+
+    count = CHECKED_ADD(count, alignment - 1,
+        panic(false, "ext_mem_alloc: count overflows when aligning"));
+    count = ALIGN_DOWN(count, alignment);
+
+    if (allocations_disallowed) {
+        panic(false, "Memory allocations disallowed");
+    }
+
+    for (size_t n = 0; n < memmap_entries; n++) {
+        size_t i = bottom_up ? n : memmap_entries - 1 - n;
+
+        if (memmap[i].type != MEMMAP_USABLE) {
+            continue;
+        }
+
+        uint64_t entry_base = memmap[i].base;
+        uint64_t entry_top = CHECKED_ADD(memmap[i].base, memmap[i].length, continue);
+
+        if (entry_top > limit) {
+            entry_top = limit;
+        }
+
+        if (entry_base >= entry_top || entry_top - entry_base < count) {
+            continue;
+        }
+
+        uint64_t alloc_base;
+        if (bottom_up) {
+            alloc_base = ALIGN_UP(entry_base, alignment, continue);
+            if (alloc_base > entry_top - count) {
+                continue;
+            }
+        } else {
+            alloc_base = ALIGN_DOWN(entry_top - count, alignment);
+            if (alloc_base < entry_base) {
+                continue;
+            }
+        }
+
+        memmap_alloc_range(alloc_base, count, type, MEMMAP_USABLE, true, false, false);
+
+        void *ret = (void *)(uintptr_t)alloc_base;
+        memset(ret, 0, count);
+
+        pmm_sanitise_entries(memmap, &memmap_entries, false);
+
+        return ret;
+    }
+
+    panic(false, "High memory allocator: Out of memory");
+}
+
 /// Compute and returns the amount of upper and lower memory till
 /// the first hole.
 struct meminfo mmap_get_info(size_t mmap_count, struct memmap_entry *mmap) {

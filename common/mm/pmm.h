@@ -62,6 +62,7 @@ void *ext_mem_alloc_counted(uint64_t count, uint64_t elem_size);
 void *ext_mem_alloc_type(uint64_t count, uint32_t type);
 void *ext_mem_alloc_type_aligned(uint64_t count, uint32_t type, size_t alignment);
 void *ext_mem_alloc_type_aligned_mode(uint64_t count, uint32_t type, size_t alignment, bool allow_high_allocs);
+void *ext_mem_alloc_type_aligned_below(uint64_t count, uint32_t type, size_t alignment, uint64_t limit, bool bottom_up);
 
 void *conv_mem_alloc(uint64_t count);
 

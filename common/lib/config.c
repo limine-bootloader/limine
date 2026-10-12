@@ -11,6 +11,7 @@
 #include <pxe/tftp.h>
 #include <crypt/hash.h>
 #include <lib/tpm.h>
+#include <lib/utf.h>
 #include <sys/cpu.h>
 
 #define CONFIG_B2SUM_SIGNATURE "++CONFIG_B2SUM_SIGNATURE++"
@@ -53,6 +54,7 @@ static bool init_efi_app_path(size_t *len_out) {
     EFI_STATUS status;
     EFI_LOADED_IMAGE_PROTOCOL *loaded_image;
     EFI_DEVICE_PATH_PROTOCOL *path;
+    CHAR16 path_units[EFI_APP_PATH_LEN];
     size_t len = 0, dir_len = 0;
 
     EFI_GUID loaded_image_protocol_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
@@ -113,11 +115,11 @@ found:
                 break;
             }
             if (separator) {
-                efi_app_path[len++] = '/';
+                path_units[len++] = L'/';
                 dir_len = len;
                 separator = false;
             }
-            efi_app_path[len++] = (char)(c & 0xff);
+            path_units[len++] = c;
         }
 
         path = (void *)path + node_length;
@@ -127,8 +129,8 @@ found:
         efi_app_path[0] = '/';
         efi_app_path[1] = 0;
         dir_len = 1;
-    } else {
-        efi_app_path[dir_len] = 0;
+    } else if (!utf16_to_utf8(efi_app_path, EFI_APP_PATH_LEN, path_units, dir_len, &dir_len)) {
+        return false;
     }
 
     if (len_out != NULL) {

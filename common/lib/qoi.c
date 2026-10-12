@@ -54,7 +54,10 @@ static uint32_t qoi_be32(const uint8_t *p) {
 static uint32_t *qoi_alloc_xrgb(size_t pixels) {
     size_t bytes = CHECKED_MUL(pixels, (size_t)4, return NULL);
     size_t total = CHECKED_ADD(bytes, (size_t)16, return NULL);
-    void *raw = ext_mem_alloc(total);
+    void *raw = ext_mem_alloc_nopanic(total);
+    if (raw == NULL) {
+        return NULL;
+    }
     *(size_t *) raw = total;
     return (uint32_t *)((uint8_t *) raw + 16);
 }

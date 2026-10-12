@@ -2082,7 +2082,7 @@ FEAT_START
 
 #if defined (__x86_64__) || defined (__i386__)
     mp_response->flags |=
-        (mp_request->flags & LIMINE_MP_REQUEST_X86_64_X2APIC) && x2apic_check() ? LIMINE_MP_RESPONSE_X86_64_X2APIC : 0;
+        (mp_request->flags & LIMINE_MP_REQUEST_X86_64_X2APIC) && (rdmsr(0x1b) & (1 << 10)) ? LIMINE_MP_RESPONSE_X86_64_X2APIC : 0;
     mp_response->bsp_lapic_id = bsp_lapic_id;
 #elif defined (__aarch64__)
     mp_response->bsp_mpidr = bsp_mpidr;

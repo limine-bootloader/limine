@@ -27,6 +27,10 @@ extern UINT32 efi_desc_ver;
 extern bool efi_boot_services_exited;
 bool efi_exit_boot_services(void);
 
+// Room for the map efi_exit_boot_services() rebuilds out of a firmware map of
+// mmap_size bytes, or 0 if that overflows.
+UINTN efi_rebuilt_mmap_max_size(UINTN mmap_size);
+
 bool is_efi_serial_present(void);
 #endif
 

@@ -408,7 +408,20 @@ static void prepare_efi_tables(struct boot_param *p, char *config) {
     }
 
     {
-        size_t buff_size = sizeof(struct linux_efi_boot_memmap) + efi_mmap_size + 4096;
+        // What gets copied in here is the map efi_exit_boot_services()
+        // rebuilds out of the firmware's, which grows little from here on.
+        UINTN mmap_size = 0, mmap_key, desc_size;
+        UINT32 desc_ver;
+        ret = gBS->GetMemoryMap(&mmap_size, NULL, &mmap_key, &desc_size, &desc_ver);
+        if (ret != EFI_BUFFER_TOO_SMALL) {
+            panic(true, "linux: failed to get UEFI memory map size");
+        }
+
+        UINTN descs_size = efi_rebuilt_mmap_max_size(mmap_size);
+        if (descs_size == 0 || descs_size > SIZE_MAX - sizeof(struct linux_efi_boot_memmap)) {
+            panic(true, "linux: UEFI memory map too large");
+        }
+        size_t buff_size = sizeof(struct linux_efi_boot_memmap) + descs_size;
 
         ret = gBS->AllocatePool(EfiLoaderData, buff_size, (void **)&p->memmap);
         if (ret != EFI_SUCCESS) {
@@ -450,6 +463,10 @@ static void prepare_mmap(struct boot_param *p) {
         if (ret < 0) {
             panic(true, "linux: failed to set UEFI memory map descriptor version: '%s'", fdt_strerror(ret));
         }
+    }
+
+    if (efi_mmap_size > p->memmap->buff_size - sizeof(struct linux_efi_boot_memmap)) {
+        panic(false, "linux: UEFI memory map outgrew its configuration table");
     }
 
     p->memmap->map_size  = efi_mmap_size;

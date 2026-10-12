@@ -395,6 +395,16 @@ error:
 
 no_unwind bool efi_boot_services_exited = false;
 
+UINTN efi_rebuilt_mmap_max_size(UINTN mmap_size) {
+    // Slack for what allocations add to the map before its final read.
+    UINTN size = CHECKED_ADD(mmap_size, (UINTN)4096, return 0);
+    // Cutting a descriptor at both edges of every region we own can add two
+    // descriptors per region on top of the firmware's own.
+    UINTN split_slack = CHECKED_MUL((UINTN)untouched_memmap_entries, (UINTN)2, return 0);
+    split_slack = CHECKED_MUL(split_slack, efi_desc_size, return 0);
+    return CHECKED_ADD(CHECKED_MUL(size, (UINTN)2, return 0), split_slack, return 0);
+}
+
 bool efi_exit_boot_services(void) {
     EFI_STATUS status;
 
@@ -452,12 +462,10 @@ bool efi_exit_boot_services(void) {
             if (status) {
                 goto fail;
             }
-            // Cutting a descriptor at both edges of every region we own can
-            // add two descriptors per region on top of the firmware's own.
-            UINTN split_slack = CHECKED_MUL((UINTN)untouched_memmap_entries, (UINTN)2, goto fail);
-            split_slack = CHECKED_MUL(split_slack, efi_desc_size, goto fail);
-            efi_copy_alloc = CHECKED_ADD(CHECKED_MUL(efi_mmap_alloc, (UINTN)2, goto fail),
-                                         split_slack, goto fail);
+            efi_copy_alloc = efi_rebuilt_mmap_max_size(efi_mmap_size);
+            if (efi_copy_alloc == 0) {
+                goto fail;
+            }
             status = gBS->AllocatePool(EfiLoaderData, efi_copy_alloc,
                                        (void **)&efi_copy);
             if (status) {

@@ -641,9 +641,21 @@ noreturn void linux_load(char *config, char *cmdline) {
     }
 #endif
 
-    p.kernel_base = ext_mem_alloc_type_aligned(
-                ALIGN_UP(CHECKED_ADD(text_offset, kernel_alloc_size, panic(true, "linux: Kernel size overflow")), 4096, panic(true, "linux: Alignment overflow")),
-                MEMMAP_KERNEL_AND_MODULES, 2 * 1024 * 1024);
+    size_t kernel_region_size = ALIGN_UP(CHECKED_ADD(text_offset, kernel_alloc_size, panic(true, "linux: Kernel size overflow")), 4096, panic(true, "linux: Alignment overflow"));
+
+#if defined (__loongarch__)
+    // A kernel that cannot relocate itself only runs at the physical address
+    // it was linked for, which load_offset gives.
+    if (memmap_alloc_range(tmp_hdr.load_offset, kernel_region_size,
+            MEMMAP_KERNEL_AND_MODULES, MEMMAP_USABLE, false, false, false)) {
+        p.kernel_base = (void *)(uintptr_t)tmp_hdr.load_offset;
+        memset(p.kernel_base, 0, kernel_region_size);
+    } else {
+        p.kernel_base = ext_mem_alloc_type_aligned(kernel_region_size, MEMMAP_KERNEL_AND_MODULES, 2 * 1024 * 1024);
+    }
+#else
+    p.kernel_base = ext_mem_alloc_type_aligned(kernel_region_size, MEMMAP_KERNEL_AND_MODULES, 2 * 1024 * 1024);
+#endif
     p.kernel_base += text_offset;
     fread(kernel_file, p.kernel_base, 0, p.kernel_size);
     fclose(kernel_file);

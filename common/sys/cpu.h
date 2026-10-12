@@ -392,7 +392,11 @@ extern size_t bsp_hartid;
 
 struct riscv_hart {
     struct riscv_hart *next;
+    // Only the base ISA, such as "rv64i", where `isa_extensions` is set.
     const char *isa_string;
+    // A `riscv,isa-extensions` list of NUL-terminated names, or NULL.
+    const char *isa_extensions;
+    size_t isa_extensions_len;
     size_t hartid;
     uint32_t acpi_uid;
     uint32_t cbom_block_size;

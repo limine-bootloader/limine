@@ -224,6 +224,8 @@ static void init_riscv_acpi(void) {
         hart->hartid = hartid;
         hart->acpi_uid = acpi_uid;
         hart->isa_string = isa_string;
+        hart->isa_extensions = NULL;
+        hart->isa_extensions_len = 0;
         hart->cbom_block_size = cbom_block_size;
         hart->mmu_type = mmu_type;
         hart->flags = flags;
@@ -235,6 +237,20 @@ static void init_riscv_acpi(void) {
             bsp_hart = hart;
         }
     }
+}
+
+// The strings of a string or string list property only end within it when its
+// last byte is a NUL.
+static const char *dt_getprop_string(const void *fdt, int node, const char *name, int *lenp) {
+    int len;
+    const char *prop = fdt_getprop(fdt, node, name, &len);
+    if (prop == NULL || len <= 0 || prop[len - 1] != '\0') {
+        return NULL;
+    }
+    if (lenp != NULL) {
+        *lenp = len;
+    }
+    return prop;
 }
 
 static void init_riscv_fdt(const void *fdt, bool entry_dtb) {
@@ -297,7 +313,16 @@ static void init_riscv_fdt(const void *fdt, bool entry_dtb) {
             }
         }
 
-        const char *isa_string = fdt_getprop(fdt, node, "riscv,isa", NULL);
+        // `riscv,isa-base` and `riscv,isa-extensions` supersede `riscv,isa`,
+        // which trees using them may leave out.
+        int isa_extensions_len = 0;
+        const char *isa_extensions = dt_getprop_string(fdt, node, "riscv,isa-extensions", &isa_extensions_len);
+        const char *isa_string = dt_getprop_string(fdt, node, "riscv,isa-base", NULL);
+        if (isa_extensions == NULL || isa_string == NULL) {
+            isa_extensions = NULL;
+            isa_extensions_len = 0;
+            isa_string = fdt_getprop(fdt, node, "riscv,isa", NULL);
+        }
         if (isa_string == NULL) {
             print("riscv: missing isa string for hartid %U, skipping.\n", (uint64_t)hartid);
             continue;
@@ -316,6 +341,8 @@ static void init_riscv_fdt(const void *fdt, bool entry_dtb) {
         hart->hartid = hartid;
         hart->acpi_uid = 0;
         hart->isa_string = isa_string;
+        hart->isa_extensions = isa_extensions;
+        hart->isa_extensions_len = isa_extensions_len;
         hart->cbom_block_size = cbom_block_size;
         hart->mmu_type = mmu_type;
         hart->flags = flags;
@@ -327,6 +354,15 @@ static void init_riscv_fdt(const void *fdt, bool entry_dtb) {
             bsp_hart = hart;
         }
     }
+}
+
+static bool riscv_same_isa(const struct riscv_hart *a, const struct riscv_hart *b) {
+    if (strcmp(a->isa_string, b->isa_string) != 0
+     || a->isa_extensions_len != b->isa_extensions_len) {
+        return false;
+    }
+    return a->isa_extensions_len == 0
+        || memcmp(a->isa_extensions, b->isa_extensions, a->isa_extensions_len) == 0;
 }
 
 void init_riscv(const char *config) {
@@ -382,7 +418,7 @@ void init_riscv(const char *config) {
     }
 
     for (struct riscv_hart *hart = hart_list; hart != NULL; hart = hart->next) {
-        if (hart != bsp_hart && strcmp(bsp_hart->isa_string, hart->isa_string)) {
+        if (hart != bsp_hart && !riscv_same_isa(bsp_hart, hart)) {
             hart->flags |= RISCV_HART_COPROC;
         }
     }
@@ -446,6 +482,25 @@ static bool parse_extension(const char **s, struct isa_extension *ext) {
     return true;
 }
 
+// A `riscv,isa-extensions` list names one extension per string, and carries no
+// versions.
+static bool next_extension(const struct riscv_hart *hart, const char **s, struct isa_extension *ext) {
+    if (hart->isa_extensions == NULL) {
+        return parse_extension(s, ext);
+    }
+
+    if (*s >= hart->isa_extensions + hart->isa_extensions_len) {
+        return false;
+    }
+
+    ext->name = *s;
+    ext->name_len = strlen(*s);
+    ext->ver_maj = 0;
+    ext->ver_min = 0;
+    *s += ext->name_len + 1;
+    return true;
+}
+
 static bool extension_matches(const struct isa_extension *ext, const char *name) {
     for (size_t i = 0; i < ext->name_len; i++) {
         const char c1 = tolower(ext->name[i]);
@@ -477,11 +532,14 @@ bool riscv_check_isa_extension_for(size_t hartid, const char *name, size_t *maj,
         return false;
     }
 
-    // Skip the `rv{32,64}` prefix so it's not parsed as extensions.
-    const char *isa_string = hart->isa_string + 4;
+    const char *s = hart->isa_extensions;
+    if (s == NULL) {
+        // Skip the `rv{32,64}` prefix so it's not parsed as extensions.
+        s = hart->isa_string + 4;
+    }
 
     struct isa_extension ext;
-    while (parse_extension(&isa_string, &ext)) {
+    while (next_extension(hart, &s, &ext)) {
         if (!extension_matches(&ext, name)) {
             continue;
         }

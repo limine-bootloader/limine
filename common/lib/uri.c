@@ -171,13 +171,15 @@ static struct file_handle *uri_odd_dispatch(char *loc, char *path) {
 
 static struct file_handle *uri_guid_dispatch(char *guid_str, char *path) {
     struct guid guid;
-    if (!string_to_guid_be(&guid, guid_str))
+    if (!string_to_guid_mixed(&guid, guid_str)) {
         return NULL;
+    }
 
     struct volume *volume = volume_get_by_guid(&guid);
     if (volume == NULL) {
-        if (!string_to_guid_mixed(&guid, guid_str))
+        if (!string_to_guid_be(&guid, guid_str)) {
             return NULL;
+        }
 
         volume = volume_get_by_guid(&guid);
         if (volume == NULL)

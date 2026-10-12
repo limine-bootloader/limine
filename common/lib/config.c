@@ -247,8 +247,12 @@ bool init_config_smbios(void) {
             return false;
         }
 
-        if (hdr->type == 127)
+        // SMBIOS 3.9 section 7.49 has End-of-Table used like an Inactive
+        // structure, the whole table staying indexable, so stop at it only
+        // when there is no structure count to go by.
+        if (hdr->type == 127 && struct_count == 0) {
             return false;
+        }
 
         size_t struct_size = smbios_struct_size(hdr, remaining);
         if (struct_size == 0) {

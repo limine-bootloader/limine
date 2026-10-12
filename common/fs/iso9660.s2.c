@@ -173,6 +173,11 @@ static bool iso9660_cache_root(struct volume *vol,
         return false;
     }
 
+    // Extent locations count logical blocks, which are read here as sectors.
+    if (pv.LBA_size.little != ISO9660_SECTOR_SIZE) {
+        return false;
+    }
+
     *root_size = pv.root.extent_size.little;
 
     // Validate root directory size to prevent memory exhaustion, and require

@@ -672,7 +672,7 @@ static void gterm_parse_config(char *config, struct gterm_config *cfg) {
         }
 
         if (tmp_font_width != 8) {
-            print("Font width must be 8, got %u. Using default font.\n", tmp_font_width);
+            print("Font width must be 8, got %U. Using default font.\n", (uint64_t)tmp_font_width);
             goto config_no_load_font;
         }
 

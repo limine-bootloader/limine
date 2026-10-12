@@ -6,6 +6,7 @@
 #include <efi.h>
 #include <lib/config.h>
 #include <lib/misc.h>
+#include <lib/utf.h>
 #include <stdbool.h>
 
 static bool uefi_string_matches(CHAR16 *desc, size_t desc_max_chars, CHAR16 *target) {
@@ -111,14 +112,11 @@ noreturn void efi_boot_entry(char *config) {
     }
 
     /* Convert entry string to UTF-16 */
-    CHAR16 boot_entry_utf16[128];
-    size_t i;
+    size_t boot_entry_len = strlen(boot_entry);
+    /* UTF-16 never takes more code units than UTF-8 takes bytes. */
+    CHAR16 *boot_entry_utf16 = ext_mem_alloc_counted(boot_entry_len + 1, sizeof(CHAR16));
 
-    for (i = 0; i < sizeof(boot_entry_utf16) / sizeof(CHAR16) - 1 && boot_entry[i]; i++) {
-        boot_entry_utf16[i] = (CHAR16)boot_entry[i];
-    }
-
-    boot_entry_utf16[i] = L'\0';
+    utf8_to_utf16(boot_entry_utf16, boot_entry_len + 1, boot_entry, boot_entry_len, NULL);
 
     /* Find the desired boot entry */
     uint16_t boot_next = 0;

@@ -38,6 +38,12 @@ void tpm_measure_path(uint32_t pcr, uint32_t event_type,
 // if no TPM is present or capture failed.
 bool tpm_get_event_log(uint32_t *format, void **address, size_t *size);
 
+// Append to the captured crypto-agile log the events the final events table
+// has gained since, those ExitBootServices() logs among them, and return the
+// log's size. None are appended unless all of them fit in the room the capture
+// kept for them.
+size_t tpm_append_final_events(void);
+
 // Free the captured event log buffer. Subsequent tpm_get_event_log() calls
 // return false.
 void tpm_release_event_log(void);

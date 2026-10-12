@@ -96,17 +96,28 @@ found:
         uint8_t *node_path = (uint8_t *)path + 4;
         size_t node_chars = (node_length - 4) / 2;
 
-        for (size_t i = 0; i < node_chars && len < EFI_APP_PATH_LEN - 1; i++) {
+        // A node boundary separates path components (UEFI 2.11 section
+        // 10.3.5.4).
+        bool separator = len != 0;
+
+        for (size_t i = 0; i < node_chars; i++) {
             CHAR16 c = node_path[i * 2] | (node_path[i * 2 + 1] << 8);
             if (c == 0) {
                 break;
             }
             if (c == L'\\') {
+                separator = true;
+                continue;
+            }
+            if (len + separator >= EFI_APP_PATH_LEN - 1) {
+                break;
+            }
+            if (separator) {
                 efi_app_path[len++] = '/';
                 dir_len = len;
-            } else {
-                efi_app_path[len++] = (char)(c & 0xff);
+                separator = false;
             }
+            efi_app_path[len++] = (char)(c & 0xff);
         }
 
         path = (void *)path + node_length;

@@ -7,11 +7,19 @@
 .set tpl_hhdm_offset,   32
 .set tpl_temp_stack,    40
 
+#define CSR_CRMD 0x00
+
 .global smp_trampoline_start
 .extern loongarch_spinup
 .extern loongarch_smp_passed_info
 
 smp_trampoline_start:
+        // CRMD.DATM may be uncached, and such loads would miss the BSP's
+        // cached writes to the parameter block, so make it coherent cached.
+        li.d    $t0, (1 << 7)
+        li.d    $t1, (3 << 7)
+        csrxchg $t0, $t1, CSR_CRMD
+
         // Load trampoline state and switch to the kernel page tables.
         la.local $t0, loongarch_smp_passed_info
         la.local $a0, 1f

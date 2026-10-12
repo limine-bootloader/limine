@@ -132,8 +132,9 @@ void vprint(const char *fmt, va_list args) {
             prn_char(print_buf, &print_buf_i, *fmt++);
         }
 
-        if (!*fmt++)
+        if (!*fmt++ || !*fmt) {
             goto out;
+        }
 
         switch (*fmt++) {
             case 's': {

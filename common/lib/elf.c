@@ -143,7 +143,7 @@ static bool elf32_validate(struct elf32_hdr *hdr) {
         panic(true, "elf: Not a Little-endian ELF file.");
     }
 
-    if (hdr->machine != ARCH_X86_32) {
+    if (hdr->machine != ARCH_X86_32 || hdr->ident[EI_CLASS] != ELFCLASS32) {
         panic(true, "elf: Not an IA-32 ELF file.");
     }
 
@@ -166,11 +166,11 @@ static bool elf64_validate(struct elf64_hdr *hdr) {
     }
 
 #if defined (__x86_64__) || defined (__i386__)
-    if (hdr->machine != ARCH_X86_64) {
+    if (hdr->machine != ARCH_X86_64 || hdr->ident[EI_CLASS] != ELFCLASS64) {
         panic(true, "elf: Not an x86-64 ELF file.");
     }
 #elif defined (__aarch64__)
-    if (hdr->machine != ARCH_AARCH64) {
+    if (hdr->machine != ARCH_AARCH64 || hdr->ident[EI_CLASS] != ELFCLASS64) {
         panic(true, "elf: Not an aarch64 ELF file.");
     }
 #elif defined (__riscv)
@@ -205,17 +205,24 @@ int elf_bits(uint8_t *elf, size_t file_size) {
         return -1;
     }
 
+    int bits;
+    if (hdr->ident[EI_CLASS] == ELFCLASS64) {
+        bits = 64;
+    } else if (hdr->ident[EI_CLASS] == ELFCLASS32) {
+        bits = 32;
+    } else {
+        return -1;
+    }
+
     switch (hdr->machine) {
         case ARCH_X86_64:
         case ARCH_AARCH64:
-            return 64;
+            return bits == 64 ? 64 : -1;
         case ARCH_RISCV:
         case ARCH_LOONGARCH:
-            if (hdr->ident[EI_CLASS] == ELFCLASS64) return 64;
-            if (hdr->ident[EI_CLASS] == ELFCLASS32) return 32;
-            return -1;
+            return bits;
         case ARCH_X86_32:
-            return 32;
+            return bits == 32 ? 32 : -1;
         default:
             return -1;
     }

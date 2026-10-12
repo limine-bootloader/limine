@@ -7,6 +7,17 @@
 #include <lib/print.h>
 #include <mm/pmm.h>
 
+static bool smbios_entry_32_valid(struct smbios_entry_point_32 *ep) {
+    // SMBIOS 2.1 misstated the length as 1Eh, which leaves out the BCD
+    // revision, so its implementations may use either 1Eh or 1Fh.
+    if (ep->length < offsetof(struct smbios_entry_point_32, bcd_revision)
+     || acpi_checksum(ep, ep->length) != 0) {
+        return false;
+    }
+
+    return true;
+}
+
 #if defined (BIOS)
 
 /// Returns the RSDP v1 pointer if available or else NULL.
@@ -31,9 +42,7 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
     for (size_t i = 0xf0000; i < 0x100000; i += 16) {
         struct smbios_entry_point_32 *ptr = (struct smbios_entry_point_32 *)i;
 
-        if (!memcmp(ptr->anchor_str, "_SM_", 4) &&
-            ptr->length >= sizeof(struct smbios_entry_point_32) &&
-            !acpi_checksum((void *)ptr, ptr->length)) {
+        if (!memcmp(ptr->anchor_str, "_SM_", 4) && smbios_entry_32_valid(ptr)) {
             printv("acpi: Found SMBIOS 32-bit entry point at %p\n", i);
             *smbios32 = (void *)ptr;
             break;
@@ -95,9 +104,9 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
 
         struct smbios_entry_point_32 *ptr = (struct smbios_entry_point_32 *)cur_table->VendorTable;
 
-        if (ptr->length < sizeof(struct smbios_entry_point_32)
-         || acpi_checksum((void *)ptr, ptr->length) != 0)
+        if (!smbios_entry_32_valid(ptr)) {
             continue;
+        }
 
         printv("acpi: Found SMBIOS 32-bit entry point at %p\n", ptr);
 

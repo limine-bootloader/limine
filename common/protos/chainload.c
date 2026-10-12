@@ -357,14 +357,23 @@ noreturn void chainload(char *config, char *cmdline) {
 
     size_t cmdline_len = strlen(cmdline);
     CHAR16 *new_cmdline = NULL;
+    size_t new_cmdline_size = 0;
     if (cmdline_len > 0) {
-        status = gBS->AllocatePool(EfiLoaderData, CHECKED_MUL(cmdline_len + 1, sizeof(CHAR16), panic(true, "efi: Allocation size overflow")), (void **)&new_cmdline);
+        // UTF-16 never takes more code units than UTF-8 takes bytes.
+        size_t cmdline_utf16_alloc_len = CHECKED_MUL(cmdline_len + 1, sizeof(CHAR16), panic(true, "efi: Allocation size overflow"));
+        CHAR16 *cmdline_utf16 = ext_mem_alloc(cmdline_utf16_alloc_len);
+
+        size_t cmdline_utf16_chars;
+        utf8_to_utf16(cmdline_utf16, cmdline_len + 1, cmdline, cmdline_len, &cmdline_utf16_chars);
+
+        new_cmdline_size = (cmdline_utf16_chars + 1) * sizeof(CHAR16);
+        status = gBS->AllocatePool(EfiLoaderData, new_cmdline_size, (void **)&new_cmdline);
         if (status) {
             panic(true, "efi: Allocation failure");
         }
-        for (size_t i = 0; i < cmdline_len + 1; i++) {
-            new_cmdline[i] = cmdline[i];
-        }
+        memcpy(new_cmdline, cmdline_utf16, new_cmdline_size);
+
+        pmm_free(cmdline_utf16, cmdline_utf16_alloc_len);
     }
 
     pmm_release_uefi_mem();
@@ -410,7 +419,7 @@ noreturn void chainload(char *config, char *cmdline) {
     new_handle_loaded_image->FilePath = efi_file_path;
 
     if (cmdline_len > 0) {
-        new_handle_loaded_image->LoadOptionsSize = (cmdline_len + 1) * sizeof(CHAR16);
+        new_handle_loaded_image->LoadOptionsSize = new_cmdline_size;
         new_handle_loaded_image->LoadOptions = new_cmdline;
     } else {
         new_handle_loaded_image->LoadOptionsSize = 0;

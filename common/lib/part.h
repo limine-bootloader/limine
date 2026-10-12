@@ -51,8 +51,9 @@ struct volume {
     // Built on the first logical partition probe and kept for the rest.
     struct volume *ebr_part;
     int ebr_walk_index;
-    uint64_t ebr_walk_sector;
+    int ebr_walk_depth;
     uint64_t ebr_walk_size;
+    uint64_t *ebr_walk_chain;
 
     uint64_t first_sect;
     uint64_t sect_count;

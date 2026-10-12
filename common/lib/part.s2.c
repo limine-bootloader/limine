@@ -707,8 +707,11 @@ uint32_t mbr_get_id(struct volume *volume) {
     return ret;
 }
 
-// Maximum number of logical partitions to prevent infinite loops from circular EBR chains
 #define MAX_LOGICAL_PARTITIONS 256
+
+// Maximum number of EBRs one chain is followed through, the sector of each
+// being kept to detect a loop.
+#define MAX_EBRS 256
 
 // A data entry's start is relative to the EBR that carries it, where the chain
 // link's is relative to the extended partition.
@@ -735,6 +738,7 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
 
     uint64_t ebr_sector = 0;
     uint64_t ebr_size = extended_part->sect_count;
+    int depth = 0;
     uint64_t first_sect_64 = 0;
     int accepted = 0;
     bool found = false;
@@ -743,15 +747,17 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
     // stopped instead of following the chain from its head every time.
     if (extended_part->ebr_walk_index <= partition) {
         accepted = extended_part->ebr_walk_index;
-        ebr_sector = extended_part->ebr_walk_sector;
+        depth = extended_part->ebr_walk_depth;
+        ebr_sector = extended_part->ebr_walk_chain[depth];
         ebr_size = extended_part->ebr_walk_size;
     }
 
-    for (int link = 0; link < MAX_LOGICAL_PARTITIONS; link++) {
+    for (;;) {
         // The memo pairs an EBR with the count of logicals before it, so it has
         // to be taken before this EBR's own entries are counted.
         extended_part->ebr_walk_index = accepted;
-        extended_part->ebr_walk_sector = ebr_sector;
+        extended_part->ebr_walk_depth = depth;
+        extended_part->ebr_walk_chain[depth] = ebr_sector;
         extended_part->ebr_walk_size = ebr_size;
 
         // Each EBR is an MBR-format sector of its own that is_valid_mbr() never
@@ -829,24 +835,26 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
             return END_OF_TABLE;
         }
 
-        uint64_t prev_ebr_sector = ebr_sector;
+        // Links may point backwards, as they do once a logical partition is
+        // created in a gap before existing ones, so a loop shows only as a
+        // sector the chain has already visited.
+        for (int i = 0; i <= depth; i++) {
+            if (extended_part->ebr_walk_chain[i] == link_first_sect) {
+                return END_OF_TABLE;
+            }
+        }
+
+        if (++depth == MAX_EBRS) {
+            return END_OF_TABLE;
+        }
+
         ebr_sector = link_first_sect;
         ebr_size = link_sect_count;
-
-        // Detect circular chain: if new sector points to 0 or backwards, it's invalid
-        // (EBR sectors should always increase within the extended partition)
-        if (ebr_sector == 0 || ebr_sector <= prev_ebr_sector) {
-            return END_OF_TABLE;  // Circular or corrupted EBR chain
-        }
 
         // Also check that ebr_sector is within the extended partition bounds
         if (ebr_sector >= extended_part->sect_count) {
             return END_OF_TABLE;  // EBR points outside extended partition
         }
-    }
-
-    if (!found) {
-        return END_OF_TABLE;
     }
 
 #if defined (UEFI)
@@ -937,6 +945,7 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
 
             // The head EBR may describe the whole extended partition.
             extended_part->ebr_walk_size = entry.sect_count;
+            extended_part->ebr_walk_chain = ext_mem_alloc(MAX_EBRS * sizeof(uint64_t));
 
             volume->ebr_part = extended_part;
 

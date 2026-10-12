@@ -127,10 +127,15 @@ static void *acpi_get_table_impl(const char *signature, int index, bool log) {
 
     for (size_t i = 0; i < entry_count; i++) {
         struct sdt *ptr;
-        if (use_xsdt)
-            ptr = (struct sdt *)(uintptr_t)((uint64_t *)rsdt->ptrs_start)[i];
-        else
-            ptr = (struct sdt *)(uintptr_t)((uint32_t *)rsdt->ptrs_start)[i];
+        if (use_xsdt) {
+            uint64_t entry;
+            memcpy(&entry, rsdt->ptrs_start + i * sizeof(entry), sizeof(entry));
+            ptr = (struct sdt *)(uintptr_t)entry;
+        } else {
+            uint32_t entry;
+            memcpy(&entry, rsdt->ptrs_start + i * sizeof(entry), sizeof(entry));
+            ptr = (struct sdt *)(uintptr_t)entry;
+        }
 
         if (ptr == NULL) {
             continue;

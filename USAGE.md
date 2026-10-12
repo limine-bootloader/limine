@@ -211,10 +211,15 @@ server or your existing DHCP server and a proxy DHCP server such as dnsmasq.
 `limine.conf` and `limine-bios.sys` are expected to be on the server used for
 boot.
 
+With BIOS PXE, the TFTP server must support the `tsize` option (RFC 2349):
+Limine asks for the size of every file before transferring it, and treats a
+file whose size the server does not report as missing.
+
 ## UEFI/PXE boot
 The `BOOT*.EFI` files are compatible with UEFI PXE.
 The steps needed to boot Limine are the same as with BIOS PXE,
-except that the `limine-bios.sys` file is not needed on the server.
+except that the `limine-bios.sys` file is not needed on the server, and
+neither is `tsize` support, as the firmware finds sizes without it.
 
 ## Configuration
 The `limine.conf` file contains Limine's configuration.

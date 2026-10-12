@@ -268,7 +268,8 @@ Editor control options:
   kernel/executable. Valid protocols are: `linux`, `limine`, `multiboot`
   (or `multiboot1`), `multiboot2`, `efi`, `efi_boot_entry` and `bios`.
 * `cmdline` - The command line string to be passed to the kernel/executable.
-  Can be omitted.
+  Can be omitted. The `bios` and `efi_boot_entry` protocols take no command
+  line, and ignore it.
 * `kernel_cmdline` - Alias of `cmdline`.
 * `if_fw_type` - Hide the entry if the firmware does not match. Valid values
   are: `BIOS`, `UEFI`

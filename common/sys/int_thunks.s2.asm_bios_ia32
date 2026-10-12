@@ -13,6 +13,9 @@ raise_exception_%1:
 %endif
     push ebp
     mov ebp, esp
+    and esp, -16
+    push dword [ebp + 4]
+    push dword [ebp]
     push eax
     push %1
     call except

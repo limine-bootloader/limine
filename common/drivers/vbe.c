@@ -88,6 +88,10 @@ struct vbe_mode_info_struct {
     uint8_t  reserved2[190];
 } __attribute__((packed));
 
+// VBE 3.0 ModeAttributes D0, D3, and D4: supported by the hardware
+// configuration, colour, and graphics.
+#define VBE_MODE_ATTRS_REQUIRED ((1 << 0) | (1 << 3) | (1 << 4))
+
 static bool get_vbe_info(struct vbe_info_struct *buf) {
     struct rm_regs r = {0};
 
@@ -169,6 +173,9 @@ struct fb_info *vbe_get_mode_list(size_t *count) {
         // We only support linear modes
         if (!(vbe_mode_info.mode_attributes & (1 << 7)))
             continue;
+        if ((vbe_mode_info.mode_attributes & VBE_MODE_ATTRS_REQUIRED) != VBE_MODE_ATTRS_REQUIRED) {
+            continue;
+        }
 
         uint16_t pitch = (vbe_info.version_maj < 3)
                        ? vbe_mode_info.bytes_per_scanline
@@ -272,6 +279,9 @@ retry:
             // We only support linear modes
             if (!(vbe_mode_info.mode_attributes & (1 << 7)))
                 continue;
+            if ((vbe_mode_info.mode_attributes & VBE_MODE_ATTRS_REQUIRED) != VBE_MODE_ATTRS_REQUIRED) {
+                continue;
+            }
             printv("vbe: Found matching mode %x, attempting to set...\n", vid_modes[i]);
             if (vid_modes[i] == current_video_mode) {
                 printv("vbe: Mode was already set, perfect!\n");

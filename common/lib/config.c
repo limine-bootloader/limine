@@ -70,7 +70,7 @@ static bool init_efi_app_path(size_t *len_out) {
             goto found;
         }
 
-        uint16_t node_length = *((uint16_t *)&path->Length[0]);
+        uint16_t node_length = DevicePathNodeLength(path);
         if (node_length < 4) {
             return false;
         }
@@ -83,20 +83,25 @@ found:
     // A file path may span several consecutive MEDIA_FILEPATH_DP nodes; walk
     // them all, bounding each scan by the node length, and keep the directory.
     while (path->Type == MEDIA_DEVICE_PATH && path->SubType == MEDIA_FILEPATH_DP) {
-        uint16_t node_length = *((uint16_t *)&path->Length[0]);
+        uint16_t node_length = DevicePathNodeLength(path);
         if (node_length < 4) {
             return false;
         }
 
-        CHAR16 *node_path = (CHAR16 *)((void *)path + 4);
+        // Nodes may start at any byte boundary (UEFI 2.11 section 10.3.1).
+        uint8_t *node_path = (uint8_t *)path + 4;
         size_t node_chars = (node_length - 4) / 2;
 
-        for (size_t i = 0; i < node_chars && node_path[i] != 0 && len < EFI_APP_PATH_LEN - 1; i++) {
-            if (node_path[i] == L'\\') {
+        for (size_t i = 0; i < node_chars && len < EFI_APP_PATH_LEN - 1; i++) {
+            CHAR16 c = node_path[i * 2] | (node_path[i * 2 + 1] << 8);
+            if (c == 0) {
+                break;
+            }
+            if (c == L'\\') {
                 efi_app_path[len++] = '/';
                 dir_len = len;
             } else {
-                efi_app_path[len++] = (char)(node_path[i] & 0xff);
+                efi_app_path[len++] = (char)(c & 0xff);
             }
         }
 

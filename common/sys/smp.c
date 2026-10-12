@@ -477,16 +477,32 @@ static bool try_start_ap(int boot_method, uint64_t method_ptr,
 
         case BOOT_WITH_PSCI_SMC:
         case BOOT_WITH_PSCI_HVC: {
-            register int32_t result asm("w0");
-            register uint32_t cmd asm("w0") = psci_cpu_on;
-            register uint64_t cpu asm("x1") = info_struct->mpidr;
-            register uint64_t addr asm("x2") = (uint64_t)(uintptr_t)trampoline;
-            register uint64_t ctx asm("x3") = 0;
+            register uint64_t x0 asm ("x0") = psci_cpu_on;
+            register uint64_t x1 asm ("x1") = info_struct->mpidr;
+            register uint64_t x2 asm ("x2") = (uint64_t)(uintptr_t)trampoline;
+            register uint64_t x3 asm ("x3") = 0;
 
-            if (boot_method == BOOT_WITH_PSCI_SMC)
-                asm volatile ("smc #0" : "=r"(result) : "r"(cmd), "r"(cpu), "r"(addr), "r"(ctx));
-            else
-                asm volatile ("hvc #0" : "=r"(result) : "r"(cmd), "r"(cpu), "r"(addr), "r"(ctx));
+            // SMCCC returns results in x0-x3, and version 1.0 leaves x4-x17
+            // unpredictable. Arm DEN0028.
+            if (boot_method == BOOT_WITH_PSCI_SMC) {
+                asm volatile (
+                    "smc #0"
+                    : "+r"(x0), "+r"(x1), "+r"(x2), "+r"(x3)
+                    :
+                    : "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12",
+                        "x13", "x14", "x15", "x16", "x17", "memory"
+                );
+            } else {
+                asm volatile (
+                    "hvc #0"
+                    : "+r"(x0), "+r"(x1), "+r"(x2), "+r"(x3)
+                    :
+                    : "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12",
+                        "x13", "x14", "x15", "x16", "x17", "memory"
+                );
+            }
+
+            int32_t result = (int32_t)x0;
 
             switch (result) {
                 case 0: // Success

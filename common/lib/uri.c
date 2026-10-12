@@ -8,6 +8,7 @@
 #include <fs/file.h>
 #include <mm/pmm.h>
 #include <lib/print.h>
+#include <lib/term.h>
 #include <pxe/tftp.h>
 #include <menu.h>
 #include <lib/getchar.h>
@@ -308,6 +309,8 @@ static bool uri_hash_mismatch(const struct hash_reference *hash_ref, const char 
 
     char ch = getchar();
     if (ch != 'Y' && ch != 'y') {
+        // menu()'s rewind forgets the framebuffer setup without undoing it.
+        term_notready();
         menu(false);
     }
     print("\n");

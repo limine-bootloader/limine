@@ -94,7 +94,7 @@ if ! test -f version; then
 fi
 
 # Create timestamps file
-if test -d .git && git log -1 >/dev/null 2>&1; then
+if test -e .git && git log -1 >/dev/null 2>&1; then
     cat >timestamps <<EOF
 REGEN_DATE="$(LC_ALL=C git -c log.showSignature=false log -1 --pretty=%cd --date='format:%B %Y')"
 SOURCE_DATE_EPOCH="$(git -c log.showSignature=false log -1 --pretty=%ct)"

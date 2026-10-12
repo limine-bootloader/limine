@@ -1423,6 +1423,10 @@ FEAT_START
                 panic(true, "limine: Internal module path or string is outside the executable");
             }
 
+            // Data that comes with a response belongs in bootloader-reclaimable
+            // memory, not in the executable.
+            module_cmdline = strdup(module_cmdline);
+
             bool module_compressed = internal_module->flags & LIMINE_INTERNAL_MODULE_COMPRESSED;
 
             // Validate path length to prevent buffer overflow
@@ -1499,6 +1503,7 @@ FEAT_START
             if (module_path_allocated) {
                 pmm_free(module_path, 1024);
             }
+            pmm_free(module_cmdline, strlen(module_cmdline) + 1);
             continue;
         }
         struct limine_file *l = &modules[final_module_count++];

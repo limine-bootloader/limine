@@ -553,11 +553,16 @@ static bool device_paths_match_disk(EFI_DEVICE_PATH_PROTOCOL *dp1,
     return true;
 }
 
-static struct volume *volume_by_device_path(EFI_HANDLE query_handle) {
+static struct volume *volume_by_device_path(EFI_HANDLE query_handle, bool cdrom_medium_fallback) {
     EFI_DEVICE_PATH_PROTOCOL *query_dp = get_device_path(query_handle);
     if (query_dp == NULL) {
         return NULL;
     }
+
+    // A CD-ROM node names an El Torito boot image (UEFI 2.11 10.3.5.2), which
+    // has no volume unless a partition table describes it too, so the caller
+    // may fall back to the medium holding it.
+    struct volume *cdrom_medium = NULL;
 
     for (size_t i = 0; i < volume_index_i; i++) {
         EFI_DEVICE_PATH_PROTOCOL *vol_dp = get_device_path(volume_index[i]->efi_handle);
@@ -596,6 +601,9 @@ static struct volume *volume_by_device_path(EFI_HANDLE query_handle) {
                     if (first_sect_lba == query_cd->PartitionStart) {
                         return volume_index[i];
                     }
+                    if (cdrom_medium == NULL && volume_index[i]->partition == 0) {
+                        cdrom_medium = volume_index[i];
+                    }
                     break;
                 }
                 uint16_t len = DevicePathNodeLength(qp);
@@ -611,10 +619,10 @@ static struct volume *volume_by_device_path(EFI_HANDLE query_handle) {
         }
     }
 
-    return NULL;
+    return cdrom_medium_fallback ? cdrom_medium : NULL;
 }
 
-struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
+static struct volume *volume_from_efi_handle(EFI_HANDLE efi_handle, bool cdrom_medium_fallback) {
     EFI_STATUS status;
 
     EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
@@ -630,7 +638,7 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
     }
 
     // Try device path matching first (primary method)
-    struct volume *ret = volume_by_device_path(efi_handle);
+    struct volume *ret = volume_by_device_path(efi_handle, cdrom_medium_fallback);
     if (ret != NULL) {
         return ret;
     }
@@ -667,6 +675,10 @@ struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
     // network from this handle: PXE stacks have been known to leave a
     // non-functional one behind on it.
     return pxe_from_efi_handle(efi_handle);
+}
+
+struct volume *disk_volume_from_efi_handle(EFI_HANDLE efi_handle) {
+    return volume_from_efi_handle(efi_handle, true);
 }
 
 static void find_unique_sectors(void) {
@@ -728,7 +740,8 @@ static void find_part_handles(EFI_HANDLE *handles, size_t handle_count) {
             continue;
         }
 
-        struct volume *vol = disk_volume_from_efi_handle(handles[i]);
+        // A disc keeps its own handle, not one of its El Torito images'.
+        struct volume *vol = volume_from_efi_handle(handles[i], false);
         if (vol == NULL) {
             continue;
         }

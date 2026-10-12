@@ -722,7 +722,12 @@ static struct limine_mp_info *try_dtb_smp( void *dtb,
         psci = fdt_node_offset_by_compatible(dtb, -1, "arm,psci");
     }
 
-    if (psci >= 0 && !fdt_node_check_compatible(dtb, psci, "arm,psci")) {
+    // Per the PSCI binding, cpu_on is for PSCI 0.1 software alone, and is to be
+    // ignored where the node also lists a later version.
+    if (psci >= 0
+     && !fdt_node_check_compatible(dtb, psci, "arm,psci")
+     && fdt_node_check_compatible(dtb, psci, "arm,psci-0.2")
+     && fdt_node_check_compatible(dtb, psci, "arm,psci-1.0")) {
         int prop_len;
         const void *prop;
         if (!(prop = fdt_getprop(dtb, psci, "cpu_on", &prop_len)) || prop_len < 4) {

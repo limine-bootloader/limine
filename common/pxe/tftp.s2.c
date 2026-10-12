@@ -10,7 +10,9 @@
 #include <mm/pmm.h>
 #include <lib/misc.h>
 
-// cache the dhcp packet
+// The DHCP ACK, for the Multiboot 2 network tag. With ProxyDHCP or a separate
+// boot server, the reply naming the TFTP server has neither the client address
+// nor the DHCP server's options.
 uint8_t cached_dhcp_packet[DHCP_ACK_PACKET_LEN] = { 0 };
 bool cached_dhcp_ack_valid = false;
 
@@ -36,18 +38,32 @@ static uint32_t get_boot_server_info(void) {
 
     struct bootph *reply = (struct bootph *)rm_desegment(cached_info.buffer.segment, cached_info.buffer.offset);
 
-    if (!cached_dhcp_ack_valid) {
-        memcpy(cached_dhcp_packet, reply, MIN(cached_info.buffer_size, DHCP_ACK_PACKET_LEN));
-        cached_dhcp_ack_valid = true;
+    return reply->sip;
+}
+
+static void cache_dhcp_ack(void) {
+    struct pxenv_get_cached_info cached_info = {
+        .status = 0,
+        .packet_type = PXENV_PACKET_TYPE_DHCP_ACK,
+    };
+
+    int ret = pxe_call(PXENV_GET_CACHED_INFO, ((uint16_t)rm_seg(&cached_info)), (uint16_t)rm_off(&cached_info));
+    if (ret || cached_info.buffer_size < sizeof(struct bootph)) {
+        return;
     }
 
-    return reply->sip;
+    void *ack = (void *)rm_desegment(cached_info.buffer.segment, cached_info.buffer.offset);
+    memcpy(cached_dhcp_packet, ack, MIN(cached_info.buffer_size, DHCP_ACK_PACKET_LEN));
+    cached_dhcp_ack_valid = true;
 }
 
 static uint32_t parse_ip_addr(const char *server_addr) {
     uint32_t out;
 
     if (!server_addr || !strlen(server_addr)) {
+        if (!cached_dhcp_ack_valid) {
+            cache_dhcp_ack();
+        }
         return get_boot_server_info();
     }
 
@@ -196,8 +212,8 @@ static EFI_IP_ADDRESS *parse_ip_addr(struct volume *part, const char *server_add
         else if (part->pxe_base_code->Mode->ProxyOfferReceived) packet = &part->pxe_base_code->Mode->ProxyOffer;
         else packet = &part->pxe_base_code->Mode->DhcpAck;
         memcpy(out.Addr, packet->Dhcpv4.BootpSiAddr, 4);
-        if (!cached_dhcp_ack_valid) {
-            memcpy(cached_dhcp_packet, packet, DHCP_ACK_PACKET_LEN);
+        if (!cached_dhcp_ack_valid && part->pxe_base_code->Mode->DhcpAckReceived) {
+            memcpy(cached_dhcp_packet, &part->pxe_base_code->Mode->DhcpAck, DHCP_ACK_PACKET_LEN);
             cached_dhcp_ack_valid = true;
         }
     } else {

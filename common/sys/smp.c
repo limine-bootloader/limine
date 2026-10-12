@@ -713,9 +713,16 @@ static struct limine_mp_info *try_dtb_smp( void *dtb,
         return NULL;
     }
 
-    int psci = fdt_path_offset(dtb, "/psci");
+    // The PSCI binding fixes the node's compatible, not its path.
+    int psci = fdt_node_offset_by_compatible(dtb, -1, "arm,psci-1.0");
+    if (psci < 0) {
+        psci = fdt_node_offset_by_compatible(dtb, -1, "arm,psci-0.2");
+    }
+    if (psci < 0) {
+        psci = fdt_node_offset_by_compatible(dtb, -1, "arm,psci");
+    }
 
-    if (psci > 0 && !fdt_node_check_compatible(dtb, psci, "arm,psci")) {
+    if (psci >= 0 && !fdt_node_check_compatible(dtb, psci, "arm,psci")) {
         int prop_len;
         const void *prop;
         if (!(prop = fdt_getprop(dtb, psci, "cpu_on", &prop_len)) || prop_len < 4) {
@@ -814,7 +821,7 @@ static struct limine_mp_info *try_dtb_smp( void *dtb,
 
         if (!strcmp(prop, "psci")) {
             if (psci < 0) {
-                printv("smp: failed to find /psci: %s\n", fdt_strerror(psci));
+                printv("smp: failed to find PSCI node: %s\n", fdt_strerror(psci));
                 continue;
             }
 

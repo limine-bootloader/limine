@@ -441,6 +441,21 @@ static void prepare_efi_tables(struct boot_param *p, char *config) {
     efi_exit_boot_services();
 }
 
+#if !defined (__loongarch__)
+// Kernels do without runtime services when the runtime descriptors they get
+// carry all-ones virtual addresses.
+static void mark_runtime_unmapped(EFI_MEMORY_DESCRIPTOR *map) {
+    size_t entry_count = efi_mmap_size / efi_desc_size;
+    for (size_t i = 0; i < entry_count; i++) {
+        EFI_MEMORY_DESCRIPTOR *entry = (void *)map + i * efi_desc_size;
+
+        if (entry->Attribute & EFI_MEMORY_RUNTIME) {
+            entry->VirtualStart = UINT64_MAX;
+        }
+    }
+}
+#endif
+
 static void prepare_mmap(struct boot_param *p) {
     {
         void *dtb = p->dtb;
@@ -493,7 +508,15 @@ static void prepare_mmap(struct boot_param *p) {
 
     EFI_STATUS status = gRT->SetVirtualAddressMap(efi_mmap_size, efi_desc_size, efi_desc_ver, efi_mmap);
     if (status != EFI_SUCCESS) {
+#if defined (__loongarch__)
+        // The kernel uses the runtime services table regardless of the
+        // descriptors' virtual addresses, so it cannot do without the mapping.
         panic(false, "linux: failed to set UEFI virtual address map: '%X'", (uint64_t)status);
+#else
+        printv("linux: failed to set UEFI virtual address map: '%X', booting without runtime services\n", (uint64_t)status);
+        mark_runtime_unmapped(efi_mmap);
+        mark_runtime_unmapped(p->memmap->descs);
+#endif
     }
 }
 

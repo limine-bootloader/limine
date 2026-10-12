@@ -54,7 +54,15 @@ size_t hw_entropy(void *buf, size_t size) {
             ok = rdseed(uint64_t, &wide); // Always do a 64-bit op on 64-bit to work around CPU bugs.
             val = (uint32_t)wide;
 #elif defined (__i386__)
-            ok = rdseed(uint32_t, &val);
+            // Zen 5 parts without fixed microcode return 0 with CF set from
+            // this form, so a zero is retried, then taken as a failure.
+            for (int i = 0; i < 10; i++) {
+                ok = rdseed(uint32_t, &val);
+                if (!ok || val != 0) {
+                    break;
+                }
+            }
+            ok = ok && val != 0;
 #endif
         }
 
@@ -71,7 +79,7 @@ size_t hw_entropy(void *buf, size_t size) {
         }
 
         // Carry stays clear only when every retry failed, i.e. the source is
-        // exhausted; a genuine zero draw sets carry and must be kept.
+        // exhausted; a zero draw is kept, except 32-bit RDSEED's above.
         if (!ok) {
             break;
         }

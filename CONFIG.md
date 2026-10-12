@@ -428,11 +428,12 @@ name is only available through Rock Ridge.
 
 For MBR, the four primary partitions take the numbers 1 to 4 by the slot they
 occupy, whether or not that slot is used, and logical partitions are numbered
-from 5 upwards by counting along the extended partition's chain. Every entry
-with a non-zero size takes a number, except an entry of an extended type --
-of which only the first non-empty one is the link to the next EBR -- and one
-in an EBR's last two slots that falls outside either the extended partition
-or the extent the link that led to that EBR declared.
+from 5 upwards by counting along the chain of every extended partition, one
+chain after another in slot order. Every entry with a non-zero size takes a
+number, except an entry of an extended type (of which only an EBR's first
+non-empty one is the link to the next EBR) and one in an EBR's last two slots
+that falls outside either the extended partition or the extent the link that
+led to that EBR declared.
 
 A path can optionally be suffixed with a blake2b hash for the referenced file,
 by appending a pound character (`#`) followed by the blake2b hash.

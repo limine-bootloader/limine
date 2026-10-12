@@ -727,35 +727,25 @@ static bool mbr_logical_entry_contained(struct volume *extended_part, uint64_t e
     return partition_range_valid(extended_part->backing_dev, *first_sect, entry->sect_count);
 }
 
+// Walks on from the memo. Wherever the walk stops, accepted is left holding the
+// count of logical partitions numbered so far, which the next extended
+// partition's chain numbers on from.
 static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part,
-                                int partition) {
+                                int partition, int *accepted) {
     struct mbr_part entry;
 
-    // Limit partition index to prevent excessive iteration
-    if (partition >= MAX_LOGICAL_PARTITIONS) {
-        return END_OF_TABLE;
-    }
-
-    uint64_t ebr_sector = 0;
-    uint64_t ebr_size = extended_part->sect_count;
-    int depth = 0;
+    int depth = extended_part->ebr_walk_depth;
+    uint64_t ebr_sector = extended_part->ebr_walk_chain[depth];
+    uint64_t ebr_size = extended_part->ebr_walk_size;
     uint64_t first_sect_64 = 0;
-    int accepted = 0;
     bool found = false;
 
-    // Partitions are probed in order, so carry on from where the last probe
-    // stopped instead of following the chain from its head every time.
-    if (extended_part->ebr_walk_index <= partition) {
-        accepted = extended_part->ebr_walk_index;
-        depth = extended_part->ebr_walk_depth;
-        ebr_sector = extended_part->ebr_walk_chain[depth];
-        ebr_size = extended_part->ebr_walk_size;
-    }
+    *accepted = extended_part->ebr_walk_index;
 
     for (;;) {
         // The memo pairs an EBR with the count of logicals before it, so it has
         // to be taken before this EBR's own entries are counted.
-        extended_part->ebr_walk_index = accepted;
+        extended_part->ebr_walk_index = *accepted;
         extended_part->ebr_walk_depth = depth;
         extended_part->ebr_walk_chain[depth] = ebr_sector;
         extended_part->ebr_walk_size = ebr_size;
@@ -816,7 +806,7 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
                 continue;
             }
 
-            if (accepted == partition) {
+            if (*accepted == partition) {
                 if (!contained) {
                     return NO_PARTITION;
                 }
@@ -824,7 +814,7 @@ static int mbr_get_logical_part(struct volume *ret, struct volume *extended_part
                 break;
             }
 
-            accepted++;
+            (*accepted)++;
         }
 
         if (found) {
@@ -902,11 +892,29 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
     struct mbr_part entry;
 
     if (partition > 3) {
-        if (volume->ebr_part != NULL) {
-            return mbr_get_logical_part(ret, volume->ebr_part, partition - 4);
+        struct volume *extended_part = volume->ebr_part;
+        int first_slot = 0;
+        int accepted = 0;
+
+        // Limit partition index to prevent excessive iteration
+        if (partition - 4 >= MAX_LOGICAL_PARTITIONS) {
+            return END_OF_TABLE;
         }
 
-        for (int i = 0; i < 4; i++) {
+        // Partitions are probed in order, so carry on from where the last probe
+        // stopped instead of following the chains from the first every time.
+        if (extended_part != NULL && extended_part->ebr_walk_index <= partition - 4) {
+            int status = mbr_get_logical_part(ret, extended_part, partition - 4, &accepted);
+            if (status != END_OF_TABLE) {
+                return status;
+            }
+
+            first_slot = extended_part->partition;
+        }
+
+        // More than one extended partition is non-standard, but the running
+        // system walks every one in slot order, numbering on across them.
+        for (int i = first_slot; i < 4; i++) {
             uint64_t entry_offset = 0x1be + sizeof(struct mbr_entry) * i;
 
             if (!mbr_read_entry(volume, entry_offset, &entry)) {
@@ -926,7 +934,7 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
                 continue;
             }
 
-            struct volume *extended_part = ext_mem_alloc(sizeof(struct volume));
+            extended_part = ext_mem_alloc(sizeof(struct volume));
 
 #if defined (UEFI)
             extended_part->efi_handle  = volume->efi_handle;
@@ -943,13 +951,17 @@ static int mbr_get_part(struct volume *ret, struct volume *volume, int partition
             extended_part->sect_count  = entry.sect_count;
             extended_part->backing_dev = volume;
 
+            extended_part->ebr_walk_index = accepted;
             // The head EBR may describe the whole extended partition.
             extended_part->ebr_walk_size = entry.sect_count;
             extended_part->ebr_walk_chain = ext_mem_alloc(MAX_EBRS * sizeof(uint64_t));
 
             volume->ebr_part = extended_part;
 
-            return mbr_get_logical_part(ret, extended_part, partition - 4);
+            int status = mbr_get_logical_part(ret, extended_part, partition - 4, &accepted);
+            if (status != END_OF_TABLE) {
+                return status;
+            }
         }
 
         return END_OF_TABLE;

@@ -48,7 +48,8 @@ struct volume {
     uint8_t *cache;
     uint64_t cached_block;
 
-    // Built on the first logical partition probe and kept for the rest.
+    // The extended partition whose chain the last logical partition probe
+    // walked, which the next probe carries on from.
     struct volume *ebr_part;
     int ebr_walk_index;
     int ebr_walk_depth;

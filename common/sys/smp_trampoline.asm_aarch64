@@ -58,6 +58,11 @@ smp_trampoline_start:
     msr hcr_el2, x8
     isb
 
+    // E2H is permitted to be cached in TLB entries.
+    tlbi alle2
+    dsb nsh
+    isb
+
     // Configure EL2 state for VHE
     msr spsel, #0
 

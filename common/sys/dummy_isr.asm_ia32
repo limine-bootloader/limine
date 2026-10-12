@@ -5,6 +5,9 @@ extern lapic_eoi
 global dummy_isr
 dummy_isr:
     pusha
+    mov esi, esp
+    and esp, -16
     call lapic_eoi
+    mov esp, esi
     popa
     iretd

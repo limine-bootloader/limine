@@ -1944,6 +1944,7 @@ FEAT_END
     // TPM event log feature. Processed last so GetEventLog snapshots a log
     // containing all of Limine's extends; later extends would land in the
     // final-events table instead.
+    struct limine_tpm_event_log_response *tpm_event_log_response = NULL;
 FEAT_START
     struct limine_tpm_event_log_request *tpm_event_log_request = get_request(tpm_event_log_request, LIMINE_TPM_EVENT_LOG_REQUEST_ID);
     if (tpm_event_log_request == NULL) {
@@ -1957,8 +1958,7 @@ FEAT_START
         break; // no TPM or capture failed
     }
 
-    struct limine_tpm_event_log_response *tpm_event_log_response =
-        ext_mem_alloc(sizeof(struct limine_tpm_event_log_response));
+    tpm_event_log_response = ext_mem_alloc(sizeof(struct limine_tpm_event_log_response));
 
     tpm_event_log_response->format = tpm_event_log_format;
     tpm_event_log_response->size = tpm_event_log_size;
@@ -1979,6 +1979,12 @@ FEAT_END
 #endif
 
     efi_exit_boot_services();
+
+    // ExitBootServices() measures into PCR 5, and only the final events table
+    // records those events.
+    if (tpm_event_log_response != NULL) {
+        tpm_event_log_response->size = tpm_append_final_events();
+    }
 #endif
 
     // EFI memory map

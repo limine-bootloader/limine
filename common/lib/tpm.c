@@ -20,6 +20,10 @@
 // Real logs are far smaller; a larger one is taken to be corrupt.
 #define TCG_LOG_MAX_SIZE 0x400000
 
+// Room kept past the copy of a crypto-agile log for the events logged after
+// its capture, such as ExitBootServices()'s, which are a few small records.
+#define TCG_LOG_HEADROOM 0x2000
+
 // TPMs have a handful of PCR banks; the cap keeps record parsing cheap.
 #define TCG_LOG_MAX_ALGORITHMS 16
 
@@ -391,20 +395,20 @@ static size_t tcg_log_size(const uint8_t *data, size_t limit, size_t last_offset
 
 // The final events table repeats every event logged since the first
 // GetEventLog call (TCG EFI Protocol section 7, UEFI 2.11 section 38.3), so the
-// events it holds at capture are the newest ones of the captured log. Returns
-// their size, or 0 where that cannot be established: an OS then replays them
-// all, and a duplicated event does less harm than a lost one.
-static size_t tcg_final_events_preboot_size(const uint8_t *log_data, size_t log_size,
-                                            const struct tcg_digest_sizes *sizes) {
+// events it holds at capture are the newest ones of the captured log. Gives
+// their number and size, unless that cannot be established: an OS then
+// replays them all, and a duplicated event does less harm than a lost one.
+static bool tcg_final_events_preboot(const uint8_t *log_data, size_t log_size,
+    const struct tcg_digest_sizes *sizes, uint64_t *count, size_t *total_size) {
     const uint8_t *table = tpm_get_final_events_table();
     if (table == NULL) {
-        return 0;
+        return false;
     }
 
     EFI_TCG2_FINAL_EVENTS_TABLE header;
     memcpy(&header, table, offsetof(EFI_TCG2_FINAL_EVENTS_TABLE, Events));
     if (header.Version != TCG_FINAL_EVENTS_TABLE_VERSION) {
-        return 0;
+        return false;
     }
 
     const uint8_t *events = table + offsetof(EFI_TCG2_FINAL_EVENTS_TABLE, Events);
@@ -415,15 +419,18 @@ static size_t tcg_final_events_preboot_size(const uint8_t *log_data, size_t log_
     for (uint64_t i = 0; i < header.NumberOfEvents; i++) {
         size_t size = tcg_pcr_event2_size(events + total, limit - total, sizes);
         if (size == 0) {
-            return 0;
+            return false;
         }
         total += size;
     }
 
     if (memcmp(events, log_data + log_size - total, total) != 0) {
-        return 0;
+        return false;
     }
-    return total;
+
+    *count = header.NumberOfEvents;
+    *total_size = total;
+    return true;
 }
 
 static bool tcg2_get_event_log(uint32_t *format, EFI_PHYSICAL_ADDRESS *location,
@@ -472,7 +479,14 @@ static enum event_log_state event_log_state = EVENT_LOG_UNCAPTURED;
 static uint32_t event_log_format;
 static void *event_log_copy;
 static size_t event_log_size;
+static size_t event_log_capacity;
 static size_t event_log_preboot_size;
+
+// Set where the log is known to end with the first event_log_preboot_count
+// events of the final events table, which take event_log_preboot_size bytes.
+static bool event_log_appendable;
+static uint64_t event_log_preboot_count;
+static struct tcg_digest_sizes event_log_digest_sizes;
 
 static bool event_log_capture(void) {
     uint32_t format;
@@ -520,23 +534,34 @@ static bool event_log_capture(void) {
     }
 
     void *copy = NULL;
+    size_t capacity = size;
     if (size != 0) {
-        copy = ext_mem_alloc(size);
+        if (format == EFI_TCG2_EVENT_LOG_FORMAT_TCG_2) {
+            capacity += TCG_LOG_HEADROOM;
+        }
+        copy = ext_mem_alloc(capacity);
         memcpy(copy, log_data, size);
     }
 
     // A truncated log can lack events that the final events table holds.
     size_t preboot_size = 0;
+    uint64_t preboot_count = 0;
+    bool appendable = false;
     if (truncated) {
         printv("tpm: firmware event log is truncated\n");
     } else if (format == EFI_TCG2_EVENT_LOG_FORMAT_TCG_2 && size != 0) {
-        preboot_size = tcg_final_events_preboot_size(copy, size, &sizes);
+        appendable = tcg_final_events_preboot(copy, size, &sizes,
+            &preboot_count, &preboot_size);
     }
 
     event_log_format = format;
     event_log_copy = copy;
     event_log_size = size;
+    event_log_capacity = capacity;
     event_log_preboot_size = preboot_size;
+    event_log_appendable = appendable;
+    event_log_preboot_count = preboot_count;
+    event_log_digest_sizes = sizes;
 
     printv("tpm: captured %U byte event log, format %u, final events pre-boot size %U\n",
            (uint64_t)size, format, (uint64_t)preboot_size);
@@ -558,6 +583,47 @@ bool tpm_get_event_log(uint32_t *format, void **address, size_t *size) {
     return true;
 }
 
+size_t tpm_append_final_events(void) {
+    if (!event_log_appendable) {
+        return event_log_size;
+    }
+
+    const uint8_t *table = tpm_get_final_events_table();
+    if (table == NULL) {
+        return event_log_size;
+    }
+
+    EFI_TCG2_FINAL_EVENTS_TABLE header;
+    memcpy(&header, table, offsetof(EFI_TCG2_FINAL_EVENTS_TABLE, Events));
+    if (header.Version != TCG_FINAL_EVENTS_TABLE_VERSION
+     || header.NumberOfEvents < event_log_preboot_count) {
+        return event_log_size;
+    }
+
+    const uint8_t *events = table + offsetof(EFI_TCG2_FINAL_EVENTS_TABLE, Events)
+        + event_log_preboot_size;
+    size_t room = event_log_capacity - event_log_size;
+    size_t total = 0;
+
+    for (uint64_t i = event_log_preboot_count; i < header.NumberOfEvents; i++) {
+        size_t size = tcg_pcr_event2_size(events + total, room - total,
+            &event_log_digest_sizes);
+        if (size == 0) {
+            printv("tpm: cannot append the events logged after the capture\n");
+            return event_log_size;
+        }
+        total += size;
+    }
+
+    memcpy((uint8_t *)event_log_copy + event_log_size, events, total);
+    event_log_size += total;
+    event_log_preboot_size += total;
+    event_log_preboot_count = header.NumberOfEvents;
+
+    printv("tpm: appended %U bytes of events logged after the capture\n", (uint64_t)total);
+    return event_log_size;
+}
+
 size_t tpm_get_final_events_preboot_size(void) {
     if (event_log_state != EVENT_LOG_CAPTURED) {
         return 0;
@@ -567,12 +633,14 @@ size_t tpm_get_final_events_preboot_size(void) {
 
 void tpm_release_event_log(void) {
     if (event_log_copy != NULL) {
-        pmm_free(event_log_copy, event_log_size);
+        pmm_free(event_log_copy, event_log_capacity);
     }
 
     event_log_copy = NULL;
     event_log_size = 0;
+    event_log_capacity = 0;
     event_log_preboot_size = 0;
+    event_log_appendable = false;
     event_log_state = EVENT_LOG_UNAVAILABLE;
 }
 

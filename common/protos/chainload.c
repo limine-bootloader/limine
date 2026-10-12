@@ -278,7 +278,7 @@ static EFI_DEVICE_PATH_PROTOCOL *build_relative_efi_file_path(struct file_handle
     EFI_DEVICE_PATH_PROTOCOL *device_path;
     EFI_STATUS status = gBS->AllocatePool(EfiLoaderData, alloc_len, (void **)&device_path);
     if (status) {
-        panic(true, "efi: AllocatePool() failure (%x)", status);
+        panic(true, "efi: AllocatePool() failure (%X)", (uint64_t)status);
     }
 
     FILEPATH_DEVICE_PATH *path_item = (FILEPATH_DEVICE_PATH *)device_path;

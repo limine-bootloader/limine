@@ -8,6 +8,7 @@
 #include <lib/real.h>
 
 #define A20_KBC_TIMEOUT 50000
+#define A20_WAIT_TIMEOUT 5000
 
 static bool a20_kbc_wait(uint8_t mask, uint8_t expected) {
     for (int i = 0; i < A20_KBC_TIMEOUT; i++) {
@@ -52,6 +53,18 @@ out:
     return ret;
 }
 
+// Some gates only switch a while after being told to.
+static bool a20_wait(void) {
+    for (int i = 0; i < A20_WAIT_TIMEOUT; i++) {
+        if (a20_check()) {
+            return true;
+        }
+        // A write to the POST code port is a harmless I/O delay.
+        outb(0x80, 0);
+    }
+    return false;
+}
+
 // Keyboard controller method code below taken from:
 // https://wiki.osdev.org/A20_Line
 // It predates the wiki's 2011 relicensing to CC0, but its author, Jhawthorn,
@@ -67,8 +80,9 @@ bool a20_enable(void) {
     r.eax = 0x2401;
     rm_int(0x15, &r, &r);
 
-    if (a20_check())
+    if (a20_wait()) {
         return true;
+    }
 
     // Keyboard controller method (with timeout for systems without KBC)
     if (!a20_kbc_wait(2, 0)) goto kbc_failed;
@@ -88,8 +102,9 @@ bool a20_enable(void) {
     outb(0x64, 0xae);
     if (!a20_kbc_wait(2, 0)) goto kbc_failed;
 
-    if (a20_check())
+    if (a20_wait()) {
         return true;
+    }
 
 kbc_failed:
 
@@ -101,10 +116,7 @@ kbc_failed:
         outb(0x92, b);
     }
 
-    if (a20_check())
-        return true;
-
-    return false;
+    return a20_wait();
 }
 
 #endif

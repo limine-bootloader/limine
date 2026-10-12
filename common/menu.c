@@ -1709,7 +1709,7 @@ noreturn void _menu(bool first_run) {
 #endif
 
     char *hash_mismatch_panic_str = config_get_value(NULL, 0, "HASH_MISMATCH_PANIC");
-    hash_mismatch_panic = hash_mismatch_panic_str == NULL || strcmp(hash_mismatch_panic_str, "yes") == 0;
+    hash_mismatch_panic = hash_mismatch_panic_str == NULL || strcasecmp(hash_mismatch_panic_str, "no") != 0;
 
     if (secure_boot_active) {
         hash_mismatch_panic = true;

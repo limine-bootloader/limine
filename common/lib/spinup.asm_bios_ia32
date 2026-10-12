@@ -14,7 +14,10 @@ common_spinup:
 
     lidt [invalid_idt]
 
+    mov esi, esp
+    and esp, -16
     call flush_irqs
+    mov esp, esi
 
     xor eax, eax
     lldt ax

@@ -25,6 +25,7 @@
 #include <sys/lapic.h>
 #include <lib/getchar.h>
 #include <sys/cpu.h>
+#include <libfdt.h>
 
 void stage3_common(void);
 
@@ -165,6 +166,47 @@ opened:
 }
 #endif
 
+#if defined (__riscv) && defined (UEFI)
+// Firmware predating RISCV_EFI_BOOT_PROTOCOL passes the boot hart in the
+// device tree it publishes instead.
+static bool get_dtb_boot_hartid(size_t *hartid) {
+    EFI_GUID dtb_guid = EFI_DTB_TABLE_GUID;
+    void *dtb = NULL;
+
+    for (size_t i = 0; i < gST->NumberOfTableEntries; i++) {
+        if (memcmp(&gST->ConfigurationTable[i].VendorGuid, &dtb_guid, sizeof(EFI_GUID)) == 0) {
+            dtb = gST->ConfigurationTable[i].VendorTable;
+            break;
+        }
+    }
+
+    if (dtb == NULL || fdt_check_header(dtb) != 0) {
+        return false;
+    }
+
+    int chosen = fdt_path_offset(dtb, "/chosen");
+    if (chosen < 0) {
+        return false;
+    }
+
+    int len;
+    const void *prop = fdt_getprop(dtb, chosen, "boot-hartid", &len);
+    if (prop == NULL) {
+        return false;
+    }
+
+    if (len == 8) {
+        *hartid = fdt64_ld(prop);
+    } else if (len == 4) {
+        *hartid = fdt32_ld(prop);
+    } else {
+        return false;
+    }
+
+    return true;
+}
+#endif
+
 noreturn void stage3_common(void) {
 #if defined (__x86_64__) || defined (__i386__)
     init_flush_irqs();
@@ -175,7 +217,9 @@ noreturn void stage3_common(void) {
 #if defined (UEFI)
     RISCV_EFI_BOOT_PROTOCOL *rv_proto = get_riscv_boot_protocol();
     if (rv_proto == NULL || rv_proto->GetBootHartId(rv_proto, &bsp_hartid) != EFI_SUCCESS) {
-        panic(false, "failed to get BSP's hartid");
+        if (!get_dtb_boot_hartid(&bsp_hartid)) {
+            panic(false, "failed to get BSP's hartid");
+        }
     }
 #else
 #error riscv: only UEFI is supported

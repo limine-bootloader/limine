@@ -505,6 +505,10 @@ void init_memmap(void) {
 
     pmm_sanitise_entries(memmap, &memmap_entries, false);
 
+    // Page 0 sits at the null pointer and must never be handed out. Left to
+    // the firmware, it still reaches kernels, typed by the final EFI memory map.
+    memmap_alloc_range(0, PAGE_SIZE, MEMMAP_EFI_RECLAIMABLE, MEMMAP_USABLE, false, false, false);
+
     allocations_disallowed = false;
 
     // Let's leave 64MiB to the firmware below 4GiB

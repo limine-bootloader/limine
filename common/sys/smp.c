@@ -612,6 +612,10 @@ static struct limine_mp_info *try_acpi_smp(size_t   *cpu_count,
     struct limine_mp_info *ret = ext_mem_alloc_counted(max_cpus, sizeof(struct limine_mp_info));
     *cpu_count = 0;
 
+    if (boot_method == BOOT_WITH_ACPI_PARK) {
+        printv("smp: ACPI parking protocol is unsupported, starting no APs\n");
+    }
+
     // Try to start all APs
     for (uint8_t *madt_ptr = (uint8_t *)madt->madt_entries_begin;
       (uintptr_t)madt_ptr + 1 < (uintptr_t)madt + madt->header.length;
@@ -642,6 +646,10 @@ static struct limine_mp_info *try_acpi_smp(size_t   *cpu_count,
                 // Do not try to restart the BSP
                 if (mpidr == bsp_mpidr) {
                     (*cpu_count)++;
+                    continue;
+                }
+
+                if (boot_method == BOOT_WITH_ACPI_PARK) {
                     continue;
                 }
 

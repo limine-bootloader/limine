@@ -614,8 +614,9 @@ bool mouse_init(void) {
     if (aux_command(0xe9)) {
         b = aux_read();
         if (b != -1) {
-            left_down = (b & 0x01) != 0;
-            right_down = (b & 0x02) != 0;
+            // The status byte orders the buttons unlike a movement packet.
+            left_down = (b & 0x04) != 0;
+            right_down = (b & 0x01) != 0;
         }
         aux_read();
         aux_read();

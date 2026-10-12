@@ -148,6 +148,7 @@ struct boot_param {
     size_t kernel_size;
     void *module_base;
     size_t module_size;
+    uint64_t module_limit;
     char *cmdline;
     void *dtb;
     struct linux_efi_boot_memmap *memmap;
@@ -159,6 +160,8 @@ struct boot_param {
 #define LINUX_HEADER_MINOR_VER(ver)     (((ver) >> 0)  & 0xffff)
 #elif defined(__aarch64__)
 #define LINUX_HEADER_MAGIC2             0x644d5241
+// booting.rst, "Kernel physical placement".
+#define LINUX_HEADER_FLAG_PHYS_PLACEMENT (1 << 3)
 #elif defined(__loongarch__)
 #define LINUX_HEADER_MAGIC2             0x818223cd
 #endif
@@ -220,9 +223,12 @@ static void load_module(struct boot_param *p, char *config) {
     }
 
     p->module_size = total_size;
-    p->module_base = ext_mem_alloc_type_aligned(
-                    ALIGN_UP(p->module_size, 4096, panic(true, "linux: Alignment overflow")),
-                    MEMMAP_KERNEL_AND_MODULES, 4096);
+    uint64_t module_alloc_size = ALIGN_UP(p->module_size, 4096, panic(true, "linux: Alignment overflow"));
+    if (p->module_limit != 0) {
+        p->module_base = ext_mem_alloc_type_aligned_below(module_alloc_size, MEMMAP_KERNEL_AND_MODULES, 4096, p->module_limit, false);
+    } else {
+        p->module_base = ext_mem_alloc_type_aligned(module_alloc_size, MEMMAP_KERNEL_AND_MODULES, 4096);
+    }
 
     size_t offset = 0;
     for (size_t i = 0; i < module_count; i++) {
@@ -713,7 +719,21 @@ noreturn void linux_load(char *config, char *cmdline) {
 
     size_t kernel_region_size = ALIGN_UP(CHECKED_ADD(text_offset, kernel_alloc_size, panic(true, "linux: Kernel size overflow")), 4096, panic(true, "linux: Alignment overflow"));
 
-#if defined (__loongarch__)
+#if defined (__aarch64__)
+    // Without the flag, memory below the image's base is out of the kernel's
+    // linear map. With it, the image need only end within 48-bit physical
+    // addresses, and stays near the modules, which are allocated top down.
+    if (tmp_hdr.flags & LINUX_HEADER_FLAG_PHYS_PLACEMENT) {
+        p.kernel_base = ext_mem_alloc_type_aligned_below(kernel_region_size,
+            MEMMAP_KERNEL_AND_MODULES, 2 * 1024 * 1024, (uint64_t)1 << 48, false);
+    } else {
+        p.kernel_base = ext_mem_alloc_type_aligned_below(kernel_region_size,
+            MEMMAP_KERNEL_AND_MODULES, 2 * 1024 * 1024, UINT64_MAX, true);
+        // The modules, allocated top down, would otherwise land beyond the
+        // window that the initrd must share with the image.
+        p.module_limit = ALIGN_DOWN((uint64_t)(uintptr_t)p.kernel_base, (uint64_t)1 << 30) + ((uint64_t)32 << 30);
+    }
+#elif defined (__loongarch__)
     // A kernel that cannot relocate itself only runs at the physical address
     // it was linked for, which load_offset gives.
     if (memmap_alloc_range(tmp_hdr.load_offset, kernel_region_size,

@@ -456,7 +456,7 @@ static bool is_efi_handle_to_skip(EFI_HANDLE efi_handle) {
         if (dp->Type == HARDWARE_DEVICE_PATH && dp->SubType == HW_VENDOR_DP) {
             // Vendor device path must be large enough to contain a GUID
             if (len >= sizeof(EFI_DEVICE_PATH_PROTOCOL) + sizeof(EFI_GUID)) {
-                EFI_GUID *vendor_guid = (void *)dp + sizeof(EFI_DEVICE_PATH_PROTOCOL);
+                void *vendor_guid = (void *)dp + sizeof(EFI_DEVICE_PATH_PROTOCOL);
 
                 for (size_t i = 0; i < SIZEOF_ARRAY(guids_to_skip); i++) {
                     if (memcmp(vendor_guid, &guids_to_skip[i], sizeof(EFI_GUID)) == 0) {

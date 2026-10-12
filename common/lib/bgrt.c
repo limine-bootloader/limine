@@ -22,7 +22,8 @@ void bgrt_restore(uint64_t fb_width, uint64_t fb_height) {
         return;
     }
 
-    if (bgrt->version != 1) {
+    // 1 is the only version defined, but some firmware leaves this at 0.
+    if (bgrt->version > 1) {
         return;
     }
 

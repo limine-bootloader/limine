@@ -202,6 +202,16 @@ bytes_per_sector_valid:;
         return 1;
     }
 
+    // Bit 7 of BPB_ExtFlags turns FAT mirroring off, leaving only the FAT
+    // numbered by bits 0-3 up to date.
+    if (context->type == 32 && (bpb.flags & 0x80)) {
+        unsigned int active_fat = bpb.flags & 0x0f;
+        if (active_fat >= context->number_of_fats) {
+            return 1;
+        }
+        context->fat_start_lba += active_fat * context->sectors_per_fat;
+    }
+
     // Calculate root_start with overflow check
     uint64_t root_start_64 = (uint64_t)context->reserved_sectors + (uint64_t)context->number_of_fats * context->sectors_per_fat;
     if (root_start_64 > UINT32_MAX) {

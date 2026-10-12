@@ -13,6 +13,18 @@ can be installed there and coexist with a BIOS installation of Limine
 A valid config file should also be provided as described in
 [CONFIG.md](CONFIG.md).
 
+If the root directory of the volume Limine was loaded from contains a UEFI
+Shell executable, the menu offers a `U` key ("UEFI Shell") that chainloads
+it. The file name depends on the Limine EFI executable:
+
+* `shellx64.efi` for `BOOTX64.EFI`
+* `shellia32.efi` for `BOOTIA32.EFI`
+* `shellaa64.efi` for `BOOTAA64.EFI`
+* `shellriscv64.efi` for `BOOTRISCV64.EFI`
+* `shellloongarch64.efi` for `BOOTLOONGARCH64.EFI`
+
+This is not available when Limine is booted over PXE.
+
 ## Secure Boot
 Limine can be booted with Secure Boot if the executable is signed and the key
 used to sign it is added to the firmware's keychain. This should be done in

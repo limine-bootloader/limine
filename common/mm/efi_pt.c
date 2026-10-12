@@ -280,6 +280,31 @@ static void wc_walk(uint64_t *table, int lvl, uint64_t tbl_va,
     }
 }
 
+// Lines cached through the old WB mapping outlive the switch to WC, and a
+// dirty one can later be written back over what went through WC. The SDM and
+// APM have them flushed after the TLB, which the SDM lets a self-snooping
+// processor skip.
+static void flush_cached_range(uint64_t base, uint64_t end) {
+    uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
+    cpuid(1, 0, &eax, &ebx, &ecx, &edx);
+
+    if (edx & (1 << 27)) {
+        return;
+    }
+
+    uint64_t line_size = ((ebx >> 8) & 0xff) * 8;
+
+    if (!(edx & (1 << 19)) || line_size == 0) {
+        asm volatile ("wbinvd" ::: "memory");
+        return;
+    }
+
+    for (uint64_t p = base; p < end; p += line_size) {
+        asm volatile ("clflush (%0)" :: "r"(p) : "memory");
+    }
+    asm volatile ("mfence" ::: "memory");
+}
+
 void efi_pt_set_fb_wc(uint64_t base, uint64_t size) {
     if (size == 0) {
         return;
@@ -309,6 +334,8 @@ void efi_pt_set_fb_wc(uint64_t base, uint64_t size) {
     wp_off(&old_cr0);
     wc_walk(top, levels, 0, base, end, true);
     wp_on(old_cr0);
+
+    flush_cached_range(base, end);
 
 out:
     if (ints) {

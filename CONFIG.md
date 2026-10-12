@@ -442,9 +442,10 @@ Limine distinguishes hashes by length: 64 hexadecimal characters is standard
 BLAKE3, 128 is BLAKE2b, and 256 is extended-output BLAKE3.
 When Secure Boot is active and a config hash is enrolled, all file paths
 **must** have a hash appended or Limine will panic (except for wallpapers and
-fonts, which are silently skipped instead, falling back to defaults). Without
-an enrolled hash Limine treats Secure Boot as inactive; see
-[USAGE.md](USAGE.md#secure-boot).
+fonts, which are silently skipped instead, falling back to defaults, and for
+images chainloaded with the `efi` protocol, whose signature the firmware
+verifies instead). Without an enrolled hash Limine treats Secure Boot as
+inactive; see [USAGE.md](USAGE.md#secure-boot).
 
 A gzip-compressed resource is indicated by inserting a dollar character (`$`)
 before the resource string. This allows for transparent decompression. For

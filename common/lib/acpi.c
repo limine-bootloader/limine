@@ -181,7 +181,10 @@ static void map_single_table(uint64_t addr, uint32_t len) {
     }
 #endif
 
-    uint32_t length = len != (uint32_t)-1 ? len : *(uint32_t *)(uintptr_t)(addr + 4);
+    uint32_t length = len;
+    if (length == (uint32_t)-1) {
+        memcpy(&length, (void *)(uintptr_t)(addr + 4), sizeof(length));
+    }
 
     uint64_t aligned_base = ALIGN_DOWN(addr, 4096);
     uint64_t aligned_top  = ALIGN_UP(addr + length, 4096, panic(false, "acpi: Alignment overflow"));

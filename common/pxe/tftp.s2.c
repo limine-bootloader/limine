@@ -14,6 +14,7 @@
 // boot server, the reply naming the TFTP server has neither the client address
 // nor the DHCP server's options.
 uint8_t cached_dhcp_packet[DHCP_ACK_PACKET_LEN] = { 0 };
+size_t cached_dhcp_packet_len = 0;
 bool cached_dhcp_ack_valid = false;
 
 #if defined (BIOS)
@@ -53,7 +54,8 @@ static void cache_dhcp_ack(void) {
     }
 
     void *ack = (void *)rm_desegment(cached_info.buffer.segment, cached_info.buffer.offset);
-    memcpy(cached_dhcp_packet, ack, MIN(cached_info.buffer_size, DHCP_ACK_PACKET_LEN));
+    cached_dhcp_packet_len = MIN(cached_info.buffer_size, DHCP_ACK_PACKET_LEN);
+    memcpy(cached_dhcp_packet, ack, cached_dhcp_packet_len);
     cached_dhcp_ack_valid = true;
 }
 
@@ -203,6 +205,31 @@ struct file_handle *tftp_open(struct volume *part, const char *server_addr, cons
 
 #elif defined (UEFI)
 
+_Static_assert(sizeof(EFI_PXE_BASE_CODE_PACKET) <= DHCP_ACK_PACKET_LEN, "DHCP packet buffer too small");
+
+// The firmware keeps the packet in a fixed-size union, so its length is only
+// known from where the End option sits (RFC 2132).
+static size_t dhcp_packet_len(const uint8_t *packet, size_t max) {
+    size_t i = offsetof(EFI_PXE_BASE_CODE_DHCPV4_PACKET, DhcpOptions);
+
+    while (i < max) {
+        if (packet[i] == 255) {
+            return i + 1;
+        }
+
+        // Pad is the only other option without a length octet.
+        if (packet[i] == 0) {
+            i++;
+        } else if (i + 1 < max) {
+            i += 2 + packet[i + 1];
+        } else {
+            break;
+        }
+    }
+
+    return max;
+}
+
 static EFI_IP_ADDRESS *parse_ip_addr(struct volume *part, const char *server_addr) {
     static EFI_IP_ADDRESS out;
 
@@ -213,7 +240,9 @@ static EFI_IP_ADDRESS *parse_ip_addr(struct volume *part, const char *server_add
         else packet = &part->pxe_base_code->Mode->DhcpAck;
         memcpy(out.Addr, packet->Dhcpv4.BootpSiAddr, 4);
         if (!cached_dhcp_ack_valid && part->pxe_base_code->Mode->DhcpAckReceived) {
-            memcpy(cached_dhcp_packet, &part->pxe_base_code->Mode->DhcpAck, DHCP_ACK_PACKET_LEN);
+            EFI_PXE_BASE_CODE_PACKET *ack = &part->pxe_base_code->Mode->DhcpAck;
+            cached_dhcp_packet_len = dhcp_packet_len(ack->Raw, sizeof(ack->Raw));
+            memcpy(cached_dhcp_packet, ack, cached_dhcp_packet_len);
             cached_dhcp_ack_valid = true;
         }
     } else {

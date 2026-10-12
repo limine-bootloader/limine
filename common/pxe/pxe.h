@@ -2,11 +2,15 @@
 #define PXE_H
 
 #include <stdint.h>
+#include <stddef.h>
 #include <lib/part.h>
 
-#define DHCP_ACK_PACKET_LEN 296
+// Room for the UDP payload of a full Ethernet frame, which is what the UEFI
+// EFI_PXE_BASE_CODE_PACKET union holds.
+#define DHCP_ACK_PACKET_LEN 1472
 
 extern uint8_t cached_dhcp_packet[DHCP_ACK_PACKET_LEN];
+extern size_t cached_dhcp_packet_len;
 extern bool cached_dhcp_ack_valid;
 
 #if defined (BIOS)

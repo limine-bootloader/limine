@@ -1088,10 +1088,10 @@ skip_modeset:;
             struct multiboot_tag_network *tag = (struct multiboot_tag_network *)(mb2_info + info_idx);
 
             tag->type = MULTIBOOT_TAG_TYPE_NETWORK;
-            tag->size = sizeof(struct multiboot_tag_network) + DHCP_ACK_PACKET_LEN;
+            tag->size = sizeof(struct multiboot_tag_network) + cached_dhcp_packet_len;
 
             // Copy over the DHCP packet.
-            memcpy(tag->dhcpack, cached_dhcp_packet, DHCP_ACK_PACKET_LEN);
+            memcpy(tag->dhcpack, cached_dhcp_packet, cached_dhcp_packet_len);
             append_tag(info_idx, tag);
         }
     }

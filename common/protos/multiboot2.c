@@ -636,7 +636,9 @@ reloc_fail:
             panic(true, "multiboot2: ELF section entry size too small");
         }
 
-        for (size_t i = 0; i < section_hdr_info.num; i++) {
+        // Section header 0 describes no section, and under extended numbering
+        // its sh_size is the section count.
+        for (size_t i = 1; i < section_hdr_info.num; i++) {
             if (bits == 64)  {
                 struct elf64_shdr *shdr = (void *)tag->sections + i * section_hdr_info.section_entry_size;
 

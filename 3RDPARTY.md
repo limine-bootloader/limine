@@ -38,14 +38,9 @@ routines. `./bootstrap` copies its `cc-runtime.c` to `common/cc-runtime.s2.c`.
 (0BSD) has the C/C++ header and the specification text of the Limine Boot
 Protocol.
 
-- [PicoEFI](https://github.com/PicoEFI/PicoEFI) (multiple licenses, see list
-below) provides the UEFI headers, the linker scripts Limine's own are based
-on, and the relocation and entry code built into Limine's UEFI binaries.
-    - BSD-2-Clause
-    - BSD-2-Clause-Patent
-    - BSD-3-Clause
-    - BSD-Source-Code-no-disclaimer
-    - MIT
+- [PicoEFI](https://github.com/PicoEFI/PicoEFI) (0BSD) provides the UEFI
+headers, the linker scripts Limine's own are based on, and the relocation and
+entry code built into Limine's UEFI binaries.
 
 - [Flanterm](https://github.com/Mintsuki/Flanterm) (BSD-2-Clause) is used for
 text related screen drawing.
@@ -466,263 +461,21 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 Its relocation and entry code is built into Limine's UEFI binaries, which are
 built using its headers, and Limine's own UEFI linker scripts are based on its
-linker scripts. Each part is covered by the notice below that names it.
-
-#### Relocation code, and IA-32 and x86-64 entry code
-
-The `reloc.c` files of every architecture, and `ia32/entry.S` and
-`x86_64/entry.S`.
+linker scripts.
 
 ```
-Copyright (C) 1999 Hewlett-Packard Co.
-Contributed by David Mosberger <davidm@hpl.hp.com>.
-Copyright (C) 2005 Intel Co.
-Contributed by Fenghua Yu <fenghua.yu@intel.com>.
-Copyright (C) 2014 Linaro Ltd. <ard.biesheuvel@linaro.org>
-Copyright (C) 2018 Alexander Graf <agraf@suse.de>
-Copyright (C) 2021 Loongson Technology Corporation Limited. <zhoumingtao@loongson.cn>
-Copyright (C) 2022-2026 Mintsuki and contributors.
 Copyright (C) 2026 Mintsuki and contributors.
 
-All rights reserved.
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-
-* Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-* Redistributions in binary form must reproduce the above
-  copyright notice, this list of conditions and the following
-  disclaimer in the documentation and/or other materials
-  provided with the distribution.
-* Neither the name of Hewlett-Packard Co. nor the names of its
-  contributors may be used to endorse or promote products derived
-  from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
-INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
-BE LIABLE FOR ANYDIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
-OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
-TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGE.
-```
-
-#### AArch64, LoongArch64, and RISC-V 64 entry code and bindings
-
-`aarch64/entry.S`, `loongarch64/entry.S`, and `riscv64/entry.S`, and the
-`efibind.h` headers for these architectures. Limine uses them under the
-following terms, rather than the GNU General Public License they offer as an
-alternative.
-
-```
-Copyright (C) 2014 Linaro Ltd. <ard.biesheuvel@linaro.org>
-Copyright (C) 2014 - 2015 Linaro Ltd.
-Author: Ard Biesheuvel <ard.biesheuvel@linaro.org>
-Copyright (C) 2017 Lemote Co.
-Copyright (C) 2018 Alexander Graf <agraf@suse.de>
-Copyright (C) 2021 Loongson Technology Corporation Limited. <zhoumingtao@loongson.cn>
-Copyright (C) 2021 Loongson Technology Corporation Limited.
-Copyright (C) 2022-2026 Mintsuki and contributors.
-Copyright (C) 2025 mintsuki and contributors
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-1. Redistributions of source code must retain the above copyright
-   notice and this list of conditions, without modification.
-2. The name of the author may not be used to endorse or promote products
-   derived from this software without specific prior written permission.
-
-Alternatively, this software may be distributed under the terms of the
-GNU General Public License as published by the Free Software Foundation;
-either version 2 of the License, or (at your option) any later version.
-```
-
-#### Headers
-
-The headers in `inc/` not named elsewhere in this section.
-
-```
-Copyright (c) 1998-2000 Intel Corporation
-Copyright (c) 1998  Intel Corporation
-Copyright (c) 1999  Intel Corporation
-Copyright (c) Intel  1999
-Copyright (c) 2000  Intel Corporation
-Copyright (c) 200  Intel Corporation
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.
-Copyright (c) 2013  Intel Corporation
-Copyright (c) 2016 Pete Batard <pete@akeo.ie>
-Copyright (c) 2020 Kagurazaka Kotori <kagurazakakotori@gmail.com>
-
-Redistribution and use in source and binary forms, with or without modification, are permitted
-provided that the following conditions are met:
-
-Redistributions of source code must retain the above copyright notice, this list of conditions and
-the following disclaimer.
-
-Redistributions in binary form must reproduce the above copyright notice, this list of conditions
-and the following disclaimer in the documentation and/or other materials provided with the
-distribution.
-
-THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
-INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL INTEL BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE. THE EFI SPECIFICATION AND ALL OTHER INFORMATION
-ON THIS WEB SITE ARE PROVIDED "AS IS" WITH NO WARRANTIES, AND ARE SUBJECT
-TO CHANGE WITHOUT NOTICE.
-```
-
-#### `efishell.h`
-
-```
-(C) Copyright 2014 Hewlett-Packard Development Company, L.P.
-Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-Subject to the terms and conditions of this license, each copyright holder
-and contributor hereby grants to those receiving rights under this license
-a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable
-(except for failure to satisfy the conditions of this license) patent
-license to make, have made, use, offer to sell, sell, import, and otherwise
-transfer this software, where such license applies only to those patent
-claims, already acquired or hereafter acquired, licensable by such copyright
-holder or contributor that are necessarily infringed by:
-
-(a) their Contribution(s) (the licensed copyrights of copyright holders and
-    non-copyrightable additions of contributors, in source or binary form)
-    alone; or
-
-(b) combination of their Contribution(s) with the work of authorship to
-    which such Contribution(s) was added by such copyright holder or
-    contributor, if, at the time the Contribution is added, such addition
-    causes such combination to be necessarily infringed. The patent license
-    shall not apply to any other combinations which include the
-    Contribution.
-
-Except as expressly stated above, no rights or licenses from any copyright
-holder or contributor is granted under this license, whether expressly, by
-implication, estoppel or otherwise.
-
-DISCLAIMER
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-```
-
-#### `efipoint.h`
-
-```
-Copyright (C) 2014 by John Cronin
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-```
-
-#### `elf32.h`, `elf64.h`, and `elf_common.h`
-
-```
-Copyright (c) 1996-1998 John D. Polstra.
-Copyright (c) 1998 John D. Polstra.
-Copyright (c) 2000, 2001, 2008, 2011, David E. O'Brien
-Copyright (c) 2017, 2018 Dell EMC
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGE.
-```
-
-#### `elf.h` and the linker scripts
-
-```
-Copyright (C) 2021-2025 mintsuki and contributors.
-Copyright (C) 2021-2026 Mintsuki and contributors.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
 ```
 
 ### Flanterm

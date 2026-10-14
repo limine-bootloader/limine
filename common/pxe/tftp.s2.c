@@ -261,7 +261,7 @@ struct file_handle *tftp_open(struct volume *part, const char *server_addr, cons
 
     EFI_IP_ADDRESS *ip = parse_ip_addr(part, server_addr);
 
-    uint64_t file_size;
+    EFI_UINT64 file_size;
     EFI_STATUS status;
 
     // Firmware from before EDK2 cf9ff46b rejects a NULL BufferPtr for every

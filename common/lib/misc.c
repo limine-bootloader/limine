@@ -22,8 +22,8 @@ EFI_BOOT_SERVICES *gBS;
 EFI_RUNTIME_SERVICES *gRT;
 EFI_HANDLE efi_image_handle;
 EFI_MEMORY_DESCRIPTOR *efi_mmap = NULL;
-UINTN efi_mmap_size = 0, efi_desc_size = 0, efi_mmap_key = 0;
-UINT32 efi_desc_ver = 0;
+EFI_UINTN efi_mmap_size = 0, efi_desc_size = 0, efi_mmap_key = 0;
+EFI_UINT32 efi_desc_ver = 0;
 #endif
 
 #if defined (UEFI) && defined (__x86_64__)
@@ -139,7 +139,7 @@ bool is_efi_serial_present(void) {
         return false;
     }
 
-    UINT32 control;
+    EFI_UINT32 control;
     status = serial_io->GetControl(serial_io, &control);
     if (status) {
         return false;
@@ -354,9 +354,9 @@ void *get_device_tree_blob(const char *config, size_t extra_size,
 
 #if defined (__riscv)
 
-RISCV_EFI_BOOT_PROTOCOL *get_riscv_boot_protocol(void) {
-    EFI_GUID boot_proto_guid = RISCV_EFI_BOOT_PROTOCOL_GUID;
-    RISCV_EFI_BOOT_PROTOCOL *proto;
+EFI_RISCV_EFI_BOOT_PROTOCOL *get_riscv_boot_protocol(void) {
+    EFI_GUID boot_proto_guid = EFI_RISCV_EFI_BOOT_PROTOCOL_GUID;
+    EFI_RISCV_EFI_BOOT_PROTOCOL *proto;
 
     // LocateProtocol() is available from EFI version 1.1
     if (gBS->Hdr.Revision >= ((1 << 16) | 10)) {
@@ -365,11 +365,12 @@ RISCV_EFI_BOOT_PROTOCOL *get_riscv_boot_protocol(void) {
         }
     }
 
-    UINTN bufsz = 0;
-    if (gBS->LocateHandle(ByProtocol, &boot_proto_guid, NULL, &bufsz, NULL) != EFI_BUFFER_TOO_SMALL)
+    EFI_UINTN bufsz = 0;
+    if (gBS->LocateHandle(EfiByProtocol, &boot_proto_guid, NULL, &bufsz, NULL) != EFI_BUFFER_TOO_SMALL) {
         return NULL;
+    }
 
-    UINTN handles_alloc = bufsz;
+    EFI_UINTN handles_alloc = bufsz;
     EFI_HANDLE *handles_buf = ext_mem_alloc(handles_alloc);
     if (handles_buf == NULL)
         return NULL;
@@ -377,8 +378,9 @@ RISCV_EFI_BOOT_PROTOCOL *get_riscv_boot_protocol(void) {
     if (bufsz < sizeof(EFI_HANDLE))
         goto error;
 
-    if (gBS->LocateHandle(ByProtocol, &boot_proto_guid, NULL, &bufsz, handles_buf) != EFI_SUCCESS)
+    if (gBS->LocateHandle(EfiByProtocol, &boot_proto_guid, NULL, &bufsz, handles_buf) != EFI_SUCCESS) {
         goto error;
+    }
 
     if (gBS->HandleProtocol(handles_buf[0], &boot_proto_guid, (void **)&proto) != EFI_SUCCESS)
         goto error;
@@ -395,14 +397,14 @@ error:
 
 no_unwind bool efi_boot_services_exited = false;
 
-UINTN efi_rebuilt_mmap_max_size(UINTN mmap_size) {
+EFI_UINTN efi_rebuilt_mmap_max_size(EFI_UINTN mmap_size) {
     // Slack for what allocations add to the map before its final read.
-    UINTN size = CHECKED_ADD(mmap_size, (UINTN)4096, return 0);
+    EFI_UINTN size = CHECKED_ADD(mmap_size, (EFI_UINTN)4096, return 0);
     // Cutting a descriptor at both edges of every region we own can add two
     // descriptors per region on top of the firmware's own.
-    UINTN split_slack = CHECKED_MUL((UINTN)untouched_memmap_entries, (UINTN)2, return 0);
+    EFI_UINTN split_slack = CHECKED_MUL((EFI_UINTN)untouched_memmap_entries, (EFI_UINTN)2, return 0);
     split_slack = CHECKED_MUL(split_slack, efi_desc_size, return 0);
-    return CHECKED_ADD(CHECKED_MUL(size, (UINTN)2, return 0), split_slack, return 0);
+    return CHECKED_ADD(CHECKED_MUL(size, (EFI_UINTN)2, return 0), split_slack, return 0);
 }
 
 bool efi_exit_boot_services(void) {
@@ -425,8 +427,8 @@ bool efi_exit_boot_services(void) {
     efi_mmap = NULL;
 
     EFI_MEMORY_DESCRIPTOR *efi_copy = NULL;
-    UINTN efi_mmap_alloc = 0;
-    UINTN efi_copy_alloc = 0;
+    EFI_UINTN efi_mmap_alloc = 0;
+    EFI_UINTN efi_copy_alloc = 0;
 
     bli_on_boot();
 

@@ -47,8 +47,8 @@ void *acpi_get_rsdp(void) {
 #include <efi.h>
 
 void *acpi_get_rsdp(void) {
-    EFI_GUID acpi_2_guid = ACPI_20_TABLE_GUID;
-    EFI_GUID acpi_1_guid = ACPI_TABLE_GUID;
+    EFI_GUID acpi_2_guid = EFI_ACPI_20_TABLE_GUID;
+    EFI_GUID acpi_1_guid = EFI_ACPI_10_TABLE_GUID;
 
     void *rsdp = NULL;
 

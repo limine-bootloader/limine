@@ -10,9 +10,6 @@
 #include <lib/libc.h>
 #if defined (UEFI)
 #  include <efi.h>
-#  if defined (__riscv)
-#    include <efi/protocol/riscv/efiboot.h>
-#  endif
 #endif
 
 #if defined (UEFI)
@@ -21,15 +18,15 @@ extern EFI_BOOT_SERVICES *gBS;
 extern EFI_RUNTIME_SERVICES *gRT;
 extern EFI_HANDLE efi_image_handle;
 extern EFI_MEMORY_DESCRIPTOR *efi_mmap;
-extern UINTN efi_mmap_size, efi_desc_size, efi_mmap_key;
-extern UINT32 efi_desc_ver;
+extern EFI_UINTN efi_mmap_size, efi_desc_size, efi_mmap_key;
+extern EFI_UINT32 efi_desc_ver;
 
 extern bool efi_boot_services_exited;
 bool efi_exit_boot_services(void);
 
 // Room for the map efi_exit_boot_services() rebuilds out of a firmware map of
 // mmap_size bytes, or 0 if that overflows.
-UINTN efi_rebuilt_mmap_max_size(UINTN mmap_size);
+EFI_UINTN efi_rebuilt_mmap_max_size(EFI_UINTN mmap_size);
 
 bool is_efi_serial_present(void);
 #endif
@@ -143,7 +140,7 @@ noreturn void enter_in_el2(uint64_t entry, uint64_t sp, uint64_t sctlr,
 #elif defined (__riscv)
 noreturn void riscv_spinup(uint64_t entry, uint64_t sp, uint64_t satp, uint64_t direct_map_offset);
 #if defined (UEFI)
-RISCV_EFI_BOOT_PROTOCOL *get_riscv_boot_protocol(void);
+EFI_RISCV_EFI_BOOT_PROTOCOL *get_riscv_boot_protocol(void);
 #endif
 #elif defined (__loongarch64)
 noreturn void loongarch_spinup(uint64_t entry, uint64_t sp, uint64_t pgdl,

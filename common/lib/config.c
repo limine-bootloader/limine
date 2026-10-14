@@ -50,7 +50,7 @@ static bool init_efi_app_path(size_t *len_out) {
     EFI_STATUS status;
     EFI_LOADED_IMAGE_PROTOCOL *loaded_image;
     EFI_DEVICE_PATH_PROTOCOL *path;
-    CHAR16 path_units[EFI_APP_PATH_LEN];
+    EFI_CHAR16 path_units[EFI_APP_PATH_LEN];
     size_t len = 0, dir_len = 0;
 
     EFI_GUID loaded_image_protocol_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
@@ -67,12 +67,12 @@ static bool init_efi_app_path(size_t *len_out) {
         return false;
     }
 
-    while (!(path->Type == END_DEVICE_PATH_TYPE && path->SubType == END_ENTIRE_DEVICE_PATH_SUBTYPE)) {
-        if (path->Type == MEDIA_DEVICE_PATH && path->SubType == MEDIA_FILEPATH_DP) {
+    while (!(path->Type == EFI_END_DEVICE_PATH_TYPE && path->SubType == EFI_END_ENTIRE_DEVICE_PATH_SUBTYPE)) {
+        if (path->Type == EFI_MEDIA_DEVICE_PATH && path->SubType == EFI_MEDIA_FILEPATH_DP) {
             goto found;
         }
 
-        uint16_t node_length = DevicePathNodeLength(path);
+        uint16_t node_length = EfiDevicePathNodeLength(path);
         if (node_length < 4) {
             return false;
         }
@@ -82,10 +82,11 @@ static bool init_efi_app_path(size_t *len_out) {
     return false;
 
 found:
-    // A file path may span several consecutive MEDIA_FILEPATH_DP nodes; walk
-    // them all, bounding each scan by the node length, and keep the directory.
-    while (path->Type == MEDIA_DEVICE_PATH && path->SubType == MEDIA_FILEPATH_DP) {
-        uint16_t node_length = DevicePathNodeLength(path);
+    // A file path may span several consecutive EFI_MEDIA_FILEPATH_DP nodes;
+    // walk them all, bounding each scan by the node length, and keep the
+    // directory.
+    while (path->Type == EFI_MEDIA_DEVICE_PATH && path->SubType == EFI_MEDIA_FILEPATH_DP) {
+        uint16_t node_length = EfiDevicePathNodeLength(path);
         if (node_length < 4) {
             return false;
         }
@@ -99,7 +100,7 @@ found:
         bool separator = len != 0;
 
         for (size_t i = 0; i < node_chars; i++) {
-            CHAR16 c = node_path[i * 2] | (node_path[i * 2 + 1] << 8);
+            EFI_CHAR16 c = node_path[i * 2] | (node_path[i * 2 + 1] << 8);
             if (c == 0) {
                 break;
             }

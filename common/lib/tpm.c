@@ -4,8 +4,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <efi.h>
-#include <efi/protocol/efitcg2.h>
-#include <efi/protocol/eficc.h>
 #include <lib/tpm.h>
 #include <lib/misc.h>
 #include <lib/print.h>
@@ -141,7 +139,7 @@ void tpm_measure(uint32_t pcr, uint32_t event_type,
         size_t event_size = offsetof(EFI_TCG2_EVENT, Event) + desc_len;
 
         EFI_TCG2_EVENT *event = ext_mem_alloc(event_size);
-        event->Size = (UINT32)event_size;
+        event->Size = (EFI_UINT32)event_size;
         event->Header.HeaderSize = sizeof(EFI_TCG2_EVENT_HEADER);
         event->Header.HeaderVersion = 1;
         event->Header.PCRIndex = pcr;
@@ -155,7 +153,7 @@ void tpm_measure(uint32_t pcr, uint32_t event_type,
 
         EFI_STATUS status = tcg2->HashLogExtendEvent(
             tcg2, 0,
-            (EFI_PHYSICAL_ADDRESS)(uintptr_t)data, (UINT64)data_size,
+            (EFI_PHYSICAL_ADDRESS)(uintptr_t)data, (EFI_UINT64)data_size,
             event);
         if (status != EFI_SUCCESS) {
             quiet = false;
@@ -184,7 +182,7 @@ void tpm_measure(uint32_t pcr, uint32_t event_type,
         size_t event_size = offsetof(EFI_CC_EVENT, Event) + desc_len;
 
         EFI_CC_EVENT *event = ext_mem_alloc(event_size);
-        event->Size = (UINT32)event_size;
+        event->Size = (EFI_UINT32)event_size;
         event->Header.HeaderSize = sizeof(EFI_CC_EVENT_HEADER);
         event->Header.HeaderVersion = EFI_CC_EVENT_HEADER_VERSION;
         event->Header.MrIndex = mr_index;
@@ -198,7 +196,7 @@ void tpm_measure(uint32_t pcr, uint32_t event_type,
 
         status = cc->HashLogExtendEvent(
             cc, 0,
-            (EFI_PHYSICAL_ADDRESS)(uintptr_t)data, (UINT64)data_size,
+            (EFI_PHYSICAL_ADDRESS)(uintptr_t)data, (EFI_UINT64)data_size,
             event);
         if (status != EFI_SUCCESS) {
             quiet = false;
@@ -406,12 +404,12 @@ static bool tcg_final_events_preboot(const uint8_t *log_data, size_t log_size,
     }
 
     EFI_TCG2_FINAL_EVENTS_TABLE header;
-    memcpy(&header, table, offsetof(EFI_TCG2_FINAL_EVENTS_TABLE, Events));
+    memcpy(&header, table, offsetof(EFI_TCG2_FINAL_EVENTS_TABLE, Event));
     if (header.Version != TCG_FINAL_EVENTS_TABLE_VERSION) {
         return false;
     }
 
-    const uint8_t *events = table + offsetof(EFI_TCG2_FINAL_EVENTS_TABLE, Events);
+    const uint8_t *events = table + offsetof(EFI_TCG2_FINAL_EVENTS_TABLE, Event);
     // They can only be among the events that follow the log's header.
     size_t limit = log_size - tcg_pcr_event_size(log_data, log_size);
     size_t total = 0;
@@ -434,7 +432,7 @@ static bool tcg_final_events_preboot(const uint8_t *log_data, size_t log_size,
 }
 
 static bool tcg2_get_event_log(uint32_t *format, EFI_PHYSICAL_ADDRESS *location,
-                               EFI_PHYSICAL_ADDRESS *last_entry, BOOLEAN *truncated) {
+    EFI_PHYSICAL_ADDRESS *last_entry, EFI_BOOLEAN *truncated) {
     EFI_TCG2_EVENT_LOG_BITMAP supported =
         EFI_TCG2_EVENT_LOG_FORMAT_TCG_1_2 | EFI_TCG2_EVENT_LOG_FORMAT_TCG_2;
 
@@ -492,7 +490,7 @@ static bool event_log_capture(void) {
     uint32_t format;
     EFI_PHYSICAL_ADDRESS location = 0;
     EFI_PHYSICAL_ADDRESS last_entry = 0;
-    BOOLEAN truncated = FALSE;
+    EFI_BOOLEAN truncated = EFI_FALSE;
 
     if (tcg2 != NULL) {
         if (!tcg2_get_event_log(&format, &location, &last_entry, &truncated)) {
@@ -594,13 +592,13 @@ size_t tpm_append_final_events(void) {
     }
 
     EFI_TCG2_FINAL_EVENTS_TABLE header;
-    memcpy(&header, table, offsetof(EFI_TCG2_FINAL_EVENTS_TABLE, Events));
+    memcpy(&header, table, offsetof(EFI_TCG2_FINAL_EVENTS_TABLE, Event));
     if (header.Version != TCG_FINAL_EVENTS_TABLE_VERSION
      || header.NumberOfEvents < event_log_preboot_count) {
         return event_log_size;
     }
 
-    const uint8_t *events = table + offsetof(EFI_TCG2_FINAL_EVENTS_TABLE, Events)
+    const uint8_t *events = table + offsetof(EFI_TCG2_FINAL_EVENTS_TABLE, Event)
         + event_log_preboot_size;
     size_t room = event_log_capacity - event_log_size;
     size_t total = 0;
@@ -656,7 +654,7 @@ void *tpm_get_final_events_table(void) {
         return NULL;
     }
 
-    for (UINTN i = 0; i < gST->NumberOfTableEntries; i++) {
+    for (EFI_UINTN i = 0; i < gST->NumberOfTableEntries; i++) {
         if (memcmp(&gST->ConfigurationTable[i].VendorGuid,
                    &guid, sizeof(EFI_GUID)) == 0) {
             return gST->ConfigurationTable[i].VendorTable;

@@ -67,12 +67,12 @@ noreturn void uefi_entry(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) 
     // Detect UEFI Secure Boot
     {
         EFI_GUID global_variable = EFI_GLOBAL_VARIABLE;
-        UINT8 secure_boot = 0;
-        UINTN sb_size = sizeof(secure_boot);
+        EFI_UINT8 secure_boot = 0;
+        EFI_UINTN sb_size = sizeof(secure_boot);
         EFI_STATUS sb_status = gRT->GetVariable(L"SecureBoot", &global_variable, NULL, &sb_size, &secure_boot);
         if (sb_status == EFI_SUCCESS && secure_boot == 1) {
-            UINT8 setup_mode = 0;
-            UINTN sm_size = sizeof(setup_mode);
+            EFI_UINT8 setup_mode = 0;
+            EFI_UINTN sm_size = sizeof(setup_mode);
             EFI_STATUS sm_status = gRT->GetVariable(L"SetupMode", &global_variable, NULL, &sm_size, &setup_mode);
             if (sm_status != EFI_SUCCESS || setup_mode == 0) {
                 secure_boot_active = true;
@@ -215,7 +215,7 @@ noreturn void stage3_common(void) {
 
 #if defined (__riscv)
 #if defined (UEFI)
-    RISCV_EFI_BOOT_PROTOCOL *rv_proto = get_riscv_boot_protocol();
+    EFI_RISCV_EFI_BOOT_PROTOCOL *rv_proto = get_riscv_boot_protocol();
     if (rv_proto == NULL || rv_proto->GetBootHartId(rv_proto, &bsp_hartid) != EFI_SUCCESS) {
         if (!get_dtb_boot_hartid(&bsp_hartid)) {
             panic(false, "failed to get BSP's hartid");

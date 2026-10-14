@@ -19,8 +19,8 @@
 // 256 bits: the security level UEFI 2.11 section 37.5 requires of a DRBG
 // behind the RNG protocol. Ask for twice that, so that a raw source short of
 // full entropy still covers it.
-#define RNG_SEED_MIN_REQUEST ((UINTN)32)
-#define RNG_SEED_REQUEST ((UINTN)64)
+#define RNG_SEED_MIN_REQUEST ((EFI_UINTN)32)
+#define RNG_SEED_REQUEST ((EFI_UINTN)64)
 
 // UEFI is little-endian on every port (UEFI 2.11 section 1.9.1), so a native
 // store yields the little-endian count the table wants.
@@ -44,7 +44,7 @@ static void seed_fold(uint8_t *dst, size_t dst_len, size_t offset, const uint8_t
 }
 
 static size_t seed_request(EFI_RNG_PROTOCOL *rng, EFI_RNG_ALGORITHM *alg, uint8_t *buf) {
-    UINTN len = RNG_SEED_REQUEST;
+    EFI_UINTN len = RNG_SEED_REQUEST;
     EFI_STATUS status = rng->GetRNG(rng, alg, len, buf);
 
     // The source has too little banked for the full length; take the minimum.
@@ -89,7 +89,7 @@ static size_t seed_gather(uint8_t *buf) {
 // the variable is deleted before its bytes are used.
 static size_t seed_take_variable(uint8_t *buf) {
     EFI_GUID guid = RNG_SEED_TABLE_GUID;
-    UINTN size = RNG_SEED_MAX;
+    EFI_UINTN size = RNG_SEED_MAX;
 
     EFI_STATUS status = gRT->GetVariable(RNG_SEED_VAR_NAME, &guid, NULL, &size, buf);
     if (status == EFI_NOT_FOUND) {
@@ -130,7 +130,7 @@ void rng_seed_install(void) {
     // Nothing says an earlier stage's table is aligned, so it is only ever
     // accessed as bytes.
     uint8_t *prev = NULL;
-    for (UINTN i = 0; i < gST->NumberOfTableEntries; i++) {
+    for (EFI_UINTN i = 0; i < gST->NumberOfTableEntries; i++) {
         EFI_CONFIGURATION_TABLE *entry = &gST->ConfigurationTable[i];
         if (memcmp(&entry->VendorGuid, &table_guid, sizeof(EFI_GUID)) == 0) {
             prev = entry->VendorTable;

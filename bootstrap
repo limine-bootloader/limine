@@ -72,7 +72,7 @@ if ! test -f version; then
     clone_repo_commit \
         https://github.com/PicoEFI/PicoEFI.git \
         picoefi \
-        470ec8325a1e05697c3af6248e2423a92bb820b0
+        0515ccde7a3ac9c52e32c9c21c924a8d50d3261e
 
     clone_repo_commit \
         https://github.com/Mintsuki/Flanterm.git \

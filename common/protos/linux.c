@@ -4,7 +4,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <efi.h>
-#include <efi/protocol/efitcg2.h>
 #include <protos/linux.h>
 #include <lib/misc.h>
 #include <lib/tpm.h>

@@ -88,8 +88,8 @@ _Static_assert(sizeof(struct linux_header) == 0x40, "linux_header layout");
 // UINTN is 8 bytes (UEFI 2.11, section 2.3.1).
 
 struct linux_efi_initrd {
-    UINTN base;
-    UINTN size;
+    EFI_UINTN base;
+    EFI_UINTN size;
 };
 
 _Static_assert(offsetof(struct linux_efi_initrd, base) == 0, "linux_efi_initrd layout");
@@ -97,11 +97,11 @@ _Static_assert(offsetof(struct linux_efi_initrd, size) == 8, "linux_efi_initrd l
 _Static_assert(sizeof(struct linux_efi_initrd) == 16, "linux_efi_initrd layout");
 
 struct linux_efi_boot_memmap {
-    UINTN map_size;
-    UINTN desc_size;
-    UINT32 desc_ver;
-    UINTN map_key;
-    UINTN buff_size;
+    EFI_UINTN map_size;
+    EFI_UINTN desc_size;
+    EFI_UINT32 desc_ver;
+    EFI_UINTN map_key;
+    EFI_UINTN buff_size;
     EFI_MEMORY_DESCRIPTOR descs[];
 };
 
@@ -114,15 +114,15 @@ _Static_assert(offsetof(struct linux_efi_boot_memmap, descs) == 40, "linux_efi_b
 _Static_assert(sizeof(struct linux_efi_boot_memmap) == 40, "linux_efi_boot_memmap layout");
 
 struct linux_efi_memreserve_entry {
-    UINT64 base;
-    UINT64 size;
+    EFI_UINT64 base;
+    EFI_UINT64 size;
 };
 
 // One link of a chain of reservation tables, which the kernel may extend.
 struct linux_efi_memreserve {
-    INT32 capacity;
-    INT32 count;
-    UINT64 next;
+    EFI_INT32 capacity;
+    EFI_INT32 count;
+    EFI_UINT64 next;
     struct linux_efi_memreserve_entry entries[];
 };
 
@@ -403,7 +403,7 @@ static void prepare_efi_tables(struct boot_param *p, char *config) {
             panic(true, "linux: failed to allocate Linux initrd table");
         }
 
-        initrd_table->base = (UINTN)p->module_base;
+        initrd_table->base = (EFI_UINTN)p->module_base;
         initrd_table->size = p->module_size;
 
         EFI_GUID initrd_table_guid = { 0x5568e427, 0x68fc, 0x4f3d, { 0xac, 0x74, 0xca, 0x55, 0x52, 0x31, 0xcc, 0x68}};
@@ -416,14 +416,14 @@ static void prepare_efi_tables(struct boot_param *p, char *config) {
     {
         // What gets copied in here is the map efi_exit_boot_services()
         // rebuilds out of the firmware's, which grows little from here on.
-        UINTN mmap_size = 0, mmap_key, desc_size;
-        UINT32 desc_ver;
+        EFI_UINTN mmap_size = 0, mmap_key, desc_size;
+        EFI_UINT32 desc_ver;
         ret = gBS->GetMemoryMap(&mmap_size, NULL, &mmap_key, &desc_size, &desc_ver);
         if (ret != EFI_BUFFER_TOO_SMALL) {
             panic(true, "linux: failed to get UEFI memory map size");
         }
 
-        UINTN descs_size = efi_rebuilt_mmap_max_size(mmap_size);
+        EFI_UINTN descs_size = efi_rebuilt_mmap_max_size(mmap_size);
         if (descs_size == 0 || descs_size > SIZE_MAX - sizeof(struct linux_efi_boot_memmap)) {
             panic(true, "linux: UEFI memory map too large");
         }

@@ -380,7 +380,7 @@ static struct volume *pxe_from_efi_handle(EFI_HANDLE efi_handle) {
     EFI_STATUS status;
 
     EFI_GUID pxe_base_code_guid = EFI_PXE_BASE_CODE_PROTOCOL_GUID;
-    EFI_PXE_BASE_CODE *pxe_base_code = NULL;
+    EFI_PXE_BASE_CODE_PROTOCOL *pxe_base_code = NULL;
 
     status = gBS->HandleProtocol(efi_handle, &pxe_base_code_guid, (void **)&pxe_base_code);
     if (status) {
@@ -415,7 +415,7 @@ static bool unique_sectors_calculated = false;
 // ReadBlocks buffers must be aligned to IoAlign, which UEFI 2.11 13.9 limits
 // to 0, 1, or a power of two: any other value is taken as 1, as for the volume
 // caches. The pool is shared, so it moves when a device needs more alignment.
-static void align_unique_sector_pool(EFI_BLOCK_IO *block_io) {
+static void align_unique_sector_pool(EFI_BLOCK_IO_PROTOCOL *block_io) {
     size_t alignment = 4096;
     uint32_t io_align = block_io->Media->IoAlign;
     if (io_align > alignment && (io_align & (io_align - 1)) == 0) {
@@ -485,18 +485,18 @@ static bool is_efi_handle_to_skip(EFI_HANDLE efi_handle) {
     }
 
     for (;;) {
-        if (dp->Type == END_DEVICE_PATH_TYPE && dp->SubType == END_ENTIRE_DEVICE_PATH_SUBTYPE) {
+        if (dp->Type == EFI_END_DEVICE_PATH_TYPE && dp->SubType == EFI_END_ENTIRE_DEVICE_PATH_SUBTYPE) {
             break;
         }
 
-        uint16_t len = DevicePathNodeLength(dp);
+        uint16_t len = EfiDevicePathNodeLength(dp);
 
         // Validate minimum device path node size before accessing type-specific data
         if (len < sizeof(EFI_DEVICE_PATH_PROTOCOL)) {
             break;  // Malformed device path node
         }
 
-        if (dp->Type == HARDWARE_DEVICE_PATH && dp->SubType == HW_VENDOR_DP) {
+        if (dp->Type == EFI_HARDWARE_DEVICE_PATH && dp->SubType == EFI_HW_VENDOR_DP) {
             // Vendor device path must be large enough to contain a GUID
             if (len >= sizeof(EFI_DEVICE_PATH_PROTOCOL) + sizeof(EFI_GUID)) {
                 void *vendor_guid = (void *)dp + sizeof(EFI_DEVICE_PATH_PROTOCOL);
@@ -526,15 +526,15 @@ static bool is_efi_handle_optical(EFI_HANDLE efi_handle) {
     }
 
     for (;;) {
-        if (dp->Type == END_DEVICE_PATH_TYPE && dp->SubType == END_ENTIRE_DEVICE_PATH_SUBTYPE) {
+        if (dp->Type == EFI_END_DEVICE_PATH_TYPE && dp->SubType == EFI_END_ENTIRE_DEVICE_PATH_SUBTYPE) {
             break;
         }
 
-        if (dp->Type == MEDIA_DEVICE_PATH && dp->SubType == MEDIA_CDROM_DP) {
+        if (dp->Type == EFI_MEDIA_DEVICE_PATH && dp->SubType == EFI_MEDIA_CDROM_DP) {
             return true;
         }
 
-        uint16_t len = DevicePathNodeLength(dp);
+        uint16_t len = EfiDevicePathNodeLength(dp);
         if (len < sizeof(EFI_DEVICE_PATH_PROTOCOL)) {
             break;  // Malformed device path node
         }
@@ -563,19 +563,19 @@ static bool device_paths_match_disk(EFI_DEVICE_PATH_PROTOCOL *dp1,
         return false;
     }
 
-    while (!IsDevicePathEnd(dp1) && !IsDevicePathEnd(dp2)) {
+    while (!EfiIsDevicePathEnd(dp1) && !EfiIsDevicePathEnd(dp2)) {
         // Stop at partition nodes
-        if (dp1->Type == MEDIA_DEVICE_PATH &&
-            (dp1->SubType == MEDIA_HARDDRIVE_DP || dp1->SubType == MEDIA_CDROM_DP)) {
+        if (dp1->Type == EFI_MEDIA_DEVICE_PATH &&
+            (dp1->SubType == EFI_MEDIA_HARDDRIVE_DP || dp1->SubType == EFI_MEDIA_CDROM_DP)) {
             break;
         }
-        if (dp2->Type == MEDIA_DEVICE_PATH &&
-            (dp2->SubType == MEDIA_HARDDRIVE_DP || dp2->SubType == MEDIA_CDROM_DP)) {
+        if (dp2->Type == EFI_MEDIA_DEVICE_PATH &&
+            (dp2->SubType == EFI_MEDIA_HARDDRIVE_DP || dp2->SubType == EFI_MEDIA_CDROM_DP)) {
             break;
         }
 
-        uint16_t len1 = DevicePathNodeLength(dp1);
-        uint16_t len2 = DevicePathNodeLength(dp2);
+        uint16_t len1 = EfiDevicePathNodeLength(dp1);
+        uint16_t len2 = EfiDevicePathNodeLength(dp2);
 
         if (len1 != len2) {
             return false;
@@ -622,25 +622,24 @@ static struct volume *volume_by_device_path(EFI_HANDLE query_handle, bool cdrom_
             uint64_t first_sect_lba = (volume_index[i]->first_sect * 512) / sector_size;
 
             EFI_DEVICE_PATH_PROTOCOL *qp = query_dp;
-            while (!IsDevicePathEnd(qp)) {
-                if (qp->Type == MEDIA_DEVICE_PATH && qp->SubType == MEDIA_HARDDRIVE_DP) {
-                    uint16_t len = DevicePathNodeLength(qp);
-                    // UEFI spec size is 42 bytes, but sizeof() may be larger due to padding
-                    if (len < 42) {
+            while (!EfiIsDevicePathEnd(qp)) {
+                if (qp->Type == EFI_MEDIA_DEVICE_PATH && qp->SubType == EFI_MEDIA_HARDDRIVE_DP) {
+                    uint16_t len = EfiDevicePathNodeLength(qp);
+                    if (len < sizeof(EFI_HARDDRIVE_DEVICE_PATH)) {
                         break;
                     }
-                    HARDDRIVE_DEVICE_PATH *query_hd = (HARDDRIVE_DEVICE_PATH *)qp;
+                    EFI_HARDDRIVE_DEVICE_PATH *query_hd = (EFI_HARDDRIVE_DEVICE_PATH *)qp;
                     if (first_sect_lba == query_hd->PartitionStart) {
                         return volume_index[i];
                     }
                     break;
                 }
-                if (qp->Type == MEDIA_DEVICE_PATH && qp->SubType == MEDIA_CDROM_DP) {
-                    uint16_t len = DevicePathNodeLength(qp);
-                    if (len < sizeof(CDROM_DEVICE_PATH)) {
+                if (qp->Type == EFI_MEDIA_DEVICE_PATH && qp->SubType == EFI_MEDIA_CDROM_DP) {
+                    uint16_t len = EfiDevicePathNodeLength(qp);
+                    if (len < sizeof(EFI_CDROM_DEVICE_PATH)) {
                         break;
                     }
-                    CDROM_DEVICE_PATH *query_cd = (CDROM_DEVICE_PATH *)qp;
+                    EFI_CDROM_DEVICE_PATH *query_cd = (EFI_CDROM_DEVICE_PATH *)qp;
                     if (first_sect_lba == query_cd->PartitionStart) {
                         return volume_index[i];
                     }
@@ -649,14 +648,14 @@ static struct volume *volume_by_device_path(EFI_HANDLE query_handle, bool cdrom_
                     }
                     break;
                 }
-                uint16_t len = DevicePathNodeLength(qp);
+                uint16_t len = EfiDevicePathNodeLength(qp);
                 if (len < sizeof(EFI_DEVICE_PATH_PROTOCOL)) {
                     break;
                 }
                 qp = (void *)qp + len;
             }
 
-            if (IsDevicePathEnd(qp) && volume_index[i]->partition == 0) {
+            if (EfiIsDevicePathEnd(qp) && volume_index[i]->partition == 0) {
                 return volume_index[i];
             }
         }
@@ -668,8 +667,8 @@ static struct volume *volume_by_device_path(EFI_HANDLE query_handle, bool cdrom_
 static struct volume *volume_from_efi_handle(EFI_HANDLE efi_handle, bool cdrom_medium_fallback) {
     EFI_STATUS status;
 
-    EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
-    EFI_BLOCK_IO *block_io = NULL;
+    EFI_GUID block_io_guid = EFI_BLOCK_IO_PROTOCOL_GUID;
+    EFI_BLOCK_IO_PROTOCOL *block_io = NULL;
 
     if (is_efi_handle_to_skip(efi_handle)) {
         return NULL;
@@ -798,7 +797,7 @@ static void find_part_handles(EFI_HANDLE *handles, size_t handle_count) {
 
 static bool is_efi_handle_driver_managed(EFI_HANDLE efi_handle, EFI_GUID *protocol) {
     EFI_OPEN_PROTOCOL_INFORMATION_ENTRY *entries = NULL;
-    UINTN entries_count = 0;
+    EFI_UINTN entries_count = 0;
 
     if (gBS->OpenProtocolInformation(efi_handle, protocol,
                                      &entries, &entries_count) != EFI_SUCCESS) {
@@ -806,7 +805,7 @@ static bool is_efi_handle_driver_managed(EFI_HANDLE efi_handle, EFI_GUID *protoc
     }
 
     bool managed = false;
-    for (UINTN i = 0; i < entries_count; i++) {
+    for (EFI_UINTN i = 0; i < entries_count; i++) {
         if (entries[i].Attributes & (EFI_OPEN_PROTOCOL_BY_DRIVER
                                      | EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER)) {
             managed = true;
@@ -822,7 +821,7 @@ static bool is_efi_handle_driver_managed(EFI_HANDLE efi_handle, EFI_GUID *protoc
 }
 
 static bool should_connect_storage_controller(EFI_HANDLE efi_handle) {
-    EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
+    EFI_GUID block_io_guid = EFI_BLOCK_IO_PROTOCOL_GUID;
     void *block_io = NULL;
     if (gBS->HandleProtocol(efi_handle, &block_io_guid, &block_io) == EFI_SUCCESS) {
         // A disk or partition already claimed by a partition or filesystem
@@ -866,10 +865,10 @@ void disk_create_index(void) {
     // their disks and partitions appear, without pulling in unrelated slow drivers.
     {
         EFI_HANDLE *all_handles = NULL;
-        UINTN all_handles_count = 0;
-        if (gBS->LocateHandleBuffer(AllHandles, NULL, NULL,
+        EFI_UINTN all_handles_count = 0;
+        if (gBS->LocateHandleBuffer(EfiAllHandles, NULL, NULL,
                                     &all_handles_count, &all_handles) == EFI_SUCCESS) {
-            for (UINTN i = 0; i < all_handles_count; i++) {
+            for (EFI_UINTN i = 0; i < all_handles_count; i++) {
                 if (should_connect_storage_controller(all_handles[i])) {
                     gBS->ConnectController(all_handles[i], NULL, NULL, true);
                 }
@@ -880,16 +879,16 @@ void disk_create_index(void) {
 
     EFI_HANDLE tmp_handles[1];
 
-    EFI_GUID block_io_guid = BLOCK_IO_PROTOCOL;
+    EFI_GUID block_io_guid = EFI_BLOCK_IO_PROTOCOL_GUID;
     EFI_HANDLE *handles = tmp_handles;
-    UINTN handles_size = sizeof(tmp_handles);
+    EFI_UINTN handles_size = sizeof(tmp_handles);
 
-    status = gBS->LocateHandle(ByProtocol, &block_io_guid, NULL, &handles_size, handles);
+    status = gBS->LocateHandle(EfiByProtocol, &block_io_guid, NULL, &handles_size, handles);
 
     // we only care about the first handle, so ignore if we get EFI_BUFFER_TOO_SMALL
     if (status != EFI_BUFFER_TOO_SMALL && status != EFI_SUCCESS) {
         EFI_GUID pxe_guid = EFI_PXE_BASE_CODE_PROTOCOL_GUID;
-        status = gBS->LocateHandle(ByProtocol, &pxe_guid, NULL, &handles_size, handles);
+        status = gBS->LocateHandle(EfiByProtocol, &pxe_guid, NULL, &handles_size, handles);
         // likewise, all that matters is that the protocol is present
         if (status == EFI_BUFFER_TOO_SMALL || status == EFI_SUCCESS) {
             return;
@@ -900,7 +899,7 @@ void disk_create_index(void) {
 
     handles = ext_mem_alloc(handles_size);
 
-    status = gBS->LocateHandle(ByProtocol, &block_io_guid, NULL, &handles_size, handles);
+    status = gBS->LocateHandle(EfiByProtocol, &block_io_guid, NULL, &handles_size, handles);
 
     if (status != EFI_SUCCESS) {
 fail:
@@ -912,7 +911,7 @@ fail:
     size_t handle_count = handles_size / sizeof(EFI_HANDLE);
 
     for (size_t i = 0; i < handle_count; i++) {
-        EFI_BLOCK_IO *drive = NULL;
+        EFI_BLOCK_IO_PROTOCOL *drive = NULL;
 
         if (is_efi_handle_to_skip(handles[i])) {
             continue;

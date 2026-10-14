@@ -1522,7 +1522,7 @@ noreturn static void boot_uefi_shell(void) {
 
 bool reboot_to_fw_ui_supported(void) {
     uint64_t os_indications_supported;
-    UINTN size = sizeof(os_indications_supported);
+    EFI_UINTN size = sizeof(os_indications_supported);
     EFI_GUID global_variable = EFI_GLOBAL_VARIABLE;
     EFI_STATUS status = gRT->GetVariable(L"OsIndicationsSupported", &global_variable, NULL, &size, &os_indications_supported);
     if (status == EFI_SUCCESS && size == sizeof(os_indications_supported)) {
@@ -1537,7 +1537,7 @@ noreturn void reboot_to_fw_ui(void) {
     print("Rebooting to the firmware setup...\n");
 
     uint64_t os_indications;
-    UINTN size = sizeof(os_indications);
+    EFI_UINTN size = sizeof(os_indications);
     EFI_GUID global_variable = EFI_GLOBAL_VARIABLE;
     EFI_STATUS status = gRT->GetVariable(L"OsIndications", &global_variable, NULL, &size, &os_indications);
     if (status != EFI_SUCCESS || size != sizeof(os_indications)) {
@@ -1873,7 +1873,7 @@ noreturn void _menu(bool first_run) {
         char *remember_last = config_get_value(NULL, 0, "REMEMBER_LAST_ENTRY");
         if (remember_last != NULL && strcasecmp(remember_last, "yes") == 0) {
             char last_entry_path[MENU_PATH_MAX];
-            UINTN getvar_size = sizeof(last_entry_path);
+            EFI_UINTN getvar_size = sizeof(last_entry_path);
             if (gRT->GetVariable(L"LimineLastBootedEntry",
                                  &limine_efi_vendor_guid,
                                  NULL,

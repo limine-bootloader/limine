@@ -137,7 +137,7 @@ void bli_on_boot(void) {
 // through to the sources a set one-shot variable is defined to override.
 static bool handle_timeout(wchar_t *variable, bool erase, uint64_t *timeout_ms, bool *skip_timeout) {
     wchar_t timeout_buf[256];
-    UINTN getvar_size = sizeof(timeout_buf) - 2;
+    EFI_UINTN getvar_size = sizeof(timeout_buf) - 2;
     uint32_t attrs;
 
     if (gRT->GetVariable(variable,
@@ -240,7 +240,7 @@ void bli_entries_publish(void) {
 
 static bool handle_entry(wchar_t *variable, bool erase, char *path, size_t buf_size) {
     wchar_t wide_path[256];
-    UINTN getvar_size = sizeof(wide_path) - 2;
+    EFI_UINTN getvar_size = sizeof(wide_path) - 2;
     uint32_t attrs;
     if (gRT->GetVariable(variable,
                              &bli_vendor_guid,

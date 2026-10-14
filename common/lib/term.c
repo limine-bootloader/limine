@@ -139,10 +139,10 @@ static size_t cursor_x = 0, cursor_y = 0;
 
 static void fallback_scroll(struct flanterm_context *ctx) {
     (void)ctx;
-    UINTN uefi_x_size, uefi_y_size;
+    EFI_UINTN uefi_x_size, uefi_y_size;
     gST->ConOut->QueryMode(gST->ConOut, gST->ConOut->Mode->Mode, &uefi_x_size, &uefi_y_size);
     gST->ConOut->SetCursorPosition(gST->ConOut, uefi_x_size - 1, uefi_y_size - 1);
-    CHAR16 string[2];
+    EFI_CHAR16 string[2];
     string[0] = ' ';
     string[1] = 0;
     gST->ConOut->OutputString(gST->ConOut, string);
@@ -152,7 +152,7 @@ static void fallback_scroll(struct flanterm_context *ctx) {
 // Inverse of the Unicode to CP437 mapping Flanterm applies before raw_putchar,
 // taking the code point standard CP437 assigns where it maps several to one
 // code. It never produces 0, which is left blank like the IBM glyph.
-static const CHAR16 cp437_to_unicode[256] = {
+static const EFI_CHAR16 cp437_to_unicode[256] = {
     0x0020, 0x263a, 0x263b, 0x2665, 0x2666, 0x2663, 0x2660, 0x2022,
     0x25d8, 0x25cb, 0x25d9, 0x2642, 0x2640, 0x266a, 0x266b, 0x263c,
     0x25ba, 0x25c4, 0x2195, 0x203c, 0x00b6, 0x00a7, 0x25ac, 0x21a8,
@@ -192,7 +192,7 @@ static void fallback_raw_putchar(struct flanterm_context *ctx, uint8_t c) {
         return;
     }
     gST->ConOut->EnableCursor(gST->ConOut, true);
-    CHAR16 string[2];
+    EFI_CHAR16 string[2];
     string[0] = cp437_to_unicode[c];
     string[1] = 0;
     // '?' is ASCII too, so only non-ASCII is worth testing.
@@ -234,7 +234,7 @@ static void fallback_get_cursor_pos(struct flanterm_context *ctx, size_t *x, siz
     *y = cursor_y;
 }
 
-static UINTN ansi_colours[] = {
+static EFI_UINTN ansi_colours[] = {
     EFI_BLACK,
     EFI_RED,
     EFI_GREEN,
@@ -245,7 +245,7 @@ static UINTN ansi_colours[] = {
     EFI_LIGHTGRAY
 };
 
-static UINTN conout_current_fg, conout_current_bg;
+static EFI_UINTN conout_current_fg, conout_current_bg;
 
 // SetAttribute rejects any background above EFI_LIGHTGRAY. The stored one
 // keeps its bright bit, which reverse video swaps back into the foreground.
@@ -305,7 +305,7 @@ static void fallback_set_text_bg_default_bright(struct flanterm_context *ctx) {
 
 static void fallback_swap_palette(struct flanterm_context *ctx) {
     (void)ctx;
-    UINTN tmp = conout_current_bg;
+    EFI_UINTN tmp = conout_current_bg;
     conout_current_bg = conout_current_fg;
     conout_current_fg = tmp;
     fallback_set_attribute();

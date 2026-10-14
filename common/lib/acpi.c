@@ -74,7 +74,7 @@ void *acpi_get_rsdp_v1(void) {
     // again since UEFI can contain both XSDP and RSDP (see ACPI 6.2 section
     // 5.2.5.2 'Finding the RSDP on UEFI Enabled Systems') and in the acpi_get_rsdp
     // function we look for the RSDP with the latest revision.
-    EFI_GUID acpi_1_guid = ACPI_TABLE_GUID;
+    EFI_GUID acpi_1_guid = EFI_ACPI_10_TABLE_GUID;
 
     for (size_t i = 0; i < gST->NumberOfTableEntries; i++) {
         EFI_CONFIGURATION_TABLE *cur_table = &gST->ConfigurationTable[i];
@@ -97,7 +97,7 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
 
     for (size_t i = 0; i < gST->NumberOfTableEntries; i++) {
         EFI_CONFIGURATION_TABLE *cur_table = &gST->ConfigurationTable[i];
-        EFI_GUID smbios_guid = SMBIOS_TABLE_GUID;
+        EFI_GUID smbios_guid = EFI_SMBIOS_TABLE_GUID;
 
         if (memcmp(&cur_table->VendorGuid, &smbios_guid, sizeof(EFI_GUID)) != 0)
             continue;
@@ -117,7 +117,7 @@ void acpi_get_smbios(void **smbios32, void **smbios64) {
 
     for (size_t i = 0; i < gST->NumberOfTableEntries; i++) {
         EFI_CONFIGURATION_TABLE *cur_table = &gST->ConfigurationTable[i];
-        EFI_GUID smbios3_guid = SMBIOS3_TABLE_GUID;
+        EFI_GUID smbios3_guid = EFI_SMBIOS3_TABLE_GUID;
 
         if (memcmp(&cur_table->VendorGuid, &smbios3_guid, sizeof(EFI_GUID)) != 0)
             continue;

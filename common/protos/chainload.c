@@ -361,8 +361,8 @@ static EFI_DEVICE_PATH_PROTOCOL *build_relative_efi_file_path(struct file_handle
     size_t original_path_chars = strlen(image->path);
 
     // UTF-16 never takes more code units than UTF-8 takes bytes.
-    size_t efi_file_path_alloc_len = (original_path_chars + 1) * sizeof(CHAR16);
-    CHAR16 *efi_file_path = ext_mem_alloc(efi_file_path_alloc_len);
+    size_t efi_file_path_alloc_len = (original_path_chars + 1) * sizeof(EFI_CHAR16);
+    EFI_CHAR16 *efi_file_path = ext_mem_alloc(efi_file_path_alloc_len);
 
     size_t efi_file_path_chars;
     utf8_to_utf16(efi_file_path, original_path_chars + 1, image->path, original_path_chars, &efi_file_path_chars);
@@ -379,7 +379,7 @@ static EFI_DEVICE_PATH_PROTOCOL *build_relative_efi_file_path(struct file_handle
     efi_file_path[j] = 0;
 
 
-    size_t efi_file_path_len = ((j + 1) * sizeof(CHAR16));
+    size_t efi_file_path_len = ((j + 1) * sizeof(EFI_CHAR16));
     size_t path_item_len     = sizeof(EFI_DEVICE_PATH_PROTOCOL) + efi_file_path_len;
     size_t end_item_len      = sizeof(EFI_DEVICE_PATH_PROTOCOL);
     size_t alloc_len         = path_item_len + end_item_len;
@@ -394,16 +394,16 @@ static EFI_DEVICE_PATH_PROTOCOL *build_relative_efi_file_path(struct file_handle
         panic(true, "efi: AllocatePool() failure (%X)", (uint64_t)status);
     }
 
-    FILEPATH_DEVICE_PATH *path_item = (FILEPATH_DEVICE_PATH *)device_path;
-    path_item->Header.Type      = MEDIA_DEVICE_PATH;
-    path_item->Header.SubType   = MEDIA_FILEPATH_DP;
+    EFI_FILEPATH_DEVICE_PATH *path_item = (EFI_FILEPATH_DEVICE_PATH *)device_path;
+    path_item->Header.Type = EFI_MEDIA_DEVICE_PATH;
+    path_item->Header.SubType = EFI_MEDIA_FILEPATH_DP;
     path_item->Header.Length[0] = path_item_len;
     path_item->Header.Length[1] = path_item_len >> 8;
     memcpy(&path_item->PathName, efi_file_path, efi_file_path_len);
 
     EFI_DEVICE_PATH_PROTOCOL *end_item = (void *)device_path + path_item_len;
-    end_item->Type      = END_DEVICE_PATH_TYPE;
-    end_item->SubType   = END_ENTIRE_DEVICE_PATH_SUBTYPE;
+    end_item->Type = EFI_END_DEVICE_PATH_TYPE;
+    end_item->SubType = EFI_END_ENTIRE_DEVICE_PATH_SUBTYPE;
     end_item->Length[0] = end_item_len;
     end_item->Length[1] = end_item_len >> 8;
 
@@ -464,17 +464,17 @@ noreturn void chainload(char *config, char *cmdline) {
             !fb_flush_reliable(), false);
 
     size_t cmdline_len = strlen(cmdline);
-    CHAR16 *new_cmdline = NULL;
+    EFI_CHAR16 *new_cmdline = NULL;
     size_t new_cmdline_size = 0;
     if (cmdline_len > 0) {
         // UTF-16 never takes more code units than UTF-8 takes bytes.
-        size_t cmdline_utf16_alloc_len = CHECKED_MUL(cmdline_len + 1, sizeof(CHAR16), panic(true, "efi: Allocation size overflow"));
-        CHAR16 *cmdline_utf16 = ext_mem_alloc(cmdline_utf16_alloc_len);
+        size_t cmdline_utf16_alloc_len = CHECKED_MUL(cmdline_len + 1, sizeof(EFI_CHAR16), panic(true, "efi: Allocation size overflow"));
+        EFI_CHAR16 *cmdline_utf16 = ext_mem_alloc(cmdline_utf16_alloc_len);
 
         size_t cmdline_utf16_chars;
         utf8_to_utf16(cmdline_utf16, cmdline_len + 1, cmdline, cmdline_len, &cmdline_utf16_chars);
 
-        new_cmdline_size = (cmdline_utf16_chars + 1) * sizeof(CHAR16);
+        new_cmdline_size = (cmdline_utf16_chars + 1) * sizeof(EFI_CHAR16);
         status = gBS->AllocatePool(EfiLoaderData, new_cmdline_size, (void **)&new_cmdline);
         if (status) {
             panic(true, "efi: Allocation failure");
@@ -486,26 +486,26 @@ noreturn void chainload(char *config, char *cmdline) {
 
     pmm_release_uefi_mem();
 
-    MEMMAP_DEVICE_PATH memdev_path[2];
+    EFI_MEMMAP_DEVICE_PATH memdev_path[2];
 
-    memdev_path[0].Header.Type      = HARDWARE_DEVICE_PATH;
-    memdev_path[0].Header.SubType   = HW_MEMMAP_DP;
-    memdev_path[0].Header.Length[0] = sizeof(MEMMAP_DEVICE_PATH);
-    memdev_path[0].Header.Length[1] = sizeof(MEMMAP_DEVICE_PATH) >> 8;
+    memdev_path[0].Header.Type = EFI_HARDWARE_DEVICE_PATH;
+    memdev_path[0].Header.SubType = EFI_HW_MEMMAP_DP;
+    memdev_path[0].Header.Length[0] = sizeof(EFI_MEMMAP_DEVICE_PATH);
+    memdev_path[0].Header.Length[1] = sizeof(EFI_MEMMAP_DEVICE_PATH) >> 8;
 
     memdev_path[0].MemoryType       = EfiLoaderCode;
     memdev_path[0].StartingAddress  = (uintptr_t)ptr;
     memdev_path[0].EndingAddress    = (uintptr_t)ptr + image_size;
 
-    memdev_path[1].Header.Type      = END_DEVICE_PATH_TYPE;
-    memdev_path[1].Header.SubType   = END_ENTIRE_DEVICE_PATH_SUBTYPE;
-    memdev_path[1].Header.Length[0] = sizeof(EFI_DEVICE_PATH);
-    memdev_path[1].Header.Length[1] = sizeof(EFI_DEVICE_PATH) >> 8;
+    memdev_path[1].Header.Type = EFI_END_DEVICE_PATH_TYPE;
+    memdev_path[1].Header.SubType = EFI_END_ENTIRE_DEVICE_PATH_SUBTYPE;
+    memdev_path[1].Header.Length[0] = sizeof(EFI_DEVICE_PATH_PROTOCOL);
+    memdev_path[1].Header.Length[1] = sizeof(EFI_DEVICE_PATH_PROTOCOL) >> 8;
 
     EFI_HANDLE new_handle = 0;
 
     status = gBS->LoadImage(0, efi_image_handle,
-                            (EFI_DEVICE_PATH *)memdev_path,
+                            (EFI_DEVICE_PATH_PROTOCOL *)memdev_path,
                             ptr, image_size, &new_handle);
     if (status) {
         panic(false, "efi: LoadImage failure (%X)", (uint64_t)status);
@@ -536,8 +536,8 @@ noreturn void chainload(char *config, char *cmdline) {
 
     bli_on_boot();
 
-    UINTN exit_data_size = 0;
-    CHAR16 *exit_data = NULL;
+    EFI_UINTN exit_data_size = 0;
+    EFI_CHAR16 *exit_data = NULL;
     EFI_STATUS exit_status = gBS->StartImage(new_handle, &exit_data_size, &exit_data);
 
     status = gBS->Exit(efi_image_handle, exit_status, exit_data_size, exit_data);

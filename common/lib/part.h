@@ -29,7 +29,7 @@ struct volume {
 
     // Block storage
     EFI_HANDLE efi_part_handle;
-    EFI_BLOCK_IO *block_io;
+    EFI_BLOCK_IO_PROTOCOL *block_io;
 
     // PXE
     EFI_PXE_BASE_CODE_PROTOCOL *pxe_base_code;

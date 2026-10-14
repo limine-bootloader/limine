@@ -732,14 +732,14 @@ static size_t locate_pointers(EFI_GUID *guid, void **out, size_t max) {
         return 1;
     }
 
-    UINTN count = 0;
+    EFI_UINTN count = 0;
     EFI_HANDLE *handles = NULL;
-    if (gBS->LocateHandleBuffer(ByProtocol, guid, NULL, &count, &handles) != EFI_SUCCESS) {
+    if (gBS->LocateHandleBuffer(EfiByProtocol, guid, NULL, &count, &handles) != EFI_SUCCESS) {
         return 0;
     }
 
     size_t n = 0;
-    for (UINTN i = 0; i < count && n < max; i++) {
+    for (EFI_UINTN i = 0; i < count && n < max; i++) {
         if (gBS->HandleProtocol(handles[i], guid, &iface) == EFI_SUCCESS) {
             out[n++] = iface;
         }

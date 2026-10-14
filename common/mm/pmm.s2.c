@@ -331,28 +331,28 @@ extern symbol __slide, __image_base, __image_end;
 // Some UEFI implementations cannot handle allocations spanning a large
 // fraction of physical memory. Reduce the request cap no lower than 64MiB,
 // and use 1MiB requests only to recover a failed chunk.
-#define UEFI_ALLOC_MAX_PAGES      ((UINTN)(0x40000000 / PAGE_SIZE))
-#define UEFI_ALLOC_MIN_PAGES      ((UINTN)(0x04000000 / PAGE_SIZE))
-#define UEFI_ALLOC_FALLBACK_PAGES ((UINTN)(0x00100000 / PAGE_SIZE))
+#define UEFI_ALLOC_MAX_PAGES ((EFI_UINTN)(0x40000000 / PAGE_SIZE))
+#define UEFI_ALLOC_MIN_PAGES ((EFI_UINTN)(0x04000000 / PAGE_SIZE))
+#define UEFI_ALLOC_FALLBACK_PAGES ((EFI_UINTN)(0x00100000 / PAGE_SIZE))
 
-static UINTN uefi_alloc_chunk_pages = UEFI_ALLOC_MAX_PAGES;
+static EFI_UINTN uefi_alloc_chunk_pages = UEFI_ALLOC_MAX_PAGES;
 
 static void pmm_mark_uefi_pages_unclaimed(EFI_PHYSICAL_ADDRESS base,
-                                          UINTN page_count) {
+    EFI_UINTN page_count) {
     memmap_alloc_range(base, (uint64_t)page_count * PAGE_SIZE,
                        MEMMAP_EFI_RECLAIMABLE, MEMMAP_USABLE,
                        true, false, false);
 }
 
 static void pmm_claim_uefi_pages_fallback(EFI_PHYSICAL_ADDRESS base,
-                                          UINTN page_count, UINTN step_pages) {
+    EFI_UINTN page_count, EFI_UINTN step_pages) {
     EFI_PHYSICAL_ADDRESS failed_base = 0;
-    UINTN failed_pages = 0;
+    EFI_UINTN failed_pages = 0;
 
     while (page_count != 0) {
-        UINTN chunk_pages = MIN(page_count, step_pages);
+        EFI_UINTN chunk_pages = MIN(page_count, step_pages);
         EFI_PHYSICAL_ADDRESS alloc_base = base;
-        EFI_STATUS status = gBS->AllocatePages(AllocateAddress,
+        EFI_STATUS status = gBS->AllocatePages(EfiAllocateAddress,
                                                EfiLoaderCode,
                                                chunk_pages,
                                                &alloc_base);
@@ -379,18 +379,17 @@ static void pmm_claim_uefi_pages_fallback(EFI_PHYSICAL_ADDRESS base,
     }
 }
 
-static void pmm_claim_uefi_pages(EFI_PHYSICAL_ADDRESS base, UINTN page_count) {
+static void pmm_claim_uefi_pages(EFI_PHYSICAL_ADDRESS base, EFI_UINTN page_count) {
     while (page_count != 0) {
-        UINTN chunk_pages = MIN(page_count, uefi_alloc_chunk_pages);
+        EFI_UINTN chunk_pages = MIN(page_count, uefi_alloc_chunk_pages);
         EFI_PHYSICAL_ADDRESS alloc_base = base;
-        EFI_STATUS status = gBS->AllocatePages(AllocateAddress,
+        EFI_STATUS status = gBS->AllocatePages(EfiAllocateAddress,
                                                EfiLoaderCode,
                                                chunk_pages,
                                                &alloc_base);
 
         if (status && chunk_pages > UEFI_ALLOC_MIN_PAGES) {
-            UINTN new_chunk_pages = MAX(chunk_pages / 2,
-                                        UEFI_ALLOC_MIN_PAGES);
+            EFI_UINTN new_chunk_pages = MAX(chunk_pages / 2, UEFI_ALLOC_MIN_PAGES);
             uefi_alloc_chunk_pages = MIN(uefi_alloc_chunk_pages,
                                          new_chunk_pages);
             continue;
@@ -411,7 +410,7 @@ void init_memmap(void) {
 
     EFI_MEMORY_DESCRIPTOR tmp_mmap[1];
     efi_mmap_size = sizeof(tmp_mmap);
-    UINTN mmap_key = 0;
+    EFI_UINTN mmap_key = 0;
 
     gBS->GetMemoryMap(&efi_mmap_size, tmp_mmap, &mmap_key, &efi_desc_size, &efi_desc_ver);
 

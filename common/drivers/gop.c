@@ -41,7 +41,9 @@ static void linear_mask_to_mask_shift(
 
 static bool validate_pitch(struct fb_info *ret, size_t mode) {
     uint64_t bytes_per_pixel = ret->framebuffer_bpp / 8;
-    if (bytes_per_pixel == 0
+    if (ret->framebuffer_width == 0
+     || ret->framebuffer_height == 0
+     || bytes_per_pixel == 0
      || ret->framebuffer_pitch % bytes_per_pixel != 0
      || ret->framebuffer_pitch < ret->framebuffer_width * bytes_per_pixel) {
         printv("gop: Mode %u has invalid pitch %u (width=%u, bpp=%u), skipping.\n",
@@ -134,6 +136,10 @@ bool gop_force_16 = false;
 static bool try_mode(struct fb_info *ret, EFI_GRAPHICS_OUTPUT_PROTOCOL *gop,
                      size_t mode, uint64_t width, uint64_t height, int bpp,
                      struct fb_info *fbs, size_t fbs_count) {
+    if (gop->Mode == NULL) {
+        return false;
+    }
+
     EFI_STATUS status;
 
     if (!mode_to_fb_info(ret, gop, mode)) {
@@ -175,6 +181,10 @@ static bool try_mode(struct fb_info *ret, EFI_GRAPHICS_OUTPUT_PROTOCOL *gop,
         }
     }
 
+    if (gop->Mode == NULL || gop->Mode->Info == NULL) {
+        return false;
+    }
+
     // Recalculate pitch from gop->Mode->Info, as some firmware (e.g. Apple
     // Macs) report incorrect PixelsPerScanLine via QueryMode.
     ret->framebuffer_pitch = gop->Mode->Info->PixelsPerScanLine * (ret->framebuffer_bpp / 8);
@@ -184,6 +194,15 @@ static bool try_mode(struct fb_info *ret, EFI_GRAPHICS_OUTPUT_PROTOCOL *gop,
     }
 
     ret->framebuffer_addr = gop->Mode->FrameBufferBase;
+    if (ret->framebuffer_addr == 0) {
+        return false;
+    }
+
+    for (size_t i = 0; i < fbs_count; i++) {
+        if (ret->framebuffer_addr == fbs[i].framebuffer_addr) {
+            return false;
+        }
+    }
 
     return true;
 }
@@ -307,7 +326,13 @@ void init_gop(struct fb_info **ret, size_t *_fbs_count,
 
         uint32_t mode_width = mode_info->HorizontalResolution;
         uint32_t mode_height = mode_info->VerticalResolution;
-        if (gop->Mode == NULL || mode_info != gop->Mode->Info) {
+
+        if (gop->Mode == NULL) {
+            gBS->FreePool(mode_info);
+            continue;
+        }
+
+        if (mode_info != gop->Mode->Info) {
             gBS->FreePool(mode_info);
         }
 
@@ -387,6 +412,11 @@ success:;
     }
 
     pmm_free(handles, handles_alloc);
+
+    if (fbs_count == 0) {
+        pmm_free(*ret, handles_count * sizeof(struct fb_info));
+        *ret = NULL;
+    }
 
     gop_force_16 = false;
 

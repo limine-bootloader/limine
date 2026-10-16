@@ -10,7 +10,7 @@ Limine (pronounced as demonstrated [here](https://www.merriam-webster.com/dictio
 is a modern, secure, portable, multiprotocol bootloader and boot manager, also used
 as the reference implementation for the [Limine boot protocol](https://github.com/Limine-Bootloader/limine-protocol/blob/trunk/PROTOCOL.md).
 
-### Community, Support, and Donations
+### Community and Support
 
 #### Community
 We have a Matrix room at [`#limine:matrix.org`](https://matrix.to/#/#limine:matrix.org) if you need support, info, or you just want to hang out with us.

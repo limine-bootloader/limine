@@ -12,12 +12,6 @@ as the reference implementation for the [Limine boot protocol](https://github.co
 
 ### Community, Support, and Donations
 
-#### Donate
-If you want to support the work I ([@mintsuki](https://github.com/Mintsuki)) do on Limine, feel free to donate to me on Liberapay:
-<p><a href="https://liberapay.com/mintsuki/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></p>
-
-Donations welcome, but absolutely not mandatory!
-
 #### Community
 We have a Matrix room at [`#limine:matrix.org`](https://matrix.to/#/#limine:matrix.org) if you need support, info, or you just want to hang out with us.
 

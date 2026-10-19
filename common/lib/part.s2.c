@@ -56,10 +56,7 @@ static bool cache_block(struct volume *volume, uint64_t block) {
         // admits the bytes of a trailing sector the volume only partly owns.
         uint64_t volume_sectors = DIV_ROUNDUP(volume->sect_count,
             (uint64_t)(volume->sector_size / 512), return false);
-        uint64_t end_sector;
-        if (__builtin_add_overflow(first_sect, volume_sectors, &end_sector)) {
-            end_sector = UINT64_MAX;
-        }
+        uint64_t end_sector = first_sect + MIN(volume_sectors, UINT64_MAX - first_sect);
         if (read_sector >= end_sector) {
             return false;
         }

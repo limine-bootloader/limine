@@ -55,10 +55,8 @@ unsigned long strtoul(const char *str, char **end, int base) {
     unsigned int digit;
 
     while ((digit = digit_value((unsigned char)*p)) < radix) {
-        if (__builtin_mul_overflow(value, radix, &value)
-         || __builtin_add_overflow(value, digit, &value)) {
-            overflow = true;
-        }
+        value = CHECKED_MUL(value, radix, overflow = true);
+        value = CHECKED_ADD(value, digit, overflow = true);
         p++;
     }
 

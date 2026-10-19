@@ -59,6 +59,7 @@
 /common-uefi-loongarch64
 /decompressor-build
 /tools-build
+/host-build
 /stage1.stamp
 
 

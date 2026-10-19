@@ -446,8 +446,9 @@ AC_DEFUN([LIMINE_X86_CHECKS], [
 
 limine_cflags="m4_normalize([
     -g -Wall -Wextra -Wshadow -Wvla $WERROR_FLAG -std=gnu11 -ffreestanding
-    -fno-common -ffunction-sections -fdata-sections -fstack-protector-strong
-    -fno-stack-check -fno-omit-frame-pointer -fno-strict-aliasing -fno-lto
+    -fno-exceptions -fno-common -ffunction-sections -fdata-sections
+    -fstack-protector-strong -fno-stack-check -fno-omit-frame-pointer
+    -fno-strict-aliasing -fno-lto
 ])"
 limine_ldflags="-nostdlib -z max-page-size=0x1000 -z noexecstack --gc-sections"
 

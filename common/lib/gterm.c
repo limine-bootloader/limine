@@ -366,6 +366,13 @@ __attribute__((always_inline)) static inline void genloop(struct fb_info *fb, si
         yend = tmp;
     }
 
+    if (xstart >= xend
+     || ystart >= yend
+     || fb->framebuffer_width == 0
+     || fb->framebuffer_height == 0) {
+        return;
+    }
+
     switch (background->type) {
     case IMAGE_TILED:
         for (size_t y = ystart; y < yend; y++) {
@@ -442,6 +449,15 @@ static void loop_margin(struct fb_info *fb, size_t xstart, size_t xend, size_t y
 static void loop_internal(struct fb_info *fb, size_t xstart, size_t xend, size_t ystart, size_t yend) { genloop(fb, xstart, xend, ystart, yend, blend_internal); }
 
 static void generate_canvas(struct fb_info *fb) {
+    if (fb->framebuffer_width == 0 || fb->framebuffer_height == 0) {
+        if (bg_canvas != NULL) {
+            pmm_free(bg_canvas, bg_canvas_size);
+        }
+        bg_canvas = NULL;
+        bg_canvas_size = 0;
+        return;
+    }
+
     if (background) {
         // Free previous canvas if it exists
         if (bg_canvas != NULL) {
@@ -837,7 +853,10 @@ bool gterm_init(struct fb_info **_fbs, size_t *_fbs_count,
     for (size_t i = 0; i < fbs_count; i++) {
         struct fb_info *fb = &fbs[i];
 
-        if (fb->framebuffer_bpp != 32) {
+        if (fb->framebuffer_bpp != 32
+         || fb->framebuffer_width == 0
+         || fb->framebuffer_height == 0
+         || fb->framebuffer_addr == 0) {
             continue;
         }
 
@@ -938,7 +957,10 @@ size_t gterm_prepare_flanterm_params(struct fb_info *fbs, size_t fbs_count,
     for (size_t i = 0; i < fbs_count && count < out_max; i++) {
         struct fb_info *fb = &fbs[i];
 
-        if (fb->framebuffer_bpp != 32) {
+        if (fb->framebuffer_bpp != 32
+         || fb->framebuffer_width == 0
+         || fb->framebuffer_height == 0
+         || fb->framebuffer_addr == 0) {
             continue;
         }
 

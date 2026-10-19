@@ -147,12 +147,24 @@ $(call MKESCAPE,$(BINDIR))/limine-bios-hdd.h: $(call MKESCAPE,$(BINDIR))/limine-
 	$(MKDIR_P) '$(call SHESCAPE,$(BINDIR))'
 	cd '$(call SHESCAPE,$(BINDIR))' && '$(call SHESCAPE,$(SRCDIR))/host/hgen.sh' >limine-bios-hdd.h
 
+# The host utility and limlzpack depend on records of the variables they are
+# built with, named after them, which are compared here and remade when they
+# differ.
+override VARSFILES := $(addprefix host-build/,CC CFLAGS CPPFLAGS LDFLAGS LIBS) $(addprefix tools-build/,CC_FOR_BUILD CFLAGS_FOR_BUILD)
+override CHANGED_VARSFILES := $(foreach f,$(VARSFILES),$(shell printf '%s\n' '$(call SHESCAPE,$($(notdir $(f))))' | cmp -s - '$(call SHESCAPE,$(BUILDDIR))/$(f)' 2>/dev/null || echo $(f)))
+.PHONY: FORCE
+FORCE:
+$(addprefix $(call MKESCAPE,$(BUILDDIR))/,$(CHANGED_VARSFILES)): FORCE
+$(addprefix $(call MKESCAPE,$(BUILDDIR))/,$(VARSFILES)):
+	@$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
+	@printf '%s\n' '$(call SHESCAPE,$($(notdir $(subst $(BUILDDIR)/,,$@))))' >'$(call SHESCAPE,$@)'
+
 override LIMINE_NO_BIOS :=
 ifneq ($(BUILD_BIOS),limine-bios)
 override LIMINE_NO_BIOS := -DLIMINE_NO_BIOS
 endif
 
-$(call MKESCAPE,$(BINDIR))/limine: $(call MKESCAPE,$(BUILDDIR))/GNUmakefile $(call MKESCAPE,$(BINDIR))/Makefile $(call MKESCAPE,$(SRCDIR))/host/limine.c $(if $(filter $(BUILD_BIOS),limine-bios),$(call MKESCAPE,$(BINDIR))/limine-bios-hdd.h)
+$(call MKESCAPE,$(BINDIR))/limine: $(call MKESCAPE,$(BUILDDIR))/GNUmakefile $(call MKESCAPE,$(BINDIR))/Makefile $(call MKESCAPE,$(SRCDIR))/host/limine.c $(if $(filter $(BUILD_BIOS),limine-bios),$(call MKESCAPE,$(BINDIR))/limine-bios-hdd.h) $(addprefix $(call MKESCAPE,$(BUILDDIR))/host-build/,CC CFLAGS CPPFLAGS LDFLAGS LIBS)
 	$(SED) 's/%VERSION%/@PACKAGE_VERSION@/g;s/%COPYRIGHT%/@LIMINE_COPYRIGHT@/g' <'$(call SHESCAPE,$(SRCDIR))/host/limine.c' >'$(call SHESCAPE,$(BINDIR))/limine.c'
 	$(MAKE) -C '$(call SHESCAPE,$(BINDIR))' limine \
 		CC="$(CC)" \
@@ -171,7 +183,7 @@ limine:
 
 .PHONY: clean
 clean: tools-clean limine-bios-clean limine-uefi-ia32-clean limine-uefi-x86-64-clean limine-uefi-aarch64-clean limine-uefi-riscv64-clean limine-uefi-loongarch64-clean
-	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
+	rm -rf '$(call SHESCAPE,$(BINDIR))' '$(call SHESCAPE,$(BUILDDIR))/host-build' '$(call SHESCAPE,$(BUILDDIR))/stage1.stamp'
 
 .PHONY: install
 install: all
@@ -444,7 +456,7 @@ common-bios: $(call MKESCAPE,$(BUILDDIR))/tools-build/limlzpack
 common-bios-clean:
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))/common-bios'
 
-$(call MKESCAPE,$(BUILDDIR))/tools-build/limlzpack: $(call MKESCAPE,$(SRCDIR))/tools/limlzpack.c
+$(call MKESCAPE,$(BUILDDIR))/tools-build/limlzpack: $(call MKESCAPE,$(SRCDIR))/tools/limlzpack.c $(addprefix $(call MKESCAPE,$(BUILDDIR))/tools-build/,CC_FOR_BUILD CFLAGS_FOR_BUILD)
 	$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))/tools-build'
 	$(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) -std=c99 -Wall -Wextra $(WERROR_FLAG) '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 

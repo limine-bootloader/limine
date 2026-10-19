@@ -1,3 +1,76 @@
+2026-10-19  Mintsuki  <mintsuki@protonmail.com>
+
+    *** Release 12.9.4 ***
+
+    Noteworthy changes compared to the previous release, 12.9.3:
+
+    Bug fixes:
+        - UEFI: Skip graphics modes with a zero width or height, or with no
+          framebuffer address, which a GPU without a display attached can
+          report. Drawing to one hung the boot. Fixes #691.
+        - Hide the UEFI Shell key when Secure Boot is active with an enrolled
+          config checksum, as it started binaries outside the enrolled config.
+        - `hash_mismatch_panic` is now only turned off by `no`, rather than by
+          any value but `yes`.
+        - Stop the menu hanging on x86-64 UEFI when the hash mismatch prompt
+          returns to it.
+        - Skip a wallpaper or font that cannot be loaded, rather than panicking
+          each time the menu starts or, for lack of memory, halting.
+        - Size the expansion of config macros from the expansion itself. A long
+          macro used a few times made the whole config fail to load.
+        - Fix a crash on bold or blinking text in the fallback terminal, used
+          by the UEFI menu with `serial: yes` and by BIOS panics under `quiet`.
+        - UEFI text console: Print non-ASCII characters as Unicode rather than
+          as CP437 codes, and keep backgrounds to the colours UEFI allows.
+        - BIOS text mode: Show bright backgrounds rather than blinking text.
+        - UEFI: Find the boot volume on CDs whose El Torito image no partition
+          describes, rather than waiting for a key.
+        - UEFI: Find the config next to the Limine executable when its path is
+          split over several device path nodes, uses forward slashes, or holds
+          non-ASCII characters.
+        - UEFI: Read disks in multiples of their optimal transfer granularity
+          rather than in transfers of that size, which made loading up to six
+          times slower.
+        - Linux protocol: Make the screen info table big enough for the EDID
+          block that aarch64, riscv64, and loongarch64 kernels may read and
+          clear after it, rather than leaving them to clear firmware memory
+          there.
+        - Linux protocol/loongarch64: Load the kernel at the address it was
+          linked for when that memory is free, as kernels that cannot relocate
+          themselves need, and hand over the device tree given by `dtb_path`.
+        - Multiboot 2: Leave out the tags for information a machine lacks, as
+          the specification asks, rather than refusing to boot kernels that
+          request them.
+        - Limine boot protocol: Provide an MP response with the BSP alone where
+          the CPUs cannot be enumerated, as the protocol promises, and include
+          the events ExitBootServices() logs in the TPM event log response.
+        - aarch64: Start the application processors on ACPI 5.1 firmware, and
+          on device trees with the PSCI node under `/firmware`.
+        - riscv64: Accept device trees describing harts with
+          `riscv,isa-extensions` alone or without `mmu-type`, and take the boot
+          hart from the device tree where the firmware lacks the RISC-V boot
+          protocol.
+        - FAT: Open files with non-ASCII long names, and read the active FAT
+          where mirroring is disabled.
+        - Miscellaneous bug fixes.
+
+    Miscellaneous:
+        - Update PicoEFI to its clean-room rewrite, under the 0BSD license. The
+          UEFI images now declare NX compatibility, and the IA-32 port no
+          longer needs `-malign-double`.
+        - Replace cc-runtime with freestanding-lgrt, so that the aarch64 port
+          no longer needs `-mno-outline-atomics`.
+        - Pack the UEFI images' relative relocations where the linker can.
+        - Rebuild what depends on the toolchain or flags whenever they change.
+        - Take the build timestamps from git, rather than placeholders, when
+          bootstrapping a git submodule or worktree.
+        - Keep the mouse pointer hidden until the mouse has moved more than one
+          character cell, so that jitter does not reveal it.
+        - Add Kamila Szewczyk to the copyright holders.
+        - Match CONFIG.md, USAGE.md, and FAQ.md to what the code does, and
+          document the UEFI Shell key.
+        - Miscellaneous improvements.
+
 2026-10-06  Mintsuki  <mintsuki@protonmail.com>
 
     *** Release 12.9.3 ***

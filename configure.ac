@@ -481,7 +481,6 @@ LIMINE_PORT_FLAGS([UEFI_AARCH64], [the aarch64 UEFI port], [aarch64],
     [$limine_cflags -fPIE -fshort-wchar -mcpu=generic -march=armv8-a+nofp+nosimd -mcmodel=small],
     [$limine_ldflags -m aarch64elf -pie -z text --hash-style=gnu], [
     LIMINE_CHECK_CFLAG([UEFI_AARCH64], [-fno-stack-clash-protection])
-    LIMINE_CHECK_CFLAG([UEFI_AARCH64], [-mno-outline-atomics])
     LIMINE_CHECK_CFLAG([UEFI_AARCH64], [-mbranch-protection=none])
     # Only the linker can work around Cortex-A53 erratum 843419, so require one
     # that can.

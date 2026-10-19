@@ -52,10 +52,10 @@ if ! test -f version; then
         38fed4e1e3365733ddbfa03b0a28936243ad31e9
 
     clone_repo_commit \
-        https://github.com/osdev0/cc-runtime.git \
-        cc-runtime \
-        9891629daf3703d0ddecd295772df7da82ab25b9
-    cp cc-runtime/src/cc-runtime.c common/cc-runtime.s2.c
+        https://github.com/osdev0/freestanding-lgrt.git \
+        freestanding-lgrt \
+        a6e79759589f9905ec08c5fdc7f10f34f668d145
+    cp freestanding-lgrt/src/freestanding-lgrt.c common/freestanding-lgrt.s2.c
 
     clone_repo_commit \
         https://github.com/iczelia/pdgzip.git \

@@ -145,7 +145,7 @@ test.elf: limine.o e9print.o memory.o flanterm.o flanterm_fb.o
 
 # The compiler emits calls to the 64-bit division helpers, which a freestanding
 # link has nothing else to satisfy.
-cc-runtime.mb.o: ../common/cc-runtime.s2.c
+freestanding-lgrt.mb.o: ../common/freestanding-lgrt.s2.c
 	$(CC) $(CFLAGS_MB) -c $< -o $@
 
 # These are 32-bit where test.elf's objects are not, so they need names of
@@ -162,10 +162,10 @@ multiboot.o: multiboot.c
 multiboot2.o: multiboot2.c
 	$(CC) $(CFLAGS_MB) -c $< -o $@
 
-multiboot2.elf: multiboot2_trampoline.o cc-runtime.mb.o memory.mb.o multiboot2.o e9print.mb.o
+multiboot2.elf: multiboot2_trampoline.o freestanding-lgrt.mb.o memory.mb.o multiboot2.o e9print.mb.o
 	$(LD) $(LDFLAGS_MB2) $^ -o $@
 
-multiboot.elf: multiboot_trampoline.o cc-runtime.mb.o memory.mb.o multiboot.o e9print.mb.o
+multiboot.elf: multiboot_trampoline.o freestanding-lgrt.mb.o memory.mb.o multiboot.o e9print.mb.o
 	$(LD) $(LDFLAGS_MB1) $^ -o $@
 
 %.o: %.c
@@ -177,6 +177,6 @@ multiboot.elf: multiboot_trampoline.o cc-runtime.mb.o memory.mb.o multiboot.o e9
 clean:
 	rm -rf test.elf limine.o e9print.o memory.o
 	rm -rf flanterm.o flanterm_fb.o
-	rm -rf e9print.mb.o memory.mb.o cc-runtime.mb.o
+	rm -rf e9print.mb.o memory.mb.o freestanding-lgrt.mb.o
 	rm -rf multiboot2.o multiboot2.elf multiboot2_trampoline.o
 	rm -rf multiboot.o multiboot_trampoline.o multiboot.elf

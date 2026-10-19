@@ -29,8 +29,8 @@
 /flanterm
 /stbi-hardened
 /common/lib/stb_image.h
-/common/cc-runtime.s2.c
-/cc-runtime
+/common/freestanding-lgrt.s2.c
+/freestanding-lgrt
 /common/compress/pdgzip.c
 /common/compress/pdgzip.h
 /pdgzip

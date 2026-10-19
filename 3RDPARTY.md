@@ -27,9 +27,10 @@ developers is listed. The notices further below give the full terms.
 
 ### Fetched by `./bootstrap`
 
-- [cc-runtime](https://github.com/osdev0/cc-runtime)
+- [freestanding-lgrt](https://github.com/osdev0/freestanding-lgrt)
 (Apache-2.0 WITH LLVM-exception) is used to provide runtime libgcc-like
-routines. `./bootstrap` copies its `cc-runtime.c` to `common/cc-runtime.s2.c`.
+routines. `./bootstrap` copies its `freestanding-lgrt.c` to
+`common/freestanding-lgrt.s2.c`.
 
 - [Freestanding C Headers](https://github.com/osdev0/freestanding-c-hdrs)
 (0BSD) provide GCC and Clang compatible freestanding C headers.
@@ -57,7 +58,7 @@ transparent gzip decompression layer for loaded files. `./bootstrap` copies
 its `pdgzip.c` and `pdgzip.h` to `common/compress/`.
 
 Release tarballs carry the other projects whole, but only the files copied out
-of cc-runtime, stb_image, and pdgzip, which keep their notices.
+of freestanding-lgrt, stb_image, and pdgzip, which keep their notices.
 
 ### In Limine's own source tree
 
@@ -96,7 +97,7 @@ embeds `limine-bios-hdd.bin`, which Limine's binary release archives also ship
 as `limine-bios-hdd.h`. Limine's UEFI binaries are the `BOOT*.EFI` files, which
 `limine-uefi-cd.bin` also carries.
 
-### cc-runtime
+### freestanding-lgrt
 
 Built into Limine's BIOS and UEFI binaries, the BIOS stage 2 included, and so
 into the `limine` tool. Its code comes from the compiler-rt library of the

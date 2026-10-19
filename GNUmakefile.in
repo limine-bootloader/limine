@@ -361,7 +361,7 @@ dist:
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"$(DIST_OUTPUT)/freestanding-c-hdrs/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"$(DIST_OUTPUT)/limine-protocol/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"$(DIST_OUTPUT)/picoefi/.git"
-	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"$(DIST_OUTPUT)/cc-runtime"
+	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"$(DIST_OUTPUT)/freestanding-lgrt"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"$(DIST_OUTPUT)/libfdt/.git"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"$(DIST_OUTPUT)/stbi-hardened"
 	rm -rf '$(call SHESCAPE,$(BUILDDIR))'/"$(DIST_OUTPUT)/pdgzip"
@@ -393,7 +393,7 @@ distclean: clean
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf flanterm stbi-hardened common/lib/stb_image.h pdgzip common/compress/pdgzip.c common/compress/pdgzip.h libfdt freestanding-c-hdrs cc-runtime common/cc-runtime.s2.c limine-protocol picoefi configure timestamps build-aux *'~' autom4te.cache aclocal.m4 *.tar*
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf flanterm stbi-hardened common/lib/stb_image.h pdgzip common/compress/pdgzip.c common/compress/pdgzip.h libfdt freestanding-c-hdrs freestanding-lgrt common/freestanding-lgrt.s2.c limine-protocol picoefi configure timestamps build-aux *'~' autom4te.cache aclocal.m4 *.tar*
 
 .PHONY: common-uefi-x86-64
 common-uefi-x86-64:

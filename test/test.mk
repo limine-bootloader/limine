@@ -55,6 +55,7 @@ override CFLAGS += \
     -std=c11 \
     -nostdinc \
     -ffreestanding \
+    -fno-exceptions \
     -fno-common \
     -fno-stack-protector \
     -fno-stack-check \
@@ -114,6 +115,7 @@ override CFLAGS_MB := \
     -std=c11 \
     -nostdinc \
     -ffreestanding \
+    -fno-exceptions \
     -fno-common \
     -fno-stack-protector \
     -fno-stack-check \

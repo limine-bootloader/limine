@@ -231,6 +231,15 @@ $(call VARSFILES,$(VARS)):
 	@$(MKDIR_P) '$(call SHESCAPE,$(BUILDDIR))'
 	@printf '%s\n' '$(call SHESCAPE,$(RECORD))' >'$(call SHESCAPE,$@)'
 
+# Objects get their records here, as GNU make 3.81 never matches a pattern
+# rule with a prerequisite path holding an escaped space.
+override NASM_OBJ_REL :=
+ifneq ($(filter $(TARGET),bios uefi-x86-64 uefi-ia32),)
+    override NASM_OBJ_REL := $(filter-out $(C_FILES:.c=.o) $(S_FILES:.S=.o),$(OBJ_REL))
+endif
+$(addprefix $(call MKESCAPE,$(BUILDDIR))/,$(filter-out $(NASM_OBJ_REL),$(OBJ_REL))): $(call VARSFILES,CC_FOR_TARGET CFLAGS_FOR_TARGET CPPFLAGS_FOR_TARGET)
+$(addprefix $(call MKESCAPE,$(BUILDDIR))/,$(NASM_OBJ_REL)): $(call VARSFILES,NASMFLAGS_FOR_TARGET)
+
 ifeq ($(TARGET),bios)
 
 $(call MKESCAPE,$(BUILDDIR))/stage2.bin.limlz: $(call MKESCAPE,$(BUILDDIR))/stage2.bin $(call MKESCAPE,$(LIMLZPACK))
@@ -489,87 +498,87 @@ endif
 # Must precede the generic .c rule: make before 3.82 picks the first matching
 # pattern rule rather than the shortest stem, and both match a .s2.o target.
 ifeq ($(TARGET),bios)
-$(call MKESCAPE,$(BUILDDIR))/%.s2.o: ../%.s2.c $(call VARSFILES,CC_FOR_TARGET CFLAGS_FOR_TARGET CPPFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.s2.o: ../%.s2.c
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(S2CFLAGS) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.c $(call VARSFILES,CC_FOR_TARGET CFLAGS_FOR_TARGET CPPFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.c
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.S $(call VARSFILES,CC_FOR_TARGET CFLAGS_FOR_TARGET CPPFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.S
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
 ifeq ($(TARGET),bios)
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_ia32 $(call VARSFILES,NASMFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_ia32
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' $(NASMFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_bios_ia32 $(call VARSFILES,NASMFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_bios_ia32
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' $(NASMFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_x86 $(call VARSFILES,NASMFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_x86
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' $(NASMFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-x86-64)
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_x86_64 $(call VARSFILES,NASMFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_x86_64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' $(NASMFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_uefi_x86_64 $(call VARSFILES,NASMFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_uefi_x86_64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' $(NASMFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_x86 $(call VARSFILES,NASMFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_x86
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' $(NASMFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-aarch64)
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_aarch64 $(call VARSFILES,CC_FOR_TARGET CFLAGS_FOR_TARGET CPPFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_aarch64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_uefi_aarch64 $(call VARSFILES,CC_FOR_TARGET CFLAGS_FOR_TARGET CPPFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_uefi_aarch64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-riscv64)
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_riscv64 $(call VARSFILES,CC_FOR_TARGET CFLAGS_FOR_TARGET CPPFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_riscv64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_uefi_riscv64 $(call VARSFILES,CC_FOR_TARGET CFLAGS_FOR_TARGET CPPFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_uefi_riscv64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-loongarch64)
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_loongarch64 $(call VARSFILES,CC_FOR_TARGET CFLAGS_FOR_TARGET CPPFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_loongarch64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_uefi_loongarch64 $(call VARSFILES,CC_FOR_TARGET CFLAGS_FOR_TARGET CPPFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_uefi_loongarch64
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CC_FOR_TARGET) $(CFLAGS_FOR_TARGET) $(CPPFLAGS_FOR_TARGET) -x assembler-with-cpp -c '$(call SHESCAPE,$<)' -o '$(call SHESCAPE,$@)'
 endif
 
 ifeq ($(TARGET),uefi-ia32)
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_ia32 $(call VARSFILES,NASMFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_ia32
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' $(NASMFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_uefi_ia32 $(call VARSFILES,NASMFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_uefi_ia32
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' $(NASMFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
 
-$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_x86 $(call VARSFILES,NASMFLAGS_FOR_TARGET)
+$(call MKESCAPE,$(BUILDDIR))/%.o: ../%.asm_x86
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm '$(call SHESCAPE,$<)' $(NASMFLAGS_FOR_TARGET) -o '$(call SHESCAPE,$@)'
 endif

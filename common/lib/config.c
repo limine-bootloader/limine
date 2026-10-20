@@ -442,13 +442,13 @@ static size_t expand_macros(char *out, size_t config_size) {
 
 next:
         if (config_size - i >= 2 && memcmp(config_addr + i, "${", 2) == 0) {
-            char *macro_name = ext_mem_alloc(1024);
+            char macro_name[1024];
             i += 2;
             size_t j;
-            for (j = 0; j < 1023 && config_addr[i] != '}' && config_addr[i] != '\n' && config_addr[i] != 0; j++, i++) {
+            for (j = 0; j < sizeof(macro_name) - 1 && i < config_size && config_addr[i] != '}' && config_addr[i] != '\n' && config_addr[i] != 0; j++, i++) {
                 macro_name[j] = config_addr[i];
             }
-            if (config_addr[i] != '}') {
+            if (i >= config_size || config_addr[i] != '}') {
                 bad_config = true;
                 panic(true, "config: Malformed macro usage");
             }
@@ -466,7 +466,6 @@ next:
                 }
                 macro = macro->next;
             }
-            pmm_free(macro_name, 1024);
             size_t value_len = strlen(macro_value);
             if (out != NULL) {
                 memcpy(out + in, macro_value, value_len);
@@ -487,6 +486,27 @@ next:
 too_large:
     bad_config = true;
     panic(true, "config: Config file too large for macro expansion");
+}
+
+static bool has_macro_references(const char *config, size_t config_size) {
+    const char *p = config;
+    size_t rem = config_size;
+
+    while (rem >= 2) {
+        const char *dollar = memchr(p, '$', rem);
+        if (dollar == NULL || dollar >= config + config_size - 1) {
+            return false;
+        }
+
+        if (dollar[1] == '{') {
+            return true;
+        }
+
+        p = dollar + 1;
+        rem = config_size - (p - config);
+    }
+
+    return false;
 }
 
 int init_config(size_t config_size) {
@@ -557,88 +577,91 @@ int init_config(size_t config_size) {
     config_addr[write++] = '\0';
     config_size = write;
 
-    // Load macros
-    struct macro *arch_macro = ext_mem_alloc(sizeof(struct macro));
-    strcpy(arch_macro->name, "ARCH");
-    strcpy(arch_macro->value, current_arch());
-    arch_macro->next = macros;
-    macros = arch_macro;
+    if (has_macro_references(config_addr, config_size)) {
+        // Load macros
+        struct macro *arch_macro = ext_mem_alloc(sizeof(struct macro));
+        strcpy(arch_macro->name, "ARCH");
+        strcpy(arch_macro->value, current_arch());
+        arch_macro->next = macros;
+        macros = arch_macro;
 
-    struct macro *fw_type_macro = ext_mem_alloc(sizeof(struct macro));
-    strcpy(fw_type_macro->name, "FW_TYPE");
-    strcpy(fw_type_macro->value, current_firmware());
-    fw_type_macro->next = macros;
-    macros = fw_type_macro;
+        struct macro *fw_type_macro = ext_mem_alloc(sizeof(struct macro));
+        strcpy(fw_type_macro->name, "FW_TYPE");
+        strcpy(fw_type_macro->value, current_firmware());
+        fw_type_macro->next = macros;
+        macros = fw_type_macro;
 
-    struct macro *loader_arch_macro = ext_mem_alloc(sizeof(struct macro));
-    strcpy(loader_arch_macro->name, "LOADER_ARCH");
-    strcpy(loader_arch_macro->value, loader_arch());
-    loader_arch_macro->next = macros;
-    macros = loader_arch_macro;
+        struct macro *loader_arch_macro = ext_mem_alloc(sizeof(struct macro));
+        strcpy(loader_arch_macro->name, "LOADER_ARCH");
+        strcpy(loader_arch_macro->value, loader_arch());
+        loader_arch_macro->next = macros;
+        macros = loader_arch_macro;
 
-    for (size_t i = 0; i < config_size;) {
-        if ((config_size - i >= 3 && memcmp(config_addr + i, "\n${", 3) == 0)
-         || (config_size - i >= 2 && i == 0 && memcmp(config_addr, "${", 2) == 0)) {
-            struct macro *macro = ext_mem_alloc(sizeof(struct macro));
+        for (size_t i = 0; i < config_size;) {
+            if ((config_size - i >= 3 && memcmp(config_addr + i, "\n${", 3) == 0)
+             || (config_size - i >= 2 && i == 0 && memcmp(config_addr, "${", 2) == 0)) {
+                struct macro *macro = ext_mem_alloc(sizeof(struct macro));
 
-            i += i ? 3 : 2;
-            size_t j;
-            for (j = 0; config_addr[i] != '}' && config_addr[i] != '\n' && config_addr[i] != 0; j++, i++) {
-                if (j >= sizeof(macro->name) - 1) {
-                    bad_config = true;
-                    panic(true, "config: Macro name too long (max %U)", (uint64_t)(sizeof(macro->name) - 1));
+                i += i ? 3 : 2;
+                size_t j;
+                for (j = 0; config_addr[i] != '}' && config_addr[i] != '\n' && config_addr[i] != 0; j++, i++) {
+                    if (j >= sizeof(macro->name) - 1) {
+                        bad_config = true;
+                        panic(true, "config: Macro name too long (max %U)", (uint64_t)(sizeof(macro->name) - 1));
+                    }
+                    macro->name[j] = config_addr[i];
                 }
-                macro->name[j] = config_addr[i];
-            }
 
-            if (config_addr[i] == '\n' || config_addr[i] == 0 || config_addr[i+1] != '=') {
-                pmm_free(macro, sizeof(struct macro));
+                if (config_addr[i] == '\n' || config_addr[i] == 0 || config_addr[i+1] != '=') {
+                    pmm_free(macro, sizeof(struct macro));
+                    continue;
+                }
+                i += 2;
+
+                macro->name[j] = 0;
+
+                for (j = 0; config_addr[i] != '\n' && config_addr[i] != 0; j++, i++) {
+                    if (j >= sizeof(macro->value) - 1) {
+                        bad_config = true;
+                        panic(true, "config: Macro value too long (max %U)", (uint64_t)(sizeof(macro->value) - 1));
+                    }
+                    macro->value[j] = config_addr[i];
+                }
+                macro->value[j] = 0;
+
+                macro->next = macros;
+                macros = macro;
+
                 continue;
             }
-            i += 2;
 
-            macro->name[j] = 0;
+            i++;
+        }
 
-            for (j = 0; config_addr[i] != '\n' && config_addr[i] != 0; j++, i++) {
-                if (j >= sizeof(macro->value) - 1) {
-                    bad_config = true;
-                    panic(true, "config: Macro value too long (max %U)", (uint64_t)(sizeof(macro->value) - 1));
+        // Expand macros
+        if (macros != NULL) {
+            size_t new_config_size = expand_macros(NULL, config_size);
+            char *new_config = ext_mem_alloc(new_config_size);
+            expand_macros(new_config, config_size);
+
+            pmm_free(config_addr, config_alloc_size);
+
+            config_addr = new_config;
+            config_size = new_config_size;
+
+            // Free macros
+            struct macro *macro = macros;
+            for (;;) {
+                if (macro == NULL) {
+                    break;
                 }
-                macro->value[j] = config_addr[i];
+                struct macro *next = macro->next;
+                pmm_free(macro, sizeof(struct macro));
+                macro = next;
             }
-            macro->value[j] = 0;
-
-            macro->next = macros;
-            macros = macro;
-
-            continue;
+            macros = NULL;
         }
 
-        i++;
-    }
-
-    // Expand macros
-    if (macros != NULL) {
-        size_t new_config_size = expand_macros(NULL, config_size);
-        char *new_config = ext_mem_alloc(new_config_size);
-        expand_macros(new_config, config_size);
-
-        pmm_free(config_addr, config_alloc_size);
-
-        config_addr = new_config;
-        config_size = new_config_size;
-
-        // Free macros
-        struct macro *macro = macros;
-        for (;;) {
-            if (macro == NULL) {
-                break;
-            }
-            struct macro *next = macro->next;
-            pmm_free(macro, sizeof(struct macro));
-            macro = next;
-        }
-        macros = NULL;
     }
 
     config_ready = true;

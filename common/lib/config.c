@@ -524,32 +524,38 @@ int init_config(size_t config_size) {
 
     size_t config_alloc_size = config_size;
 
-    // remove windows carriage returns and spaces at the start and end of lines, if any
-    for (size_t i = 0; i < config_size; i++) {
-        size_t skip = 0;
-        if (config_addr[i] == ' ' || config_addr[i] == '\t') {
-            while (i + skip < config_size && (config_addr[i + skip] == ' ' || config_addr[i + skip] == '\t')) {
-                skip++;
+    config_addr[config_size - 1] = '\0';
+
+    size_t write = 0;
+    bool at_line_start = true;
+    for (size_t read = 0; read < config_size - 1; read++) {
+        char c = config_addr[read];
+
+        if (c == '\r') {
+            continue;
+        }
+
+        if (at_line_start && (c == ' ' || c == '\t')) {
+            continue;
+        }
+
+        if (c == '\n') {
+            while (write > 0 && (config_addr[write - 1] == ' ' || config_addr[write - 1] == '\t')) {
+                write--;
             }
-            if (i + skip < config_size && config_addr[i + skip] == '\n') {
-                goto skip_loop;
-            }
-            skip = 0;
+            at_line_start = true;
+        } else {
+            at_line_start = false;
         }
-        while (i + skip < config_size
-            && ((config_addr[i + skip] == '\r')
-                || ((!i || config_addr[i - 1] == '\n') && (config_addr[i + skip] == ' ' || config_addr[i + skip] == '\t')))
-        ) {
-            skip++;
-        }
-skip_loop:
-        if (skip) {
-            for (size_t j = i; j < config_size - skip; j++)
-                config_addr[j] = config_addr[j + skip];
-            config_size -= skip;
-            i--; // re-examine character shifted into position i
-        }
+
+        config_addr[write++] = c;
     }
+
+    while (write > 0 && (config_addr[write - 1] == ' ' || config_addr[write - 1] == '\t')) {
+        write--;
+    }
+    config_addr[write++] = '\0';
+    config_size = write;
 
     // Load macros
     struct macro *arch_macro = ext_mem_alloc(sizeof(struct macro));
